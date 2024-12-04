@@ -7,6 +7,7 @@
 
 const [, , ...aCmd] = process.argv;
 const watch = aCmd.includes('--watch') ?{} :null;
+const web = aCmd.includes('--web') ?{} :null;
 
 import {build} from 'vite';
 import dts, {PluginOptions} from 'vite-plugin-dts';
@@ -42,6 +43,7 @@ build({
 	},
 	plugins: [dts(oDts)],
 });
+if (! web) {
 
 // === アプリ用 ===
 build({
@@ -127,3 +129,5 @@ build({
 	},
 	plugins: [dts(oDts)],
 });
+
+}

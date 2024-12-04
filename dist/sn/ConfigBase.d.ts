@@ -66,12 +66,9 @@ export interface IConfig {
     addPath(fn: string, h_exts: IExts): void;
 }
 export interface ISysRoots {
-    loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
     dec(ext: string, tx: string): Promise<string>;
-    decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
     get cur(): string;
     get crypto(): boolean;
-    fetch(url: string): Promise<Response>;
     hash(str: string): string;
 }
 export type HSysBaseArg = {

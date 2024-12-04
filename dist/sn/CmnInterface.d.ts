@@ -46,15 +46,7 @@ export type HSysBaseArg = {
 };
 export type SYS_DEC_RET = HTMLImageElement | HTMLVideoElement | ArrayBuffer;
 export interface ISysBase {
-    flush(): void;
     dec(ext: string, tx: string): Promise<string>;
-    decAB(ab: ArrayBuffer): Promise<SYS_DEC_RET>;
-    addHook(fnc: IFncHook): void;
-    callHook: IFncHook;
-    send2Dbg: IFncHook;
-    copyBMFolder(from: number, to: number): void;
-    eraseBMFolder(place: number): void;
-    destroy(): void;
 }
 export interface IFire {
     (KEY: string, e: Event): void;

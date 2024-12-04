@@ -73,14 +73,14 @@ export interface IConfig {
 	addPath(fn: string, h_exts: IExts): void;
 }
 
+
 export interface ISysRoots {
-	loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
+	// loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
 	dec(ext: string, tx: string): Promise<string>;
-	decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
+	// decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
 
 	get cur()	: string;
 	get crypto(): boolean;
-	fetch(url: string): Promise<Response>;	// ハッシュ値作成ロード用
 	hash(str: string): string;
 }
 export type HSysBaseArg = {
@@ -152,7 +152,19 @@ export class ConfigBase implements IConfig {
 		// これが同期（App）非同期（Web、path.json）混在してるので、
 		// （Mainのメンバ変数に入れる→他のクラスに渡す都合により）
 		// 当クラスのコンストラクタとload()は分ける
-		await this.sys.loadPath(this.hPathFn2Exts, this);
+		// await this.sys.loadPath(this.hPathFn2Exts, this);
+		const fn = this.sys.cur +'path.json';
+		const res = await fetch(fn);
+		if (! res.ok) throw Error(res.statusText);
+
+		const src = await res.text();
+		const oJs = JSON.parse(await this.sys.dec(fn, src));
+		for (const [nm, v] of Object.entries(oJs)) {
+			const h = this.hPathFn2Exts[nm] = <any>v;
+			for (const [ext, w] of Object.entries(h)) {
+				if (ext !== ':cnt') h[ext] = this.sys.cur + w;
+			}
+		}
 
 		this.#existsBreakline = this.matchPath('^breakline$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
 		this.#existsBreakpage = this.matchPath('^breakpage$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
@@ -176,7 +188,7 @@ export class ConfigBase implements IConfig {
 				if (! ext.endsWith(':id')) continue;
 				const hp = v.slice(v.lastIndexOf('/') +1);
 				const fn = hExts[ext.slice(0, -10)] ?? '';
-				const res = await this.sys.fetch(fn);
+				const res = await fetch(fn);
 				const src = await res.text();
 				const hf = this.sys.hash(src);
 				if (hp !== hf) throw `ファイル改竄エラーです fn:${fn}`;

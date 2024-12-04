@@ -11,6 +11,9 @@
 			// pixi.js 6.1.0以降必須
 		"resolveJsonModule": true,	// JSON ファイルの型検証、json をインポートできるように
 
+		"jsx": "react-jsx",
+		"jsxImportSource": "@emotion/react",
+
 		/* Output */
 		"sourceMap": true,
 		"outDir": "dist/",
