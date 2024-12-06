@@ -1,5 +1,5 @@
-import { SysBase } from './sn/SysBase';
-import { HPlugin, IPlugin, IPluginInitArg } from './sn/CmnInterface';
+import { SysBase } from './SysBase';
+import { HPlugin, IPlugin, IPluginInitArg } from './CmnInterface';
 export type { HPlugin, IPlugin, IPluginInitArg };
 export declare class SysWeb extends SysBase {
     constructor(hPlg?: HPlugin, arg?: {

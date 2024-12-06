@@ -1,5 +1,5 @@
-import { a as o } from "./web2.js";
+import { d as r } from "./web2.js";
 export {
-  o as SysWeb
+  r as SysWeb
 };
 //# sourceMappingURL=web.js.map

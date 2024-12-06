@@ -66,10 +66,12 @@ export type T_CFG = {
 export interface IExts { [ext: string]: string; };
 export interface IFn2Path { [fn: string]: IExts; };
 
+export type T_SEARCHPATH = (fn: string, extptn?: SEARCH_PATH_ARG_EXT)=> string;
 export interface IConfig {
 	oCfg	: T_CFG;
 	getNs()	: string;
-	searchPath(fn: string, extptn?: string): string;
+	searchPath: T_SEARCHPATH;
+	matchPath(fnptn: string, extptn?: SEARCH_PATH_ARG_EXT): ReadonlyArray<IExts>;
 	addPath(fn: string, h_exts: IExts): void;
 }
 
@@ -79,8 +81,7 @@ export interface ISysRoots {
 	dec(ext: string, tx: string): Promise<string>;
 	// decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
 
-	get cur()	: string;
-	get crypto(): boolean;
+	arg: HSysBaseArg;
 	hash(str: string): string;
 }
 export type HSysBaseArg = {
@@ -131,7 +132,7 @@ export class ConfigBase implements IConfig {
 	userFnTail		= '';	// 4tst public
 	protected	hPathFn2Exts	: IFn2Path	= {};
 
-	constructor(readonly sys: ISysRoots) {}
+	protected	constructor(readonly sys: ISysRoots) {}
 	async load(oCfg: any) {
 		// this.oCfg = {...this.oCfg, ...oCfg};	// 一階層目でコピーしてしまう
 		this.oCfg.save_ns = oCfg?.save_ns ?? this.oCfg.save_ns;
@@ -153,16 +154,16 @@ export class ConfigBase implements IConfig {
 		// （Mainのメンバ変数に入れる→他のクラスに渡す都合により）
 		// 当クラスのコンストラクタとload()は分ける
 		// await this.sys.loadPath(this.hPathFn2Exts, this);
-		const fn = this.sys.cur +'path.json';
-		const res = await fetch(fn);
+		const path = this.sys.arg.cur +'path.json';
+		const res = await fetch(path);
 		if (! res.ok) throw Error(res.statusText);
 
 		const src = await res.text();
-		const oJs = JSON.parse(await this.sys.dec(fn, src));
+		const oJs = JSON.parse(await this.sys.dec(path, src));
 		for (const [nm, v] of Object.entries(oJs)) {
 			const h = this.hPathFn2Exts[nm] = <any>v;
 			for (const [ext, w] of Object.entries(h)) {
-				if (ext !== ':cnt') h[ext] = this.sys.cur + w;
+				if (ext !== ':cnt') h[ext] = this.sys.arg.cur + w;
 			}
 		}
 
@@ -170,7 +171,7 @@ export class ConfigBase implements IConfig {
 		this.#existsBreakpage = this.matchPath('^breakpage$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
 
 		const hFn2Ext: {[fn: string]: string}	= {};
-		if (! this.sys.crypto) {
+		if (! this.sys.arg.crypto) {
 			for (const [fn0, hExts] of Object.entries(this.hPathFn2Exts)) {
 				for (const ext of Object.keys(hExts)) {
 					if (ext.startsWith(':')) continue;
@@ -285,7 +286,7 @@ export class ConfigBase implements IConfig {
 	addPath(fn: string, h_exts: IExts) {
 		const o: any = {};
 		for (const [ext, v] of Object.entries(h_exts)) {
-			o[ext] = (ext.startsWith(':') ?`` :this.sys.cur) + v;
+			o[ext] = (ext.startsWith(':') ?`` :this.sys.arg.cur) + v;
 		}
 		this.hPathFn2Exts[fn] = o;
 	}

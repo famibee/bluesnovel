@@ -5,8 +5,8 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {SysBase} from './sn/SysBase';
-import type {HPlugin, IPlugin, IPluginInitArg} from './sn/CmnInterface';
+import {SysBase} from './SysBase';
+import type {HPlugin, IPlugin, IPluginInitArg} from './CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 
 

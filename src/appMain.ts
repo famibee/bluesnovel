@@ -5,11 +5,11 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './sn/CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 import {HINFO, TAG_WINDOW} from './preload';
-import {T_CFG} from './sn/ConfigBase';
-import {CmnLib} from "./sn/CmnLib";
+import {T_CFG} from './ts/ConfigBase';
+import {CmnLib} from "./ts/CmnLib";
 
 import {BrowserWindow, ipcMain, app, dialog, MessageBoxOptions, shell, Size, screen} from 'electron';
 import Store from 'electron-store';

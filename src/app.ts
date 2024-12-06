@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './sn/CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 
 export class SysApp {

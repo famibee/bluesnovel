@@ -6,24 +6,24 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {CmnLib} from './CmnLib';
-import {SysBase} from './SysBase';
+import {SysBase} from '../SysBase';
 import {ConfigBase, SEARCH_PATH_ARG_EXT} from './ConfigBase';
 
 
 export class Config extends ConfigBase {
 	static	async	generate(sys: SysBase) {
 		const c = new Config(sys);
-		const fn = sys.arg.cur +'prj.json';
-		const res = await fetch(fn);
+		const path = sys.arg.cur +'prj.json';
+		const res = await fetch(path);
 		if (! res.ok) throw Error(res.statusText);
 
 		const src = await res.text();
-		const oJs = JSON.parse(await sys.dec(fn, src));
+		const oJs = JSON.parse(await sys.dec(path, src));
 		await c.load(oJs);
 		return c;
 	}
 
-	constructor(override readonly sys: SysBase) {super(sys)}
+	protected	constructor(override readonly sys: SysBase) {super(sys)}
 	override	async load(oCfg: any) {		// test用に public
 		await super.load(oCfg);
 

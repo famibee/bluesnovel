@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {HArg} from './Grammar';
-import {IPutCh} from './CmnInterface';
+import {IPutCh} from '../CmnInterface';
 
 export interface IAutoPage { (idx: number, str: string): void; }
 
