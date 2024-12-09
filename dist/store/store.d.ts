@@ -4,6 +4,7 @@ type T_STATE = {
     addTxt: (t: string) => void;
     clearTxt: () => void;
     aLay: T_LAY[];
+    replace: (arg: string) => void;
     addLayer: (arg: T_LAY) => void;
     chgPic: (arg: T_CHGPIC) => void;
 };

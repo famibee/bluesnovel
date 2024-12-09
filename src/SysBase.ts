@@ -9,6 +9,7 @@ import type {HPlugin, ISysBase} from './CmnInterface';
 import {Config} from './ts/Config';
 import type {IConfig, ISysRoots} from './ts/ConfigBase';
 import type {ScriptMng} from './ts/ScriptMng';
+import {Caretaker} from './ts/Memento';
 
 import {extensions, ExtensionType} from '@pixi/extensions';
 
@@ -24,6 +25,10 @@ type HSysBaseArg = {
 
 export class SysBase implements ISysRoots, ISysBase {
 	constructor(readonly hPlg: HPlugin = {}, readonly arg: HSysBaseArg) {}
+
+	readonly	#ct	= new Caretaker;
+	get caretaker() {return this.#ct}
+
 
 	protected	async init() {
 		this.cfg = await Config.generate(this);
@@ -55,7 +60,7 @@ export class SysBase implements ISysRoots, ISysBase {
 			await Assets.init({basePath: location.origin});
 			extensions.add(this.#PixiExt_sn);
 
-			this.#scrMng = await ScriptMng.generate(this, Assets);
+			this.#scrMng = new ScriptMng(this, Assets);
 			await this.#scrMng.load('main');
 		});
 	}

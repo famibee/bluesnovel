@@ -20,7 +20,7 @@
 		"./app": "./dist/app.js"
 	},
 	"dependencies": {
-		"@emotion/react": "^11.13.5",
+		"@emotion/react": "^11.14.0",
 		"@pixi/assets": "^7.4.2",
 		"@pixi/extensions": "^7.4.2",
 		"@tweenjs/tween.js": "^25.0.0",

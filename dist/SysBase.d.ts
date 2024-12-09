@@ -1,5 +1,6 @@
 import { HPlugin, ISysBase } from './CmnInterface';
 import { IConfig, ISysRoots } from './ts/ConfigBase';
+import { Caretaker } from './ts/Memento';
 type HSysBaseArg = {
     cur: string;
     crypto: boolean;
@@ -10,6 +11,7 @@ export declare class SysBase implements ISysRoots, ISysBase {
     readonly hPlg: HPlugin;
     readonly arg: HSysBaseArg;
     constructor(hPlg: HPlugin | undefined, arg: HSysBaseArg);
+    get caretaker(): Caretaker;
     protected init(): Promise<void>;
     cfg: IConfig;
     protected $path_downloads: string;

@@ -10,6 +10,7 @@ import {CmnLib, uint} from '../ts/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLaye';
 import {T_CHGPIC, useStore} from '../store/store';
+import {BaseMemento} from '../ts/Memento';
 
 import {useEffect, useState} from 'react';
 import {css, type SerializedStyles} from '@emotion/react';
@@ -20,8 +21,11 @@ export type T_LAY_IDX = {
 	nm		: string;
 };
 export type T_LAY_CMN = {
-	styChild	: SerializedStyles;
-	visible?	: boolean;
+	cmn: {
+		sys			: SysBase;
+		styChild	: SerializedStyles;
+		visible?	: boolean;
+	};
 };
 export type T_LAY = T_GRPLAY | T_TXTLAY;
 
@@ -33,9 +37,12 @@ console.log(`fn:Stage.tsx line:60 Stage 0`);
 	// 外部からの呼び出し
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
+	const replace = useStore(s=> s.replace);
 	useEffect(()=> {
 		heStage.addEventListener('ev_addLayer', ((e: CustomEvent<T_LAY>)=> addLayer(e.detail)) as EventListenerOrEventListenerObject);
 		heStage.addEventListener('ev_chgPic', ((e: CustomEvent<T_CHGPIC>)=> chgPic(e.detail)) as EventListenerOrEventListenerObject);
+		// Stage更新処理
+		heStage.addEventListener('ev_replace', ((e: CustomEvent<string>)=> replace(e.detail)) as EventListenerOrEventListenerObject);
 	}, []);
 
 	// ウインドウサイズ追従
@@ -47,6 +54,9 @@ console.log(`fn:Stage.tsx line:60 Stage 0`);
 	}, []);
 	const {cvsScale} = calcScale(wh);
 
+	// 状態ＤＢ更新
+	useEffect(()=> mmt.onUpdate(JSON.stringify(aLay)), [aLay]);
+
 	// css
 	const styParent = css`
 		position: relative;
@@ -57,21 +67,39 @@ console.log(`fn:Stage.tsx line:60 Stage 0`);
 		height	: calc(${CmnLib.stageH}px / ${cvsScale});
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
-	const styBtn = css`position: relative; z-index: 1;`;
+	const styBtn = css`
+position: relative; z-index: 1;
+
+display: inline-block;
+text-align: center;
+vertical-align: middle;
+text-decoration: none;
+width: 120px;
+margin: auto;
+padding: 1rem 4rem;
+font-weight: bold;
+border: 2px solid #27acd9;
+color: #27acd9;
+border-radius: 100vh;
+transition: 0.5s;
+&:hover {
+	color: #fff;
+	background: #27acd9;
+}`;
 
 	return <div css={styParent}>
 		<button onClick={()=> {}} css={styBtn}>Click</button>
 		<button onClick={()=> {}} css={styBtn}>Back</button>
 		<button onClick={()=> {}} css={styBtn}>Prev</button>
 		{aLay.map(l=> l.cls === 'GRP'
-			? <GrpLayer key={l.nm} sys={sys} styChild={styChild} fn={l.fn}/>
-			: <TxtLayer key={l.nm} sys={sys} styChild={styChild} str={'てすと'}/>)}
+			? <GrpLayer key={l.nm} cmn={{sys, styChild}} fn={l.fn}/>
+			: <TxtLayer key={l.nm} cmn={{sys, styChild}} str={'てすと'}/>)}
 	</div>;
 };
-	interface T_WH {
+	type T_WH = {
 		width	: number;
 		height	: number;
-	}
+	};
 	function calcScale({width: w, height: h}: T_WH) {
 		let cvsWidth = 0;
 		let cvsHeight = 0;
@@ -144,6 +172,8 @@ export async function opening($heStage: HTMLElement, $sys: SysBase) {
 
 	const {createRoot} = await import('react-dom/client');
 	createRoot(heStage).render(<Stage />);
+
+	sys.caretaker.add(mmt);
 }
 	let heStage: HTMLElement;
 	let sys: SysBase;
@@ -155,3 +185,13 @@ export function addLayer(detail: T_LAY) {
 export function chgPic(detail: T_CHGPIC) {
 	heStage.dispatchEvent(new CustomEvent('ev_chgPic', {detail}));
 }
+
+export class Memento extends BaseMemento {
+	readonly	nm = 'Stage';
+	protected override	stt = '[]';
+
+	protected replace() {	// stt から 置換処理を
+		heStage.dispatchEvent(new CustomEvent('ev_replace', {detail: this.stt}));
+	}
+}
+const mmt = new Memento;

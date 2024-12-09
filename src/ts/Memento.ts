@@ -5,22 +5,37 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-export interface IMemento {
-	getState(): string;
-	setState(state: string): void;
+export abstract class BaseMemento {
+	#onUpdate: ()=> void;
+	init(onUpdate: ()=> void) {this.#onUpdate = onUpdate}
+
+	protected stt = '';
+	onUpdate($stt: string) {this.stt = $stt; this.#onUpdate()}
+
+	abstract readonly	nm: string;		// 適当な名を付けて
+	get state() {return this.stt}
+
+	setState(state: string) {this.stt = state; this.replace()}
+	protected abstract	replace(): void;	 // stt から 置換処理を
 };
 
 
 export class Caretaker {
-	#aMemento	: IMemento[] = [];		// Memento対象
+	#aMemento	: BaseMemento[] = [];		// Memento対象
 	#hScr2AState: {[key: string]: string[]}	= {};
 	#aKey	: string[]	= [];
 
-	add(m: IMemento) {this.#aMemento.push(m)}
+	add(m: BaseMemento) {m.init(()=> this.backup()); this.#aMemento.push(m)}
 
-	backup(key: string) {
+	#key = '';
+	set key($key: string) {this.#key = $key}
+	backup(key = this.#key) {
 		this.#aKey.push(key);
-		this.#hScr2AState[key] = this.#aMemento.map(m=> m.getState());
+		this.#hScr2AState[key] = this.#aMemento.map(m=> m.state);
+console.log(`fn:Memento.ts key:${key} STT:%o`, this.#hScr2AState[key]);
+
+		//x const aLay = useStore(s=> s.aLay);
+
 	}
 
 	undo(key: string) {
@@ -30,7 +45,7 @@ export class Caretaker {
 		const len = this.#aMemento.length;
 		for (let i=0; i<len; ++i) {
 			const m = this.#aMemento[i]!;
-			m.setState(a[i] ?? '');
+			m.onUpdate(a[i] ?? '');
 		}
 	}
 
