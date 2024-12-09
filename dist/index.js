@@ -11531,7 +11531,10 @@ function Rt(r, e) {
   const t = r.split("?")[0], s = $e.extname(t).toLowerCase();
   return Array.isArray(e) ? e.includes(s) : s === e;
 }
-const Fe = (r, e, t = !1) => (Array.isArray(r) || (r = [r]), e ? r.map((s) => typeof s == "string" || t ? e(s) : s) : r);
+const Fe = (r, e, t = !1) => (Array.isArray(r) || (r = [r]), e ? r.map((s) => typeof s == "string" || t ? e(s) : s) : r), $l = (r, e) => {
+  const t = e.split("?")[1];
+  return t && (r += `?${t}`), r;
+};
 function Aa(r, e, t, s, i) {
   const n = e[t];
   for (let a = 0; a < n.length; a++) {
@@ -12889,6 +12892,7 @@ export {
   wt as checkDataUrl,
   Rt as checkExtension,
   Fe as convertToList,
+  $l as copySearchParams,
   el as createStringVariations,
   Qs as createTexture,
   Pl as detectAvif,

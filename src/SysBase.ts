@@ -7,7 +7,7 @@
 
 import type {HPlugin, ISysBase} from './CmnInterface';
 import {Config} from './ts/Config';
-import {IConfig, ISysRoots} from './ts/ConfigBase';
+import type {IConfig, ISysRoots} from './ts/ConfigBase';
 import type {ScriptMng} from './ts/ScriptMng';
 
 import {extensions, ExtensionType} from '@pixi/extensions';
@@ -27,17 +27,37 @@ export class SysBase implements ISysRoots, ISysBase {
 
 	protected	async init() {
 		this.cfg = await Config.generate(this);
-		
+
+		document.head.insertAdjacentHTML('beforeend',
+`<style type="text/css">
+	body {
+		background-color: ${this.cfg.oCfg.init.bg_color};
+	}
+	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+</style>`);
+
+		const SN_ID = 'skynovel';
+		const cvs = <HTMLCanvasElement>document.getElementById(SN_ID);
+		if (cvs) {
+			const clone_cvs = <HTMLCanvasElement>cvs.cloneNode(true);
+			clone_cvs.id = SN_ID;
+		}
+		else document.body.insertAdjacentHTML('afterbegin', `<div id="${SN_ID}"></div>`);
 		const {opening} = await import('./components/Stage');
-		opening(this);
+		await opening(document.getElementById(SN_ID)!, this);
 
-		const {Assets} = await import('@pixi/assets');
-		await Assets.init({basePath: location.origin});
-		extensions.add(this.#PixiExt_sn);
+		await Promise.all([
+			import('@pixi/assets'),
+			import('./ts/ScriptMng'),
+		]).then(async ([{Assets}, {ScriptMng}])=> {
+			await Assets.init({basePath: location.origin});
+			extensions.add(this.#PixiExt_sn);
 
-		const {ScriptMng} = await import('./ts/ScriptMng');
-		this.#scrMng = await ScriptMng.generate(this, Assets);
-		await this.#scrMng.load('main');
+			this.#scrMng = await ScriptMng.generate(this, Assets);
+			await this.#scrMng.load('main');
+		});
 	}
 		#scrMng	: ScriptMng
 		cfg		: IConfig;

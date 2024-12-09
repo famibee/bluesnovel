@@ -5,26 +5,38 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {T_LAY} from '../components/Stage';
+import type {T_LAY} from '../components/Stage';
 
 import {create} from 'zustand';
 
 type T_STATE = {
-	happys	: number;
-	happysUp: ()=> void;
+	txt	: string;
+	addTxt: (t: string)=> void;
+	clearTxt: ()=> void;
 
 	aLay	: T_LAY[];
-	addLayer: (l: T_LAY)=> void,
+	addLayer: (arg: T_LAY)=> void,
+	chgPic: (arg: T_CHGPIC)=> void,
+}
+export type T_CHGPIC = {
+	nm	: string;
+	fn	: string;
 }
 
 export const useStore = create<T_STATE>()(set=> ({
-	happys	: 10,
-	happysUp: ()=> set(s=> ({
-		happys: s.happys + 1,
-	})),
+	txt		: '',
+	addTxt	: t=> set(s=> ({txt: s.txt + t})),
+	clearTxt: ()=> set(()=> ({txt: ''})),
 
 	aLay	: [],
-	addLayer: (l: T_LAY)=> set(s=> ({
-		aLay: [...s.aLay, l],
-	})),
+	addLayer: (arg: T_LAY)=> set(s=> ({aLay: [...s.aLay, arg]})),
+	chgPic	: ({nm, fn}: T_CHGPIC)=> set(s=> {
+		const aLay = [...s.aLay];
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+		if (e.cls !== 'GRP') throw `${nm} は画像レイヤではありません`;
+
+		e.fn = fn;
+		return {aLay};
+	}),
 }))

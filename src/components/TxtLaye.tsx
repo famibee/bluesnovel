@@ -5,18 +5,19 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {T_SEARCHPATH} from '../ts/ConfigBase';
-import {styChild, type T_LAY_IDX, type T_LAY_CMN} from './Stage';
+import type {SysBase} from '../SysBase';
+import type {T_LAY_IDX, T_LAY_CMN} from './Stage';
+
 
 type T_TXTARG = T_LAY_CMN & {
-	search	: T_SEARCHPATH,
-	str		: string,
-	b_color?: number,
+	sys		: SysBase;
+	str		: string;
+	b_color?: number;
 };
 export type T_TXTLAY = T_LAY_IDX & {cls: 'TXT'} & T_TXTARG;
 
 
-export default function TxtLayer({}: T_TXTARG) {
+export default function TxtLayer({styChild}: T_TXTARG) {
 	return <div css={styChild}>
 		<span></span>
 	</div>;

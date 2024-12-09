@@ -5,18 +5,22 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {T_SEARCHPATH} from '../ts/ConfigBase';
-import {styChild, type T_LAY_IDX, type T_LAY_CMN} from './Stage';
+import type {SysBase} from '../SysBase';
+import type {T_LAY_IDX, T_LAY_CMN} from './Stage';
+import {SEARCH_PATH_ARG_EXT} from '../ts/ConfigBase';
+
 
 type T_GRPARG = T_LAY_CMN & {
-	search	: T_SEARCHPATH,
-	fn		: string,
+	sys		: SysBase;
+	fn		: string;
 };
 export type T_GRPLAY = T_LAY_IDX & {cls: 'GRP'} & T_GRPARG;
 
 
-export default function GrpLayer({search, fn}: T_GRPARG) {
-	return <div css={styChild}>
-		<img src={search(fn)}/>
-	</div>;
+export default function GrpLayer({styChild, sys, fn}: T_GRPARG) {
+	const search = (fn: string)=> sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM);
+
+	return <>
+		<img css={styChild} src={search(fn)}/>
+	</>;
 }

@@ -9,10 +9,12 @@ import {SysBase} from '../SysBase';
 import {SEARCH_PATH_ARG_EXT} from './ConfigBase';
 // import {Caretaker} from './Memento';
 import {Grammar} from './Grammar';
-import {addLayer} from '../components/Stage';
+import {addLayer, chgPic} from '../components/Stage';
 import {T_GRPLAY} from '../components/GrpLayer';
 
 import type {AssetsClass} from '@pixi/assets';
+import { T_CHGPIC } from '../store/store';
+
 
 export class ScriptMng {
 	static	async	generate(sys: SysBase, Assets: AssetsClass) {
@@ -36,6 +38,27 @@ console.log(`fn:ScriptMng.ts line:34 1=${scr.aToken[1]}`);
 
 		addLayer({cls: 'GRP', nm: 'base', fn: 'yun_1184'} as T_GRPLAY);
 		addLayer({cls: 'GRP', nm: 'fg0', fn: 'F_1024a'} as T_GRPLAY);
+		chgPic({nm: 'base', fn: 'yun_1317'} as T_CHGPIC);
+
+
+// TS最新のジェネレーターみたいなので仮組み。詳細なスクリプトアナライザーなどは後に。
+
+/*
+function* generator(){
+    console.log('Execution started');
+    yield 0;
+    console.log('Execution resumed');
+    yield 1;
+    console.log('Execution resumed');
+}
+
+var iterator = generator();
+console.log('Starting iteration'); // これはジェネレータ関数の本体の前に実行されます
+console.log(iterator.next()); // { value: 0, done: false }
+console.log(iterator.next()); // { value: 1, done: false }
+console.log(iterator.next()); // { value: undefined, done: true }
+*/
+
 
 
 		//NOTE: 同じidxの更新をチェックか

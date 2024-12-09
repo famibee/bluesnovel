@@ -5,11 +5,11 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-
 export interface IMemento {
 	getState(): string;
 	setState(state: string): void;
 };
+
 
 export class Caretaker {
 	#aMemento	: IMemento[] = [];		// Memento対象
@@ -27,7 +27,11 @@ export class Caretaker {
 		const a = this.#hScr2AState[key];
 		if (! a) throw `undo Err key:${key}`;
 
-		this.#aMemento.forEach((m, i)=> m.setState(a[i] ?? ''));
+		const len = this.#aMemento.length;
+		for (let i=0; i<len; ++i) {
+			const m = this.#aMemento[i]!;
+			m.setState(a[i] ?? '');
+		}
 	}
 
 	beforeKey() {}	// 前のキーへ移動

@@ -1,6 +1,6 @@
 import { S as g, b as R } from "./web2.js";
-import { addLayer as _ } from "./Stage.js";
-class E {
+import { a as d, c as E } from "./Stage.js";
+class v {
   // 87 match 2725 step(0.5ms) PCRE2 https://regex101.com/r/aeN57J/1
   /*
   ;[^\n]*
@@ -35,12 +35,12 @@ class E {
       const { key: h, val: l, val2: u = "", literal: m } = o;
       if (m) {
         if (m.endsWith("=")) {
-          const p = m.length - 1, { ch: d } = this.#s(e, s, r, i, a + p);
+          const p = m.length - 1, { ch: _ } = this.#s(e, s, r, i, a + p);
           n[m.slice(0, -1)] = {
             k_ln: s,
-            k_ch: d - p,
+            k_ch: _ - p,
             v_ln: s,
-            v_ch: d + 1,
+            v_ch: _ + 1,
             //	v_ch: ch +1+lenNm +literal.length +1,
             v_len: 0
           };
@@ -70,14 +70,14 @@ class E {
     return this.#a;
   }
 }
-const v = /(?<name>[^\s;\]]+)/;
-function A(f) {
-  const e = v.exec(f.slice(1, -1))?.groups;
+const A = /(?<name>[^\s;\]]+)/;
+function C(f) {
+  const e = A.exec(f.slice(1, -1))?.groups;
   if (!e) throw `タグ記述【${f}】異常です(タグ解析)`;
   const s = e.name;
   return [s, f.slice(1 + s.length, -1)];
 }
-class C {
+class N {
   constructor(t) {
     this.cfg = t, this.setEscape("");
   }
@@ -145,7 +145,7 @@ class C {
     for (let e = t.len - 1; e >= 0; --e) {
       const s = t.aToken[e];
       if (!this.#h.test(s)) continue;
-      const [r, n] = A(s);
+      const [r, n] = C(s);
       this.#r.parse(n);
       const i = this.#r.hPrm.fn;
       if (!i) continue;
@@ -163,7 +163,7 @@ class C {
     }
     t.len = t.aToken.length;
   }
-  #r = new E();
+  #r = new v();
   testTagLetml(t) {
     return /^\[let_ml\s/.test(t);
   }
@@ -201,7 +201,7 @@ class C {
 class T {
   // #ct		= new Caretaker;
   constructor(t, e) {
-    this.sys = t, this.Assets = e, this.#e = new C(t.cfg);
+    this.sys = t, this.Assets = e, this.#e = new N(t.cfg);
   }
   static async generate(t, e) {
     return new T(t, e);
@@ -209,7 +209,7 @@ class T {
   #e;
   async load(t) {
     const e = this.sys.cfg.searchPath(t, g.SCRIPT), s = await this.Assets.load(e), r = this.#e.resolveScript(s);
-    console.log(`fn:ScriptMng.ts line:34 1=${r.aToken[1]}`), _({ cls: "GRP", nm: "base", fn: "yun_1184" }), _({ cls: "GRP", nm: "fg0", fn: "F_1024a" });
+    console.log(`fn:ScriptMng.ts line:34 1=${r.aToken[1]}`), d({ cls: "GRP", nm: "base", fn: "yun_1184" }), d({ cls: "GRP", nm: "fg0", fn: "F_1024a" }), E({ nm: "base", fn: "yun_1317" });
   }
 }
 export {
