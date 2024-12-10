@@ -1,4 +1,4 @@
-import { r as Gv } from "./Stage.js";
+import { r as Gv } from "./Main.js";
 function hb(w, Pe) {
   for (var xe = 0; xe < Pe.length; xe++) {
     const z = Pe[xe];

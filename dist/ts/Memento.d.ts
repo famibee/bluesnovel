@@ -1,21 +1,18 @@
 export declare abstract class BaseMemento {
-    #private;
-    init(onUpdate: () => void): void;
-    protected stt: string;
-    onUpdate($stt: string): void;
+    protected readonly stt: string;
     abstract readonly nm: string;
-    get state(): string;
-    setState(state: string): void;
-    protected abstract replace(): void;
+    constructor(stt?: string);
+    abstract restore(): void;
 }
+export type T_SAVE_MEMENTO = () => BaseMemento;
 export declare class Caretaker {
     #private;
-    add(m: BaseMemento): void;
-    set key($key: string);
-    backup(key?: string): void;
+    add(save: T_SAVE_MEMENTO): void;
+    set key(key: string);
+    update(): void;
     undo(key: string): void;
-    beforeKey(): void;
-    afterKey(): void;
-    gotoKey(): void;
+    beforeKey(): boolean;
+    afterKey(): boolean;
+    isLast(): boolean;
 }
 //# sourceMappingURL=Memento.d.ts.map

@@ -8,13 +8,13 @@
 import type {SysBase} from '../SysBase';
 import {CmnLib, uint} from '../ts/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
-import TxtLayer, {type T_TXTLAY} from './TxtLaye';
-import {T_CHGPIC, useStore} from '../store/store';
-import {BaseMemento} from '../ts/Memento';
+import TxtLayer, {type T_TXTLAY} from './TxtLayer';
+import type {T_ARG} from './Main';
+import {useStore} from '../store/store';
+import {BaseMemento, type T_SAVE_MEMENTO} from '../ts/Memento';
 
 import {useEffect, useState} from 'react';
 import {css, type SerializedStyles} from '@emotion/react';
-
 
 export type T_LAY_IDX = {
 	cls		: 'GRP'|'TXT';
@@ -30,32 +30,33 @@ export type T_LAY_CMN = {
 export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 
-export const Stage = ()=> {
-console.log(`fn:Stage.tsx line:60 Stage 0`);
+export default function Stage({arg: {sys, heStage}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
 	const aLay = useStore(s=> s.aLay);
+	const stt = JSON.stringify(aLay);
+console.log(`fn:Stage.tsx 0 stt=${stt}`);
+	updMemento();
+	useEffect(()=> {	// 初回処理
+		const save: T_SAVE_MEMENTO = ()=> new Memento(stt);
+		sys.caretaker.add(save);
+		updMemento = ()=> sys.caretaker.update();
+	}, []);
 
-	// 外部からの呼び出し
-	const addLayer = useStore(s=> s.addLayer);
-	const chgPic = useStore(s=> s.chgPic);
 	const replace = useStore(s=> s.replace);
-	useEffect(()=> {
-		heStage.addEventListener('ev_addLayer', ((e: CustomEvent<T_LAY>)=> addLayer(e.detail)) as EventListenerOrEventListenerObject);
-		heStage.addEventListener('ev_chgPic', ((e: CustomEvent<T_CHGPIC>)=> chgPic(e.detail)) as EventListenerOrEventListenerObject);
-		// Stage更新処理
-		heStage.addEventListener('ev_replace', ((e: CustomEvent<string>)=> replace(e.detail)) as EventListenerOrEventListenerObject);
+	useEffect(()=> {	// 初回処理
+		$heStage = heStage;
+		heStage.addEventListener('restore', ((e: CustomEvent<string>)=> {
+			replace(e.detail);
+		}) as EventListenerOrEventListenerObject);
 	}, []);
 
 	// ウインドウサイズ追従
 	const [wh, setWH] = useState<T_WH>(innWH());
-	useEffect(()=> {
+	useEffect(()=> {	// 初回処理
 		function onResize() {setWH(innWH())}
 		globalThis.addEventListener('resize', onResize);
 		return ()=> globalThis.removeEventListener('resize', onResize);
 	}, []);
 	const {cvsScale} = calcScale(wh);
-
-	// 状態ＤＢ更新
-	useEffect(()=> mmt.onUpdate(JSON.stringify(aLay)), [aLay]);
 
 	// css
 	const styParent = css`
@@ -65,7 +66,7 @@ console.log(`fn:Stage.tsx line:60 Stage 0`);
 		transform: scale(${cvsScale});
 		width	: calc(${CmnLib.stageW}px / ${cvsScale});
 		height	: calc(${CmnLib.stageH}px / ${cvsScale});
-	`;
+`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
 	const styBtn = css`
 position: relative; z-index: 1;
@@ -87,7 +88,7 @@ transition: 0.5s;
 	background: #27acd9;
 }`;
 
-	return <div css={styParent}>
+	return <div css={styParent} onClick={()=> onClick()}>
 		<button onClick={()=> {}} css={styBtn}>Click</button>
 		<button onClick={()=> {}} css={styBtn}>Back</button>
 		<button onClick={()=> {}} css={styBtn}>Prev</button>
@@ -152,46 +153,15 @@ transition: 0.5s;
 		return {width, height};
 	}
 
+	let $heStage: HTMLElement;
+	let updMemento = ()=> {};
 
-/*
-export class Stage0 implements IMemento {
-	getState(): string {return 'yun_1184,F_1024a'}
-	setState(state: string) {
-console.log(`fn:Stage.tsx line:40 state:${state}`);
-		//TODO: setState
-		;
+
+	class Memento extends BaseMemento {
+		readonly	nm = 'Stage';
+
+		restore() {	// this.stt から
+console.log(`fn:Stage.tsx line:162 / restore /`);
+			$heStage.dispatchEvent(new CustomEvent('restore', {detail: this.stt}));
+		}
 	}
-
-}
-*/
-
-
-export async function opening($heStage: HTMLElement, $sys: SysBase) {
-	heStage = $heStage;
-	sys = $sys;
-
-	const {createRoot} = await import('react-dom/client');
-	createRoot(heStage).render(<Stage />);
-
-	sys.caretaker.add(mmt);
-}
-	let heStage: HTMLElement;
-	let sys: SysBase;
-
-export function addLayer(detail: T_LAY) {
-	heStage.dispatchEvent(new CustomEvent('ev_addLayer', {detail}));
-}
-
-export function chgPic(detail: T_CHGPIC) {
-	heStage.dispatchEvent(new CustomEvent('ev_chgPic', {detail}));
-}
-
-export class Memento extends BaseMemento {
-	readonly	nm = 'Stage';
-	protected override	stt = '[]';
-
-	protected replace() {	// stt から 置換処理を
-		heStage.dispatchEvent(new CustomEvent('ev_replace', {detail: this.stt}));
-	}
-}
-const mmt = new Memento;

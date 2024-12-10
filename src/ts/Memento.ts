@@ -6,50 +6,63 @@
 ** ***** END LICENSE BLOCK ***** */
 
 export abstract class BaseMemento {
-	#onUpdate: ()=> void;
-	init(onUpdate: ()=> void) {this.#onUpdate = onUpdate}
-
-	protected stt = '';
-	onUpdate($stt: string) {this.stt = $stt; this.#onUpdate()}
-
 	abstract readonly	nm: string;		// 適当な名を付けて
-	get state() {return this.stt}
+	constructor(protected readonly stt = '') {}
 
-	setState(state: string) {this.stt = state; this.replace()}
-	protected abstract	replace(): void;	 // stt から 置換処理を
+	abstract	restore(): void;	// this.stt から
 };
 
 
-export class Caretaker {
-	#aMemento	: BaseMemento[] = [];		// Memento対象
-	#hScr2AState: {[key: string]: string[]}	= {};
-	#aKey	: string[]	= [];
+export type T_SAVE_MEMENTO = ()=> BaseMemento;
 
-	add(m: BaseMemento) {m.init(()=> this.backup()); this.#aMemento.push(m)}
+export class Caretaker {
+	#aSave	: T_SAVE_MEMENTO[] = [];	// Memento対象
+	add(save: T_SAVE_MEMENTO) {this.#aSave.push(save)}
 
 	#key = '';
-	set key($key: string) {this.#key = $key}
-	backup(key = this.#key) {
-		this.#aKey.push(key);
-		this.#hScr2AState[key] = this.#aMemento.map(m=> m.state);
-console.log(`fn:Memento.ts key:${key} STT:%o`, this.#hScr2AState[key]);
+	set key(key: string) {
+		this.#key = key;
+		this.#aKeyHistory.push(key);
+		++this.#idxHistory;
+	}
 
-		//x const aLay = useStore(s=> s.aLay);
-
+	#hScr2AState: {[key: string]: BaseMemento[]}	= {};
+	update() {
+		const a: BaseMemento[] = [];
+		for (const save of this.#aSave) a.push(save());
+		this.#hScr2AState[this.#key] = a;
+console.log(`fn:Memento.ts line:30 -- key(${this.#key}) STT:%o`, this.#hScr2AState[this.#key]);
 	}
 
 	undo(key: string) {
+console.log(`fn:Memento.ts line:38 = undo key=(${key})`);
 		const a = this.#hScr2AState[key];
 		if (! a) throw `undo Err key:${key}`;
 
-		const len = this.#aMemento.length;
-		for (let i=0; i<len; ++i) {
-			const m = this.#aMemento[i]!;
-			m.onUpdate(a[i] ?? '');
+console.log(`fn:Memento.ts line:41 = undo == do`);
+		for (const meme of a) {
+console.log(`fn:Memento.ts line:44 == nm:${meme.nm}`);
+			meme.restore();
 		}
 	}
 
-	beforeKey() {}	// 前のキーへ移動
-	afterKey() {}
-	gotoKey() {}	// scr + idx? で指定して移動
+	#aKeyHistory: string[]	= [];
+	#idxHistory	= -1;
+	// 前のキーへ移動
+	beforeKey(): boolean {
+		if (this.#idxHistory <= 0) return false;
+console.log(`fn:Memento.ts line:53 -- beforeKey --`);
+		this.undo(this.#aKeyHistory[--this.#idxHistory]!);
+
+		return true;
+	}
+	// 後のキーへ移動
+	afterKey(): boolean {
+		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
+console.log(`fn:Memento.ts line:61 -- afterKey --`);
+		this.undo(this.#aKeyHistory[++this.#idxHistory]!);
+
+		return true;
+	}
+	isLast() {return this.#aKeyHistory.length -1 === this.#idxHistory}
 }

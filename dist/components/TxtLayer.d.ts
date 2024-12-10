@@ -8,4 +8,4 @@ export type T_TXTLAY = T_LAY_IDX & {
 } & T_TXTARG;
 export default function TxtLayer({ cmn: { styChild } }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};
-//# sourceMappingURL=TxtLaye.d.ts.map
+//# sourceMappingURL=TxtLayer.d.ts.map

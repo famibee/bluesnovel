@@ -8,10 +8,8 @@
 import type {HPlugin, ISysBase} from './CmnInterface';
 import {Config} from './ts/Config';
 import type {IConfig, ISysRoots} from './ts/ConfigBase';
-import type {ScriptMng} from './ts/ScriptMng';
 import {Caretaker} from './ts/Memento';
 
-import {extensions, ExtensionType} from '@pixi/extensions';
 
 // React Developer Toolsのインストールを推されるコンソールメッセージを消す
 (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = {isDisabled: true};
@@ -50,39 +48,10 @@ export class SysBase implements ISysRoots, ISysBase {
 			clone_cvs.id = SN_ID;
 		}
 		else document.body.insertAdjacentHTML('afterbegin', `<div id="${SN_ID}"></div>`);
-		const {opening} = await import('./components/Stage');
-		await opening(document.getElementById(SN_ID)!, this);
-
-		await Promise.all([
-			import('@pixi/assets'),
-			import('./ts/ScriptMng'),
-		]).then(async ([{Assets}, {ScriptMng}])=> {
-			await Assets.init({basePath: location.origin});
-			extensions.add(this.#PixiExt_sn);
-
-			this.#scrMng = new ScriptMng(this, Assets);
-			await this.#scrMng.load('main');
-		});
+		const {opening} = await import('./components/Main');
+		await opening({heStage: document.getElementById(SN_ID)!, sys: this});
 	}
-		#scrMng	: ScriptMng
 		cfg		: IConfig;
-
-		readonly	#PixiExt_sn = {
-			extension: {
-				type: ExtensionType.LoadParser,
-				name: 'sn-loader',
-				//priority: LoaderParserPriority.High,
-			},
-			test: (url: string)=> url.endsWith('.sn'),
-			load: (url: string)=> new Promise(async (re, rj)=> {
-				const res = await fetch(url);
-				if (! res.ok) {rj(`sn-loader fetch err:`+ res.statusText); return}
-
-				try {
-					re(await this.dec('sn', await res.text()));
-				} catch (e) {rj(`sn-loader err url:${url} ${e}`)}
-			}),
-		};
 
 
 	protected $path_downloads	= '';

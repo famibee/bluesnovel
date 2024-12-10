@@ -25,7 +25,7 @@ export type T_CHGPIC = {
 }
 
 
-export const useStore = create<T_STATE>()(set=> ({
+export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 	txt		: '',
 	addTxt	: t=> set(s=> ({txt: s.txt + t})),
 	clearTxt: ()=> set(()=> ({txt: ''})),
