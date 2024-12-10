@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import type {SysBase} from '../SysBase';
-import type {T_LAY} from './Stage';
+import {save, type T_LAY} from './Stage';
 import {useStore, type T_CHGPIC} from '../store/store';
 
 import {lazy, Suspense, useEffect} from 'react';
@@ -73,8 +73,10 @@ console.log(`fn:Main.tsx == line:75 key(${key}) CMD:%o`, o);
 			break;
 		}
 	}
-	// 初回処理
-	useEffect(()=> onClick(), []);
+	useEffect(()=> {	// 初回処理
+		sys.caretaker.add(save);
+		onClick();
+	}, []);
 
 	// イベント
 	useKey('ArrowDown', e=> {

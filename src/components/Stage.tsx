@@ -32,12 +32,10 @@ export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 export default function Stage({arg: {sys, heStage}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
 	const aLay = useStore(s=> s.aLay);
-	const stt = JSON.stringify(aLay);
+	stt = JSON.stringify(aLay);
 console.log(`fn:Stage.tsx 0 stt=${stt}`);
 	updMemento();
 	useEffect(()=> {	// 初回処理
-		const save: T_SAVE_MEMENTO = ()=> new Memento(stt);
-		sys.caretaker.add(save);
 		updMemento = ()=> sys.caretaker.update();
 	}, []);
 
@@ -165,3 +163,6 @@ console.log(`fn:Stage.tsx line:162 / restore /`);
 			$heStage.dispatchEvent(new CustomEvent('restore', {detail: this.stt}));
 		}
 	}
+
+	let stt = '';
+export const save: T_SAVE_MEMENTO = ()=> new Memento(stt);
