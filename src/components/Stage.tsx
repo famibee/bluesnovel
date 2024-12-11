@@ -58,27 +58,29 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		transform: scale(${cvsScale});
 		width	: calc(${CmnLib.stageW}px / ${cvsScale});
 		height	: calc(${CmnLib.stageH}px / ${cvsScale});
-`;
+	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
 	const styBtn = css`
-position: relative; z-index: 1;
+		position: relative; z-index: 1;
 
-display: inline-block;
-text-align: center;
-vertical-align: middle;
-text-decoration: none;
-width: 120px;
-margin: auto;
-padding: 1rem 4rem;
-font-weight: bold;
-border: 2px solid #27acd9;
-color: #27acd9;
-border-radius: 100vh;
-transition: 0.5s;
-&:hover {
-	color: #fff;
-	background: #27acd9;
-}`;
+		display: inline-block;
+		text-align: center;
+		vertical-align: middle;
+		text-decoration: none;
+		width: 120px;
+		margin: auto;
+		padding: 1rem 4rem;
+		font-weight: bold;
+		border: 2px solid #27acd9;
+		color: #27acd9;
+		border-radius: 100vh;
+		transition: 0.5s;
+		top: 48%;
+		&:hover {
+			color: #fff;
+			background: #27acd9;
+		}
+	`;
 
 	return <div css={styParent} onClick={()=> onClick()}>
 		<button onClick={()=> {}} css={styBtn}>Click</button>
@@ -86,7 +88,7 @@ transition: 0.5s;
 		<button onClick={()=> {}} css={styBtn}>Prev</button>
 		{aLay.map(l=> l.cls === 'GRP'
 			? <GrpLayer key={l.nm} cmn={{sys, styChild}} fn={l.fn}/>
-			: <TxtLayer key={l.nm} cmn={{sys, styChild}} str={'てすと'}/>)}
+			: <TxtLayer key={l.nm} cmn={{sys, styChild}} str={l.str}/>)}
 	</div>;
 };
 	type T_WH = {

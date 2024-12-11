@@ -7,6 +7,8 @@
 
 import type {T_LAY_IDX, T_LAY_CMN} from './Stage';
 
+import {css} from '@emotion/react';
+
 
 type T_TXTARG = T_LAY_CMN & {
 	str		: string;
@@ -15,8 +17,19 @@ type T_TXTARG = T_LAY_CMN & {
 export type T_TXTLAY = T_LAY_IDX & {cls: 'TXT'} & T_TXTARG;
 
 
-export default function TxtLayer({cmn: {styChild}}: T_TXTARG) {
-	return <div css={styChild}>
-		<span></span>
-	</div>;
+export default function TxtLayer({cmn: {styChild}, str}: T_TXTARG) {
+	const styTxt = css`
+		padding: 1em 1.5em;
+		margin: 2em 0;
+		background-color: aquamarine;
+		border: dotted 6px #ffa500;
+
+		font-size: xxx-large;
+		top: 48%;
+		width: 70%;
+	`;
+
+	return <>
+		<span css={[styChild, styTxt]}>{str}</span>
+	</>;
 }

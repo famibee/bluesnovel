@@ -18,10 +18,15 @@ type T_STATE = {
 	replace	: (arg: string)=> void;
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
+	chgStr	: (arg: T_CHGSTR)=> void,
 }
 export type T_CHGPIC = {
 	nm	: string;
 	fn	: string;
+}
+export type T_CHGSTR = {
+	nm	: string;
+	str	: string;
 }
 
 
@@ -40,6 +45,15 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		if (e.cls !== 'GRP') throw `${nm} は画像レイヤではありません`;
 
 		e.fn = fn;
+		return {aLay};
+	}),
+	chgStr	: ({nm, str}: T_CHGSTR)=> set(s=> {
+		const aLay = [...s.aLay];
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+		if (e.cls !== 'TXT') throw `${nm} は文字レイヤではありません`;
+
+		e.str = str;
 		return {aLay};
 	}),
 }))

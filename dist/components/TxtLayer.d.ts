@@ -6,6 +6,6 @@ type T_TXTARG = T_LAY_CMN & {
 export type T_TXTLAY = T_LAY_IDX & {
     cls: 'TXT';
 } & T_TXTARG;
-export default function TxtLayer({ cmn: { styChild } }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function TxtLayer({ cmn: { styChild }, str }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};
 //# sourceMappingURL=TxtLayer.d.ts.map

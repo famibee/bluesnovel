@@ -1,90 +1,102 @@
-import { j as i, F as x, s as H, h as E, a as g, b as W, c as y, u as m, d as C } from "./Main.js";
-import { S as L, C as a, B as w, u as p } from "./web2.js";
-function A({ cmn: { styChild: e, sys: n }, fn: t }) {
-  return /* @__PURE__ */ i(x, { children: /* @__PURE__ */ i("img", { css: e, src: ((c) => n.cfg.searchPath(c, L.SP_GSM))(t) }) });
+import { j as c, F as S, s as H, h as y, a as d, b as E, c as W, u as f, d as C } from "./Main.js";
+import { S as w, C as r, B as L, u as p } from "./web2.js";
+function k({ cmn: { styChild: t, sys: n }, fn: e }) {
+  return /* @__PURE__ */ c(S, { children: /* @__PURE__ */ c("img", { css: t, src: ((i) => n.cfg.searchPath(i, w.SP_GSM))(e) }) });
 }
-function P({ cmn: { styChild: e } }) {
-  return /* @__PURE__ */ i("div", { css: e, children: /* @__PURE__ */ i("span", {}) });
-}
-var v = function(n, t) {
-  var r = arguments;
-  if (t == null || !E.call(t, "css"))
-    return g.createElement.apply(void 0, r);
-  var c = r.length, o = new Array(c);
-  o[0] = W, o[1] = y(n, t);
-  for (var l = 2; l < c; l++)
-    o[l] = r[l];
-  return g.createElement.apply(null, o);
+var v = function(n, e) {
+  var s = arguments;
+  if (e == null || !y.call(e, "css"))
+    return d.createElement.apply(void 0, s);
+  var i = s.length, o = new Array(i);
+  o[0] = E, o[1] = W(n, e);
+  for (var l = 2; l < i; l++)
+    o[l] = s[l];
+  return d.createElement.apply(null, o);
 };
-(function(e) {
+(function(t) {
   var n;
-  n || (n = e.JSX || (e.JSX = {}));
+  n || (n = t.JSX || (t.JSX = {}));
 })(v || (v = {}));
-function h() {
-  for (var e = arguments.length, n = new Array(e), t = 0; t < e; t++)
-    n[t] = arguments[t];
+function g() {
+  for (var t = arguments.length, n = new Array(t), e = 0; e < t; e++)
+    n[e] = arguments[e];
   return H(n);
 }
-function z({ arg: { sys: e }, onClick: n }) {
-  const t = m((s) => s.aLay), r = m((s) => s.replace);
-  class c extends w {
+function A({ cmn: { styChild: t }, str: n }) {
+  const e = g`
+		padding: 1em 1.5em;
+		margin: 2em 0;
+		background-color: aquamarine;
+		border: dotted 6px #ffa500;
+
+		font-size: xxx-large;
+		top: 48%;
+		width: 70%;
+	`;
+  return /* @__PURE__ */ c(S, { children: /* @__PURE__ */ c("span", { css: [t, e], children: n }) });
+}
+function z({ arg: { sys: t }, onClick: n }) {
+  const e = f((a) => a.aLay), s = f((a) => a.replace);
+  class i extends L {
     nm = "Stage";
     restore() {
-      r(this.stt);
+      s(this.stt);
     }
     // this.stt から
   }
-  e.caretaker.update(() => new c(JSON.stringify(t)));
-  const [o, l] = g.useState(S());
-  g.useEffect(() => {
-    function s() {
-      l(S());
+  t.caretaker.update(() => new i(JSON.stringify(e)));
+  const [o, l] = d.useState(x());
+  d.useEffect(() => {
+    function a() {
+      l(x());
     }
-    return globalThis.addEventListener("resize", s), () => globalThis.removeEventListener("resize", s);
+    return globalThis.addEventListener("resize", a), () => globalThis.removeEventListener("resize", a);
   }, []);
-  const { cvsScale: u } = $(o), b = h`
+  const { cvsScale: u } = P(o), b = g`
 		position: relative;
 
 		transform-origin: left top;
 		transform: scale(${u});
-		width	: calc(${a.stageW}px / ${u});
-		height	: calc(${a.stageH}px / ${u});
-`, f = h`position: absolute; top: 0; left: 0;`, d = h`
-position: relative; z-index: 1;
+		width	: calc(${r.stageW}px / ${u});
+		height	: calc(${r.stageH}px / ${u});
+	`, m = g`position: absolute; top: 0; left: 0;`, h = g`
+		position: relative; z-index: 1;
 
-display: inline-block;
-text-align: center;
-vertical-align: middle;
-text-decoration: none;
-width: 120px;
-margin: auto;
-padding: 1rem 4rem;
-font-weight: bold;
-border: 2px solid #27acd9;
-color: #27acd9;
-border-radius: 100vh;
-transition: 0.5s;
-&:hover {
-	color: #fff;
-	background: #27acd9;
-}`;
+		display: inline-block;
+		text-align: center;
+		vertical-align: middle;
+		text-decoration: none;
+		width: 120px;
+		margin: auto;
+		padding: 1rem 4rem;
+		font-weight: bold;
+		border: 2px solid #27acd9;
+		color: #27acd9;
+		border-radius: 100vh;
+		transition: 0.5s;
+		top: 48%;
+		&:hover {
+			color: #fff;
+			background: #27acd9;
+		}
+	`;
   return /* @__PURE__ */ C("div", { css: b, onClick: () => n(), children: [
-    /* @__PURE__ */ i("button", { onClick: () => {
-    }, css: d, children: "Click" }),
-    /* @__PURE__ */ i("button", { onClick: () => {
-    }, css: d, children: "Back" }),
-    /* @__PURE__ */ i("button", { onClick: () => {
-    }, css: d, children: "Prev" }),
-    t.map((s) => s.cls === "GRP" ? /* @__PURE__ */ i(A, { cmn: { sys: e, styChild: f }, fn: s.fn }, s.nm) : /* @__PURE__ */ i(P, { cmn: { sys: e, styChild: f }, str: "てすと" }, s.nm))
+    /* @__PURE__ */ c("button", { onClick: () => {
+    }, css: h, children: "Click" }),
+    /* @__PURE__ */ c("button", { onClick: () => {
+    }, css: h, children: "Back" }),
+    /* @__PURE__ */ c("button", { onClick: () => {
+    }, css: h, children: "Prev" }),
+    e.map((a) => a.cls === "GRP" ? /* @__PURE__ */ c(k, { cmn: { sys: t, styChild: m }, fn: a.fn }, a.nm) : /* @__PURE__ */ c(A, { cmn: { sys: t, styChild: m }, str: a.str }, a.nm))
   ] });
 }
-function $({ width: e, height: n }) {
-  let t = 0, r = 0, c = 1;
-  return a.stageW > e || a.stageH > n ? (a.stageW / a.stageH <= e / n ? (r = n, t = p(a.stageW / a.stageH * n)) : (t = e, r = p(a.stageH / a.stageW * e)), c = t / a.stageW) : (t = a.stageW, r = a.stageH, c = 1), { cvsScale: c, cvsWidth: t, cvsHeight: r };
+function P({ width: t, height: n }) {
+  let e = 0, s = 0, i = 1;
+  return r.stageW > t || r.stageH > n ? (r.stageW / r.stageH <= t / n ? (s = n, e = p(r.stageW / r.stageH * n)) : (e = t, s = p(r.stageH / r.stageW * t)), i = e / r.stageW) : (e = r.stageW, s = r.stageH, i = 1), { cvsScale: i, cvsWidth: e, cvsHeight: s };
 }
-function S() {
-  const { innerWidth: e, innerHeight: n } = globalThis;
-  return { width: e, height: n };
+function x() {
+  const { innerWidth: t, innerHeight: n } = globalThis;
+  return { width: t, height: n };
 }
 export {
   z as default
