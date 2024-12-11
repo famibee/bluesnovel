@@ -42,15 +42,17 @@ console.log(`fn:Memento.ts = undo key=(${key})`);
 	#idxHistory	= -1;
 	// 前のキーへ移動
 	beforeKey(): boolean {
-		if (this.#idxHistory <= 0) return false;
 console.log(`fn:Memento.ts -- beforeKey --`);
+		if (this.#idxHistory <= 0) return false;
+
 		this.undo(this.#aKeyHistory[--this.#idxHistory]!);
 		return true;
 	}
 	// 後のキーへ移動
 	afterKey(): boolean {
-		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
 console.log(`fn:Memento.ts -- afterKey --`);
+		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
+
 		this.undo(this.#aKeyHistory[++this.#idxHistory]!);
 		return true;
 	}

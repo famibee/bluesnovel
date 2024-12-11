@@ -618,11 +618,11 @@ class Me {
   #i = -1;
   // 前のキーへ移動
   beforeKey() {
-    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts -- beforeKey --"), this.undo(this.#t[--this.#i]), !0);
+    return console.log("fn:Memento.ts -- beforeKey --"), this.#i <= 0 ? !1 : (this.undo(this.#t[--this.#i]), !0);
   }
   // 後のキーへ移動
   afterKey() {
-    return this.#t.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts -- afterKey --"), this.undo(this.#t[++this.#i]), !0);
+    return console.log("fn:Memento.ts -- afterKey --"), this.#t.length - 1 <= this.#i ? !1 : (this.undo(this.#t[++this.#i]), !0);
   }
   isLast() {
     return this.#t.length - 1 === this.#i;

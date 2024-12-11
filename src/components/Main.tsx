@@ -62,10 +62,10 @@ console.log(`fn:Main.tsx == next ==`);
 			const {done, value: o} = gen.next();
 			if (done) break;
 
-			const key = sys.caretaker.key = 'main' + ':'+ ++idxDummy;
-console.log(`fn:Main.tsx == line:66 key(${key}) CMD:%o`, o);
+			// const key =
+			sys.caretaker.key = 'main' + ':'+ ++idxDummy;
+// console.log(`fn:Main.tsx == key(${key}) CMD:%o`, o);
 			if ('cls' in o) addLayer(o); else chgPic(o);
-			// sys.caretaker.backup('main' + ':'+ ++idxDummy);
 			break;
 		}
 	}

@@ -31,7 +31,7 @@ export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 
 export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
-console.log(`fn:Stage.tsx 0`);
+// console.log(`fn:Stage.tsx 0`);
 	const aLay = useStore(s=> s.aLay);
 
 	const replace = useStore(s=> s.replace);

@@ -1,7 +1,7 @@
-import { j as i, F as b, s as H, h as E, a as g, b as W, c as y, u as m, d as C } from "./Main.js";
+import { j as i, F as x, s as H, h as E, a as g, b as W, c as y, u as m, d as C } from "./Main.js";
 import { S as L, C as a, B as w, u as p } from "./web2.js";
 function A({ cmn: { styChild: e, sys: n }, fn: t }) {
-  return /* @__PURE__ */ i(b, { children: /* @__PURE__ */ i("img", { css: e, src: ((c) => n.cfg.searchPath(c, L.SP_GSM))(t) }) });
+  return /* @__PURE__ */ i(x, { children: /* @__PURE__ */ i("img", { css: e, src: ((c) => n.cfg.searchPath(c, L.SP_GSM))(t) }) });
 }
 function P({ cmn: { styChild: e } }) {
   return /* @__PURE__ */ i("div", { css: e, children: /* @__PURE__ */ i("span", {}) });
@@ -26,7 +26,6 @@ function h() {
   return H(n);
 }
 function z({ arg: { sys: e }, onClick: n }) {
-  console.log("fn:Stage.tsx 0");
   const t = m((s) => s.aLay), r = m((s) => s.replace);
   class c extends w {
     nm = "Stage";
@@ -43,7 +42,7 @@ function z({ arg: { sys: e }, onClick: n }) {
     }
     return globalThis.addEventListener("resize", s), () => globalThis.removeEventListener("resize", s);
   }, []);
-  const { cvsScale: u } = $(o), x = h`
+  const { cvsScale: u } = $(o), b = h`
 		position: relative;
 
 		transform-origin: left top;
@@ -69,7 +68,7 @@ transition: 0.5s;
 	color: #fff;
 	background: #27acd9;
 }`;
-  return /* @__PURE__ */ C("div", { css: x, onClick: () => n(), children: [
+  return /* @__PURE__ */ C("div", { css: b, onClick: () => n(), children: [
     /* @__PURE__ */ i("button", { onClick: () => {
     }, css: d, children: "Click" }),
     /* @__PURE__ */ i("button", { onClick: () => {
