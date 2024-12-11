@@ -15,7 +15,7 @@ export type T_LAY_CMN = {
     };
 };
 export type T_LAY = T_GRPLAY | T_TXTLAY;
-export default function Stage({ arg: { sys, heStage }, onClick }: {
+export default function Stage({ arg: { sys }, onClick }: {
     arg: T_ARG;
     onClick: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;

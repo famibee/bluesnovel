@@ -30,19 +30,16 @@ export type T_LAY_CMN = {
 export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 
-export default function Stage({arg: {sys, heStage}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
-	const aLay = useStore(s=> s.aLay);
+export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
 console.log(`fn:Stage.tsx 0`);
-	sys.caretaker.update(()=> new Memento(JSON.stringify(aLay)));
+	const aLay = useStore(s=> s.aLay);
 
 	const replace = useStore(s=> s.replace);
-	useEffect(()=> {	// 初回処理
-		$heStage = heStage;
-		heStage.addEventListener('restore', ((e: CustomEvent<string>)=> {
-console.log(`fn:Stage.tsx line:42 / restore /`);
-			replace(e.detail);
-		}) as EventListenerOrEventListenerObject);
-	}, []);
+	class Memento extends BaseMemento {
+		readonly	nm = 'Stage';
+		restore() {replace(this.stt)}	// this.stt から
+	}
+	sys.caretaker.update(()=> new Memento(JSON.stringify(aLay)));
 
 	// ウインドウサイズ追従
 	const [wh, setWH] = useState<T_WH>(innWH());
@@ -146,16 +143,4 @@ transition: 0.5s;
 	function innWH(): T_WH {
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
-	}
-
-	let $heStage: HTMLElement;
-
-
-	class Memento extends BaseMemento {
-		readonly	nm = 'Stage';
-
-		// this.stt から
-		restore() {
-			$heStage.dispatchEvent(new CustomEvent('restore', {detail: this.stt}));
-		}
 	}

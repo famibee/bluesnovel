@@ -27,11 +27,11 @@ export class Caretaker {
 
 		const m = genMeMe();
 		this.#hScr2AState[this.#key]![m.nm] = m;
-console.log(`fn:Memento.ts line:30 update -- key(${this.#key}) MeMe:%o`, m);
+console.log(`fn:Memento.ts update -- key(${this.#key}) MeMe:%o`, m);
 	}
 
 	undo(key: string) {
-console.log(`fn:Memento.ts line:34 = undo key=(${key})`);
+console.log(`fn:Memento.ts = undo key=(${key})`);
 		const h = this.#hScr2AState[key];
 		if (! h) throw `undo Err key:${key}`;
 
@@ -43,14 +43,14 @@ console.log(`fn:Memento.ts line:34 = undo key=(${key})`);
 	// 前のキーへ移動
 	beforeKey(): boolean {
 		if (this.#idxHistory <= 0) return false;
-console.log(`fn:Memento.ts line:46 -- beforeKey --`);
+console.log(`fn:Memento.ts -- beforeKey --`);
 		this.undo(this.#aKeyHistory[--this.#idxHistory]!);
 		return true;
 	}
 	// 後のキーへ移動
 	afterKey(): boolean {
 		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
-console.log(`fn:Memento.ts line:53 -- afterKey --`);
+console.log(`fn:Memento.ts -- afterKey --`);
 		this.undo(this.#aKeyHistory[++this.#idxHistory]!);
 		return true;
 	}

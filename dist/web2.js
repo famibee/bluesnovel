@@ -606,10 +606,10 @@ class Me {
   update(r) {
     if (this.#i < this.#t.length - 1) return;
     const s = r();
-    this.#r[this.#e][s.nm] = s, console.log(`fn:Memento.ts line:30 update -- key(${this.#e}) MeMe:%o`, s);
+    this.#r[this.#e][s.nm] = s, console.log(`fn:Memento.ts update -- key(${this.#e}) MeMe:%o`, s);
   }
   undo(r) {
-    console.log(`fn:Memento.ts line:34 = undo key=(${r})`);
+    console.log(`fn:Memento.ts = undo key=(${r})`);
     const s = this.#r[r];
     if (!s) throw `undo Err key:${r}`;
     for (const h of Object.values(s)) h.restore();
@@ -618,11 +618,11 @@ class Me {
   #i = -1;
   // 前のキーへ移動
   beforeKey() {
-    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts line:46 -- beforeKey --"), this.undo(this.#t[--this.#i]), !0);
+    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts -- beforeKey --"), this.undo(this.#t[--this.#i]), !0);
   }
   // 後のキーへ移動
   afterKey() {
-    return this.#t.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts line:53 -- afterKey --"), this.undo(this.#t[++this.#i]), !0);
+    return this.#t.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts -- afterKey --"), this.undo(this.#t[++this.#i]), !0);
   }
   isLast() {
     return this.#t.length - 1 === this.#i;
