@@ -22,16 +22,20 @@ export class Caretaker {
 	#key = '';
 	set key(key: string) {
 		this.#key = key;
-		this.#aKeyHistory.push(key);
-		++this.#idxHistory;
+		this.#idxHistory = this.#aKeyHistory.push(key) -1;
 	}
 
 	#hScr2AState: {[key: string]: BaseMemento[]}	= {};
 	update() {
+		if (this.#idxHistory < this.#aKeyHistory.length -1) {
+console.log(`fn:Memento.ts line:31 update -- SKIP`);
+			return;
+		}
+
 		const a: BaseMemento[] = [];
 		for (const save of this.#aSave) a.push(save());
 		this.#hScr2AState[this.#key] = a;
-console.log(`fn:Memento.ts line:30 -- key(${this.#key}) STT:%o`, this.#hScr2AState[this.#key]);
+console.log(`fn:Memento.ts line:30 update -- key(${this.#key}) STT:%o`, this.#hScr2AState[this.#key]);
 	}
 
 	undo(key: string) {

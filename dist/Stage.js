@@ -1,17 +1,17 @@
-import { j as i, F as W, s as y, h as C, a as g, b as L, c as $, u as v, d as w } from "./Main.js";
-import { S as A, C as a, u as p, B as P } from "./web2.js";
-function k({ cmn: { styChild: e, sys: t }, fn: n }) {
-  return /* @__PURE__ */ i(W, { children: /* @__PURE__ */ i("img", { css: e, src: ((c) => t.cfg.searchPath(c, A.SP_GSM))(n) }) });
+import { j as i, F as H, s as W, h as y, a as g, b as C, c as L, u as v, d as $ } from "./Main.js";
+import { S as w, C as a, u as p, B as A } from "./web2.js";
+function P({ cmn: { styChild: e, sys: t }, fn: n }) {
+  return /* @__PURE__ */ i(H, { children: /* @__PURE__ */ i("img", { css: e, src: ((c) => t.cfg.searchPath(c, w.SP_GSM))(n) }) });
 }
-function T({ cmn: { styChild: e } }) {
+function k({ cmn: { styChild: e } }) {
   return /* @__PURE__ */ i("div", { css: e, children: /* @__PURE__ */ i("span", {}) });
 }
 var S = function(t, n) {
   var r = arguments;
-  if (n == null || !C.call(n, "css"))
+  if (n == null || !y.call(n, "css"))
     return g.createElement.apply(void 0, r);
   var c = r.length, o = new Array(c);
-  o[0] = L, o[1] = $(t, n);
+  o[0] = C, o[1] = L(t, n);
   for (var l = 2; l < c; l++)
     o[l] = r[l];
   return g.createElement.apply(null, o);
@@ -23,17 +23,15 @@ var S = function(t, n) {
 function f() {
   for (var e = arguments.length, t = new Array(e), n = 0; n < e; n++)
     t[n] = arguments[n];
-  return y(t);
+  return W(t);
 }
-function B({ arg: { sys: e, heStage: t }, onClick: n }) {
+function j({ arg: { sys: e, heStage: t }, onClick: n }) {
   const r = v((s) => s.aLay);
-  h = JSON.stringify(r), console.log(`fn:Stage.tsx 0 stt=${h}`), E(), g.useEffect(() => {
-    E = () => e.caretaker.update();
-  }, []);
+  h = JSON.stringify(r), console.log(`fn:Stage.tsx 0 stt=${h}`), e.caretaker.update();
   const c = v((s) => s.replace);
   g.useEffect(() => {
-    b = t, t.addEventListener("restore", (s) => {
-      c(s.detail);
+    E = t, t.addEventListener("restore", (s) => {
+      console.log("fn:Stage.tsx line:46 / restore /"), c(s.detail);
     });
   }, []);
   const [o, l] = g.useState(x());
@@ -43,7 +41,7 @@ function B({ arg: { sys: e, heStage: t }, onClick: n }) {
     }
     return globalThis.addEventListener("resize", s), () => globalThis.removeEventListener("resize", s);
   }, []);
-  const { cvsScale: d } = z(o), H = f`
+  const { cvsScale: d } = T(o), b = f`
 		position: relative;
 
 		transform-origin: left top;
@@ -69,17 +67,17 @@ transition: 0.5s;
 	color: #fff;
 	background: #27acd9;
 }`;
-  return /* @__PURE__ */ w("div", { css: H, onClick: () => n(), children: [
+  return /* @__PURE__ */ $("div", { css: b, onClick: () => n(), children: [
     /* @__PURE__ */ i("button", { onClick: () => {
     }, css: u, children: "Click" }),
     /* @__PURE__ */ i("button", { onClick: () => {
     }, css: u, children: "Back" }),
     /* @__PURE__ */ i("button", { onClick: () => {
     }, css: u, children: "Prev" }),
-    r.map((s) => s.cls === "GRP" ? /* @__PURE__ */ i(k, { cmn: { sys: e, styChild: m }, fn: s.fn }, s.nm) : /* @__PURE__ */ i(T, { cmn: { sys: e, styChild: m }, str: "てすと" }, s.nm))
+    r.map((s) => s.cls === "GRP" ? /* @__PURE__ */ i(P, { cmn: { sys: e, styChild: m }, fn: s.fn }, s.nm) : /* @__PURE__ */ i(k, { cmn: { sys: e, styChild: m }, str: "てすと" }, s.nm))
   ] });
 }
-function z({ width: e, height: t }) {
+function T({ width: e, height: t }) {
   let n = 0, r = 0, c = 1;
   return a.stageW > e || a.stageH > t ? (a.stageW / a.stageH <= e / t ? (r = t, n = p(a.stageW / a.stageH * t)) : (n = e, r = p(a.stageH / a.stageW * e)), c = n / a.stageW) : (n = a.stageW, r = a.stageH, c = 1), { cvsScale: c, cvsWidth: n, cvsHeight: r };
 }
@@ -87,18 +85,18 @@ function x() {
   const { innerWidth: e, innerHeight: t } = globalThis;
   return { width: e, height: t };
 }
-let b, E = () => {
-};
-class J extends P {
+let E;
+class z extends A {
   nm = "Stage";
+  // this.stt から
   restore() {
-    console.log("fn:Stage.tsx line:162 / restore /"), b.dispatchEvent(new CustomEvent("restore", { detail: this.stt }));
+    E.dispatchEvent(new CustomEvent("restore", { detail: this.stt }));
   }
 }
 let h = "";
-const G = () => new J(h);
+const B = () => new z(h);
 export {
-  B as default,
-  G as save
+  j as default,
+  B as save
 };
 //# sourceMappingURL=Stage.js.map

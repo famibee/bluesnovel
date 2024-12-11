@@ -34,15 +34,13 @@ export default function Stage({arg: {sys, heStage}, onClick}: {arg: T_ARG, onCli
 	const aLay = useStore(s=> s.aLay);
 	stt = JSON.stringify(aLay);
 console.log(`fn:Stage.tsx 0 stt=${stt}`);
-	updMemento();
-	useEffect(()=> {	// 初回処理
-		updMemento = ()=> sys.caretaker.update();
-	}, []);
+	sys.caretaker.update();
 
 	const replace = useStore(s=> s.replace);
 	useEffect(()=> {	// 初回処理
 		$heStage = heStage;
 		heStage.addEventListener('restore', ((e: CustomEvent<string>)=> {
+console.log(`fn:Stage.tsx line:46 / restore /`);
 			replace(e.detail);
 		}) as EventListenerOrEventListenerObject);
 	}, []);
@@ -152,14 +150,13 @@ transition: 0.5s;
 	}
 
 	let $heStage: HTMLElement;
-	let updMemento = ()=> {};
 
 
 	class Memento extends BaseMemento {
 		readonly	nm = 'Stage';
 
-		restore() {	// this.stt から
-console.log(`fn:Stage.tsx line:162 / restore /`);
+		// this.stt から
+		restore() {
 			$heStage.dispatchEvent(new CustomEvent('restore', {detail: this.stt}));
 		}
 	}

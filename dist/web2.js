@@ -506,12 +506,12 @@ class Oe {
   getNs() {
     return `skynovel.${this.oCfg.save_ns} - `;
   }
-  #r = /([^\/\s]+)\.([^\d]\w+)/;
+  #n = /([^\/\s]+)\.([^\d]\w+)/;
   // 4 match 498 step(~1ms)  https://regex101.com/r/tpVgmI/1
   searchPath(r, a = "") {
     if (!r) throw "[searchPath] fnが空です";
     if (r.startsWith("http://")) return r;
-    const h = r.match(this.#r);
+    const h = r.match(this.#n);
     let d = h ? h[1] : r;
     const w = h ? h[2] : "";
     if (this.userFnTail) {
@@ -605,34 +605,38 @@ class Me {
   }
   #t = "";
   set key(r) {
-    this.#t = r, this.#n.push(r), ++this.#i;
+    this.#t = r, this.#i = this.#r.push(r) - 1;
   }
-  #r = {};
+  #n = {};
   update() {
+    if (this.#i < this.#r.length - 1) {
+      console.log("fn:Memento.ts line:31 update -- SKIP");
+      return;
+    }
     const r = [];
     for (const a of this.#e) r.push(a());
-    this.#r[this.#t] = r, console.log(`fn:Memento.ts line:30 -- key(${this.#t}) STT:%o`, this.#r[this.#t]);
+    this.#n[this.#t] = r, console.log(`fn:Memento.ts line:30 update -- key(${this.#t}) STT:%o`, this.#n[this.#t]);
   }
   undo(r) {
     console.log(`fn:Memento.ts line:38 = undo key=(${r})`);
-    const a = this.#r[r];
+    const a = this.#n[r];
     if (!a) throw `undo Err key:${r}`;
     console.log("fn:Memento.ts line:41 = undo == do");
     for (const h of a)
       console.log(`fn:Memento.ts line:44 == nm:${h.nm}`), h.restore();
   }
-  #n = [];
+  #r = [];
   #i = -1;
   // 前のキーへ移動
   beforeKey() {
-    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts line:53 -- beforeKey --"), this.undo(this.#n[--this.#i]), !0);
+    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts line:53 -- beforeKey --"), this.undo(this.#r[--this.#i]), !0);
   }
   // 後のキーへ移動
   afterKey() {
-    return this.#n.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts line:61 -- afterKey --"), this.undo(this.#n[++this.#i]), !0);
+    return this.#r.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts line:61 -- afterKey --"), this.undo(this.#r[++this.#i]), !0);
   }
   isLast() {
-    return this.#n.length - 1 === this.#i;
+    return this.#r.length - 1 === this.#i;
   }
 }
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
