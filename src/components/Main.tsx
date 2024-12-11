@@ -52,10 +52,6 @@ export async function opening({heStage, sys}: T_ARG) {
 
 
 function Main({heStage, sys}: T_ARG) {
-
-	//TODO: （useEffect不要と思われる）状態ＤＢ更新
-	// useEffect(()=> mmt.onUpdate(JSON.stringify(aLay)), [aLay]);
-
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	function onClick() {
@@ -67,29 +63,22 @@ console.log(`fn:Main.tsx == next ==`);
 			if (done) break;
 
 			const key = sys.caretaker.key = 'main' + ':'+ ++idxDummy;
-console.log(`fn:Main.tsx == line:75 key(${key}) CMD:%o`, o);
+console.log(`fn:Main.tsx == line:66 key(${key}) CMD:%o`, o);
 			if ('cls' in o) addLayer(o); else chgPic(o);
 			// sys.caretaker.backup('main' + ':'+ ++idxDummy);
 			break;
 		}
 	}
-	useEffect(()=> {	// 初回処理
-		import('./Stage').then(({save})=> {
-			sys.caretaker.add(save);
-		});
-		onClick();
-	}, []);
+	// 初回処理
+	useEffect(()=> onClick(), []);
 
 	// イベント
 	useKey('ArrowDown', e=> {
-console.log('ArrowDown');
 		e.stopPropagation();
 		e.preventDefault();
-
 		onClick();
 	});
 	useKey('ArrowUp', e=> {
-console.log('ArrowUp');
 		e.stopPropagation();
 		e.preventDefault();
 		sys.caretaker.beforeKey();

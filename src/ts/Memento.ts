@@ -13,41 +13,29 @@ export abstract class BaseMemento {
 };
 
 
-export type T_SAVE_MEMENTO = ()=> BaseMemento;
-
 export class Caretaker {
-	#aSave	: T_SAVE_MEMENTO[] = [];	// Memento対象
-	add(save: T_SAVE_MEMENTO) {this.#aSave.push(save)}
-
 	#key = '';
 	set key(key: string) {
 		this.#key = key;
 		this.#idxHistory = this.#aKeyHistory.push(key) -1;
+		this.#hScr2AState[key] = {};
 	}
 
-	#hScr2AState: {[key: string]: BaseMemento[]}	= {};
-	update() {
-		if (this.#idxHistory < this.#aKeyHistory.length -1) {
-console.log(`fn:Memento.ts line:31 update -- SKIP`);
-			return;
-		}
+	#hScr2AState: {[key: string]: {[nm: string]: BaseMemento}}	= {};
+	update(genMeMe: ()=> BaseMemento) {
+		if (this.#idxHistory < this.#aKeyHistory.length -1) return;
 
-		const a: BaseMemento[] = [];
-		for (const save of this.#aSave) a.push(save());
-		this.#hScr2AState[this.#key] = a;
-console.log(`fn:Memento.ts line:30 update -- key(${this.#key}) STT:%o`, this.#hScr2AState[this.#key]);
+		const m = genMeMe();
+		this.#hScr2AState[this.#key]![m.nm] = m;
+console.log(`fn:Memento.ts line:30 update -- key(${this.#key}) MeMe:%o`, m);
 	}
 
 	undo(key: string) {
-console.log(`fn:Memento.ts line:38 = undo key=(${key})`);
-		const a = this.#hScr2AState[key];
-		if (! a) throw `undo Err key:${key}`;
+console.log(`fn:Memento.ts line:34 = undo key=(${key})`);
+		const h = this.#hScr2AState[key];
+		if (! h) throw `undo Err key:${key}`;
 
-console.log(`fn:Memento.ts line:41 = undo == do`);
-		for (const meme of a) {
-console.log(`fn:Memento.ts line:44 == nm:${meme.nm}`);
-			meme.restore();
-		}
+		for (const meme of Object.values(h)) meme.restore();
 	}
 
 	#aKeyHistory: string[]	= [];
@@ -55,17 +43,15 @@ console.log(`fn:Memento.ts line:44 == nm:${meme.nm}`);
 	// 前のキーへ移動
 	beforeKey(): boolean {
 		if (this.#idxHistory <= 0) return false;
-console.log(`fn:Memento.ts line:53 -- beforeKey --`);
+console.log(`fn:Memento.ts line:46 -- beforeKey --`);
 		this.undo(this.#aKeyHistory[--this.#idxHistory]!);
-
 		return true;
 	}
 	// 後のキーへ移動
 	afterKey(): boolean {
 		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
-console.log(`fn:Memento.ts line:61 -- afterKey --`);
+console.log(`fn:Memento.ts line:53 -- afterKey --`);
 		this.undo(this.#aKeyHistory[++this.#idxHistory]!);
-
 		return true;
 	}
 	isLast() {return this.#aKeyHistory.length -1 === this.#idxHistory}

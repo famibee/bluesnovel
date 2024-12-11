@@ -11,7 +11,7 @@ import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
 import type {T_ARG} from './Main';
 import {useStore} from '../store/store';
-import {BaseMemento, type T_SAVE_MEMENTO} from '../ts/Memento';
+import {BaseMemento} from '../ts/Memento';
 
 import {useEffect, useState} from 'react';
 import {css, type SerializedStyles} from '@emotion/react';
@@ -32,15 +32,14 @@ export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 export default function Stage({arg: {sys, heStage}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
 	const aLay = useStore(s=> s.aLay);
-	stt = JSON.stringify(aLay);
-console.log(`fn:Stage.tsx 0 stt=${stt}`);
-	sys.caretaker.update();
+console.log(`fn:Stage.tsx 0`);
+	sys.caretaker.update(()=> new Memento(JSON.stringify(aLay)));
 
 	const replace = useStore(s=> s.replace);
 	useEffect(()=> {	// 初回処理
 		$heStage = heStage;
 		heStage.addEventListener('restore', ((e: CustomEvent<string>)=> {
-console.log(`fn:Stage.tsx line:46 / restore /`);
+console.log(`fn:Stage.tsx line:42 / restore /`);
 			replace(e.detail);
 		}) as EventListenerOrEventListenerObject);
 	}, []);
@@ -160,6 +159,3 @@ transition: 0.5s;
 			$heStage.dispatchEvent(new CustomEvent('restore', {detail: this.stt}));
 		}
 	}
-
-	let stt = '';
-export const save: T_SAVE_MEMENTO = ()=> new Memento(stt);

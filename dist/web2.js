@@ -1,25 +1,25 @@
 var re = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {};
-function Ce(s) {
-  return s && s.__esModule && Object.prototype.hasOwnProperty.call(s, "default") ? s.default : s;
+function Ce(a) {
+  return a && a.__esModule && Object.prototype.hasOwnProperty.call(a, "default") ? a.default : a;
 }
-function ke(s) {
-  if (s.__esModule) return s;
-  var r = s.default;
+function Ee(a) {
+  if (a.__esModule) return a;
+  var r = a.default;
   if (typeof r == "function") {
-    var a = function h() {
+    var s = function h() {
       return this instanceof h ? Reflect.construct(r, arguments, this.constructor) : r.apply(this, arguments);
     };
-    a.prototype = r.prototype;
-  } else a = {};
-  return Object.defineProperty(a, "__esModule", { value: !0 }), Object.keys(s).forEach(function(h) {
-    var d = Object.getOwnPropertyDescriptor(s, h);
-    Object.defineProperty(a, h, d.get ? d : {
+    s.prototype = r.prototype;
+  } else s = {};
+  return Object.defineProperty(s, "__esModule", { value: !0 }), Object.keys(a).forEach(function(h) {
+    var d = Object.getOwnPropertyDescriptor(a, h);
+    Object.defineProperty(s, h, d.get ? d : {
       enumerable: !0,
       get: function() {
-        return s[h];
+        return a[h];
       }
     });
-  }), a;
+  }), s;
 }
 var N = { exports: {} };
 /*!
@@ -30,12 +30,12 @@ var N = { exports: {} };
  */
 var we = N.exports, ne;
 function ve() {
-  return ne || (ne = 1, function(s, r) {
+  return ne || (ne = 1, function(a, r) {
     (function() {
-      var a = {
+      var s = {
         function: !0,
         object: !0
-      }, h = a[typeof window] && window || this, d = r, w = s && !s.nodeType && s, g = d && w && typeof re == "object" && re;
+      }, h = s[typeof window] && window || this, d = r, w = a && !a.nodeType && a, g = d && w && typeof re == "object" && re;
       g && (g.global === g || g.window === g || g.self === g) && (h = g);
       var P = Math.pow(2, 53) - 1, m = /\bOpera/, v = Object.prototype, C = v.hasOwnProperty, W = v.toString;
       function V(t) {
@@ -82,7 +82,7 @@ function ve() {
         var u = t != null ? typeof t[c] : "number";
         return !/^(?:boolean|number|string|undefined)$/.test(u) && (u == "object" ? !!t[c] : !0);
       }
-      function E(t) {
+      function k(t) {
         return String(t).replace(/([ -])(?!$)/g, "$1?");
       }
       function j(t, c) {
@@ -249,29 +249,29 @@ function ve() {
         ]);
         function ue(O) {
           return j(O, function(x, p) {
-            return x || RegExp("\\b" + (p.pattern || E(p)) + "\\b", "i").exec(t) && (p.label || p);
+            return x || RegExp("\\b" + (p.pattern || k(p)) + "\\b", "i").exec(t) && (p.label || p);
           });
         }
         function ge(O) {
-          return j(O, function(x, p, k) {
-            return x || (p[l] || p[/^[a-z]+(?: +[a-z]+\b)*/i.exec(l)] || RegExp("\\b" + E(k) + "(?:\\b|\\w*\\d)", "i").exec(t)) && k;
+          return j(O, function(x, p, E) {
+            return x || (p[l] || p[/^[a-z]+(?: +[a-z]+\b)*/i.exec(l)] || RegExp("\\b" + k(E) + "(?:\\b|\\w*\\d)", "i").exec(t)) && E;
           });
         }
         function me(O) {
           return j(O, function(x, p) {
-            return x || RegExp("\\b" + (p.pattern || E(p)) + "\\b", "i").exec(t) && (p.label || p);
+            return x || RegExp("\\b" + (p.pattern || k(p)) + "\\b", "i").exec(t) && (p.label || p);
           });
         }
         function xe(O) {
           return j(O, function(x, p) {
-            var k = p.pattern || E(p);
-            return !x && (x = RegExp("\\b" + k + "(?:/[\\d.]+|[ \\w.]*)", "i").exec(t)) && (x = z(x, k, p.label || p)), x;
+            var E = p.pattern || k(p);
+            return !x && (x = RegExp("\\b" + E + "(?:/[\\d.]+|[ \\w.]*)", "i").exec(t)) && (x = z(x, E, p.label || p)), x;
           });
         }
         function te(O) {
           return j(O, function(x, p) {
-            var k = p.pattern || E(p);
-            return !x && (x = RegExp("\\b" + k + " *\\d+[.\\w_]*", "i").exec(t) || RegExp("\\b" + k + " *\\w+-[\\w]*", "i").exec(t) || RegExp("\\b" + k + "(?:; *(?:[a-z]+[_-])?[a-z]+\\d+|[^ ();-]*)", "i").exec(t)) && ((x = String(p.label && !RegExp(k, "i").test(p.label) ? p.label : x).split("/"))[1] && !/[\d.]+/.test(x[0]) && (x[0] += " " + x[1]), p = p.label || p, x = _(x[0].replace(RegExp(k, "i"), p).replace(RegExp("; *(?:" + p + "[_-])?", "i"), " ").replace(RegExp("(" + p + ")[-_.]?(\\w)", "i"), "$1 $2"))), x;
+            var E = p.pattern || k(p);
+            return !x && (x = RegExp("\\b" + E + " *\\d+[.\\w_]*", "i").exec(t) || RegExp("\\b" + E + " *\\w+-[\\w]*", "i").exec(t) || RegExp("\\b" + E + "(?:; *(?:[a-z]+[_-])?[a-z]+\\d+|[^ ();-]*)", "i").exec(t)) && ((x = String(p.label && !RegExp(E, "i").test(p.label) ? p.label : x).split("/"))[1] && !/[\d.]+/.test(x[0]) && (x[0] += " " + x[1]), p = p.label || p, x = _(x[0].replace(RegExp(E, "i"), p).replace(RegExp("; *(?:" + p + "[_-])?", "i"), " ").replace(RegExp("(" + p + ")[-_.]?(\\w)", "i"), "$1 $2"))), x;
           });
         }
         function ie(O) {
@@ -282,10 +282,10 @@ function ve() {
         function Se() {
           return this.description || "";
         }
-        if (b && (b = [b]), /\bAndroid\b/.test(n) && !l && (e = /\bAndroid[^;]*;(.*?)(?:Build|\) AppleWebKit)\b/i.exec(t)) && (l = X(e[1]).replace(/^[a-z]{2}-[a-z]{2};\s*/i, "") || null), S && !l ? l = te([S]) : S && l && (l = l.replace(RegExp("^(" + E(S) + ")[-_.\\s]", "i"), S + " ").replace(RegExp("^(" + E(S) + ")[-_.]?(\\w)", "i"), S + " $2")), (e = /\bGoogle TV\b/.exec(l)) && (l = e[0]), /\bSimulator\b/i.test(t) && (l = (l ? l + " " : "") + "Simulator"), i == "Opera Mini" && /\bOPiOS\b/.test(t) && f.push("running in Turbo/Uncompressed mode"), i == "IE" && /\blike iPhone OS\b/.test(t) ? (e = L(t.replace(/like iPhone OS/, "")), S = e.manufacturer, l = e.product) : /^iP/.test(l) ? (i || (i = "Safari"), n = "iOS" + ((e = / OS ([\d_]+)/i.exec(t)) ? " " + e[1].replace(/_/g, ".") : "")) : i == "Konqueror" && /^Linux\b/i.test(n) ? n = "Kubuntu" : S && S != "Google" && (/Chrome/.test(i) && !/\bMobile Safari\b/i.test(t) || /\bVita\b/.test(l)) || /\bAndroid\b/.test(n) && /^Chrome/.test(i) && /\bVersion\//i.test(t) ? (i = "Android Browser", n = /\bAndroid\b/.test(n) ? n : "Android") : i == "Silk" ? (/\bMobi/i.test(t) || (n = "Android", f.unshift("desktop mode")), /Accelerated *= *true/i.test(t) && f.unshift("accelerated")) : i == "UC Browser" && /\bUCWEB\b/.test(t) ? f.push("speed mode") : i == "PaleMoon" && (e = /\bFirefox\/([\d.]+)\b/.exec(t)) ? f.push("identifying as Firefox " + e[1]) : i == "Firefox" && (e = /\b(Mobile|Tablet|TV)\b/i.exec(t)) ? (n || (n = "Firefox OS"), l || (l = e[1])) : !i || (e = !/\bMinefield\b/i.test(t) && /\b(?:Firefox|Safari)\b/.exec(i)) ? (i && !l && /[\/,]|^[^(]+?\)/.test(t.slice(t.indexOf(e + "/") + 8)) && (i = null), (e = l || S || n) && (l || S || /\b(?:Android|Symbian OS|Tablet OS|webOS)\b/.test(n)) && (i = /[a-z]+(?: Hat)?/i.exec(/\bAndroid\b/.test(n) ? n : e) + " Browser")) : i == "Electron" && (e = (/\bChrome\/([\d.]+)\b/.exec(t) || 0)[1]) && f.push("Chromium " + e), o || (o = ie([
+        if (b && (b = [b]), /\bAndroid\b/.test(n) && !l && (e = /\bAndroid[^;]*;(.*?)(?:Build|\) AppleWebKit)\b/i.exec(t)) && (l = X(e[1]).replace(/^[a-z]{2}-[a-z]{2};\s*/i, "") || null), S && !l ? l = te([S]) : S && l && (l = l.replace(RegExp("^(" + k(S) + ")[-_.\\s]", "i"), S + " ").replace(RegExp("^(" + k(S) + ")[-_.]?(\\w)", "i"), S + " $2")), (e = /\bGoogle TV\b/.exec(l)) && (l = e[0]), /\bSimulator\b/i.test(t) && (l = (l ? l + " " : "") + "Simulator"), i == "Opera Mini" && /\bOPiOS\b/.test(t) && f.push("running in Turbo/Uncompressed mode"), i == "IE" && /\blike iPhone OS\b/.test(t) ? (e = L(t.replace(/like iPhone OS/, "")), S = e.manufacturer, l = e.product) : /^iP/.test(l) ? (i || (i = "Safari"), n = "iOS" + ((e = / OS ([\d_]+)/i.exec(t)) ? " " + e[1].replace(/_/g, ".") : "")) : i == "Konqueror" && /^Linux\b/i.test(n) ? n = "Kubuntu" : S && S != "Google" && (/Chrome/.test(i) && !/\bMobile Safari\b/i.test(t) || /\bVita\b/.test(l)) || /\bAndroid\b/.test(n) && /^Chrome/.test(i) && /\bVersion\//i.test(t) ? (i = "Android Browser", n = /\bAndroid\b/.test(n) ? n : "Android") : i == "Silk" ? (/\bMobi/i.test(t) || (n = "Android", f.unshift("desktop mode")), /Accelerated *= *true/i.test(t) && f.unshift("accelerated")) : i == "UC Browser" && /\bUCWEB\b/.test(t) ? f.push("speed mode") : i == "PaleMoon" && (e = /\bFirefox\/([\d.]+)\b/.exec(t)) ? f.push("identifying as Firefox " + e[1]) : i == "Firefox" && (e = /\b(Mobile|Tablet|TV)\b/i.exec(t)) ? (n || (n = "Firefox OS"), l || (l = e[1])) : !i || (e = !/\bMinefield\b/i.test(t) && /\b(?:Firefox|Safari)\b/.exec(i)) ? (i && !l && /[\/,]|^[^(]+?\)/.test(t.slice(t.indexOf(e + "/") + 8)) && (i = null), (e = l || S || n) && (l || S || /\b(?:Android|Symbian OS|Tablet OS|webOS)\b/.test(n)) && (i = /[a-z]+(?: Hat)?/i.exec(/\bAndroid\b/.test(n) ? n : e) + " Browser")) : i == "Electron" && (e = (/\bChrome\/([\d.]+)\b/.exec(t) || 0)[1]) && f.push("Chromium " + e), o || (o = ie([
           "(?:Cloud9|CriOS|CrMo|Edge|Edg|EdgA|EdgiOS|FxiOS|HeadlessChrome|IEMobile|Iron|Opera ?Mini|OPiOS|OPR|Raven|SamsungBrowser|Silk(?!/[\\d.]+$)|UCBrowser|YaBrowser)",
           "Version",
-          E(i),
+          k(i),
           "(?:Firefox|Minefield|NetFront)"
         ])), (e = b == "iCab" && parseFloat(o) > 3 && "WebKit" || /\bOpera\b/.test(i) && (/\bOPR\b/.test(t) ? "Blink" : "Presto") || /\b(?:Midori|Nook|Safari)\b/i.test(t) && !/^(?:Trident|EdgeHTML)$/.test(b) && "WebKit" || !b && /\bMSIE\b/i.test(t) && (n == "Mac OS" ? "Tasman" : "Trident") || b == "WebKit" && /\bPlayStation\b(?! Vita\b)/i.test(i) && "NetFront") && (b = [e]), i == "IE" && (e = (/; *(?:XBLWP|ZuneWP)(\d+)/i.exec(t) || 0)[1]) ? (i += " Mobile", n = "Windows Phone " + (/\+$/.test(e) ? e : e + ".x"), f.unshift("desktop mode")) : /\bWPDesktop\b/i.test(t) ? (i = "IE Mobile", n = "Windows Phone 8.x", f.unshift("desktop mode"), o || (o = (/\brv:([\d.]+)/.exec(t) || 0)[1])) : i != "IE" && b == "Trident" && (e = /\brv:([\d.]+)/.exec(t)) && (i && f.push("identifying as " + i + (o ? " " + o : "")), i = "IE", o = e[1]), B) {
           if (se(c, "global"))
@@ -315,7 +315,7 @@ function ve() {
             f.unshift("embedded");
           }
         else (/\bBlackBerry\b/.test(l) || /\bBB10\b/.test(t)) && (e = (RegExp(l.replace(/ +/g, " *") + "/([.\\d]+)", "i").exec(t) || 0)[1] || o) ? (e = [e, /BB10/.test(t)], n = (e[1] ? (l = null, S = "BlackBerry") : "Device Software") + " " + e[0], o = null) : this != G && l != "Wii" && (B && $ || /Opera/.test(i) && /\b(?:MSIE|Firefox)\b/i.test(t) || i == "Firefox" && /\bOS X (?:\d+\.){2,}/.test(n) || i == "IE" && (n && !/^Win/.test(n) && o > 5.5 || /\bWindows XP\b/.test(n) && o > 8 || o == 8 && !/\bTrident\b/.test(t))) && !m.test(e = L.call(G, t.replace(m, "") + ";")) && e.name && (e = "ing as " + e.name + ((e = e.version) ? " " + e : ""), m.test(i) ? (/\bIE\b/.test(e) && n == "Mac OS" && (n = null), e = "identify" + e) : (e = "mask" + e, R ? i = _(R.replace(/([a-z])([A-Z])/g, "$1 $2")) : i = "Opera", /\bIE\b/.test(e) && (n = null), B || (o = null)), b = ["Presto"], f.push(e));
-        (e = (/\bAppleWebKit\/([\d.]+\+?)/i.exec(t) || 0)[1]) && (e = [parseFloat(e.replace(/\.(\d)$/, ".0$1")), e], i == "Safari" && e[1].slice(-1) == "+" ? (i = "WebKit Nightly", U = "alpha", o = e[1].slice(0, -1)) : (o == e[1] || o == (e[2] = (/\bSafari\/([\d.]+\+?)/i.exec(t) || 0)[1])) && (o = null), e[1] = (/\b(?:Headless)?Chrome\/([\d.]+)/i.exec(t) || 0)[1], e[0] == 537.36 && e[2] == 537.36 && parseFloat(e[1]) >= 28 && b == "WebKit" && (b = ["Blink"]), !B || !ae && !e[1] ? (b && (b[1] = "like Safari"), e = (e = e[0], e < 400 ? 1 : e < 500 ? 2 : e < 526 ? 3 : e < 533 ? 4 : e < 534 ? "4+" : e < 535 ? 5 : e < 537 ? 6 : e < 538 ? 7 : e < 601 ? 8 : e < 602 ? 9 : e < 604 ? 10 : e < 606 ? 11 : e < 608 ? 12 : "12")) : (b && (b[1] = "like Chrome"), e = e[1] || (e = e[0], e < 530 ? 1 : e < 532 ? 2 : e < 532.05 ? 3 : e < 533 ? 4 : e < 534.03 ? 5 : e < 534.07 ? 6 : e < 534.1 ? 7 : e < 534.13 ? 8 : e < 534.16 ? 9 : e < 534.24 ? 10 : e < 534.3 ? 11 : e < 535.01 ? 12 : e < 535.02 ? "13+" : e < 535.07 ? 15 : e < 535.11 ? 16 : e < 535.19 ? 17 : e < 536.05 ? 18 : e < 536.1 ? 19 : e < 537.01 ? 20 : e < 537.11 ? "21+" : e < 537.13 ? 23 : e < 537.18 ? 24 : e < 537.24 ? 25 : e < 537.36 ? 26 : b != "Blink" ? "27" : "28")), b && (b[1] += " " + (e += typeof e == "number" ? ".x" : /[.+]/.test(e) ? "" : "+")), i == "Safari" && (!o || parseInt(o) > 45) ? o = e : i == "Chrome" && /\bHeadlessChrome/i.test(t) && f.unshift("headless")), i == "Opera" && (e = /\bzbov|zvav$/.exec(n)) ? (i += " ", f.unshift("desktop mode"), e == "zvav" ? (i += "Mini", o = null) : i += "Mobile", n = n.replace(RegExp(" *" + e + "$"), "")) : i == "Safari" && /\bChrome\b/.exec(b && b[1]) ? (f.unshift("desktop mode"), i = "Chrome Mobile", o = null, /\bOS X\b/.test(n) ? (S = "Apple", n = "iOS 4.3+") : n = null) : /\bSRWare Iron\b/.test(i) && !o && (o = ie("Chrome")), o && o.indexOf(e = /[\d.]+$/.exec(n)) == 0 && t.indexOf("/" + e + "-") > -1 && (n = X(n.replace(e, ""))), n && n.indexOf(i) != -1 && !RegExp(i + " OS").test(n) && (n = n.replace(RegExp(" *" + E(i) + " *"), "")), b && !/\b(?:Avant|Nook)\b/.test(i) && (/Browser|Lunascape|Maxthon/.test(i) || i != "Safari" && /^iOS/.test(n) && /\bSafari\b/.test(b[1]) || /^(?:Adobe|Arora|Breach|Midori|Opera|Phantom|Rekonq|Rock|Samsung Internet|Sleipnir|SRWare Iron|Vivaldi|Web)/.test(i) && b[1]) && (e = b[b.length - 1]) && f.push(e), f.length && (f = ["(" + f.join("; ") + ")"]), S && l && l.indexOf(S) < 0 && f.push("on " + S), l && f.push((/^on /.test(f[f.length - 1]) ? "" : "on ") + l), n && (e = / ([\d.+]+)$/.exec(n), Y = e && n.charAt(n.length - e[0].length - 1) == "/", n = {
+        (e = (/\bAppleWebKit\/([\d.]+\+?)/i.exec(t) || 0)[1]) && (e = [parseFloat(e.replace(/\.(\d)$/, ".0$1")), e], i == "Safari" && e[1].slice(-1) == "+" ? (i = "WebKit Nightly", U = "alpha", o = e[1].slice(0, -1)) : (o == e[1] || o == (e[2] = (/\bSafari\/([\d.]+\+?)/i.exec(t) || 0)[1])) && (o = null), e[1] = (/\b(?:Headless)?Chrome\/([\d.]+)/i.exec(t) || 0)[1], e[0] == 537.36 && e[2] == 537.36 && parseFloat(e[1]) >= 28 && b == "WebKit" && (b = ["Blink"]), !B || !ae && !e[1] ? (b && (b[1] = "like Safari"), e = (e = e[0], e < 400 ? 1 : e < 500 ? 2 : e < 526 ? 3 : e < 533 ? 4 : e < 534 ? "4+" : e < 535 ? 5 : e < 537 ? 6 : e < 538 ? 7 : e < 601 ? 8 : e < 602 ? 9 : e < 604 ? 10 : e < 606 ? 11 : e < 608 ? 12 : "12")) : (b && (b[1] = "like Chrome"), e = e[1] || (e = e[0], e < 530 ? 1 : e < 532 ? 2 : e < 532.05 ? 3 : e < 533 ? 4 : e < 534.03 ? 5 : e < 534.07 ? 6 : e < 534.1 ? 7 : e < 534.13 ? 8 : e < 534.16 ? 9 : e < 534.24 ? 10 : e < 534.3 ? 11 : e < 535.01 ? 12 : e < 535.02 ? "13+" : e < 535.07 ? 15 : e < 535.11 ? 16 : e < 535.19 ? 17 : e < 536.05 ? 18 : e < 536.1 ? 19 : e < 537.01 ? 20 : e < 537.11 ? "21+" : e < 537.13 ? 23 : e < 537.18 ? 24 : e < 537.24 ? 25 : e < 537.36 ? 26 : b != "Blink" ? "27" : "28")), b && (b[1] += " " + (e += typeof e == "number" ? ".x" : /[.+]/.test(e) ? "" : "+")), i == "Safari" && (!o || parseInt(o) > 45) ? o = e : i == "Chrome" && /\bHeadlessChrome/i.test(t) && f.unshift("headless")), i == "Opera" && (e = /\bzbov|zvav$/.exec(n)) ? (i += " ", f.unshift("desktop mode"), e == "zvav" ? (i += "Mini", o = null) : i += "Mobile", n = n.replace(RegExp(" *" + e + "$"), "")) : i == "Safari" && /\bChrome\b/.exec(b && b[1]) ? (f.unshift("desktop mode"), i = "Chrome Mobile", o = null, /\bOS X\b/.test(n) ? (S = "Apple", n = "iOS 4.3+") : n = null) : /\bSRWare Iron\b/.test(i) && !o && (o = ie("Chrome")), o && o.indexOf(e = /[\d.]+$/.exec(n)) == 0 && t.indexOf("/" + e + "-") > -1 && (n = X(n.replace(e, ""))), n && n.indexOf(i) != -1 && !RegExp(i + " OS").test(n) && (n = n.replace(RegExp(" *" + k(i) + " *"), "")), b && !/\b(?:Avant|Nook)\b/.test(i) && (/Browser|Lunascape|Maxthon/.test(i) || i != "Safari" && /^iOS/.test(n) && /\bSafari\b/.test(b[1]) || /^(?:Adobe|Arora|Breach|Midori|Opera|Phantom|Rekonq|Rock|Samsung Internet|Sleipnir|SRWare Iron|Vivaldi|Web)/.test(i) && b[1]) && (e = b[b.length - 1]) && f.push(e), f.length && (f = ["(" + f.join("; ") + ")"]), S && l && l.indexOf(S) < 0 && f.push("on " + S), l && f.push((/^on /.test(f[f.length - 1]) ? "" : "on ") + l), n && (e = / ([\d.+]+)$/.exec(n), Y = e && n.charAt(n.length - e[0].length - 1) == "/", n = {
           architecture: 32,
           family: e && !Y ? n.replace(e[0], "") : n,
           version: e ? e[1] : null,
@@ -371,23 +371,23 @@ function ve() {
   }(N, N.exports)), N.exports;
 }
 var T = ve();
-function Z(s) {
-  return parseInt(String(s), 10);
+function Z(a) {
+  return parseInt(String(a), 10);
 }
-function Ee(s) {
-  const r = parseInt(String(s), 10);
+function ke(a) {
+  const r = parseInt(String(a), 10);
   return r < 0 ? -r : r;
 }
 "toInt" in String.prototype || (String.prototype.toInt = function() {
   return Z(this);
 });
 "toUint" in String.prototype || (String.prototype.toUint = function() {
-  const s = Z(this);
-  return s < 0 ? -s : s;
+  const a = Z(this);
+  return a < 0 ? -a : a;
 });
 const ye = /^[^\/\.]+$|[^\/]+(?=\.)/;
-function $e(s) {
-  return (s.match(ye) ?? [""])[0];
+function $e(a) {
+  return (a.match(ye) ?? [""])[0];
 }
 class H {
   static stageW = 0;
@@ -404,7 +404,7 @@ class H {
   static isDarkMode = !1;
   static cc4ColorName;
 }
-var oe = /* @__PURE__ */ ((s) => (s.DEFAULT = "", s.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", s.SCRIPT = "sn|ssn", s.FONT = "woff2|woff|otf|ttf", s.SOUND = "mp3|m4a|ogg|aac|flac|wav", s.HTML = "htm|html", s.CSS = "css", s.SN = "sn", s.TST_PNGPNG_ = "png|png_", s.TST_HH = "hh", s.TST_EEE = "eee", s.TST_GGG = "ggg", s.TST_PNGXML = "png|xml", s))(oe || {});
+var oe = /* @__PURE__ */ ((a) => (a.DEFAULT = "", a.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", a.SCRIPT = "sn|ssn", a.FONT = "woff2|woff|otf|ttf", a.SOUND = "mp3|m4a|ogg|aac|flac|wav", a.HTML = "htm|html", a.CSS = "css", a.SN = "sn", a.TST_PNGPNG_ = "png|png_", a.TST_HH = "hh", a.TST_EEE = "eee", a.TST_GGG = "ggg", a.TST_PNGXML = "png|xml", a))(oe || {});
 class Oe {
   constructor(r) {
     this.sys = r;
@@ -467,9 +467,9 @@ class Oe {
   hPathFn2Exts = {};
   async load(r) {
     this.oCfg.save_ns = r?.save_ns ?? this.oCfg.save_ns, this.oCfg.window.width = Number(r?.window?.width ?? this.oCfg.window.width), this.oCfg.window.height = Number(r?.window?.height ?? this.oCfg.window.height), this.oCfg.book = { ...this.oCfg.book, ...r.book }, this.oCfg.log.max_len = r.log?.max_len?.max_len ?? this.oCfg.log.max_len, this.oCfg.init = { ...this.oCfg.init, ...r.init }, this.oCfg.debug = { ...this.oCfg.debug, ...r.debug }, this.oCfg.debuger_token = r.debuger_token;
-    const a = this.sys.arg.cur + "path.json", h = await fetch(a);
+    const s = this.sys.arg.cur + "path.json", h = await fetch(s);
     if (!h.ok) throw Error(h.statusText);
-    const d = await h.text(), w = JSON.parse(await this.sys.dec(a, d));
+    const d = await h.text(), w = JSON.parse(await this.sys.dec(s, d));
     for (const [g, P] of Object.entries(w)) {
       const m = this.hPathFn2Exts[g] = P;
       for (const [v, C] of Object.entries(m))
@@ -479,7 +479,7 @@ class Oe {
       "^breakline$",
       "png|jpg|jpeg|json|svg|webp|mp4|webm"
       /* SP_GSM */
-    ).length > 0, this.#t = this.matchPath(
+    ).length > 0, this.#r = this.matchPath(
       "^breakpage$",
       "png|jpg|jpeg|json|svg|webp|mp4|webm"
       /* SP_GSM */
@@ -499,27 +499,27 @@ class Oe {
   get existsBreakline() {
     return this.#e;
   }
-  #t = !1;
+  #r = !1;
   get existsBreakpage() {
-    return this.#t;
+    return this.#r;
   }
   getNs() {
     return `skynovel.${this.oCfg.save_ns} - `;
   }
-  #n = /([^\/\s]+)\.([^\d]\w+)/;
+  #t = /([^\/\s]+)\.([^\d]\w+)/;
   // 4 match 498 step(~1ms)  https://regex101.com/r/tpVgmI/1
-  searchPath(r, a = "") {
+  searchPath(r, s = "") {
     if (!r) throw "[searchPath] fnが空です";
     if (r.startsWith("http://")) return r;
-    const h = r.match(this.#n);
+    const h = r.match(this.#t);
     let d = h ? h[1] : r;
     const w = h ? h[2] : "";
     if (this.userFnTail) {
       const m = d + "@@" + this.userFnTail;
       if (m in this.hPathFn2Exts) {
-        if (a === "") d = m;
+        if (s === "") d = m;
         else for (const v of Object.keys(this.hPathFn2Exts[m] ?? {}))
-          if (`|${a}|`.includes(`|${v}|`)) {
+          if (`|${s}|`.includes(`|${v}|`)) {
             d = m;
             break;
           }
@@ -529,32 +529,32 @@ class Oe {
     if (!g) throw `サーチパスに存在しないファイル【${r}】です`;
     if (!w) {
       const m = Z(g[":cnt"]);
-      if (a === "") {
-        if (m > 1) throw `指定ファイル【${r}】が複数マッチします。サーチ対象拡張子群【${a}】で絞り込むか、ファイル名を個別にして下さい。`;
+      if (s === "") {
+        if (m > 1) throw `指定ファイル【${r}】が複数マッチします。サーチ対象拡張子群【${s}】で絞り込むか、ファイル名を個別にして下さい。`;
         return r;
       }
-      const v = `|${a}|`;
+      const v = `|${s}|`;
       if (m > 1) {
         let C = 0;
         for (const W of Object.keys(g))
           if (v.includes(`|${W}|`) && ++C > 1)
-            throw `指定ファイル【${r}】が複数マッチします。サーチ対象拡張子群【${a}】で絞り込むか、ファイル名を個別にして下さい。`;
+            throw `指定ファイル【${r}】が複数マッチします。サーチ対象拡張子群【${s}】で絞り込むか、ファイル名を個別にして下さい。`;
       }
       for (const C of Object.keys(g))
         if (v.includes(`|${C}|`)) return g[C];
-      throw `サーチ対象拡張子群【${a}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${r}】`;
+      throw `サーチ対象拡張子群【${s}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${r}】`;
     }
-    if (a !== "" && !`|${a}|`.includes(`|${w}|`))
-      throw `指定ファイルの拡張子【${w}】は、サーチ対象拡張子群【${a}】にマッチしません。探索ファイル名=【${r}】`;
+    if (s !== "" && !`|${s}|`.includes(`|${w}|`))
+      throw `指定ファイルの拡張子【${w}】は、サーチ対象拡張子群【${s}】にマッチしません。探索ファイル名=【${r}】`;
     const P = g[w];
-    if (!P) throw `サーチパスに存在しない拡張子【${w}】です。探索ファイル名=【${r}】、サーチ対象拡張子群【${a}】`;
+    if (!P) throw `サーチパスに存在しない拡張子【${w}】です。探索ファイル名=【${r}】、サーチ対象拡張子群【${s}】`;
     return P;
   }
-  matchPath(r, a = "") {
-    const h = [], d = new RegExp(r), w = new RegExp(a);
+  matchPath(r, s = "") {
+    const h = [], d = new RegExp(r), w = new RegExp(s);
     for (const [g, P] of Object.entries(this.hPathFn2Exts)) {
       if (g.search(d) === -1) continue;
-      if (a === "") {
+      if (s === "") {
         h.push(P);
         continue;
       }
@@ -566,9 +566,9 @@ class Oe {
     }
     return h;
   }
-  addPath(r, a) {
+  addPath(r, s) {
     const h = {};
-    for (const [d, w] of Object.entries(a))
+    for (const [d, w] of Object.entries(s))
       h[d] = (d.startsWith(":") ? "" : this.sys.arg.cur) + w;
     this.hPathFn2Exts[r] = h;
   }
@@ -578,16 +578,16 @@ class Q extends Oe {
     super(r), this.sys = r;
   }
   static async generate(r) {
-    const a = new Q(r), h = r.arg.cur + "prj.json", d = await fetch(h);
+    const s = new Q(r), h = r.arg.cur + "prj.json", d = await fetch(h);
     if (!d.ok) throw Error(d.statusText);
     const w = await d.text(), g = JSON.parse(await r.dec(h, w));
-    return await a.load(g), a;
+    return await s.load(g), s;
   }
   async load(r) {
     await super.load(r), H.stageW = this.oCfg.window.width, H.stageH = this.oCfg.window.height, H.debugLog = this.oCfg.debug.debugLog;
   }
-  searchPath(r, a = oe.DEFAULT) {
-    return r.startsWith("downloads:/") ? this.sys.path_downloads + r.slice(11) : r.startsWith("userdata:/") ? this.sys.path_userdata + "storage/" + r.slice(10) : super.searchPath(r, a);
+  searchPath(r, s = oe.DEFAULT) {
+    return r.startsWith("downloads:/") ? this.sys.path_downloads + r.slice(11) : r.startsWith("userdata:/") ? this.sys.path_userdata + "storage/" + r.slice(10) : super.searchPath(r, s);
   }
 }
 class Be {
@@ -598,51 +598,40 @@ class Be {
   // this.stt から
 }
 class Me {
-  #e = [];
-  // Memento対象
-  add(r) {
-    this.#e.push(r);
-  }
-  #t = "";
+  #e = "";
   set key(r) {
-    this.#t = r, this.#i = this.#r.push(r) - 1;
+    this.#e = r, this.#i = this.#t.push(r) - 1, this.#r[r] = {};
   }
-  #n = {};
-  update() {
-    if (this.#i < this.#r.length - 1) {
-      console.log("fn:Memento.ts line:31 update -- SKIP");
-      return;
-    }
-    const r = [];
-    for (const a of this.#e) r.push(a());
-    this.#n[this.#t] = r, console.log(`fn:Memento.ts line:30 update -- key(${this.#t}) STT:%o`, this.#n[this.#t]);
+  #r = {};
+  update(r) {
+    if (this.#i < this.#t.length - 1) return;
+    const s = r();
+    this.#r[this.#e][s.nm] = s, console.log(`fn:Memento.ts line:30 update -- key(${this.#e}) MeMe:%o`, s);
   }
   undo(r) {
-    console.log(`fn:Memento.ts line:38 = undo key=(${r})`);
-    const a = this.#n[r];
-    if (!a) throw `undo Err key:${r}`;
-    console.log("fn:Memento.ts line:41 = undo == do");
-    for (const h of a)
-      console.log(`fn:Memento.ts line:44 == nm:${h.nm}`), h.restore();
+    console.log(`fn:Memento.ts line:34 = undo key=(${r})`);
+    const s = this.#r[r];
+    if (!s) throw `undo Err key:${r}`;
+    for (const h of Object.values(s)) h.restore();
   }
-  #r = [];
+  #t = [];
   #i = -1;
   // 前のキーへ移動
   beforeKey() {
-    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts line:53 -- beforeKey --"), this.undo(this.#r[--this.#i]), !0);
+    return this.#i <= 0 ? !1 : (console.log("fn:Memento.ts line:46 -- beforeKey --"), this.undo(this.#t[--this.#i]), !0);
   }
   // 後のキーへ移動
   afterKey() {
-    return this.#r.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts line:61 -- afterKey --"), this.undo(this.#r[++this.#i]), !0);
+    return this.#t.length - 1 <= this.#i ? !1 : (console.log("fn:Memento.ts line:53 -- afterKey --"), this.undo(this.#t[++this.#i]), !0);
   }
   isLast() {
-    return this.#r.length - 1 === this.#i;
+    return this.#t.length - 1 === this.#i;
   }
 }
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
 class Pe {
-  constructor(r = {}, a) {
-    this.hPlg = r, this.arg = a;
+  constructor(r = {}, s) {
+    this.hPlg = r, this.arg = s;
   }
   #e = new Me();
   get caretaker() {
@@ -660,9 +649,9 @@ class Pe {
 	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
 </style>`
     );
-    const r = "skynovel", a = document.getElementById(r);
-    if (a) {
-      const d = a.cloneNode(!0);
+    const r = "skynovel", s = document.getElementById(r);
+    if (s) {
+      const d = s.cloneNode(!0);
       d.id = r;
     } else document.body.insertAdjacentHTML("afterbegin", `<div id="${r}"></div>`);
     const { opening: h } = await import("./Main.js").then((d) => d.M);
@@ -677,23 +666,23 @@ class Pe {
   get path_userdata() {
     return this.$path_userdata;
   }
-  dec = (r, a) => Promise.resolve(a);
+  dec = (r, s) => Promise.resolve(s);
   hash = (r) => "";
 }
 class We extends Pe {
-  constructor(r = {}, a = { cur: "prj/", crypto: !1, dip: "" }) {
-    super(r, a), super.init();
+  constructor(r = {}, s = { cur: "prj/", crypto: !1, dip: "" }) {
+    super(r, s), super.init();
   }
 }
 export {
   Be as B,
   H as C,
   oe as S,
-  ke as a,
+  Ee as a,
   $e as b,
   re as c,
   We as d,
   Ce as g,
-  Ee as u
+  ke as u
 };
 //# sourceMappingURL=web2.js.map

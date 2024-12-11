@@ -3155,18 +3155,14 @@ function ro({ heStage: r, sys: t }) {
         const { done: v, value: m } = no.next();
         if (v) break;
         const w = t.caretaker.key = "main:" + ++to;
-        console.log(`fn:Main.tsx == line:75 key(${w}) CMD:%o`, m), "cls" in m ? n(m) : i(m);
+        console.log(`fn:Main.tsx == line:66 key(${w}) CMD:%o`, m), "cls" in m ? n(m) : i(m);
         break;
       }
   }
-  ce.useEffect(() => {
-    import("./Stage.js").then(({ save: v }) => {
-      t.caretaker.add(v);
-    }), u();
-  }, []), mt("ArrowDown", (v) => {
-    console.log("ArrowDown"), v.stopPropagation(), v.preventDefault(), u();
+  ce.useEffect(() => u(), []), mt("ArrowDown", (v) => {
+    v.stopPropagation(), v.preventDefault(), u();
   }), mt("ArrowUp", (v) => {
-    console.log("ArrowUp"), v.stopPropagation(), v.preventDefault(), t.caretaker.beforeKey();
+    v.stopPropagation(), v.preventDefault(), t.caretaker.beforeKey();
   });
   const c = ce.lazy(() => import("./Stage.js"));
   return /* @__PURE__ */ mr(ce.Suspense, { fallback: /* @__PURE__ */ mr(Un, { children: "Loading" }), children: /* @__PURE__ */ mr(c, { arg: { heStage: r, sys: t }, onClick: u }) });

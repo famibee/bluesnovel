@@ -4,12 +4,10 @@ export declare abstract class BaseMemento {
     constructor(stt?: string);
     abstract restore(): void;
 }
-export type T_SAVE_MEMENTO = () => BaseMemento;
 export declare class Caretaker {
     #private;
-    add(save: T_SAVE_MEMENTO): void;
     set key(key: string);
-    update(): void;
+    update(genMeMe: () => BaseMemento): void;
     undo(key: string): void;
     beforeKey(): boolean;
     afterKey(): boolean;
