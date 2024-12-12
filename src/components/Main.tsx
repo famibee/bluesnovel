@@ -9,8 +9,8 @@ import type {SysBase} from '../SysBase';
 import type {T_LAY} from './Stage';
 import {useStore, type T_CHGPIC, type T_CHGSTR} from '../store/store';
 
-import {lazy, Suspense, useEffect} from 'react';
-import {useKey} from 'react-use';
+import {lazy, Suspense} from 'react';
+import {useEffectOnce, useKey, useTitle} from 'react-use';
 import {extensions, ExtensionType} from '@pixi/extensions';
 
 export type T_ARG = {
@@ -52,6 +52,8 @@ export async function opening({heStage, sys}: T_ARG) {
 
 
 function Main({heStage, sys}: T_ARG) {
+	useTitle(sys.cfg.oCfg.book.title);
+
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
@@ -71,8 +73,7 @@ console.log(`fn:Main.tsx == next ==`);
 			break;
 		}
 	}
-	// 初回処理
-	useEffect(()=> onClick(), []);
+	useEffectOnce(()=> onClick());
 
 	// イベント
 	useKey('ArrowDown', e=> {

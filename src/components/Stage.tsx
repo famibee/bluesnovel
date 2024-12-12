@@ -13,7 +13,8 @@ import type {T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
+import {useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 
 export type T_LAY_IDX = {
@@ -44,11 +45,11 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 
 	// ウインドウサイズ追従
 	const [wh, setWH] = useState<T_WH>(innWH());
-	useEffect(()=> {	// 初回処理
+	useMount(()=> {
 		function onResize() {setWH(innWH())}
 		globalThis.addEventListener('resize', onResize);
 		return ()=> globalThis.removeEventListener('resize', onResize);
-	}, []);
+	});
 	const {cvsScale} = calcScale(wh);
 
 	// css
@@ -84,6 +85,16 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		}
 	`;
 
+	const [isDesignMode, tglDesignMode] = useToggle(false);
+
+	let isLong = false;
+	const longPressEvent = useLongPress(e=> {
+		e.stopPropagation();	// でも止まらない
+		isLong = true;			// これで止める
+		tglDesignMode();
+	}, {isPreventDefault: true, delay: 300,});
+	const onClick2 = ()=> {if (isLong) isLong = false; else onClick()};
+
 	const c: T_LAY_CMN = {cmn: {sys, styChild, sty4Moveable: {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
@@ -91,10 +102,13 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
-	return <div css={styParent} onClick={()=> onClick()}>
-		<button onClick={()=> {}} css={styBtn}>Click</button>
-		<button onClick={()=> {}} css={styBtn}>Back</button>
-		<button onClick={()=> {}} css={styBtn}>Prev</button>
+	//
+	return <div css={styParent}  onClick={onClick2} {...longPressEvent}>
+		{isDesignMode && <>
+			<button onClick={()=> {}} css={styBtn}>Click</button>
+			<button onClick={()=> {}} css={styBtn}>Back</button>
+			<button onClick={()=> {}} css={styBtn}>Prev</button>
+		</>}
 		{aLay.map(l=> l.cls === 'GRP'
 			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
 			: <TxtLayer key={l.nm} cmn={c.cmn} str={l.str}/>)}

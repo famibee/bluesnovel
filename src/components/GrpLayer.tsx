@@ -8,7 +8,7 @@
 import type {T_LAY_IDX, T_LAY_CMN} from './Stage';
 import {SEARCH_PATH_ARG_EXT} from '../ts/ConfigBase';
 
-import {useRef} from 'react';
+import {MouseEvent, useRef} from 'react';
 import Moveable from 'react-moveable';
 
 
@@ -21,9 +21,16 @@ export type T_GRPLAY = T_LAY_IDX & {cls: 'GRP'} & T_GRPARG;
 export default function GrpLayer({cmn: {styChild, sys, sty4Moveable}, fn}: T_GRPARG) {
 	const search = (fn: string)=> sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM);
 
+	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
+		if (e.button != 1) {
+			return
+		}
+console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
+	};
+
 	const img0 = useRef<HTMLImageElement>(null);
 	return <>
-		<img css={styChild} src={search(fn)} ref={img0} style={sty4Moveable}/>
+		<img css={styChild} src={search(fn)} ref={img0} style={sty4Moveable} onMouseDown={e=> onMouseDown(e)}/>
 		<Moveable
 			target={img0}
 
