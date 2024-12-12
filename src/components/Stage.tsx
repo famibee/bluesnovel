@@ -24,6 +24,7 @@ export type T_LAY_CMN = {
 	cmn: {
 		sys			: SysBase;
 		styChild	: SerializedStyles;
+		sty4Moveable: any;
 		visible?	: boolean;
 	};
 };
@@ -60,6 +61,7 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		height	: calc(${CmnLib.stageH}px / ${cvsScale});
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
+
 	const styBtn = css`
 		position: relative; z-index: 1;
 
@@ -82,13 +84,20 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		}
 	`;
 
+	const c: T_LAY_CMN = {cmn: {sys, styChild, sty4Moveable: {
+		maxWidth	: 'auto',
+		maxHeight	: 'auto',
+		minWidth	: 'auto',
+		minHeight	: 'auto',
+		transform	: 'translate(0px, 0px) rotate(0deg)',
+	}}};
 	return <div css={styParent} onClick={()=> onClick()}>
 		<button onClick={()=> {}} css={styBtn}>Click</button>
 		<button onClick={()=> {}} css={styBtn}>Back</button>
 		<button onClick={()=> {}} css={styBtn}>Prev</button>
 		{aLay.map(l=> l.cls === 'GRP'
-			? <GrpLayer key={l.nm} cmn={{sys, styChild}} fn={l.fn}/>
-			: <TxtLayer key={l.nm} cmn={{sys, styChild}} str={l.str}/>)}
+			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
+			: <TxtLayer key={l.nm} cmn={c.cmn} str={l.str}/>)}
 	</div>;
 };
 	type T_WH = {

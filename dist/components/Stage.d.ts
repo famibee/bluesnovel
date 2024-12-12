@@ -11,6 +11,7 @@ export type T_LAY_CMN = {
     cmn: {
         sys: SysBase;
         styChild: SerializedStyles;
+        sty4Moveable: any;
         visible?: boolean;
     };
 };
