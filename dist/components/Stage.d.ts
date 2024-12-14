@@ -11,6 +11,7 @@ export type T_LAY_CMN = {
     cmn: {
         sys: SysBase;
         styChild: SerializedStyles;
+        isDesignMode: boolean;
         sty4Moveable: any;
         visible?: boolean;
     };
@@ -22,4 +23,5 @@ export default function Stage({ arg: { sys }, onClick, after, before, }: {
     after: () => void;
     before: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
+export declare const noticeDrag: () => void;
 //# sourceMappingURL=Stage.d.ts.map

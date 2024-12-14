@@ -14,7 +14,7 @@ import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
 import {useRef, useState} from 'react';
-import {useEffectOnce, useLongPress, useMount, useToggle} from 'react-use';
+import {useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 
 export type T_LAY_IDX = {
@@ -25,6 +25,7 @@ export type T_LAY_CMN = {
 	cmn: {
 		sys			: SysBase;
 		styChild	: SerializedStyles;
+		isDesignMode: boolean;
 		sty4Moveable: any;
 		visible?	: boolean;
 	};
@@ -90,32 +91,32 @@ export default function Stage({
 		}
 	`;
 
+	// useMouseWheel だと preventDefault() できないので手作り
+	const divRef = useRef<HTMLDivElement>(null);
+	useMount(()=> {
+		const div = divRef.current!;
+		div.addEventListener('mousedown', ()=> isDrag = false);
+
+		const fnc = (e: WheelEvent)=> {
+			e.preventDefault();
+			if (e.deltaY < 0) after(); else before();
+		}
+		div.addEventListener('wheel', fnc, {passive: false});
+		return ()=> div.removeEventListener('wheel', fnc);
+	});
+
 	const [isDesignMode, tglDesignMode] = useToggle(false);
 
 	const longPressEvent = useLongPress(e=> {
 		e.stopPropagation();	// でも止まらない
 		onLong();			// これで止める
 
+		if (isDrag) return;
 		tglDesignMode();
-		setDesignMode(isDesignMode);
+		setDesignMode(! isDesignMode);	// React のくせで取れないので
 	}, {isPreventDefault: true, delay: 300,});
 
-	// useMouseWheel だと preventDefault() できないので手作り
-	const divRef = useRef<HTMLDivElement>(null);
-	useEffectOnce(()=> {
-		let prevWheel = 0;
-		const fnc = (e: WheelEvent)=> {
-			e.preventDefault();
-			const nowWheel = e.deltaY;
-			if (prevWheel > nowWheel) after(); else before();
-		}
-
-		const div = divRef.current!;
-		div.addEventListener('wheel', fnc, {passive: false});
-		return ()=> div.removeEventListener('wheel', fnc);
-	});
-
-	const c: T_LAY_CMN = {cmn: {sys, styChild, sty4Moveable: {
+	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
 		minWidth	: 'auto',
@@ -188,3 +189,6 @@ export default function Stage({
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
 	}
+
+	let isDrag = false;
+export const noticeDrag = ()=> {isDrag = true}
