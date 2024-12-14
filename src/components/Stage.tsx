@@ -9,12 +9,12 @@ import type {SysBase} from '../SysBase';
 import {CmnLib, uint} from '../ts/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
-import {onLong, type T_ARG} from './Main';
+import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {useState} from 'react';
-import {useLongPress, useMount, useToggle} from 'react-use';
+import {useRef, useState} from 'react';
+import {useEffectOnce, useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 
 export type T_LAY_IDX = {
@@ -32,7 +32,12 @@ export type T_LAY_CMN = {
 export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 
-export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> void}) {
+export default function Stage({
+	arg: {sys}, onClick, after, before,
+}: {
+	arg: T_ARG, onClick: ()=> void,
+	after: ()=> void, before: ()=> void,
+}) {
 // console.log(`fn:Stage.tsx 0`);
 	const aLay = useStore(s=> s.aLay);
 
@@ -92,8 +97,23 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		onLong();			// これで止める
 
 		tglDesignMode();
-		$isDesignMode = isDesignMode;
+		setDesignMode(isDesignMode);
 	}, {isPreventDefault: true, delay: 300,});
+
+	// useMouseWheel だと preventDefault() できないので手作り
+	const divRef = useRef<HTMLDivElement>(null);
+	useEffectOnce(()=> {
+		let prevWheel = 0;
+		const fnc = (e: WheelEvent)=> {
+			e.preventDefault();
+			const nowWheel = e.deltaY;
+			if (prevWheel > nowWheel) after(); else before();
+		}
+
+		const div = divRef.current!;
+		div.addEventListener('wheel', fnc, {passive: false});
+		return ()=> div.removeEventListener('wheel', fnc);
+	});
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, sty4Moveable: {
 		maxWidth	: 'auto',
@@ -102,8 +122,7 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
-	//
-	return <div css={styParent}  onClick={onClick} {...longPressEvent}>
+	return <div css={styParent} onClick={onClick} {...longPressEvent} ref={divRef}>
 		{isDesignMode && <>
 			<button onClick={()=> {}} css={styBtn}>Click</button>
 			<button onClick={()=> {}} css={styBtn}>Back</button>
@@ -169,6 +188,3 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
 	}
-
-let $isDesignMode: boolean = false;
-export const getDesignMode = ()=> $isDesignMode	// この形でないとちらつく

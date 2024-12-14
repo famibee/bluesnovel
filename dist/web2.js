@@ -615,7 +615,7 @@ class Me {
     for (const h of Object.values(s)) h.restore();
   }
   #t = [];
-  #i = -1;
+  #i = 0;
   // 前のキーへ移動
   beforeKey() {
     return console.log("fn:Memento.ts -- beforeKey --"), this.#i <= 0 ? !1 : (this.undo(this.#t[--this.#i]), !0);

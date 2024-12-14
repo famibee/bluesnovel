@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import type {SysBase} from '../SysBase';
-import {getDesignMode, type T_LAY} from './Stage';
+import {type T_LAY} from './Stage';
 import {useStore, type T_CHGPIC, type T_CHGSTR} from '../store/store';
 
 import {lazy, Suspense} from 'react';
@@ -57,10 +57,7 @@ function Main({heStage, sys}: T_ARG) {
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
-	function onClick() {
-		if (isLong) {isLong = false; return}
-		if (getDesignMode() || sys.caretaker.afterKey()) return;
-
+	function next() {
 console.log(`fn:Main.tsx == next ==`);
 		while (true) {
 			const {done, value: o} = gen.next();
@@ -72,34 +69,28 @@ console.log(`fn:Main.tsx == next ==`);
 			break;
 		}
 	}
-	useEffectOnce(()=> onClick());
+	useEffectOnce(()=> next());
 
 	// イベント
-	useKey('ArrowDown', e=> {
-		e.stopPropagation();
-		e.preventDefault();
-		onClick();
-	});
-	useKey('ArrowUp', e=> {
-		e.stopPropagation();
-		e.preventDefault();
-		sys.caretaker.beforeKey();
-	});
-// 	const mouseWheel = useMouseWheel();		//TODO: なぜかちらつく
-// 	useEffect(()=> {
-// // 		const isDown = yyy > mouseWheel ?'downwheel' :'upwheel';
-// // console.log(`fn:Main.tsx line:88 ${isDown}`);
-// 		if (deltaY_wheel > mouseWheel) onClick(); else sys.caretaker.beforeKey();
-// 		deltaY_wheel = mouseWheel;
-// 	}, [mouseWheel]);
+	function after() {if (! sys.caretaker.afterKey()) next()}
+	useKey('ArrowDown', e=> {e.stopPropagation(); e.preventDefault(); after()});
+	function before() {sys.caretaker.beforeKey()}
+	useKey('ArrowUp', e=> {e.stopPropagation(); e.preventDefault(); before()});
+
+	function onClick() {
+		if (isLong) {isLong = false; return}
+		if (isDesignMode) return;
+
+		after();
+	}
 
 	const Stage = lazy(()=> import('./Stage'));
 	return <Suspense fallback={<>Loading</>}>
-		<Stage arg={{heStage, sys}} onClick={onClick} />
+		<Stage arg={{heStage, sys}} onClick={onClick}
+		after={after} before={before} />
 	</Suspense>;
 };
 	let idxDummy = 0;
-	// let deltaY_wheel = 0;
 	const gen = generator();
 	// NOTE: TS最新のジェネレーターみたいなので仮組み。詳細なスクリプトアナライザーなどは後に。
 	function* generator(): Generator<T_LAY | T_CHGPIC | T_CHGSTR> {
@@ -109,6 +100,9 @@ console.log(`fn:Main.tsx == next ==`);
 		yield {cls: 'GRP', nm: 'fg0', fn: 'F_1024a'};
 		yield {nm: 'base', fn: 'yun_1317'};
 	}
+
+let isDesignMode = false;	// この形でないとちらつく
+export const setDesignMode = (b: boolean)=> isDesignMode = b;
 
 let isLong = false;
 export function onLong() {isLong = true}

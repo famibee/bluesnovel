@@ -39,7 +39,7 @@ console.log(`fn:Memento.ts = undo key=(${key})`);
 	}
 
 	#aKeyHistory: string[]	= [];
-	#idxHistory	= -1;
+	#idxHistory	= 0;
 	// 前のキーへ移動
 	beforeKey(): boolean {
 console.log(`fn:Memento.ts -- beforeKey --`);

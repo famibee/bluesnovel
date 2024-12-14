@@ -16,9 +16,10 @@ export type T_LAY_CMN = {
     };
 };
 export type T_LAY = T_GRPLAY | T_TXTLAY;
-export default function Stage({ arg: { sys }, onClick }: {
+export default function Stage({ arg: { sys }, onClick, after, before, }: {
     arg: T_ARG;
     onClick: () => void;
+    after: () => void;
+    before: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
-export declare const getDesignMode: () => boolean;
 //# sourceMappingURL=Stage.d.ts.map
