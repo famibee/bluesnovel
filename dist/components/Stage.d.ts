@@ -20,4 +20,5 @@ export default function Stage({ arg: { sys }, onClick }: {
     arg: T_ARG;
     onClick: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
+export declare const getDesignMode: () => boolean;
 //# sourceMappingURL=Stage.d.ts.map

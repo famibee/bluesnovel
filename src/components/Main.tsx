@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import type {SysBase} from '../SysBase';
-import type {T_LAY} from './Stage';
+import {getDesignMode, type T_LAY} from './Stage';
 import {useStore, type T_CHGPIC, type T_CHGSTR} from '../store/store';
 
 import {lazy, Suspense} from 'react';
@@ -58,16 +58,15 @@ function Main({heStage, sys}: T_ARG) {
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
 	function onClick() {
-		if (sys.caretaker.afterKey()) return;
+		if (isLong) {isLong = false; return}
+		if (getDesignMode() || sys.caretaker.afterKey()) return;
 
 console.log(`fn:Main.tsx == next ==`);
 		while (true) {
 			const {done, value: o} = gen.next();
 			if (done) break;
 
-			// const key =
 			sys.caretaker.key = 'main' + ':'+ ++idxDummy;
-// console.log(`fn:Main.tsx == key(${key}) CMD:%o`, o);
 			if ('cls' in o) addLayer(o); else
 			if ('fn' in o) chgPic(o); else chgStr(o);
 			break;
@@ -110,3 +109,6 @@ console.log(`fn:Main.tsx == next ==`);
 		yield {cls: 'GRP', nm: 'fg0', fn: 'F_1024a'};
 		yield {nm: 'base', fn: 'yun_1317'};
 	}
+
+let isLong = false;
+export function onLong() {isLong = true}

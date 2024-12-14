@@ -9,7 +9,7 @@ import type {SysBase} from '../SysBase';
 import {CmnLib, uint} from '../ts/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
-import type {T_ARG} from './Main';
+import {onLong, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
@@ -87,13 +87,13 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 
 	const [isDesignMode, tglDesignMode] = useToggle(false);
 
-	let isLong = false;
 	const longPressEvent = useLongPress(e=> {
 		e.stopPropagation();	// でも止まらない
-		isLong = true;			// これで止める
+		onLong();			// これで止める
+
 		tglDesignMode();
+		$isDesignMode = isDesignMode;
 	}, {isPreventDefault: true, delay: 300,});
-	const onClick2 = ()=> {if (isLong) isLong = false; else onClick()};
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, sty4Moveable: {
 		maxWidth	: 'auto',
@@ -103,7 +103,7 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
 	//
-	return <div css={styParent}  onClick={onClick2} {...longPressEvent}>
+	return <div css={styParent}  onClick={onClick} {...longPressEvent}>
 		{isDesignMode && <>
 			<button onClick={()=> {}} css={styBtn}>Click</button>
 			<button onClick={()=> {}} css={styBtn}>Back</button>
@@ -169,3 +169,6 @@ export default function Stage({arg: {sys}, onClick}: {arg: T_ARG, onClick: ()=> 
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
 	}
+
+let $isDesignMode: boolean = false;
+export const getDesignMode = ()=> $isDesignMode	// この形でないとちらつく

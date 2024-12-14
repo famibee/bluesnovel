@@ -9627,7 +9627,7 @@ function hc({ cmn: { styChild: t, sty4Moveable: r }, str: e }) {
     )
   ] });
 }
-function Dc({ arg: { sys: t }, onClick: r }) {
+function bc({ arg: { sys: t }, onClick: r }) {
   const e = wa((m) => m.aLay), n = wa((m) => m.replace);
   class a extends Ss {
     nm = "Stage";
@@ -9674,9 +9674,9 @@ function Dc({ arg: { sys: t }, onClick: r }) {
 	`, [v, c] = bs(!1);
   let p = !1;
   const d = ys((m) => {
-    m.stopPropagation(), p = !0, c();
+    m.stopPropagation(), p = !0, c(), xc = v;
   }, { isPreventDefault: !0, delay: 300 }), g = () => {
-    p ? p = !1 : r();
+    console.log(`fn:Stage.tsx line:97 isLong:${p}`), p ? p = !1 : r();
   }, h = { cmn: { sys: t, styChild: f, sty4Moveable: {
     maxWidth: "auto",
     maxHeight: "auto",
@@ -9704,7 +9704,9 @@ function xi() {
   const { innerWidth: t, innerHeight: r } = globalThis;
   return { width: t, height: r };
 }
+let xc = !1;
 export {
-  Dc as default
+  bc as default,
+  xc as isDesignMode_
 };
 //# sourceMappingURL=Stage.js.map
