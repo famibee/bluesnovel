@@ -1,4 +1,4 @@
-import { SysBase } from '../SysBase';
+import { SysBase } from './SysBase';
 import { AssetsClass } from '@pixi/assets';
 export declare class ScriptMng {
     #private;

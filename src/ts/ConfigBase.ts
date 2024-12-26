@@ -62,6 +62,44 @@ export type T_CFG = {
 	debuger_token	: string,	// デバッガとの接続トークン
 }
 
+export	const DEF_CFG: T_CFG = {
+	save_ns		: '',		// 扱うセーブデータを一意に識別するキーワード文字列
+	window	: {		// アプリケーションウインドウサイズ
+		width	: 300,
+		height	: 300,
+	},
+	book	: {		// プロジェクトの詳細情報です
+		title		: '',	//作品タイトル
+		creator		: '',	//著作者。同人ならペンネーム
+		cre_url		: '',	//著作者URL。ツイッターやメール、サイトなど
+		publisher	: '',	//出版社。同人ならサークル名
+		pub_url		: '',	//出版社URL。無ければ省略します
+		detail		: '',	// 内容紹介。端的に記入
+		version		: '1.0',
+	},
+	log		: {max_len: 64},	// プレイヤーが読んだ文章を読み返せる履歴のページ数
+	init	: {
+		bg_color			: '#000000',	// 背景色
+		tagch_msecwait		: 10,		// 通常文字表示待ち時間（未読／既読）
+		auto_msecpagewait	: 3500,		// 自動文字表示、行クリック待ち時間（未読／既読）
+		escape				: '',		// エスケープ文字
+	},
+	debug	: {
+		devtool		: false,
+		token		: false,
+		tag			: false,
+		putCh		: false,
+		debugLog	: false,
+		baseTx		: false,
+		masume		: false,	// テキストレイヤ：ガイドマス目を表示するか
+		variable	: false,
+		dumpHtm	: false,
+	},
+	code	: {},	// 暗号化しないフォルダ
+	debuger_token	: '',		// デバッガとの接続トークン
+};
+
+
 
 export interface IExts { [ext: string]: string; };
 export interface IFn2Path { [fn: string]: IExts; };
@@ -75,13 +113,13 @@ export interface IConfig {
 	addPath(fn: string, h_exts: IExts): void;
 }
 
-
 export interface ISysRoots {
-	// loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
+	loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
 	dec(ext: string, tx: string): Promise<string>;
 	// decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
 
 	arg: HSysBaseArg;
+	fetch(url: string): Promise<Response>;	// ハッシュ値作成ロード用
 	hash(str: string): string;
 }
 export type HSysBaseArg = {
@@ -92,48 +130,13 @@ export type HSysBaseArg = {
 
 
 export class ConfigBase implements IConfig {
-	oCfg: T_CFG = {
-		save_ns		: '',		// 扱うセーブデータを一意に識別するキーワード文字列
-		window	: {		// アプリケーションウインドウサイズ
-			width	: 300,
-			height	: 300,
-		},
-		book	: {		// プロジェクトの詳細情報です
-			title		: '',	//作品タイトル
-			creator		: '',	//著作者。同人ならペンネーム
-			cre_url		: '',	//著作者URL。ツイッターやメール、サイトなど
-			publisher	: '',	//出版社。同人ならサークル名
-			pub_url		: '',	//出版社URL。無ければ省略します
-			detail		: '',	// 内容紹介。端的に記入
-			version		: '1.0',
-		},
-		log		: {max_len: 64},	// プレイヤーが読んだ文章を読み返せる履歴のページ数
-		init	: {
-			bg_color			: '#000000',	// 背景色
-			tagch_msecwait		: 10,		// 通常文字表示待ち時間（未読／既読）
-			auto_msecpagewait	: 3500,		// 自動文字表示、行クリック待ち時間（未読／既読）
-			escape				: '',		// エスケープ文字
-		},
-		debug	: {
-			devtool		: false,
-			token		: false,
-			tag			: false,
-			putCh		: false,
-			debugLog	: false,
-			baseTx		: false,
-			masume		: false,	// テキストレイヤ：ガイドマス目を表示するか
-			variable	: false,
-			dumpHtm	: false,
-		},
-		code	: {},	// 暗号化しないフォルダ
-		debuger_token	: '',		// デバッガとの接続トークン
-	};
+	oCfg	= DEF_CFG;
 
 	userFnTail		= '';	// 4tst public
 	protected	hPathFn2Exts	: IFn2Path	= {};
 
 	protected	constructor(readonly sys: ISysRoots) {}
-	async load(oCfg: any) {
+	protected	async load(oCfg: T_CFG) {
 		// this.oCfg = {...this.oCfg, ...oCfg};	// 一階層目でコピーしてしまう
 		this.oCfg.save_ns = oCfg?.save_ns ?? this.oCfg.save_ns;
 
@@ -142,7 +145,7 @@ export class ConfigBase implements IConfig {
 
 		this.oCfg.book = {...this.oCfg.book, ...oCfg.book};
 
-		this.oCfg.log.max_len = oCfg.log?.max_len?.max_len ?? this.oCfg.log.max_len;
+		this.oCfg.log.max_len = oCfg.log?.max_len ?? this.oCfg.log.max_len;
 
 		this.oCfg.init = {...this.oCfg.init, ...oCfg.init};
 
@@ -153,19 +156,7 @@ export class ConfigBase implements IConfig {
 		// これが同期（App）非同期（Web、path.json）混在してるので、
 		// （Mainのメンバ変数に入れる→他のクラスに渡す都合により）
 		// 当クラスのコンストラクタとload()は分ける
-		// await this.sys.loadPath(this.hPathFn2Exts, this);
-		const path = this.sys.arg.cur +'path.json';
-		const res = await fetch(path);
-		if (! res.ok) throw Error(res.statusText);
-
-		const src = await res.text();
-		const oJs = JSON.parse(await this.sys.dec(path, src));
-		for (const [nm, v] of Object.entries(oJs)) {
-			const h = this.hPathFn2Exts[nm] = <any>v;
-			for (const [ext, w] of Object.entries(h)) {
-				if (ext !== ':cnt') h[ext] = this.sys.arg.cur + w;
-			}
-		}
+		await this.sys.loadPath(this.hPathFn2Exts, this);
 
 		this.#existsBreakline = this.matchPath('^breakline$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
 		this.#existsBreakpage = this.matchPath('^breakpage$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
@@ -189,7 +180,7 @@ export class ConfigBase implements IConfig {
 				if (! ext.endsWith(':id')) continue;
 				const hp = v.slice(v.lastIndexOf('/') +1);
 				const fn = hExts[ext.slice(0, -10)] ?? '';
-				const res = await fetch(fn);
+				const res = await this.sys.fetch(fn);
 				const src = await res.text();
 				const hf = this.sys.hash(src);
 				if (hp !== hf) throw `ファイル改竄エラーです fn:${fn}`;

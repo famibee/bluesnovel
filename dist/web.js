@@ -1,4 +1,4 @@
-import { d as r } from "./web2.js";
+import { w as r } from "./web2.js";
 export {
   r as SysWeb
 };

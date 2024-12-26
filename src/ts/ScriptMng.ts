@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {SysBase} from '../SysBase';
+import {SysBase} from './SysBase';
 import {SEARCH_PATH_ARG_EXT} from './ConfigBase';
 import {Grammar} from './Grammar';
 

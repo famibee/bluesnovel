@@ -1,4 +1,4 @@
-import { r as Gv } from "./Main.js";
+import { r as Gv } from "./web2.js";
 function hb(w, Pe) {
   for (var xe = 0; xe < Pe.length; xe++) {
     const z = Pe[xe];

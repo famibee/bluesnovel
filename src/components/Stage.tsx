@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../SysBase';
+import type {SysBase} from '../ts/SysBase';
 import {CmnLib, uint} from '../ts/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
@@ -13,8 +13,8 @@ import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {useRef, useState} from 'react';
-import {useLongPress, useMount, useToggle} from 'react-use';
+import {RefObject, useRef, useState} from 'react';
+import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 
 export type T_LAY_IDX = {
@@ -92,7 +92,8 @@ export default function Stage({
 	`;
 
 	// useMouseWheel だと preventDefault() できないので手作り
-	const divRef = useRef<HTMLDivElement>(null);
+	const divRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
+	// const divRef = useRef<HTMLDivElement>(null);
 	useMount(()=> {
 		const div = divRef.current!;
 		div.addEventListener('mousedown', ()=> isDrag = false);
@@ -116,6 +117,9 @@ export default function Stage({
 		setDesignMode(! isDesignMode);	// React のくせで取れないので
 	}, {isPreventDefault: true, delay: 300,});
 
+	const [show, tglFlScr] = useToggle(false);
+	const isFullscreen = useFullscreen(divRef, show, {onClose: ()=> tglFlScr(false)});
+
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
@@ -125,10 +129,11 @@ export default function Stage({
 	}}};
 	return <div css={styParent} onClick={onClick} {...longPressEvent} ref={divRef}>
 		{isDesignMode && <>
-			<button onClick={()=> {}} css={styBtn}>Click</button>
+			<button onClick={()=> tglFlScr()} css={styBtn}>FullScr</button>
 			<button onClick={()=> {}} css={styBtn}>Back</button>
 			<button onClick={()=> {}} css={styBtn}>Prev</button>
 		</>}
+		{<span>{isFullscreen}</span>}
 		{aLay.map(l=> l.cls === 'GRP'
 			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
 			: <TxtLayer key={l.nm} cmn={c.cmn} str={l.str}/>)}

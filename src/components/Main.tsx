@@ -5,8 +5,8 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../SysBase';
-import {type T_LAY} from './Stage';
+import type {SysBase} from '../ts/SysBase';
+import type {T_LAY} from './Stage';
 import {useStore, type T_CHGPIC, type T_CHGSTR} from '../store/store';
 
 import {lazy, Suspense} from 'react';
@@ -36,7 +36,7 @@ export async function opening({heStage, sys}: T_ARG) {
 			},
 			test: (url: string)=> url.endsWith('.sn'),
 			load: (url: string)=> new Promise(async (re, rj)=> {
-				const res = await fetch(url);
+				const res = await sys.fetch(url);
 				if (! res.ok) {rj(`sn-loader fetch err:`+ res.statusText); return}
 	
 				try {
@@ -44,6 +44,8 @@ export async function opening({heStage, sys}: T_ARG) {
 				} catch (e) {rj(`sn-loader err url:${url} ${e}`)}
 			}),
 		});
+
+
 
 		const scrMng = new ScriptMng(sys, Assets);
 		await scrMng.load('main');

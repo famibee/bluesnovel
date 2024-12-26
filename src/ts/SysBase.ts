@@ -1,14 +1,14 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2018-2024 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, ISysBase} from './CmnInterface';
-import {Config} from './ts/Config';
-import type {IConfig, ISysRoots} from './ts/ConfigBase';
-import {Caretaker} from './ts/Memento';
+import type {HPlugin, ISysBase, T_SysBaseLoadedParams} from './CmnInterface';
+import {Config} from './Config';
+import type {IConfig, IFn2Path, ISysRoots} from './ConfigBase';
+import {Caretaker} from './Memento';
 
 
 // React Developer Toolsのインストールを推されるコンソールメッセージを消す
@@ -23,9 +23,20 @@ type HSysBaseArg = {
 
 export class SysBase implements ISysRoots, ISysBase {
 	constructor(readonly hPlg: HPlugin = {}, readonly arg: HSysBaseArg) {}
+	protected async loaded(...[_hPlg,]: T_SysBaseLoadedParams) {
+		return Promise.resolve();
+	}
+	fetch = (url: string, init?: RequestInit)=> fetch(url, init);
 
 	readonly	#ct	= new Caretaker;
 	get caretaker() {return this.#ct}
+
+
+	cfg: IConfig;
+	async loadPath(_hPathFn2Exts: IFn2Path, cfg: IConfig) {this.cfg = cfg}
+
+
+	protected async run() {}
 
 
 	protected	async init() {
@@ -48,10 +59,9 @@ export class SysBase implements ISysRoots, ISysBase {
 			clone_cvs.id = SN_ID;
 		}
 		else document.body.insertAdjacentHTML('afterbegin', `<div id="${SN_ID}"></div>`);
-		const {opening} = await import('./components/Main');
+		const {opening} = await import('../components/Main');
 		await opening({heStage: document.getElementById(SN_ID)!, sys: this});
 	}
-		cfg		: IConfig;
 
 
 	protected $path_downloads	= '';

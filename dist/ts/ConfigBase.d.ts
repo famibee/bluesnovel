@@ -53,6 +53,7 @@ export type T_CFG = {
     };
     debuger_token: string;
 };
+export declare const DEF_CFG: T_CFG;
 export interface IExts {
     [ext: string]: string;
 }
@@ -68,8 +69,10 @@ export interface IConfig {
     addPath(fn: string, h_exts: IExts): void;
 }
 export interface ISysRoots {
+    loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
     dec(ext: string, tx: string): Promise<string>;
     arg: HSysBaseArg;
+    fetch(url: string): Promise<Response>;
     hash(str: string): string;
 }
 export type HSysBaseArg = {
@@ -84,7 +87,7 @@ export declare class ConfigBase implements IConfig {
     userFnTail: string;
     protected hPathFn2Exts: IFn2Path;
     protected constructor(sys: ISysRoots);
-    load(oCfg: any): Promise<void>;
+    protected load(oCfg: T_CFG): Promise<void>;
     get existsBreakline(): boolean;
     get existsBreakpage(): boolean;
     getNs(): string;

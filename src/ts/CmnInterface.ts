@@ -5,8 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {T_SEARCHPATH} from './ts/ConfigBase';
-import {HArg, ITag} from './ts/Grammar';
+import type {HArg, ITag} from './Grammar';
 
 export interface IMyTrace {
 	(txt: string, lvl?: string, fnline?: boolean, adjust_line?: number): void;
@@ -32,6 +31,7 @@ export type T_PLUGIN_INFO = {
 		height	: number;
 	},
 }
+import type {T_SEARCHPATH} from './ConfigBase';
 export type IPluginInitArg = {
 	getInfo(): void;
 	addTag(tag_name: string, tag_fnc: boolean): void;
@@ -68,6 +68,15 @@ export type HSysBaseArg = {
 	crypto	: boolean;
 	dip		: string;
 }
+export type T_SysBaseParams = [
+	hPlg	: HPlugin,
+	arg?	: HSysBaseArg,
+];
+export type T_SysBaseLoadedParams = [
+	hPlg	: HPlugin,
+	arg		: HSysBaseArg,
+];
+
 
 export type SYS_DEC_RET = HTMLImageElement | HTMLVideoElement | ArrayBuffer;
 export interface ISysBase {

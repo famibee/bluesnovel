@@ -1,5 +1,5 @@
-import { T_SEARCHPATH } from './ts/ConfigBase';
-import { HArg, ITag } from './ts/Grammar';
+import { HArg, ITag } from './Grammar';
+import { T_SEARCHPATH } from './ConfigBase';
 export interface IMyTrace {
     (txt: string, lvl?: string, fnline?: boolean, adjust_line?: number): void;
 }
@@ -45,8 +45,14 @@ export type HSysBaseArg = {
     crypto: boolean;
     dip: string;
 };
-export type T_fncSysBaseInit = (hPlg: HPlugin, arg: HSysBaseArg) => Promise<void>;
-export type T_fncSysBaseInitParams = Parameters<T_fncSysBaseInit>;
+export type T_SysBaseParams = [
+    hPlg: HPlugin,
+    arg?: HSysBaseArg
+];
+export type T_SysBaseLoadedParams = [
+    hPlg: HPlugin,
+    arg: HSysBaseArg
+];
 export type SYS_DEC_RET = HTMLImageElement | HTMLVideoElement | ArrayBuffer;
 export interface ISysBase {
     dec(ext: string, tx: string): Promise<string>;

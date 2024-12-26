@@ -1,4 +1,4 @@
-import { SysBase } from '../SysBase';
+import { SysBase } from '../ts/SysBase';
 export type T_ARG = {
     heStage: HTMLElement;
     sys: SysBase;
