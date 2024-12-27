@@ -12,12 +12,12 @@ export declare class SysBase implements ISysRoots, ISysBase {
     readonly arg: HSysBaseArg;
     constructor(hPlg: HPlugin | undefined, arg: HSysBaseArg);
     protected loaded(...[_hPlg,]: T_SysBaseLoadedParams): Promise<void>;
+    load: (_url: string) => Promise<string>;
     fetch: (url: string, init?: RequestInit) => Promise<Response>;
     get caretaker(): Caretaker;
     cfg: IConfig;
-    loadPath(_hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
+    loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
     protected run(): Promise<void>;
-    protected init(): Promise<void>;
     protected $path_downloads: string;
     get path_downloads(): string;
     protected $path_userdata: string;

@@ -34,10 +34,9 @@ export type T_LAY = T_GRPLAY | T_TXTLAY;
 
 
 export default function Stage({
-	arg: {sys}, onClick, after, before,
+	arg: {sys}, onClick, prev, next,
 }: {
-	arg: T_ARG, onClick: ()=> void,
-	after: ()=> void, before: ()=> void,
+	arg: T_ARG, onClick: ()=> void, prev: ()=> void, next: ()=> void,
 }) {
 // console.log(`fn:Stage.tsx 0`);
 	const aLay = useStore(s=> s.aLay);
@@ -100,7 +99,7 @@ export default function Stage({
 
 		const fnc = (e: WheelEvent)=> {
 			e.preventDefault();
-			if (e.deltaY < 0) after(); else before();
+			if (e.deltaY < 0) next(); else prev();
 		}
 		div.addEventListener('wheel', fnc, {passive: false});
 		return ()=> div.removeEventListener('wheel', fnc);

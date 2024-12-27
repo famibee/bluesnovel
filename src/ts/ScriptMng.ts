@@ -9,18 +9,16 @@ import {SysBase} from './SysBase';
 import {SEARCH_PATH_ARG_EXT} from './ConfigBase';
 import {Grammar} from './Grammar';
 
-import type {AssetsClass} from '@pixi/assets';
-
 
 export class ScriptMng {
-	constructor(private readonly sys: SysBase, private readonly Assets: AssetsClass) {
+	constructor(private readonly sys: SysBase) {
 		this.#grm = new Grammar(sys.cfg);
 	}
 		readonly	#grm;
 
 	async load(fn: string) {
 		const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
-		const txt = await this.Assets.load(path);
+		const txt = await this.sys.load(path);
 		const scr = this.#grm.resolveScript(txt);
 console.log(`fn:ScriptMng.ts line:34 1=${scr.aToken[1]}`);
 

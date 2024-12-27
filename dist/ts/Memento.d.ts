@@ -6,11 +6,11 @@ export declare abstract class BaseMemento {
 }
 export declare class Caretaker {
     #private;
-    set key(key: string);
-    update(genMeMe: () => BaseMemento): void;
+    push(key: string): void;
+    update(_genMeMe: () => BaseMemento): void;
     undo(key: string): void;
-    beforeKey(): boolean;
-    afterKey(): boolean;
+    prevKey(): boolean;
+    nextKey(): boolean;
     isLast(): boolean;
 }
 //# sourceMappingURL=Memento.d.ts.map

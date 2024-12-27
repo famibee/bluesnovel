@@ -6,7 +6,6 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import type {HPlugin, ISysBase, T_SysBaseLoadedParams} from './CmnInterface';
-import {Config} from './Config';
 import type {IConfig, IFn2Path, ISysRoots} from './ConfigBase';
 import {Caretaker} from './Memento';
 
@@ -20,12 +19,84 @@ type HSysBaseArg = {
 	dip		: string;
 }
 
+const	SN_ID	= 'skynovel';
+
 
 export class SysBase implements ISysRoots, ISysBase {
 	constructor(readonly hPlg: HPlugin = {}, readonly arg: HSysBaseArg) {}
 	protected async loaded(...[_hPlg,]: T_SysBaseLoadedParams) {
-		return Promise.resolve();
+		document.head.insertAdjacentHTML('beforeend',
+`<style type="text/css">
+	body {
+		background-color: black;
 	}
+	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
+</style>`);
+
+		Promise.all([
+			import('react-dom/client'),
+			import('../components/Main'),
+			import('./Config'),
+		]).then(async ([{createRoot}, {initMain, start}, {Config}])=> {
+			const runSub: ()=> Promise<HTMLDivElement> = async ()=> {
+				const cfg = await Config.generate(this);
+				document.body.style.backgroundColor = cfg.oCfg.init.bg_color;
+
+				let e = <HTMLDivElement>document.getElementById(SN_ID);
+				if (e) {
+					const clone_cvs = <HTMLDivElement>e.cloneNode(true);
+					clone_cvs.id = SN_ID;
+				}
+				else {	// 自動的に作ってくれるが、どうも appendChild に遅延があるので
+					e = document.createElement('div');
+					e.id = SN_ID;
+					document.body.appendChild(e);
+				}
+				return e;
+			}
+			const heStage = await runSub();
+			initMain(createRoot(heStage), {heStage, sys: this});	// React 初期表示
+
+			Promise.all([
+				import('@pixi/assets'),
+				import('@pixi/extensions'),
+				import('../ts/ScriptMng'),
+			]).then(async ([{Assets}, {extensions, ExtensionType}, {ScriptMng}])=> {
+				await Assets.init({basePath: location.origin});
+				extensions.add({
+					extension: {
+						type: ExtensionType.LoadParser,
+						name: 'sn-loader',
+						//priority: LoaderParserPriority.High,
+					},
+					test: (url: string)=> url.endsWith('.sn'),
+					load: (url: string)=> new Promise(async (re, rj)=> {
+						const res = await this.fetch(url);
+						if (! res.ok) {rj(`sn-loader fetch err:`+ res.statusText); return}
+
+						try {
+							re(await this.dec('sn', await res.text()));
+						} catch (e) {rj(`sn-loader err url:${url} ${e}`)}
+					}),
+				});
+				this.load = url=> Assets.load(url);
+
+				const scrMng = new ScriptMng(this);
+				await start(scrMng);	// SKYNovel 開始
+				// this.run = async ()=> {
+				// 	const heStage = await runSub();
+				// 	initMain(createRoot(heStage), {heStage, sys: this});
+
+				// 	const scrMng = new ScriptMng(this);
+				// 	await start(scrMng);
+				// };
+			});
+		});
+	}
+	load = async (_url: string)=> '';
+
 	fetch = (url: string, init?: RequestInit)=> fetch(url, init);
 
 	readonly	#ct	= new Caretaker;
@@ -33,35 +104,25 @@ export class SysBase implements ISysRoots, ISysBase {
 
 
 	cfg: IConfig;
-	async loadPath(_hPathFn2Exts: IFn2Path, cfg: IConfig) {this.cfg = cfg}
+	async loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig) {
+		this.cfg = cfg;
+
+		const fn = this.arg.cur +'path.json';
+		const res = await this.fetch(fn);
+		if (! res.ok) throw Error(res.statusText);
+
+		const src = await res.text();
+		const oJs = JSON.parse(await this.dec(fn, src));
+		for (const [nm, v] of Object.entries(oJs)) {
+			const h = hPathFn2Exts[nm] = <any>v;
+			for (const [ext, w] of Object.entries(h)) {
+				if (ext !== ':cnt') h[ext] = this.arg.cur + w;
+			}
+		}
+	}
 
 
 	protected async run() {}
-
-
-	protected	async init() {
-		this.cfg = await Config.generate(this);
-
-		document.head.insertAdjacentHTML('beforeend',
-`<style type="text/css">
-	body {
-		background-color: ${this.cfg.oCfg.init.bg_color};
-	}
-	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-</style>`);
-
-		const SN_ID = 'skynovel';
-		const cvs = <HTMLCanvasElement>document.getElementById(SN_ID);
-		if (cvs) {
-			const clone_cvs = <HTMLCanvasElement>cvs.cloneNode(true);
-			clone_cvs.id = SN_ID;
-		}
-		else document.body.insertAdjacentHTML('afterbegin', `<div id="${SN_ID}"></div>`);
-		const {opening} = await import('../components/Main');
-		await opening({heStage: document.getElementById(SN_ID)!, sys: this});
-	}
 
 
 	protected $path_downloads	= '';

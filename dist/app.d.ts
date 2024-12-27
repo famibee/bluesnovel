@@ -1,5 +1,4 @@
-import { HPlugin, IPlugin, IPluginInitArg } from './CmnInterface';
-import { T_SysBaseParams } from './ts/CmnInterface';
+import { HPlugin, IPlugin, IPluginInitArg, T_SysBaseParams } from './ts/CmnInterface';
 export type { HPlugin, IPlugin, IPluginInitArg };
 export declare class SysApp {
     constructor(...[hPlg, arg]: T_SysBaseParams);

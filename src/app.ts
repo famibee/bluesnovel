@@ -5,10 +5,10 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './ts/CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 
-import {T_SysBaseParams} from './ts/CmnInterface';
+import type {T_SysBaseParams} from './ts/CmnInterface';
 
 export class SysApp {
 	constructor(...[hPlg = {}, arg = {cur: 'prj/', crypto: false, dip: ''}]: T_SysBaseParams) {	// DOMContentLoaded は呼び出し側でやる

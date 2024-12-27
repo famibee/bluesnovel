@@ -17,11 +17,11 @@ export type T_LAY_CMN = {
     };
 };
 export type T_LAY = T_GRPLAY | T_TXTLAY;
-export default function Stage({ arg: { sys }, onClick, after, before, }: {
+export default function Stage({ arg: { sys }, onClick, prev, next, }: {
     arg: T_ARG;
     onClick: () => void;
-    after: () => void;
-    before: () => void;
+    prev: () => void;
+    next: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
 export declare const noticeDrag: () => void;
 //# sourceMappingURL=Stage.d.ts.map

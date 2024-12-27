@@ -15,14 +15,20 @@ export abstract class BaseMemento {
 
 export class Caretaker {
 	#key = '';
-	set key(key: string) {
-		this.#key = key;
-		this.#idxHistory = this.#aKeyHistory.push(key) -1;
-		this.#hScr2AState[key] = {};
+	push(key: string) {
+		this.update = this.#update;
+
+		this.push = (key: string)=> {
+			this.#key = key;
+			this.#idxHistory = this.#aKeyHistory.push(key) -1;
+			this.#hScr2AState[key] = {};
+		};
+		this.push(key);
 	}
 
 	#hScr2AState: {[key: string]: {[nm: string]: BaseMemento}}	= {};
-	update(genMeMe: ()=> BaseMemento) {
+	update(_genMeMe: ()=> BaseMemento) {return}
+	#update(genMeMe: ()=> BaseMemento) {
 		if (this.#idxHistory < this.#aKeyHistory.length -1) return;
 
 		const m = genMeMe();
@@ -41,7 +47,7 @@ console.log(`fn:Memento.ts = undo key=(${key})`);
 	#aKeyHistory: string[]	= [];
 	#idxHistory	= 0;
 	// 前のキーへ移動
-	beforeKey(): boolean {
+	prevKey(): boolean {
 console.log(`fn:Memento.ts -- beforeKey --`);
 		if (this.#idxHistory <= 0) return false;
 
@@ -49,7 +55,7 @@ console.log(`fn:Memento.ts -- beforeKey --`);
 		return true;
 	}
 	// 後のキーへ移動
-	afterKey(): boolean {
+	nextKey(): boolean {
 console.log(`fn:Memento.ts -- afterKey --`);
 		if (this.#aKeyHistory.length -1 <= this.#idxHistory) return false;
 

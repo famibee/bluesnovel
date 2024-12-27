@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './ts/CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 import {HINFO, TAG_WINDOW} from './preload';
 import {T_CFG} from './ts/ConfigBase';

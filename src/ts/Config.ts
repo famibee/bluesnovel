@@ -7,7 +7,7 @@
 
 import {CmnLib} from './CmnLib';
 import type {SysBase} from './SysBase';
-import {ConfigBase, SEARCH_PATH_ARG_EXT, T_CFG} from './ConfigBase';
+import {ConfigBase, SEARCH_PATH_ARG_EXT, type T_CFG} from './ConfigBase';
 
 
 export class Config extends ConfigBase {
