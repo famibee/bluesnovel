@@ -17,6 +17,7 @@ export type T_CHGSTR = {
     nm: string;
     str: string;
 };
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgStr'>>;
 export declare const useStore: import('zustand').UseBoundStore<import('zustand').StoreApi<T_STATE>>;
 export {};
 //# sourceMappingURL=store.d.ts.map

@@ -39,31 +39,29 @@ export class SysBase implements ISysRoots, ISysBase {
 			import('react-dom/client'),
 			import('../components/Main'),
 			import('./Config'),
-		]).then(async ([{createRoot}, {initMain, start}, {Config}])=> {
-			const runSub: ()=> Promise<HTMLDivElement> = async ()=> {
-				const cfg = await Config.generate(this);
-				document.body.style.backgroundColor = cfg.oCfg.init.bg_color;
+			import('./ScriptMng'),
+		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}])=> {
+			// React 初期表示
+			const {oCfg} = await Config.generate(this);
+			document.body.style.backgroundColor = oCfg.init.bg_color;
 
-				let e = <HTMLDivElement>document.getElementById(SN_ID);
-				if (e) {
-					const clone_cvs = <HTMLDivElement>e.cloneNode(true);
-					clone_cvs.id = SN_ID;
-				}
-				else {	// 自動的に作ってくれるが、どうも appendChild に遅延があるので
-					e = document.createElement('div');
-					e.id = SN_ID;
-					document.body.appendChild(e);
-				}
-				return e;
+			let he = <HTMLDivElement>document.getElementById(SN_ID);
+			if (he) {
+				const clone_cvs = <HTMLDivElement>he.cloneNode(true);
+				clone_cvs.id = SN_ID;
 			}
-			const heStage = await runSub();
-			initMain(createRoot(heStage), {heStage, sys: this});	// React 初期表示
+			else {	// 自動的に作ってくれるが、どうも appendChild に遅延があるので
+				he = document.createElement('div');
+				he.id = SN_ID;
+				document.body.appendChild(he);
+			}
+			const scrMng = new ScriptMng(this);
+			initMain(createRoot(he), {heStage: he, sys: this, scrMng});
 
 			Promise.all([
 				import('@pixi/assets'),
 				import('@pixi/extensions'),
-				import('../ts/ScriptMng'),
-			]).then(async ([{Assets}, {extensions, ExtensionType}, {ScriptMng}])=> {
+			]).then(async ([{Assets}, {extensions, ExtensionType}])=> {
 				await Assets.init({basePath: location.origin});
 				extensions.add({
 					extension: {
@@ -83,8 +81,7 @@ export class SysBase implements ISysRoots, ISysBase {
 				});
 				this.load = url=> Assets.load(url);
 
-				const scrMng = new ScriptMng(this);
-				await start(scrMng);	// SKYNovel 開始
+				await scrMng.load('main');	// SKYNovel 開始
 				// this.run = async ()=> {
 				// 	const heStage = await runSub();
 				// 	initMain(createRoot(heStage), {heStage, sys: this});

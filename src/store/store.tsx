@@ -29,6 +29,8 @@ export type T_CHGSTR = {
 	str	: string;
 }
 
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'>>;
+
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 	txt		: '',
