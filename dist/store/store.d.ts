@@ -8,6 +8,8 @@ type T_STATE = {
     addLayer: (arg: T_LAY) => void;
     chgPic: (arg: T_CHGPIC) => void;
     chgStr: (arg: T_CHGSTR) => void;
+    title: string;
+    addTitle: (t: string) => void;
 };
 export type T_CHGPIC = {
     nm: string;
@@ -17,7 +19,7 @@ export type T_CHGSTR = {
     nm: string;
     str: string;
 };
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgStr'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgStr' | 'addTitle'>>;
 export declare const useStore: import('zustand').UseBoundStore<import('zustand').StoreApi<T_STATE>>;
 export {};
 //# sourceMappingURL=store.d.ts.map

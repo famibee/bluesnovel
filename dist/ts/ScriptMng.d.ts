@@ -12,7 +12,6 @@ export declare class ScriptMng {
     load(fn: string): Promise<void>;
     go(): void;
     readonly myTrace: T_TRACE;
-    dumpErrForeLine(): void;
 }
 export {};
 //# sourceMappingURL=ScriptMng.d.ts.map

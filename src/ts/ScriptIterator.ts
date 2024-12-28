@@ -5,20 +5,21 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
+import type {SysBase} from './SysBase';
+import {SEARCH_PATH_ARG_EXT} from './ConfigBase';
+import {Grammar} from './Grammar';
+import type {Script} from './Grammar';
+import {RubySpliter} from './RubySpliter';
+
 // import {argChk_Boolean, getFn, CmnLib, argChk_Num} from './CmnLib';
-// import type {IHTag, HArg, Script} from './Grammar';
 // import type {IMain, IVariable, IMark, IPropParser} from './CmnInterface';
 // import type {Config} from './Config';
 // import {CallStack, type ICallStackArg} from './CallStack';
-// import {Grammar, tagToken2Name_Args, tagToken2Name} from './Grammar';
 // import {AnalyzeTagArg} from './AnalyzeTagArg';
-// import {RubySpliter} from './RubySpliter';
 // import type {EventMng} from './EventMng';
 // import type {LayerMng} from './LayerMng';
 // import {DebugMng} from './DebugMng';
 // import type {SoundMng} from './SoundMng';
-// import type {SysBase} from './SysBase';
-// import {SEARCH_PATH_ARG_EXT} from './ConfigBase';
 // import {disableEvent, enableEvent} from './ReadState';
 // import {CmnTween} from './CmnTween';
 
@@ -44,28 +45,102 @@
 
 
 export class ScriptIterator {
-	// #script		: Script	= {aToken: [''], len: 1, aLNum: [1]};
+	#script		: Script	= {aToken: [''], len: 1, aLNum: [1]};
 
-	// #scriptFn	= '';
+	#scriptFn	= '';
 	// get scriptFn() {return this.#scriptFn}
-	// #idxToken	= 0;
-	// subIdxToken() {--this.#idxToken}
-	// #lineNum	= 0;
-	// get lineNum() {return this.#lineNum}
-	// readonly addLineNum	= (len: number)=> this.#lineNum += len;
+	#idxToken	= 0;
+	addIdxToken() {++this.#idxToken}
+	subIdxToken() {--this.#idxToken}
+	#lineNum	= 0;
+	get lineNum() {return this.#lineNum}
+	readonly addLineNum	= (len: number)=> this.#lineNum += len;
 	// jumpJustBefore() {this.#jumpWork(this.#scriptFn, '', --this.#idxToken)}
 	// 	// 直前にジャンプ
 
 
+	readonly	#grm;
+	// readonly	#alzTagArg	= new AnalyzeTagArg;
+	async load(fn: string): Promise<ArrayIterator<string>> {
+		this.#scriptFn = fn;
+		const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
+		const txt = await this.sys.load(path);
+		this.#script = this.#grm.resolveScript(txt);
+
+		this.#idxToken = 0;	//TODO: idx jump
+		this.#lineNum = 1;
+
+		return this.#script.aToken.slice(this.#idxToken).values();
+	}
+
+
+	strPos = ()=> this.#lineNum > 0
+		? `(fn:${this.#scriptFn} line:${this.#lineNum}) `
+		: '';
+
+
+	#dumpErrLine = 5;	//TODO: 
+	dumpErrForeLine() {
+		if (this.#idxToken === 0) {
+			console.group(`🥟 Error line (from 0 rows before) fn:${this.#scriptFn}`);
+			console.groupEnd();
+			return;
+		}
+
+		let s = '';
+		for (let i=this.#idxToken -1; i>=0; --i) {
+			s = this.#script.aToken[i] + s;
+			if ((s.match(/\n/g) ?? []).length >= this.#dumpErrLine) break;
+		}
+		const a = s.split('\n').slice(-this.#dumpErrLine);
+		const len = a.length;
+		console.group(`🥟 Error line (from ${len} rows before) fn:${this.#scriptFn}`);
+		const ln_txt_width = String(this.#lineNum).length;
+		const lc = this.#cnvIdx2lineCol(this.#script, this.#idxToken);
+		for (let i=0; i<len; ++i) {
+			const ln = this.#lineNum -len +i +1;
+			const mes = `${String(ln).padStart(ln_txt_width, ' ')}: %c`;
+			const e = a[i]!;
+			const line = (e.length > 75) ?e.slice(0, 75) +'…' :e;	// 長い場合は後略
+			if (i === len -1) console.info(
+				mes + line.slice(0, lc.col_s) +'%c'+ line.slice(lc.col_s),
+				'color: black; background-color: skyblue;', 'color: black; background-color: pink;'
+			)
+			else console.info(mes + line, 'color: black; background-color: skyblue;');
+		}
+		console.groupEnd();
+		//console.log('Linkの出力   : %o', 'file:///Volumes/MacHD2/_Famibee/SKYNovel/prj/mat/main.sn');
+	}
+		#cnvIdx2lineCol(st: Script, idx: number): {ln: number, col_s: number, col_e: number} {
+			const ret = {ln: 1, col_s: 0, col_e: 0};
+			if (! st) return ret;
+
+			let i = idx -1;
+			const lN = ret.ln = st.aLNum[i]!;
+			while (st.aLNum[i] === lN) {
+				if (! st.aToken[i]!.startsWith('\n')) {
+					const len = st.aToken[i]!.length;
+// console.log(`fn:ScriptMng.ts line:269 cnvIdx2lineCol tkn:${st.aToken[i]} len:${len} s:${ret.col_s} e:${ret.col_e}`);
+					if (ret.col_e > 0) ret.col_s += len;
+					ret.col_e += len;
+				}
+				if (--i < 0) break;
+			}
+
+			return ret;
+		}
+
+
+
+	
 	// #aCallStk	: CallStack[]	= [];	// FILOバッファ（push/pop）
 
-	// readonly	#grm;
-	// readonly	#alzTagArg	= new AnalyzeTagArg;
 
 
 	//MARK: コンストラクタ
-	constructor() {
-	// constructor(private readonly cfg: Config, private readonly hTag: IHTag, private readonly main: IMain, private readonly val: IVariable, private readonly prpPrs: IPropParser, private readonly sndMng: SoundMng, private readonly sys: SysBase) {
+	constructor(private readonly sys: SysBase) {
+
+	// constructor(private readonly cfg: Config, private readonly hTag: IHTag, private readonly main: IMain, private readonly val: IVariable, private readonly prpPrs: IPropParser, private readonly sndMng: SoundMng, ) {
 // 		// 変数操作
 // 		hTag.let_ml		= o=> this.#let_ml(o);	// インラインテキスト代入
 // 		hTag.endlet_ml	= ()=> false;			// インラインテキスト代入終端
@@ -109,11 +184,11 @@ export class ScriptIterator {
 // 		val.defTmp('const.sn.aIfStk.length', ()=> this.#aIfStk.length);
 // 		val.defTmp('const.sn.vctCallStk.length', ()=> this.#aCallStk.length);
 
-// 		this.#grm = new Grammar(cfg);
+		this.#grm = new Grammar(sys.cfg);
 		
-// 		const ce = cfg.oCfg.init.escape;
-// 		this.#grm.setEscape(ce);
-// 		RubySpliter.setEscape(ce);
+		const ce = sys.cfg.oCfg.init.escape;
+		this.#grm.setEscape(ce);
+		RubySpliter.setEscape(ce);
 
 // 		if (CmnLib.isDbg) {
 // 			sys.addHook((type, o)=> this.#hHook[type]?.(o));

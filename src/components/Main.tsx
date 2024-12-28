@@ -27,15 +27,18 @@ export function initMain(root: Root, arg: T_ARG, inited: ()=> void) {
 
 export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const {heStage, sys, scrMng} = arg;
-	useTitle(sys.cfg.oCfg.book.title);
+	const title = useStore(s=> s.title);
+	const addTitle = useStore(s=> s.addTitle);
+	useTitle(title);
 
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
+		addTitle(sys.cfg.oCfg.book.title)
 		const hTag: IHTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle}, hTag);
 
 		inited();
 

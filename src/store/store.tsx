@@ -19,6 +19,9 @@ type T_STATE = {
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
+
+	title	: string;
+	addTitle	: (t: string)=> void;
 }
 export type T_CHGPIC = {
 	nm	: string;
@@ -29,7 +32,7 @@ export type T_CHGSTR = {
 	str	: string;
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addTitle'>>;
 
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
@@ -38,7 +41,7 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 	clearTxt: ()=> set(()=> ({txt: ''})),
 
 	aLay	: [],
-	replace	: (arg: string)=> set(_=> ({aLay: JSON.parse(arg)})),
+	replace	: (arg: string)=> set(()=> ({aLay: JSON.parse(arg)})),
 	addLayer: (arg: T_LAY)=> set(s=> ({aLay: [...s.aLay, arg]})),
 	chgPic	: ({nm, fn}: T_CHGPIC)=> set(s=> {
 		const aLay = [...s.aLay];
@@ -58,4 +61,7 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		e.str = str;
 		return {aLay};
 	}),
+
+	title		: '',
+	addTitle	: title=> set(()=> ({title})),
 }))
