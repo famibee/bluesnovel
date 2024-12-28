@@ -56,39 +56,40 @@ export class SysBase implements ISysRoots, ISysBase {
 				document.body.appendChild(he);
 			}
 			const scrMng = new ScriptMng(this);
-			initMain(createRoot(he), {heStage: he, sys: this, scrMng});
+			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> {
+				Promise.all([
+					import('@pixi/assets'),
+					import('@pixi/extensions'),
+				]).then(async ([{Assets}, {extensions, ExtensionType}])=> {
+					await Assets.init({basePath: location.origin});
+					extensions.add({
+						extension: {
+							type: ExtensionType.LoadParser,
+							name: 'sn-loader',
+							//priority: LoaderParserPriority.High,
+						},
+						test: (url: string)=> url.endsWith('.sn'),
+						load: (url: string)=> new Promise(async (re, rj)=> {
+							const res = await this.fetch(url);
+							if (! res.ok) {rj(`sn-loader fetch err:`+ res.statusText); return}
 
-			Promise.all([
-				import('@pixi/assets'),
-				import('@pixi/extensions'),
-			]).then(async ([{Assets}, {extensions, ExtensionType}])=> {
-				await Assets.init({basePath: location.origin});
-				extensions.add({
-					extension: {
-						type: ExtensionType.LoadParser,
-						name: 'sn-loader',
-						//priority: LoaderParserPriority.High,
-					},
-					test: (url: string)=> url.endsWith('.sn'),
-					load: (url: string)=> new Promise(async (re, rj)=> {
-						const res = await this.fetch(url);
-						if (! res.ok) {rj(`sn-loader fetch err:`+ res.statusText); return}
+							try {
+								re(await this.dec('sn', await res.text()));
+							} catch (e) {rj(`sn-loader err url:${url} ${e}`)}
+						}),
+					});
+					this.load = url=> Assets.load(url);
 
-						try {
-							re(await this.dec('sn', await res.text()));
-						} catch (e) {rj(`sn-loader err url:${url} ${e}`)}
-					}),
+					await scrMng.load('title');	// TODO: [jump]実装までの仮
+					// await scrMng.load('main');	// SKYNovel 開始
+					// this.run = async ()=> {
+					// 	const heStage = await runSub();
+					// 	initMain(createRoot(heStage), {heStage, sys: this});
+
+					// 	const scrMng = new ScriptMng(this);
+					// 	await start(scrMng);
+					// };
 				});
-				this.load = url=> Assets.load(url);
-
-				await scrMng.load('main');	// SKYNovel 開始
-				// this.run = async ()=> {
-				// 	const heStage = await runSub();
-				// 	initMain(createRoot(heStage), {heStage, sys: this});
-
-				// 	const scrMng = new ScriptMng(this);
-				// 	await start(scrMng);
-				// };
 			});
 		});
 	}

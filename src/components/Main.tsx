@@ -7,6 +7,7 @@
 
 import type {SysBase} from '../ts/SysBase';
 import type {ScriptMng} from '../ts/ScriptMng';
+import type {IHTag} from '../ts/Grammar';
 
 import {useStore} from '../store/store';
 import {lazy, Suspense} from 'react';
@@ -20,11 +21,11 @@ export type T_ARG = {
 };
 
 
-export function initMain(root: Root, arg: T_ARG) {
-	root.render(<Main arg={arg} />);
+export function initMain(root: Root, arg: T_ARG, inited: ()=> void) {
+	root.render(<Main arg={arg} inited={inited} />);
 }
 
-export function Main({arg}: {arg: T_ARG}) {
+export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const {heStage, sys, scrMng} = arg;
 	useTitle(sys.cfg.oCfg.book.title);
 
@@ -33,7 +34,10 @@ export function Main({arg}: {arg: T_ARG}) {
 	const chgStr = useStore(s=> s.chgStr);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
-		scrMng.init(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr});
+		const hTag: IHTag		= Object.create(null);	// タグ処理辞書
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr}, hTag);
+
+		inited();
 
 		heStage.addEventListener('ev_next', procNext as EventListenerOrEventListenerObject);
 		return ()=> heStage.removeEventListener('ev_next', procNext);

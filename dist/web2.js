@@ -62,40 +62,42 @@ class _ {
       import("./Main.js").then((t) => t.M),
       import("./Config.js"),
       import("./ScriptMng.js")
-    ]).then(async ([{ createRoot: t }, { initMain: n }, { Config: r }, { ScriptMng: d }]) => {
-      const { oCfg: l } = await r.generate(this);
-      document.body.style.backgroundColor = l.init.bg_color;
+    ]).then(async ([{ createRoot: t }, { initMain: n }, { Config: r }, { ScriptMng: l }]) => {
+      const { oCfg: d } = await r.generate(this);
+      document.body.style.backgroundColor = d.init.bg_color;
       let s = document.getElementById(y);
       if (s) {
         const o = s.cloneNode(!0);
         o.id = y;
       } else
         s = document.createElement("div"), s.id = y, document.body.appendChild(s);
-      const i = new d(this);
-      n(t(s), { heStage: s, sys: this, scrMng: i }), Promise.all([
-        import("./index.js"),
-        import("./index2.js")
-      ]).then(async ([{ Assets: o }, { extensions: c, ExtensionType: u }]) => {
-        await o.init({ basePath: location.origin }), c.add({
-          extension: {
-            type: u.LoadParser,
-            name: "sn-loader"
-            //priority: LoaderParserPriority.High,
-          },
-          test: (a) => a.endsWith(".sn"),
-          load: (a) => new Promise(async (m, p) => {
-            const f = await this.fetch(a);
-            if (!f.ok) {
-              p("sn-loader fetch err:" + f.statusText);
-              return;
-            }
-            try {
-              m(await this.dec("sn", await f.text()));
-            } catch (g) {
-              p(`sn-loader err url:${a} ${g}`);
-            }
-          })
-        }), this.load = (a) => o.load(a), await i.load("main");
+      const i = new l(this);
+      n(t(s), { heStage: s, sys: this, scrMng: i }, () => {
+        Promise.all([
+          import("./index.js"),
+          import("./index2.js")
+        ]).then(async ([{ Assets: o }, { extensions: c, ExtensionType: u }]) => {
+          await o.init({ basePath: location.origin }), c.add({
+            extension: {
+              type: u.LoadParser,
+              name: "sn-loader"
+              //priority: LoaderParserPriority.High,
+            },
+            test: (a) => a.endsWith(".sn"),
+            load: (a) => new Promise(async (m, p) => {
+              const f = await this.fetch(a);
+              if (!f.ok) {
+                p("sn-loader fetch err:" + f.statusText);
+                return;
+              }
+              try {
+                m(await this.dec("sn", await f.text()));
+              } catch (g) {
+                p(`sn-loader err url:${a} ${g}`);
+              }
+            })
+          }), this.load = (a) => o.load(a), await i.load("title");
+        });
       });
     });
   }
@@ -110,8 +112,8 @@ class _ {
     this.cfg = t;
     const n = this.arg.cur + "path.json", r = await this.fetch(n);
     if (!r.ok) throw Error(r.statusText);
-    const d = await r.text(), l = JSON.parse(await this.dec(n, d));
-    for (const [s, i] of Object.entries(l)) {
+    const l = await r.text(), d = JSON.parse(await this.dec(n, l));
+    for (const [s, i] of Object.entries(d)) {
       const o = e[s] = i;
       for (const [c, u] of Object.entries(o))
         c !== ":cnt" && (o[c] = this.arg.cur + u);
