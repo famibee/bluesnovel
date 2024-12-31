@@ -1,4 +1,4 @@
-import { HPlugin, ISysBase, T_SysBaseLoadedParams } from './CmnInterface';
+import { HPlugin, IData4Vari, IFncHook, ISysBase, T_SysBaseLoadedParams } from './CmnInterface';
 import { IConfig, IFn2Path, ISysRoots } from './ConfigBase';
 import { Caretaker } from './Memento';
 type HSysBaseArg = {
@@ -17,7 +17,20 @@ export declare class SysBase implements ISysRoots, ISysBase {
     get caretaker(): Caretaker;
     cfg: IConfig;
     loadPath(hPathFn2Exts: IFn2Path, cfg: IConfig): Promise<void>;
+    protected readonly data: {
+        sys: {};
+        mark: {};
+        kidoku: {};
+    };
+    initVal(_data: IData4Vari, _hTmp: any, _comp: (data: IData4Vari) => void): Promise<void>;
+    flush(): void;
+    protected flushSub(): void;
     protected run(): Promise<void>;
+    addHook(fnc: IFncHook): void;
+    callHook: IFncHook;
+    send2Dbg: IFncHook;
+    copyBMFolder: (_from: number, _to: number) => void;
+    eraseBMFolder: (_place: number) => void;
     protected $path_downloads: string;
     get path_downloads(): string;
     protected $path_userdata: string;

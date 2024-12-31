@@ -1,48 +1,48 @@
-class b {
+class $ {
   // 適当な名を付けて
   constructor(e = "") {
     this.stt = e;
   }
   // this.stt から
 }
-class w {
-  #s = "";
+class j {
+  #o = "";
   push(e) {
     this.update = this.#n, this.push = (t) => {
-      this.#s = t, this.#t = this.#e.push(t) - 1, this.#o[t] = {};
+      this.#o = t, this.#s = this.#t.push(t) - 1, this.#e[t] = {};
     }, this.push(e);
   }
-  #o = {};
+  #e = {};
   update(e) {
   }
   #n(e) {
-    if (this.#t < this.#e.length - 1) return;
+    if (this.#s < this.#t.length - 1) return;
     const t = e();
-    this.#o[this.#s][t.nm] = t, console.log(`fn:Memento.ts update -- key(${this.#s}) MeMe:%o`, t);
+    this.#e[this.#o][t.nm] = t, console.log(`fn:Memento.ts update -- key(${this.#o}) MeMe:%o`, t);
   }
   undo(e) {
     console.log(`fn:Memento.ts = undo key=(${e})`);
-    const t = this.#o[e];
+    const t = this.#e[e];
     if (!t) throw `undo Err key:${e}`;
-    for (const n of Object.values(t)) n.restore();
+    for (const o of Object.values(t)) o.restore();
   }
-  #e = [];
-  #t = 0;
+  #t = [];
+  #s = 0;
   // 前のキーへ移動
   prevKey() {
-    return console.log("fn:Memento.ts -- beforeKey --"), this.#t <= 0 ? !1 : (this.undo(this.#e[--this.#t]), !0);
+    return console.log("fn:Memento.ts -- beforeKey --"), this.#s <= 0 ? !1 : (this.undo(this.#t[--this.#s]), !0);
   }
   // 後のキーへ移動
   nextKey() {
-    return console.log("fn:Memento.ts -- afterKey --"), this.#e.length - 1 <= this.#t ? !1 : (this.undo(this.#e[++this.#t]), !0);
+    return console.log("fn:Memento.ts -- afterKey --"), this.#t.length - 1 <= this.#s ? !1 : (this.undo(this.#t[++this.#s]), !0);
   }
   isLast() {
-    return this.#e.length - 1 === this.#t;
+    return this.#t.length - 1 === this.#s;
   }
 }
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
 const y = "skynovel";
-class _ {
+class P {
   constructor(e = {}, t) {
     this.hPlg = e, this.arg = t;
   }
@@ -60,67 +60,106 @@ class _ {
     ), Promise.all([
       import("./client.js").then((t) => t.c),
       import("./Main.js").then((t) => t.M),
-      import("./Config.js"),
-      import("./ScriptMng.js")
-    ]).then(async ([{ createRoot: t }, { initMain: n }, { Config: r }, { ScriptMng: l }]) => {
-      const { oCfg: d } = await r.generate(this);
-      document.body.style.backgroundColor = d.init.bg_color;
+      import("./Config.js")
+    ]).then(async ([{ createRoot: t }, { initMain: o }, { Config: i }]) => {
+      const l = await i.generate(this), { oCfg: { init: { bg_color: u, escape: f } } } = l;
+      document.body.style.backgroundColor = u;
       let s = document.getElementById(y);
       if (s) {
-        const o = s.cloneNode(!0);
-        o.id = y;
+        const h = s.cloneNode(!0);
+        h.id = y;
       } else
         s = document.createElement("div"), s.id = y, document.body.appendChild(s);
-      const i = new l(this);
-      n(t(s), { heStage: s, sys: this, scrMng: i }, () => {
-        Promise.all([
+      let n = /* @__PURE__ */ Object.create(null), r = () => {
+      };
+      o(t(s), { heStage: s, sys: this, hTag: n, procNext: () => r(), attachTsx: (h, m) => {
+        n.title = ({ text: c }) => {
+          if (!c) throw "[title] textは必須です";
+          return m.addTitle(c), !1;
+        }, Promise.all([
           import("./index.js"),
-          import("./index2.js")
-        ]).then(async ([{ Assets: o }, { extensions: c, ExtensionType: u }]) => {
-          await o.init({ basePath: location.origin }), c.add({
+          import("./index2.js"),
+          import("./ScriptMng.js"),
+          import("./Variable.js"),
+          import("./PropParser.js")
+        ]).then(async ([{ Assets: c }, { extensions: b, ExtensionType: k }, { ScriptMng: v }, { Variable: x }, { PropParser: M }]) => {
+          await c.init({ basePath: location.origin }), b.add({
             extension: {
-              type: u.LoadParser,
+              type: k.LoadParser,
               name: "sn-loader"
               //priority: LoaderParserPriority.High,
             },
             test: (a) => a.endsWith(".sn"),
-            load: (a) => new Promise(async (m, p) => {
-              const f = await this.fetch(a);
-              if (!f.ok) {
-                p("sn-loader fetch err:" + f.statusText);
+            load: (a) => new Promise(async (O, w) => {
+              const p = await this.fetch(a);
+              if (!p.ok) {
+                w("sn-loader fetch err:" + p.statusText);
                 return;
               }
               try {
-                m(await this.dec("sn", await f.text()));
-              } catch (g) {
-                p(`sn-loader err url:${a} ${g}`);
+                O(await this.dec("sn", await p.text()));
+              } catch (T) {
+                w(`sn-loader err url:${a} ${T}`);
               }
             })
-          }), this.load = (a) => o.load(a), await i.load("title");
+          }), this.load = (a) => c.load(a);
+          const g = new x(l, n), S = new M(g, f ?? "\\"), _ = new v(this, n, h, m, g, S);
+          r = () => _.go(), await _.load("title");
         });
-      });
+      } });
     });
   }
   load = async (e) => "";
   fetch = (e, t) => fetch(e, t);
-  #s = new w();
+  #o = new j();
   get caretaker() {
-    return this.#s;
+    return this.#o;
   }
   cfg;
   async loadPath(e, t) {
     this.cfg = t;
-    const n = this.arg.cur + "path.json", r = await this.fetch(n);
-    if (!r.ok) throw Error(r.statusText);
-    const l = await r.text(), d = JSON.parse(await this.dec(n, l));
-    for (const [s, i] of Object.entries(d)) {
-      const o = e[s] = i;
-      for (const [c, u] of Object.entries(o))
-        c !== ":cnt" && (o[c] = this.arg.cur + u);
+    const o = this.arg.cur + "path.json", i = await this.fetch(o);
+    if (!i.ok) throw Error(i.statusText);
+    const l = await i.text(), u = JSON.parse(await this.dec(o, l));
+    for (const [f, s] of Object.entries(u)) {
+      const n = e[f] = s;
+      for (const [r, h] of Object.entries(n))
+        r !== ":cnt" && (n[r] = this.arg.cur + h);
     }
   }
+  data = { sys: {}, mark: {}, kidoku: {} };
+  async initVal(e, t, o) {
+  }
+  flush() {
+    if (this.#e) {
+      this.#n = !0;
+      return;
+    }
+    this.flushSub(), this.#e = setTimeout(() => {
+      this.#e = void 0, this.#n && (this.#n = !1, this.flush());
+    }, 500);
+  }
+  #e = void 0;
+  #n = !1;
+  flushSub() {
+  }
+  //TODO: 
   async run() {
   }
+  #t = [];
+  addHook(e) {
+    this.#t.push(e);
+  }
+  callHook = (e, t) => {
+  };
+  send2Dbg = (e, t) => {
+  };
+  copyBMFolder = (e, t) => {
+  };
+  //TODO: 
+  eraseBMFolder = (e) => {
+  };
+  //TODO: 
   $path_downloads = "";
   get path_downloads() {
     return this.$path_downloads;
@@ -132,13 +171,13 @@ class _ {
   dec = (e, t) => Promise.resolve(t);
   hash = (e) => "";
 }
-class k extends _ {
+class B extends P {
   constructor(...[e = {}, t = { cur: "prj/", crypto: !1, dip: "" }]) {
     super(e, t), queueMicrotask(async () => this.loaded(e, t));
   }
 }
 export {
-  b as B,
-  k as S
+  $ as B,
+  B as S
 };
 //# sourceMappingURL=web2.js.map

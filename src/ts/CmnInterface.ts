@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2018-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2018-2025 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -80,17 +80,17 @@ export type T_SysBaseLoadedParams = [
 
 export type SYS_DEC_RET = HTMLImageElement | HTMLVideoElement | ArrayBuffer;
 export interface ISysBase {
-	// initVal(data: IData4Vari, hTmp: object, comp: (data: IData4Vari)=> void): Promise<void>;
-	// flush(): void;
+	initVal(data: IData4Vari, hTmp: object, comp: (data: IData4Vari)=> void): Promise<void>;
+	flush(): void;
 	dec(ext: string, tx: string): Promise<string>;
 	// decAB(ab: ArrayBuffer): Promise<SYS_DEC_RET>;
 
-	// addHook(fnc: IFncHook): void;
-	// callHook: IFncHook;
-	// send2Dbg: IFncHook;
+	addHook(fnc: IFncHook): void;
+	callHook: IFncHook;
+	send2Dbg: IFncHook;
 
-	// copyBMFolder(from: number, to: number): void;
-	// eraseBMFolder(place: number): void;
+	copyBMFolder(from: number, to: number): void;
+	eraseBMFolder(place: number): void;
 
 	// destroy(): void;
 }

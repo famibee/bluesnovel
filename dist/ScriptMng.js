@@ -1,5 +1,6 @@
-import { S as m, g as x } from "./ConfigBase.js";
-class E {
+import { g as E } from "./CmnLib.js";
+import { S as u } from "./ConfigBase.js";
+class k {
   // 87 match 2725 step(0.5ms) PCRE2 https://regex101.com/r/aeN57J/1
   /*
   ;[^\n]*
@@ -19,23 +20,23 @@ class E {
   parse(t) {
     this.#s = {}, this.#n = !1;
     for (const { groups: s } of t.matchAll(this.#e)) {
-      const { key: e, val: r, val2: c, def: n, def2: i, literal: o } = s;
+      const { key: e, val: o, val2: r, def: n, def2: i, literal: a } = s;
       e ? this.#s[e] = {
-        val: r ?? c ?? "",
+        val: o ?? r ?? "",
         def: n ?? i
-      } : o && (o === "*" ? this.#n = !0 : this.#s[o] = { val: "1" });
+      } : a && (a === "*" ? this.#n = !0 : this.#s[a] = { val: "1" });
     }
   }
   // 属性と値の位置をまとめて返す
-  parseinDetail(t, s, e, r) {
-    const c = {}, n = t.slice(1 + s, -1);
-    for (const { groups: i, index: o, 0: a } of n.matchAll(this.#e)) {
-      if (o === void 0) continue;
-      const { key: h, val: f, val2: u = "", literal: g } = i;
-      if (g) {
-        if (g.endsWith("=")) {
-          const d = g.length - 1, { ch: p } = this.#t(s, e, r, n, o + d);
-          c[g.slice(0, -1)] = {
+  parseinDetail(t, s, e, o) {
+    const r = {}, n = t.slice(1 + s, -1);
+    for (const { groups: i, index: a, 0: c } of n.matchAll(this.#e)) {
+      if (a === void 0) continue;
+      const { key: h, val: f, val2: g = "", literal: m } = i;
+      if (m) {
+        if (m.endsWith("=")) {
+          const d = m.length - 1, { ch: p } = this.#t(s, e, o, n, a + d);
+          r[m.slice(0, -1)] = {
             k_ln: e,
             k_ch: p - d,
             v_ln: e,
@@ -47,17 +48,17 @@ class E {
         continue;
       }
       if (!h) continue;
-      const { ln: T, ch: $ } = this.#t(s, e, r, n, o), { ln: b, ch: _ } = this.#t(s, e, r, n, o + a.lastIndexOf(f ?? u ?? "") - (f ? 0 : 1));
-      c[h] = { k_ln: T, k_ch: $, v_ln: b, v_ch: _, v_len: f ? f.length : u.length + 2 };
+      const { ln: b, ch: w } = this.#t(s, e, o, n, a), { ln: $, ch: x } = this.#t(s, e, o, n, a + c.lastIndexOf(f ?? g ?? "") - (f ? 0 : 1));
+      r[h] = { k_ln: b, k_ch: w, v_ln: $, v_ch: x, v_len: f ? f.length : g.length + 2 };
     }
-    return c;
+    return r;
   }
-  #t(t, s, e, r, c) {
-    const i = r.slice(0, c).split(`
-`), o = i.length;
+  #t(t, s, e, o, r) {
+    const i = o.slice(0, r).split(`
+`), a = i.length;
     return {
-      ln: s + o - 1,
-      ch: o < 2 ? e + 1 + t + c : i.at(-1).length
+      ln: s + a - 1,
+      ch: a < 2 ? e + 1 + t + r : i.at(-1).length
     };
   }
   #s = {};
@@ -69,17 +70,28 @@ class E {
     return this.#n;
   }
 }
-const k = /(?<name>[^\s;\]]+)/;
-function w(l) {
-  const s = k.exec(l.slice(1, -1))?.groups;
+const _ = /(?<name>[^\s;\]]+)/;
+function T(l) {
+  const s = _.exec(l.slice(1, -1))?.groups;
   if (!s) throw `タグ記述【${l}】異常です(タグ解析)`;
   const e = s.name;
   return [e, l.slice(1 + e.length, -1)];
 }
-function y(l) {
-  const s = k.exec(l.slice(1))?.groups;
+function A(l) {
+  const s = _.exec(l.slice(1))?.groups;
   if (!s) throw `タグ記述【${l}】異常です(タグ解析)`;
   return s.name;
+}
+function y(l) {
+  const t = l.replaceAll("==", "＝").replaceAll("!=", "≠").split("="), s = t.length;
+  if (s < 2 || s > 3) throw "「&計算」書式では「=」指定が一つか二つ必要です";
+  const [e, o, r] = t;
+  if (o.startsWith("&")) throw "「&計算」書式では「&」指定が不要です";
+  return {
+    name: e.replaceAll("＝", "==").replaceAll("≠", "!="),
+    text: o.replaceAll("＝", "==").replaceAll("≠", "!="),
+    cast: s === 3 ? r.trim() : void 0
+  };
 }
 class N {
   constructor(t) {
@@ -93,34 +105,34 @@ class N {
       `\\n+|\\t+|\\[let_ml\\s+[^\\]]+\\].+?(?=\\[endlet_ml[\\]\\s])|\\[(?:[^"'#;\\]]+|(["'#]).*?\\1|;[^\\n]*)*?]|;[^\\n]*|&[^&\\n]+&|&&?(?:[^"'#;\\n&]+|(["'#]).*?\\2)+|^\\*[^\\s\\[&;\\\\]+|[^\\n\\t\\[;${t ? `\\${t}` : ""}]+`,
       // 本文
       "gs"
-    ), this.#t = new RegExp(`[\\w\\s;[\\]*=&｜《》${t ? `\\${t}` : ""}]`), this.#l = new RegExp(`[\\n\\t;\\[*&${t ? `\\${t}` : ""}]`);
+    ), this.#t = new RegExp(`[\\w\\s;[\\]*=&｜《》${t ? `\\${t}` : ""}]`), this.#f = new RegExp(`[\\n\\t;\\[*&${t ? `\\${t}` : ""}]`);
   }
   // 括弧マクロの定義
-  bracket2macro(t, s, e, r) {
-    const { name: c, text: n } = t;
-    if (!c) throw "[bracket2macro] nameは必須です";
+  bracket2macro(t, s, e, o) {
+    const { name: r, text: n } = t;
+    if (!r) throw "[bracket2macro] nameは必須です";
     if (!n) throw "[bracket2macro] textは必須です";
     const i = n.at(0);
     if (!i) throw "[bracket2macro] textは必須です";
     if (n.length !== 2) throw "[bracket2macro] textは括弧の前後を示す二文字を指定してください";
-    if (!(c in s)) throw `[bracket2macro] 未定義のタグ又はマクロ[${c}]です`;
+    if (!(r in s)) throw `[bracket2macro] 未定義のタグ又はマクロ[${r}]です`;
     this.#i ??= {};
-    const o = n.charAt(1);
+    const a = n.charAt(1);
     if (i in this.#i) throw "[bracket2macro] text【" + i + "】が登録済みの括弧マクロまたは一文字マクロです";
-    if (o in this.#i) throw "[bracket2macro] text【" + o + "】が登録済みの括弧マクロまたは一文字マクロです";
+    if (a in this.#i) throw "[bracket2macro] text【" + a + "】が登録済みの括弧マクロまたは一文字マクロです";
     if (this.#t.test(i)) throw "[bracket2macro] text【" + i + "】は括弧マクロに使用できない文字です";
-    if (this.#t.test(o)) throw "[bracket2macro] text【" + o + "】は括弧マクロに使用できない文字です";
-    this.#i[o] = "0", this.#i[i] = `[${c} text=`, this.addC2M(`\\${i}[^\\${o}]*\\${o}`, `\\${i}\\${o}`), this.#a(e, r);
+    if (this.#t.test(a)) throw "[bracket2macro] text【" + a + "】は括弧マクロに使用できない文字です";
+    this.#i[a] = "0", this.#i[i] = `[${r} text=`, this.addC2M(`\\${i}[^\\${a}]*\\${a}`, `\\${i}\\${a}`), this.#l(e, o);
   }
   // 一文字マクロの定義
-  char2macro(t, s, e, r) {
-    const { char: c, name: n } = t;
-    if (!c) throw "[char2macro] charは必須です";
-    if (this.#i ??= {}, c in this.#i) throw "[char2macro] char【" + c + "】が登録済みの括弧マクロまたは一文字マクロです";
-    if (this.#t.test(c)) throw "[char2macro] char【" + c + "】は一文字マクロに使用できない文字です";
+  char2macro(t, s, e, o) {
+    const { char: r, name: n } = t;
+    if (!r) throw "[char2macro] charは必須です";
+    if (this.#i ??= {}, r in this.#i) throw "[char2macro] char【" + r + "】が登録済みの括弧マクロまたは一文字マクロです";
+    if (this.#t.test(r)) throw "[char2macro] char【" + r + "】は一文字マクロに使用できない文字です";
     if (!n) throw "[char2macro] nameは必須です";
     if (!(n in s)) throw `[char2macro] 未定義のタグ又はマクロ[${n}]です`;
-    this.#i[c] = `[${n}]`, this.addC2M(`\\${c}`, `\\${c}`), this.#a(e, r);
+    this.#i[r] = `[${n}]`, this.addC2M(`\\${r}`, `\\${r}`), this.#l(e, o);
   }
   #t;
   #s = new RegExp("");
@@ -134,40 +146,40 @@ class N {
   }
   resolveScript(t) {
     const s = t.replaceAll(/\r\n?/g, `
-`).match(this.#e)?.flatMap((r) => {
-      if (!this.testTagLetml(r)) return r;
-      const c = /^([^\]]+?])(.*)$/s.exec(r);
-      if (!c) return r;
-      const [, n, i] = c;
+`).match(this.#e)?.flatMap((o) => {
+      if (!this.testTagLetml(o)) return o;
+      const r = /^([^\]]+?])(.*)$/s.exec(o);
+      if (!r) return o;
+      const [, n, i] = r;
       return [n, i];
     }) ?? [], e = { aToken: s, len: s.length, aLNum: [] };
-    return this.#a(e), this.#f(e), e;
+    return this.#l(e), this.#c(e), e;
   }
   #o = /^\[(call|loadplugin)\s/;
-  #c = /\bfn\s*=\s*[^\s\]]+/;
-  #f(t) {
+  #a = /\bfn\s*=\s*[^\s\]]+/;
+  #c(t) {
     for (let s = t.len - 1; s >= 0; --s) {
       const e = t.aToken[s];
       if (!this.#o.test(e)) continue;
-      const [r, c] = w(e);
-      this.#h.parse(c);
+      const [o, r] = T(e);
+      this.#h.parse(r);
       const n = this.#h.hPrm.fn;
       if (!n) continue;
       const { val: i } = n;
       if (!i || !i.endsWith("*")) continue;
       t.aToken.splice(s, 1, "	", "; " + e), t.aLNum.splice(s, 1, NaN, NaN);
-      const o = r === "loadplugin" ? m.CSS : m.SN, a = this.cfg.matchPath("^" + i.slice(0, -1) + ".*", o);
-      for (const h of a) {
+      const a = o === "loadplugin" ? u.CSS : u.SN, c = this.cfg.matchPath("^" + i.slice(0, -1) + ".*", a);
+      for (const h of c) {
         const f = e.replace(
-          this.#c,
-          "fn=" + decodeURIComponent(x(h[o]))
+          this.#a,
+          "fn=" + decodeURIComponent(E(h[a]))
         );
         t.aToken.splice(s, 0, f), t.aLNum.splice(s, 0, NaN);
       }
     }
     t.len = t.aToken.length;
   }
-  #h = new E();
+  #h = new k();
   testTagLetml(t) {
     return /^\[let_ml\s/.test(t);
   }
@@ -178,31 +190,31 @@ class N {
     return this.#e.lastIndex = 0, this.#e.exec(t);
   }
   #i;
-  #l;
-  #a(t, s = 0) {
+  #f;
+  #l(t, s = 0) {
     if (this.#i) {
       for (let e = t.len - 1; e >= s; --e) {
-        const r = t.aToken[e];
-        if (this.testNoTxt(r.at(0) ?? `
+        const o = t.aToken[e];
+        if (this.testNoTxt(o.at(0) ?? `
 `)) continue;
-        const c = t.aLNum[e], n = r.match(this.#s);
+        const r = t.aLNum[e], n = o.match(this.#s);
         if (!n) continue;
         let i = 1;
-        for (let o = n.length - 1; o >= 0; --o) {
-          let a = n[o];
-          const h = this.#i[a.at(0) ?? " "];
-          h && (a = h + (h.endsWith("]") ? "" : `'${a.slice(1, -1)}']`)), t.aToken.splice(e, i, a), t.aLNum.splice(e, i, c), i = 0;
+        for (let a = n.length - 1; a >= 0; --a) {
+          let c = n[a];
+          const h = this.#i[c.at(0) ?? " "];
+          h && (c = h + (h.endsWith("]") ? "" : `'${c.slice(1, -1)}']`)), t.aToken.splice(e, i, c), t.aLNum.splice(e, i, r), i = 0;
         }
       }
       t.len = t.aToken.length;
     }
   }
   testNoTxt(t) {
-    return this.#l.test(t);
+    return this.#f.test(t);
   }
   //4tst
 }
-class S {
+class v {
   // #aCallStk	: CallStack[]	= [];	// FILOバッファ（push/pop）
   //MARK: コンストラクタ
   constructor(t) {
@@ -231,7 +243,7 @@ class S {
   // readonly	#alzTagArg	= new AnalyzeTagArg;
   async load(t) {
     this.#t = t;
-    const s = this.sys.cfg.searchPath(t, m.SCRIPT), e = await this.sys.load(s);
+    const s = this.sys.cfg.searchPath(t, u.SCRIPT), e = await this.sys.load(s);
     return this.#e = this.#r.resolveScript(e), this.#s = 0, this.#n = 1, this.#e.aToken.slice(this.#s).values();
   }
   strPos = () => this.#n > 0 ? `(fn:${this.#t} line:${this.#n}) ` : "";
@@ -248,29 +260,29 @@ class S {
     const s = t.split(`
 `).slice(-this.#o), e = s.length;
     console.group(`🥟 Error line (from ${e} rows before) fn:${this.#t}`);
-    const r = String(this.#n).length, c = this.#c(this.#e, this.#s);
+    const o = String(this.#n).length, r = this.#a(this.#e, this.#s);
     for (let n = 0; n < e; ++n) {
-      const i = this.#n - e + n + 1, o = `${String(i).padStart(r, " ")}: %c`, a = s[n], h = a.length > 75 ? a.slice(0, 75) + "…" : a;
+      const i = this.#n - e + n + 1, a = `${String(i).padStart(o, " ")}: %c`, c = s[n], h = c.length > 75 ? c.slice(0, 75) + "…" : c;
       n === e - 1 ? console.info(
-        o + h.slice(0, c.col_s) + "%c" + h.slice(c.col_s),
+        a + h.slice(0, r.col_s) + "%c" + h.slice(r.col_s),
         "color: black; background-color: skyblue;",
         "color: black; background-color: pink;"
-      ) : console.info(o + h, "color: black; background-color: skyblue;");
+      ) : console.info(a + h, "color: black; background-color: skyblue;");
     }
     console.groupEnd();
   }
-  #c(t, s) {
+  #a(t, s) {
     const e = { ln: 1, col_s: 0, col_e: 0 };
     if (!t) return e;
-    let r = s - 1;
-    const c = e.ln = t.aLNum[r];
-    for (; t.aLNum[r] === c; ) {
-      if (!t.aToken[r].startsWith(`
+    let o = s - 1;
+    const r = e.ln = t.aLNum[o];
+    for (; t.aLNum[o] === r; ) {
+      if (!t.aToken[o].startsWith(`
 `)) {
-        const n = t.aToken[r].length;
+        const n = t.aToken[o].length;
         e.col_e > 0 && (e.col_s += n), e.col_e += n;
       }
-      if (--r < 0) break;
+      if (--o < 0) break;
     }
     return e;
   }
@@ -1264,27 +1276,35 @@ class S {
   // 	}
   // 	replace(idx: number, val: string) {this.#script.aToken[idx] = val}
 }
-class A {
-  constructor(t) {
-    this.sys = t, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${Number.MAX_SAFE_INTEGER};
+class C {
+  //TODO: 
+  constructor(t, s, e, o, r, n) {
+    this.sys = t, this.hTag = s, this.trgNext = e, this.fncs = o, this.val = r, this.prpPrs = n, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `
+			z-index: ${Number.MAX_SAFE_INTEGER};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t = new S(t), this.#s.trace = (s) => this.#r(s);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t = new v(t), this.#s = (i, a, c, h) => r.setVal_Nochk(i, a, c, h), this.#n = (i) => n.getValAmpersand(i), this.#r = (i) => n.parse(i), s.trace = (i) => this.#i(i);
   }
   #e;
   #t;
-  // Main.tsx からの初期化
-  attachTsx(t, s, e) {
-    this.$trgNext = t, this.$fncs = s, this.#s = e, this.#s.title = ({ text: r }) => {
-      if (!r) throw "[title] textは必須です";
-      return s.addTitle(r), !1;
-    };
-  }
-  $trgNext;
-  $fncs;
-  #s = /* @__PURE__ */ Object.create(null);
-  // タグ処理辞書
+  #s = (t, s, e, o = !1) => {
+  };
+  #n = (t) => "";
+  #r = (t) => {
+  };
+  #o = (t) => !1;
   async load(t) {
+    this.#s(
+      "tmp",
+      "sn.eventArg",
+      /*hArg.arg ??*/
+      ""
+    ), this.#s(
+      "tmp",
+      "sn.eventLabel",
+      /*hArg.label ??*/
+      ""
+    );
     const s = await this.#t.load(t);
     for (; ; ) {
       const { done: n, value: i } = s.next();
@@ -1293,35 +1313,37 @@ class A {
         break;
       }
       this.#t.addIdxToken();
-      let o = i;
+      let a = i;
       switch (i.charAt(0)) {
         case "	":
           continue;
         //  タブ
         case `
 `:
-          this.#t.addLineNum(o.length);
+          this.#t.addLineNum(a.length);
           continue;
         case "[":
-          if (console.log(`fn:ScriptMng.ts 🍊 TAG ${o}`), this.#n(o)) return;
+          if (console.log(`fn:ScriptMng.ts 🍊 TAG ${a}`), this.#o(a)) return;
           try {
-            const a = (o.match(/\n/g) ?? []).length;
-            a > 0 && this.#t.addLineNum(a);
-          } catch (a) {
-            a instanceof Error ? this.myTrace(`[${y(o)}]タグ解析中例外 mes=${a.message}(${a.name})`) : this.myTrace(String(a));
+            const c = (a.match(/\n/g) ?? []).length;
+            c > 0 && this.#t.addLineNum(c);
+          } catch (c) {
+            c instanceof Error ? this.myTrace(`[${A(a)}]タグ解析中例外 mes=${c.message}(${c.name})`) : this.myTrace(String(c));
             return;
           }
           continue;
         case "&":
           try {
             if (!i.endsWith("&")) {
-              if (this.#n(o)) return;
+              if (this.#o(a)) return;
+              const c = y(a.slice(1));
+              c.name = this.#n(c.name), c.text = String(this.#r(c.text)), this.hTag.let(c);
               continue;
             }
             if (i.charAt(1) === "&") throw new Error("「&表示&」書式では「&」指定が不要です");
-          } catch (a) {
+          } catch (c) {
             this.myTrace(
-              a instanceof Error ? `& 変数操作・表示 mes=${a.message}(${a.name})` : String(a)
+              c instanceof Error ? `& 変数操作・表示 mes=${c.message}(${c.name})` : String(c)
             );
             return;
           }
@@ -1334,10 +1356,10 @@ class A {
           break;
       }
       try {
-        console.log(`fn:ScriptMng.ts 🍈 tagCh:${o}`);
-      } catch (a) {
+        console.log(`fn:ScriptMng.ts 🍈 tagCh:${a}`);
+      } catch (c) {
         this.myTrace(
-          a instanceof Error ? `文字表示 mes=${a.message}(${a.name})` : String(a)
+          c instanceof Error ? `文字表示 mes=${c.message}(${c.name})` : String(c)
         );
         return;
       }
@@ -1345,22 +1367,58 @@ class A {
     function* e() {
       yield { cls: "GRP", nm: "base", fn: "yun_1184" }, yield { cls: "TXT", nm: "mes", str: "あいうえお" }, yield { nm: "mes", str: "かきくけこ" }, yield { cls: "GRP", nm: "fg0", fn: "F_1024a" }, yield { nm: "base", fn: "yun_1317" };
     }
-    const r = e();
-    let c = 0;
+    const o = e();
+    let r = 0;
     this.go = () => {
       for (console.log("fn:ScriptMng.ts == go =="); ; ) {
-        const { done: n, value: i } = r.next();
+        const { done: n, value: i } = o.next();
         if (n) break;
-        this.sys.caretaker.push(t + ":" + ++c), "cls" in i ? this.$fncs.addLayer(i) : "fn" in i ? this.$fncs.chgPic(i) : this.$fncs.chgStr(i);
+        this.sys.caretaker.push(t + ":" + ++r), "cls" in i ? this.fncs.addLayer(i) : "fn" in i ? this.fncs.chgPic(i) : this.fncs.chgStr(i);
         break;
       }
-    }, this.$trgNext();
+    }, this.trgNext();
   }
-  #n = (t) => !1;
-  //TODO: 
   go() {
   }
-  #r(t) {
+  // result = true : waitする  resume()で再開
+  #a = (t) => {
+  };
+  //MARK: タグ解析
+  タグ解析(t) {
+    const [s, e] = T(t), o = this.hTag[s];
+    if (!o) throw `未定義のタグ【${s}】です`;
+    this.#c.parse(e), this.#a(s);
+    const r = this.#c.hPrm;
+    if (r.cond) {
+      const c = r.cond.val;
+      if (!c || c.startsWith("&")) throw "属性condは「&」が不要です";
+    }
+    let n = {};
+    const i = this.#h.length, a = i === 0 ? {} : this.#h[i - 1].csArg;
+    if (this.#c.isKomeParam) {
+      if (i === 0) throw "属性「*」はマクロのみ有効です";
+      n = { ...a };
+    }
+    n[":タグ名"] = s;
+    for (const [c, { val: h, def: f }] of Object.entries(r)) {
+      let g = h;
+      if (g?.startsWith("%")) {
+        if (i === 0) throw "属性「%」はマクロ定義内でのみ使用できます（そのマクロの引数を示す簡略文法であるため）";
+        const m = a[g.slice(1)];
+        if (m) {
+          n[c] = m;
+          continue;
+        }
+        if (f === void 0 || f === "null") continue;
+        g = f;
+      }
+    }
+    return o(n);
+  }
+  #c = new k();
+  #h = [];
+  // FILOバッファ（push/pop）
+  #i(t) {
     return this.myTrace(t.text || `(text is ${t.text})`, "I"), !1;
   }
   myTrace = (t, s = "E") => {
@@ -1382,8 +1440,8 @@ class A {
       default:
         e = "";
     }
-    const r = `{${s}} ` + this.#t.strPos() + t;
-    switch (this.#e.innerHTML += `<span style='${e}'>${r}</span><br/>`, this.#e.hidden = !1, s) {
+    const o = `{${s}} ` + this.#t.strPos() + t;
+    switch (this.#e.innerHTML += `<span style='${e}'>${o}</span><br/>`, this.#e.hidden = !1, s) {
       case "D":
         break;
       case "W":
@@ -1391,15 +1449,15 @@ class A {
         break;
       case "ET":
       case "E":
-        if (this.#s.title({ text: t }), this.#t.dumpErrForeLine(), s === "ET") throw r;
+        if (this.hTag.title({ text: t }), this.#t.dumpErrForeLine(), s === "ET") throw o;
         break;
       default:
         e = "";
     }
-    console.info("%c " + r, e);
+    console.info("%c " + o, e);
   };
 }
 export {
-  A as ScriptMng
+  C as ScriptMng
 };
 //# sourceMappingURL=ScriptMng.js.map

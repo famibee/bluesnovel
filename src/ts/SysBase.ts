@@ -1,12 +1,13 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2018-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2018-2025 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, ISysBase, T_SysBaseLoadedParams} from './CmnInterface';
+import type {HPlugin, IData4Vari, IFncHook, ISysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import type {IConfig, IFn2Path, ISysRoots} from './ConfigBase';
+import type {IHTag} from './Grammar';
 import {Caretaker} from './Memento';
 
 
@@ -39,11 +40,11 @@ export class SysBase implements ISysRoots, ISysBase {
 			import('react-dom/client'),
 			import('../components/Main'),
 			import('./Config'),
-			import('./ScriptMng'),
-		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}])=> {
+		]).then(async ([{createRoot}, {initMain}, {Config}])=> {
 			// React 初期表示
-			const {oCfg} = await Config.generate(this);
-			document.body.style.backgroundColor = oCfg.init.bg_color;
+			const cfg = await Config.generate(this);
+			const {oCfg: {init: {bg_color, escape}}} = cfg;
+			document.body.style.backgroundColor = bg_color;
 
 			let he = <HTMLDivElement>document.getElementById(SN_ID);
 			if (he) {
@@ -55,12 +56,28 @@ export class SysBase implements ISysRoots, ISysBase {
 				he.id = SN_ID;
 				document.body.appendChild(he);
 			}
-			const scrMng = new ScriptMng(this);
-			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> {
+
+			let	hTag: IHTag	= Object.create(null);	// タグ処理辞書
+			let procNext	= ()=> {};
+			initMain(createRoot(he), {heStage: he, sys: this, hTag, procNext: ()=> procNext(), attachTsx: (trgNext, fncs)=> {
+				// Main.tsx からの初期化
+				hTag.title = ({text})=> {
+					if (! text) throw '[title] textは必須です';
+
+					// this.#main_title = text;	//TODO: 
+					// this.titleSub(this.#main_title + this.#info_title);
+					fncs.addTitle(text);
+
+					return false;
+				}
+
 				Promise.all([
 					import('@pixi/assets'),
 					import('@pixi/extensions'),
-				]).then(async ([{Assets}, {extensions, ExtensionType}])=> {
+					import('./ScriptMng'),
+					import('./Variable'),
+					import('./PropParser'),
+				]).then(async ([{Assets}, {extensions, ExtensionType}, {ScriptMng}, {Variable}, {PropParser}])=> {
 					await Assets.init({basePath: location.origin});
 					extensions.add({
 						extension: {
@@ -80,6 +97,16 @@ export class SysBase implements ISysRoots, ISysBase {
 					});
 					this.load = url=> Assets.load(url);
 
+					// 変数
+					const val = new Variable(cfg, hTag);
+					const prpPrs = new PropParser(val, escape ?? '\\');
+
+					// ＢＧＭ・効果音
+					// const sndMng = new SoundMng(cfg, this.#hTag, val, this(Main), this);	//TODO: 
+
+					const scrMng = new ScriptMng(this, hTag, trgNext, fncs, val, prpPrs);
+					procNext = ()=> scrMng.go();
+
 					await scrMng.load('title');	// TODO: [jump]実装までの仮
 					// await scrMng.load('main');	// SKYNovel 開始
 					// this.run = async ()=> {
@@ -90,7 +117,7 @@ export class SysBase implements ISysRoots, ISysBase {
 					// 	await start(scrMng);
 					// };
 				});
-			});
+			}});
 		});
 	}
 	load = async (_url: string)=> '';
@@ -119,8 +146,41 @@ export class SysBase implements ISysRoots, ISysBase {
 		}
 	}
 
+	protected	readonly	data	= {sys:{}, mark:{}, kidoku:{}};
+	async	initVal(_data: IData4Vari, _hTmp: any, _comp: (data: IData4Vari)=> void) {}
+	flush() {
+		// 立て続きの保存を回避し最短 500ms の間隔を開ける
+		if (this.#tidFlush) {this.#rsvFlush = true; return}	// 次の Timeout 時に予約
+
+		this.flushSub();	// ひとまず即時
+		this.#tidFlush = setTimeout(()=> {
+			this.#tidFlush = undefined;
+			if (! this.#rsvFlush) return;	// 予約もないのでなにもせず通常状態に
+
+			this.#rsvFlush = false;			// 次の予約を待つためリセット
+			this.flush();	// 次の Timeout 後に
+		}, 500);
+	}
+	#tidFlush	: NodeJS.Timeout | undefined = undefined;
+	#rsvFlush	: boolean = false;
+	protected	flushSub() {}	//TODO: 
+
 
 	protected async run() {}
+
+
+	#aFncHook: IFncHook[]	= [];
+	addHook(fnc: IFncHook) {this.#aFncHook.push(fnc)}
+	callHook: IFncHook = (_type, _o)=> {};
+
+	send2Dbg: IFncHook = (_type, _o)=> {
+//console.log(`fn:SysBase.ts 新SND isBuf:${!(this.sk)} type:${type} o:${JSON.stringify(o)}`);
+		// this.#sk?.emit('data', type, o);	//TODO: 
+	}
+
+
+	copyBMFolder = (_from: number, _to: number)=> {};	//TODO: 
+	eraseBMFolder = (_place: number)=> {};	//TODO: 
 
 
 	protected $path_downloads	= '';
