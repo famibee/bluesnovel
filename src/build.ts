@@ -8,11 +8,26 @@
 const [, , ...aCmd] = process.argv;
 const watch = aCmd.includes('--watch') ?{} :null;
 const web = aCmd.includes('--web') ?{} :null;
+const app = aCmd.includes('--app') ?{} :null;
 
-import {build} from 'vite';
-import dts, {PluginOptions} from 'vite-plugin-dts';
+import {build, type BuildEnvironmentOptions} from 'vite';
+import dts, {type PluginOptions} from 'vite-plugin-dts';
 import {builtinModules} from 'node:module';
 
+const oBuild: BuildEnvironmentOptions = {
+	target		: 'esnext',
+
+	sourcemap	: true,
+	emptyOutDir	: false,
+//	minify		: 'terser',
+	reportCompressedSize	: false,
+	watch,
+};
+const output = { // entry chunk assets それぞれの書き出し名の指定
+	entryFileNames: '[name].js',
+	chunkFileNames: '[name].js',
+	assetFileNames: '[name].[ext]',
+};
 const oDts: PluginOptions = {
 	beforeWriteFile: pathOut=> ({
 		filePath: pathOut.replace('/src/', '/'),
@@ -20,83 +35,58 @@ const oDts: PluginOptions = {
 };
 
 // === ブラウザ用 ===
+if (! app)
 build({
 	build: {
-		target		: 'esnext',
+		...oBuild,
 		lib: {
 			entry	: './src/web',
 			fileName: _=> 'web.js',
 			formats	: ['es'],
 		},
-		sourcemap	: true,
-		emptyOutDir	: false,
-//		minify		: 'terser',
-		reportCompressedSize	: false,
-		watch,
-		rollupOptions: {
-			output: { // entry chunk assets それぞれの書き出し名の指定
-				entryFileNames: `[name].js`,
-				chunkFileNames: `[name].js`,
-				assetFileNames: `[name].[ext]`,
-			},
-		},
+		rollupOptions: {output},
 	},
 	plugins: [dts(oDts)],
 });
-if (! web) {
 
 // === アプリ用 ===
+if (! web)
 build({
 	build: {
-		target		: 'esnext',
+		...oBuild,
 		lib: {
 			entry	: './src/app',
 			fileName: _=> 'app.js',
 			formats	: ['es'],
 		},
-		sourcemap	: true,
-		emptyOutDir	: false,
-//		minify		: 'terser',
-		reportCompressedSize	: false,
-		watch,
+		outDir	: 'dist_app',
 		rollupOptions: {
 			external: [
 				...builtinModules.flatMap(p=> [p, `node:${p}`]),
 			],
-			output: { // entry chunk assets それぞれの書き出し名の指定
-				entryFileNames: `[name].js`,
-				chunkFileNames: `[name].js`,
-				assetFileNames: `[name].[ext]`,
-			},
+			output,
 		},
 	},
 	plugins: [dts(oDts)],
 });
 
+if (! web && ! app) {
 build({
 	build: {
-		target		: 'esnext',
+		...oBuild,
 		lib: {
 			entry	: './src/appMain',
 			fileName: _=> 'appMain.js',
 			formats	: ['es'],
 		},
-		sourcemap	: true,
-		emptyOutDir	: false,
-//		minify		: 'terser',
-		reportCompressedSize	: false,
-		watch,
+		outDir	: 'dist_app',
 		rollupOptions: {
 			external: [
 				'electron',
 				'electron-devtools-installer',
 				...builtinModules.flatMap(p=> [p, `node:${p}`]),
 			],
-			output: { // entry chunk assets それぞれの書き出し名の指定
-				entryFileNames: `[name].js`,
-				chunkFileNames: `[name].js`,
-				assetFileNames: `[name].[ext]`,
-			},
+			output,
 		},
 	},
 	plugins: [dts(oDts)],
@@ -104,27 +94,19 @@ build({
 
 build({
 	build: {
-		target		: 'esnext',
+		...oBuild,
 		lib: {
 			entry	: './src/preload',
 			fileName: _=> 'preload.js',
 			formats	: ['es'],
 		},
-		sourcemap	: true,
-		emptyOutDir	: false,
-//		minify		: 'terser',
-		reportCompressedSize	: false,
-		watch,
+		outDir	: 'dist_app',
 		rollupOptions: {
 			external: [
 				'electron',
 				...builtinModules.flatMap(p=> [p, `node:${p}`]),
 			],
-			output: { // entry chunk assets それぞれの書き出し名の指定
-				entryFileNames: `[name].js`,
-				chunkFileNames: `[name].js`,
-				assetFileNames: `[name].[ext]`,
-			},
+			output,
 		},
 	},
 	plugins: [dts(oDts)],
