@@ -1,5 +1,5 @@
-import { SysBase } from '../sn/SysBase';
-import { ScriptMng } from '../sn/ScriptMng';
+import { SysBase } from '../ts/SysBase';
+import { ScriptMng } from '../ts/ScriptMng';
 import { Root } from 'react-dom/client';
 export type T_ARG = {
     heStage: HTMLElement;

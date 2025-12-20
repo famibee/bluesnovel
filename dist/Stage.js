@@ -2,7 +2,8 @@ import { r as __toESM, t as __commonJSMin } from "./chunk.js";
 import { t as BaseMemento } from "./Memento.js";
 import { t as require_react } from "./react.js";
 import { a as createEmotionProps, c as require_hoist_non_react_statics_cjs, d as noop, f as off, i as Emotion$1, l as useEffectOnce_default, m as useStore, n as jsx$1, o as hasOwn, onLong, p as on, r as jsxs, s as serializeStyles, setDesignMode, t as Fragment, u as isBrowser } from "./Main.js";
-import { a as uint, n as SEARCH_PATH_ARG_EXT, r as CmnLib } from "./ConfigBase.js";
+import { r as uint, t as CmnLib } from "./CmnLib.js";
+import { n as SEARCH_PATH_ARG_EXT } from "./ConfigBase.js";
 var import_react = /* @__PURE__ */ __toESM(require_react()), toggleReducer = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
 }, useToggle_default = function(e) {
@@ -10027,15 +10028,15 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [x, w] = useToggle_default(!1), E = useLongPress_default((e) => {
-		e.stopPropagation(), onLong(), !isDrag && (w(), setDesignMode(!x));
+	let [S, w] = useToggle_default(!1), E = useLongPress_default((e) => {
+		e.stopPropagation(), onLong(), !isDrag && (w(), setDesignMode(!S));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
 	}), [D, k] = useToggle_default(!1), A = useFullscreen_default(b, D, { onClose: () => k(!1) }), N = { cmn: {
 		sys: e,
 		styChild: g,
-		isDesignMode: x,
+		isDesignMode: S,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10050,7 +10051,7 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 		...E,
 		ref: b,
 		children: [
-			x && /* @__PURE__ */ jsxs(Fragment, { children: [
+			S && /* @__PURE__ */ jsxs(Fragment, { children: [
 				/* @__PURE__ */ jsx$1("button", {
 					onClick: () => k(),
 					css: y,

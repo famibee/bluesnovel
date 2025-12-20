@@ -5,11 +5,12 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './sn/CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './ts/CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 
-import type {T_SysBaseParams} from './sn/CmnInterface';
+import type {T_SysBaseParams} from './ts/CmnInterface';
 
+// 仮置きでここに
 export class SysApp {
 	constructor(...[hPlg = {}, arg = {cur: 'prj/', crypto: false, dip: ''}]: T_SysBaseParams) {	// DOMContentLoaded は呼び出し側でやる
 console.log(`fn:app.ts line:13 hPlg:%o arg:%o`, hPlg, arg);

@@ -25,32 +25,12 @@ var SN_ID = "skynovel", SysBase = class {
 				sys: this,
 				scrMng: s
 			}, () => {
-				Promise.all([import("./lib3.js"), import("./lib.js")]).then(async ([{ Assets: e }, { extensions: t, ExtensionType: n }]) => {
-					await e.init({ basePath: location.origin }), t.add({
-						extension: {
-							type: n.LoadParser,
-							name: "sn-loader"
-						},
-						test: (e) => e.endsWith(".sn"),
-						load: (e) => new Promise(async (t, n) => {
-							let r = await this.fetch(e);
-							if (!r.ok) {
-								n("sn-loader fetch err:" + r.statusText);
-								return;
-							}
-							try {
-								t(await this.dec("sn", await r.text()));
-							} catch (t) {
-								n(`sn-loader err url:${e} ${t}`);
-							}
-						})
-					}), this.load = (t) => e.load(t), await s.load("title");
+				Promise.all([]).then(async ([]) => {
+					await s.load("title");
 				});
 			});
 		});
 	}
-	load = async (e) => "";
-	fetch = (e, t) => fetch(e, t);
 	#e = new Caretaker();
 	get caretaker() {
 		return this.#e;
@@ -58,7 +38,7 @@ var SN_ID = "skynovel", SysBase = class {
 	cfg;
 	async loadPath(e, t) {
 		this.cfg = t;
-		let n = this.arg.cur + "path.json", r = await this.fetch(n);
+		let n = this.arg.cur + "path.json", r = await fetch(n);
 		if (!r.ok) throw Error(r.statusText);
 		let i = await r.text(), a = JSON.parse(await this.dec(n, i));
 		for (let [t, n] of Object.entries(a)) {
