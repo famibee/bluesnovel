@@ -1,14 +1,15 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../ts/SysBase';
-import type {IHTag} from '../ts/Grammar';
+import type {SysBase} from '../sn/SysBase';
+import type {ScriptMng} from '../sn/ScriptMng';
+import type {IHTag} from '../sn/Grammar';
 
-import {type T_INIT_FNCS, useStore} from '../store/store';
+import {useStore} from '../store/store';
 import {lazy, Suspense} from 'react';
 import {useEffectOnce, useKey, useTitle} from 'react-use';
 import type {Root} from 'react-dom/client';
@@ -16,19 +17,16 @@ import type {Root} from 'react-dom/client';
 export type T_ARG = {
 	heStage	: HTMLElement;
 	sys		: SysBase;
-	hTag	: IHTag;
-	procNext: ()=> void;
-	attachTsx	: (trgNext: ()=> void, fncs: T_INIT_FNCS)=> void;
+	scrMng	: ScriptMng;
 };
 
 
-export function initMain(root: Root, arg: T_ARG) {
-	root.render(<Main arg={arg} />);
+export function initMain(root: Root, arg: T_ARG, inited: ()=> void) {
+	root.render(<Main arg={arg} inited={inited} />);
 }
 
-export function Main({arg}: {arg: T_ARG}) {
-	const {heStage, sys, procNext, attachTsx} = arg;
-
+export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
+	const {heStage, sys, scrMng} = arg;
 	const title = useStore(s=> s.title);
 	const addTitle = useStore(s=> s.addTitle);
 	useTitle(title);
@@ -36,9 +34,13 @@ export function Main({arg}: {arg: T_ARG}) {
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
+	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title)
-		attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle});
+		const hTag: IHTag		= Object.create(null);	// タグ処理辞書
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle}, hTag);
+
+		inited();
 
 		heStage.addEventListener('ev_next', procNext as EventListenerOrEventListenerObject);
 		return ()=> heStage.removeEventListener('ev_next', procNext);

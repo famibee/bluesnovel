@@ -1,15 +1,15 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2021-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2021-2024 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './ts/CmnInterface';
+import type {HPlugin, IPlugin, IPluginInitArg} from './sn/CmnInterface';
 export type {HPlugin, IPlugin, IPluginInitArg};
 import {HINFO, TAG_WINDOW} from './preload';
-import {T_CFG} from './ts/ConfigBase';
-import {CmnLib} from "./ts/CmnLib";
+import {T_CFG} from './sn/ConfigBase';
+import {CmnLib} from "./sn/CmnLib";
 
 import {BrowserWindow, ipcMain, app, dialog, MessageBoxOptions, shell, Size, screen} from 'electron';
 import Store from 'electron-store';

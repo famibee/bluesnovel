@@ -1,12 +1,12 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Stage';
-import {SEARCH_PATH_ARG_EXT} from '../ts/ConfigBase';
+import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 
 import {MouseEvent, useRef} from 'react';
 import Moveable from 'react-moveable';

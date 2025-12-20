@@ -46,6 +46,7 @@
 		"noUnusedLocals": true,		// 使っていないローカル変数をエラーに
 		"noUnusedParameters": true,	// 使っていない仮引数をエラーに
 								// ただし引数名の先頭にアンダースコアを付けると回避できる
+		"exactOptionalPropertyTypes": true,	// オプションプロパティにundefined 禁止
 
 		"forceConsistentCasingInFileNames": true,	// import時にファイルパスの文字列で大文字小文字を区別するか
 		//"isolatedDeclarations": true,	// 変数や関数をエクスポート時、ユーザーに明示的な型注釈を求める（トランスパイラ向け）
@@ -55,6 +56,7 @@
 		//verbatimModuleSyntax	false
 		//"extendedDiagnostics": true,	// コンパイル時に TypeScript が時間を費やしている場所を検出
 		"noUncheckedSideEffectImports": true,
+		"libReplacement": false,
 
 		/* Other */
 		// experimentalDecorators

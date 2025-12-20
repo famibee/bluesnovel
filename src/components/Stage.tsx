@@ -1,17 +1,17 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../ts/SysBase';
-import {CmnLib, uint} from '../ts/CmnLib';
+import type {SysBase} from '../sn/SysBase';
+import {CmnLib, uint} from '../sn/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
-import {BaseMemento} from '../ts/Memento';
+import {BaseMemento} from '../sn/Memento';
 
 import {RefObject, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';

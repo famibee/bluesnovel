@@ -34,9 +34,12 @@ const oDts: PluginOptions = {
 	}),
 };
 
+
+const aP = [];
+
 // === ブラウザ用 ===
 if (! app)
-build({
+aP.push(build({
 	build: {
 		...oBuild,
 		lib: {
@@ -44,14 +47,14 @@ build({
 			fileName: _=> 'web.js',
 			formats	: ['es'],
 		},
-		rollupOptions: {output},
+		rolldownOptions: {output},
 	},
 	plugins: [dts(oDts)],
-});
+}));
 
 // === アプリ用 ===
 if (! web)
-build({
+aP.push(build({
 	build: {
 		...oBuild,
 		lib: {
@@ -60,18 +63,16 @@ build({
 			formats	: ['es'],
 		},
 		outDir	: 'dist_app',
-		rollupOptions: {
-			external: [
-				...builtinModules.flatMap(p=> [p, `node:${p}`]),
-			],
+		rolldownOptions: {
+			external: builtinModules.flatMap(p=> [p, `node:${p}`]),
 			output,
 		},
 	},
 	plugins: [dts(oDts)],
-});
+}));
 
 if (! web && ! app) {
-build({
+aP.push(build({
 	build: {
 		...oBuild,
 		lib: {
@@ -80,7 +81,7 @@ build({
 			formats	: ['es'],
 		},
 		outDir	: 'dist_app',
-		rollupOptions: {
+		rolldownOptions: {
 			external: [
 				'electron',
 				'electron-devtools-installer',
@@ -90,9 +91,9 @@ build({
 		},
 	},
 	plugins: [dts(oDts)],
-});
+}));
 
-build({
+aP.push(build({
 	build: {
 		...oBuild,
 		lib: {
@@ -101,7 +102,7 @@ build({
 			formats	: ['es'],
 		},
 		outDir	: 'dist_app',
-		rollupOptions: {
+		rolldownOptions: {
 			external: [
 				'electron',
 				...builtinModules.flatMap(p=> [p, `node:${p}`]),
@@ -110,6 +111,8 @@ build({
 		},
 	},
 	plugins: [dts(oDts)],
-});
+}));
 
 }
+
+void Promise.allSettled(aP);

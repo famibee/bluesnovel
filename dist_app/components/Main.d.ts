@@ -1,17 +1,15 @@
-import { SysBase } from '../ts/SysBase';
-import { IHTag } from '../ts/Grammar';
-import { T_INIT_FNCS } from '../store/store';
+import { SysBase } from '../sn/SysBase';
+import { ScriptMng } from '../sn/ScriptMng';
 import { Root } from 'react-dom/client';
 export type T_ARG = {
     heStage: HTMLElement;
     sys: SysBase;
-    hTag: IHTag;
-    procNext: () => void;
-    attachTsx: (trgNext: () => void, fncs: T_INIT_FNCS) => void;
+    scrMng: ScriptMng;
 };
-export declare function initMain(root: Root, arg: T_ARG): void;
-export declare function Main({ arg }: {
+export declare function initMain(root: Root, arg: T_ARG, inited: () => void): void;
+export declare function Main({ arg, inited }: {
     arg: T_ARG;
+    inited: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
 export declare const setDesignMode: (b: boolean) => boolean;
 export declare function onLong(): void;

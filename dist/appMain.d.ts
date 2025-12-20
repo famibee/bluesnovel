@@ -1,4 +1,4 @@
-import { HPlugin, IPlugin, IPluginInitArg } from './ts/CmnInterface';
+import { HPlugin, IPlugin, IPluginInitArg } from './sn/CmnInterface';
 import { BrowserWindow } from 'electron';
 export type { HPlugin, IPlugin, IPluginInitArg };
 export declare class appMain {
