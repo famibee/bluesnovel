@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Stage';
-import {SEARCH_PATH_ARG_EXT} from '../ts/ConfigBase';
+import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 
 import {MouseEvent, useRef} from 'react';
 import Moveable from 'react-moveable';

@@ -5,10 +5,12 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {HPlugin, IPlugin, IPluginInitArg} from './ts/CmnInterface';
-export type {HPlugin, IPlugin, IPluginInitArg};
+import type {T_HPlugin, T_Plugin, T_PluginInitArg} from './sn/CmnInterface';
+export type {T_HPlugin, T_Plugin, T_PluginInitArg};
+import type {TArg} from './sn/Grammar';
+export type {TArg};
 
-import type {T_SysBaseParams} from './ts/CmnInterface';
+import type {T_SysBaseParams} from './sn/CmnInterface';
 
 // 仮置きでここに
 export class SysApp {

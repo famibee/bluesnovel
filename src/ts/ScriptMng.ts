@@ -5,11 +5,11 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from './SysBase';
-import type {HArg, IHTag} from './Grammar';
+import type {SysBase} from '../sn/SysBase';
+import type {TArg, T_HTag} from '../sn/Grammar';
 import type {T_LAY} from '../components/Stage';
 import type {T_CHGPIC, T_CHGSTR, T_INIT_FNCS} from '../store/store';
-import {CmnLib} from './CmnLib';
+import {CmnLib} from '../sn/CmnLib';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
@@ -28,11 +28,11 @@ export class ScriptMng {
 			background-color: rgba(255, 255, 255, 0.7);`
 		document.body.appendChild(this.#spnDbg);
 
-		this.#hTag.trace		= o=> this.#trace(o);			// デバッグ表示へ出力
+		this.#hTag.trace	= o=> this.#trace(o);	// デバッグ表示へ出力
 	}
 
 	// Main.tsx からの初期化
-	attachTsx(trgNext: ()=> void, fncs: T_INIT_FNCS, hTag: IHTag) {
+	attachTsx(trgNext: ()=> void, fncs: T_INIT_FNCS, hTag: T_HTag) {
 		this.$trgNext = trgNext;
 		this.$fncs = fncs;
 		this.#hTag = hTag;
@@ -49,7 +49,7 @@ export class ScriptMng {
 	}
 		$trgNext	: ()=> void;
 		$fncs		: T_INIT_FNCS;
-		#hTag		: IHTag		= Object.create(null);	// タグ処理辞書
+		#hTag		: T_HTag		= Object.create(null);	// タグ処理辞書
 
 
 	async load(fn: string) {
@@ -86,7 +86,7 @@ console.log(`fn:ScriptMng.ts == go ==`);
 	go() {}
 
 
-	#trace(hArg: HArg) {
+	#trace(hArg: TArg) {
 		this.myTrace(hArg.text || `(text is ${hArg.text})`, 'I');
 
 		return false;

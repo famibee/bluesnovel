@@ -5,8 +5,8 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../ts/SysBase';
-import {CmnLib, uint} from '../ts/CmnLib';
+import type {SysBase} from '../sn/SysBase';
+import {CmnLib, uint} from '../sn/CmnLib';
 import GrpLayer, {type T_GRPLAY} from './GrpLayer';
 import TxtLayer, {type T_TXTLAY} from './TxtLayer';
 import {onLong, setDesignMode, type T_ARG} from './Main';

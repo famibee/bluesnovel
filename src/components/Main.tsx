@@ -5,9 +5,9 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../ts/SysBase';
+import type {SysBase} from '../sn/SysBase';
 import type {ScriptMng} from '../ts/ScriptMng';
-import type {IHTag} from '../ts/Grammar';
+import type {T_HTag} from '../sn/Grammar';
 
 import {useStore} from '../store/store';
 import {lazy, Suspense} from 'react';
@@ -37,7 +37,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
-		const hTag: IHTag		= Object.create(null);	// タグ処理辞書
+		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
 		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle}, hTag);
 
 		inited();

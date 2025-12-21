@@ -1,4 +1,4 @@
-import { SysBase } from '../ts/SysBase';
+import { SysBase } from '../sn/SysBase';
 import { T_GRPLAY } from './GrpLayer';
 import { T_TXTLAY } from './TxtLayer';
 import { T_ARG } from './Main';

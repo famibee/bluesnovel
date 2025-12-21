@@ -1,4 +1,4 @@
-import { SysBase } from '../ts/SysBase';
+import { SysBase } from '../sn/SysBase';
 import { ScriptMng } from '../ts/ScriptMng';
 import { Root } from 'react-dom/client';
 export type T_ARG = {
