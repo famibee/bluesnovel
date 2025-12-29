@@ -9997,8 +9997,6 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 
 		transform-origin: left top;
 		transform: scale(${f});
-		width	: calc(${CmnLib.stageW}px / ${f});
-		height	: calc(${CmnLib.stageH}px / ${f});
 	`, g = css`position: absolute; top: 0; left: 0;`, y = css`
 		position: relative; z-index: 1;
 
@@ -10028,15 +10026,15 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [S, w] = useToggle_default(!1), E = useLongPress_default((e) => {
-		e.stopPropagation(), onLong(), !isDrag && (w(), setDesignMode(!S));
+	let [x, S] = useToggle_default(!1), w = useLongPress_default((e) => {
+		e.stopPropagation(), onLong(), !isDrag && (S(), setDesignMode(!x));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), [D, k] = useToggle_default(!1), A = useFullscreen_default(b, D, { onClose: () => k(!1) }), N = { cmn: {
+	}), [E, D] = useToggle_default(!1), k = useFullscreen_default(b, E, { onClose: () => D(!1) }), A = { cmn: {
 		sys: e,
 		styChild: g,
-		isDesignMode: S,
+		isDesignMode: x,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10048,12 +10046,12 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 	return /* @__PURE__ */ jsxs("div", {
 		css: m,
 		onClick: t,
-		...E,
+		...w,
 		ref: b,
 		children: [
-			S && /* @__PURE__ */ jsxs(Fragment, { children: [
+			x && /* @__PURE__ */ jsxs(Fragment, { children: [
 				/* @__PURE__ */ jsx$1("button", {
-					onClick: () => k(),
+					onClick: () => D(),
 					css: y,
 					children: "FullScr"
 				}),
@@ -10068,12 +10066,12 @@ function Stage({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ jsx$1("span", { children: A }),
+			/* @__PURE__ */ jsx$1("span", { children: k }),
 			a.map((e) => e.cls === "GRP" ? /* @__PURE__ */ jsx$1(GrpLayer, {
-				cmn: N.cmn,
+				cmn: A.cmn,
 				fn: e.fn
 			}, e.nm) : /* @__PURE__ */ jsx$1(TxtLayer, {
-				cmn: N.cmn,
+				cmn: A.cmn,
 				str: e.str
 			}, e.nm))
 		]

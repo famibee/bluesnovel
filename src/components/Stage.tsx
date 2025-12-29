@@ -63,9 +63,10 @@ export default function Stage({
 
 		transform-origin: left top;
 		transform: scale(${cvsScale});
-		width	: calc(${CmnLib.stageW}px / ${cvsScale});
-		height	: calc(${CmnLib.stageH}px / ${cvsScale});
 	`;
+		// 有効にするとスケーラブルでなくなる、本番用か
+		// width	: calc(${CmnLib.stageW}px / ${cvsScale});
+		// height	: calc(${CmnLib.stageH}px / ${cvsScale});
 	const styChild = css`position: absolute; top: 0; left: 0;`;
 
 	const styBtn = css`

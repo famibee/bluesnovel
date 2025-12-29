@@ -14,10 +14,10 @@ var createStoreImpl = (t) => {
 		subscribe: (t) => (s.add(t), () => s.delete(t))
 	}, d = o = t(c, l, u);
 	return u;
-}, createStore = ((t) => t ? createStoreImpl(t) : createStoreImpl), import_react = /* @__PURE__ */ __toESM(require_react(), 1), identity = (t) => t;
+}, createStore = ((t) => t ? createStoreImpl(t) : createStoreImpl), import_react$1 = /* @__PURE__ */ __toESM(require_react(), 1), identity = (t) => t;
 function useStore$1(t, o = identity) {
-	let s = import_react.useSyncExternalStore(t.subscribe, import_react.useCallback(() => o(t.getState()), [t, o]), import_react.useCallback(() => o(t.getInitialState()), [t, o]));
-	return import_react.useDebugValue(s), s;
+	let s = import_react$1.useSyncExternalStore(t.subscribe, import_react$1.useCallback(() => o(t.getState()), [t, o]), import_react$1.useCallback(() => o(t.getInitialState()), [t, o]));
+	return import_react$1.useDebugValue(s), s;
 }
 var createImpl = (t) => {
 	let o = createStore(t), s = (t) => useStore$1(o, t);
@@ -55,13 +55,13 @@ function off(t) {
 	t && t.removeEventListener && t.removeEventListener.apply(t, o);
 }
 var isBrowser$1 = typeof window < "u", useEffectOnce_default = function(t) {
-	(0, import_react.useEffect)(t, []);
+	(0, import_react$1.useEffect)(t, []);
 }, defaultTarget = isBrowser$1 ? window : null, isListenerType1 = function(t) {
 	return !!t.addEventListener;
 }, isListenerType2 = function(t) {
 	return !!t.on;
 }, useEvent_default = function(t, o, s, c) {
-	s === void 0 && (s = defaultTarget), (0, import_react.useEffect)(function() {
+	s === void 0 && (s = defaultTarget), (0, import_react$1.useEffect)(function() {
 		if (o && s) return isListenerType1(s) ? on(s, t, o, c) : isListenerType2(s) && s.on(t, o, c), function() {
 			isListenerType1(s) ? off(s, t, o, c) : isListenerType2(s) && s.off(t, o, c);
 		};
@@ -82,7 +82,7 @@ var isBrowser$1 = typeof window < "u", useEffectOnce_default = function(t) {
 }, useKey_default = function(t, o, s, c) {
 	o === void 0 && (o = noop), s === void 0 && (s = {}), c === void 0 && (c = [t]);
 	var l = s.event, d = l === void 0 ? "keydown" : l, f = s.target, p = s.options;
-	useEvent_default(d, (0, import_react.useMemo)(function() {
+	useEvent_default(d, (0, import_react$1.useMemo)(function() {
 		var s = createKeyPredicate(t);
 		return function(t) {
 			if (s(t)) return o(t);
@@ -91,8 +91,8 @@ var isBrowser$1 = typeof window < "u", useEffectOnce_default = function(t) {
 }, DEFAULT_USE_TITLE_OPTIONS = { restoreOnUnmount: !1 };
 function useTitle(t, o) {
 	o === void 0 && (o = DEFAULT_USE_TITLE_OPTIONS);
-	var s = (0, import_react.useRef)(document.title);
-	document.title !== t && (document.title = t), (0, import_react.useEffect)(function() {
+	var s = (0, import_react$1.useRef)(document.title);
+	document.title !== t && (document.title = t), (0, import_react$1.useEffect)(function() {
 		if (o && o.restoreOnUnmount) return function() {
 			document.title = s.current;
 		};
@@ -1116,15 +1116,15 @@ function serializeStyles(t, o, s) {
 }
 var syncFallback = function(t) {
 	return t();
-}, useInsertionEffect = import_react.useInsertionEffect ? import_react.useInsertionEffect : !1, useInsertionEffectAlwaysWithSyncFallback = useInsertionEffect || syncFallback;
-useInsertionEffect || import_react.useLayoutEffect;
-var EmotionCacheContext = /* @__PURE__ */ import_react.createContext(typeof HTMLElement < "u" ? /* @__PURE__ */ createCache({ key: "css" }) : null);
+}, useInsertionEffect = import_react$1.useInsertionEffect ? import_react$1.useInsertionEffect : !1, useInsertionEffectAlwaysWithSyncFallback = useInsertionEffect || syncFallback;
+useInsertionEffect || import_react$1.useLayoutEffect;
+var EmotionCacheContext = /* @__PURE__ */ import_react$1.createContext(typeof HTMLElement < "u" ? /* @__PURE__ */ createCache({ key: "css" }) : null);
 EmotionCacheContext.Provider;
 var withEmotionCache = function(t) {
-	return /* @__PURE__ */ (0, import_react.forwardRef)(function(o, s) {
-		return t(o, (0, import_react.useContext)(EmotionCacheContext), s);
+	return /* @__PURE__ */ (0, import_react$1.forwardRef)(function(o, s) {
+		return t(o, (0, import_react$1.useContext)(EmotionCacheContext), s);
 	});
-}, ThemeContext = /* @__PURE__ */ import_react.createContext({}), hasOwn = {}.hasOwnProperty, typePropName = "__EMOTION_TYPE_PLEASE_DO_NOT_USE__", createEmotionProps = function(t, o) {
+}, ThemeContext = /* @__PURE__ */ import_react$1.createContext({}), hasOwn = {}.hasOwnProperty, typePropName = "__EMOTION_TYPE_PLEASE_DO_NOT_USE__", createEmotionProps = function(t, o) {
 	var s = {};
 	for (var c in o) hasOwn.call(o, c) && (s[c] = o[c]);
 	return s[typePropName] = t, s;
@@ -1138,17 +1138,17 @@ var withEmotionCache = function(t) {
 	typeof c == "string" && o.registered[c] !== void 0 && (c = o.registered[c]);
 	var l = t[typePropName], d = [c], f = "";
 	typeof t.className == "string" ? f = getRegisteredStyles(o.registered, d, t.className) : t.className != null && (f = t.className + " ");
-	var p = serializeStyles(d, void 0, import_react.useContext(ThemeContext));
+	var p = serializeStyles(d, void 0, import_react$1.useContext(ThemeContext));
 	f += o.key + "-" + p.name;
 	var m = {};
 	for (var h in t) hasOwn.call(t, h) && h !== "css" && h !== typePropName && (m[h] = t[h]);
-	return m.className = f, s && (m.ref = s), /* @__PURE__ */ import_react.createElement(import_react.Fragment, null, /* @__PURE__ */ import_react.createElement(Insertion, {
+	return m.className = f, s && (m.ref = s), /* @__PURE__ */ import_react$1.createElement(import_react$1.Fragment, null, /* @__PURE__ */ import_react$1.createElement(Insertion, {
 		cache: o,
 		serialized: p,
 		isStringTag: typeof l == "string"
-	}), /* @__PURE__ */ import_react.createElement(l, m));
+	}), /* @__PURE__ */ import_react$1.createElement(l, m));
 });
-require_hoist_non_react_statics_cjs();
+require_react(), require_hoist_non_react_statics_cjs();
 var Fragment = import_jsx_runtime.Fragment, jsx = function(t, o, s) {
 	return hasOwn.call(o, "css") ? import_jsx_runtime.jsx(Emotion$1, createEmotionProps(t, o), s) : import_jsx_runtime.jsx(t, o, s);
 }, jsxs = function(t, o, s) {
@@ -1196,8 +1196,8 @@ function Main({ arg: t, inited: o }) {
 		}
 		isDesignMode || v();
 	}
-	let S = (0, import_react.lazy)(() => import("./Stage.js"));
-	return /* @__PURE__ */ jsx(import_react.Suspense, {
+	let S = (0, import_react$1.lazy)(() => import("./Stage.js"));
+	return /* @__PURE__ */ jsx(import_react$1.Suspense, {
 		fallback: /* @__PURE__ */ jsx(Fragment, { children: "Loading" }),
 		children: /* @__PURE__ */ jsx(S, {
 			arg: t,

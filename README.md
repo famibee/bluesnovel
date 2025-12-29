@@ -1,27 +1,46 @@
-# BlueSNovel
-[![MIT License](https://img.shields.io/github/license/famibee/bluesnovel.svg)](https://github.com/famibee/bluesnovel/blob/master/LICENSE)
-![platform](https://img.shields.io/badge/platform-windows%20%7C%20macos-lightgrey.svg)
+<p align="center">
+	<img src="test/logo.png" alt="logo" width="120">
+</p>
+
+<h1 align="center">BlueSNovel</h1>
+
+<p align="center"><em>NovelGame framework by JS</em></p>
+<br />
+
+
+[![MIT](https://img.shields.io/badge/MIT-green?style=for-the-badge)](LICENSE)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=apple&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Google chrome](https://img.shields.io/badge/Google_chrome-4285F4?style=for-the-badge&logo=Google-chrome&logoColor=white)
+![Firefox](https://img.shields.io/badge/Firefox_Browser-FF7139?style=for-the-badge&logo=Firefox-Browser&logoColor=white)
+![Safari](https://img.shields.io/badge/Safari-FF1B2D?style=for-the-badge&logo=Safari&logoColor=white)
+
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/famibee/bluesnovel?color=brightgreen)
 ![GitHub last commit](https://img.shields.io/github/last-commit/famibee/bluesnovel)
-![npm type definitions](https://img.shields.io/npm/types/bluesnovel)
-
-[![Build Status](https://app.travis-ci.com/famibee/bluesnovel.svg?branch=master)](https://app.travis-ci.com/famibee/bluesnovel)
-[![Maintainability](https://api.codeclimate.com/v1/badges/228e91311459ce3f7e10/maintainability)](https://codeclimate.com/github/famibee/bluesnovel/maintainability)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/famibee/bluesnovel)
-![GitHub Release Date](https://img.shields.io/github/release-date/famibee/bluesnovel)
-![Release package](https://github.com/famibee/bluesnovel/workflows/Release%20package/badge.svg)
+![npm type definitions](https://img.shields.io/npm/types/@famibee/bluesnovel)
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 
-WebGL NovelGame framework by PixiJS
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/famibee/bluesnovel)
+![Release package](https://github.com/famibee/bluesnovel/workflows/Release%20package/badge.svg)
+![GitHub Release Date](https://img.shields.io/github/release-date/famibee/bluesnovel)
 
-![logo.svg](https://raw.githubusercontent.com/famibee/bluesnovel/master/test/icon.svg)
+![NodeJs](https://img.shields.io/badge/Node%20js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![electron](https://img.shields.io/badge/Electron-2B2E3A?style=for-the-badge&logo=electron&logoColor=9FEAF9)
 
-[CHANGELOG.md](CHANGELOG.md)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![bun](https://img.shields.io/badge/bun-282a36?style=for-the-badge&logo=bun&logoColor=fbf0df)
+![vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
+![ESLint](https://img.shields.io/badge/eslint-3A33D1?style=for-the-badge&logo=eslint&logoColor=white)
+![VSCode](https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)
+![Sublime Text](https://img.shields.io/badge/sublime_text-%23575757.svg?&style=for-the-badge&logo=sublime-text&logoColor=important)
+
 
 ---
 ## description（説明）
 
-
+---
+## 拡張機能 / Extension
+ - [SKYNovel - Visual Studio Marketplace](https://marketplace.visualstudio.com/itesm?itemName=famibee.skynovel)
 
 ---
 ## License ... [MIT](LICENSE)
