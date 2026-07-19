@@ -1,8 +1,10 @@
-var BaseMemento = class {
+//#region src/ts/Memento.ts
+var e = class {
+	stt;
 	constructor(e = "") {
 		this.stt = e;
 	}
-}, Caretaker = class {
+}, t = class {
 	#e = "";
 	push(e) {
 		this.update = this.#n, this.push = (e) => {
@@ -34,6 +36,7 @@ var BaseMemento = class {
 		return this.#r.length - 1 === this.#i;
 	}
 };
-export { Caretaker as n, BaseMemento as t };
+//#endregion
+export { t as n, e as t };
 
 //# sourceMappingURL=Memento.js.map

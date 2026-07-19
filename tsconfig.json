@@ -4,6 +4,7 @@
 		"target": "esnext",
 		"lib": ["esnext","DOM"],
 		"module": "esnext",
+		"types": ["bun", "node"],
 
 		/* Bundler mode */
 		"moduleResolution": "bundler",
@@ -16,7 +17,8 @@
 
 		/* Output */
 		"sourceMap": true,
-		"outDir": "dist/",
+		"rootDir": ".",
+		"outDir": "./dist",
 		"declaration": true,
 		"declarationMap": true,
 		"removeComments": true,
@@ -62,5 +64,5 @@
 		// experimentalDecorators
 		"incremental": true
 	},
-	"include": ["src/**/*"]
+	"include": ["src/**/*", "test/**/*"]
 }

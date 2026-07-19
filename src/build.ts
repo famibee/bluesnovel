@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2022-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2022-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -7,8 +7,6 @@
 
 const [, , ...aCmd] = process.argv;
 const watch = aCmd.includes('--watch') ?{} :null;
-const web = aCmd.includes('--web') ?{} :null;
-const app = aCmd.includes('--app') ?{} :null;
 
 import {build, type BuildEnvironmentOptions} from 'vite';
 import dts, {type PluginOptions} from 'vite-plugin-dts';
@@ -38,7 +36,6 @@ const oDts: PluginOptions = {
 const aP = [];
 
 // === ブラウザ用 ===
-if (! app)
 aP.push(build({
 	build: {
 		...oBuild,
@@ -49,11 +46,10 @@ aP.push(build({
 		},
 		rolldownOptions: {output},
 	},
-	plugins: [dts(oDts)],
+	plugins: watch ? [] : [dts(oDts)],
 }));
 
 // === アプリ用 ===
-if (! web)
 aP.push(build({
 	build: {
 		...oBuild,
@@ -68,10 +64,9 @@ aP.push(build({
 			output,
 		},
 	},
-	plugins: [dts(oDts)],
+	plugins: watch ? [] : [dts(oDts)],
 }));
 
-if (! web && ! app) {
 aP.push(build({
 	build: {
 		...oBuild,
@@ -90,7 +85,7 @@ aP.push(build({
 			output,
 		},
 	},
-	plugins: [dts(oDts)],
+	plugins: watch ? [] : [dts(oDts)],
 }));
 
 aP.push(build({
@@ -110,9 +105,7 @@ aP.push(build({
 			output,
 		},
 	},
-	plugins: [dts(oDts)],
+	plugins: watch ? [] : [dts(oDts)],
 }));
-
-}
 
 void Promise.allSettled(aP);

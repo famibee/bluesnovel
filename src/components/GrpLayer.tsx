@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -15,11 +15,19 @@ import Moveable from 'react-moveable';
 type T_GRPARG = T_LAY_CMN & {
 	fn		: string;
 };
-export type T_GRPLAY = T_LAY_IDX & {cls: 'GRP'} & T_GRPARG;
+// ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'GRP'; fn: string};
+export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
 export default function GrpLayer({cmn: {styChild, sys, isDesignMode, sty4Moveable}, fn}: T_GRPARG) {
-	const search = (fn: string)=> sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM);
+	// 試作注意：アセット一式（path.json等）未整備の状態でも画面ごと落ちないようにする
+	//	本実装ではアセット未登録をロードエラーとして扱う方針へ戻すこと
+	const search = (fn: string)=> {
+		if (! fn) return '';
+		try {return sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)}
+		catch (e) {console.warn('GrpLayer search failed (試作：アセット未整備の可能性)', e); return ''}
+	};
 
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {

@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -7,8 +7,8 @@
 
 import type {SysBase} from '../sn/SysBase';
 import {CmnLib, uint} from '../sn/CmnLib';
-import GrpLayer, {type T_GRPLAY} from './GrpLayer';
-import TxtLayer, {type T_TXTLAY} from './TxtLayer';
+import GrpLayer, {type T_GRPLAY_DATA} from './GrpLayer';
+import TxtLayer, {type T_TXTLAY_DATA} from './TxtLayer';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
@@ -30,7 +30,7 @@ export type T_LAY_CMN = {
 		visible?	: boolean;
 	};
 };
-export type T_LAY = T_GRPLAY | T_TXTLAY;
+export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
 
 
 export default function Stage({

@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2025 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -7,11 +7,26 @@
 
 import type {SysBase} from '../sn/SysBase';
 import type {TArg, T_HTag} from '../sn/Grammar';
-import type {T_LAY} from '../components/Stage';
-import type {T_CHGPIC, T_CHGSTR, T_INIT_FNCS} from '../store/store';
+import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib} from '../sn/CmnLib';
+import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
+import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
+
+
+// 試作用：path.json 等のアセット一式が無くても動作確認できるダミーシナリオ
+//	（本実装ではこのフォールバックは撤去する。詳細は docs_handover/ 参照）
+const SAMPLE_SN = `[add_lay layer=base class=GRP]
+[add_lay layer=mes class=TXT]
+[current layer=mes]
+[lay layer=base pic=yun_1184]
+あいうえお、これはbluesnovelの試作画面です。[l]
+クリックかスペースキーで読み進められます。[p]
+[lay layer=base pic=yun_1317]
+ページが変わり、背景が差し替わりました。[l]
+PageUp/PageDownキーで読み戻り・読み進めができます。[s]
+`;
 
 
 export class ScriptMng {
@@ -40,8 +55,6 @@ export class ScriptMng {
 		this.#hTag.title = ({text})=> {
 			if (! text) throw '[title] textは必須です';
 
-			// this.#main_title = text;	//TODO: 
-			// this.titleSub(this.#main_title + this.#info_title);
 			fncs.addTitle(text);
 
 			return false;
@@ -52,38 +65,77 @@ export class ScriptMng {
 		#hTag		: T_HTag		= Object.create(null);	// タグ処理辞書
 
 
+	// シナリオ解析ループ・開始
+	//	試作版：ScriptEngine（超簡略パーサ・実行器）に処理を委譲する。
+	//	[l][p][s] での状態は Caretaker（Memento.ts）が Stage.tsx 経由で自動記録する。
+	#hEngine: {[fn: string]: ScriptEngine} = {};
+	#curEngine?: ScriptEngine;
+
 	async load(fn: string) {
-		//NOTE: 同じidxの更新をチェックか
-
-		//TODO: スクリプト解析ループ・開始
-		//TODO: [l][p][s][wait]での状態を保存
-
-		function* gene1(): Generator<T_LAY | T_CHGPIC | T_CHGSTR> {
-			yield {cls: 'GRP', nm: 'base', fn: 'yun_1184'};
-			yield {cls: 'TXT', nm: 'mes', str: 'あいうえお'};
-			yield {nm: 'mes', str: 'かきくけこ'};
-			yield {cls: 'GRP', nm: 'fg0', fn: 'F_1024a'};
-			yield {nm: 'base', fn: 'yun_1317'};
+		let engine = this.#hEngine[fn];
+		if (! engine) {
+			const src = await this.#fetchScript(fn);
+			engine = this.#hEngine[fn] = new ScriptEngine(fn, src);
 		}
-		const gen1 = gene1();
-		let idxDummy = 0;
-		this.go = ()=> {
-console.log(`fn:ScriptMng.ts == go ==`);
-			while (true) {
-				const {done, value: o} = gen1.next();
-				if (done) break;
-	
-				this.sys.caretaker.push(fn +':'+ ++idxDummy);
-				if ('cls' in o) this.$fncs.addLayer(o); else
-				if ('fn' in o) this.$fncs.chgPic(o); else this.$fncs.chgStr(o);
-				break;
-			}
-		};
+		this.#curEngine = engine;
 
-		this.$trgNext();
+		this.go = ()=> this.#runStep();
+
+		this.$trgNext();	// -> ev_next -> Main.tsx procNext() -> this.go()
 	}
 
-	go() {}
+	// 現在の実行位置から次の停止点（[l][p][s]、またはスクリプト終端）まで進める
+	go() { /* attachTsx/load 完了後、上でthis.goとして差し替えられる */ }
+
+	#runStep() {
+		const engine = this.#curEngine;
+		if (! engine) return;
+
+		let aAct: T_ENGINE_ACTION[];
+		try {
+			aAct = engine.step();
+		} catch (e) {
+			this.myTrace(`シナリオ解析エラー fn:${engine.fn} ${String(e)}`, 'ET');
+			return;
+		}
+		for (const act of aAct) this.#applyAction(act);
+
+		if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
+	}
+
+	#applyAction(act: T_ENGINE_ACTION) {
+		switch (act.t) {
+		case 'addLay':
+			this.$fncs.addLayer(act.cls === 'GRP'
+				? {cls: 'GRP', nm: act.nm, fn: ''}
+				: {cls: 'TXT', nm: act.nm, str: ''});
+			break;
+		case 'chgPic':
+			this.$fncs.chgPic({nm: act.nm, fn: act.fn});
+			break;
+		case 'chgStr':
+			this.$fncs.chgStr({nm: act.nm, str: act.str});
+			break;
+		case 'stop':
+			// このタイミングでの表示状態を Caretaker に記録する
+			//	（Stage.tsx の再描画で自動的に Memento が生成される）
+			this.sys.caretaker.push(act.key);
+			break;
+		}
+	}
+
+	async #fetchScript(fn: string): Promise<string> {
+		try {
+			const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
+			const res = await fetch(path);
+			if (! res.ok) throw Error(res.statusText);
+			return await res.text();
+		} catch (e) {
+			// 試作：アセット未整備でも表示確認できるようダミーシナリオへ切替
+			this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${fn} ${String(e)}`, 'W');
+			return SAMPLE_SN;
+		}
+	}
 
 
 	#trace(hArg: TArg) {
@@ -103,7 +155,6 @@ console.log(`fn:ScriptMng.ts == go ==`);
 		}
 
 		const mes = `{${lvl}} `+ txt;
-		// const mes = `{${lvl}} `+ this.#scrItr.strPos() + txt;
 		this.#spnDbg.innerHTML += `<span style='${sty}'>${mes}</span><br/>`;
 		this.#spnDbg.hidden = false;
 
@@ -114,17 +165,6 @@ console.log(`fn:ScriptMng.ts == go ==`);
 			case 'ET':
 			case 'E':
 				this.#hTag.title!({text: txt});
-				/*if (CmnLib.osName === "AND") {
-					const buf = "mailto:foo@hoge.co.jp"
-						+ "?subject=AIRNovel_ERR&body="
-						+ CmnLib.escapeZenkaku(mes) + "\n"
-						+ "※一部記号は全角表示しています。";
-					flash.net.navigateToURL(new URLRequest(buf));
-				}*/
-				// this.#hTag.dump_lay!({});	//TODO: 
-				// this.#hTag.dump_val!({});	//TODO: 
-				// this.#scrItr.dumpErrForeLine();
-				// this.#hTag.dump_stack!({});	//TODO: 
 
 				if (lvl === 'ET') throw mes;
 				break;

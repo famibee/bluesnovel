@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -34,6 +34,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
+	const setReadBack = useStore(s=> s.setReadBack);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
@@ -47,10 +48,20 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	});
 
 	// イベント
-	function next() {if (! sys.caretaker.nextKey()) procNext()}
-	useKey('ArrowDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
-	function prev() {sys.caretaker.prevKey()}
-	useKey('ArrowUp', e=> {e.stopPropagation(); e.preventDefault(); prev()});
+	// space/クリック = 既存の読み戻り範囲内なら読み進め、最新なら未読を進める
+	// PageDown = 読み進め（next()と同じ扱い）／PageUp = 読み戻り
+	//	読み戻り中（Caretaker.isLast()===false）はTxtLayerで文字を黄色く表示する
+	function next() {
+		if (sys.caretaker.nextKey()) {setReadBack(! sys.caretaker.isLast()); return}
+		setReadBack(false);
+		procNext();
+	}
+	function prev() {
+		if (sys.caretaker.prevKey()) setReadBack(! sys.caretaker.isLast());
+	}
+	useKey(e=> e.code === 'Space', e=> {e.stopPropagation(); e.preventDefault(); next()});
+	useKey(e=> e.code === 'PageDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
+	useKey(e=> e.code === 'PageUp', e=> {e.stopPropagation(); e.preventDefault(); prev()});
 
 	function onClick() {
 		if (isLong) {isLong = false; return}

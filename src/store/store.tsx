@@ -1,5 +1,5 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
@@ -22,6 +22,9 @@ type T_STATE = {
 
 	title	: string;
 	addTitle	: (t: string)=> void;
+
+	isReadBack	: boolean;		// 読み戻り中か（PageUp等でCaretaker.isLast()===falseの間）
+	setReadBack	: (b: boolean)=> void;
 }
 export type T_CHGPIC = {
 	nm	: string;
@@ -64,4 +67,7 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 
 	title		: '',
 	addTitle	: title=> set(()=> ({title})),
+
+	isReadBack	: false,
+	setReadBack	: b=> set(()=> ({isReadBack: b})),
 }))

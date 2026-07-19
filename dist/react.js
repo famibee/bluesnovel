@@ -1,14 +1,6 @@
-import { t as __commonJSMin } from "./chunk.js";
-/**
-* @license React
-* react.production.js
-*
-* Copyright (c) Meta Platforms, Inc. and affiliates.
-*
-* This source code is licensed under the MIT license found in the
-* LICENSE file in the root directory of this source tree.
-*/
-var require_react_production = /* @__PURE__ */ __commonJSMin(((e) => {
+import { t as e } from "./rolldown-runtime.js";
+//#region node_modules/react/cjs/react.production.js
+var t = /* @__PURE__ */ e(((e) => {
 	var t = Symbol.for("react.transitional.element"), n = Symbol.for("react.portal"), r = Symbol.for("react.fragment"), i = Symbol.for("react.strict_mode"), a = Symbol.for("react.profiler"), o = Symbol.for("react.consumer"), s = Symbol.for("react.context"), c = Symbol.for("react.forward_ref"), l = Symbol.for("react.suspense"), u = Symbol.for("react.memo"), d = Symbol.for("react.lazy"), f = Symbol.for("react.activity"), p = Symbol.iterator;
 	function m(e) {
 		return typeof e != "object" || !e ? null : (e = p && e[p] || e["@@iterator"], typeof e == "function" ? e : null);
@@ -293,8 +285,8 @@ var require_react_production = /* @__PURE__ */ __commonJSMin(((e) => {
 		return w.H.useSyncExternalStore(e, t, n);
 	}, e.useTransition = function() {
 		return w.H.useTransition();
-	}, e.version = "19.2.3";
-})), require_react_development = /* @__PURE__ */ __commonJSMin(((e, t) => {
+	}, e.version = "19.2.7";
+})), n = /* @__PURE__ */ e(((e, t) => {
 	process.env.NODE_ENV !== "production" && (function() {
 		function n(e, t) {
 			Object.defineProperty(a.prototype, e, { get: function() {
@@ -907,11 +899,12 @@ var require_react_production = /* @__PURE__ */ __commonJSMin(((e) => {
 			return D().useSyncExternalStore(e, t, n);
 		}, e.useTransition = function() {
 			return D().useTransition();
-		}, e.version = "19.2.3", typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop == "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+		}, e.version = "19.2.7", typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop == "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
-})), require_react = /* @__PURE__ */ __commonJSMin(((e, r) => {
-	process.env.NODE_ENV === "production" ? r.exports = require_react_production() : r.exports = require_react_development();
+})), r = /* @__PURE__ */ e(((e, r) => {
+	process.env.NODE_ENV === "production" ? r.exports = t() : r.exports = n();
 }));
-export { require_react as t };
+//#endregion
+export { r as t };
 
 //# sourceMappingURL=react.js.map

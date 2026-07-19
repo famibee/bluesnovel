@@ -1,11 +1,12 @@
 /* ***** BEGIN LICENSE BLOCK *****
-	Copyright (c) 2024-2024 Famibee (famibee.blog38.fc2.com)
+	Copyright (c) 2024-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Stage';
+import {useStore} from '../store/store';
 
 import {css} from '@emotion/react';
 import {useEffect, useRef, useState} from 'react';
@@ -16,10 +17,14 @@ type T_TXTARG = T_LAY_CMN & {
 	str		: string;
 	b_color?: number;
 };
-export type T_TXTLAY = T_LAY_IDX & {cls: 'TXT'} & T_TXTARG;
+// ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'TXT'; str: string; b_color?: number};
+export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
 export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, str}: T_TXTARG) {
+	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
+	const isReadBack = useStore(s=> s.isReadBack);
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;
@@ -29,6 +34,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, s
 		font-size: xxx-large;
 		top: 48%;
 		width: 70%;
+		white-space: pre-wrap;
+		color: ${isReadBack ? 'yellow' : 'inherit'};
 	`;
 
 	const styInp = css`

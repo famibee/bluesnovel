@@ -1,4 +1,5 @@
-var SysApp = class {
+//#region src/app.ts
+var e = class {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
 		crypto: !1,
@@ -8,6 +9,7 @@ var SysApp = class {
 	}
 	async init() {}
 };
-export { SysApp };
+//#endregion
+export { e as SysApp };
 
 //# sourceMappingURL=app.js.map
