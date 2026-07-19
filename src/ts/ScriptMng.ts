@@ -17,8 +17,8 @@ type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
 // 試作用：path.json 等のアセット一式が無くても動作確認できるダミーシナリオ
 //	（本実装ではこのフォールバックは撤去する。詳細は docs_handover/ 参照）
-const SAMPLE_SN = `[add_lay layer=base class=GRP]
-[add_lay layer=mes class=TXT]
+const SAMPLE_SN = `[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
 [current layer=mes]
 [lay layer=base pic=yun_1184]
 あいうえお、これはbluesnovelの試作画面です。[l]
@@ -106,9 +106,9 @@ export class ScriptMng {
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
-			this.$fncs.addLayer(act.cls === 'GRP'
-				? {cls: 'GRP', nm: act.nm, fn: ''}
-				: {cls: 'TXT', nm: act.nm, str: ''});
+			this.$fncs.addLayer(act.cls === 'grp'
+				? {cls: 'grp', nm: act.nm, fn: ''}
+				: {cls: 'txt', nm: act.nm, str: ''});
 			break;
 		case 'chgPic':
 			this.$fncs.chgPic({nm: act.nm, fn: act.fn});

@@ -25,9 +25,11 @@ var n = class e {
 	#n = {};
 	#r = "mes";
 	#i = {};
+	#a = !1;
 	constructor(t, n) {
 		this.fn = t, this.#e = e.tokenize(n), this.#e.forEach((e, t) => {
-			e.charCodeAt(0) === 42 && e.length > 1 && (this.#n[e.trim()] = t + 1);
+			let n = e.trimStart();
+			n.charCodeAt(0) === 42 && n.length > 1 && (this.#n[n.trim()] = t + 1);
 		});
 	}
 	get idx() {
@@ -37,19 +39,25 @@ var n = class e {
 		return this.#t >= this.#e.length;
 	}
 	step() {
-		let t = [], n = this.#e.length;
+		let t = [];
+		this.#a && (this.#a = !1, this.#i[this.#r] = "", t.push({
+			t: "chgStr",
+			nm: this.#r,
+			str: ""
+		}));
+		let n = this.#e.length;
 		for (; this.#t < n;) {
 			let n = this.#e[this.#t++];
 			if (n === "" || n === "\n" || n === "\r\n") continue;
-			let r = n.charCodeAt(0);
-			if (r !== 59 && !(r === 42 && n.length > 1)) {
+			let r = n.trimStart().charCodeAt(0);
+			if (r !== 59 && !(r === 42 && n.trimStart().length > 1)) {
 				if (r === 91) {
 					let { name: r, args: i } = e.parseTag(n);
 					switch (r) {
 						case "add_lay": {
 							let e = i.layer ?? i.nm ?? "";
 							if (!e) throw "[add_lay] layerは必須です（試作仕様）";
-							let n = (i.class ?? "TXT").toUpperCase() === "GRP" ? "GRP" : "TXT";
+							let n = (i.class ?? "txt").toLowerCase() === "grp" ? "grp" : "txt";
 							this.#i[e] = "", t.push({
 								t: "addLay",
 								cls: n,
@@ -68,7 +76,7 @@ var n = class e {
 							});
 							continue;
 						case "r":
-							this.#a(t, "\n");
+							this.#o(t, "\n");
 							continue;
 						case "er":
 							this.#i[this.#r] = "", t.push({
@@ -85,7 +93,7 @@ var n = class e {
 						}
 						case "l":
 						case "p":
-						case "s": return t.push({
+						case "s": return r === "p" && (this.#a = !0), t.push({
 							t: "stop",
 							kind: r,
 							key: `${this.fn}:${String(this.#t)}`
@@ -93,12 +101,12 @@ var n = class e {
 						default: continue;
 					}
 				}
-				this.#a(t, n);
+				this.#o(t, n);
 			}
 		}
 		return t;
 	}
-	#a(e, t) {
+	#o(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",
@@ -106,7 +114,7 @@ var n = class e {
 			str: r
 		});
 	}
-}, r = "[add_lay layer=base class=GRP]\n[add_lay layer=mes class=TXT]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", i = class {
+}, r = "[add_lay layer=base class=grp]\n[add_lay layer=mes class=txt]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", i = class {
 	sys;
 	#e;
 	constructor(e) {
@@ -151,12 +159,12 @@ var n = class e {
 	#a(e) {
 		switch (e.t) {
 			case "addLay":
-				this.$fncs.addLayer(e.cls === "GRP" ? {
-					cls: "GRP",
+				this.$fncs.addLayer(e.cls === "grp" ? {
+					cls: "grp",
 					nm: e.nm,
 					fn: ""
 				} : {
-					cls: "TXT",
+					cls: "txt",
 					nm: e.nm,
 					str: ""
 				});

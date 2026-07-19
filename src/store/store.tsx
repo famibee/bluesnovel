@@ -50,7 +50,7 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		const aLay = [...s.aLay];
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		if (e.cls !== 'GRP') throw `${nm} は画像レイヤではありません`;
+		if (e.cls !== 'grp') throw `${nm} は画像レイヤではありません`;
 
 		e.fn = fn;
 		return {aLay};
@@ -59,7 +59,7 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		const aLay = [...s.aLay];
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		if (e.cls !== 'TXT') throw `${nm} は文字レイヤではありません`;
+		if (e.cls !== 'txt') throw `${nm} は文字レイヤではありません`;
 
 		e.str = str;
 		return {aLay};

@@ -13,7 +13,7 @@
 //	・戻り値をどう画面へ反映するかは呼び出し側（ScriptMng.ts）の責務とする。
 
 export type T_ENGINE_ACTION =
-	| {t: 'addLay'; cls: 'GRP' | 'TXT'; nm: string}
+	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; fn: string}
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string}	// 状態確定ポイント（Caretakerキー）
@@ -55,12 +55,14 @@ export class ScriptEngine {
 	readonly #hLabel: {[label: string]: number} = {};	// *label -> トークン索引
 	#curTxtLayer = 'mes';
 	readonly #hTxt: {[nm: string]: string} = {};		// レイヤ名 -> そのページの蓄積文字列
+	#clearOnResume = false;	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか
 
 	constructor(readonly fn: string, src: string) {
 		this.#aToken = ScriptEngine.tokenize(src);
 		this.#aToken.forEach((tkn, i) => {
-			// * ラベル（本家同様、先頭が'*'かつ1文字超のトークン）
-			if (tkn.charCodeAt(0) === 42 && tkn.length > 1) this.#hLabel[tkn.trim()] = i + 1;
+			// * ラベル（本家同様、先頭が'*'かつ1文字超のトークン。行頭のタブ/空白は無視する）
+			const t = tkn.trimStart();
+			if (t.charCodeAt(0) === 42 && t.length > 1) this.#hLabel[t.trim()] = i + 1;
 		});
 	}
 
@@ -70,14 +72,19 @@ export class ScriptEngine {
 	// 次の[l][p][s]（またはスクリプト終端）まで進め、その間に生じた表示変化を返す
 	step(): T_ENGINE_ACTION[] {
 		const aAct: T_ENGINE_ACTION[] = [];
+		if (this.#clearOnResume) {	// 前回[p]で停止した後の再開なので、現在レイヤを先にクリア
+			this.#clearOnResume = false;
+			this.#hTxt[this.#curTxtLayer] = '';
+			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
+		}
 		const len = this.#aToken.length;
 		while (this.#idx < len) {
 			const token = this.#aToken[this.#idx++]!;
 			if (token === '' || token === '\n' || token === '\r\n') continue;
 
-			const uc = token.charCodeAt(0);	// TokenTopUnicode（本家命名に合わせる）
+			const uc = token.trimStart().charCodeAt(0);	// TokenTopUnicode（本家命名に合わせる。行頭のタブ/空白は無視）
 			if (uc === 59) continue;				// ; コメント
-			if (uc === 42 && token.length > 1) continue;	// *ラベル定義（実行時はスキップ）
+			if (uc === 42 && token.trimStart().length > 1) continue;	// *ラベル定義（実行時はスキップ）
 
 			if (uc === 91) {	// [ タグ開始
 				const {name, args} = ScriptEngine.parseTag(token);
@@ -85,7 +92,7 @@ export class ScriptEngine {
 				case 'add_lay': {
 					const nm = args.layer ?? args.nm ?? '';
 					if (! nm) throw '[add_lay] layerは必須です（試作仕様）';
-					const cls = (args.class ?? 'TXT').toUpperCase() === 'GRP' ? 'GRP' : 'TXT';
+					const cls = (args.class ?? 'txt').toLowerCase() === 'grp' ? 'grp' : 'txt';
 					this.#hTxt[nm] = '';
 					aAct.push({t: 'addLay', cls, nm});
 					continue;
@@ -115,6 +122,7 @@ export class ScriptEngine {
 				}
 
 				case 'l': case 'p': case 's':	// 行末クリック待ち／改ページ／停止
+					if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
 					aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`});
 					return aAct;
 

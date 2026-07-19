@@ -27,9 +27,7 @@ var n = "skynovel", r = class {
 				heStage: o,
 				sys: this,
 				scrMng: s
-			}, () => {
-				queueMicrotask(() => s.load("title"));
-			});
+			}, () => queueMicrotask(() => s.load("main")));
 		});
 	}
 	#e = new t();

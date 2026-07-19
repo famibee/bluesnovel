@@ -10098,7 +10098,7 @@ function Jl({ arg: { sys: e }, onClick: t, prev: r, next: i }) {
 				})
 			] }),
 			/* @__PURE__ */ d("span", { children: k }),
-			a.map((e) => e.cls === "GRP" ? /* @__PURE__ */ d(Wl, {
+			a.map((e) => e.cls === "grp" ? /* @__PURE__ */ d(Wl, {
 				cmn: A.cmn,
 				fn: e.fn
 			}, e.nm) : /* @__PURE__ */ d(ql, {

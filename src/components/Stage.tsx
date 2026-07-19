@@ -18,7 +18,7 @@ import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 
 export type T_LAY_IDX = {
-	cls		: 'GRP'|'TXT';
+	cls		: 'grp'|'txt';
 	nm		: string;
 };
 export type T_LAY_CMN = {
@@ -134,7 +134,7 @@ export default function Stage({
 			<button onClick={()=> {}} css={styBtn}>Prev</button>
 		</>}
 		{<span>{isFullscreen}</span>}
-		{aLay.map(l=> l.cls === 'GRP'
+		{aLay.map(l=> l.cls === 'grp'
 			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
 			: <TxtLayer key={l.nm} cmn={c.cmn} str={l.str}/>)}
 	</div>;

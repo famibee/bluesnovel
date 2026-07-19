@@ -60,6 +60,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		if (sys.caretaker.prevKey()) setReadBack(! sys.caretaker.isLast());
 	}
 	useKey(e=> e.code === 'Space', e=> {e.stopPropagation(); e.preventDefault(); next()});
+	useKey(e=> e.code === 'ArrowDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
 	useKey(e=> e.code === 'PageDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
 	useKey(e=> e.code === 'PageUp', e=> {e.stopPropagation(); e.preventDefault(); prev()});
 

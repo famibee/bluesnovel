@@ -16,7 +16,7 @@ type T_GRPARG = T_LAY_CMN & {
 	fn		: string;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'GRP'; fn: string};
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 

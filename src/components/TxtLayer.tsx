@@ -18,7 +18,7 @@ type T_TXTARG = T_LAY_CMN & {
 	b_color?: number;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'TXT'; str: string; b_color?: number};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 

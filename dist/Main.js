@@ -33,13 +33,13 @@ var c = (e) => {
 	chgPic: ({ nm: t, fn: n }) => e((e) => {
 		let r = [...e.aLay], i = r.find((e) => e.nm === t);
 		if (!i) throw `存在しないレイヤ ${t} です`;
-		if (i.cls !== "GRP") throw `${t} は画像レイヤではありません`;
+		if (i.cls !== "grp") throw `${t} は画像レイヤではありません`;
 		return i.fn = n, { aLay: r };
 	}),
 	chgStr: ({ nm: t, str: n }) => e((e) => {
 		let r = [...e.aLay], i = r.find((e) => e.nm === t);
 		if (!i) throw `存在しないレイヤ ${t} です`;
-		if (i.cls !== "TXT") throw `${t} は文字レイヤではありません`;
+		if (i.cls !== "txt") throw `${t} は文字レイヤではありません`;
 		return i.str = n, { aLay: r };
 	}),
 	title: "",
@@ -1208,6 +1208,8 @@ function St({ arg: e, inited: t }) {
 		r.caretaker.prevKey() && f(!r.caretaker.isLast());
 	}
 	b((e) => e.code === "Space", (e) => {
+		e.stopPropagation(), e.preventDefault(), h();
+	}), b((e) => e.code === "ArrowDown", (e) => {
 		e.stopPropagation(), e.preventDefault(), h();
 	}), b((e) => e.code === "PageDown", (e) => {
 		e.stopPropagation(), e.preventDefault(), h();

@@ -33,7 +33,7 @@ it('step_stopsAtL', ()=> {
 	const se = new ScriptEngine('t1', '[add_lay layer=mes class=TXT]あいうえお[l]かきくけこ[s]');
 	const a1 = se.step();
 	expect(a1).toEqual([
-		{t: 'addLay', cls: 'TXT', nm: 'mes'},
+		{t: 'addLay', cls: 'txt', nm: 'mes'},
 		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
 		{t: 'stop', kind: 'l', key: 't1:3'},
 	]);
@@ -51,7 +51,7 @@ it('step_chgPic', ()=> {
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=GRP][lay layer=base pic=yun_1184][s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addLay', cls: 'GRP', nm: 'base'},
+		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'chgPic', nm: 'base', fn: 'yun_1184'},
 		{t: 'stop', kind: 's', key: 't1:3'},
 	]);
@@ -81,5 +81,33 @@ it('step_comment_ignored', ()=> {
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:4'},
+	]);
+});
+
+it('step_comment_ignored_leadingWhitespace', ()=> {
+	// 行頭にタブ/空白が入っていてもコメントとして無視されること（本番のscriptの慣習に合わせる）
+	const se = new ScriptEngine('t1', '\t; これはコメント\nあ[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:4'},
+	]);
+});
+
+it('step_p_clearsOnResume', ()=> {
+	// [p]で停止した直後の次のstep()開始時に、現在レイヤがクリアされてから続く（改ページ挙動）
+	const se = new ScriptEngine('t1', '[add_lay layer=mes class=TXT]あいうえお[p]かきくけこ[s]');
+	const a1 = se.step();
+	expect(a1).toEqual([
+		{t: 'addLay', cls: 'txt', nm: 'mes'},
+		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
+		{t: 'stop', kind: 'p', key: 't1:3'},
+	]);
+
+	const a2 = se.step();
+	expect(a2).toEqual([
+		{t: 'chgStr', nm: 'mes', str: ''},			// [p]の次の進行でまずクリアされる
+		{t: 'chgStr', nm: 'mes', str: 'かきくけこ'},
+		{t: 'stop', kind: 's', key: 't1:5'},
 	]);
 });

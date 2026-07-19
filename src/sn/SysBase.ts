@@ -57,11 +57,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 				document.body.appendChild(he);
 			}
 			const scrMng = new ScriptMng(this);
-			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> {
-				queueMicrotask(()=> scrMng.load('title'));	// TODO: 仮
-				// void scrMng.load('title');	//x
-				// void Promise.all([]).then(()=> scrMng.load('title'));// o
-			});
+			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
 		});
 	}
 
