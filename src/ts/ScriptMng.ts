@@ -91,6 +91,8 @@ export class ScriptMng {
 		const engine = this.#curEngine;
 		if (! engine) return;
 
+		this.$fncs.setWait(null);	// 前回の[l]/[p]待ちマーカーをまずクリア（クリックで削除して次の文字表示へ）
+
 		let aAct: T_ENGINE_ACTION[];
 		try {
 			aAct = engine.step();
@@ -120,6 +122,8 @@ export class ScriptMng {
 			// このタイミングでの表示状態を Caretaker に記録する
 			//	（Stage.tsx の再描画で自動的に Memento が生成される）
 			this.sys.caretaker.push(act.key);
+			// [l]/[p]待ち中マーカー表示（[s]はマーカーなし＝上のsetWait(null)のままにする）
+			if (act.kind === 'l' || act.kind === 'p') this.$fncs.setWait({nm: act.nm, kind: act.kind});
 			break;
 		}
 	}

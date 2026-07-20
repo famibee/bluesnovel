@@ -96,7 +96,8 @@ var n = class e {
 						case "s": return r === "p" && (this.#a = !0), t.push({
 							t: "stop",
 							kind: r,
-							key: `${this.fn}:${String(this.#t)}`
+							key: `${this.fn}:${String(this.#t)}`,
+							nm: this.#r
 						}), t;
 						default: continue;
 					}
@@ -146,6 +147,7 @@ var n = class e {
 	#i() {
 		let e = this.#r;
 		if (!e) return;
+		this.$fncs.setWait(null);
 		let t;
 		try {
 			t = e.step();
@@ -182,7 +184,10 @@ var n = class e {
 				});
 				break;
 			case "stop":
-				this.sys.caretaker.push(e.key);
+				this.sys.caretaker.push(e.key), (e.kind === "l" || e.kind === "p") && this.$fncs.setWait({
+					nm: e.nm,
+					kind: e.kind
+				});
 				break;
 		}
 	}

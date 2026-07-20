@@ -25,7 +25,16 @@ type T_STATE = {
 
 	isReadBack	: boolean;		// 読み戻り中か（PageUp等でCaretaker.isLast()===falseの間）
 	setReadBack	: (b: boolean)=> void;
+
+	isTyping	: boolean;		// 文字送り演出（GSAP）実行中か。trueの間はクリックで進行せずスキップ要求のみ行う
+	setIsTyping	: (b: boolean)=> void;
+	skipReq		: number;		// TxtLayer側へ「今のアニメを瞬時完了させろ」と伝える合図（インクリメントで通知）
+	requestSkip	: ()=> void;
+
+	wait		: T_WAIT;		// 現在[l]/[p]待ち中のレイヤと種別（[s]はマーカーなし=null）
+	setWait		: (w: T_WAIT)=> void;
 }
+export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
 export type T_CHGPIC = {
 	nm	: string;
 	fn	: string;
@@ -35,7 +44,7 @@ export type T_CHGSTR = {
 	str	: string;
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addTitle'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addTitle'|'setWait'>>;
 
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
@@ -70,4 +79,12 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 
 	isReadBack	: false,
 	setReadBack	: b=> set(()=> ({isReadBack: b})),
+
+	isTyping	: false,
+	setIsTyping	: b=> set(()=> ({isTyping: b})),
+	skipReq		: 0,
+	requestSkip	: ()=> set(s=> ({skipReq: s.skipReq + 1})),
+
+	wait		: null,
+	setWait		: w=> set(()=> ({wait: w})),
 }))

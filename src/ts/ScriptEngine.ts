@@ -16,7 +16,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; fn: string}
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
-	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string}	// 状態確定ポイント（Caretakerキー）
+	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
 ;
 
 export type T_TAG_PARSED = {
@@ -123,7 +123,7 @@ export class ScriptEngine {
 
 				case 'l': case 'p': case 's':	// 行末クリック待ち／改ページ／停止
 					if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
-					aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`});
+					aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer});
 					return aAct;
 
 				default:

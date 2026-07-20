@@ -136,7 +136,7 @@ export default function Stage({
 		{<span>{isFullscreen}</span>}
 		{aLay.map(l=> l.cls === 'grp'
 			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
-			: <TxtLayer key={l.nm} cmn={c.cmn} str={l.str}/>)}
+			: <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} str={l.str}/>)}
 	</div>;
 };
 	type T_WH = {

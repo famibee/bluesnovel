@@ -14,6 +14,10 @@ import {lazy, Suspense} from 'react';
 import {useEffectOnce, useKey, useTitle} from 'react-use';
 import type {Root} from 'react-dom/client';
 
+const Stage = lazy(()=> import('./Stage'));
+	// コンポーネント内で呼ぶと再レンダー毎に新しいコンポーネント型が生成され、
+	// Stage以下が毎回アンマウント/再マウントされてちらつくので、必ずトップレベルで一度だけ生成する
+
 export type T_ARG = {
 	heStage	: HTMLElement;
 	sys		: SysBase;
@@ -35,11 +39,14 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
 	const setReadBack = useStore(s=> s.setReadBack);
+	const isTyping = useStore(s=> s.isTyping);
+	const requestSkip = useStore(s=> s.requestSkip);
+	const setWait = useStore(s=> s.setWait);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle, setWait}, hTag);
 
 		inited();
 
@@ -52,6 +59,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	// PageDown = 読み進め（next()と同じ扱い）／PageUp = 読み戻り
 	//	読み戻り中（Caretaker.isLast()===false）はTxtLayerで文字を黄色く表示する
 	function next() {
+		if (isTyping) {requestSkip(); return}	// 文字送り演出中の1クリック目は瞬時完了のみ行い、進行はしない
 		if (sys.caretaker.nextKey()) {setReadBack(! sys.caretaker.isLast()); return}
 		setReadBack(false);
 		procNext();
@@ -70,7 +78,6 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		next();
 	}
 
-	const Stage = lazy(()=> import('./Stage'));
 	return <Suspense fallback={<>Loading</>}>
 		<Stage arg={arg} next={next} prev={prev} onClick={onClick} />
 	</Suspense>;

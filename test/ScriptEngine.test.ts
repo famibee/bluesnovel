@@ -35,14 +35,14 @@ it('step_stopsAtL', ()=> {
 	expect(a1).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
 		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
-		{t: 'stop', kind: 'l', key: 't1:3'},
+		{t: 'stop', kind: 'l', key: 't1:3', nm: 'mes'},
 	]);
 	expect(se.atEnd).toBe(false);
 
 	const a2 = se.step();
 	expect(a2).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あいうえおかきくけこ'},	// [l]は文字を消さないため、行が積み上がる
-		{t: 'stop', kind: 's', key: 't1:5'},
+		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);
 	expect(se.atEnd).toBe(true);
 });
@@ -53,14 +53,14 @@ it('step_chgPic', ()=> {
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'chgPic', nm: 'base', fn: 'yun_1184'},
-		{t: 'stop', kind: 's', key: 't1:3'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'base'},
 	]);
 });
 
 it('step_jumpLabel', ()=> {
 	const se = new ScriptEngine('t1', '[jump label=*goal]むし[s]\n*goal\nあ[s]');
 	const a = se.step();
-	expect(a.at(-1)).toEqual({t: 'stop', kind: 's', key: 't1:8'});
+	expect(a.at(-1)).toEqual({t: 'stop', kind: 's', key: 't1:8', nm: 'mes'});
 	// jump先の「あ」だけが表示され、「むし」はスキップされる
 	expect(a.some(v=> v.t === 'chgStr' && v.str.includes('むし'))).toBe(false);
 	expect(a.some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);
@@ -71,7 +71,7 @@ it('step_unknownTagIgnored', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'stop', kind: 's', key: 't1:3'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
 
@@ -80,7 +80,7 @@ it('step_comment_ignored', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'stop', kind: 's', key: 't1:4'},
+		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 });
 
@@ -90,7 +90,7 @@ it('step_comment_ignored_leadingWhitespace', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'stop', kind: 's', key: 't1:4'},
+		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 });
 
@@ -101,13 +101,13 @@ it('step_p_clearsOnResume', ()=> {
 	expect(a1).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
 		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
-		{t: 'stop', kind: 'p', key: 't1:3'},
+		{t: 'stop', kind: 'p', key: 't1:3', nm: 'mes'},
 	]);
 
 	const a2 = se.step();
 	expect(a2).toEqual([
 		{t: 'chgStr', nm: 'mes', str: ''},			// [p]の次の進行でまずクリアされる
 		{t: 'chgStr', nm: 'mes', str: 'かきくけこ'},
-		{t: 'stop', kind: 's', key: 't1:5'},
+		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);
 });
