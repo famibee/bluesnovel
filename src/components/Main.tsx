@@ -38,6 +38,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);
 	const chgStr = useStore(s=> s.chgStr);
+	const addBtn = useStore(s=> s.addBtn);
 	const setReadBack = useStore(s=> s.setReadBack);
 	const isTyping = useStore(s=> s.isTyping);
 	const requestSkip = useStore(s=> s.requestSkip);
@@ -46,7 +47,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addTitle, setWait}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgStr, addBtn, addTitle, setWait}, hTag);
 
 		inited();
 

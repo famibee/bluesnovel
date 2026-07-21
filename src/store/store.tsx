@@ -19,6 +19,7 @@ type T_STATE = {
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
+	addBtn	: (arg: T_ADDBTN)=> void,
 
 	title	: string;
 	addTitle	: (t: string)=> void;
@@ -43,8 +44,15 @@ export type T_CHGSTR = {
 	nm	: string;
 	str	: string;
 }
+// [button]タグで文字レイヤ（UIコンテナ）にボタンを乗せる（独立レイヤにはしない）
+export type T_ADDBTN = {
+	layerNm	: string;	// 乗せ先の文字レイヤnm
+	nm		: string;	// ボタン自身の識別名（同一layer内で一意）
+	text	: string;
+	label	: string;
+}
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addTitle'|'setWait'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addBtn'|'addTitle'|'setWait'>>;
 
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
@@ -54,7 +62,27 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 
 	aLay	: [],
 	replace	: (arg: string)=> set(()=> ({aLay: JSON.parse(arg)})),
-	addLayer: (arg: T_LAY)=> set(s=> ({aLay: [...s.aLay, arg]})),
+	addLayer: (arg: T_LAY)=> set(s=> {
+		// レイヤ名（nm）はcls（grp/txt）をまたいで全体で一意である前提
+		//	（chgPic/chgStrがcls不問でnmだけを検索キーにしているため）。
+		//	重複したまま追加するとStage.tsxのkey={l.nm}が衝突し、Reactの
+		//	「Encountered two children with the same key」警告や表示不具合の原因になる。
+		if (s.aLay.some(e=> e.nm === arg.nm)) throw `レイヤ名 ${arg.nm} は既に使用されています（既存の${s.aLay.find(e=> e.nm === arg.nm)!.cls}レイヤと重複）`;
+
+		return {aLay: [...s.aLay, arg]};
+	}),
+	// [button]タグ：指定した文字レイヤ（UIコンテナ）のaBtnにボタンを1件追加する。
+	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる。
+	addBtn	: ({layerNm, nm, text, label}: T_ADDBTN)=> set(s=> {
+		const aLay = [...s.aLay];
+		const e = aLay.find(e=> e.nm === layerNm);
+		if (! e) throw `存在しないレイヤ ${layerNm} です`;
+		if (e.cls !== 'txt') throw `${layerNm} は文字レイヤ（UIコンテナ）ではありません`;
+		if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
+
+		e.aBtn = [...e.aBtn, {nm, text, label}];
+		return {aLay};
+	}),
 	chgPic	: ({nm, fn}: T_CHGPIC)=> set(s=> {
 		const aLay = [...s.aLay];
 		const e = aLay.find(e=> e.nm === nm);

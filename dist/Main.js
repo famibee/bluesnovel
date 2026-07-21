@@ -29,7 +29,21 @@ var c = (e) => {
 	clearTxt: () => e(() => ({ txt: "" })),
 	aLay: [],
 	replace: (t) => e(() => ({ aLay: JSON.parse(t) })),
-	addLayer: (t) => e((e) => ({ aLay: [...e.aLay, t] })),
+	addLayer: (t) => e((e) => {
+		if (e.aLay.some((e) => e.nm === t.nm)) throw `レイヤ名 ${t.nm} は既に使用されています（既存の${e.aLay.find((e) => e.nm === t.nm).cls}レイヤと重複）`;
+		return { aLay: [...e.aLay, t] };
+	}),
+	addBtn: ({ layerNm: t, nm: n, text: r, label: i }) => e((e) => {
+		let a = [...e.aLay], o = a.find((e) => e.nm === t);
+		if (!o) throw `存在しないレイヤ ${t} です`;
+		if (o.cls !== "txt") throw `${t} は文字レイヤ（UIコンテナ）ではありません`;
+		if (o.aBtn.some((e) => e.nm === n)) throw `ボタン名 ${n} はレイヤ ${t} 内で既に使用されています`;
+		return o.aBtn = [...o.aBtn, {
+			nm: n,
+			text: r,
+			label: i
+		}], { aLay: a };
+	}),
 	chgPic: ({ nm: t, fn: n }) => e((e) => {
 		let r = [...e.aLay], i = r.find((e) => e.nm === t);
 		if (!i) throw `存在しないレイヤ ${t} です`;
@@ -1187,8 +1201,8 @@ function St(e, t, n) {
 function Ct({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: i } = e, o = l((e) => e.title), s = l((e) => e.addTitle);
 	C(o);
-	let c = l((e) => e.addLayer), u = l((e) => e.chgPic), d = l((e) => e.chgStr), f = l((e) => e.setReadBack), p = l((e) => e.isTyping), h = l((e) => e.requestSkip), g = l((e) => e.setWait);
-	function _() {
+	let c = l((e) => e.addLayer), u = l((e) => e.chgPic), d = l((e) => e.chgStr), f = l((e) => e.addBtn), p = l((e) => e.setReadBack), h = l((e) => e.isTyping), g = l((e) => e.requestSkip), _ = l((e) => e.setWait);
+	function v() {
 		i.go();
 	}
 	m(() => {
@@ -1198,47 +1212,48 @@ function Ct({ arg: e, inited: t }) {
 			addLayer: c,
 			chgPic: u,
 			chgStr: d,
+			addBtn: f,
 			addTitle: s,
-			setWait: g
-		}, e), t(), n.addEventListener("ev_next", _), () => n.removeEventListener("ev_next", _);
+			setWait: _
+		}, e), t(), n.addEventListener("ev_next", v), () => n.removeEventListener("ev_next", v);
 	});
-	function v() {
-		if (p) {
-			h();
+	function y() {
+		if (h) {
+			g();
 			return;
 		}
 		if (r.caretaker.nextKey()) {
-			f(!r.caretaker.isLast());
+			p(!r.caretaker.isLast());
 			return;
 		}
-		f(!1), _();
+		p(!1), v();
 	}
-	function y() {
-		r.caretaker.prevKey() && f(!r.caretaker.isLast());
+	function x() {
+		r.caretaker.prevKey() && p(!r.caretaker.isLast());
 	}
 	b((e) => e.code === "Space", (e) => {
-		e.stopPropagation(), e.preventDefault(), v();
-	}), b((e) => e.code === "ArrowDown", (e) => {
-		e.stopPropagation(), e.preventDefault(), v();
-	}), b((e) => e.code === "PageDown", (e) => {
-		e.stopPropagation(), e.preventDefault(), v();
-	}), b((e) => e.code === "PageUp", (e) => {
 		e.stopPropagation(), e.preventDefault(), y();
+	}), b((e) => e.code === "ArrowDown", (e) => {
+		e.stopPropagation(), e.preventDefault(), y();
+	}), b((e) => e.code === "PageDown", (e) => {
+		e.stopPropagation(), e.preventDefault(), y();
+	}), b((e) => e.code === "PageUp", (e) => {
+		e.stopPropagation(), e.preventDefault(), x();
 	});
-	function x() {
+	function S() {
 		if (Et) {
 			Et = !1;
 			return;
 		}
-		wt || v();
+		wt || y();
 	}
 	return /* @__PURE__ */ $(a.Suspense, {
 		fallback: /* @__PURE__ */ $(yt, { children: "Loading" }),
 		children: /* @__PURE__ */ $(xt, {
 			arg: e,
-			next: v,
-			prev: y,
-			onClick: x
+			next: y,
+			prev: x,
+			onClick: S
 		})
 	});
 }

@@ -34,7 +34,7 @@ export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
 
 
 export default function Stage({
-	arg: {sys}, onClick, prev, next,
+	arg: {sys, scrMng}, onClick, prev, next,
 }: {
 	arg: T_ARG, onClick: ()=> void, prev: ()=> void, next: ()=> void,
 }) {
@@ -134,9 +134,11 @@ export default function Stage({
 			<button onClick={()=> {}} css={styBtn}>Prev</button>
 		</>}
 		{<span>{isFullscreen}</span>}
-		{aLay.map(l=> l.cls === 'grp'
-			? <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>
-			: <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} str={l.str}/>)}
+		{aLay.map(l=> {
+			if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>;
+			// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
+			return <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} str={l.str} aBtn={l.aBtn} onActivate={label=> scrMng.jumpToLabelAndGo(label)}/>;
+		})}
 	</div>;
 };
 	type T_WH = {

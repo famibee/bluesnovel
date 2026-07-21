@@ -38,6 +38,11 @@ var n = class e {
 	get atEnd() {
 		return this.#t >= this.#e.length;
 	}
+	jumpToLabel(e) {
+		let t = this.#n[e];
+		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		this.#t = t;
+	}
 	step() {
 		let t = [];
 		this.#a && (this.#a = !1, this.#i[this.#r] = "", t.push({
@@ -47,13 +52,21 @@ var n = class e {
 		}));
 		let n = this.#e.length;
 		for (; this.#t < n;) {
-			let n = this.#e[this.#t++];
-			if (n === "" || n === "\n" || n === "\r\n") continue;
-			let r = n.trimStart().charCodeAt(0);
-			if (r !== 59 && !(r === 42 && n.trimStart().length > 1)) {
-				if (r === 91) {
-					let { name: r, args: i } = e.parseTag(n);
-					switch (r) {
+			let r = this.#e[this.#t++];
+			if (r === "" || r === "\n" || r === "\r\n") continue;
+			let i = r.trimStart().charCodeAt(0);
+			if (i === 59) {
+				for (; this.#t < n;) {
+					let e = this.#e[this.#t];
+					if (e === "\n" || e === "\r\n") break;
+					this.#t++;
+				}
+				continue;
+			}
+			if (!(i === 42 && r.trimStart().length > 1)) {
+				if (i === 91) {
+					let { name: n, args: i } = e.parseTag(r);
+					switch (n) {
 						case "add_lay": {
 							let e = i.layer ?? i.nm ?? "";
 							if (!e) throw "[add_lay] layerは必須です（試作仕様）";
@@ -91,18 +104,33 @@ var n = class e {
 							this.#t = t;
 							continue;
 						}
+						case "button": {
+							let e = i.layer || this.#r;
+							if (!e) throw "[button] layerは必須です（試作仕様）";
+							let n = i.label ?? "";
+							if (!n) throw "[button] labelは必須です（試作仕様）";
+							let r = i.nm ?? n;
+							t.push({
+								t: "addBtn",
+								layerNm: e,
+								nm: r,
+								text: i.text ?? "",
+								label: n
+							});
+							continue;
+						}
 						case "l":
 						case "p":
-						case "s": return r === "p" && (this.#a = !0), t.push({
+						case "s": return n === "p" && (this.#a = !0), t.push({
 							t: "stop",
-							kind: r,
+							kind: n,
 							key: `${this.fn}:${String(this.#t)}`,
 							nm: this.#r
 						}), t;
 						default: continue;
 					}
 				}
-				this.#o(t, n);
+				this.#o(t, r);
 			}
 		}
 		return t;
@@ -144,6 +172,18 @@ var n = class e {
 		this.#r = t, this.go = () => this.#i(), this.$trgNext();
 	}
 	go() {}
+	jumpToLabelAndGo(e) {
+		let t = this.#r;
+		if (t) {
+			try {
+				t.jumpToLabel(e);
+			} catch (e) {
+				this.myTrace(`[button] ジャンプ先エラー fn:${t.fn} ${String(e)}`, "ET");
+				return;
+			}
+			this.#i();
+		}
+	}
 	#i() {
 		let e = this.#r;
 		if (!e) return;
@@ -168,7 +208,8 @@ var n = class e {
 				} : {
 					cls: "txt",
 					nm: e.nm,
-					str: ""
+					str: "",
+					aBtn: []
 				});
 				break;
 			case "chgPic":
@@ -181,6 +222,14 @@ var n = class e {
 				this.$fncs.chgStr({
 					nm: e.nm,
 					str: e.str
+				});
+				break;
+			case "addBtn":
+				this.$fncs.addBtn({
+					layerNm: e.layerNm,
+					nm: e.nm,
+					text: e.text,
+					label: e.label
 				});
 				break;
 			case "stop":

@@ -87,6 +87,22 @@ export class ScriptMng {
 	// 現在の実行位置から次の停止点（[l][p][s]、またはスクリプト終端）まで進める
 	go() { /* attachTsx/load 完了後、上でthis.goとして差し替えられる */ }
 
+	// [button]クリック時のJSX側から呼ばれる：指定ラベルへ直接ジャンプしてそのまま進行する。
+	//	Main.tsxのnext()（クリックでの読み進め）とは別系統。CaretakerのprevKey/nextKeyや
+	//	isReadBackには一切触れないため、ボタンクリックは「読み進め」扱いにはならない（今回の要件）。
+	jumpToLabelAndGo(label: string) {
+		const engine = this.#curEngine;
+		if (! engine) return;
+
+		try {
+			engine.jumpToLabel(label);
+		} catch (e) {
+			this.myTrace(`[button] ジャンプ先エラー fn:${engine.fn} ${String(e)}`, 'ET');
+			return;
+		}
+		this.#runStep();
+	}
+
 	#runStep() {
 		const engine = this.#curEngine;
 		if (! engine) return;
@@ -110,13 +126,17 @@ export class ScriptMng {
 		case 'addLay':
 			this.$fncs.addLayer(act.cls === 'grp'
 				? {cls: 'grp', nm: act.nm, fn: ''}
-				: {cls: 'txt', nm: act.nm, str: ''});
+				: {cls: 'txt', nm: act.nm, str: '', aBtn: []});	// 文字レイヤはUIコンテナとしてaBtnを初期化
 			break;
 		case 'chgPic':
 			this.$fncs.chgPic({nm: act.nm, fn: act.fn});
 			break;
 		case 'chgStr':
 			this.$fncs.chgStr({nm: act.nm, str: act.str});
+			break;
+		case 'addBtn':
+			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
+			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label});
 			break;
 		case 'stop':
 			// このタイミングでの表示状態を Caretaker に記録する

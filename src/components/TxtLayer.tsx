@@ -7,6 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Stage';
 import {useStore} from '../store/store';
+import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
 import {useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -14,17 +15,27 @@ import Moveable from 'react-moveable';
 import gsap from 'gsap';
 
 
+// [button]タグで文字レイヤ（UIコンテナ）に乗せるボタンで1件分のデータ
+//	skynovel_esmのTxtLayerが#cntBtnで複数のButtonを抱えるのと同じ発想：
+//	文字レイヤ自体を「UIコンテナ」とし、ボタンは独立レイヤにしない（表示/非表示を一緒に切り替えやすくするため）。
+export type T_BTN = {
+	nm		: string;
+	text	: string;
+	label	: string;
+};
 type T_TXTARG = T_LAY_CMN & {
 	nm		: string;
 	str		: string;
 	b_color?: number;
+	aBtn	: T_BTN[];
+	onActivate: (label: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, str}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, str, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -38,45 +49,63 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
-	const prevLenRef = useRef(0);
+	// 1文字＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
+	// DOM上の表示/非表示だけを切り替える。これにより読み戻りから戻った際に
+	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。
+	const spansRef = useRef<HTMLSpanElement[]>([]);
 	const tlRef = useRef<gsap.core.Timeline | null>(null);
 
 	useLayoutEffect(()=> {
 		const el = charsRef.current;
 		if (! el) return;
 
-		// ページクリア（[p]等でstrが短くなった／前方一致しなくなった）場合は作り直し
-		const cur = el.textContent ?? '';
-		if (str.length < prevLenRef.current || ! str.startsWith(cur)) {
-			tlRef.current?.kill();
+		tlRef.current?.kill();
+
+		const cachedText = spansRef.current.map(s=> s.textContent === '\u00A0' ? ' ' : s.textContent).join('');
+
+		// 本当のページクリア（strとキャッシュが互いに前方一致しない＝別内容）の場合のみ作り直す
+		if (! cachedText.startsWith(str) && ! str.startsWith(cachedText)) {
+			spansRef.current = [];
 			el.textContent = '';
-			prevLenRef.current = 0;
 		}
 
-		const added = str.slice(prevLenRef.current);
-		prevLenRef.current = str.length;
-		if (! added) return;
+		const cache = spansRef.current;
+		const target = Math.min(str.length, cache.length);
 
+		// 表示DOMをキャッシュ済み範囲まで合わせる
+		//	・読み戻り（strが短い）：末尾を非表示化（キャッシュからは消さない）
+		//	・読み戻りから戻る（strがキャッシュ済み長へ復帰）：非表示にしていた分を瞬時に復帰
+		while (el.childNodes.length > target) el.removeChild(el.lastChild!);
+		while (el.childNodes.length < target) el.appendChild(cache[el.childNodes.length]!);
+		if (target > 0) gsap.set(cache.slice(0, target), {opacity: 1, y: 0});	// キル時の中途半端な状態を確定させる
+
+		if (str.length <= cache.length) {
+			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要
+			setIsTyping(false);
+			return;
+		}
+
+		// キャッシュを超える分だけが本当に新規表示すべき文字
+		const added = str.slice(cache.length);
 		const frag = document.createDocumentFragment();
-		const spans = [...added].map(ch=> {
+		const newSpans = [...added].map(ch=> {
 			const s = document.createElement('span');
 			s.textContent = ch === ' ' ? '\u00A0' : ch;
 			frag.appendChild(s);
 			return s;
 		});
+		cache.push(...newSpans);
 		el.appendChild(frag);
 
 		if (isReadBack) {
 			// 読み戻り中：staggerを使わず瞬時にアニメ終端状態へ
-			tlRef.current?.kill();
-			gsap.set(spans, {opacity: 1, y: 0});
+			gsap.set(newSpans, {opacity: 1, y: 0});
 			setIsTyping(false);
 			return;
 		}
 
-		tlRef.current?.kill();
 		setIsTyping(true);
-		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)}).fromTo(spans, {opacity: 0, y: '0.3em'}, {
+		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)}).fromTo(newSpans, {opacity: 0, y: '0.3em'}, {
 			opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', stagger: 0.035,
 		});
 	}, [str, isReadBack]);
@@ -93,6 +122,13 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 	const styWaitMark = css`
 		display: inline-block;
 		margin-left: 0.15em;
+	`;
+	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
+	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。
+	const styBtnBox = css`
+		display: flex;
+		flex-wrap: wrap;
+		top: 70%;
 	`;
 	const styTxt = css`
 		padding: 1em 1.5em;
@@ -177,6 +213,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 			<span ref={charsRef}></span>
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
+		{aBtn.length > 0 && <span css={[styChild, styBtnBox]}>
+			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} onActivate={onActivate}/>)}
+		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */
 			draggable={true}

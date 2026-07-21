@@ -16,6 +16,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; fn: string}
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
+	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
 ;
 
@@ -69,6 +70,13 @@ export class ScriptEngine {
 	get idx() {return this.#idx}
 	get atEnd() {return this.#idx >= this.#aToken.length}
 
+	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
+	jumpToLabel(label: string) {
+		const to = this.#hLabel[label];
+		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		this.#idx = to;
+	}
+
 	// 次の[l][p][s]（またはスクリプト終端）まで進め、その間に生じた表示変化を返す
 	step(): T_ENGINE_ACTION[] {
 		const aAct: T_ENGINE_ACTION[] = [];
@@ -83,7 +91,17 @@ export class ScriptEngine {
 			if (token === '' || token === '\n' || token === '\r\n') continue;
 
 			const uc = token.trimStart().charCodeAt(0);	// TokenTopUnicode（本家命名に合わせる。行頭のタブ/空白は無視）
-			if (uc === 59) continue;				// ; コメント
+			if (uc === 59) {	// ; コメント：このトークンだけでなく、行末（次の改行トークン）まで丸ごと無視する
+				//	コメント行中に[tag]が書かれていた場合、トークナイザは'['で別トークンに分割するため、
+				//	このトークンだけをスキップすると[tag]部分が実行されてしまう（旧実装のbug）。
+				//	そのため次の改行トークンの手前まで#idxを進めてから、通常のループへ戻る。
+				while (this.#idx < len) {
+					const nxt = this.#aToken[this.#idx];
+					if (nxt === '\n' || nxt === '\r\n') break;
+					this.#idx++;
+				}
+				continue;
+			}
 			if (uc === 42 && token.trimStart().length > 1) continue;	// *ラベル定義（実行時はスキップ）
 
 			if (uc === 91) {	// [ タグ開始
@@ -118,6 +136,19 @@ export class ScriptEngine {
 					const to = this.#hLabel[label];
 					if (to === undefined) throw `[jump] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
 					this.#idx = to;
+					continue;
+				}
+
+				case 'button': {	// ボタン表示（試作簡略：layer/nm/text/labelに対応）
+					// クリック後のjump先はjumpToLabel()で別途処理する（読み進め扱いにはしないため）
+					// layer: ボタンを乗せる「UIコンテナ」＝既存の文字レイヤのnm（省略時は現在の文字レイヤ）
+					const layerNm = args.layer || this.#curTxtLayer;
+					if (! layerNm) throw '[button] layerは必須です（試作仕様）';
+					const label = args.label ?? '';
+					if (! label) throw '[button] labelは必須です（試作仕様）';
+					// nm: ボタン自身の識別名（同一layer内で一意）。省略時はlabelを流用（試作の割り切り）
+					const nm = args.nm ?? label;
+					aAct.push({t: 'addBtn', layerNm, nm, text: args.text ?? '', label});
 					continue;
 				}
 

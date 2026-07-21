@@ -48,12 +48,14 @@ it('step_stopsAtL', ()=> {
 });
 
 it('step_chgPic', ()=> {
+	// stop.nmは「待ち中の文字レイヤ（#curTxtLayer）」であり、[add_lay]でgrpレイヤを追加しても
+	// [current]しない限り既定値'mes'のまま変わらない仕様（ScriptEngine.ts:57, #curTxtLayer）。
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=GRP][lay layer=base pic=yun_1184][s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'chgPic', nm: 'base', fn: 'yun_1184'},
-		{t: 'stop', kind: 's', key: 't1:3', nm: 'base'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
 
@@ -94,6 +96,21 @@ it('step_comment_ignored_leadingWhitespace', ()=> {
 	]);
 });
 
+it('step_comment_ignoresEmbeddedTagOnSameLine', ()=> {
+	// バグ修正: 「;」コメントはトークン単位ではなく行末までを丸ごと無視する必要がある。
+	// コメント行中に[tag]が書かれていた場合、トークナイザは'['で別トークンに分割するため、
+	// 旧実装（コメント判定されたトークンだけをcontinueでスキップ）では[button]部分が
+	// 実行されてしまっていた。
+	const se = new ScriptEngine('t1', ';これはコメント[button layer=btn1 text=x label=*goal]\nあ[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
+	]);
+	// addBtnアクションが積まれていない（＝[button]タグがコメントとして無視された）ことを確認
+	expect(a.some(v=> v.t === 'addBtn')).toBe(false);
+});
+
 it('step_p_clearsOnResume', ()=> {
 	// [p]で停止した直後の次のstep()開始時に、現在レイヤがクリアされてから続く（改ページ挙動）
 	const se = new ScriptEngine('t1', '[add_lay layer=mes class=TXT]あいうえお[p]かきくけこ[s]');
@@ -110,4 +127,51 @@ it('step_p_clearsOnResume', ()=> {
 		{t: 'chgStr', nm: 'mes', str: 'かきくけこ'},
 		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);
+});
+
+it('step_button_addsBtnAction', ()=> {
+	// [button] は addBtn アクションを積むだけで、停止点にはならない（[s]まで続く）。
+	// 文字レイヤをUIコンテナとする設計：
+	// layer=ボタンを乗せる既存の文字レイヤのnm、nm=ボタン自身の識別名（同一layer内で一意）。
+	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal]あ[s]\n*goal\ni[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal'},
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+
+it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
+	// layerを省略すると現在の文字レイヤ（#curTxtLayer、既定'mes'）が乗せ先になる。
+	// nmも省略した場合はlabelを流用する（試作の割り切り）。
+	const se = new ScriptEngine('t1', '[button text=x label=*goal]あ[s]');
+	const a = se.step();
+	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal'});
+});
+
+it('step_button_requiresLabel', ()=> {
+	// layerは省略可能（現在の文字レイヤにフォールバック）だが、labelは必須
+	expect(()=> new ScriptEngine('t1', '[button layer=mes text=x]あ[s]').step()).toThrow();
+});
+
+it('jumpToLabel_movesIdxToLabel', ()=> {
+	// [button]クリック時に呼ばれる想定のAPI：ラベルへ直接ジャンプしてからstep()を呼ぶと、
+	// そのラベル以降が実行される（jumpタグと同じ移動先計算を使う）。
+	// jumpToLabel()は#hTxtをクリアしないため（ScriptEngine.ts jumpToLabel実装参照）、
+	// [s]前の'あ'が既に#hTxt['mes']に入っている状態に'い'が積み上がり'あい'になる。
+	const se = new ScriptEngine('t1', 'あ[s]\n*goal\nい[s]');
+	se.step();	// 最初の[s]まで進める（読み進めの体で消費）
+
+	se.jumpToLabel('*goal');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'stop', kind: 's', key: 't1:7', nm: 'mes'},
+	]);
+});
+
+it('jumpToLabel_unknownLabelThrows', ()=> {
+	const se = new ScriptEngine('t1', 'あ[s]');
+	expect(()=> se.jumpToLabel('*nothing')).toThrow();
 });
