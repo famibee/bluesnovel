@@ -135,9 +135,9 @@ export default function Stage({
 		</>}
 		{<span>{isFullscreen}</span>}
 		{aLay.map(l=> {
-			if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn}/>;
+			if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn} aFace={l.aFace}/>;
 			// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
-			return <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} str={l.str} aBtn={l.aBtn} onActivate={label=> scrMng.jumpToLabelAndGo(label)}/>;
+			return <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} str={l.str} b_alpha={l.b_alpha} aBtn={l.aBtn} onActivate={label=> scrMng.jumpToLabelAndGo(label)}/>;
 		})}
 	</div>;
 };

@@ -9828,44 +9828,58 @@ var Wl = /* @__PURE__ */ function(e) {
 }(C.PureComponent));
 //#endregion
 //#region src/components/GrpLayer.tsx
-function Gl({ cmn: { styChild: e, sys: t, isDesignMode: n, sty4Moveable: r }, fn: i }) {
-	let a = (e) => {
+function Gl({ cmn: { styChild: e, sys: t, isDesignMode: n, sty4Moveable: r }, fn: i, aFace: a }) {
+	let o = (e) => {
 		if (!e) return "";
 		try {
 			return t.cfg.searchPath(e, x.SP_GSM);
 		} catch (e) {
 			return console.warn("GrpLayer search failed (試作：アセット未整備の可能性)", e), "";
 		}
-	}, o = (e) => {
+	}, s = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, s = (0, C.useRef)(null), c = (e, t) => {
+	}, c = (0, C.useRef)(null), l = (e, t) => {
 		ch(), e.transform = t;
 	};
-	return /* @__PURE__ */ h(v, { children: [/* @__PURE__ */ d("img", {
+	return /* @__PURE__ */ h(v, { children: [/* @__PURE__ */ h("div", {
 		css: e,
-		src: a(i),
-		ref: s,
+		ref: c,
 		style: r,
-		onMouseDown: (e) => o(e)
+		onMouseDown: (e) => s(e),
+		children: [i && o(i) && /* @__PURE__ */ d("img", {
+			src: o(i),
+			style: { display: "block" }
+		}), a.map(({ fn: e, dx: t, dy: n, blendmode: r }, i) => {
+			let a = e && o(e);
+			return a ? /* @__PURE__ */ d("img", {
+				src: a,
+				style: {
+					position: "absolute",
+					left: t,
+					top: n,
+					mixBlendMode: r
+				}
+			}, `${e}_${String(i)}`) : null;
+		})]
 	}), n && /* @__PURE__ */ d(Wl, {
-		target: s,
+		target: c,
 		draggable: !0,
 		throttleDrag: 1,
-		onDrag: ({ target: { style: e }, transform: t }) => c(e, t),
+		onDrag: ({ target: { style: e }, transform: t }) => l(e, t),
 		resizable: !0,
 		keepRatio: !0,
 		onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-			c(e, r), e.width = `${t}px`, e.height = `${n}px`;
+			l(e, r), e.width = `${t}px`, e.height = `${n}px`;
 		},
 		rotatable: !0,
 		throttleRotate: 0,
 		startDragRotate: 0,
 		throttleDragRotate: 0,
 		rotationPosition: "top",
-		onRotate: ({ target: { style: e }, drag: { transform: t } }) => c(e, t),
+		onRotate: ({ target: { style: e }, drag: { transform: t } }) => l(e, t),
 		originDraggable: !0,
 		onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-			c(e, n), e.transformOrigin = t;
+			l(e, n), e.transformOrigin = t;
 		}
 	})] });
 }
@@ -11732,36 +11746,36 @@ var nh = Np.registerPlugin(th) || Np;
 nh.core.Tween;
 //#endregion
 //#region src/components/TxtLayer.tsx
-function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str: i, aBtn: a, onActivate: o }) {
-	let s = u((e) => e.isReadBack), c = u((e) => e.isTyping), l = u((e) => e.setIsTyping), f = u((e) => e.skipReq), p = u((e) => e.wait), m = (0, C.useRef)(null), g = (0, C.useRef)(null), _ = (0, C.useRef)([]), y = (0, C.useRef)(null);
+function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str: i, b_alpha: a, aBtn: o, onActivate: s }) {
+	let c = u((e) => e.isReadBack), l = u((e) => e.isTyping), f = u((e) => e.setIsTyping), p = u((e) => e.skipReq), m = u((e) => e.wait), g = (0, C.useRef)(null), _ = (0, C.useRef)(null), y = (0, C.useRef)([]), b = (0, C.useRef)(null);
 	(0, C.useLayoutEffect)(() => {
-		let e = g.current;
+		let e = _.current;
 		if (!e) return;
-		y.current?.kill();
-		let t = _.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
-		!t.startsWith(i) && !i.startsWith(t) && (_.current = [], e.textContent = "");
-		let n = _.current, r = Math.min(i.length, n.length);
+		b.current?.kill();
+		let t = y.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
+		!t.startsWith(i) && !i.startsWith(t) && (y.current = [], e.textContent = "");
+		let n = y.current, r = Math.min(i.length, n.length);
 		for (; e.childNodes.length > r;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < r;) e.appendChild(n[e.childNodes.length]);
 		if (r > 0 && nh.set(n.slice(0, r), {
 			opacity: 1,
 			y: 0
 		}), i.length <= n.length) {
-			l(!1);
+			f(!1);
 			return;
 		}
-		let a = i.slice(n.length), o = document.createDocumentFragment(), c = [...a].map((e) => {
+		let a = i.slice(n.length), o = document.createDocumentFragment(), s = [...a].map((e) => {
 			let t = document.createElement("span");
 			return t.textContent = e === " " ? "\xA0" : e, o.appendChild(t), t;
 		});
-		if (n.push(...c), e.appendChild(o), s) {
-			nh.set(c, {
+		if (n.push(...s), e.appendChild(o), c) {
+			nh.set(s, {
 				opacity: 1,
 				y: 0
-			}), l(!1);
+			}), f(!1);
 			return;
 		}
-		l(!0), y.current = nh.timeline({ onComplete: () => l(!1) }).fromTo(c, {
+		f(!0), b.current = nh.timeline({ onComplete: () => f(!1) }).fromTo(s, {
 			opacity: 0,
 			y: "0.3em"
 		}, {
@@ -11771,28 +11785,30 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 			ease: "power1.out",
 			stagger: .035
 		});
-	}, [i, s]), (0, C.useEffect)(() => {
-		y.current && y.current.progress() < 1 && y.current.progress(1);
-	}, [f]);
-	let b = !s && !c && p !== null && p.nm === r, x = ql`
+	}, [i, c]), (0, C.useEffect)(() => {
+		b.current && b.current.progress() < 1 && b.current.progress(1);
+	}, [p]);
+	let x = !c && !l && m !== null && m.nm === r, S = ql`
 		display: inline-block;
 		margin-left: 0.15em;
-	`, S = ql`
+	`, w = ql`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-	`, w = ql`
+	`, T = ql`
 		padding: 1em 1.5em;
 		margin: 2em 0;
-		background-color: aquamarine;
+		/* aquamarine相当のRGBに[lay b_alpha=...]をアルファチャンレベルで反映。
+			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない */
+		background-color: rgba(127, 255, 212, ${a});
 		border: dotted 6px #ffa500;
 
 		font-size: xxx-large;
 		top: 48%;
 		width: 70%;
 		white-space: pre-wrap;
-		color: ${s ? "yellow" : "inherit"};
-	`, T = ql`
+		color: ${c ? "yellow" : "inherit"};
+	`, E = ql`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -11847,64 +11863,64 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 				border-color: #ff9900;
 			}
 		}
-	`, [E, D] = (0, C.useState)("");
-	(0, C.useEffect)(() => D(i), [i]);
-	let O = (0, C.useRef)(null), k = (e, t) => {
+	`, [D, O] = (0, C.useState)("");
+	(0, C.useEffect)(() => O(i), [i]);
+	let k = (0, C.useRef)(null), A = (e, t) => {
 		ch(), e.transform = t;
 	};
 	return /* @__PURE__ */ h(v, { children: [
 		/* @__PURE__ */ h("span", {
-			css: [e, w],
-			ref: m,
+			css: [e, T],
+			ref: g,
 			style: n,
-			children: [/* @__PURE__ */ d("span", { ref: g }), b && /* @__PURE__ */ d("span", {
-				css: x,
-				children: p.kind === "l" ? "🩷" : "✅"
+			children: [/* @__PURE__ */ d("span", { ref: _ }), x && /* @__PURE__ */ d("span", {
+				css: S,
+				children: m.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		a.length > 0 && /* @__PURE__ */ d("span", {
-			css: [e, S],
-			children: a.map((e) => /* @__PURE__ */ d(Jl, {
+		o.length > 0 && /* @__PURE__ */ d("span", {
+			css: [e, w],
+			children: o.map((e) => /* @__PURE__ */ d(Jl, {
 				text: e.text,
 				label: e.label,
-				onActivate: o
+				onActivate: s
 			}, e.nm))
 		}),
 		t && /* @__PURE__ */ d(Wl, {
-			target: m,
+			target: g,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => k(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => A(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				k(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				A(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => k(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => A(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				k(e, n), e.transformOrigin = t;
+				A(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ h(v, { children: [/* @__PURE__ */ h("label", {
-			css: T,
-			ref: O,
+			css: E,
+			ref: k,
 			children: ["テキスト入力", /* @__PURE__ */ d("textarea", {
 				rows: 3,
-				value: E,
-				onChange: (e) => D(e.target.value)
+				value: D,
+				onChange: (e) => O(e.target.value)
 			})]
 		}), /* @__PURE__ */ d(Wl, {
-			target: O,
+			target: k,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => k(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => A(e, t),
 			preventDefault: !1
 		})] })
 	] });
@@ -12004,11 +12020,13 @@ function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
 			/* @__PURE__ */ d("span", { children: A }),
 			o.map((e) => e.cls === "grp" ? /* @__PURE__ */ d(Gl, {
 				cmn: N.cmn,
-				fn: e.fn
+				fn: e.fn,
+				aFace: e.aFace
 			}, e.nm) : /* @__PURE__ */ d(rh, {
 				cmn: N.cmn,
 				nm: e.nm,
 				str: e.str,
+				b_alpha: e.b_alpha,
 				aBtn: e.aBtn,
 				onActivate: (e) => t.jumpToLabelAndGo(e)
 			}, e.nm))

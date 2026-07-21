@@ -27,15 +27,16 @@ type T_TXTARG = T_LAY_CMN & {
 	nm		: string;
 	str		: string;
 	b_color?: number;
+	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
 	aBtn	: T_BTN[];
 	onActivate: (label: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, str, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, str, b_alpha, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -133,7 +134,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;
-		background-color: aquamarine;
+		/* aquamarine相当のRGBに[lay b_alpha=...]をアルファチャンレベルで反映。
+			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない */
+		background-color: rgba(127, 255, 212, ${b_alpha});
 		border: dotted 6px #ffa500;
 
 		font-size: xxx-large;

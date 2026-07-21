@@ -6,6 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import type {T_LAY} from '../components/Stage';
+import type {T_FACE} from '../components/GrpLayer';
 
 import {create} from 'zustand';
 
@@ -18,6 +19,7 @@ type T_STATE = {
 	replace	: (arg: string)=> void;
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
+	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
 	addBtn	: (arg: T_ADDBTN)=> void,
 
@@ -39,6 +41,12 @@ export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
 export type T_CHGPIC = {
 	nm	: string;
 	fn	: string;
+	aFace	: T_FACE[];	// [lay face=...]で重ねる差分絵（重なり順＝配列順）
+}
+// [lay b_alpha=...]：文字レイヤ背景の不透明度。値域は0.0（透明）～1.0（不透過）。背景のみを透過させ、文字は透過しない（レイヤ全体の透過度ではない）
+export type T_CHGBALPHA = {
+	nm		: string;
+	b_alpha	: number;
 }
 export type T_CHGSTR = {
 	nm	: string;
@@ -52,7 +60,7 @@ export type T_ADDBTN = {
 	label	: string;
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgStr'|'addBtn'|'addTitle'|'setWait'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'addBtn'|'addTitle'|'setWait'>>;
 
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
@@ -83,13 +91,23 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		e.aBtn = [...e.aBtn, {nm, text, label}];
 		return {aLay};
 	}),
-	chgPic	: ({nm, fn}: T_CHGPIC)=> set(s=> {
+	chgPic	: ({nm, fn, aFace}: T_CHGPIC)=> set(s=> {
 		const aLay = [...s.aLay];
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
 		if (e.cls !== 'grp') throw `${nm} は画像レイヤではありません`;
 
 		e.fn = fn;
+		e.aFace = aFace;	// [lay face=...]の差分合成情報も同時に更新（未指定時は空配列）
+		return {aLay};
+	}),
+	chgBAlpha	: ({nm, b_alpha}: T_CHGBALPHA)=> set(s=> {
+		const aLay = [...s.aLay];
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+		if (e.cls !== 'txt') throw `${nm} は文字レイヤではありません`;
+
+		e.b_alpha = b_alpha;	// レイヤ全体ではなく文字レイヤ背景の不透明度のみ（TxtLayer.tsxでbackground-colorのrgbaのアルファとして反映）
 		return {aLay};
 	}),
 	chgStr	: ({nm, str}: T_CHGSTR)=> set(s=> {

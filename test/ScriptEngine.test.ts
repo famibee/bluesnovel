@@ -50,13 +50,95 @@ it('step_stopsAtL', ()=> {
 it('step_chgPic', ()=> {
 	// stop.nmは「待ち中の文字レイヤ（#curTxtLayer）」であり、[add_lay]でgrpレイヤを追加しても
 	// [current]しない限り既定値'mes'のまま変わらない仕様（ScriptEngine.ts:57, #curTxtLayer）。
+	// face未指定時はaFaceは空配列になる。
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=GRP][lay layer=base pic=yun_1184][s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
-		{t: 'chgPic', nm: 'base', fn: 'yun_1184'},
+		{t: 'chgPic', nm: 'base', fn: 'yun_1184', aFace: []},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
+});
+
+it('step_addFace_definesFace', ()=> {
+	// [add_face]は表示変化を伴わない（アクションを積まない）。dx/dyは数値に変換され、blendmode未指定時は'normal'
+	const se = new ScriptEngine('t1', '[add_face name=minoura_me_futsu dx=171 dy=159]あ[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+
+it('step_addFace_duplicateNameThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', '[add_face name=a dx=1 dy=1][add_face name=a dx=2 dy=2][s]').step()).toThrow();
+});
+
+it('step_lay_faceComposesMultipleImages', ()=> {
+	// [lay fn=... face=A,B,C] で、[add_face]済みの差分絵を重ねてchgPicアクションが積まれる。
+	// 重なり順はface=の記述順（配列の並び順＝後の要素ほど上に重なる、本家 csvFn = fn+','+face と同じ）
+	const sn = [
+		'[add_lay layer=0 class=grp]',
+		'[add_face name=minoura_kuchi_futsu dx=200 dy=239 blendmode=multiply]',
+		'[add_face name=minoura_me_futsu dx=171 dy=159]',
+		'[add_face name=minoura_mayu_futsu dx=167 dy=146 blendmode=multiply]',
+		'[lay layer=0 fn=minoura_wasou face=minoura_kuchi_futsu,minoura_me_futsu,minoura_mayu_futsu]',
+		'[s]',
+	].join('');
+	const se = new ScriptEngine('t1', sn);
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'addLay', cls: 'grp', nm: '0'},
+		{t: 'chgPic', nm: '0', fn: 'minoura_wasou', aFace: [
+			{fn: 'minoura_kuchi_futsu', dx: 200, dy: 239, blendmode: 'multiply'},
+			{fn: 'minoura_me_futsu', dx: 171, dy: 159, blendmode: 'normal'},
+			{fn: 'minoura_mayu_futsu', dx: 167, dy: 146, blendmode: 'multiply'},
+		]},
+		{t: 'stop', kind: 's', key: 't1:6', nm: 'mes'},
+	]);
+});
+
+it('step_lay_faceWithFnOmitted_usesNameAsFn', ()=> {
+	// [add_face]でfn省略時はnameをファイル名として使う（本家 SpritesMng.add_face()と同様）
+	const se = new ScriptEngine('t1', '[add_lay layer=0 class=grp][add_face name=minoura_me_futsu dx=1 dy=2][lay layer=0 fn=base face=minoura_me_futsu][s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'addLay', cls: 'grp', nm: '0'},
+		{t: 'chgPic', nm: '0', fn: 'base', aFace: [
+			{fn: 'minoura_me_futsu', dx: 1, dy: 2, blendmode: 'normal'},
+		]},
+		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
+	]);
+});
+
+it('step_lay_faceUndefinedNameThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', '[lay fn=base face=nothing][s]').step()).toThrow();
+});
+
+it('step_lay_bAlpha', ()=> {
+	// [lay layer=mes b_alpha=0.8] で文字レイヤ背景の不透明度を指定できる。pic/fnとは無関係に単独でもchgBAlphaアクションが積まれる
+	const se = new ScriptEngine('t1', '[lay layer=mes b_alpha=0.8][s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgBAlpha', nm: 'mes', b_alpha: 0.8},
+		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
+	]);
+});
+
+it('step_lay_bAlpha_withPic_bothActionsPushed', ()=> {
+	// pic（またはfn）とb_alphaを同一[lay]タグ内で併用した場合、両方のアクションが記述順で積まれる
+	const se = new ScriptEngine('t1', '[add_lay layer=base class=grp][lay layer=base pic=yun_1184 b_alpha=0.5][s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'addLay', cls: 'grp', nm: 'base'},
+		{t: 'chgPic', nm: 'base', fn: 'yun_1184', aFace: []},
+		{t: 'chgBAlpha', nm: 'base', b_alpha: 0.5},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+
+it('step_lay_bAlpha_invalidValueThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', '[lay layer=mes b_alpha=abc][s]').step()).toThrow();
 });
 
 it('step_jumpLabel', ()=> {

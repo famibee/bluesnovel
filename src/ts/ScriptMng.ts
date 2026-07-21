@@ -125,11 +125,14 @@ export class ScriptMng {
 		switch (act.t) {
 		case 'addLay':
 			this.$fncs.addLayer(act.cls === 'grp'
-				? {cls: 'grp', nm: act.nm, fn: ''}
-				: {cls: 'txt', nm: act.nm, str: '', aBtn: []});	// 文字レイヤはUIコンテナとしてaBtnを初期化
+				? {cls: 'grp', nm: act.nm, fn: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
+				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic':
-			this.$fncs.chgPic({nm: act.nm, fn: act.fn});
+			this.$fncs.chgPic({nm: act.nm, fn: act.fn, aFace: act.aFace});
+			break;
+		case 'chgBAlpha':
+			this.$fncs.chgBAlpha({nm: act.nm, b_alpha: act.b_alpha});
 			break;
 		case 'chgStr':
 			this.$fncs.chgStr({nm: act.nm, str: act.str});

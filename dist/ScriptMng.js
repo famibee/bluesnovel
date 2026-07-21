@@ -26,6 +26,7 @@ var n = class e {
 	#r = "mes";
 	#i = {};
 	#a = !1;
+	#o = {};
 	constructor(t, n) {
 		this.fn = t, this.#e = e.tokenize(n), this.#e.forEach((e, t) => {
 			let n = e.trimStart();
@@ -81,15 +82,48 @@ var n = class e {
 						case "current":
 							this.#r = i.layer ?? i.nm ?? this.#r;
 							continue;
-						case "lay":
-							i.pic && t.push({
-								t: "chgPic",
-								nm: i.layer ?? "",
-								fn: i.pic
-							});
+						case "add_face": {
+							let e = i.name ?? "";
+							if (!e) throw "[add_face] nameは必須です（試作仕様）";
+							if (this.#o[e]) throw `[add_face] 同一のname（${e}）に対して複数の画像を割り当てられません`;
+							this.#o[e] = {
+								fn: i.fn || e,
+								dx: Number(i.dx || "0"),
+								dy: Number(i.dy || "0"),
+								blendmode: i.blendmode || "normal"
+							};
 							continue;
+						}
+						case "lay": {
+							let e = i.fn || i.pic;
+							if (e) {
+								let n = [];
+								if (i.face) for (let e of i.face.split(",")) {
+									if (!e) throw "[lay] face属性に空要素が含まれています";
+									let t = this.#o[e];
+									if (!t) throw `[lay] face【${e}】は[add_face]で未定義です`;
+									n.push(t);
+								}
+								t.push({
+									t: "chgPic",
+									nm: i.layer ?? "",
+									fn: e,
+									aFace: n
+								});
+							}
+							if (i.b_alpha !== void 0) {
+								let e = Number(i.b_alpha);
+								if (Number.isNaN(e)) throw `[lay] b_alphaの値が不正です：${i.b_alpha}`;
+								t.push({
+									t: "chgBAlpha",
+									nm: i.layer ?? "",
+									b_alpha: e
+								});
+							}
+							continue;
+						}
 						case "r":
-							this.#o(t, "\n");
+							this.#s(t, "\n");
 							continue;
 						case "er":
 							this.#i[this.#r] = "", t.push({
@@ -130,12 +164,12 @@ var n = class e {
 						default: continue;
 					}
 				}
-				this.#o(t, r);
+				this.#s(t, r);
 			}
 		}
 		return t;
 	}
-	#o(e, t) {
+	#s(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",
@@ -204,18 +238,27 @@ var n = class e {
 				this.$fncs.addLayer(e.cls === "grp" ? {
 					cls: "grp",
 					nm: e.nm,
-					fn: ""
+					fn: "",
+					aFace: []
 				} : {
 					cls: "txt",
 					nm: e.nm,
 					str: "",
-					aBtn: []
+					aBtn: [],
+					b_alpha: 1
 				});
 				break;
 			case "chgPic":
 				this.$fncs.chgPic({
 					nm: e.nm,
-					fn: e.fn
+					fn: e.fn,
+					aFace: e.aFace
+				});
+				break;
+			case "chgBAlpha":
+				this.$fncs.chgBAlpha({
+					nm: e.nm,
+					b_alpha: e.b_alpha
 				});
 				break;
 			case "chgStr":

@@ -12,9 +12,19 @@
 //	・[l][p][s] で停止し、そこまでに生じた表示変化を T_ENGINE_ACTION[] として返す。
 //	・戻り値をどう画面へ反映するかは呼び出し側（ScriptMng.ts）の責務とする。
 
+// [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
+//	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
+export type T_FACE = {
+	fn			: string;
+	dx			: number;
+	dy			: number;
+	blendmode	: string;
+};
+
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
-	| {t: 'chgPic'; nm: string; fn: string}
+	| {t: 'chgPic'; nm: string; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
+	| {t: 'chgBAlpha'; nm: string; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
 	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
@@ -57,6 +67,7 @@ export class ScriptEngine {
 	#curTxtLayer = 'mes';
 	readonly #hTxt: {[nm: string]: string} = {};		// レイヤ名 -> そのページの蓄積文字列
 	#clearOnResume = false;	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか
+	readonly #hFace: {[name: string]: T_FACE} = {};	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
 
 	constructor(readonly fn: string, src: string) {
 		this.#aToken = ScriptEngine.tokenize(src);
@@ -119,9 +130,44 @@ export class ScriptEngine {
 					this.#curTxtLayer = args.layer ?? args.nm ?? this.#curTxtLayer;
 					continue;
 
-				case 'lay':		// 試作簡略：画像レイヤの絵（pic属性）変更のみ対応
-					if (args.pic) aAct.push({t: 'chgPic', nm: args.layer ?? '', fn: args.pic});
+				case 'add_face': {	// 差分名称の定義（本家 SpritesMng.add_face() 相当。dx/dyは親画像基準の相対座標）
+					const name = args.name ?? '';
+					if (! name) throw '[add_face] nameは必須です（試作仕様）';
+					if (this.#hFace[name]) throw `[add_face] 同一のname（${name}）に対して複数の画像を割り当てられません`;
+					this.#hFace[name] = {
+						fn			: args.fn || name,			// fn省略時はnameをファイル名として使用（本家と同様）
+						dx			: Number(args.dx || '0'),
+						dy			: Number(args.dy || '0'),
+						blendmode	: args.blendmode || 'normal',
+					};
 					continue;
+				}
+
+				case 'lay': {		// 試作簡略：画像レイヤの絵（picまたはfn属性）変更、face属性による差分合成、及び文字レイヤ背景の不透明度（b_alpha）に対応
+					// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
+					const picFn = args.fn || args.pic;
+					if (picFn) {
+						const aFace: T_FACE[] = [];
+						if (args.face) {
+							// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
+							for (const nm of args.face.split(',')) {
+								if (! nm) throw '[lay] face属性に空要素が含まれています';
+								const f = this.#hFace[nm];
+								if (! f) throw `[lay] face【${nm}】は[add_face]で未定義です`;
+								aFace.push(f);
+							}
+						}
+						aAct.push({t: 'chgPic', nm: args.layer ?? '', fn: picFn, aFace});
+					}
+
+					// b_alpha：文字レイヤ背景の不透明度。pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
+					if (args.b_alpha !== undefined) {
+						const b_alpha = Number(args.b_alpha);
+						if (Number.isNaN(b_alpha)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+						aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', b_alpha});
+					}
+					continue;
+				}
 
 				case 'r':		// 改行
 					this.#appendTxt(aAct, '\n');
