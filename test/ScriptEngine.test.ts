@@ -257,3 +257,61 @@ it('jumpToLabel_unknownLabelThrows', ()=> {
 	const se = new ScriptEngine('t1', 'あ[s]');
 	expect(()=> se.jumpToLabel('*nothing')).toThrow();
 });
+
+
+// ============ 変数代入（[let]）・組み込み変数 ============
+
+it('let_simpleAssign_noAction', ()=> {
+	// [let]はT_ENGINE_ACTIONを何も積まない（画面表示には関与しない内部状態のみの変更）
+	const se = new ScriptEngine('t1', '[let name=game:hp val=100][s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
+	]);
+	expect(se.getVal('game:hp')).toBe(100);
+});
+
+it('let_defaultNamespaceIsTmp', ()=> {
+	// nameに名前空間を付けない場合、本家準拠でtmp:扱い（VarStore.ts:33参照）
+	const se = new ScriptEngine('t1', '[let name=foo val=1][s]');
+	se.step();
+	expect(se.getVal('foo')).toBe(1);
+	expect(se.getVal('tmp:foo')).toBe(1);
+	expect(se.getVal('game:foo')).toBeNull();	// 名前空間が違うので別変数
+});
+
+it('let_expressionReferencesPreviousValue', ()=> {
+	// val属性は式として評価されるため、自分自身を参照して更新できる
+	const se = new ScriptEngine('t1', '[let name=game:hp val=100][let name=game:hp val="game:hp-30"][s]');
+	se.step();
+	expect(se.getVal('game:hp')).toBe(70);
+});
+
+it('let_stringValue', ()=> {
+	// val属性は常に式として評価される（ifのexp属性と同じ規約）。
+	// そのため文字列リテラルを渡す場合は、タグ属性の引用符とは別に
+	// 式側の引用符も必要（ここでは属性を'で囲み、式側は"で囲む）。
+	// 引用符の二重化を不要にする構文糖（&付与方式等）の導入はTODO（ExprEval.tsコメント参照）
+	const se = new ScriptEngine('t1', '[let name=game:name val=\'"ゆかり"\'][s]');
+	se.step();
+	expect(se.getVal('game:name')).toBe('ゆかり');
+});
+
+it('let_requiresName', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let val=1][s]').step()).toThrow();
+});
+
+it('let_invalidExpressionThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let name=foo val="1+"][s]').step()).toThrow();
+});
+
+it('builtinVar_scriptFn', ()=> {
+	// 組み込み変数の例：tmp:const.sn.scriptFnは常に現在のScriptEngineのfnを返す（遅延評価）
+	const se = new ScriptEngine('myFile', '[s]');
+	expect(se.getVal('const.sn.scriptFn')).toBe('myFile');
+	expect(se.getVal('tmp:const.sn.scriptFn')).toBe('myFile');
+});
+
+it('builtinVar_cannotBeOverwritten', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let name=const.sn.scriptFn val=1][s]').step()).toThrow();
+});

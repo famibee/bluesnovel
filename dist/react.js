@@ -285,7 +285,7 @@ var t = /* @__PURE__ */ e(((e) => {
 		return w.H.useSyncExternalStore(e, t, n);
 	}, e.useTransition = function() {
 		return w.H.useTransition();
-	}, e.version = "19.2.7";
+	}, e.version = "19.2.8";
 })), n = /* @__PURE__ */ e(((e, t) => {
 	process.env.NODE_ENV !== "production" && (function() {
 		function n(e, t) {
@@ -899,7 +899,7 @@ var t = /* @__PURE__ */ e(((e) => {
 			return D().useSyncExternalStore(e, t, n);
 		}, e.useTransition = function() {
 			return D().useTransition();
-		}, e.version = "19.2.7", typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop == "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+		}, e.version = "19.2.8", typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop == "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
 })), r = /* @__PURE__ */ e(((e, r) => {
 	process.env.NODE_ENV === "production" ? r.exports = t() : r.exports = n();
