@@ -30,6 +30,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgBAlpha'; nm: string; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
 	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）
+	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
 ;
 
@@ -77,8 +78,17 @@ export class ScriptEngine {
 	readonly #expr = new ExprEval(this.#val);
 
 	// if/elsif/else/endifの再開位置スタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:873 #aIfStk 相当）
-	//	本家の初期値-1はcall/returnとの共存機構（csa保存・復元）用で、call未実装の現段階では不要なため単純な空配列とする
+	//	call/return実装に伴い、本家同様「壁」(-1)を積む方式を導入した（#call()参照）。
+	//	壁を挟むことで、サブルーチン内の[elsif]/[else]/[endif]がコール元の（まだ閉じていない）
+	//	ifブロックを誤って終端させることを防ぐ（本家 ScriptIterator.ts:972 aIfStk.unshift(-1) 相当）
 	readonly #aIfStk: number[] = [];
+
+	// callスタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:66 #aCallStk 相当の簡略版）
+	//	試作では同一ファイル内ラベルのみ対応（jump/buttonと同じ制約）。
+	//	本家CallStack.ts（sn/CallStack.ts）はmp:（マクロ変数）・hEvt1Time等マクロ機構前提の
+	//	フィールドを持つが、マクロは未実装のためここでは流用せず、必要最小限の型を独自定義する
+	//	（マクロ実装時にsn/CallStack.tsとの統合要否を再検討する）
+	readonly #aCallStk: {returnIdx: number; lenIfStk: number}[] = [];
 
 	constructor(readonly fn: string, src: string) {
 		this.#aToken = ScriptEngine.tokenize(src);
@@ -217,11 +227,37 @@ export class ScriptEngine {
 					aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
 					continue;
 
+				case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
+					aAct.push({t: 'trace', text: args.text ?? ''});
+					continue;
+
 				case 'jump': {	// シナリオジャンプ（試作簡略：同一スクリプト内ラベルのみ）
 					const label = args.label ?? '';
 					const to = this.#hLabel[label];
 					if (to === undefined) throw `[jump] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
 					this.#idx = to;
+					continue;
+				}
+
+				case 'call': {	// サブルーチンコール（試作簡略：同一スクリプト内ラベルのみ。本家 ScriptIterator.ts:951 #call() 参照）
+					const label = args.label ?? '';
+					if (! label) throw '[call] labelは必須です（試作仕様）';
+					const to = this.#hLabel[label];
+					if (to === undefined) throw `[call] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+					// this.#idxは既に[call ...]の次のトークンを指している（#returnで戻る先）
+					this.#aCallStk.push({returnIdx: this.#idx, lenIfStk: this.#aIfStk.length});
+					this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
+					this.#idx = to;
+					continue;
+				}
+
+				case 'return': {	// サブルーチンから戻る（試作簡略：fn/label指定による戻り先変更は本家 #return() と異なり未対応）
+					const cs = this.#aCallStk.pop();
+					if (! cs) throw '[return] 呼び出し元がありません（[call]されていないか、既に戻っています）';
+					// 呼び出し先で[if]が閉じきっていなくても、コール元のifスタックだけを確実に復元する
+					// （本家 ScriptIterator.ts:999 aIfStk.slice(-lenIfStk) と同じ意図。押した側から詰め直す）
+					this.#aIfStk.length = cs.lenIfStk;
+					this.#idx = cs.returnIdx;
 					continue;
 				}
 
@@ -311,7 +347,9 @@ export class ScriptEngine {
 	// [elsif]/[else]/[endif] に、選ばれた分岐の実行が「通常のトークン処理として」辿り着いた場合の処理
 	#endif() {
 		const t = this.#aIfStk.pop();
-		if (t === undefined) throw '[if] に対応していない [elsif]/[else]/[endif] です';
+		// undefined: スタックが空（対応する[if]がそもそもない）
+		// -1: [call]が積んだ壁（このサブルーチン内に対応する[if]がない。コール元のif枠を誤って終端させない）
+		if (t === undefined || t === -1) throw '[if] に対応していない [elsif]/[else]/[endif] です';
 		this.#idx = t;
 	}
 

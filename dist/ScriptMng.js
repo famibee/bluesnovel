@@ -887,6 +887,7 @@ var r = class e {
 	#s = new r();
 	#c = new a(this.#s);
 	#l = [];
+	#u = [];
 	constructor(t, n) {
 		this.fn = t, this.#e = e.tokenize(n), this.#e.forEach((e, t) => {
 			let n = e.trimStart();
@@ -993,15 +994,15 @@ var r = class e {
 							continue;
 						}
 						case "if":
-							this.#u(i);
+							this.#d(i);
 							continue;
 						case "elsif":
 						case "else":
 						case "endif":
-							this.#d();
+							this.#f();
 							continue;
 						case "r":
-							this.#f(t, "\n");
+							this.#p(t, "\n");
 							continue;
 						case "er":
 							this.#i[this.#r] = "", t.push({
@@ -1010,10 +1011,33 @@ var r = class e {
 								str: ""
 							});
 							continue;
+						case "trace":
+							t.push({
+								t: "trace",
+								text: i.text ?? ""
+							});
+							continue;
 						case "jump": {
 							let e = i.label ?? "", t = this.#n[e];
 							if (t === void 0) throw `[jump] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
 							this.#t = t;
+							continue;
+						}
+						case "call": {
+							let e = i.label ?? "";
+							if (!e) throw "[call] labelは必須です（試作仕様）";
+							let t = this.#n[e];
+							if (t === void 0) throw `[call] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
+							this.#u.push({
+								returnIdx: this.#t,
+								lenIfStk: this.#l.length
+							}), this.#l.push(-1), this.#t = t;
+							continue;
+						}
+						case "return": {
+							let e = this.#u.pop();
+							if (!e) throw "[return] 呼び出し元がありません（[call]されていないか、既に戻っています）";
+							this.#l.length = e.lenIfStk, this.#t = e.returnIdx;
 							continue;
 						}
 						case "button": {
@@ -1042,12 +1066,12 @@ var r = class e {
 						default: continue;
 					}
 				}
-				this.#f(t, r);
+				this.#p(t, r);
 			}
 		}
 		return t;
 	}
-	#u(t) {
+	#d(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
 		let r = this.#c.evalBool(n) ? this.#t : -1, i = 0, a = this.#e.length;
@@ -1082,12 +1106,12 @@ var r = class e {
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#d() {
+	#f() {
 		let e = this.#l.pop();
-		if (e === void 0) throw "[if] に対応していない [elsif]/[else]/[endif] です";
+		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#t = e;
 	}
-	#f(e, t) {
+	#p(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",
@@ -1192,6 +1216,9 @@ var r = class e {
 					text: e.text,
 					label: e.label
 				});
+				break;
+			case "trace":
+				this.#s({ text: e.text });
 				break;
 			case "stop":
 				this.sys.caretaker.push(e.key), (e.kind === "l" || e.kind === "p") && this.$fncs.setWait({

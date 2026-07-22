@@ -141,6 +141,10 @@ export class ScriptMng {
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
 			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label});
 			break;
+		case 'trace':
+			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲
+			this.#trace({text: act.text});
+			break;
 		case 'stop':
 			// このタイミングでの表示状態を Caretaker に記録する
 			//	（Stage.tsx の再描画で自動的に Memento が生成される）

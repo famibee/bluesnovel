@@ -159,6 +159,22 @@ it('step_unknownTagIgnored', ()=> {
 	]);
 });
 
+it('step_trace_emitsTraceAction', ()=> {
+	// [trace text=@] は表示に影響を与えず、traceアクションを積むだけ（実処理はScriptMng.ts #trace()側）
+	const se = new ScriptEngine('t1', '[trace text=@]あ[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'trace', text: '@'},
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+it('step_trace_missingText_emitsEmptyString', ()=> {
+	// text省略時は空文字を積む（ScriptMng側の#trace()で「(text is )」的なフォールバック表示になる）
+	const se = new ScriptEngine('t1', '[trace]あ[s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
+});
+
 it('step_comment_ignored', ()=> {
 	const se = new ScriptEngine('t1', ';これはコメント\nあ[s]');
 	const a = se.step();
