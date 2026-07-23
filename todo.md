@@ -1,8 +1,7 @@
-# TO DO・優先順位順
+#TODO 優先順位順
 
 （セッション開始時のserena疎通確認・MCPタイムアウト時の注意は`CLAUDE.md`の「MCP pre-flight」へ移動）
 
-- [ ] `[let_ml]`〜`[endlet_ml]`（複数行テキスト代入）の実行時対応。`Grammar`は既に3トークンへ分解できるが、`ScriptEngine`側が未対応のため本文がそのまま画面表示されてしまう
 - [ ] `&計算`書式・`[let]`タグの`cast`指定（`= int`等）は未対応のまま無視している
 - [ ] `[trace]`用の`ScriptEngine.#evalAmpArg()`を`ExprEval.getValAmpersand()`へ寄せる（`&`代入側は既に`getValAmpersand()`を使用。未定義変数を空文字にする差分だけが残っている）
 - [ ] E2Eの拡充（未着手）：`[lay b_alpha=...]`の見た目、`[if]`/`[let]`分岐、マクロ呼び出し、`[trace]`のデバッグ表示

@@ -98,7 +98,7 @@ export class ScriptEngine {
 	// マクロ名として使用不可（既存タグと同名は不可。本家 ScriptIterator.ts:1366
 	// if (name in this.hTag) throw と同じ意図）
 	static readonly RESERVED_TAGS = new Set([
-		'add_lay', 'current', 'add_face', 'lay', 'let',
+		'add_lay', 'current', 'add_face', 'lay', 'let', 'let_ml', 'endlet_ml',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro',
@@ -113,9 +113,17 @@ export class ScriptEngine {
 
 		// ラベル定義を記録。Grammarのトークンは行頭のタブが別トークンに分かれるため、
 		//	ラベルトークンは必ず「*」始まり（本家 Main.ts:262 の uc===42 && length>1 と同じ判定）。
-		//	末尾に半角空白が残ることはあるのでtrim()する
+		//	末尾に半角空白が残ることはあるのでtrim()する。
+		//	[let_ml]〜[endlet_ml]の本文は「ただのテキスト」なので、中に「*〜」の行があっても
+		//	ラベルとして拾わない（本家 ScriptIterator.ts:1196 の in_let_ml と同じ）
+		let inLetMl = false;
 		this.#aToken.forEach((tkn, i)=> {
-			if (tkn.charCodeAt(0) === 42 && tkn.length > 1) this.#hLabel[tkn.trim()] = i + 1;
+			if (inLetMl) {
+				if (this.#grm.testTagEndLetml(tkn)) inLetMl = false;
+				return;
+			}
+			if (tkn.charCodeAt(0) === 42 && tkn.length > 1) {this.#hLabel[tkn.trim()] = i + 1; return}
+			if (this.#grm.testTagLetml(tkn)) inLetMl = true;
 		});
 	}
 
@@ -268,6 +276,39 @@ export class ScriptEngine {
 			this.#val.set(varName, this.#expr.parse(exp));
 			return 'skip';
 		}
+
+		case 'let_ml': {	// インラインテキスト代入（本家 ScriptIterator.ts:718 #let_ml()）
+			// Grammarが「[let_ml …]」と「その本文」を別トークンに割ってくれているので、
+			//	次のトークンをそのまま（式評価も改行の解釈もせず）変数へ入れるだけでよい。
+			//	用途はシェーダーのソースやJSONの埋め込みなど「そのままの複数行テキスト」
+			const varName = args.name ?? '';
+			if (! varName) throw '[let_ml] nameは必須です';
+
+			let ml = '';
+			for (; this.#idx < len; ++this.#idx) {	// 空トークンは読み飛ばす（本家踏襲）
+				ml = this.#aToken[this.#idx]!;
+				if (ml !== '') break;
+			}
+			if (this.#grm.testTagEndLetml(ml)) {	// 本文が空（[let_ml …][endlet_ml]）
+				//	この場合Grammarのlet_mlルール（本文が1文字以上必要）にマッチせず、
+				//	[let_ml …]は普通のタグトークンになるため、次は[endlet_ml]そのもの
+				this.#val.set(varName, '');
+				++this.#idx;
+				return 'skip';
+			}
+			if (! this.#grm.testTagEndLetml(this.#aToken[this.#idx +1] ?? '')) {
+				throw `[let_ml] 変数【${varName}】の終端・[endlet_ml]がありません`;
+			}
+			// 本家は cast='str' を付けて[let]へ渡すが、bluesnovelの自動キャストは
+			//	読み出し時（VarStore.get()）に効くため、書き込み側での指定に相当するものは無い。
+			//	数値だけのテキストを文字列のまま読みたい場合は「名前@str」で参照する
+			this.#val.set(varName, ml);
+			this.#idx += 2;	// 本文 → [endlet_ml] → その次
+			return 'skip';
+		}
+		case 'endlet_ml':	// [let_ml]が本文ごと読み飛ばすので通常は到達しない。
+			// 本家も no-op（ScriptIterator.ts:76。[if]ブロック内で未定義タグ扱いにしないため）
+			return 'skip';
 
 		case 'if':	// ifブロック開始（本家 ScriptIterator.ts:886 #if() のアルゴリズムを移植）
 			this.#if(args);

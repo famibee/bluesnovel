@@ -452,6 +452,66 @@ it('let_invalidExpressionThrows', ()=> {
 	expect(()=> new ScriptEngine('t1', '[let name=foo val="1+"][s]').step()).toThrow();
 });
 
+// ============ [let_ml]〜[endlet_ml]（インラインテキスト代入） ============
+
+it('let_ml_basic', ()=> {
+	// 本文は式評価も改行の解釈もせず、そのままの文字列として変数へ入る
+	const se = new ScriptEngine('t1', '[let_ml name=ml]\nabc\ndef\n[endlet_ml][s]');
+	const a = se.step();
+	expect(se.getVal('ml')).toBe('\nabc\ndef\n');
+	expect(a.filter(v=> v.t === 'chgStr')).toEqual([]);	// 本文は画面表示されない
+});
+
+it('let_ml_json', ()=> {	// 主用途：JSONを埋め込み、VarStoreのJSON探索で下位階層を引く
+	const se = new ScriptEngine('t1',
+		'[let_ml name=const.db]\n{"紀子": {"fn": "nori", "col": "lightskyblue"}}\n[endlet_ml][s]');
+	se.step();
+	expect(se.getVal('const.db.紀子.fn')).toBe('nori');
+	expect(se.getVal('const.db.紀子.col')).toBe('lightskyblue');
+});
+
+it('let_ml_keepsBracketsAndSemicolons', ()=> {
+	// 本文中の「[」「]」「;」はタグにもコメントにもならない（Grammarが本文まるごと1トークンにする）
+	const se = new ScriptEngine('t1',
+		'[let_ml name=ml]\nvoid main(void) {\n\tgl_FragColor = v[0];\t; これもただの本文\n}\n[endlet_ml][s]');
+	se.step();
+	expect(se.getVal('ml')).toBe('\nvoid main(void) {\n\tgl_FragColor = v[0];\t; これもただの本文\n}\n');
+});
+
+it('let_ml_emptyBody', ()=> {
+	const se = new ScriptEngine('t1', '[let_ml name=ml][endlet_ml]あ[s]');
+	const a = se.step();
+	expect(se.getVal('ml')).toBe('');
+	expect(a[0]).toEqual({t: 'chgStr', nm: 'mes', str: 'あ'});	// [endlet_ml]の次から続行できている
+});
+
+it('let_ml_insideIf', ()=> {
+	const se = new ScriptEngine('t1', '[if exp=true][let_ml name=ml]\nX\n[endlet_ml][endif][s]');
+	se.step();
+	expect(se.getVal('ml')).toBe('\nX\n');
+});
+
+it('let_ml_labelInBodyIsNotALabel', ()=> {
+	// 本文中の「*〜」をラベルとして拾ってしまわないこと。
+	//	本文トークンの先頭が「*」になる書き方（[let_ml …]直後に*を置く）でないと再現しない
+	const se = new ScriptEngine('t1', '[let_ml name=ml]*inner\n[endlet_ml][jump label=*inner][s]');
+	expect(()=> se.step()).toThrow();
+	expect(se.getVal('ml')).toBe('*inner\n');
+});
+
+it('let_ml_requiresName', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let_ml]\nX\n[endlet_ml][s]').step()).toThrow();
+});
+
+it('let_ml_requiresEndTag', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let_ml name=ml]\nX\n[s]').step()).toThrow();
+});
+
+it('let_ml_cannotBeUsedAsMacroName', ()=> {
+	expect(()=> new ScriptEngine('t1', '[macro name=let_ml][endmacro][s]').step()).toThrow();
+	expect(()=> new ScriptEngine('t1', '[macro name=endlet_ml][endmacro][s]').step()).toThrow();
+});
+
 it('builtinVar_scriptFn', ()=> {
 	// 組み込み変数の例：tmp:const.sn.scriptFnは常に現在のScriptEngineのfnを返す（遅延評価）
 	const se = new ScriptEngine('myFile', '[s]');

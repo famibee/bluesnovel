@@ -188,8 +188,10 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 ### The `.sn` scripting language (current prototype tag set)
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
-text-bg opacity), `let`, `if`/`elsif`/`else`/`endif`, `r`, `er`, `trace` (`text=&expr` for
-expression eval), `jump`, `call`/`return`, `macro`/`endmacro`, `button` (`call=true` for
+text-bg opacity), `let`, `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
+expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
+`er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
+`macro`/`endmacro`, `button` (`call=true` for
 subroutine-call on click), and the stop points `l`/`p`/`s`. **Only same-file labels are
 supported** for jump/call/button/macro — cross-file (`jump fn=...`) is a known TODO that
 needs execution state moved out of `ScriptEngine` into `ScriptMng`. Reserved tag names that

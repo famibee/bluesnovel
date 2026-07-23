@@ -1224,6 +1224,8 @@ var p = class {
 		"add_face",
 		"lay",
 		"let",
+		"let_ml",
+		"endlet_ml",
 		"if",
 		"elsif",
 		"else",
@@ -1242,8 +1244,18 @@ var p = class {
 		"s"
 	]);
 	constructor(e, t) {
-		this.fn = e, this.#n = this.#t.resolveScript(t).aToken, this.#l.defBuiltin("const.sn.scriptFn", () => this.fn), this.#n.forEach((e, t) => {
-			e.charCodeAt(0) === 42 && e.length > 1 && (this.#i[e.trim()] = t + 1);
+		this.fn = e, this.#n = this.#t.resolveScript(t).aToken, this.#l.defBuiltin("const.sn.scriptFn", () => this.fn);
+		let n = !1;
+		this.#n.forEach((e, t) => {
+			if (n) {
+				this.#t.testTagEndLetml(e) && (n = !1);
+				return;
+			}
+			if (e.charCodeAt(0) === 42 && e.length > 1) {
+				this.#i[e.trim()] = t + 1;
+				return;
+			}
+			this.#t.testTagLetml(e) && (n = !0);
 		});
 	}
 	getVal(e) {
@@ -1363,6 +1375,16 @@ var p = class {
 				let t = n.val ?? "";
 				return this.#l.set(e, this.#u.parse(t)), "skip";
 			}
+			case "let_ml": {
+				let e = n.name ?? "";
+				if (!e) throw "[let_ml] nameは必須です";
+				let t = "";
+				for (; this.#r < i && (t = this.#n[this.#r], t === ""); ++this.#r);
+				if (this.#t.testTagEndLetml(t)) return this.#l.set(e, ""), ++this.#r, "skip";
+				if (!this.#t.testTagEndLetml(this.#n[this.#r + 1] ?? "")) throw `[let_ml] 変数【${e}】の終端・[endlet_ml]がありません`;
+				return this.#l.set(e, t), this.#r += 2, "skip";
+			}
+			case "endlet_ml": return "skip";
 			case "if": return this.#g(n), "skip";
 			case "elsif":
 			case "else":
