@@ -76,7 +76,7 @@ it('testAnalyzeScript_n3t2n5', ()=> {
 });
 
 it('testAnalyzeScript_ans', ()=> {
-	const sScr = '\t[add_lay layer=mes class=txt]\n\t[add_lay layer=upd class=grp]\n\t[lay layer="mes" visible=true b_alpha=0 r_size=12 r_align="121" layout=\'blockProgression="rl" lineHeight="36" paddingTop="15" paddingRight="15" fontSize="24" color="0xffffff"\']\n\n\t[title text="&tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.filename +\'  ver \'+ tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.version"]\n\n\t空気《え あ》小説《のべる》[r]\n\tばい　ふぁみべぇ[r]\n[r]\n\tクリックで更新確認[r]\n\tするよー[p][er]\n\n\t[lay layer=upd fn="update" visible=true left=86 top=86]\n[update_check url="http://ugainovel.ddo.jp/ans/ver.xml" config_fn="update.xml"]\n\t何かあれば[r]\n\t通知します。[r]\n[r][r][r][r]\n\t数秒経っても無反応なら更新はありません。\n*loop\n[l]\n[jump label=*loop]\n';
+	const sScr = `\t[add_lay layer=mes class=txt]\n\t[add_lay layer=upd class=grp]\n\t[lay layer="mes" visible=true b_alpha=0 r_size=12 r_align="121" layout='blockProgression="rl" lineHeight="36" paddingTop="15" paddingRight="15" fontSize="24" color="0xffffff"']\n\n\t[title text="&tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.filename +'  ver '+ tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.version"]\n\n\t空気《え あ》小説《のべる》[r]\n\tばい　ふぁみべぇ[r]\n[r]\n\tクリックで更新確認[r]\n\tするよー[p][er]\n\n\t[lay layer=upd fn="update" visible=true left=86 top=86]\n[update_check url="http://ugainovel.ddo.jp/ans/ver.xml" config_fn="update.xml"]\n\t何かあれば[r]\n\t通知します。[r]\n[r][r][r][r]\n\t数秒経っても無反応なら更新はありません。\n*loop\n[l]\n[jump label=*loop]\n`;
 	const {aToken, len} = grm.resolveScript(sScr);
 
 	expect(len).toBe(58);
@@ -87,10 +87,10 @@ it('testAnalyzeScript_ans', ()=> {
 	expect(aToken[4]).toBe('[add_lay layer=upd class=grp]');
 	expect(aToken[5]).toBe('\n');
 	expect(aToken[6]).toBe('\t');
-	expect(aToken[7]).toBe('[lay layer="mes" visible=true b_alpha=0 r_size=12 r_align="121" layout=\'blockProgression="rl" lineHeight="36" paddingTop="15" paddingRight="15" fontSize="24" color="0xffffff"\']');
+	expect(aToken[7]).toBe(`[lay layer="mes" visible=true b_alpha=0 r_size=12 r_align="121" layout='blockProgression="rl" lineHeight="36" paddingTop="15" paddingRight="15" fontSize="24" color="0xffffff"']`);
 	expect(aToken[8]).toBe('\n\n');
 	expect(aToken[9]).toBe('\t');
-	expect(aToken[10]).toBe('[title text="&tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.filename +\'  ver \'+ tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.version"]');
+	expect(aToken[10]).toBe(`[title text="&tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.filename +'  ver '+ tmp:const.flash.desktop.NativeApplication.nativeApplication.applicationDescriptor.version"]`);
 	expect(aToken[11]).toBe('\n\n');
 	expect(aToken[12]).toBe('\t');
 	expect(aToken[13]).toBe('空気《え あ》小説《のべる》');
@@ -448,16 +448,16 @@ it('test_let_expansion_4_OperatorNotEq', ()=> {
 	expect(grm.testNoTxt(ch)).toBe(true);
 });
 it('test_let_bug_20120321s_aira', ()=> {
-	const sScr = '&&\'tex\'+0 = 1+2\t;[tcy t=\'!!\']';
+	const sScr = `&&'tex'+0 = 1+2\t;[tcy t='!!']`;
 	const {aToken, len} = grm.resolveScript(sScr);
 	let ch = '';
 
 	expect(len).toBe(2);
-	expect(aToken[0]).toBe('&&\'tex\'+0 = 1+2\t');
+	expect(aToken[0]).toBe(`&&'tex'+0 = 1+2\t`);
 	ch = aToken[0]!.charAt(0);
 	expect(grm.testNoTxt(ch)).toBe(true);
 
-	expect(aToken[1]).toBe(';[tcy t=\'!!\']');
+	expect(aToken[1]).toBe(`;[tcy t='!!']`);
 	ch = aToken[1]!.charAt(0);
 	expect(grm.testNoTxt(ch)).toBe(true);
 });
@@ -682,12 +682,12 @@ it('test_ch_expansion_miss_1', ()=> {
 });
 
 it('test_let_bug_20140606_comment_in_str', ()=> {
-	const sScr = '&st_hv=\'back;\'\t\t; [tcy t="!!"]';
+	const sScr = `&st_hv='back;'\t\t; [tcy t="!!"]`;
 	const {aToken, len} = grm.resolveScript(sScr);
 	let ch = '';
 
 	expect(len).toBe(2);
-	expect(aToken[0]).toBe('&st_hv=\'back;\'\t\t');
+	expect(aToken[0]).toBe(`&st_hv='back;'\t\t`);
 	ch = aToken[0]!.charAt(0);
 	expect(grm.testNoTxt(ch)).toBe(true);
 
@@ -1323,10 +1323,10 @@ it('test_bracket2macro_0', ()=> {
 	expect(aToken).toHaveLength(7);
 	expect(aToken[0]).toBe('〔黒柳〕');
 	expect(aToken[1]).toBe('[ab]');
-	expect(aToken[2]).toBe('[セリフ text=\'梨香\']');
+	expect(aToken[2]).toBe(`[セリフ text='梨香']`);
 	expect(aToken[3]).toBe('[あ]');
-	expect(aToken[4]).toBe('[セリフ text=\'黒柳\']');
-	expect(aToken[5]).toBe('[セリフ text=\'梨香\']');
+	expect(aToken[4]).toBe(`[セリフ text='黒柳']`);
+	expect(aToken[5]).toBe(`[セリフ text='梨香']`);
 	expect(aToken[6]).toBe('[zzz]');
 });
 it('test_bracket2macro_1', ()=> {
@@ -1346,10 +1346,10 @@ it('test_bracket2macro_1', ()=> {
 	}, scr, 0);
 	expect(aToken).toHaveLength(6);
 	expect(aToken[0]).toBe('[ab]');
-	expect(aToken[1]).toBe('[セリフ text=\'梨香\']');
+	expect(aToken[1]).toBe(`[セリフ text='梨香']`);
 	expect(aToken[2]).toBe('[あ]');
-	expect(aToken[3]).toBe('[セリフ text=\'黒柳\']');
-	expect(aToken[4]).toBe('[セリフ text=\'梨香\']');
+	expect(aToken[3]).toBe(`[セリフ text='黒柳']`);
+	expect(aToken[4]).toBe(`[セリフ text='梨香']`);
 	expect(aToken[5]).toBe('[zzz]');
 });
 
@@ -1453,20 +1453,20 @@ it('testAnalyzeScript_esc¥etc2', ()=> {
 
 it('testAnalyzeScript_tag_in_string_esc', ()=> {
 	grm.setEscape('\\');
-	const sScr = '[lay layer="mes" chk_overrow=false over_ins_tag="\\"\\\'\\#\\\n"]\n';
+	const sScr = `[lay layer="mes" chk_overrow=false over_ins_tag="\\"\\'\\#\\\n"]\n`;
 	const {aToken, len} = grm.resolveScript(sScr);
 
 	expect(len).toBe(2);
-	expect(aToken[0]).toBe('[lay layer="mes" chk_overrow=false over_ins_tag="\\"\\\'\\#\\\n"]');
+	expect(aToken[0]).toBe(`[lay layer="mes" chk_overrow=false over_ins_tag="\\"\\'\\#\\\n"]`);
 	expect(aToken[1]).toBe('\n');
 });
 it('testAnalyzeScript_tag_in_string_esc¥', ()=> {
 	grm.setEscape('¥');
-	const sScr = '[lay layer="mes" chk_overrow=false over_ins_tag="¥"¥\'¥#¥\n"]\n';
+	const sScr = `[lay layer="mes" chk_overrow=false over_ins_tag="¥"¥'¥#¥\n"]\n`;
 	const {aToken, len} = grm.resolveScript(sScr);
 
 	expect(len).toBe(2);
-	expect(aToken[0]).toBe('[lay layer="mes" chk_overrow=false over_ins_tag="¥"¥\'¥#¥\n"]');
+	expect(aToken[0]).toBe(`[lay layer="mes" chk_overrow=false over_ins_tag="¥"¥'¥#¥\n"]`);
 	expect(aToken[1]).toBe('\n');
 });
 

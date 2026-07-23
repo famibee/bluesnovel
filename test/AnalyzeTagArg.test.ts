@@ -80,21 +80,21 @@ it('Arg44', ()=> {
 });
 
 it('Arg45', ()=> {
-	alz.parse('a=\'2009\'');
+	alz.parse(`a='2009'`);
 	expect(isHashEmpty(alz.hPrm)).toBe(false);
 	expect(alz.hPrm.a!.val).toBe('2009');
 	expect(alz.hPrm.a!.def).toBeUndefined();
 	expect(alz.isKomeParam).toBe(false);
 });
 	it('Arg45_empty', ()=> {
-		alz.parse('a=\'\'');
+		alz.parse(`a=''`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('');
 		expect(alz.hPrm.a!.def).toBeUndefined();
 		expect(alz.isKomeParam).toBe(false);
 	});
 	it('Arg45_str_null', ()=> {
-		alz.parse('a=\'null\'');
+		alz.parse(`a='null'`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('null');
 		expect(alz.hPrm.a!.def).toBeUndefined();
@@ -116,7 +116,7 @@ it('Arg45', ()=> {
 		expect(alz.hPrm.a!.val).toBeDefined();
 	});
 	it('Arg45_str_undefined', ()=> {
-		alz.parse('a=\'undefined\'');
+		alz.parse(`a='undefined'`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('undefined');
 		expect(alz.hPrm.a!.def).toBeUndefined();
@@ -178,21 +178,21 @@ it('Arg61', ()=> {
 	expect(alz.isKomeParam).toBe(false);
 });
 it('Arg62', ()=> {
-	alz.parse('a=%bar|\'うひょー\'');
+	alz.parse(`a=%bar|'うひょー'`);
 	expect(isHashEmpty(alz.hPrm)).toBe(false);
 	expect(alz.hPrm.a!.val).toBe('%bar');
 	expect(alz.hPrm.a!.def).toBe('うひょー');
 	expect(alz.isKomeParam).toBe(false);
 });
 	it('Arg62_empty', ()=> {
-		alz.parse('a=%bar|\'\'');
+		alz.parse(`a=%bar|''`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('%bar');
 		expect(alz.hPrm.a!.def).toBe('');
 		expect(alz.isKomeParam).toBe(false);
 	});
 	it('Arg62_str_null', ()=> {
-		alz.parse('a=%bar|\'null\'');
+		alz.parse(`a=%bar|'null'`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('%bar');
 		expect(alz.hPrm.a!.def).toBe('null');
@@ -214,7 +214,7 @@ it('Arg62', ()=> {
 		expect(alz.hPrm.a!.def).toBeDefined();
 	});
 	it('Arg62_str_undefined', ()=> {
-		alz.parse('a=%bar|\'undefined\'');
+		alz.parse(`a=%bar|'undefined'`);
 		expect(isHashEmpty(alz.hPrm)).toBe(false);
 		expect(alz.hPrm.a!.val).toBe('%bar');
 		expect(alz.hPrm.a!.def).toBe('undefined');
@@ -236,7 +236,7 @@ it('Arg62', ()=> {
 		expect(alz.hPrm.a!.def).toBeDefined();
 	});
 it('Arg63', ()=> {
-	alz.parse('a=%bar|\'う ひょー\'');
+	alz.parse(`a=%bar|'う ひょー'`);
 	expect(isHashEmpty(alz.hPrm)).toBe(false);
 	expect(alz.hPrm.a!.val).toBe('%bar');
 	expect(alz.hPrm.a!.def).toBe('う ひょー');
@@ -273,7 +273,7 @@ it('Arg50_bug0', ()=> {
 
 
 it('Arg80', ()=> {
-	alz.parse('a=3 b=\'1327\' ');
+	alz.parse(`a=3 b='1327' `);
 	expect(isHashEmpty(alz.hPrm)).toBe(false);
 	expect(alz.hPrm.a!.val).toBe('3');
 	expect(alz.hPrm.a!.def).toBeUndefined();
@@ -327,9 +327,9 @@ it('Arg82', ()=> {
 	expect(alz.isKomeParam).toBe(true);
 });
 it('Arg83', ()=> {
-	alz.parse('layout=#&\'lineHeight="36" justificationRule="space" columnGap="0" paddingLeft="$pl" paddingTop="$pt" paddingRight="$pr" paddingBottom="$pb" verticalAlign="inherit" blockProgression="rl" lineBreak="explicit" fontLookup="embeddedCFF" renderingMode="cff" fontSize="24" locale="ja" kerning="off" trackingRight="0" color="$fcol" whiteSpaceCollapse="preserve"\'#');
+	alz.parse(`layout=#&'lineHeight="36" justificationRule="space" columnGap="0" paddingLeft="$pl" paddingTop="$pt" paddingRight="$pr" paddingBottom="$pb" verticalAlign="inherit" blockProgression="rl" lineBreak="explicit" fontLookup="embeddedCFF" renderingMode="cff" fontSize="24" locale="ja" kerning="off" trackingRight="0" color="$fcol" whiteSpaceCollapse="preserve"'#`);
 	expect(isHashEmpty(alz.hPrm)).toBe(false);
-	expect(alz.hPrm.layout!.val).toBe('&\'lineHeight="36" justificationRule="space" columnGap="0" paddingLeft="$pl" paddingTop="$pt" paddingRight="$pr" paddingBottom="$pb" verticalAlign="inherit" blockProgression="rl" lineBreak="explicit" fontLookup="embeddedCFF" renderingMode="cff" fontSize="24" locale="ja" kerning="off" trackingRight="0" color="$fcol" whiteSpaceCollapse="preserve"\'');
+	expect(alz.hPrm.layout!.val).toBe(`&'lineHeight="36" justificationRule="space" columnGap="0" paddingLeft="$pl" paddingTop="$pt" paddingRight="$pr" paddingBottom="$pb" verticalAlign="inherit" blockProgression="rl" lineBreak="explicit" fontLookup="embeddedCFF" renderingMode="cff" fontSize="24" locale="ja" kerning="off" trackingRight="0" color="$fcol" whiteSpaceCollapse="preserve"'`);
 	expect(alz.hPrm.layout!.def).toBeUndefined();
 	expect(alz.isKomeParam).toBe(false);
 });

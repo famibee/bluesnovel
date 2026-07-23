@@ -47,9 +47,9 @@ export class VarStore {
 		for (;;) {
 			i = s.indexOf('["');
 			if (i < 0) {
-				i = s.indexOf('[\'');
+				i = s.indexOf(`['`);
 				if (i < 0) break;
-				e = s.indexOf('\']', i +2);
+				e = s.indexOf(`']`, i +2);
 			}
 			else e = s.indexOf('"]', i +2);
 			if (e < 0) break;

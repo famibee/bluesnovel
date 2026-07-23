@@ -53,7 +53,7 @@ it('macro_calls_anotherMacro_nested', ()=> {
 it('macro_args_passedViaMpNamespace', ()=> {
 	// マクロ呼び出し時のタグ属性がmp:名前空間経由で[if]から参照できること
 	expect(run(
-		'[macro name=say][if exp=mp:msg=="YO"]MATCHED[endif][endmacro]'+
+		`[macro name=say][if exp="mp:msg=='YO'"]MATCHED[endif][endmacro]`+
 		'[say msg="YO"]'
 	)).toBe('MATCHED');
 });
@@ -62,11 +62,11 @@ it('macro_mp_restoredAfterReturn_nestedCallDoesNotLeak', ()=> {
 	// 入れ子マクロ呼び出しから戻った後、外側のmp:値が復元されること
 	// （本家 #callSub()/#return() のcsArg[':hMp']保存・復元と同じ仕組み）
 	expect(run(
-		'[macro name=inner][if exp=mp:v=="Y"]INNER-Y[endif][endmacro]'+
+		`[macro name=inner][if exp="mp:v=='Y'"]INNER-Y[endif][endmacro]`+
 		'[macro name=outer]'+
-			'[if exp=mp:v=="X"]OUTER-BEFORE-X|[endif]'+
+			`[if exp="mp:v=='X'"]OUTER-BEFORE-X|[endif]`+
 			'[inner v="Y"]|'+
-			'[if exp=mp:v=="X"]OUTER-AFTER-X[endif]'+
+			`[if exp="mp:v=='X'"]OUTER-AFTER-X[endif]`+
 		'[endmacro]'+
 		'[outer v="X"]'
 	)).toBe('OUTER-BEFORE-X|INNER-Y|OUTER-AFTER-X');

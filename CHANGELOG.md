@@ -48,6 +48,14 @@
 - 徐々に試作から本番にスライドしていく方針
 - こちらのスクリプトにだいたいの文法が入っているように思う。簡略化してテスト化＆テスト通しを
 	https://github.com/famibee/tmp_esm_uc/blob/main/doc/prj/frames/_yesno.sn
+- [x] **`ScriptEngine`の字句解析・タグ引数解析を本家実装へ差し替え**（2026-07-24 完了）
+  - `ScriptEngine.tokenize()`/`RE_TOKEN`を廃止し、`Grammar.resolveScript()`へ委譲
+  - `ScriptEngine.parseTag()`の`RE_ARG`も廃止し、本家`tagToken2Name_Args()`＋`AnalyzeTagArg`へ委譲
+  - `step()`のトークン振り分けを本家`Main.ts#main()`と同じ「先頭一文字」方式へ（`\t`/`\n`読み飛ばし、`[`タグ、`&`変数操作、`;`コメント、`*`ラベル、それ以外は文字表示）。`trimStart()`は不要になったので全廃
+  - `Grammar`の`cfg`を省略可にした（ワイルドカード展開にしか使わないため）
+  - これにより新たに使えるようになったもの：複数行タグ、タグ内`;`コメント、文字列リテラル中の`[`/`]`/`;`、`&名前 = 式`代入（`&&式 = 式`で変数名側も式評価）、`&式&`表示
+  - 注意：属性値に引用符を含む場合は値全体を引用符で囲む必要がある（`[if exp="mp:v=='X'"]`）。旧`RE_ARG`は`\S+`で雑に拾っていたが、`AnalyzeTagArg`（本家）は引用符の手前で値を切る
+  - ユニット546件・E2E15件・`tsc --noEmit` すべてクリーン
 
 
 

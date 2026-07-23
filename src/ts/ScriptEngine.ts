@@ -14,6 +14,8 @@
 
 import {VarStore, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
+import {Grammar, splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
+import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -41,30 +43,23 @@ export type T_TAG_PARSED = {
 
 
 export class ScriptEngine {
-	// 本家 Grammar.ts 同様、「[tag ...]」「改行」「地の文」の3種でトークン化する
-	//	（本家ほど厳密ではない。属性値の"["文字などは非対応 = 試作の割り切り）
-	static readonly RE_TOKEN = /\[[^\]]*\]|\r\n|\n|[^\[\r\n]+/g;
-	static tokenize(src: string): string[] {
-		return src.match(this.RE_TOKEN) ?? [];
-	}
-
-	static readonly RE_ARG = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g;
+	// タグトークン1件を「タグ名」と「属性の連想配列」へ分解する。
+	//	本家と同じ Grammar.tagToken2Name_Args() ＋ AnalyzeTagArg を使うので、
+	//	複数行タグ・タグ内コメント（;〜）・"'#の引用符・非ASCIIの属性名まで正しく扱える。
+	//	（属性の省略値「|省略値」はAnalyzeTagArgが解釈するが、試作では未使用のため捨てている）
+	static readonly #alzTagArg = new AnalyzeTagArg;
 	static parseTag(token: string): T_TAG_PARSED {
-		const inner = token.slice(1, -1).trim();
-		const sp = inner.search(/\s/);
-		const name = sp === -1 ? inner : inner.slice(0, sp);
+		const [name, sArgs] = tagToken2Name_Args(token);
+		ScriptEngine.#alzTagArg.parse(sArgs);
 		const args: {[k: string]: string} = {};
-		if (sp !== -1) {
-			const rest = inner.slice(sp + 1);
-			this.RE_ARG.lastIndex = 0;
-			let m: RegExpExecArray | null;
-			// eslint-disable-next-line no-cond-assign
-			while (m = this.RE_ARG.exec(rest)) args[m[1]!] = m[2] ?? m[3] ?? m[4] ?? '';
-		}
+		for (const [k, prm] of Object.entries(ScriptEngine.#alzTagArg.hPrm)) args[k] = prm.val;
 		return {name, args};
 	}
 
 
+	// 字句解析は本家 Grammar をそのまま使う（cfg無し＝ワイルドカード展開なし。Grammar.ts参照）。
+	//	これにより複数行タグ・文字列リテラル中の[ ] ;・コメント・ラベル・エスケープ文字に対応する
+	readonly #grm = new Grammar;
 	readonly #aToken: string[];
 	#idx = 0;
 	readonly #hLabel: {[label: string]: number} = {};	// *label -> トークン索引
@@ -111,15 +106,16 @@ export class ScriptEngine {
 	]);
 
 	constructor(readonly fn: string, src: string) {
-		this.#aToken = ScriptEngine.tokenize(src);
+		this.#aToken = this.#grm.resolveScript(src).aToken;
 
 		// 組み込み変数：常に自分自身のfnを返す（本家 val.defTmp('const.sn.scriptFn', ...) 相当）
 		this.#val.defBuiltin('const.sn.scriptFn', ()=> this.fn);
 
-		// ラベル定義を記録
-		this.#aToken.forEach((tkn, i) => {
-			const t = tkn.trimStart();
-			if (t.charCodeAt(0) === 42 && t.length > 1) this.#hLabel[t.trim()] = i + 1;
+		// ラベル定義を記録。Grammarのトークンは行頭のタブが別トークンに分かれるため、
+		//	ラベルトークンは必ず「*」始まり（本家 Main.ts:262 の uc===42 && length>1 と同じ判定）。
+		//	末尾に半角空白が残ることはあるのでtrim()する
+		this.#aToken.forEach((tkn, i)=> {
+			if (tkn.charCodeAt(0) === 42 && tkn.length > 1) this.#hLabel[tkn.trim()] = i + 1;
 		});
 	}
 
@@ -161,21 +157,12 @@ export class ScriptEngine {
 		const len = this.#aToken.length;
 		while (this.#idx < len) {
 			const token = this.#aToken[this.#idx++]!;
-			if (token === '' || token === '\n' || token === '\r\n') continue;
 
-			const uc = token.trimStart().charCodeAt(0);	// TokenTopUnicode（本家命名に合わせる。行頭のタブ/空白は無視）
-			if (uc === 59) {	// ; コメント：このトークンだけでなく、行末（次の改行トークン）まで丸ごと無視する
-				//	コメント行中に[tag]が書かれていた場合、トークナイザは'['で別トークンに分割するため、
-				//	このトークンだけをスキップすると[tag]部分が実行されてしまう（旧実装のbug）。
-				//	そのため次の改行トークンの手前まで#idxを進めてから、通常のループへ戻る。
-				while (this.#idx < len) {
-					const nxt = this.#aToken[this.#idx];
-					if (nxt === '\n' || nxt === '\r\n') break;
-					this.#idx++;
-				}
-				continue;
-			}
-			if (uc === 42 && token.trimStart().length > 1) continue;	// *ラベル定義（実行時はスキップ）
+			// トークン先頭一文字での振り分け。本家 Main.ts:221 #main() と同じ並び
+			//	（Grammarのトークンは行頭のタブ・改行・コメントが必ず独立するので、
+			//	trimStart()の必要が無くなった）
+			const uc = token.charCodeAt(0);	// TokenTopUnicode
+			if (uc === 9 || uc === 10) continue;	// \t タブ / \n 改行（連続分がまとめて1トークン）
 
 			if (uc === 91) {	// [ タグ開始
 				const {name, args} = ScriptEngine.parseTag(token);
@@ -186,10 +173,30 @@ export class ScriptEngine {
 				continue;
 			}
 
+			let txt = token;
+			if (uc === 38) {	// & 変数操作・変数表示（本家 Main.ts:243）
+				if (! token.endsWith('&')) {this.#letAmpersand(token); continue}	// ＆代入
+
+				// ＆表示＆：式の評価結果をそのまま文字表示へ回す
+				if (token.charAt(1) === '&') throw '「&表示&」書式では「&」指定が不要です';
+				const v = this.#expr.parse(token.slice(1, -1));
+				txt = v === null || v === undefined ? '' : String(v);
+			}
+			else if (uc === 59) continue;	// ; コメント（行末までで1トークン）
+			else if (uc === 42 && token.length > 1) continue;	// * ラベル定義（実行時はスキップ）
+
 			// 文字表示（プレーンテキスト＝地の文）
-			this.#appendTxt(aAct, token);
+			this.#appendTxt(aAct, txt);
 		}
 		return aAct;	// スクリプト終端まで到達
+	}
+
+	// 「&名前 = 式 [= キャスト]」書式による変数代入（本家 Main.ts:246、[let]タグ相当）。
+	//	「&&式 = 式」と書くと、変数名の側も式として評価される（本家 #getValAmpersand()）
+	//TODO: キャスト指定（= int 等）は[let]のcast属性同様まだ無視している
+	#letAmpersand(token: string) {
+		const {name, text} = splitAmpersand(token.slice(1));
+		this.#val.set(this.#expr.getValAmpersand(name.trim()), this.#expr.parse(text));
 	}
 
 	// [ タグ ]トークン1件分の処理。戻り値：
@@ -324,7 +331,7 @@ export class ScriptEngine {
 			let found = false;
 			for (; this.#idx < len; ++this.#idx) {
 				const tkn2 = this.#aToken[this.#idx]!;
-				if (tkn2.trimStart().charCodeAt(0) !== 91) continue;	// [ タグ開始以外は読み飛ばす
+				if (tkn2.charCodeAt(0) !== 91) continue;	// [ タグ開始以外は読み飛ばす
 				const {name: nm2} = ScriptEngine.parseTag(tkn2);
 				if (nm2 === 'endmacro') {++this.#idx; found = true; break}
 			}
@@ -386,7 +393,7 @@ export class ScriptEngine {
 		const len = this.#aToken.length;
 		for (; this.#idx < len; ++this.#idx) {
 			const tkn = this.#aToken[this.#idx]!;
-			const uc = tkn.trimStart().charCodeAt(0);
+			const uc = tkn.charCodeAt(0);
 			if (uc !== 91) continue;	// [ タグ開始以外（地の文・改行）はこの時点ではまだ実行せず読み飛ばすだけ
 
 			const {name, args: a2} = ScriptEngine.parseTag(tkn);

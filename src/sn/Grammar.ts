@@ -383,7 +383,10 @@ export function	splitAmpersand(token: string): {
 
 
 export class Grammar {
-	constructor(private readonly cfg: T_Config) {this.setEscape('')}
+	// cfgは`fn=…*`のワイルドカード展開（#replaceScript_Wildcard）にしか使わないため、
+	//	bluesnovelでは省略可とした（本家は必須）。省略時はワイルドカード展開を行わない。
+	//	試作は同一ファイル内のみ対応なので、ScriptEngineはcfg無しで生成している
+	constructor(private readonly cfg?: T_Config) {this.setEscape('')}
 
 	#REG_TOKEN	: RegExp;
 	// エスケープ文字の設定（本家 Grammar.ts:381）。トークン化用の正規表現を組み立て直す
@@ -421,13 +424,13 @@ export class Grammar {
 			'.+?'+			// [let_ml]〜[endlet_ml]間のテキスト
 		'(?=\\[endlet_ml[\\]\\s])'+
 		'|\\[(?:'+
-			'[^"\'#;\\]]+|'+	// タグ
-			'(["\'#]).*?\\1' +
+			`[^"'#;\\]]+|`+	// タグ
+			`(["'#]).*?\\1` +
 				// . は (?:\\${ ce??'\\' }.|[^\\1]) でなくてよさげ
 		'|;[^\\n]*)*?]'+
 		'|;[^\\n]*'+		// コメント
 		'|&[^&\\n]+&'+		// ＆表示＆
-		'|&&?(?:[^"\'#;\\n&]+|(["\'#]).*?\\2)+'+	// ＆代入
+		`|&&?(?:[^"'#;\\n&]+|(["'#]).*?\\2)+`+	// ＆代入
 		'|^\\*[^\\s\\[&;\\\\]+'+	// ラベル
 		`|[^\\n\\t\\[;${ce ?`\\${ce}` :''}]+`,		// 本文
 		'gs');
@@ -518,6 +521,8 @@ export class Grammar {
 	readonly #REG_WILDCARD	= /^\[(call|loadplugin)\s/;
 	readonly #REG_WILDCARD2	= /\bfn\s*=\s*[^\s\]]+/;
 	#replaceScript_Wildcard(scr: Script) {
+		if (! this.cfg) return;	// サーチパスが無ければ展開しようがない（bluesnovelでの追加）
+
 		for (let i=scr.len -1; i>=0; --i) {
 			const token = scr.aToken[i]!;
 			if (! this.#REG_WILDCARD.test(token)) continue;

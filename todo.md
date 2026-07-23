@@ -2,11 +2,9 @@
 
 （セッション開始時のserena疎通確認・MCPタイムアウト時の注意は`CLAUDE.md`の「MCP pre-flight」へ移動）
 
-- [ ] **`ScriptEngine.tokenize()`を`Grammar.resolveScript()`へ差し替え**（次の一手）
-  - 現状 `src/ts/ScriptEngine.ts:46` の素朴な正規表現3種のままで、せっかく移植した`Grammar`を誰も使っていない
-  - 差し替えると複数行タグ・文字列リテラル中の`[`/`]`/`;`・`[let_ml]`・エスケープ文字が一気に効くが、トークンの切れ方が変わる（タブが独立トークンになる、コメントが1トークンになる等）ため、`ScriptEngine.step()`のトークン走査とラベル収集の見直しが必要
-  - `Grammar`は`T_Config`を要求するので、`ScriptEngine`へcfgを渡すか、ワイルドカード展開だけ切り離すかの判断も要る
-- [ ] `ExprEval`の`getValAmpersand()`をタグ属性の評価経路（`ScriptEngine.#evalAmpArg`）へ統合する（現状は`[trace]`専用の簡易版が残っている）
+- [ ] `[let_ml]`〜`[endlet_ml]`（複数行テキスト代入）の実行時対応。`Grammar`は既に3トークンへ分解できるが、`ScriptEngine`側が未対応のため本文がそのまま画面表示されてしまう
+- [ ] `&計算`書式・`[let]`タグの`cast`指定（`= int`等）は未対応のまま無視している
+- [ ] `[trace]`用の`ScriptEngine.#evalAmpArg()`を`ExprEval.getValAmpersand()`へ寄せる（`&`代入側は既に`getValAmpersand()`を使用。未定義変数を空文字にする差分だけが残っている）
 - [ ] E2Eの拡充（未着手）：`[lay b_alpha=...]`の見た目、`[if]`/`[let]`分岐、マクロ呼び出し、`[trace]`のデバッグ表示
 - [ ] マクロ関連の残課題
   - [ ] マクロ名の禁止文字チェック（本家`#REG_NG4MAC_NM`相当）

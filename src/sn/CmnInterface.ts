@@ -356,7 +356,7 @@ export function creTMP_DATA(): T_H_TMP_DATA {return {
 	'const.sn.aIfStk.length'	: 1,	// IFスタックの深さ（[if]するたびに増）
 	'const.sn.vctCallStk.length': 0,	// コールスタックの深さ（[call]するたびに増）
 	'sn.auto.enabled'		: false,	// 自動読みすすみモードかどうか
-	'sn.button.fontFamily'	: '\'Hiragino Sans\', \'Hiragino Kaku Gothic ProN\', \'游ゴシック Medium\', meiryo, sans-serif',	// 文字ボタンフォントを指定
+	'sn.button.fontFamily'	: `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`,	// 文字ボタンフォントを指定
 	// 'sn.event.domdata.（任意）'		: ''[event]でフレーム内のHTML要素に登録したイベントで、そのイベント発生時、HTML要素のdata-（任意）属性で指定された値。使い道は開発者が自由に決めていい
 	'sn.eventArg'		: '',	// [button]等のイベント発生時、そのボタンタグのarg属性で指定された値。使い道は開発者が自由に決めていい
 	'sn.eventLabel'		: '',	// [button]等のイベント発生時、そのボタンタグのlabel属性で指定された値。使い道は開発者が自由に決めていい

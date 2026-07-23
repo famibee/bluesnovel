@@ -10,9 +10,35 @@ import {ScriptEngine} from '../src/ts/ScriptEngine';
 import {expect, it} from 'bun:test';
 
 
-it('tokenize_basic', ()=> {
-	expect(ScriptEngine.tokenize('あい[l]うえ\nお'))
-		.toEqual(['あい', '[l]', 'うえ', '\n', 'お']);
+// 字句解析は本家Grammar（src/sn/Grammar.ts）へ委譲済み。網羅的な検証はtest/Grammar.test.tsにあるので、
+//	ここでは「Grammarを使うことで初めて通るようになった書き方」だけを確認する
+it('grammar_multilineTag', ()=> {	// タグを複数行に分けて書ける
+	const se = new ScriptEngine('t1', '[add_lay\n\tlayer=mes\n\tclass=txt\n]あ[s]');
+	expect(se.step()).toEqual([
+		{t: 'addLay', cls: 'txt', nm: 'mes'},
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+it('grammar_tagInStringLiteral', ()=> {	// 属性値の文字列リテラル中の「]」でタグが切れない
+	const se = new ScriptEngine('t1', '[trace text="a]b"][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: 'a]b'});
+});
+it('grammar_commentInMultilineTag', ()=> {	// タグ内に「;」コメントを書ける
+	const se = new ScriptEngine('t1', '[add_lay\t;これはコメント\n\tlayer=mes\t;これも\nclass=txt\n]あ[s]');
+	expect(se.step()).toEqual([
+		{t: 'addLay', cls: 'txt', nm: 'mes'},
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+it('grammar_leadingTabIsNotText', ()=> {	// 行頭のタブは独立トークンになり、地の文には含まれない
+	const se = new ScriptEngine('t1', '\tあ\n\tい[s]');
+	expect(se.step()).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'stop', kind: 's', key: 't1:6', nm: 'mes'},
+	]);
 });
 
 it('parseTag_basic', ()=> {
@@ -20,7 +46,7 @@ it('parseTag_basic', ()=> {
 		.toEqual({name: 'lay', args: {layer: 'base', pic: 'yun_1184'}});
 });
 it('parseTag_quoted', ()=> {
-	expect(ScriptEngine.parseTag('[add_lay layer="my layer" class=\'GRP\']'))
+	expect(ScriptEngine.parseTag(`[add_lay layer="my layer" class='GRP']`))
 		.toEqual({name: 'add_lay', args: {layer: 'my layer', class: 'GRP'}});
 });
 it('parseTag_noarg', ()=> {
@@ -178,7 +204,7 @@ it('step_trace_missingText_emitsEmptyString', ()=> {
 it('step_trace_ampPrefix_evaluatesExprAndStringifies', ()=> {
 	// textが'&'で始まる場合は式として評価する（mp:などの変数値を[trace]で確認できるようにするための動作確認用対応）
 	// val属性は常に式として評価されるため、文字列リテラルを渡すにはタグ属性の引用符とは別に式側の引用符も必要（let_stringValueと同じ規約）
-	const se = new ScriptEngine('t1', '[let name=mp:t val=\'"YO"\'][trace text=&mp:t][s]');
+	const se = new ScriptEngine('t1', `[let name=mp:t val='"YO"'][trace text=&mp:t][s]`);
 	expect(se.step()[0]).toEqual({t: 'trace', text: 'YO'});
 });
 it('step_trace_ampPrefix_numberIsStringified', ()=> {
@@ -196,6 +222,39 @@ it('step_trace_withoutAmp_isLiteral', ()=> {
 	expect(se.step()[0]).toEqual({t: 'trace', text: 'mp:t'});
 });
 
+// ============ 「&」書式（Grammarが独立トークンとして切り出すようになったので対応した） ============
+
+it('amp_let', ()=> {	// ＆代入：&名前 = 式
+	const se = new ScriptEngine('t1', '&game:hp = 10 + 5\n[s]');
+	se.step();
+	expect(se.getVal('game:hp')).toBe(15);
+});
+it('amp_let_nameIsAlsoExpression', ()=> {	// 「&&」なら変数名の側も式として評価される
+	const se = new ScriptEngine('t1', "&&'game:'+'hp' = 7\n[s]");
+	se.step();
+	expect(se.getVal('game:hp')).toBe(7);
+});
+it('amp_show', ()=> {	// ＆表示＆：式の評価結果を地の文として表示
+	const se = new ScriptEngine('t1', '[let name=game:hp val=80]&game:hp&[s]');
+	expect(se.step()).toEqual([
+		{t: 'chgStr', nm: 'mes', str: '80'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+it('amp_show_afterPlainTextIsNotSpecial', ()=> {
+	// 本家と同じ制約：地の文の途中に書いた「&〜&」は独立トークンにならないため、そのまま表示される
+	//	（＆表示＆として効くのは、行頭やタグ直後など「&」でトークンが始まる位置のみ）
+	const se = new ScriptEngine('t1', '[let name=game:hp val=80]HP=&game:hp&[s]');
+	expect(se.step()[0]).toEqual({t: 'chgStr', nm: 'mes', str: 'HP=&game:hp&'});
+});
+it('amp_show_undefinedVarIsEmpty', ()=> {
+	const se = new ScriptEngine('t1', '&未定義変数&[s]');
+	expect(se.step()).toEqual([
+		{t: 'chgStr', nm: 'mes', str: ''},
+		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
+	]);
+});
+
 it('step_comment_ignored', ()=> {
 	const se = new ScriptEngine('t1', ';これはコメント\nあ[s]');
 	const a = se.step();
@@ -211,20 +270,18 @@ it('step_comment_ignored_leadingWhitespace', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
+		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},	// 行頭タブが独立トークンになる分、旧実装より1つ後ろ
 	]);
 });
 
 it('step_comment_ignoresEmbeddedTagOnSameLine', ()=> {
-	// バグ修正: 「;」コメントはトークン単位ではなく行末までを丸ごと無視する必要がある。
-	// コメント行中に[tag]が書かれていた場合、トークナイザは'['で別トークンに分割するため、
-	// 旧実装（コメント判定されたトークンだけをcontinueでスキップ）では[button]部分が
-	// 実行されてしまっていた。
+	// 「;」コメントは行末までで1トークン（Grammarの字句解析がそう切る）。
+	// 旧実装は'['で別トークンに割れてしまい、コメント行中の[button]が実行されていた
 	const se = new ScriptEngine('t1', ';これはコメント[button layer=btn1 text=x label=*goal]\nあ[s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
+		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 	// addBtnアクションが積まれていない（＝[button]タグがコメントとして無視された）ことを確認
 	expect(a.some(v=> v.t === 'addBtn')).toBe(false);
@@ -382,7 +439,7 @@ it('let_stringValue', ()=> {
 	// そのため文字列リテラルを渡す場合は、タグ属性の引用符とは別に
 	// 式側の引用符も必要（ここでは属性を'で囲み、式側は"で囲む）。
 	// 引用符の二重化を不要にする構文糖（&付与方式等）の導入はTODO（ExprEval.tsコメント参照）
-	const se = new ScriptEngine('t1', '[let name=game:name val=\'"ゆかり"\'][s]');
+	const se = new ScriptEngine('t1', `[let name=game:name val='"ゆかり"'][s]`);
 	se.step();
 	expect(se.getVal('game:name')).toBe('ゆかり');
 });

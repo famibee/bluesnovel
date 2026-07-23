@@ -2,7 +2,7 @@ import { n as e, t } from "./rolldown-runtime.js";
 import { t as n } from "./Memento.js";
 import { t as r } from "./react.js";
 import { a as i, c as a, d as o, f as s, i as c, l, m as u, n as d, o as f, onLong as p, p as m, r as h, s as g, setDesignMode as _, t as v, u as y } from "./Main.js";
-import { a as b, n as x, r as S } from "./ConfigBase.js";
+import { n as b, o as x, r as S } from "./ConfigBase.js";
 //#region node_modules/react-use/esm/useToggle.js
 var C = /* @__PURE__ */ e(r()), w = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
@@ -9832,7 +9832,7 @@ function Gl({ cmn: { styChild: e, sys: t, isDesignMode: n, sty4Moveable: r }, fn
 	let o = (e) => {
 		if (!e) return "";
 		try {
-			return t.cfg.searchPath(e, x.SP_GSM);
+			return t.cfg.searchPath(e, b.SP_GSM);
 		} catch (e) {
 			return console.warn("GrpLayer search failed (試作：アセット未整備の可能性)", e), "";
 		}
@@ -12036,7 +12036,7 @@ function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
 }
 function ah({ width: e, height: t }) {
 	let n = 0, r = 0, i = 1;
-	return S.stageW > e || S.stageH > t ? (S.stageW / S.stageH <= e / t ? (r = t, n = b(S.stageW / S.stageH * t)) : (n = e, r = b(S.stageH / S.stageW * e)), i = n / S.stageW) : (n = S.stageW, r = S.stageH, i = 1), {
+	return S.stageW > e || S.stageH > t ? (S.stageW / S.stageH <= e / t ? (r = t, n = x(S.stageW / S.stageH * t)) : (n = e, r = x(S.stageH / S.stageW * e)), i = n / S.stageW) : (n = S.stageW, r = S.stageH, i = 1), {
 		cvsScale: i,
 		cvsWidth: n,
 		cvsHeight: r

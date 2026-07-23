@@ -9,7 +9,7 @@
 //	式評価器を本家PropParser相当まで引き上げるため、テストケースは丸ごと持ち込んでいる。
 //	本家との差異：
 //	・対象クラスは PropParser ではなく ExprEval（src/ts/ExprEval.ts）
-//	・名前空間 game: は bluesnovel では game:
+//	・名前空間 save: は bluesnovel では game:
 //	・変数表は本家 test/ValTest.ts 相当を下記 ValTest としてこのファイル内に持つ
 //		（自動キャストの影響を受けない「素の値」で試験したいため、VarStoreではなく単純表を使う）
 //	・it.each ではなくループで it() を回す（テスト名の重複を許すため）
@@ -184,12 +184,12 @@ const aCase: T_CASE[] = [
 	// Num_int2
 	{i: 'int(10 / 4)', o: 2},
 	// Num_int2b
-	{i: 'int(\'10 / 4\')',
+	{i: `int('10 / 4')`,
 		toThrowError: '(PropParser)引数【10 / 4】が数値ではありません'},
 	// Num_int2c
-	{i: 'parseInt(\'10 / 4\')', o: 2},
+	{i: `parseInt('10 / 4')`, o: 2},
 		// Num_Num2c
-		{i: 'Number(\'10 / 4\')', o: 2.5},
+		{i: `Number('10 / 4')`, o: 2.5},
 	// Num_int2d
 	{i: 'parseInt(10 / 4)', o: 2},
 	// Num_ceil
@@ -305,7 +305,7 @@ const aCase: T_CASE[] = [
 	// Num42_
 	{i: '5 * (1 + 2)==15 !== true', o: false},
 	// Num42_2
-	{i: '5 * (1 + 2)==15 === \'true\'', o: false},
+	{i: `5 * (1 + 2)==15 === 'true'`, o: false},
 	// Num43
 	{i: '5 * (1 + 2)==15 === false', o: false},
 	// Num43_
@@ -372,33 +372,33 @@ const aCase: T_CASE[] = [
 
 // 文字列
 	// Str0
-	{i: '\'@@\'', o: '@@'},
+	{i: `'@@'`, o: '@@'},
 	// Str1
-	{i: '\'\'', o: ''},
+	{i: `''`, o: ''},
 	// Str2
-	{i: '\'(´ω⊂\'', o: '(´ω⊂'},
+	{i: `'(´ω⊂'`, o: '(´ω⊂'},
 	// Str3
-	{i: '\'(´Д⊂\'', o: '(´Д⊂'},
+	{i: `'(´Д⊂'`, o: '(´Д⊂'},
 	// Str4
-	{i: '\'0<5\'', o: '0<5'},
+	{i: `'0<5'`, o: '0<5'},
 
 	// Str5
-	{i: '\' @+@ \'', o: ' @+@ '},
+	{i: `' @+@ '`, o: ' @+@ '},
 	// Str6
-	{i: '\'@ + @\'', o: '@ + @'},
+	{i: `'@ + @'`, o: '@ + @'},
 	// Str7
-	{i: '\'いろは\' + \'にほへ\'', o: 'いろはにほへ'},
+	{i: `'いろは' + 'にほへ'`, o: 'いろはにほへ'},
 		// Str7_2
-		{i: '\'いろは\' + 55', o: 'いろは55'},
+		{i: `'いろは' + 55`, o: 'いろは55'},
 		// Str7_3
-		{i: '74 + \'にほへ\'', o: '74にほへ'},
+		{i: `74 + 'にほへ'`, o: '74にほへ'},
 	// Str8	// 2018/07/12
-	{i: '\'05\'', o: '05'},
+	{i: `'05'`, o: '05'},
 	// Str9	// 2018/07/12
-	{i: '\' 05　\'', o: ' 05　'},
+	{i: `' 05　'`, o: ' 05　'},
 	// Str10	// 2021/09/29 エスケープシーケンス導入
-	{i: '\'\\\'\'', o: '\''},
-	{i: '\'\\\'\'', o: '\''},
+	{i: `'\\''`, o: `'`},
+	{i: `'\\''`, o: `'`},
 	{i: '#\\##', o: '#'},
 	{i: '#\\\n#', o: '\n'},
 
@@ -414,7 +414,7 @@ const aCase: T_CASE[] = [
 	// Var1
 	{i: 'から', o: ''},
 	// Var2
-	{i: '\'いろ\' + 春夏 + \'は\'', o: 'いろ秋冬は'},
+	{i: `'いろ' + 春夏 + 'は'`, o: 'いろ秋冬は'},
 
 	// Var10
 	{i: 'mp:fn', o: 'うひひ'},
@@ -451,7 +451,7 @@ const aCase: T_CASE[] = [
 	// Var13
 	{i: '春夏', o: '秋冬'},
 	// Var14
-	{i: '春夏 == \'秋冬\'', o: true},
+	{i: `春夏 == '秋冬'`, o: true},
 
 
 	// Var20
@@ -459,9 +459,9 @@ const aCase: T_CASE[] = [
 	// Var21
 	{i: 'ぎょへー == mp:lay', o: true},
 	// Var22
-	{i: 'ぎょへー == \'もきゅ\'', o: true},
+	{i: `ぎょへー == 'もきゅ'`, o: true},
 	// Var23
-	{i: 'ぎょへー != \'きゅ\'', o: true},
+	{i: `ぎょへー != 'きゅ'`, o: true},
 
 	// Var30	// うきょ、は未定義リテラル
 	{i: 'うきょ == null', o: true},
@@ -476,16 +476,16 @@ const aCase: T_CASE[] = [
 
 
 	// Var35	// うきょ、は未定義リテラル
-	{i: 'うきょ == \'null\'', o: false},
+	{i: `うきょ == 'null'`, o: false},
 	// Var36
-	{i: 'うきょ != \'null\'', o: true},
+	{i: `うきょ != 'null'`, o: true},
 	// Var37
-	{i: 'うきょ === \'null\'', o: false},
+	{i: `うきょ === 'null'`, o: false},
 	// Var38
-	{i: 'うきょ !== \'null\'', o: true},
+	{i: `うきょ !== 'null'`, o: true},
 	// Var39
 //	{i: `null == 'null'`, o: false},
-	{i: 'null == \'null\'', o: true},	// SKYNovelから
+	{i: `null == 'null'`, o: true},	// SKYNovelから
 	// Var40
 	{i: 'null == tmp:null_n', o: true},
 	// Var41
@@ -516,16 +516,16 @@ const aCase: T_CASE[] = [
 //	{i: 'true == 'true'', o: false},
 	// テストが間違ってる気がする
 	// SKYNovelから
-	{i: 'true == \'true\'', o: true},
+	{i: `true == 'true'`, o: true},
 	// VarLogic07_
-	{i: 'true === \'true\'', o: false},
+	{i: `true === 'true'`, o: false},
 	// VarLogic08
 //	{i: 'false == 'false'', o: false},
 	// テストが間違ってる気がする
 	// SKYNovelから
-	{i: 'false == \'false\'', o: true},
+	{i: `false == 'false'`, o: true},
 	// VarLogic08_
-	{i: 'false === \'false\'', o: false},
+	{i: `false === 'false'`, o: false},
 	// VarLogic10
 	{i: 'undefined', toBeUndefined: true},
 	// VarLogic10_2	// JavaScriptでは undefined == null。==がポイント
@@ -548,17 +548,17 @@ const aCase: T_CASE[] = [
 	// Hash-1
 	{i: 'hA.args', o: 'めけ'},
 	// Hash0
-	{i: 'hA[\'args\']', o: 'めけ'},
+	{i: `hA['args']`, o: 'めけ'},
 	// Hash0b
-	{i: 'hA[\'args\']', o: 'めけ'},
+	{i: `hA['args']`, o: 'めけ'},
 	// Hash1
 	{i: 'hA[ひきす]', o: 'めけ'},
 	// Hash2
 	{i: 'hB[1 + 4]', o: 'ニョホ'},
 	// Hash3
-	{i: 'hC[5 + \'reg\']', o: 'ニョホ2'},
+	{i: `hC[5 + 'reg']`, o: 'ニョホ2'},
 	// Hash4
-	{i: 'hC[\'args\'+ 9]', o: 'ニョホ3'},
+	{i: `hC['args'+ 9]`, o: 'ニョホ3'},
 
 	// Hash5
 	{i: 'hC[ひきす + 9]', o: 'ニョホ3'},
@@ -567,26 +567,26 @@ const aCase: T_CASE[] = [
 	// Hash7
 	{i: 'hA[春夏].args', o: 'よいと'},
 	// Hash8
-	{i: 'hA[\'秋冬\'][\'args\']', o: 'よいと'},
+	{i: `hA['秋冬']['args']`, o: 'よいと'},
 
 	// Hash10_err
-	{i: 'hA[\'秋冬err\'][\'args\']', toBeUndefined: true},
+	{i: `hA['秋冬err']['args']`, toBeUndefined: true},
 	// Hash11_err
-	{i: 'hA[\'秋冬\'][\'argsERR\']', toBeUndefined: true},
+	{i: `hA['秋冬']['argsERR']`, toBeUndefined: true},
 	// Hash12_err
-	{i: 'hAerr[\'秋冬\'][\'args\']', toBeUndefined: true},
+	{i: `hAerr['秋冬']['args']`, toBeUndefined: true},
 
 // 変数埋め込み
 	// EmbedPerl0
-	{i: '\'せを$春夏 はやみ\'', o: 'せを秋冬 はやみ'},
+	{i: `'せを$春夏 はやみ'`, o: 'せを秋冬 はやみ'},
 	// EmbedPerl1
-	{i: '\'せを$春夏\'+\'はやみ\'', o: 'せを秋冬はやみ'},
+	{i: `'せを$春夏'+'はやみ'`, o: 'せを秋冬はやみ'},
 	// EmbedPerl2
-	{i: '\'せを$春夏$mp:pos\'+\'はや\'', o: 'せを秋冬うひひはや'},
+	{i: `'せを$春夏$mp:pos'+'はや'`, o: 'せを秋冬うひひはや'},
 	// EmbedPerl3
-	{i: '\'せ$hC.5reg は\'', o: 'せニョホ2 は'},
+	{i: `'せ$hC.5reg は'`, o: 'せニョホ2 は'},
 	// EmbedPerl4
-	{i: '\'$hD.数値\'', o: '1.20'},
+	{i: `'$hD.数値'`, o: '1.20'},
 
 	// EmbedPerl5
 	{i: 'tmp:zero_s + tmp:one_s', o: '01'},
@@ -627,41 +627,41 @@ const aCase: T_CASE[] = [
 //	{i: '-true', toThrowError: '(PropParser)数値以外に-符号がついています'},
 
 	// EmbedPer20
-	{i: '\'を$春夏,は\'', o: 'を秋冬,は'},
+	{i: `'を$春夏,は'`, o: 'を秋冬,は'},
 	// EmbedPer21
-	{i: '\'を$春夏{は\'', o: 'を秋冬{は'},
+	{i: `'を$春夏{は'`, o: 'を秋冬{は'},
 	// EmbedPer22
-	{i: '\'を$春夏}は\'', o: 'を秋冬}は'},
+	{i: `'を$春夏}は'`, o: 'を秋冬}は'},
 	// EmbedPer23
-	{i: '\'を$春夏[は\'', o: 'を秋冬[は'},
+	{i: `'を$春夏[は'`, o: 'を秋冬[は'},
 	// EmbedPer24
-	{i: '\'を$春夏]は\'', o: 'を秋冬]は'},
+	{i: `'を$春夏]は'`, o: 'を秋冬]は'},
 	// EmbedPer25
-	{i: '\'を$春夏(は\'', o: 'を秋冬(は'},
+	{i: `'を$春夏(は'`, o: 'を秋冬(は'},
 	// EmbedPer26
-	{i: '\'を$春夏)は\'', o: 'を秋冬)は'},
+	{i: `'を$春夏)は'`, o: 'を秋冬)は'},
 	// EmbedPer27
-	{i: '\'を$春夏<は\'', o: 'を秋冬<は'},
+	{i: `'を$春夏<は'`, o: 'を秋冬<は'},
 	// EmbedPer28
-	{i: '\'を$春夏>は\'', o: 'を秋冬>は'},
+	{i: `'を$春夏>は'`, o: 'を秋冬>は'},
 	// EmbedPer29
-	{i: '\'を$春夏/は\'', o: 'を秋冬/は'},
+	{i: `'を$春夏/は'`, o: 'を秋冬/は'},
 //	// EmbedPer30	// エスケープシーケンス導入で不可に
 //	{i: `'を$春夏\\は'`, o: 'を秋冬\\は'},
 
 
 	// EmbedRuby0
-	{i: '\'せを#{春夏} はやみ\'', o: 'せを秋冬 はやみ'},
+	{i: `'せを#{春夏} はやみ'`, o: 'せを秋冬 はやみ'},
 	// EmbedRuby1
-	{i: '\'せを#{春夏}\'+\'はやみ\'', o: 'せを秋冬はやみ'},
+	{i: `'せを#{春夏}'+'はやみ'`, o: 'せを秋冬はやみ'},
 	// EmbedRuby2
-	{i: '\'せを#{春夏}はやみ\'', o: 'せを秋冬はやみ'},
+	{i: `'せを#{春夏}はやみ'`, o: 'せを秋冬はやみ'},
 	// EmbedRuby3
-	{i: '\'せを#{10 / 4}やみ\'', o: 'せを2.5やみ'},
+	{i: `'せを#{10 / 4}やみ'`, o: 'せを2.5やみ'},
 //	{i: `'せを#{10 / 4}やみ'`, o: 'せをnullやみ'},
 
 	// EmbedPerlRuby0
-	{i: '\'せを$春夏$mp:pos#{hB.5}は\'', o: 'せを秋冬うひひニョホは'},
+	{i: `'せを$春夏$mp:pos#{hB.5}は'`, o: 'せを秋冬うひひニョホは'},
 
 
 	// 不具合

@@ -129,13 +129,18 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   button, trace, stop…). It owns **all execution state**: token index `#idx`, label table,
   the if-stack `#aIfStk`, the call-stack `#aCallStk`, the macro table `#hMacro`, and
   variables (via `VarStore`/`ExprEval`). This is the file most unit tests target directly.
-  Its `static tokenize()` is still the **naive 3-pattern regex** — `src/sn/Grammar.ts` now
-  holds the real 本家 tokenizer, but nothing calls it yet (see `todo.md`).
+  Tokenizing and tag-arg parsing are **delegated to 本家 code**: `Grammar.resolveScript()`
+  and `tagToken2Name_Args()` + `AnalyzeTagArg`. `step()`'s dispatch mirrors 本家
+  `Main.ts#main()` exactly — first char of the token decides (`\t`/`\n` skip, `[` tag,
+  `&` assign-or-display, `;` comment, `*` label, else text) — so **no `trimStart()`**:
+  Grammar always splits leading tabs, newline runs and comments into their own tokens.
 - **`src/sn/Grammar.ts`** — 本家's tokenizer, **ported verbatim** (`resolveScript` →
   `Script{aToken,len,aLNum}`, `setEscape`, `char2macro`/`bracket2macro`, `splitAmpersand`,
   `tagToken2Name_Args`). Handles multi-line tags, string literals containing `[`/`]`/`;`,
   comments, `[let_ml]`…`[endlet_ml]`, labels, escape chars and `fn=…*` wildcard expansion.
   `test/Grammar.test.ts` is the 本家 test file moved over unchanged — keep it that way.
+  Only divergence: `cfg` is optional (it drives wildcard expansion alone), so `ScriptEngine`
+  can do `new Grammar` without a `T_Config`.
 - **`src/ts/VarStore.ts`** — 本家 `Variable` minus save/dirty handling. Namespaces are
   `tmp`/`game`/`sys`/`mp` (本家's `save:` is `game:` here). `get(name, def?, touch?)`
   returns **`undefined` for an undefined variable** and `null` only when null was stored —
@@ -172,7 +177,13 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 **Ported-from-本家 files carry their 本家 tests verbatim** (`test/Grammar.test.ts`,
 `test/ExprEval.test.ts`, the lower half of `test/VarStore.test.ts`). When touching those
 modules, diff against `../skynovel_esm/src/sn/…` first: the tests are the contract, and
-intentional divergences are listed in each test file's header comment.
+intentional divergences are listed in each test file's header comment. String-literal
+quoting is the one thing normalized away from upstream — see below.
+
+**No escaped quotes in string literals.** A string that would need `\'` or `\"` is written
+as a template literal instead: `` `[if exp="mp:v=='X'"]` ``, not `'[if exp="mp:v==\'X\'"]'`.
+`.sn` snippets in tests are full of both quote kinds, and the backslashes made them
+unreadable. Plain `'…'` stays the default when no escaping is involved.
 
 ### The `.sn` scripting language (current prototype tag set)
 
@@ -183,6 +194,14 @@ subroutine-call on click), and the stop points `l`/`p`/`s`. **Only same-file lab
 supported** for jump/call/button/macro — cross-file (`jump fn=...`) is a known TODO that
 needs execution state moved out of `ScriptEngine` into `ScriptMng`. Reserved tag names that
 cannot be used as macro names live in `ScriptEngine.RESERVED_TAGS`.
+
+Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
+tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
+`&名前 = 式` assignment (`&&式 = 式` evaluates the *name* as an expression too), and
+`&式&` inline display. Both `&` forms only fire when the token **starts** with `&` — i.e.
+at line start or right after a tag/tab/newline, exactly as upstream. Attribute values that
+contain quotes must quote the whole value (`[if exp="mp:v=='X'"]`), since `AnalyzeTagArg`
+ends an unquoted value at the first quote character.
 
 ## Conventions & gotchas
 
