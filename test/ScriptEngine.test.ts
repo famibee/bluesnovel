@@ -186,7 +186,7 @@ it('step_trace_ampPrefix_numberIsStringified', ()=> {
 	expect(se.step()[0]).toEqual({t: 'trace', text: '3'});
 });
 it('step_trace_ampPrefix_nullBecomesEmptyString', ()=> {
-	// 未定義変数の参照はnull。trace表示用の割り切りで空文字にする
+	// 未定義変数の参照はundefined。trace表示用の割り切りで空文字にする
 	const se = new ScriptEngine('t1', '[trace text=&mp:undef][s]');
 	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
 });
@@ -367,7 +367,7 @@ it('let_defaultNamespaceIsTmp', ()=> {
 	se.step();
 	expect(se.getVal('foo')).toBe(1);
 	expect(se.getVal('tmp:foo')).toBe(1);
-	expect(se.getVal('game:foo')).toBeNull();	// 名前空間が違うので別変数
+	expect(se.getVal('game:foo')).toBeUndefined();	// 名前空間が違うので別変数
 });
 
 it('let_expressionReferencesPreviousValue', ()=> {

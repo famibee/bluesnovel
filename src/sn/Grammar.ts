@@ -1,9 +1,14 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* ***** BEGIN LICENSE BLOCK *****
 	Copyright (c) 2019-2026 Famibee (famibee.blog38.fc2.com)
 
 	This software is released under the MIT License.
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
+
+import {AnalyzeTagArg} from './AnalyzeTagArg';
+import {getFn} from './CmnLib';
+import {type T_Config, SEARCH_PATH_ARG_EXT} from './ConfigBase';
 
 
 export type TArg = {
@@ -322,4 +327,268 @@ export type T_HTag = {
 	dump_val			: TTag;	// 変数のダンプ
 	log					: TTag;	// ログ出力
 	trace				: TTag;	// デバッグ表示へ出力
+}
+
+
+// ここから下は本家 skynovel_esm/src/sn/Grammar.ts:333- の字句解析部をそのまま移植したもの。
+//	試作版のScriptEngine.tokenize()（単純な正規表現3種）では、
+//	・複数行に渡るタグ	・文字列リテラル中の「[」「]」「;」	・コメント
+//	・[let_ml]〜[endlet_ml]	・エスケープ文字	・一文字／括弧マクロ
+//	といった本家の仕様を再現できないため、解析部だけ先に本家同等へ引き上げる。
+//	テストも本家 test/Grammar.test.ts を丸ごと移植している（test/Grammar.test.ts）
+
+export type Script = {
+	aToken	: string[];		// トークン群
+	len		: number;		// トークン数
+	aLNum	: number[];		// トークンの行番号
+};
+
+
+export const	REG_TAG	= /(?<name>[^\s;\]]+)/;	// test用にexport
+export function	tagToken2Name_Args(token: string): [name: string, args: string] {
+	const e = REG_TAG.exec(token.slice(1, -1));
+	const g = e?.groups;
+	if (! g) throw `タグ記述【${token}】異常です(タグ解析)`;
+
+	const nm = g.name!;
+	return [nm, token.slice(1 +nm.length, -1)];
+}
+export function	tagToken2Name(token: string): string {
+	const e = REG_TAG.exec(token.slice(1));
+	const g = e?.groups;
+	if (! g) throw `タグ記述【${token}】異常です(タグ解析)`;
+
+	return g.name!;
+}
+
+// 「&名前 = 式 = キャスト」書式を分解する（本家 Grammar.ts:357）
+export function	splitAmpersand(token: string): {
+		name: string;
+		text: string;
+		cast?: string;
+} {	// テスト用にpublic
+	const equa = token.replaceAll('==', '＝').replaceAll('!=', '≠').split('=');
+		// != を弾けないので中途半端ではある
+	const cnt_equa = equa.length;
+	if (cnt_equa < 2 || cnt_equa > 3) throw '「&計算」書式では「=」指定が一つか二つ必要です';
+
+	const [e0, e1, e2] = equa;
+	if (e1!.startsWith('&')) throw '「&計算」書式では「&」指定が不要です';
+	return {
+		name: e0!.replaceAll('＝', '==').replaceAll('≠', '!='),
+		text: e1!.replaceAll('＝', '==').replaceAll('≠', '!='),
+		...cnt_equa === 3 ?{cast: e2!.trim()} :{},
+	};
+}
+
+
+export class Grammar {
+	constructor(private readonly cfg: T_Config) {this.setEscape('')}
+
+	#REG_TOKEN	: RegExp;
+	// エスケープ文字の設定（本家 Grammar.ts:381）。トークン化用の正規表現を組み立て直す
+	setEscape(ce: string) {
+		if (this.#hC2M && ce in this.#hC2M) throw '[エスケープ文字] char【'+ ce +'】が登録済みの括弧マクロまたは一文字マクロです';
+
+		// 1083 matches (14577 step, 9.9ms) https://regex101.com/r/dP0tAY/1
+		/*
+\\\S |
+ \n+
+| \t+
+|	\[let_ml \s+ [^\]]+ ]
+	.+? (?=\[endlet_ml [\]\s])
+| \[ (?: [^"'#;\]]+
+	| (["'#]).*?\1
+	| ;[^\n]* ) *? ]
+| ;[^\n]*
+| &[^&\n]+&
+| &&?(?: [^"'#;\n&]+ | (["'#]).*?\2 )+
+| ^\*[^\s\[&;\\]+
+| [^\n\t\[;\\]+
+		*/
+/*
+	[^"'#;\]]++
+	| (["'\#]).*?\1
+			++ にしたいところだが、jsは未サポートらしい（2022/10/16）
+*/
+		// (new RegExp("~")) の場合は、バックスラッシュは２つ必要
+			// https://qiita.com/ue5963/items/bd8e32ac9e6b12aa7fab
+		this.#REG_TOKEN = new RegExp(
+		(ce	?`\\${ce}\\S|` :'')+	// エスケープシーケンス
+		'\\n+'+				// 改行
+		'|\\t+'+			// タブ文字
+		'|\\[let_ml\\s+[^\\]]+\\]'+
+			'.+?'+			// [let_ml]〜[endlet_ml]間のテキスト
+		'(?=\\[endlet_ml[\\]\\s])'+
+		'|\\[(?:'+
+			'[^"\'#;\\]]+|'+	// タグ
+			'(["\'#]).*?\\1' +
+				// . は (?:\\${ ce??'\\' }.|[^\\1]) でなくてよさげ
+		'|;[^\\n]*)*?]'+
+		'|;[^\\n]*'+		// コメント
+		'|&[^&\\n]+&'+		// ＆表示＆
+		'|&&?(?:[^"\'#;\\n&]+|(["\'#]).*?\\2)+'+	// ＆代入
+		'|^\\*[^\\s\\[&;\\\\]+'+	// ラベル
+		`|[^\\n\\t\\[;${ce ?`\\${ce}` :''}]+`,		// 本文
+		'gs');
+		this.#REG_CANTC2M = new RegExp(`[\\w\\s;[\\]*=&｜《》${ce ?`\\${ce}` :''}]`);
+		this.#REG_TOKEN_NOTXT = new RegExp(`[\\n\\t;\\[*&${ce ?`\\${ce}` :''}]`);
+	}
+
+
+	// 括弧マクロの定義（本家 Grammar.ts:431）
+	bracket2macro(hArg: TArg, hTag: T_HTag, scr: Script, start_idx: number) {
+		const {name, text} = hArg;
+		if (! name) throw '[bracket2macro] nameは必須です';
+		if (! text) throw '[bracket2macro] textは必須です';
+		const op = text.at(0);
+		if (! op) throw '[bracket2macro] textは必須です';
+		if (text.length !== 2) throw '[bracket2macro] textは括弧の前後を示す二文字を指定してください';
+		if (! (name in hTag)) throw `[bracket2macro] 未定義のタグ又はマクロ[${name}]です`;
+
+		this.#hC2M ??= {};
+		const cl = text.charAt(1);
+		if (op in this.#hC2M) throw '[bracket2macro] text【'+ op +'】が登録済みの括弧マクロまたは一文字マクロです';
+		if (cl in this.#hC2M) throw '[bracket2macro] text【'+ cl +'】が登録済みの括弧マクロまたは一文字マクロです';
+		if (this.#REG_CANTC2M.test(op)) throw '[bracket2macro] text【'+ op +'】は括弧マクロに使用できない文字です';
+		if (this.#REG_CANTC2M.test(cl)) throw '[bracket2macro] text【'+ cl +'】は括弧マクロに使用できない文字です';
+
+		this.#hC2M[cl] = '0';	// チェック用ダミー
+		this.#hC2M[op] = `[${name} text=`;
+
+		this.addC2M(`\\${op}[^\\${cl}]*\\${cl}`, `\\${op}\\${cl}`);
+
+		this.#replaceScr_C2M(scr, start_idx);
+	}
+	// 一文字マクロの定義（本家 Grammar.ts:455）
+	char2macro(hArg: TArg, hTag: T_HTag, scr: Script, start_idx: number) {
+		const {char, name} = hArg;
+		if (! char) throw '[char2macro] charは必須です';
+		this.#hC2M ??= {};
+		if (char in this.#hC2M) throw '[char2macro] char【'+ char +'】が登録済みの括弧マクロまたは一文字マクロです';
+		if (this.#REG_CANTC2M.test(char)) throw '[char2macro] char【'+ char +'】は一文字マクロに使用できない文字です';
+
+		if (! name) throw '[char2macro] nameは必須です';
+		if (! (name in hTag)) throw `[char2macro] 未定義のタグ又はマクロ[${name}]です`;
+
+		this.#hC2M[char] = `[${name}]`;
+
+		this.addC2M(`\\${char}`, `\\${char}`);
+
+		this.#replaceScr_C2M(scr, start_idx);
+	}
+	#REG_CANTC2M	: RegExp;
+	#REGC2M			= new RegExp('');
+	#regStrC2M		= '';
+	#regStrC2M4not	= '';
+	addC2M(a: string, b: string) {
+		this.#regStrC2M += `${a}|`;
+		this.#regStrC2M4not += b;
+		this.#REGC2M = new RegExp(
+			`(${this.#regStrC2M}[^${this.#regStrC2M4not}]+)`, 'g');
+	}
+
+
+	// スクリプト（.sn一ファイル分の文字列）をトークン列へ分解する（本家 Grammar.ts:483）
+	resolveScript(txt: string): Script {
+		const a: string[] = txt
+		.replaceAll(/\r\n?/g, '\n')
+		.match(this.#REG_TOKEN)
+		?.flatMap(tkn=> {
+			if (! this.testTagLetml(tkn)) return tkn;
+
+			// [let_ml ...]とその後続テキストは一つにマッチするので、ここで二つに割る
+			const r = /^([^\]]+?])(.*)$/s.exec(tkn);
+			if (! r) return tkn;
+			const [, a, b] = r;
+			return [a!, b!];
+		}) ?? [];
+
+		const scr = {aToken: a, len: a.length, aLNum: []};
+		this.#replaceScr_C2M(scr);
+
+		this.#replaceScript_Wildcard(scr);
+
+		return scr;
+	}
+
+
+	// [call fn=ab*]等、fn属性のワイルドカード指定をサーチパス上の実ファイル群へ展開する
+	//	（本家 Grammar.ts:507）
+	readonly #REG_WILDCARD	= /^\[(call|loadplugin)\s/;
+	readonly #REG_WILDCARD2	= /\bfn\s*=\s*[^\s\]]+/;
+	#replaceScript_Wildcard(scr: Script) {
+		for (let i=scr.len -1; i>=0; --i) {
+			const token = scr.aToken[i]!;
+			if (! this.#REG_WILDCARD.test(token)) continue;
+
+			const [tag_name, args] = tagToken2Name_Args(token);
+			this.#alzTagArg.parse(args);
+
+			const p_fn = this.#alzTagArg.hPrm.fn;
+			if (! p_fn) continue;
+			const {val: fn} = p_fn;
+			if (! fn.endsWith('*')) continue;
+
+			scr.aToken.splice(i, 1, '\t', '; '+ token);
+			scr.aLNum.splice(i, 1, NaN, NaN);
+
+			const ext = tag_name === 'loadplugin'
+				? SEARCH_PATH_ARG_EXT.CSS
+				: SEARCH_PATH_ARG_EXT.SN;
+			const a = this.cfg.matchPath('^'+ fn.slice(0, -1) +'.*', ext);
+			for (const v of a) {
+				const nt = token.replace(
+					this.#REG_WILDCARD2,
+					'fn='+ decodeURIComponent(getFn(v[ext]!))
+				);
+				scr.aToken.splice(i, 0, nt);
+				scr.aLNum.splice(i, 0, NaN);
+			}
+		}
+		scr.len = scr.aToken.length;
+	}
+		readonly	#alzTagArg	= new AnalyzeTagArg;
+
+
+	testTagLetml(tkn: string): boolean {return /^\[let_ml\s/.test(tkn)}
+	testTagEndLetml(tkn: string): boolean {return /^\[endlet_ml\s*]/.test(tkn)}
+
+
+	// 定義済みの一文字／括弧マクロを、対応するタグトークンへ置き換える（本家 Grammar.ts:548）
+	#hC2M	: {[char: string]: string} | undefined = undefined;
+	#REG_TOKEN_NOTXT	: RegExp;
+	#replaceScr_C2M(scr: Script, start_idx = 0): void {
+		if (! this.#hC2M) return;
+
+		for (let i=scr.len- 1; i >= start_idx; --i) {
+			const token = scr.aToken[i]!;
+			if (this.testNoTxt(token.at(0) ?? '\n')) continue;
+				// 省略時は #REG_TOKEN_NOTXT に引っかかる \n に
+
+			const lnum = scr.aLNum[i]!;
+			const a = token.match(this.#REGC2M);
+			if (! a) continue;
+			let del = 1;
+			for (let j=a.length -1; j>=0; --j) {
+				let ch = a[j]!;
+				const macro = this.#hC2M[ch.at(0) ?? ' '];
+					// 省略時は #REG_CANTC2M に引っかかる ' ' に
+				if (macro) {
+					ch = macro +(macro.endsWith(']')
+						? ''
+						: `'${ch.slice(1, -1)}']`);
+					// 文字列は半角空白を意識して''で囲むが、いずれ変えたい場合がある？
+				}
+				scr.aToken.splice(i, del, ch);
+
+				scr.aLNum.splice(i, del, lnum);
+				del = 0;
+			}
+		}
+		scr.len = scr.aToken.length;
+	}
+	// そのトークンが「地の文ではない」＝タグ・コメント・改行等かを先頭一文字で判定する
+	testNoTxt(ch: string): boolean {return this.#REG_TOKEN_NOTXT.test(ch)}	//4tst
+
 }

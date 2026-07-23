@@ -12,7 +12,7 @@
 //	・[l][p][s] で停止し、そこまでに生じた表示変化を T_ENGINE_ACTION[] として返す。
 //	・戻り値をどう画面へ反映するかは呼び出し側（ScriptMng.ts）の責務とする。
 
-import {VarStore, type T_VAL} from './VarStore';
+import {VarStore, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
@@ -90,7 +90,7 @@ export class ScriptEngine {
 	//	hMpは本家 #callSub()（ScriptIterator.ts:962）のcsArg[':hMp']相当：
 	//	callSub時点のmp:値を保存し、returnで復元する（[call]/マクロ呼び出し共通の仕組み。
 	//	本家は#callSub()を両者で共有するため常にmp:の保存・復元が行われる。ここでも合わせる）
-	readonly #aCallStk: {returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL}}[] = [];
+	readonly #aCallStk: {returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}}[] = [];
 
 	// マクロ定義：マクロ名 -> 本体開始位置（[macro name=...]の次のトークンの#idx）
 	//	本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式を採用。
@@ -124,7 +124,7 @@ export class ScriptEngine {
 	}
 
 	// テスト・呼び出し側（将来のif実装等）から変数値を読むためのアクセサ
-	getVal(name: string): T_VAL {return this.#val.get(name)}
+	getVal(name: string): T_VAL_D {return this.#val.get(name)}
 
 	get idx() {return this.#idx}
 	get atEnd() {return this.#idx >= this.#aToken.length}
@@ -454,11 +454,11 @@ export class ScriptEngine {
 
 	// タグ属性値の「&」記法対応：先頭が'&'の場合は残りを式として評価し文字列化して返す。
 	// '&'がなければ今まで通りリテラル文字列のまま（本家の&接頭辞記法を必要最小限に簡略化）。
-	// nullは空文字にする（trace表示用の割り切り）。
+	// null・undefined（未定義変数の参照）は空文字にする（trace表示用の割り切り）。
 	#evalAmpArg(raw: string): string {
 		if (! raw.startsWith('&')) return raw;
 		const v = this.#expr.parse(raw.slice(1));
-		return v === null ? '' : String(v);
+		return v === null || v === undefined ? '' : String(v);
 	}
 
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {

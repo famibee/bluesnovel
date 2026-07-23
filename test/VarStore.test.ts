@@ -10,9 +10,9 @@ import {VarStore} from '../src/ts/VarStore';
 import {expect, it} from 'bun:test';
 
 
-it('get_default_null', ()=> {
+it('get_default_undefined', ()=> {
 	const vs = new VarStore;
-	expect(vs.get('foo')).toBeNull();
+	expect(vs.get('foo')).toBeUndefined();	// 未定義変数はundefined（本家準拠。nullは「nullが入っている」の意）
 });
 
 it('set_get_default_ns_is_tmp', ()=> {
@@ -27,8 +27,8 @@ it('set_get_ns_game_is_independent', ()=> {
 	const vs = new VarStore;
 	vs.set('game:hp', 100);
 	expect(vs.get('game:hp')).toBe(100);
-	expect(vs.get('hp')).toBeNull();		// 名前空間が違うので別変数扱い（tmp:hp）
-	expect(vs.get('tmp:hp')).toBeNull();
+	expect(vs.get('hp')).toBeUndefined();		// 名前空間が違うので別変数扱い（tmp:hp）
+	expect(vs.get('tmp:hp')).toBeUndefined();
 });
 
 it('set_get_ns_sys', ()=> {
@@ -60,7 +60,7 @@ it('clearGame_leaves_sys_and_tmp_untouched', ()=> {
 	vs.set('sys:volume', 80);
 	vs.set('foo', 1);	// tmp:foo
 	vs.clearGame();
-	expect(vs.get('game:hp')).toBeNull();
+	expect(vs.get('game:hp')).toBeUndefined();
 	expect(vs.get('sys:volume')).toBe(80);
 	expect(vs.get('foo')).toBe(1);
 });
@@ -70,8 +70,155 @@ it('clearSys_leaves_game_and_tmp_untouched', ()=> {
 	vs.set('game:hp', 100);
 	vs.set('sys:volume', 80);
 	vs.clearSys();
-	expect(vs.get('sys:volume')).toBeNull();
+	expect(vs.get('sys:volume')).toBeUndefined();
 	expect(vs.get('game:hp')).toBe(100);
+});
+
+// ===== ここから下は 本家 skynovel_esm/test/Variable.test.ts の移植 =====
+//	本家Variableとの主な差異（意図的なもの）：
+//	・名前空間 save: は bluesnovel では game:
+//	・本家 val.getVal(name, def, touch) → vs.get(name, def, touch)
+//	・本家 val.setVal_Nochk(scope, nm, v) → vs.set(`${scope}:${nm}`, v)
+//	・本家 val.defTmp(name, fnc) → vs.defBuiltin(name, fnc)
+
+it('getVal_-1', ()=> {
+	const vs = new VarStore;
+	expect(vs.get('mp:fn')).toBeUndefined();
+});
+
+it('getVal_0', ()=> {
+	const vs = new VarStore;
+	expect(vs.get('mp:fn', 'def')).toBe('def');
+});
+it('getVal_1', ()=> {
+	const vs = new VarStore;
+	vs.set('mp:fn', 'うひひ');
+	expect(vs.get('mp:fn', 'def')).toBe('うひひ');
+});
+it('getVal_2', ()=> {
+	const vs = new VarStore;
+	vs.set('tmp:ぎょへー', 'もきゅ');
+	expect(vs.get('tmp:ぎょへー', 'def')).toBe('もきゅ');
+});
+it('getVal_3', ()=> {	// 数値リテラル文字列は取得時に数値へ自動キャスト
+	const vs = new VarStore;
+	vs.set('tmp:hD.数値', '1.20');
+	expect(vs.get('tmp:hD.数値', 'def')).toBe(1.20);
+});
+it('getVal_4', ()=> {
+	const vs = new VarStore;
+	vs.set('tmp:one_n', 1);
+	expect(vs.get('tmp:one_n', 'def')).toBe(1);
+});
+it('getVal_5', ()=> {
+	const vs = new VarStore;
+	vs.set('sys:_album.img.渡り廊下・桜昼', true);
+	expect(vs.get('sys:_album.img.渡り廊下・桜昼', 'def')).toBe(true);
+});
+
+it('getVal_6_touch', ()=> {	// touch=trueの時だけ、既定値をストアへ書き込む
+	const vs = new VarStore;
+	expect(vs.get('sys:存在しない')).toBeUndefined();
+
+	expect(vs.get('sys:存在しない', '♨')).toBe('♨');
+	expect(vs.get('sys:存在しない')).toBeUndefined();
+
+	expect(vs.get('sys:存在しない', '♨', true)).toBe('♨');
+	expect(vs.get('sys:存在しない')).toBe('♨');
+});
+
+it('getVal_10_fnc', ()=> {
+	const vs = new VarStore;
+	let c = 0;
+	vs.defBuiltin('counter', ()=> ++c);
+
+	expect(vs.get('counter', 'def')).toBe(1);
+	expect(vs.get('counter', 'def')).toBe(2);
+	expect(vs.get('counter', 'def')).toBe(3);
+});
+
+it('getVal_20_json', ()=> {	// 値がJSON文字列なら、その下の階層を「.」で辿れる
+	const vs = new VarStore;
+	vs.set('mp:const.sn.sound.codecs', '{"aac": true, "flac": false}');
+
+	expect(vs.get('mp:const.sn.sound.codecs', 'def')).toBe('{"aac": true, "flac": false}');
+	expect(vs.get('mp:const.sn.sound.codecs.aac', 'def')).toBe(true);
+	expect(vs.get('mp:const.sn.sound.codecs.aac0', 'def')).toBe('def');
+});
+it('getVal_21_json', ()=> {
+	const vs = new VarStore;
+	vs.set('tmp:const.db', `
+{
+	"紀子": {
+		"fn"	: "nori",
+		"col"	: "lightskyblue"
+	},
+	"晶": {
+		"fn"	: "akir",
+		"col"	: "gold"
+	}
+}
+`);
+
+	expect(vs.get('tmp:const.db', 'def')).toBe(`
+{
+	"紀子": {
+		"fn"	: "nori",
+		"col"	: "lightskyblue"
+	},
+	"晶": {
+		"fn"	: "akir",
+		"col"	: "gold"
+	}
+}
+`);
+	expect(vs.get('tmp:const.db.紀子', 'def')).toBe('{"fn":"nori","col":"lightskyblue"}');
+	expect(vs.get('tmp:const.db["紀子"]', 'def')).toBe('{"fn":"nori","col":"lightskyblue"}');
+	expect(vs.get('tmp:const.db.紀子0', 'def')).toBe('def');
+	expect(vs.get('tmp:const.db.梨香', 'def')).toBe('def');
+	expect(vs.get('tmp:const.db.紀子.fn', 'def')).toBe('nori');
+	expect(vs.get('tmp:const.db.紀子.fn0', 'def')).toBe('def');
+});
+it('getVal_22_json 不具合2021/01/18', ()=> {
+	// 短い名前が「JSONではない値」でヒットしても、探索を打ち切らず名前を延ばして探す
+	const vs = new VarStore;
+	vs.set('mp:const.sn.sound', 'true');
+	vs.set('mp:const.sn.sound.codecs', '{"aac": true, "flac": false}');
+
+	expect(vs.get('mp:const.sn.sound.codecs', 'def')).toBe('{"aac": true, "flac": false}');
+	expect(vs.get('mp:const.sn.sound.codecs.aac', 'def')).toBe(true);
+	expect(vs.get('mp:const.sn.sound.codecs.aac0', 'def')).toBe('def');
+
+	expect(vs.get('mp:const.sn.sound', 'def')).toBe(true);
+		// TypeError: Cannot use 'in' operator to search for 'codecs' in true
+});
+
+// 以下は本家Variable.test.tsには無いが、移植に伴い実装した仕様の確認
+it('getVal_30_autocast', ()=> {
+	const vs = new VarStore;
+	vs.set('tmp:t', 'true');
+	vs.set('tmp:f', 'false');
+	vs.set('tmp:n', 'null');
+	vs.set('tmp:i', '-12');
+	vs.set('tmp:s', 'もじ');
+	expect(vs.get('tmp:t')).toBe(true);
+	expect(vs.get('tmp:f')).toBe(false);
+	expect(vs.get('tmp:n')).toBeNull();
+	expect(vs.get('tmp:i')).toBe(-12);
+	expect(vs.get('tmp:s')).toBe('もじ');
+});
+it('getVal_31_atStr', ()=> {	// 「@str」接尾辞を付けると自動キャストしない
+	const vs = new VarStore;
+	vs.set('tmp:t', 'true');
+	vs.set('tmp:i', '-12');
+	expect(vs.get('tmp:t@str')).toBe('true');
+	expect(vs.get('tmp:i@str')).toBe('-12');
+});
+it('getVal_32_json_notJson', ()=> {
+	// JSONとして解釈できない値の下位階層を要求されても、例外にせず既定値を返す
+	const vs = new VarStore;
+	vs.set('tmp:ぎょへー', 'もきゅ');
+	expect(vs.get('tmp:ぎょへー.x', 'def')).toBe('def');
 });
 
 it('invalid_name_throws', ()=> {

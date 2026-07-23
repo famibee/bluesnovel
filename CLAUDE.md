@@ -69,6 +69,28 @@ E2E (`playwright test`) are **fully separated**:
   `vite-plugin-dts` emits `.d.ts` for the tests into `dist/`); `test/e2e/tsconfig.json` typechecks
   it instead.
 
+## ブラウザ手動操作は playwright-cli スキルで（MCP は使わない）
+
+E2E テストの実行ではなく「画面を開いて動作を目視確認する」用途では、**必ず
+`.claude/skills/playwright-cli/` スキル（`playwright-cli` コマンド）を使う**。playwright MCP
+は同じことができるが、ツール定義とスナップショット応答が丸ごとコンテキストに載るためトークン
+消費が桁違いに多い。CLI 版は結果をファイル（`.playwright-cli/*.yml`）に落として要約だけ返すので
+安い。`.claude/settings.local.json` で `mcp__playwright` を deny 済み。
+
+```bash
+playwright-cli open http://localhost:5199/test/e2e/app/?prj=basic  # vite は別途起動しておく
+playwright-cli snapshot --depth=4        # 全部は取らず浅く。詳細は find/部分snapshot で掘る
+playwright-cli find "テキスト"           # 大きい画面はこれで grep したほうが安い
+playwright-cli --raw eval "JSON.stringify(window.__sn.store.getState().aLay)"
+playwright-cli close
+```
+
+- ストア確認は `window.__sn.store.getState()`（E2E フィクスチャが公開しているもの。`src/` 側には
+  テスト用フックを足さない方針は CLI 操作でも同じ）。
+- `playwright-cli` はグローバル導入済み（`/usr/local/bin/playwright-cli`）。無ければ
+  `npx playwright cli <command>` でローカルの playwright からも呼べる。
+- 自動テストとして残すものは従来どおり `test/e2e/*.e2e.ts` に書く。CLI はあくまで手動確認用。
+
 ## Build system (`src/build.ts`)
 
 `bun run build` executes `src/build.ts`, which calls Vite's `build()` programmatically
@@ -107,6 +129,24 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   button, trace, stop…). It owns **all execution state**: token index `#idx`, label table,
   the if-stack `#aIfStk`, the call-stack `#aCallStk`, the macro table `#hMacro`, and
   variables (via `VarStore`/`ExprEval`). This is the file most unit tests target directly.
+  Its `static tokenize()` is still the **naive 3-pattern regex** — `src/sn/Grammar.ts` now
+  holds the real 本家 tokenizer, but nothing calls it yet (see `todo.md`).
+- **`src/sn/Grammar.ts`** — 本家's tokenizer, **ported verbatim** (`resolveScript` →
+  `Script{aToken,len,aLNum}`, `setEscape`, `char2macro`/`bracket2macro`, `splitAmpersand`,
+  `tagToken2Name_Args`). Handles multi-line tags, string literals containing `[`/`]`/`;`,
+  comments, `[let_ml]`…`[endlet_ml]`, labels, escape chars and `fn=…*` wildcard expansion.
+  `test/Grammar.test.ts` is the 本家 test file moved over unchanged — keep it that way.
+- **`src/ts/VarStore.ts`** — 本家 `Variable` minus save/dirty handling. Namespaces are
+  `tmp`/`game`/`sys`/`mp` (本家's `save:` is `game:` here). `get(name, def?, touch?)`
+  returns **`undefined` for an undefined variable** and `null` only when null was stored —
+  the distinction is load-bearing (`1 + 未定義` → `NaN` is how 本家 detects undefined).
+  Reads auto-cast (`'true'`→true, `'1.20'`→1.2) unless the name ends `@str`; a name whose
+  prefix holds a JSON string descends into it (`const.db.紀子.fn`).
+- **`src/ts/ExprEval.ts`** — 本家 `PropParser` **ported whole** (parsimmon operator table).
+  Ternary, bit ops, `¥` integer division, hex literals, `int`/`parseInt`/`Number`/`ceil`/
+  `floor`/`round`/`isNaN`, `#…#` string literals, `$var` / `#{expr}` embedding, and
+  `hA[春夏][ひきす]` index-to-name resolution. Takes a `T_VAR_GET` (`{get(name)}`), not a
+  concrete `VarStore`, so tests can pass a flat table like 本家's `ValTest`.
 - **`src/ts/ScriptMng.ts`** — the bridge. `#runStep()` calls `engine.step()`, then
   `#applyAction()` translates each `T_ENGINE_ACTION` into a store mutation (the `T_INIT_FNCS`
   set passed in from `Main.tsx`). Also owns script fetching (`#fetchScript`) and the
@@ -128,6 +168,11 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   deliberately do **not** touch this history (they aren't "reading forward").
 - **`src/sn/`** — support layer largely carried from 本家 SKYNovel: `SysBase`, `Config`/
   `ConfigBase`, `Grammar`, `CmnLib`, `AnalyzeTagArg`, `Areas`, `CallStack`.
+
+**Ported-from-本家 files carry their 本家 tests verbatim** (`test/Grammar.test.ts`,
+`test/ExprEval.test.ts`, the lower half of `test/VarStore.test.ts`). When touching those
+modules, diff against `../skynovel_esm/src/sn/…` first: the tests are the contract, and
+intentional divergences are listed in each test file's header comment.
 
 ### The `.sn` scripting language (current prototype tag set)
 
@@ -151,8 +196,8 @@ cannot be used as macro names live in `ScriptEngine.RESERVED_TAGS`.
 - **Backlog**: `todo.md` at the repo root is the running task list, in *Todo+* checkbox format
   and roughly priority-ordered. Read it at the start of a session and tick items off there.
   (It replaced the older per-session `引き継ぎ_YYYY-MM-DD_NN.md` handoff notes, now deleted.)
-- **MCP pre-flight**: **serena** and **playwright** MCP tools have hung in this project, and
-  have been seen to execute an action anyway despite reporting a timeout. Do a cheap serena
+- **MCP pre-flight**: **serena** MCP tools have hung in this project, and have been seen to
+  execute an action anyway despite reporting a timeout. Do a cheap serena
   call first (e.g. `get_current_config`) and ask the user to restart the MCP server if it
   hangs; after any MCP timeout, verify state before retrying rather than repeating the call.
   serena also needs its project activated (`activate_project` with `bluesnovel`) before the

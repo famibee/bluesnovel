@@ -11,3 +11,6 @@ test-results/
 playwright-report/
 blob-report/
 /.playwright/
+
+# playwright-cli スキルのスナップショット出力
+/.playwright-cli/

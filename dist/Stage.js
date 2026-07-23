@@ -2,7 +2,7 @@ import { n as e, t } from "./rolldown-runtime.js";
 import { t as n } from "./Memento.js";
 import { t as r } from "./react.js";
 import { a as i, c as a, d as o, f as s, i as c, l, m as u, n as d, o as f, onLong as p, p as m, r as h, s as g, setDesignMode as _, t as v, u as y } from "./Main.js";
-import { i as b, n as x, r as S } from "./ConfigBase.js";
+import { a as b, n as x, r as S } from "./ConfigBase.js";
 //#region node_modules/react-use/esm/useToggle.js
 var C = /* @__PURE__ */ e(r()), w = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
