@@ -90,12 +90,14 @@ export class ScriptMng {
 	// [button]クリック時のJSX側から呼ばれる：指定ラベルへ直接ジャンプしてそのまま進行する。
 	//	Main.tsxのnext()（クリックでの読み進め）とは別系統。CaretakerのprevKey/nextKeyや
 	//	isReadBackには一切触れないため、ボタンクリックは「読み進め」扱いにはならない（今回の要件）。
-	jumpToLabelAndGo(label: string) {
+	//	call=true指定時はjumpではなくcall（サブルーチンコール）する。
+	jumpToLabelAndGo(label: string, call: boolean) {
 		const engine = this.#curEngine;
 		if (! engine) return;
 
 		try {
-			engine.jumpToLabel(label);
+			if (call) engine.callToLabel(label);
+			else engine.jumpToLabel(label);
 		} catch (e) {
 			this.myTrace(`[button] ジャンプ先エラー fn:${engine.fn} ${String(e)}`, 'ET');
 			return;
@@ -139,7 +141,7 @@ export class ScriptMng {
 			break;
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
-			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label});
+			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {})});
 			break;
 		case 'trace':
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲

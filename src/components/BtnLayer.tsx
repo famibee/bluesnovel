@@ -12,7 +12,8 @@ import {type MouseEvent} from 'react';
 type T_BTNARG = {
 	text	: string;
 	label	: string;
-	onActivate: (label: string)=> void;
+	call	: boolean;
+	onActivate: (label: string, call: boolean)=> void;
 };
 
 // [button layer=... text=... label=*goal] タグに対応するボタン1件分の表示。
@@ -22,7 +23,7 @@ type T_BTNARG = {
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, onActivate}: T_BTNARG) {
+export default function BtnLayer({text, label, call, onActivate}: T_BTNARG) {
 	const styBtn = css`
 		position: relative;
 		z-index: 2;
@@ -49,7 +50,7 @@ export default function BtnLayer({text, label, onActivate}: T_BTNARG) {
 
 	const onClick = (e: MouseEvent)=> {
 		e.stopPropagation();	// 親(Stage)のonClick(=読み進め)へ伝播させないのがポイント
-		onActivate(label);
+		onActivate(label, call ?? false);
 	};
 
 	return <span css={styBtn} onClick={onClick}>{text}</span>;

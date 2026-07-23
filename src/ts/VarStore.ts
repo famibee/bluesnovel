@@ -13,7 +13,7 @@
 
 export type T_VAL = string | number | boolean | null;
 
-export const A_NS = ['tmp', 'game', 'sys'] as const;
+export const A_NS = ['tmp', 'game', 'sys', 'mp'] as const;
 export type T_NS = typeof A_NS[number];
 
 export class VarStore {
@@ -26,7 +26,7 @@ export class VarStore {
 		this.#hBuiltin[name] = fnc;
 	}
 
-	static readonly REG_NAME = /^(?:(tmp|game|sys):)?(.+)$/;
+	static readonly REG_NAME = /^(?:(tmp|game|sys|mp):)?(.+)$/;
 	static parseName(name: string): {ns: T_NS; key: string} {
 		const m = VarStore.REG_NAME.exec(name.trim());
 		if (! m) throw `変数名が不正です：${name}`;
@@ -49,6 +49,18 @@ export class VarStore {
 		//（game:/sys:で同名のキーを使うこと自体は許容する）
 		if (ns === 'tmp' && key in this.#hBuiltin) throw `組み込み変数【${name}】へは代入できません`;
 		this.#h[`${ns}.${key}`] = val;
+	}
+
+	// mp:名前空間のスナップショット・復元（マクロ呼び出し時の引数受け渡し・戻り時の復元用。
+	// 本家 Variable.ts の cloneMp()/setMp() 簡略版。ScriptEngine.ts の#aCallStk[].hMp から使用）
+	cloneMp(): {[key: string]: T_VAL} {
+		const h: {[key: string]: T_VAL} = {};
+		for (const k of Object.keys(this.#h)) if (k.startsWith('mp.')) h[k.slice(3)] = this.#h[k]!;
+		return h;
+	}
+	setMp(h: {[key: string]: T_VAL}) {
+		for (const k of Object.keys(this.#h)) if (k.startsWith('mp.')) delete this.#h[k];
+		for (const k of Object.keys(h)) this.#h[`mp.${k}`] = h[k]!;
 	}
 
 	// [clearvar]相当：gameのみクリア（本家準拠でsys/tmpは対象外）

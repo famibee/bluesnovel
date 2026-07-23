@@ -33,16 +33,17 @@ var c = (e) => {
 		if (e.aLay.some((e) => e.nm === t.nm)) throw `レイヤ名 ${t.nm} は既に使用されています（既存の${e.aLay.find((e) => e.nm === t.nm).cls}レイヤと重複）`;
 		return { aLay: [...e.aLay, t] };
 	}),
-	addBtn: ({ layerNm: t, nm: n, text: r, label: i }) => e((e) => {
-		let a = [...e.aLay], o = a.find((e) => e.nm === t);
-		if (!o) throw `存在しないレイヤ ${t} です`;
-		if (o.cls !== "txt") throw `${t} は文字レイヤ（UIコンテナ）ではありません`;
-		if (o.aBtn.some((e) => e.nm === n)) throw `ボタン名 ${n} はレイヤ ${t} 内で既に使用されています`;
-		return o.aBtn = [...o.aBtn, {
+	addBtn: ({ layerNm: t, nm: n, text: r, label: i, call: a }) => e((e) => {
+		let o = [...e.aLay], s = o.find((e) => e.nm === t);
+		if (!s) throw `存在しないレイヤ ${t} です`;
+		if (s.cls !== "txt") throw `${t} は文字レイヤ（UIコンテナ）ではありません`;
+		if (s.aBtn.some((e) => e.nm === n)) throw `ボタン名 ${n} はレイヤ ${t} 内で既に使用されています`;
+		return s.aBtn = [...s.aBtn, {
 			nm: n,
 			text: r,
-			label: i
-		}], { aLay: a };
+			label: i,
+			...a === void 0 ? {} : { call: a }
+		}], { aLay: o };
 	}),
 	chgPic: ({ nm: t, fn: n, aFace: r }) => e((e) => {
 		let i = [...e.aLay], a = i.find((e) => e.nm === t);

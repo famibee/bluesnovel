@@ -9901,7 +9901,7 @@ function ql() {
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
-function Jl({ text: e, label: t, onActivate: n }) {
+function Jl({ text: e, label: t, call: n, onActivate: r }) {
 	return /* @__PURE__ */ d("span", {
 		css: ql`
 		position: relative;
@@ -9927,7 +9927,7 @@ function Jl({ text: e, label: t, onActivate: n }) {
 		}
 	`,
 		onClick: (e) => {
-			e.stopPropagation(), n(t);
+			e.stopPropagation(), r(t, n ?? !1);
 		},
 		children: e
 	});
@@ -11883,6 +11883,7 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 			children: o.map((e) => /* @__PURE__ */ d(Jl, {
 				text: e.text,
 				label: e.label,
+				call: e.call ?? !1,
 				onActivate: s
 			}, e.nm))
 		}),
@@ -12028,7 +12029,7 @@ function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
 				str: e.str,
 				b_alpha: e.b_alpha,
 				aBtn: e.aBtn,
-				onActivate: (e) => t.jumpToLabelAndGo(e)
+				onActivate: (e, n) => t.jumpToLabelAndGo(e, n)
 			}, e.nm))
 		]
 	});

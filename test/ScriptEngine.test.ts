@@ -234,7 +234,7 @@ it('step_button_addsBtnAction', ()=> {
 	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal]あ[s]\n*goal\ni[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal'},
+		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal', call: false},
 		{t: 'chgStr', nm: 'mes', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
@@ -245,12 +245,46 @@ it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
 	// nmも省略した場合はlabelを流用する（試作の割り切り）。
 	const se = new ScriptEngine('t1', '[button text=x label=*goal]あ[s]');
 	const a = se.step();
-	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal'});
+	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal', call: false});
 });
 
 it('step_button_requiresLabel', ()=> {
 	// layerは省略可能（現在の文字レイヤにフォールバック）だが、labelは必須
 	expect(()=> new ScriptEngine('t1', '[button layer=mes text=x]あ[s]').step()).toThrow();
+});
+
+it('step_button_callTrue_setsCallFlag', ()=> {
+	// [button call=true] は addBtn アクションのcallフラグをtrueにする
+	// （ScriptMng.ts/jumpToLabelAndGo 経由で callToLabel() が呼ばれる）
+	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal call=true]あ[s]\n*goal\ni[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal', call: true},
+		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+
+it('callToLabel_movesIdxToLabel', ()=> {
+	// [button call=true]クリック時に呼ばれる想定のAPI：ラベルへサブルーチンコールする。
+	// [return]でコール元（停止点の次のトークン）へ戻れる（#aCallStk＋ifスタックの壁(-1)を積む）。
+	// jumpToLabel()は#hTxtをクリアしないため、[s]前の'あ'が#hTxt['mes']に残り、
+	// サブルーチン内の'い'が積み上がり'あい'になる。[return]後はコール元から[s]まで進む。
+	const se = new ScriptEngine('t1', 'あ[s]\nこんにちは[s]\n*goal\nい[return]');
+	se.step();	// 最初の[s]まで進める（読み進めの体で消費）
+
+	se.callToLabel('*goal');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'chgStr', nm: 'mes', str: 'あいこんにちは'},
+		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
+	]);
+});
+
+it('callToLabel_unknownLabelThrows', ()=> {
+	const se = new ScriptEngine('t1', 'あ[s]');
+	expect(()=> se.callToLabel('*nothing')).toThrow();
 });
 
 it('jumpToLabel_movesIdxToLabel', ()=> {

@@ -91,7 +91,7 @@ export class ExprEval {
 		.map(s=> ['!str!', s.slice(1, -1).replaceAll(/\\(["'\\])/g, '$1')])
 		.desc('string');
 
-		const VarLiteral = regex(/(?:(?:tmp|game|sys):)?[A-Za-z_][A-Za-z0-9_.]*/)
+		const VarLiteral = regex(/(?:(?:tmp|game|sys|mp):)?[A-Za-z_][A-Za-z0-9_.]*/)
 		.map(name=> ['!var!', name])
 		.desc('variable');
 

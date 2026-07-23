@@ -58,6 +58,7 @@ export type T_ADDBTN = {
 	nm		: string;	// ボタン自身の識別名（同一layer内で一意）
 	text	: string;
 	label	: string;
+	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
 }
 
 export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'addBtn'|'addTitle'|'setWait'>>;
@@ -81,14 +82,14 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 	}),
 	// [button]タグ：指定した文字レイヤ（UIコンテナ）のaBtnにボタンを1件追加する。
 	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる。
-	addBtn	: ({layerNm, nm, text, label}: T_ADDBTN)=> set(s=> {
+	addBtn	: ({layerNm, nm, text, label, call}: T_ADDBTN)=> set(s=> {
 		const aLay = [...s.aLay];
 		const e = aLay.find(e=> e.nm === layerNm);
 		if (! e) throw `存在しないレイヤ ${layerNm} です`;
 		if (e.cls !== 'txt') throw `${layerNm} は文字レイヤ（UIコンテナ）ではありません`;
 		if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
 
-		e.aBtn = [...e.aBtn, {nm, text, label}];
+		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {})}];
 		return {aLay};
 	}),
 	chgPic	: ({nm, fn, aFace}: T_CHGPIC)=> set(s=> {
