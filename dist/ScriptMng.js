@@ -945,7 +945,7 @@ var r = class e {
 		let t = this.#n[e];
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
 		this.#u.push({
-			returnIdx: this.#t,
+			returnIdx: --this.#t,
 			lenIfStk: this.#l.length,
 			hMp: this.#s.cloneMp()
 		}), this.#l.push(-1), this.#t = t;
@@ -976,7 +976,7 @@ var r = class e {
 					if (this.#f(n, i, t) === "stop") return t;
 					continue;
 				}
-				this.#g(t, r);
+				this.#_(t, r);
 			}
 		}
 		return t;
@@ -1044,7 +1044,7 @@ var r = class e {
 			case "elsif":
 			case "else":
 			case "endif": return this.#m(), "skip";
-			case "r": return this.#g(r, "\n"), "skip";
+			case "r": return this.#_(r, "\n"), "skip";
 			case "er": return this.#i[this.#r] = "", r.push({
 				t: "chgStr",
 				nm: this.#r,
@@ -1052,7 +1052,7 @@ var r = class e {
 			}), "skip";
 			case "trace": return r.push({
 				t: "trace",
-				text: n.text ?? ""
+				text: this.#g(n.text ?? "")
 			}), "skip";
 			case "jump": {
 				let e = n.label ?? "", t = this.#n[e];
@@ -1169,7 +1169,12 @@ var r = class e {
 		if (!e) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
 		this.#l.length = e.lenIfStk, this.#s.setMp(e.hMp), this.#t = e.returnIdx;
 	}
-	#g(e, t) {
+	#g(e) {
+		if (!e.startsWith("&")) return e;
+		let t = this.#c.parse(e.slice(1));
+		return t === null ? "" : String(t);
+	}
+	#_(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",

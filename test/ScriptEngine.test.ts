@@ -175,6 +175,27 @@ it('step_trace_missingText_emitsEmptyString', ()=> {
 	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
 });
 
+it('step_trace_ampPrefix_evaluatesExprAndStringifies', ()=> {
+	// textが'&'で始まる場合は式として評価する（mp:などの変数値を[trace]で確認できるようにするための動作確認用対応）
+	// val属性は常に式として評価されるため、文字列リテラルを渡すにはタグ属性の引用符とは別に式側の引用符も必要（let_stringValueと同じ規約）
+	const se = new ScriptEngine('t1', '[let name=mp:t val=\'"YO"\'][trace text=&mp:t][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: 'YO'});
+});
+it('step_trace_ampPrefix_numberIsStringified', ()=> {
+	const se = new ScriptEngine('t1', '[let name=mp:n val=1+2][trace text=&mp:n][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: '3'});
+});
+it('step_trace_ampPrefix_nullBecomesEmptyString', ()=> {
+	// 未定義変数の参照はnull。trace表示用の割り切りで空文字にする
+	const se = new ScriptEngine('t1', '[trace text=&mp:undef][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
+});
+it('step_trace_withoutAmp_isLiteral', ()=> {
+	// '&'がなければ今まで通りリテラル文字列のまま（式評価しない）
+	const se = new ScriptEngine('t1', '[trace text=mp:t][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: 'mp:t'});
+});
+
 it('step_comment_ignored', ()=> {
 	const se = new ScriptEngine('t1', ';これはコメント\nあ[s]');
 	const a = se.step();
@@ -267,9 +288,14 @@ it('step_button_callTrue_setsCallFlag', ()=> {
 
 it('callToLabel_movesIdxToLabel', ()=> {
 	// [button call=true]クリック時に呼ばれる想定のAPI：ラベルへサブルーチンコールする。
-	// [return]でコール元（停止点の次のトークン）へ戻れる（#aCallStk＋ifスタックの壁(-1)を積む）。
+	// callToLabel()は[l]/[s]の「停止点で待っている間」に呼ばれるため、そのときの#idxは
+	// 「停止点の次のトークン」を指している。[return]の戻り先は停止点の"次"ではなく
+	// 「停止点そのもの」にして、戻った直後に[l]/[s]を再実行しイベント待ちへ戻す
+	// （本家skynovelと同じ挙動。停止点の次へ戻すと、[l]待ちだったはずが勝手に読み進んでしまう）。
+	// #aCallStk＋ifスタックの壁(-1)を積む点は[call]タグと同じ。
 	// jumpToLabel()は#hTxtをクリアしないため、[s]前の'あ'が#hTxt['mes']に残り、
-	// サブルーチン内の'い'が積み上がり'あい'になる。[return]後はコール元から[s]まで進む。
+	// サブルーチン内の'い'が積み上がり'あい'になる。[return]後はコール元の[s](t1:2)へ戻って
+	// 再び停止するので、次の'こんにちは'へは進まない。
 	const se = new ScriptEngine('t1', 'あ[s]\nこんにちは[s]\n*goal\nい[return]');
 	se.step();	// 最初の[s]まで進める（読み進めの体で消費）
 
@@ -277,8 +303,22 @@ it('callToLabel_movesIdxToLabel', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', str: 'あい'},
-		{t: 'chgStr', nm: 'mes', str: 'あいこんにちは'},
-		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
+		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
+	]);
+});
+
+it('callToLabel_returnsToWaitingStop_notNext', ()=> {
+	// 回帰テスト：[l]でイベント待ち中に[button call=true]でサブルーチンへ飛び、[return]で
+	// 戻ったとき、コール元の[l]を再実行して「イベント待ちに戻る」こと（勝手に次へ読み進まない）。
+	// 本家skynovelと同じ挙動。ScriptEngine.ts callToLabel()の returnIdx: --this.#idx がこれを保証する。
+	const se = new ScriptEngine('t1', 'あ[l]\n*goal\nい[return]');
+	se.step();	// 最初の[l]まで進める（'あ'表示→t1:2で停止）
+
+	se.callToLabel('*goal');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'stop', kind: 'l', key: 't1:2', nm: 'mes'},	// 次(こんにちは相当)へ進まず、同じ[l]待ちへ戻る
 	]);
 });
 

@@ -145,7 +145,7 @@ export class ScriptEngine {
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
 		// this.#idxは既に停止点の次のトークンを指している（#returnで戻る先）
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
-		this.#aCallStk.push({returnIdx: this.#idx, lenIfStk: this.#aIfStk.length, hMp: this.#val.cloneMp()});
+		this.#aCallStk.push({returnIdx: --this.#idx, lenIfStk: this.#aIfStk.length, hMp: this.#val.cloneMp()});
 		this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
 		this.#idx = to;
 	}
@@ -281,7 +281,8 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
-			aAct.push({t: 'trace', text: args.text ?? ''});
+			// 先頭が'&'の場合は式として評価する（本家の&接頭辞記法の簡略版。動作確認用にtraceのみ対応）
+			aAct.push({t: 'trace', text: this.#evalAmpArg(args.text ?? '')});
 			return 'skip';
 
 		case 'jump': {	// シナリオジャンプ（試作簡略：同一スクリプト内ラベルのみ）
@@ -449,6 +450,15 @@ export class ScriptEngine {
 		// 通常の[call]から戻る場合は元々変化していないため実質no-op）
 		this.#val.setMp(cs.hMp);
 		this.#idx = cs.returnIdx;
+	}
+
+	// タグ属性値の「&」記法対応：先頭が'&'の場合は残りを式として評価し文字列化して返す。
+	// '&'がなければ今まで通りリテラル文字列のまま（本家の&接頭辞記法を必要最小限に簡略化）。
+	// nullは空文字にする（trace表示用の割り切り）。
+	#evalAmpArg(raw: string): string {
+		if (! raw.startsWith('&')) return raw;
+		const v = this.#expr.parse(raw.slice(1));
+		return v === null ? '' : String(v);
 	}
 
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {

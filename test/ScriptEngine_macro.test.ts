@@ -53,7 +53,7 @@ it('macro_calls_anotherMacro_nested', ()=> {
 it('macro_args_passedViaMpNamespace', ()=> {
 	// マクロ呼び出し時のタグ属性がmp:名前空間経由で[if]から参照できること
 	expect(run(
-		'[macro name=say][if exp=mp:msg=="YO"]MATCHED[endmacro]'.replace('[endmacro]', '[endif][endmacro]')+
+		'[macro name=say][if exp=mp:msg=="YO"]MATCHED[endif][endmacro]'+
 		'[say msg="YO"]'
 	)).toBe('MATCHED');
 });

@@ -1,3 +1,7 @@
+## Claude使用・混雑ピーク時（日本時間表記）
+
+![alt text](<test/Claude Schedule.svg>)
+
 ## v0.2.1
 - 一部最新 SKYNovel コードを導入
 ## v0.2.0
