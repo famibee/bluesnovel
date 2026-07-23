@@ -1,0 +1,8 @@
+; E2E用シナリオ（wait.e2e.ts / readback.e2e.ts が使用）
+;	画像アセットに依存させないため、文字レイヤのみで構成する
+[add_lay layer=mes class=txt]
+[current layer=mes]
+一ページ目のいち。[l]
+二番目のぶん。[p]
+二ページ目のいち。[l]
+おしまい。[s]

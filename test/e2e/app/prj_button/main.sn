@@ -1,0 +1,14 @@
+; E2E用シナリオ（button.e2e.ts が使用）
+;	[button call=true]→[return] で [l] のイベント待ちへ戻ることの回帰確認を主目的とする
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[button nm=btn_call text="サブルーチンを呼ぶ" label=*sub call=true]
+[button nm=btn_jump text="ジャンプする" label=*goal]
+選んでください。[l]
+＋そのまま進んだ。[s]
+
+*sub
+＋サブ実行[return]
+
+*goal
+＋ジャンプ先[s]

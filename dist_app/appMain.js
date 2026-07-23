@@ -1161,8 +1161,13 @@ var h = Object.create, g = Object.defineProperty, _ = Object.getOwnPropertyDescr
 					n = await i.stat(e, { bigint: !0 });
 				}
 			}
-			let a = await i.stat(t, { bigint: !0 });
-			if (f(n, a)) return;
+			let a;
+			try {
+				a = await i.stat(t, { bigint: !0 });
+			} catch (e) {
+				if (e.code !== "ENOENT") throw e;
+			}
+			if (a && f(n, a)) return;
 		}
 		let c = await s(e, t);
 		e = c.toDst;
@@ -1185,8 +1190,13 @@ var h = Object.create, g = Object.defineProperty, _ = Object.getOwnPropertyDescr
 					n = i.statSync(e, { bigint: !0 });
 				}
 			}
-			let a = i.statSync(t, { bigint: !0 });
-			if (f(n, a)) return;
+			let a;
+			try {
+				a = i.statSync(t, { bigint: !0 });
+			} catch (e) {
+				if (e.code !== "ENOENT") throw e;
+			}
+			if (a && f(n, a)) return;
 		}
 		let s = c(e, t);
 		e = s.toDst, n = u(s.toCwd, n);

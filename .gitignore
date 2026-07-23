@@ -5,3 +5,9 @@
 /node_modules/
 
 *.LICENSE.txt
+
+# Playwright（E2E）の実行成果物（設定ファイルのある test/e2e/ 配下に出力される）
+test-results/
+playwright-report/
+blob-report/
+/.playwright/

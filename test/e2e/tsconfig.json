@@ -1,0 +1,14 @@
+{
+	// E2E用の型チェック専用設定（bunx tsc --noEmit -p test/e2e）。
+	//	ルートtsconfigは include の "test/**/*" からこのフォルダを exclude している。
+	//	含めてしまうと vite-plugin-dts が dist/ へ E2E の .d.ts を吐いてしまうため
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"types": ["node"],
+		// ルートのincremental:trueを引き継ぐと、型チェックしただけで
+		// dist/ に tsbuildinfo のゴミが残るので切る
+		"incremental": false
+	},
+	"include": ["**/*.ts"]
+}

@@ -64,5 +64,8 @@
 		// experimentalDecorators
 		"incremental": true
 	},
-	"include": ["src/**/*", "test/**/*"]
+	"include": ["src/**/*", "test/**/*"],
+	// E2E（test/e2e/）は専用の test/e2e/tsconfig.json で型チェックする。
+	//	ここに含めると vite-plugin-dts が dist/ へ E2E の .d.ts まで吐いてしまう
+	"exclude": ["node_modules", "test/e2e"]
 }

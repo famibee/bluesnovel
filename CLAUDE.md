@@ -26,14 +26,48 @@ bun test           # run unit tests (bun:test)
 bun test --only-failures   # what `bun run test` does; reruns only previously-failed
 bun test test/ScriptEngine.test.ts   # single file
 bun test -t "step_trace_ampPrefix"   # single test by name (it('...') label)
-bunx tsc --noEmit  # typecheck only — NOT run by `bun test`; run it manually before committing
+bunx tsc --noEmit --incremental false   # typecheck only — NOT run by `bun test`; run before committing
+                                        # (`--incremental false` avoids littering dist/ with tsbuildinfo)
+bunx tsc --noEmit -p test/e2e   # typecheck the E2E tree (separate project, see below)
 bun run docs       # vite docs/ playground, opens /tag.html
+bun run test:e2e   # browser E2E via Playwright (starts/stops its own vite on :5199)
+bun run test:e2e:ui        # same, in Playwright's UI mode
+bunx playwright test -c test/e2e button.e2e.ts   # single E2E file
 ```
 
 There is **no `lint` script** despite ESLint devDependencies being present, and **no
 `bunfig.toml`** — tests run with Bun defaults. Unit tests are deliberately DOM/fetch-free
 so they need no happy-dom preload; `@happy-dom/global-registrator` exists for any future
 component tests.
+
+## E2E tests (`test/e2e/`)
+
+Everything E2E lives under `test/e2e/` — specs, fixture app, `playwright.config.ts` and its own
+`tsconfig.json` — deliberately keeping the repo root clean. Unit tests (`bun test`) and browser
+E2E (`playwright test`) are **fully separated**:
+
+- E2E specs are named `*.e2e.ts`, **not** `*.spec.ts` — `bun test` auto-collects `*.spec.*`, and
+  it also scans `test/`, so the conventional name would break the unit-test run. `testMatch`
+  enforces this.
+- The config is not at the root, so Playwright needs `-c test/e2e` (both `test:e2e` scripts pass
+  it). `webServer` starts/stops vite itself on a **dedicated port 5199** with
+  `reuseExistingServer: false`, and pins `cwd` to the repo root so vite's root is the repo, not
+  the config's folder. Vite's default 5173/5174 are routinely squatted by other projects' dev
+  servers (e.g. `tmp_blues`), and reusing one silently tests the *wrong app*.
+- `test/e2e/app/` is a self-contained fixture: `index.html` + `main.ts` boot `SysWeb` against
+  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button` picks the
+  scenario, since `SysBase.loaded()` always loads the script named `main`. No image assets are
+  used, so the fixtures need no binaries. **`src/` contains no test-only hooks**:
+  `test/e2e/app/main.ts` publishes `window.__sn = {store: useStore}` and assertions read the
+  zustand store from there.
+- `test/e2e/snPage.ts` holds the helpers. `waitIdle()` must be awaited before every click or
+  keypress: it waits until the DOM has caught up with the store, because `Stage` is `lazy()`-loaded
+  and a test can otherwise race ahead while Suspense still shows `Loading` — in that window
+  `Stage` never renders, so `Caretaker.update()` never records a Memento and read-back silently
+  breaks.
+- The root `tsconfig.json` **excludes `test/e2e`** from its `test/**/*` include (otherwise
+  `vite-plugin-dts` emits `.d.ts` for the tests into `dist/`); `test/e2e/tsconfig.json` typechecks
+  it instead.
 
 ## Build system (`src/build.ts`)
 
@@ -110,11 +144,19 @@ cannot be used as macro names live in `ScriptEngine.RESERVED_TAGS`.
 - **Communicate with the user in Japanese** (chat responses, explanations, questions).
 - **Comments and commit messages are in Japanese.** Match the surrounding comment density —
   this codebase comments heavily, especially explaining divergence from 本家.
-- **Handoff docs**: `引き継ぎ_YYYY-MM-DD_NN.md` at the repo root are per-session handover
-  notes (TODOs, known limitations, tooling caveats). Read the latest one at the start of a
-  session — it is the running project log. Note its warnings about **serena / playwright MCP
-  tools hanging or executing actions despite timing out**; after an MCP timeout, verify state
-  before retrying rather than repeating the call.
+- **TODOs in .ts/.tsx must use the exact `//TODO: ` form** (no space before `//`, one after
+  the colon). The author lists them with the VSCode extension *Todo+*
+  (`fabiospampinato.vscode-todo-plus`), which only picks up that prefix — a TODO written as
+  prose inside a comment block is invisible to it.
+- **Backlog**: `todo.md` at the repo root is the running task list, in *Todo+* checkbox format
+  and roughly priority-ordered. Read it at the start of a session and tick items off there.
+  (It replaced the older per-session `引き継ぎ_YYYY-MM-DD_NN.md` handoff notes, now deleted.)
+- **MCP pre-flight**: **serena** and **playwright** MCP tools have hung in this project, and
+  have been seen to execute an action anyway despite reporting a timeout. Do a cheap serena
+  call first (e.g. `get_current_config`) and ask the user to restart the MCP server if it
+  hangs; after any MCP timeout, verify state before retrying rather than repeating the call.
+  serena also needs its project activated (`activate_project` with `bluesnovel`) before the
+  symbol tools work.
 - **Strict TypeScript**: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
   `noUnusedLocals`/`Parameters` (prefix unused params with `_` to allow), `noImplicitOverride`.
   `strictPropertyInitialization` is off. Run `bunx tsc --noEmit` before committing since the
