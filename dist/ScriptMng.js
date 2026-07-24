@@ -1511,18 +1511,22 @@ var m = class {
 	#g(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
-		let r = this.#u.evalBool(n) ? this.#r : -1, i = 0, a = this.#n.length;
-		for (; this.#r < a; ++this.#r) {
+		let r = this.#u.evalBool(n) ? this.#r : -1, i = 0, a = !1, o = this.#n.length;
+		for (; this.#r < o; ++this.#r) {
 			let t = this.#n[this.#r];
+			if (a) {
+				this.#t.testTagEndLetml(t) && (a = !1);
+				continue;
+			}
 			if (t.charCodeAt(0) !== 91) continue;
-			let { name: n, args: a } = e.parseTag(t);
+			let { name: n, args: o } = e.parseTag(t);
 			switch (n) {
 				case "if":
 					++i;
 					continue;
 				case "elsif": {
 					if (i > 0 || r > -1) continue;
-					let e = a.exp ?? "";
+					let e = o.exp ?? "";
 					if (!e) throw "[elsif] expは必須です（試作仕様）";
 					this.#u.evalBool(e) && (r = this.#r + 1);
 					continue;

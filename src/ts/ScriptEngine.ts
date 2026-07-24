@@ -454,11 +454,17 @@ export class ScriptEngine {
 
 		let idxGo = this.#expr.evalBool(exp) ? this.#idx : -1;
 		let cntDepth = 0;	// 入れ子ifの深度カウンター（elsif/elseは深度を跨がないためifとendifのみ数える）
+		let inLetMl = false;	// [let_ml]の本文は「ただのテキスト」なので、[endif]等と読めても反応しない
 		const len = this.#aToken.length;
 		for (; this.#idx < len; ++this.#idx) {
 			const tkn = this.#aToken[this.#idx]!;
+			if (inLetMl) {
+				if (this.#grm.testTagEndLetml(tkn)) inLetMl = false;
+				continue;
+			}
 			const uc = tkn.charCodeAt(0);
 			if (uc !== 91) continue;	// [ タグ開始以外（地の文・改行）はこの時点ではまだ実行せず読み飛ばすだけ
+			if (this.#grm.testTagLetml(tkn)) {inLetMl = true; continue}
 
 			const {name, args: a2} = ScriptEngine.parseTag(tkn);
 			switch (name) {

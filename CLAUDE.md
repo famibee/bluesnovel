@@ -224,8 +224,12 @@ ends an unquoted value at the first quote character.
   (`fabiospampinato.vscode-todo-plus`), which only picks up that prefix — a TODO written as
   prose inside a comment block is invisible to it.
 - **Backlog**: `todo.md` at the repo root is the running task list, in *Todo+* checkbox format
-  and roughly priority-ordered. Read it at the start of a session and tick items off there.
+  and roughly priority-ordered. Read it at the start of a session.
   (It replaced the older per-session `引き継ぎ_YYYY-MM-DD_NN.md` handoff notes, now deleted.)
+  **A finished item does not stay in `todo.md` — it moves to `CHANGELOG.md`.** Write the
+  `- [x] …` block at the lone `- [ ]` marker near the end of `CHANGELOG.md`, followed by one
+  blank line, and **leave that `- [ ]` marker in place** so the next entry can be appended
+  the same way. Delete the item from `todo.md` in the same pass.
 - **MCP pre-flight**: **serena** MCP tools have hung in this project, and have been seen to
   execute an action anyway despite reporting a timeout. Do a cheap serena
   call first (e.g. `get_current_config`) and ask the user to restart the MCP server if it

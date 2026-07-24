@@ -162,3 +162,18 @@ it('elsif_missingExp_throws_whenReached', ()=> {
 	// ifが偽で実際にelsifへ到達する場合は、exp省略はthrowする
 	expect(()=> new ScriptEngine('t1', '[if exp=0==1]x[elsif]x[endif]').step()).toThrow();
 });
+
+// ============ [let_ml]本文との干渉 ============
+
+it('if_scan_ignoresEndifInsideLetMl', ()=> {
+	// [let_ml]の本文は「ただのテキスト」なので、中の[endif]でifブロックが切れてはいけない
+	expect(run(
+		'[if exp=0==0][let_ml name=doc][endif][endlet_ml]o[endif]x'
+	)).toBe('ox');
+});
+it('if_scan_ignoresElseInsideLetMl_whenFalse', ()=> {
+	// 偽側でも同様。本文中の[else]に反応して本文を実行してしまわないこと
+	expect(run(
+		'[if exp=0==1][let_ml name=doc][else]NG[endlet_ml]x[else]o[endif]'
+	)).toBe('o');
+});
