@@ -256,6 +256,15 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/e2e/stage.e2e.ts`（新規3件）で寸法・切り取り・黒地・縮小時の追随を固定。E2E 33件→36件。ユニット716件は変更なし（DOMのレイアウトなのでエンジン側に影響が無い）
   - 確認は`.claude/skills/playwright-cli/`で実際の`tmp_blues`（:5173）を開いて実測した
 
+- [x] **ページ裏表の残り：`[button page=…]`・`[er]`の両面消去・`[page clear=true]`**（2026-07-24）
+  - `[button]`に`page`属性を追加。裏ページへボタンを組んでおき`[trans]`で見せる、という本家の流儀（`title.sn`が`[clear_lay page=back]`→`[button]`→`[trans]`でやっていること）が書けるようになった
+  - **既定は`fore`のままにした**。本家の既定は`back`（`LayerMng.ts:1100` の `argChk_page(hArg, 'back')`、コメントも「チェックしたいというよりデフォルトをbackに」）だが、bluesnovelの既存シナリオ（`tmp_blues`のmain.sn・E2Eフィクスチャ）は`[trans]`を挟まないものが多く、既定をbackにするとボタンが不可視の裏に置かれて消える。`ScriptEngine.ts`に`//TODO:`を残し、シナリオが`[trans]`前提になった時点で寄せる
+  - `[er]`を**表裏どちらの文字も消す**ようにした（本家 `hTag.er`「ページ両面の文字消去」）。片面だけだと`[trans]`で裏が表に出た瞬間に前の場面の文字が蘇る。`chgStr`アクションに`page: 'fore'|'back'|'both'`を追加し、`'both'`は`[er]`だけが使う（本家 `LayerMng.ts:535` の `page='both'`相当）
+  - `[page]`に対応（`clear`のみ）。**本家の`[page]`は裏表ではなく「読み戻り用のページログ」のタグ**で、`sub.sn`の`sys_title_start`が`[page clear=true key=…]`で本編開始時に履歴を捨てている。bluesnovelでは`Caretaker.clear()`を新設して繋いだ（タイトル画面まで読み戻れてしまうのを防ぐ用途）。`to=`/`style=`/`key=`は読み戻りの作りが本家と別なので未対応（`todo.md`へ）
+  - 地の文・`[r]`は表ページ固定のまま。地の文には属性を書けない＝実質常に既定（本家`[ch]`も既定`fore`）なので、試作では表のみとする
+  - `[trans layer=…]`の交換対象外レイヤを裏へ複製するコストを確認：`structuredClone`＋`nm`検索でレイヤ数ぶんのO(n²)だが、実シナリオのレイヤ数は5〜10程度（`tmp_esm_uc`の`dsp_lays`は5）なので問題なしと判断し、`todo.md`から落とした
+  - `test/ScriptEngine_trans.test.ts`に7件追加（地の文のページ・`[er]`の両面・`[button]`の既定と`page=back`・`[page]`の3件）、`test/e2e/trans.e2e.ts`に2件追加（`[er]`が裏の文字も消すこと・`[button page=back]`が`[trans]`で表に出ること）。ユニット716件→723件、E2E 36件→38件
+
 - [ ]
 
 

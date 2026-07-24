@@ -24,6 +24,9 @@ var e = class {
 		if (!t) throw `undo Err key:${e}`;
 		for (let e of Object.values(t)) e.restore();
 	}
+	clear() {
+		this.#e = "", this.#t = {}, this.#r = [], this.#i = 0;
+	}
 	#r = [];
 	#i = 0;
 	prevKey() {

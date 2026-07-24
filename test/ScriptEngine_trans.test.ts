@@ -115,6 +115,53 @@ it('wt_withoutTransIsStillYielded', ()=> {
 });
 
 
+// ============ 文字・ボタンのページ指定 ============
+
+it('text_goesToForeOnly', ()=> {
+	// 地の文には属性を書けないので常に表ページ（本家 [ch] の既定も'fore'）
+	expect(acts(`${LAYS}あ[s]`).find(v=> v.t === 'chgStr'))
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'});
+});
+
+it('er_clearsBothPages', ()=> {
+	// タグ名のとおり「ページ両面の文字消去」（本家 hTag.er）。
+	//	片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
+	expect(acts(`${LAYS}あ[er][s]`).find(v=> v.t === 'chgStr' && v.str === ''))
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'both', str: ''});
+});
+
+it('button_defaultsToFore', ()=> {
+	// **本家の既定はback**（LayerMng.ts:1100）だが、bluesnovelの既存シナリオは
+	//	[trans]を挟まないものが多く、既定をbackにするとボタンが不可視の裏に置かれてしまう
+	expect(acts(`${LAYS}[button text=OK label=*x][s]`).find(v=> v.t === 'addBtn'))
+		.toMatchObject({t: 'addBtn', layerNm: 'mes', page: 'fore', text: 'OK', label: '*x'});
+});
+
+it('button_page_back', ()=> {
+	// page=backと明示すれば本家と同じ「裏に組んで[trans]で見せる」書き方ができる
+	expect(acts(`${LAYS}[button page=back text=OK label=*x][s]`).find(v=> v.t === 'addBtn'))
+		.toMatchObject({page: 'back'});
+});
+
+
+// ============ [page]（読み戻り用のページログ） ============
+
+it('page_clearAsksToClearLog', ()=> {
+	// 本家の[page]は裏表ではなくページログ（読み戻り履歴）のタグ。
+	//	sub.snのsys_title_startが[page clear=true key=…]で本編開始時に履歴を捨てている
+	expect(acts(`${LAYS}[page clear=true key="pageup,pagedown"][s]`).find(v=> v.t === 'clearPageLog'))
+		.toEqual({t: 'clearPageLog'});
+});
+
+it('page_clearFalseDoesNothing', ()=> {
+	expect(acts(`${LAYS}[page clear=false][s]`).some(v=> v.t === 'clearPageLog')).toBe(false);
+});
+
+it('page_noAttrThrows', ()=> {
+	expect(()=> acts(`${LAYS}[page][s]`)).toThrow('[page] clear,style,to いずれかは必須です');
+});
+
+
 // ============ 実シナリオでの並び ============
 
 it('scenario_titleSnLikeSequence', ()=> {

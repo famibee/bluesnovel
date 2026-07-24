@@ -44,6 +44,16 @@ console.log(`fn:Memento.ts = undo key=(${key})`);
 		for (const meme of Object.values(h)) meme.restore();
 	}
 
+	// 履歴を全消去（[page clear=true]。本家 Reading.ts:356 page()のclear相当）。
+	//	本編を始める前などに呼び、タイトル画面まで読み戻れてしまうのを防ぐ。
+	//	push()が差し替えた#update/#pushはそのまま活かす（次のpush()から積み直しになる）
+	clear() {
+		this.#key = '';
+		this.#hScr2AState = {};
+		this.#aKeyHistory = [];
+		this.#idxHistory = 0;
+	}
+
 	#aKeyHistory: string[]	= [];
 	#idxHistory	= 0;
 	// 前のキーへ移動

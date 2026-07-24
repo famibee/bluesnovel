@@ -227,6 +227,7 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
 text-bg opacity, `page=fore|back`), `trans`/`wt` (page swap + its wait),
+`page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
 `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
@@ -251,6 +252,10 @@ rules make this work in React:
   Fading the back page *in* on top costs the same but pops at the end wherever the back page
   is transparent; fading the fore *out* means what you see mid-transition is already the
   final state.
+- Writes are per-page: `[lay]` defaults to `fore`, `[button]` takes `page=` too, and `[er]`
+  clears **both** pages (`chgStr` carries `'fore' | 'back' | 'both'`) — otherwise the previous
+  scene's text comes back the moment `[trans]` brings that page forward. `[button]`'s default
+  is `fore` here where upstream uses `back`; see the `//TODO:` in `ScriptEngine.ts`.
 - **`ScriptMng` declares the transition finished**, not GSAP's `onComplete` — `Stage` only
   paints. `finishTrans()` (a synchronous zustand `set`) flips `foreIdx`, and only then does
   the scenario resume, so the next text always lands on the new fore page. `[wt]` waits on

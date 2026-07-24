@@ -12,11 +12,11 @@
 `[notice]`はプロジェクト側プラグイン（`tmp_esm_uc/src/plugin/humane`）なのでプラグイン機構ごと対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 
-- [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`は実装済み）
-  - [ ] `[page]` ページ移動（`sub.sn`の`sys_title_start`が`[page clear=true key=...]`を使う）
-  - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）
-  - [ ] 文字表示（地の文・`[er]`・`[r]`）と`[button]`の書き込み先は表ページ固定。本家は`[ch]`にもページ指定がある
-  - [ ] 交換対象外レイヤ（`[trans layer=…]`で挙げなかったもの）は`startTrans()`で裏へ複製している。レイヤ数が増えたときのコストは要確認
+- [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
+  - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて
+  - [ ] `[button]`の既定ページ。本家は`back`（`LayerMng.ts:1100`）だが、bluesnovelは既存シナリオが`[trans]`を挟まないため`fore`のまま。シナリオが`[trans]`前提になった時点で本家へ寄せる（`ScriptEngine.ts`に`//TODO:`あり）
+- [ ] **`[page]`（読み戻り用のページログ）の残り**（`clear`は実装済み）
+  - [ ] `to=`（指定ページへ移動）・`style=`（ページ移動中の見た目）・`key=`（移動中に有効なキーの限定）。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **レイヤ操作タグ**
   - [ ] `[clear_lay]` レイヤ設定の消去（`layer=`/`page=`）
   - [ ] `[lay]`属性の拡充：`visible` `alpha` `rotation` `scale_x`/`scale_y` `left`/`top` `b_color` `style` `bura`（`img`/`txt_lay_*`マクロが使う）

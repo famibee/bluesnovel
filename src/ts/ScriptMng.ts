@@ -295,11 +295,15 @@ export class ScriptMng {
 			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い
 			break;
 		case 'chgStr':
-			this.$fncs.chgStr({nm: act.nm, str: act.str});
+			this.$fncs.chgStr({nm: act.nm, page: act.page, str: act.str});
 			break;
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
-			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {})});
+			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {})});
+			break;
+		case 'clearPageLog':
+			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
+			this.sys.caretaker.clear();
 			break;
 		case 'trace':
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲

@@ -1370,7 +1370,7 @@ var d = class {
 	#h = !1;
 	#g = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.trans.wt.let.let_ml.endlet_ml.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.clearvar.clearsysvar.l.p.s".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.trans.wt.let.let_ml.endlet_ml.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.clearvar.clearsysvar.page.l.p.s".split("."));
 	#_() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
@@ -1524,6 +1524,7 @@ var d = class {
 		for (this.#o && (this.#o = !1, this.#a[this.#i] = "", e.push({
 			t: "chgStr",
 			nm: this.#i,
+			page: "fore",
 			str: ""
 		})); this.#r < this.#n.len;) {
 			this.#v();
@@ -1650,6 +1651,7 @@ var d = class {
 			case "er": return this.#a[this.#i] = "", r.push({
 				t: "chgStr",
 				nm: this.#i,
+				page: "both",
 				str: ""
 			}), "skip";
 			case "trace": return r.push({
@@ -1728,21 +1730,25 @@ var d = class {
 			case "bracket2macro": return this.#n.defC2M(t, n, this.#_(), this.#r), "skip";
 			case "endmacro": return this.#A(r);
 			case "button": {
-				let e = n.layer || this.#i;
-				if (!e) throw "[button] layerは必須です（試作仕様）";
-				let t = n.label ?? "", i = n.fn ?? "";
-				if (!t && !i) throw "[button] fnまたはlabelは必須です";
-				let a = n.nm ?? (t || i), o = n.call === "true";
+				let t = n.layer || this.#i;
+				if (!t) throw "[button] layerは必須です（試作仕様）";
+				let i = n.label ?? "", a = n.fn ?? "";
+				if (!i && !a) throw "[button] fnまたはlabelは必須です";
+				let o = n.nm ?? (i || a), s = n.call === "true", c = e.argPage(n, "fore");
 				return r.push({
 					t: "addBtn",
-					layerNm: e,
-					nm: a,
+					layerNm: t,
+					page: c,
+					nm: o,
 					text: n.text ?? "",
-					label: t,
-					call: o,
-					...i ? { fn: i } : {}
+					label: i,
+					call: s,
+					...a ? { fn: a } : {}
 				}), "skip";
 			}
+			case "page":
+				if (!("clear" in n || "to" in n || "style" in n)) throw "[page] clear,style,to いずれかは必須です";
+				return n.clear === "true" && r.push({ t: "clearPageLog" }), "skip";
 			case "clearvar": return this.#c.clearGame(), "skip";
 			case "clearsysvar": return this.#c.clearSys(), this.clearKidoku(), "skip";
 			case "event": {
@@ -1863,6 +1869,7 @@ var d = class {
 		this.#a[n] = r, e.push({
 			t: "chgStr",
 			nm: n,
+			page: "fore",
 			str: r
 		});
 	}
@@ -2039,18 +2046,23 @@ var d = class {
 			case "chgStr":
 				this.$fncs.chgStr({
 					nm: e.nm,
+					page: e.page,
 					str: e.str
 				});
 				break;
 			case "addBtn":
 				this.$fncs.addBtn({
 					layerNm: e.layerNm,
+					page: e.page,
 					nm: e.nm,
 					text: e.text,
 					label: e.label,
 					...e.call === void 0 ? {} : { call: e.call },
 					...e.fn === void 0 ? {} : { fn: e.fn }
 				});
+				break;
+			case "clearPageLog":
+				this.sys.caretaker.clear();
 				break;
 			case "trace":
 				this.#S({ text: e.text });

@@ -134,7 +134,7 @@ it('callToScript_pushesCallStackThenSwitches', ()=> {
 
 	se.callToScript(new Script('sub', 'S[return]'), '');
 	const a = se.step();
-	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'AS'});
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'AS'});
 	// 別ファイルからの[return]なので、呼び出し元ファイルの読み直し要求が返る
 	expect(a.at(-1)).toEqual({t: 'loadScript', fn: 'main', label: '', idx: 1});
 
@@ -165,11 +165,11 @@ it('escape_charIsStrippedOnDisplay', ()=> {
 	//	素材は「\[esc\]\;\&\\」＝ [ esc ] ; & \ を表示させたいもの
 	const se = new ScriptEngine(new Script('t1', '\\[esc\\]\\;\\&\\\\[s]', grm));
 	const a = se.step();
-	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: '[esc];&\\'});
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: '[esc];&\\'});
 });
 
 it('escape_notSet_bracketStartsTag', ()=> {
 	// エスケープ文字が未設定（既定）なら従来どおり。[esc]は未対応タグとして無視される
 	const se = new ScriptEngine(new Script('t1', '[esc]あ[s]'));
-	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'あ'});
+	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'});
 });

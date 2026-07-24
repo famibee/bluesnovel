@@ -16,7 +16,7 @@ it('grammar_multilineTag', ()=> {	// タグを複数行に分けて書ける
 	const se = new ScriptEngine('t1', '[add_lay\n\tlayer=mes\n\tclass=txt\n]あ[s]');
 	expect(se.step()).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -28,15 +28,15 @@ it('grammar_commentInMultilineTag', ()=> {	// タグ内に「;」コメントを
 	const se = new ScriptEngine('t1', '[add_lay\t;これはコメント\n\tlayer=mes\t;これも\nclass=txt\n]あ[s]');
 	expect(se.step()).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
 it('grammar_leadingTabIsNotText', ()=> {	// 行頭のタブは独立トークンになり、地の文には含まれない
 	const se = new ScriptEngine('t1', '\tあ\n\tい[s]');
 	expect(se.step()).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
-		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あい'},
 		{t: 'stop', kind: 's', key: 't1:6', nm: 'mes'},
 	]);
 });
@@ -60,14 +60,14 @@ it('step_stopsAtL', ()=> {
 	const a1 = se.step();
 	expect(a1).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
-		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あいうえお'},
 		{t: 'stop', kind: 'l', key: 't1:3', nm: 'mes'},
 	]);
 	expect(se.atEnd).toBe(false);
 
 	const a2 = se.step();
 	expect(a2).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あいうえおかきくけこ'},	// [l]は文字を消さないため、行が積み上がる
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あいうえおかきくけこ'},	// [l]は文字を消さないため、行が積み上がる
 		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);
 	expect(se.atEnd).toBe(true);
@@ -91,7 +91,7 @@ it('step_addFace_definesFace', ()=> {
 	const se = new ScriptEngine('t1', '[add_face name=minoura_me_futsu dx=171 dy=159]あ[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -211,7 +211,7 @@ it('step_unknownTagIgnored', ()=> {
 	const se = new ScriptEngine('t1', '[playbgm buf=BGM fn=a]あ[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -222,7 +222,7 @@ it('step_trace_emitsTraceAction', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'trace', text: '@'},
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -275,7 +275,7 @@ it('amp_let_nameIsAlsoExpression', ()=> {	// 「&&」なら変数名の側も式
 it('amp_show', ()=> {	// ＆表示＆：式の評価結果を地の文として表示
 	const se = new ScriptEngine('t1', '[let name=game:hp val=80]&game:hp&[s]');
 	expect(se.step()).toEqual([
-		{t: 'chgStr', nm: 'mes', str: '80'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: '80'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -283,12 +283,12 @@ it('amp_show_afterPlainTextIsNotSpecial', ()=> {
 	// 本家と同じ制約：地の文の途中に書いた「&〜&」は独立トークンにならないため、そのまま表示される
 	//	（＆表示＆として効くのは、行頭やタグ直後など「&」でトークンが始まる位置のみ）
 	const se = new ScriptEngine('t1', '[let name=game:hp val=80]HP=&game:hp&[s]');
-	expect(se.step()[0]).toEqual({t: 'chgStr', nm: 'mes', str: 'HP=&game:hp&'});
+	expect(se.step()[0]).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'HP=&game:hp&'});
 });
 it('amp_show_undefinedVarIsEmpty', ()=> {
 	const se = new ScriptEngine('t1', '&未定義変数&[s]');
 	expect(se.step()).toEqual([
-		{t: 'chgStr', nm: 'mes', str: ''},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: ''},
 		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
 	]);
 });
@@ -297,7 +297,7 @@ it('step_comment_ignored', ()=> {
 	const se = new ScriptEngine('t1', ';これはコメント\nあ[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 });
@@ -307,7 +307,7 @@ it('step_comment_ignored_leadingWhitespace', ()=> {
 	const se = new ScriptEngine('t1', '\t; これはコメント\nあ[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},	// 行頭タブが独立トークンになる分、旧実装より1つ後ろ
 	]);
 });
@@ -318,7 +318,7 @@ it('step_comment_ignoresEmbeddedTagOnSameLine', ()=> {
 	const se = new ScriptEngine('t1', ';これはコメント[button layer=btn1 text=x label=*goal]\nあ[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 	// addBtnアクションが積まれていない（＝[button]タグがコメントとして無視された）ことを確認
@@ -331,14 +331,14 @@ it('step_p_clearsOnResume', ()=> {
 	const a1 = se.step();
 	expect(a1).toEqual([
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
-		{t: 'chgStr', nm: 'mes', str: 'あいうえお'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あいうえお'},
 		{t: 'stop', kind: 'p', key: 't1:3', nm: 'mes'},
 	]);
 
 	const a2 = se.step();
 	expect(a2).toEqual([
-		{t: 'chgStr', nm: 'mes', str: ''},			// [p]の次の進行でまずクリアされる
-		{t: 'chgStr', nm: 'mes', str: 'かきくけこ'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: ''},			// [p]の次の進行でまずクリアされる
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'かきくけこ'},
 		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);
 });
@@ -350,8 +350,8 @@ it('step_button_addsBtnAction', ()=> {
 	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal]あ[s]\n*goal\ni[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal', call: false},
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'btn1', text: 'つづき', label: '*goal', call: false},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -361,7 +361,7 @@ it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
 	// nmも省略した場合はlabelを流用する（試作の割り切り）。
 	const se = new ScriptEngine('t1', '[button text=x label=*goal]あ[s]');
 	const a = se.step();
-	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal', call: false});
+	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', page: 'fore', nm: '*goal', text: 'x', label: '*goal', call: false});
 });
 
 it('step_button_requiresLabelOrFn', ()=> {
@@ -374,13 +374,13 @@ it('step_button_fn_isPassedThrough', ()=> {
 	// 実際のロードと切替はクリック時にScriptMng側が行う
 	const se = new ScriptEngine('t1', '[button text=x fn=other label=*goal]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
 });
 it('step_button_fnOnly_nmFallsBackToFn', ()=> {
 	// label省略時はそのファイルの先頭へ。nm省略時はlabelが無いのでfnを流用する
 	const se = new ScriptEngine('t1', '[button text=x fn=other]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
 });
 
 it('step_button_callTrue_setsCallFlag', ()=> {
@@ -389,8 +389,8 @@ it('step_button_callTrue_setsCallFlag', ()=> {
 	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal call=true]あ[s]\n*goal\ni[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addBtn', layerNm: 'mes', nm: 'btn1', text: 'つづき', label: '*goal', call: true},
-		{t: 'chgStr', nm: 'mes', str: 'あ'},
+		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'btn1', text: 'つづき', label: '*goal', call: true},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -411,7 +411,7 @@ it('callToLabel_movesIdxToLabel', ()=> {
 	se.callToLabel('*goal');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あい'},
 		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
 	]);
 });
@@ -426,7 +426,7 @@ it('callToLabel_returnsToWaitingStop_notNext', ()=> {
 	se.callToLabel('*goal');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あい'},
 		{t: 'stop', kind: 'l', key: 't1:2', nm: 'mes'},	// 次(こんにちは相当)へ進まず、同じ[l]待ちへ戻る
 	]);
 });
@@ -447,7 +447,7 @@ it('jumpToLabel_movesIdxToLabel', ()=> {
 	se.jumpToLabel('*goal');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgStr', nm: 'mes', str: 'あい'},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あい'},
 		{t: 'stop', kind: 's', key: 't1:7', nm: 'mes'},
 	]);
 });
@@ -604,7 +604,7 @@ it('let_ml_emptyBody', ()=> {
 	const se = new ScriptEngine('t1', '[let_ml name=ml][endlet_ml]あ[s]');
 	const a = se.step();
 	expect(se.getVal('ml')).toBe('');
-	expect(a[0]).toEqual({t: 'chgStr', nm: 'mes', str: 'あ'});	// [endlet_ml]の次から続行できている
+	expect(a[0]).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'});	// [endlet_ml]の次から続行できている
 });
 
 it('let_ml_insideIf', ()=> {

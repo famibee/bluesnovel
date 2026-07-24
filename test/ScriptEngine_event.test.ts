@@ -210,12 +210,12 @@ it('event_fireThenJump_movesExecution', ()=> {
 		'\n*a\nB[s]'+
 		'\n*fin\n'
 	);
-	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'A'});
+	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'A'});
 
 	const ev = se.beginEvent('click');
 	expect(ev).toBeDefined();
 	se.jumpToLabel(ev!.label);
-	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'AB'});
+	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'AB'});
 });
 
 it('event_fireThenCall_returnsToStopPoint', ()=> {

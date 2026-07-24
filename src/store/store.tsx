@@ -54,6 +54,7 @@ type T_STATE = {
 }
 export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
 export type T_PAGE = 'fore' | 'back';
+export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号
 //	（timeが同じ値だと参照が変わってもeffectを撃ち直せないため）
 export type T_TRANS = {seq: number; time: number} | null;
@@ -75,11 +76,13 @@ export type T_CHGBALPHA = {
 }
 export type T_CHGSTR = {
 	nm	: string;
+	page: T_PAGE_BOTH;	// [er]（ページ両面の文字消去）だけが'both'を使う
 	str	: string;
 }
 // [button]タグで文字レイヤ（UIコンテナ）にボタンを乗せる（独立レイヤにはしない）
 export type T_ADDBTN = {
 	layerNm	: string;	// 乗せ先の文字レイヤnm
+	page	: T_PAGE;
 	nm		: string;	// ボタン自身の識別名（同一layer内で一意）
 	text	: string;
 	label	: string;
@@ -133,10 +136,9 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		] as [T_LAY[], T_LAY[]]};
 	}),
 	// [button]タグ：指定した文字レイヤ（UIコンテナ）のaBtnにボタンを1件追加する。
-	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる。
-	//	書き込み先は表ページ固定（[button]のページ指定は未対応。todo.md参照）
-	addBtn	: ({layerNm, nm, text, label, call, fn}: T_ADDBTN)=> set(s=> {
-		const {idx, aLay} = pickPage(s, 'fore');
+	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる
+	addBtn	: ({layerNm, page, nm, text, label, call, fn}: T_ADDBTN)=> set(s=> {
+		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, layerNm, 'txt');
 		if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
 
@@ -158,9 +160,16 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		e.b_alpha = b_alpha;	// レイヤ全体ではなく文字レイヤ背景の不透明度のみ（TxtLayer.tsxでbackground-colorのrgbaのアルファとして反映）
 		return putPage(s, idx, aLay);
 	}),
-	// 文字表示は表ページ固定（地の文・[er]・[r]。本家は[ch]にもpage指定があるが試作では未対応）
-	chgStr	: ({nm, str}: T_CHGSTR)=> set(s=> {
-		const {idx, aLay} = pickPage(s, 'fore');
+	chgStr	: ({nm, page, str}: T_CHGSTR)=> set(s=> {
+		// [er]だけが'both'＝両面の文字を消す。片面だけだと[trans]で裏が表に出たときに
+		//	前の場面の文字が蘇ってしまう（本家 hTag.er「ページ両面の文字消去」）
+		if (page === 'both') return {aPage: s.aPage.map(a=> {
+			const aLay = [...a];
+			findLay(aLay, nm, 'txt').str = str;
+			return aLay;
+		}) as [T_LAY[], T_LAY[]]};
+
+		const {idx, aLay} = pickPage(s, page);
 		findLay(aLay, nm, 'txt').str = str;
 		return putPage(s, idx, aLay);
 	}),

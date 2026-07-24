@@ -31,6 +31,8 @@ export type T_FACE = {
 // ページ裏表（本家 Pages.ts）。表(fore)＝今画面に見えている面、裏(back)＝次の場面を組み立てる面。
 //	[trans]で入れ替えることで場面転換する。属性pageの既定は本家同様'fore'（Pages.argChk_page(hArg,'fore')）
 export type T_PAGE = 'fore' | 'back';
+// 消去系は両面まとめて指定できる（本家 LayerMng.ts:535 の page='both'）
+export type T_PAGE_BOTH = T_PAGE | 'both';
 
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
@@ -38,8 +40,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
-	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
-	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
+	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
+	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
+	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
@@ -221,7 +224,7 @@ export class ScriptEngine {
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
-		'button', 'event', 'clear_event', 'clearvar', 'clearsysvar', 'l', 'p', 's',
+		'button', 'event', 'clear_event', 'clearvar', 'clearsysvar', 'page', 'l', 'p', 's',
 	]);
 
 	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
@@ -462,7 +465,7 @@ export class ScriptEngine {
 		if (this.#clearOnResume) {	// 前回[p]で停止した後の再開なので、現在レイヤを先にクリア
 			this.#clearOnResume = false;
 			this.#hTxt[this.#curTxtLayer] = '';
-			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
+			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'fore', str: ''});
 		}
 		// トークン数は毎回読み直す。[char2macro]/[bracket2macro]は定義位置より後ろの
 		//	トークンをその場で置換する＝実行中にトークン数が増減しうるため、キャッシュできない
@@ -667,8 +670,10 @@ export class ScriptEngine {
 			this.#appendTxt(aAct, '\n');
 			return 'skip';
 		case 'er':		// ページ両面の文字消去（試作簡略：現在レイヤのみ）
+			//	タグ名のとおり表裏どちらの文字も消す（本家 LayerMng.ts hTag.er「ページ両面の文字消去」）。
+			//	これが片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
 			this.#hTxt[this.#curTxtLayer] = '';
-			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
+			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
 			return 'skip';
 
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
@@ -783,7 +788,24 @@ export class ScriptEngine {
 			const nm = args.nm ?? (label || fn);
 			// call=true指定時：クリックでjumpではなくcall（サブルーチンコール）する
 			const call = args.call === 'true';
-			aAct.push({t: 'addBtn', layerNm, nm, text: args.text ?? '', label, call, ...(fn ? {fn} : {})});
+			// 書き込み先のページ。**既定は本家（LayerMng.ts:1100 argChk_page(hArg,'back')）と違い'fore'**。
+			//	本家のシナリオは「裏ページを組んでから[trans]で見せる」流儀なので既定がbackだが、
+			//	bluesnovelの既存シナリオは[trans]を挟まないものが多く、既定をbackにすると
+			//	そのままではボタンが裏（不可視）に置かれて消えてしまう。
+			//	page=backと明示すれば本家と同じ組み方ができる
+			//TODO: シナリオが[trans]前提になった時点で既定をbackへ寄せる（本家互換）
+			const page = ScriptEngine.argPage(args, 'fore');
+			aAct.push({t: 'addBtn', layerNm, page, nm, text: args.text ?? '', label, call, ...(fn ? {fn} : {})});
+			return 'skip';
+		}
+
+		case 'page': {	// ページ移動（本家 Reading.ts:343 page()）
+			// 本家の[page]は「裏表」ではなく**読み戻り用のページログ**を操作するタグ。
+			//	試作で対応するのはclear（ログの全消去）のみ。
+			//	to=（指定ページへ移動）・style=（ページ移動中の見た目）・key=（移動中に有効なキーの限定）は、
+			//	bluesnovelの読み戻りがPageUp/PageDownとCaretakerで別の作りになっているため未対応
+			if (! ('clear' in args || 'to' in args || 'style' in args)) throw '[page] clear,style,to いずれかは必須です';
+			if (args.clear === 'true') aAct.push({t: 'clearPageLog'});
 			return 'skip';
 		}
 
@@ -958,11 +980,13 @@ export class ScriptEngine {
 		return 'skip';
 	}
 
+	// 文字表示（地の文・[r]）は表ページ固定。本家は[ch]にpage属性があるが、
+	//	地の文には属性を書けない＝実質常に既定（fore）なので、試作では表のみとする
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {
 		const nm = this.#curTxtLayer;
 		const str = (this.#hTxt[nm] ?? '') + add;
 		this.#hTxt[nm] = str;
-		aAct.push({t: 'chgStr', nm, str});
+		aAct.push({t: 'chgStr', nm, page: 'fore', str});
 	}
 
 }
