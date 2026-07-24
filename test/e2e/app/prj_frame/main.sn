@@ -23,10 +23,31 @@
 
 ; [let_frame]で取った値は同じ停止点までの間に読める
 [trace text="&'ret:'+ const.sn.frm.yesno.val2ctrl"]
-とれた[s]
+とれた[p]
+
+; [set_focus]。[button]は表示中ずっと輪に居る。フレーム内の要素は
+;	[event key='dom=…']の最初の1件が自動で入り、[set_focus add=…]でも足せる
+[button nm=b1 text=ボタン1 label=*b1]
+[button nm=b2 text=ボタン2 label=*b2]
+[set_focus add='dom=yesno:#close']
+; 本家 main.sn と同じ形：矢印キーの予約から[set_focus to=&sn.eventArg]を呼ぶ
+[event global=true call=true key=arrowright label=*fcs arg=next]
+[event global=true call=true key=arrowleft label=*fcs arg=prev]
+[event global=true call=true key=escape label=*fcs arg=null]
+ふぉーかす[s]
+
+*fcs
+[set_focus to=&sn.eventArg]
+[return]
 
 *y
 [er]おっけー[s]
 
 *cancel
 [er]きゃんせる[s]
+
+*b1
+[er]ぼたん1[s]
+
+*b2
+[er]ぼたん2[s]

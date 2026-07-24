@@ -78,6 +78,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'setFrame'; id: string; var_name: string; text: string}	// [set_frame]。iframe内のvar変数へ設定
 	| {t: 'letFrame'; id: string; var_name: string; fnc: boolean}	// [let_frame]。iframe内のvar変数／関数戻り値を組み込み変数へ。書き戻してから続けたいのでstep()は一旦返る
 	| {t: 'resvDomEvent'; rawKey: string; key: string; del: boolean; needErr: boolean}	// [event key='dom=…']のDOM側予約
+	| {t: 'setFocus'; mode: 'add' | 'del' | 'null' | 'next' | 'prev'; rawKey?: string; needErr?: boolean}	// [set_focus]。キーボードフォーカスの順番管理
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
@@ -327,7 +328,7 @@ export class ScriptEngine {
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
-		'add_frame', 'frame', 'set_frame', 'let_frame',
+		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -1156,6 +1157,23 @@ export class ScriptEngine {
 			h[key] = {fn, label, call: args.call === 'true', arg: args.arg ?? ''};
 			if (isDom) aAct.push({t: 'resvDomEvent', rawKey, key, del: false,
 				needErr: (args.need_err ?? 'true') !== 'false'});
+			return 'skip';
+		}
+
+		case 'set_focus': {	// フォーカス移動（本家 EventMng.ts:640 #set_focus()）
+			// add/delは対象要素の指定なので'dom=…'書式。toは移動先（null/next/prev）
+			const {add, del, to} = args;
+			const needErr = (args.need_err ?? 'true') !== 'false';
+			if (add !== undefined || del !== undefined) {
+				const rawKey = add ?? del ?? '';
+				if (! rawKey.startsWith('dom=')) throw `[set_focus] add/delは'dom=…'書式のみです：${rawKey}`;
+				aAct.push({t: 'setFocus', mode: add !== undefined ? 'add' : 'del', rawKey, needErr});
+				return 'skip';
+			}
+
+			if (! to) throw '[set_focus] add か to は必須です';
+			if (to !== 'null' && to !== 'next' && to !== 'prev') throw `[set_focus] to【${to}】が不正です`;
+			aAct.push({t: 'setFocus', mode: to});
 			return 'skip';
 		}
 

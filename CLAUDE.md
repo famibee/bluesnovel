@@ -256,7 +256,7 @@ expression eval, `[`/`]`/`;` in the body are literal),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
 subroutine-call on click), `event`/`clear_event`, `enable_event`, `wait`,
 `clearvar`/`clearsysvar`, `pop_stack`, `title`, `toggle_full_screen`, `dump_lay`,
-`add_frame`/`frame`/`set_frame`/`let_frame` (HTML frames),
+`add_frame`/`frame`/`set_frame`/`let_frame` (HTML frames), `set_focus`,
 and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
@@ -327,7 +327,17 @@ the scaled stage box is the one place bluesnovel is simpler than 本家: coordin
 in stage units and window-resize tracking is free, where upstream multiplies by `cvsScale`
 everywhere and rewrites every frame on resize. `[add_frame]` and `[let_frame]` are **stop
 points** — they touch the DOM and must write the result back into engine variables before the
-scenario reads them, and actions are only applied after `step()` returns.
+scenario reads them, and actions are only applied after `step()` returns. Two things about
+frames are easy to forget: **keys pressed inside a frame never reach the parent document**, so
+`FrameMng` re-dispatches them onto `document` (upstream's `EventMng.resvFlameEvent`), and
+blurring an element inside a frame leaves the *iframe itself* focused in the parent, so
+`[set_focus to=null]` blurs on both sides.
+
+**`src/ts/FocusMng.ts`** is the `[set_focus]` ring — one module-level instance, because it is
+screen-wide state touched from both the React tree (`BtnLayer`) and the DOM side
+(`ScriptMng`), the same shape as `Lay.ts`'s drag flag. Elements enter it from three places, as
+upstream: a `[button]` while it is mounted, the **first** match of an `[event key='dom=…']`,
+and `[set_focus add='dom=…']`.
 
 `char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
 from the defining tag onwards — text before it stays literal, and one text token can split

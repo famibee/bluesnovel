@@ -105,6 +105,17 @@ export class FrameMng {
 			f.srcdoc = html;
 		});
 
+		// フレーム内にフォーカスがある間、キー入力は**親のdocumentまで飛んでこない**。
+		//	そのままだと[set_focus to=next]で一度フレームへ入ったら最後、矢印キーが効かなくなる。
+		//	本家も同じ事情で各フレームのbodyへイベントを張っている（EventMng.resvFlameEvent()）。
+		//	こちらは同じ内容のイベントを親のdocumentへ投げ直して、Main.tsxの1本の経路へ合流させる
+		f.contentDocument?.addEventListener('keydown', e=> {
+			document.dispatchEvent(new KeyboardEvent('keydown', {
+				key: e.key, code: e.code, bubbles: true,
+				altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+			}));
+		});
+
 		// 本家と同じ組み込み変数一式。以降[frame]で変えたぶんもここへ書き戻す
 		const vn = `const.sn.frm.${id}`;
 		return {
@@ -194,16 +205,16 @@ export class FrameMng {
 
 	// dom=予約の付け外し。本家はinput種別でイベント名を変える（EventMng.ts:571）ので合わせる
 	readonly #hDomLsn: {[key: string]: {el: HTMLElement; ev: string; fnc: EventListener}[]} = Object.create(null);
-	resvDom(rawKey: string, key: string, del: boolean, needErr: boolean, fire: ()=> void) {
+	resvDom(rawKey: string, key: string, del: boolean, needErr: boolean, fire: ()=> void): HTMLElement[] {
 		for (const {el, ev, fnc} of this.#hDomLsn[key] ?? []) el.removeEventListener(ev, fnc);
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hDomLsn[key];
-		if (del) return;
+		if (del) return [];
 
 		const {id, sel, aEl} = this.elms(rawKey);
 		if (aEl.length === 0) {
 			if (needErr) throw `[event] HTML内にセレクタ（${sel}）に対応する要素が見つかりません。存在しない場合を許容するなら、need_err=false と指定してください`;
-			return;
+			return [];
 		}
 
 		// チェックボックス・スライダ・テキストは変更イベントで拾う（本家と同じ振り分け）
@@ -223,6 +234,16 @@ export class FrameMng {
 			a.push({el, ev, fnc});
 		}
 		this.#hDomLsn[key] = a;
+		return aEl;
+	}
+
+	// [set_focus add=/del='dom=…'] 用。イベントは張らず、対象要素を返すだけ
+	resolveDom(rawKey: string, needErr: boolean): HTMLElement[] {
+		const {sel, aEl} = this.elms(rawKey);
+		if (aEl.length === 0 && needErr) {
+			throw `[set_focus] HTML内にセレクタ（${sel}）に対応する要素が見つかりません。存在しない場合を許容するなら、need_err=false と指定してください`;
+		}
+		return aEl;
 	}
 
 

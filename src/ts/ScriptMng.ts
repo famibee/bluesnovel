@@ -15,6 +15,7 @@ import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
 import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng} from './FrameMng';
+import {focusMng} from './FocusMng';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -517,12 +518,24 @@ export class ScriptMng {
 		case 'setFrame':
 			this.#frmMng.set(act.id, act.var_name, act.text);
 			break;
-		case 'resvDomEvent':
+		case 'resvDomEvent': {
 			// DOM要素のクリック等を、[event]の予約と同じ経路（fireEvent）へ流し込む
-			this.#frmMng.resvDom(act.rawKey, act.key, act.del, act.needErr, ()=> {
+			const aEl = this.#frmMng.resvDom(act.rawKey, act.key, act.del, act.needErr, ()=> {
 				this.cancelAuto();
 				this.fireEvent(act.key);
 			});
+			// 本家は**最初の1件だけ**をフォーカス対象にも登録する（EventMng.ts:596 の `if (i === 0)`）
+			if (! act.del && aEl[0]) focusMng.add(aEl[0]);
+			break;
+		}
+		case 'setFocus':
+			switch (act.mode) {
+			case 'add':	for (const el of this.#frmMng.resolveDom(act.rawKey!, act.needErr ?? true)) focusMng.add(el);	break;
+			case 'del':	for (const el of this.#frmMng.resolveDom(act.rawKey!, act.needErr ?? true)) focusMng.remove(el);	break;
+			case 'null':	focusMng.blur();	break;
+			case 'next':	focusMng.next();	break;
+			case 'prev':	focusMng.prev();	break;
+			}
 			break;
 		case 'addFrame':
 		case 'letFrame':

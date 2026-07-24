@@ -5,8 +5,10 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
+import {focusMng} from '../ts/FocusMng';
+
 import {css} from '@emotion/react';
-import {type MouseEvent} from 'react';
+import {type KeyboardEvent, type MouseEvent, useEffect, useRef} from 'react';
 
 
 type T_BTNARG = {
@@ -54,5 +56,25 @@ export default function BtnLayer({text, label, call, fn, onActivate}: T_BTNARG) 
 		onActivate(label, call ?? false, fn);
 	};
 
-	return <span css={styBtn} onClick={onClick}>{text}</span>;
+	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
+	//	ゲーム内ボタンをFocusMngへ入れているのに対応）。表示されている間だけ輪に居ればよいので、
+	//	マウント／アンマウントで出し入れする。spanなのでtabIndexを付けないとfocus()が効かない
+	const ref = useRef<HTMLSpanElement>(null);
+	useEffect(()=> {
+		const el = ref.current;
+		if (! el) return;
+
+		focusMng.add(el);
+		return ()=> focusMng.remove(el);
+	}, []);
+	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）
+	const onKeyDown = (e: KeyboardEvent)=> {
+		if (e.key !== 'Enter' && e.key !== ' ') return;
+
+		e.stopPropagation();
+		e.preventDefault();
+		onActivate(label, call ?? false, fn);
+	};
+
+	return <span css={styBtn} ref={ref} tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}>{text}</span>;
 }

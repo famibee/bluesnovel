@@ -348,6 +348,17 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - E2Eの注意：このシナリオは`[add_frame]`/`[let_frame]`でstep()の途中から一旦返るため、その隙間が`waitIdle()`からは停止点と区別できない（複数ファイルと同じ事情）。表示の確定は`expect.poll`で待つ
   - `[tsy_frame]`・フレーム内画像の差し替え（本家`sn_repRes()`）・`sn.event.domdata.*`は未対応（`todo.md`へ）
 
+- [x] **`[set_focus]`（キーボードフォーカスの順番管理）**（2026-07-24）
+  - 本家 `FocusMng.ts` ＋ `EventMng.ts:640 #set_focus()` の移植。`[event key='dom=…']`が入って前提が揃ったので保留を解いた。`main.sn`が矢印キーの予約から`[set_focus to=&sn.eventArg]`を呼ぶ形で使う
+  - 本家はpixiのContainer（ゲーム内ボタン）とHTML要素（フレーム内の部品）を混ぜて並べるが、bluesnovelはどちらもDOM要素なので`HTMLElement`だけの一本の輪になる。輪へ入る経路は本家と同じ3つ：`[button]`（表示中ずっと）・`[event key='dom=…']`の**最初の1件だけ**（本家 `EventMng.ts:596` の `if (i === 0)`）・`[set_focus add='dom=…']`
+  - `src/ts/FocusMng.ts`はモジュール直下の単一インスタンス。画面全体で1つしかない状態で、Reactのツリー（BtnLayer）からもDOM側（ScriptMng）からも触るため。`Lay.ts`のドラッグ通知と同じ流儀
+  - `[button]`は`<span>`なので`tabIndex={0}`を付けないと`focus()`が効かない。ついでにフォーカス中のEnter／Spaceで押下できるようにした（キーボードだけで操作できる）
+  - **踏んだ穴その1**：フレーム内にフォーカスがある間、キー入力は**親のdocumentまで飛んでこない**。そのままだと`to=next`で一度フレームへ入ったら最後、矢印キーが効かなくなる。本家も同じ事情で各フレームのbodyへイベントを張っている（`EventMng.resvFlameEvent()`）ので、こちらは同じ内容のイベントを親のdocumentへ投げ直して`Main.tsx`の1本の経路へ合流させた
+  - **踏んだ穴その2**：フレーム内の要素からフォーカスを外しても、**親から見るとiframe自身がフォーカスされたまま**でキー入力もそちらへ行く。`to=null`では親側のフォーカスも外す（本家も`blurSub()`で`globalThis.focus()`を呼んで画面へ戻している）
+  - `add`/`del`が`dom=`以外なら例外にした（本家は黙って無視して`to`の処理へ落ちるが、書き間違いを見逃さないため）
+  - `test/ScriptEngine_focus.test.ts`（新規8件）＋`test/e2e/focus.e2e.ts`（新規4件・`prj_frame`フィクスチャを拡張）。ユニット866件→874件、E2E 66件→70件
+  - ゲームパッド対応（`range`のstepUp/Down等）とフォーカス時の見た目は未対応（`todo.md`へ）
+
 - [ ]
 
 
