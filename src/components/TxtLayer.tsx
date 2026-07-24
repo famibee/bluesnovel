@@ -23,6 +23,7 @@ export type T_BTN = {
 	text	: string;
 	label	: string;
 	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
+	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ
 };
 type T_TXTARG = T_LAY_CMN & {
 	nm		: string;
@@ -30,7 +31,7 @@ type T_TXTARG = T_LAY_CMN & {
 	b_color?: number;
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
 	aBtn	: T_BTN[];
-	onActivate: (label: string, call: boolean)=> void;
+	onActivate: (label: string, call: boolean, fn: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
 export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; aBtn: T_BTN[]};
@@ -218,7 +219,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
 		{aBtn.length > 0 && <span css={[styChild, styBtnBox]}>
-			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} onActivate={onActivate}/>)}
+			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} onActivate={onActivate}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */

@@ -208,9 +208,9 @@ text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text int
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes), `button` (`call=true` for
-subroutine-call on click), and the stop points `l`/`p`/`s`. `jump`/`call`/`return` take
-`fn=` to cross files, and a macro can be called from a file other than the one that defined
-it; only `[button]` is still same-file-only. Macro names are rejected
+subroutine-call on click), and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
+all take `fn=` to cross files, and a macro can be called from a file other than the one that
+defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
 Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
 them in scripts meant to run on 本家.

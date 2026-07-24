@@ -1,0 +1,10 @@
+; [button fn=sub2 …] で別ファイルへ飛ぶボタンの飛び先
+[jump label=*skip]
+
+*fcall
+＋別ファイルのサブ[return]
+
+*fjump
+＋別ファイルへジャンプ[s]
+
+*skip

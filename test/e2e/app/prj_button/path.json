@@ -1,3 +1,4 @@
 {
-	"main": {":cnt": 1, "sn": "main.sn"}
+	"main": {":cnt": 1, "sn": "main.sn"},
+	"sub2": {":cnt": 1, "sn": "sub2.sn"}
 }

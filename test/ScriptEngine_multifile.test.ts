@@ -123,3 +123,22 @@ it('fn_reflectsCurrentScript', ()=> {
 	expect(se.fn).toBe('other');
 	expect(se.getVal('const.sn.scriptFn')).toBe('other');	// 組み込み変数は遅延評価なので追随する
 });
+
+it('callToScript_pushesCallStackThenSwitches', ()=> {
+	// [button fn=… call=true]クリック相当。停止点で別ファイルをコールし、[return]でその停止点へ戻る
+	//	（＝[l]が再実行されてイベント待ちに戻る。callToLabel()と同じ規約）
+	const scrMain = new Script('main', 'A[l]B[s]');
+	const se = new ScriptEngine(scrMain);
+	expect(se.step().at(-1)).toEqual({t: 'stop', kind: 'l', key: 'main:2', nm: 'mes'});
+
+	se.callToScript(new Script('sub', 'S[return]'), '');
+	const a = se.step();
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'AS'});
+	// 別ファイルからの[return]なので、呼び出し元ファイルの読み直し要求が返る
+	expect(a.at(-1)).toEqual({t: 'loadScript', fn: 'main', label: '', idx: 1});
+
+	se.switchScript(scrMain, '', 1);
+	// 戻り先は[l]そのもの＝再びイベント待ちの停止点になる（読み進めてしまわない）
+	expect(se.step().at(-1)).toEqual({t: 'stop', kind: 'l', key: 'main:2', nm: 'mes'});
+	expect(se.fn).toBe('main');
+});

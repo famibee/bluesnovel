@@ -4,6 +4,8 @@
 [current layer=mes]
 [button nm=btn_call text="サブルーチンを呼ぶ" label=*sub call=true]
 [button nm=btn_jump text="ジャンプする" label=*goal]
+[button nm=btn_fcall text="別ファイルを呼ぶ" fn=sub2 label=*fcall call=true]
+[button nm=btn_fjump text="別ファイルへ飛ぶ" fn=sub2 label=*fjump]
 選んでください。[l]
 ＋そのまま進んだ。[s]
 

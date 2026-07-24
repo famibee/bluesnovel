@@ -1,6 +1,5 @@
 #TODO 優先順位順
 
-- [ ] `[button]`の`fn`指定（別ファイルのラベルへ飛ぶボタン）は未対応。`addBtn`アクションと store の`T_BTN`に`fn`を足し、`ScriptMng.jumpToLabelAndGo()`を非同期化（ロード→`switchScript`）すれば入る
 - [ ] `Grammar`インスタンスが`Script`ごとに別（`src/ts/Script.ts`）。`[char2macro]`/`[bracket2macro]`・エスケープ文字はプロジェクト単位の設定なので、対応時は共有インスタンスを渡すこと
 - [ ] ローカルイベント予約
 - [ ] 既読処理

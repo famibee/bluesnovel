@@ -96,15 +96,25 @@ export class ScriptMng {
 	//	Main.tsxのnext()（クリックでの読み進め）とは別系統。CaretakerのprevKey/nextKeyや
 	//	isReadBackには一切触れないため、ボタンクリックは「読み進め」扱いにはならない（今回の要件）。
 	//	call=true指定時はjumpではなくcall（サブルーチンコール）する。
-	jumpToLabelAndGo(label: string, call: boolean) {
+	//	fn指定時は別スクリプトへ飛ぶ。ロードが要るのでここだけ非同期になる
+	//	（クリックハンドラ側は投げっぱなしで良いよう、例外はここで握る）
+	jumpToLabelAndGo(label: string, call: boolean, fn = '') {
+		void this.#jumpToLabelAndGo(label, call, fn).catch(()=> {/* myTraceで表示済み */});
+	}
+	async #jumpToLabelAndGo(label: string, call: boolean, fn: string) {
 		const engine = this.#engine;
 		if (! engine) return;
 
 		try {
-			if (call) engine.callToLabel(label);
+			if (fn && fn !== engine.fn) {
+				const scr = await this.#getScript(fn);
+				if (call) engine.callToScript(scr, label);
+				else engine.switchScript(scr, label);
+			}
+			else if (call) engine.callToLabel(label);
 			else engine.jumpToLabel(label);
 		} catch (e) {
-			this.myTrace(`[button] ジャンプ先エラー fn:${engine.fn} ${String(e)}`, 'ET');
+			this.myTrace(`[button] ジャンプ先エラー fn:${fn || engine.fn} ${String(e)}`, 'ET');
 			return;
 		}
 		this.#goSafe();
@@ -181,7 +191,7 @@ export class ScriptMng {
 			break;
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
-			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {})});
+			this.$fncs.addBtn({layerNm: act.layerNm, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {})});
 			break;
 		case 'trace':
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲

@@ -106,6 +106,13 @@
   - テスト：ユニット`test/ScriptEngine_multifile.test.ts`（11件、擬似ファイル表でloadScriptプロトコルを回す）、E2E`test/e2e/multi.e2e.ts`（3件、`prj_multi/main.sn`＋`sub.sn`で実際のfetchを通す）
   - E2Eの注意：ファイル切替はfetchを挟むため、進行の途中でも「ストアもDOMも一致し文字送りも終わっている」瞬間（`[er]`直後のロード待ち等）が生まれる。`waitIdle()`はそれを停止点と区別できないので、`multi.e2e.ts`では`expect.poll`で「その表示に落ち着くまで待つ」形にしている
 
+- [x] **`[button]`の`fn`指定（別ファイルのラベルへ飛ぶボタン）**（2026-07-24 完了）
+  - `addBtn`アクション・store の`T_ADDBTN`/`T_BTN`・`TxtLayer`/`BtnLayer`/`Stage`の`onActivate`まで`fn`を通した
+  - `ScriptMng.jumpToLabelAndGo()`を非同期化（ロード→`switchScript`／`callToScript`）。クリックハンドラ側は投げっぱなしで良いよう、例外はここで握る
+  - `ScriptEngine.callToScript()`を追加。`[button fn=… call=true]`用で、戻り先は`callToLabel()`と同じく「今いる停止点そのもの」＝`[return]`で`[l]`のイベント待ちへ戻る
+  - `[button]`の必須属性が「label」から「fnまたはlabel」に。`fn`のみ指定ならそのファイルの先頭へ飛ぶ（`nm`省略時は`label`、無ければ`fn`を流用）
+  - テスト：ユニット3件（`fn`の受け渡し・`nm`のフォールバック・`callToScript`の往復）、E2E2件（`prj_button/sub2.sn`を追加）
+
 - [ ]
 
 

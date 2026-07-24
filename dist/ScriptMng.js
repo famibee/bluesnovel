@@ -1322,6 +1322,9 @@ var m = class {
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
 		this.#p(--this.#r), this.#r = t;
 	}
+	callToScript(e, t = "") {
+		this.#p(--this.#r), this.switchScript(e, t);
+	}
 	#p(e) {
 		this.#d.push({
 			fn: this.fn,
@@ -1518,16 +1521,17 @@ var m = class {
 			case "button": {
 				let e = n.layer || this.#i;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
-				let t = n.label ?? "";
-				if (!t) throw "[button] labelは必須です（試作仕様）";
-				let i = n.nm ?? t, a = n.call === "true";
+				let t = n.label ?? "", i = n.fn ?? "";
+				if (!t && !i) throw "[button] fnまたはlabelは必須です";
+				let a = n.nm ?? (t || i), o = n.call === "true";
 				return r.push({
 					t: "addBtn",
 					layerNm: e,
-					nm: i,
+					nm: a,
 					text: n.text ?? "",
 					label: t,
-					call: a
+					call: o,
+					...i ? { fn: i } : {}
 				}), "skip";
 			}
 			case "l":
@@ -1635,7 +1639,7 @@ var m = class {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#d(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#f(e);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -1650,37 +1654,43 @@ var m = class {
 	#r;
 	async load(e) {
 		let t = await this.#i(e);
-		this.#r ? this.#r.switchScript(t) : this.#r = new g(t), this.go = () => this.#a(), this.$trgNext();
+		this.#r ? this.#r.switchScript(t) : this.#r = new g(t), this.go = () => this.#o(), this.$trgNext();
 	}
 	async #i(e) {
-		return this.#n[e] ??= new h(e, await this.#u(e));
+		return this.#n[e] ??= new h(e, await this.#d(e));
 	}
 	go() {}
-	jumpToLabelAndGo(e, t) {
-		let n = this.#r;
-		if (n) {
+	jumpToLabelAndGo(e, t, n = "") {
+		this.#a(e, t, n).catch(() => {});
+	}
+	async #a(e, t, n) {
+		let r = this.#r;
+		if (r) {
 			try {
-				t ? n.callToLabel(e) : n.jumpToLabel(e);
+				if (n && n !== r.fn) {
+					let i = await this.#i(n);
+					t ? r.callToScript(i, e) : r.switchScript(i, e);
+				} else t ? r.callToLabel(e) : r.jumpToLabel(e);
 			} catch (e) {
-				this.myTrace(`[button] ジャンプ先エラー fn:${n.fn} ${String(e)}`, "ET");
+				this.myTrace(`[button] ジャンプ先エラー fn:${n || r.fn} ${String(e)}`, "ET");
 				return;
 			}
-			this.#a();
+			this.#o();
 		}
 	}
-	#a() {
-		this.#c().catch(() => {});
+	#o() {
+		this.#l().catch(() => {});
 	}
-	#o = !1;
-	#s = 0;
-	async #c() {
+	#s = !1;
+	#c = 0;
+	async #l() {
 		let e = this.#r;
 		if (e) {
-			if (this.#o) {
-				++this.#s;
+			if (this.#s) {
+				++this.#c;
 				return;
 			}
-			this.#o = !0;
+			this.#s = !0;
 			try {
 				for (;;) {
 					this.$fncs.setWait(null);
@@ -1691,7 +1701,7 @@ var m = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#l(e);
+					for (let e of t) this.#u(e);
 					let n = t.at(-1);
 					if (n?.t !== "loadScript") {
 						e.atEnd && this.myTrace(`スクリプト終端です fn:${e.fn}`, "I");
@@ -1705,11 +1715,11 @@ var m = class {
 					}
 				}
 			} finally {
-				this.#o = !1, this.#s > 0 && (--this.#s, this.#a());
+				this.#s = !1, this.#c > 0 && (--this.#c, this.#o());
 			}
 		}
 	}
-	#l(e) {
+	#u(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -1750,11 +1760,12 @@ var m = class {
 					nm: e.nm,
 					text: e.text,
 					label: e.label,
-					...e.call === void 0 ? {} : { call: e.call }
+					...e.call === void 0 ? {} : { call: e.call },
+					...e.fn === void 0 ? {} : { fn: e.fn }
 				});
 				break;
 			case "trace":
-				this.#d({ text: e.text });
+				this.#f({ text: e.text });
 				break;
 			case "loadScript": break;
 			case "stop":
@@ -1765,7 +1776,7 @@ var m = class {
 				break;
 		}
 	}
-	async #u(e) {
+	async #d(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, r.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -1774,7 +1785,7 @@ var m = class {
 			return this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${e} ${String(t)}`, "W"), _;
 		}
 	}
-	#d(e) {
+	#f(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
 	myTrace = (e, t = "E") => {

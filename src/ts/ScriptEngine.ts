@@ -32,7 +32,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgPic'; nm: string; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
 	| {t: 'chgBAlpha'; nm: string; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
-	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する
+	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
@@ -164,6 +164,13 @@ export class ScriptEngine {
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
 		this.#pushCallStk(--this.#idx);
 		this.#idx = to;
+	}
+
+	// [button fn=… call=true]クリック時：別ファイルのラベルへサブルーチンコールする。
+	//	スクリプトのロードは呼び出し側（ScriptMng）が済ませてからScriptを渡してくる
+	callToScript(scr: Script, label = '') {
+		this.#pushCallStk(--this.#idx);	// callToLabel()と同じく、戻り先は今いる停止点そのもの
+		this.switchScript(scr, label);
 	}
 
 	// コールスタックへ1段積む（[call]・マクロ呼び出し・[button call=true]で共通）
@@ -442,12 +449,13 @@ export class ScriptEngine {
 			const layerNm = args.layer || this.#curTxtLayer;
 			if (! layerNm) throw '[button] layerは必須です（試作仕様）';
 			const label = args.label ?? '';
-			if (! label) throw '[button] labelは必須です（試作仕様）';
-			// nm: ボタン自身の識別名（同一layer内で一意）。省略時はlabelを流用（試作の割り切り）
-			const nm = args.nm ?? label;
+			const fn = args.fn ?? '';	// fn指定時は別スクリプトのラベルへ飛ぶ（label省略ならそのファイルの先頭）
+			if (! label && ! fn) throw '[button] fnまたはlabelは必須です';
+			// nm: ボタン自身の識別名（同一layer内で一意）。省略時はlabel（無ければfn）を流用（試作の割り切り）
+			const nm = args.nm ?? (label || fn);
 			// call=true指定時：クリックでjumpではなくcall（サブルーチンコール）する
 			const call = args.call === 'true';
-			aAct.push({t: 'addBtn', layerNm, nm, text: args.text ?? '', label, call});
+			aAct.push({t: 'addBtn', layerNm, nm, text: args.text ?? '', label, call, ...(fn ? {fn} : {})});
 			return 'skip';
 		}
 

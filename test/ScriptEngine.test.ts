@@ -327,9 +327,23 @@ it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
 	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal', call: false});
 });
 
-it('step_button_requiresLabel', ()=> {
-	// layerは省略可能（現在の文字レイヤにフォールバック）だが、labelは必須
+it('step_button_requiresLabelOrFn', ()=> {
+	// layerは省略可能（現在の文字レイヤにフォールバック）だが、labelかfnのどちらかは必須
 	expect(()=> new ScriptEngine('t1', '[button layer=mes text=x]あ[s]').step()).toThrow();
+});
+
+it('step_button_fn_isPassedThrough', ()=> {
+	// [button fn=…] は別スクリプトへ飛ぶボタン。エンジンはfnをアクションに載せるだけで、
+	// 実際のロードと切替はクリック時にScriptMng側が行う
+	const se = new ScriptEngine('t1', '[button text=x fn=other label=*goal]あ[s]');
+	expect(se.step()[0]).toEqual(
+		{t: 'addBtn', layerNm: 'mes', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
+});
+it('step_button_fnOnly_nmFallsBackToFn', ()=> {
+	// label省略時はそのファイルの先頭へ。nm省略時はlabelが無いのでfnを流用する
+	const se = new ScriptEngine('t1', '[button text=x fn=other]あ[s]');
+	expect(se.step()[0]).toEqual(
+		{t: 'addBtn', layerNm: 'mes', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
 });
 
 it('step_button_callTrue_setsCallFlag', ()=> {
