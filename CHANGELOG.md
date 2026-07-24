@@ -236,7 +236,29 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - E2Eに入れたのは見た目そのもの：演出中に表の`opacity`が下がり裏が`visible`になること、`[wt]`がその間シナリオを止めていること、クリックで飛ばしても終了状態に落ちること、`time=0`が即交換になること
   - E2Eヘルパ（`snPage.ts`）を裏表対応に更新。`snap()`は表・裏・`foreIdx`を返し、DOMを見る箇所は`[data-page="fore"]`配下に限定した。演出中は文字が変わらないため`waitIdle()`だけでは通過してしまうので、`waitTransRunning()`/`waitTransDone()`を追加
 
+
+今回の更新でtmp_bluesの表示が崩れているので、以下の前提条件を徹底
+- ノベルゲームシステムが表示を司る <div id="skynovel"></div>全体をstageと呼ぶ（skynovelと用語をあわせる）
+- stageの縦横サイズをdoc/prj/prj.json から取得し、固定
+"window": {
+	"width": 1024,
+	"height": 768
+},
+- 文字・画像レイヤなどはこの範囲内のみ表示とする
+- [trans]はこのサイズで行い、画像がない部分は黒塗り潰しとする
+
+- [x] **ステージ（`<div id="skynovel">`）の寸法固定・表示範囲の切り取り・黒地**（2026-07-24）
+  - `tmp_blues`で表示が崩れていた件。実測すると`#skynovel`は**1280×0**、その中のステージ本体も**1200×0**で、レイヤは全部その外側へはみ出して描かれていた（`transform: scale()`はレイアウト上のサイズを変えないのに、幅・高さを与えていなかったため）
+  - 用語を本家に合わせ、`<div id="skynovel">`＝**ステージ**と呼ぶことにした（`styParent`→`styStage`、`divRef`→`stageRef`）
+  - ステージの寸法は`prj.json`の`window.width`/`height`固定（`Config.generate()`→`CmnLib.stageW`/`stageH`）。`overflow: hidden`で範囲外は表示しない
+  - ブラウザウインドウに合わせた縮小（`transform: scale(cvsScale)`）は従来どおり。ただし`transform`はレイアウトサイズを変えないので、`useLayoutEffect`で`#skynovel`自身へ**拡縮後の実寸**も書く（これが無いと等倍ぶんの領域を確保したままになり、余白や不要なスクロールバーが出る）
+  - 画像を置いていない領域は黒。ステージ本体と、`[trans]`でクロスフェードさせる表裏2枚の「ステージ大の板」の全部を不透明な黒地にした（本家がページごとに板テクスチャを作って重ねるのと同じ絵になる）
+  - `test/e2e/stage.e2e.ts`（新規3件）で寸法・切り取り・黒地・縮小時の追随を固定。E2E 33件→36件。ユニット716件は変更なし（DOMのレイアウトなのでエンジン側に影響が無い）
+  - 確認は`.claude/skills/playwright-cli/`で実際の`tmp_blues`（:5173）を開いて実測した
+
 - [ ]
+
+
 
 
 

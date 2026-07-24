@@ -125,6 +125,29 @@ export async function pressKeyToWaitMark(page: Page, code: T_KEY) {
 	await waitIdle(page);
 }
 
+// ステージ（<div id="skynovel">）と、その中の各要素の実寸・見え方。
+//	prj.jsonのwindow.width/heightで固定され、はみ出しは切り取られることの確認用
+export async function stageBox(page: Page): Promise<{
+	stage	: {w: number; h: number; overflow: string};
+	inner	: {w: number; h: number; overflow: string; bg: string};
+	fore	: {w: number; h: number; bg: string};
+}> {
+	return page.evaluate(()=> {
+		const box = (el: Element | null)=> {
+			if (! el) return {w: -1, h: -1, overflow: '', bg: ''};
+			const r = el.getBoundingClientRect();
+			const c = getComputedStyle(el);
+			return {w: r.width, h: r.height, overflow: c.overflow, bg: c.backgroundColor};
+		};
+		const st = document.getElementById('skynovel');
+		return {
+			stage	: box(st),
+			inner	: box(st?.firstElementChild ?? null),
+			fore	: box(document.querySelector('#skynovel [data-page="fore"]')),
+		};
+	});
+}
+
 // [trans]の演出が始まる（store.transが立つ）まで待つ
 export async function waitTransRunning(page: Page) {
 	await page.waitForFunction(

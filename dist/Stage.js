@@ -11929,44 +11929,62 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, isF
 }
 //#endregion
 //#region src/components/Stage.tsx
-function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
-	let o = u((e) => e.aPage), s = u((e) => e.foreIdx), c = u((e) => e.trans), l = u((e) => e.replace);
-	class f extends n {
+function ih({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next: o }) {
+	let s = u((e) => e.aPage), c = u((e) => e.foreIdx), l = u((e) => e.trans), f = u((e) => e.replace);
+	class m extends n {
 		nm = "Stage";
 		restore() {
-			l(this.stt);
+			f(this.stt);
 		}
 	}
-	e.caretaker.update(() => new f(JSON.stringify({
-		aPage: o,
-		foreIdx: s
+	t.caretaker.update(() => new m(JSON.stringify({
+		aPage: s,
+		foreIdx: c
 	})));
-	let m = (0, C.useRef)(null), g = (0, C.useRef)(null), y = [m, g], b = (0, C.useRef)(null);
+	let g = (0, C.useRef)(null), y = (0, C.useRef)(null), b = [g, y], x = (0, C.useRef)(null);
 	(0, C.useEffect)(() => {
-		if (b.current?.kill(), b.current = null, !c) {
-			nh.set([m.current, g.current].filter((e) => e !== null), { opacity: 1 });
+		if (x.current?.kill(), x.current = null, !l) {
+			nh.set([g.current, y.current].filter((e) => e !== null), { opacity: 1 });
 			return;
 		}
-		let e = y[s].current;
-		e && (b.current = nh.to(e, {
+		let e = b[c].current;
+		e && (x.current = nh.to(e, {
 			opacity: 0,
-			duration: c.time / 1e3,
+			duration: l.time / 1e3,
 			ease: "none"
 		}));
-	}, [c]);
-	let [x, S] = (0, C.useState)(oh());
+	}, [l]);
+	let [w, E] = (0, C.useState)(oh());
 	M(() => {
 		function e() {
-			S(oh());
+			E(oh());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: w } = ah(x), E = ql`
+	let { cvsScale: D } = ah(w), { stageW: k, stageH: A } = S;
+	(0, C.useLayoutEffect)(() => {
+		e.style.width = `${String(k * D)}px`, e.style.height = `${String(A * D)}px`, e.style.overflow = "hidden";
+	}, [
+		D,
+		k,
+		A
+	]);
+	let N = ql`
 		position: relative;
+		width: ${k}px;
+		height: ${A}px;
+		overflow: hidden;
+		background-color: black;
 
 		transform-origin: left top;
-		transform: scale(${w});
-	`, D = ql`position: absolute; top: 0; left: 0;`, k = ql`position: absolute; top: 0; left: 0;`, A = ql`
+		transform: scale(${D});
+	`, P = ql`position: absolute; top: 0; left: 0;`, F = ql`
+		position: absolute; top: 0; left: 0;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		background-color: black;
+	`, I = ql`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -11986,24 +12004,24 @@ function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
 			color: #fff;
 			background: #27acd9;
 		}
-	`, N = (0, C.useRef)(null);
+	`, L = (0, C.useRef)(null);
 	M(() => {
-		let e = N.current;
+		let e = L.current;
 		e.addEventListener("mousedown", () => sh = !1);
 		let t = (e) => {
-			e.preventDefault(), e.deltaY < 0 ? a() : i();
+			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [P, F] = T(!1), I = j((e) => {
-		e.stopPropagation(), p(), !sh && (F(), _(!P));
+	let [R, z] = T(!1), B = j((e) => {
+		e.stopPropagation(), p(), !sh && (z(), _(!R));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), [L, R] = T(!1), z = O(N, L, { onClose: () => R(!1) }), B = { cmn: {
-		sys: e,
-		styChild: D,
-		isDesignMode: P,
+	}), [ee, V] = T(!1), te = O(L, ee, { onClose: () => V(!1) }), ne = { cmn: {
+		sys: t,
+		styChild: P,
+		isDesignMode: R,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -12013,52 +12031,52 @@ function ih({ arg: { sys: e, scrMng: t }, onClick: r, prev: i, next: a }) {
 		}
 	} };
 	return /* @__PURE__ */ h("div", {
-		css: E,
-		onClick: r,
-		...I,
-		ref: N,
+		css: N,
+		onClick: i,
+		...B,
+		ref: L,
 		children: [
-			P && /* @__PURE__ */ h(v, { children: [
+			R && /* @__PURE__ */ h(v, { children: [
 				/* @__PURE__ */ d("button", {
-					onClick: () => R(),
-					css: A,
+					onClick: () => V(),
+					css: I,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ d("button", {
 					onClick: () => {},
-					css: A,
+					css: I,
 					children: "Back"
 				}),
 				/* @__PURE__ */ d("button", {
 					onClick: () => {},
-					css: A,
+					css: I,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ d("span", { children: z }),
-			o.map((e, n) => /* @__PURE__ */ d("div", {
-				ref: y[n],
-				"data-page": n === s ? "fore" : "back",
-				css: k,
+			/* @__PURE__ */ d("span", { children: te }),
+			s.map((e, t) => /* @__PURE__ */ d("div", {
+				ref: b[t],
+				"data-page": t === c ? "fore" : "back",
+				css: F,
 				style: {
-					zIndex: +(n === s),
-					visibility: n === s || c ? "visible" : "hidden",
-					pointerEvents: n === s ? "auto" : "none"
+					zIndex: +(t === c),
+					visibility: t === c || l ? "visible" : "hidden",
+					pointerEvents: t === c ? "auto" : "none"
 				},
 				children: e.map((e) => e.cls === "grp" ? /* @__PURE__ */ d(Gl, {
-					cmn: B.cmn,
+					cmn: ne.cmn,
 					fn: e.fn,
 					aFace: e.aFace
 				}, e.nm) : /* @__PURE__ */ d(rh, {
-					cmn: B.cmn,
+					cmn: ne.cmn,
 					nm: e.nm,
-					isFore: n === s,
+					isFore: t === c,
 					str: e.str,
 					b_alpha: e.b_alpha,
 					aBtn: e.aBtn,
-					onActivate: (e, n, r) => t.jumpToLabelAndGo(e, n, r)
+					onActivate: (e, t, n) => r.jumpToLabelAndGo(e, t, n)
 				}, e.nm))
-			}, n))
+			}, t))
 		]
 	});
 }

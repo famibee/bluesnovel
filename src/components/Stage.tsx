@@ -13,7 +13,7 @@ import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {RefObject, useEffect, useRef, useState} from 'react';
+import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 import gsap from 'gsap';
@@ -35,7 +35,7 @@ export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
 
 
 export default function Stage({
-	arg: {sys, scrMng}, onClick, prev, next,
+	arg: {heStage, sys, scrMng}, onClick, prev, next,
 }: {
 	arg: T_ARG, onClick: ()=> void, prev: ()=> void, next: ()=> void,
 }) {
@@ -87,20 +87,44 @@ export default function Stage({
 	});
 	const {cvsScale} = calcScale(wh);
 
+	// ステージ（＝ノベルゲームの表示範囲そのもの）の寸法は prj.json の window.width/height 固定。
+	//	Config.generate() が CmnLib.stageW/stageH へ入れている
+	const {stageW, stageH} = CmnLib;
+
+	// 外側の <div id="skynovel"> にも、拡縮後の実寸を持たせる。
+	//	transform: scale() はレイアウト上のサイズを変えないので、これをやらないと
+	//	ページ側は等倍ぶんの領域を確保したまま（＝余白や不要なスクロールバーが出る）。
+	//	overflow:hidden は内側にも掛けるが、拡縮の丸め誤差でのはみ出しを止めるため両方に置く
+	useLayoutEffect(()=> {
+		heStage.style.width		= `${String(stageW * cvsScale)}px`;
+		heStage.style.height	= `${String(stageH * cvsScale)}px`;
+		heStage.style.overflow	= 'hidden';
+	}, [cvsScale, stageW, stageH]);
+
 	// css
-	const styParent = css`
+	//	ステージ本体。ここが座標系の原点かつ表示範囲で、はみ出したレイヤは切り取られる。
+	//	背景は黒（画像を置いていない領域＝素通しの黒。[trans]中も同じ）
+	const styStage = css`
 		position: relative;
+		width: ${stageW}px;
+		height: ${stageH}px;
+		overflow: hidden;
+		background-color: black;
 
 		transform-origin: left top;
 		transform: scale(${cvsScale});
 	`;
-		// 有効にするとスケーラブルでなくなる、本番用か
-		// width	: calc(${CmnLib.stageW}px / ${cvsScale});
-		// height	: calc(${CmnLib.stageH}px / ${cvsScale});
 	const styChild = css`position: absolute; top: 0; left: 0;`;
-	// 表裏それぞれのページを包むコンテナ。z-index・opacityを効かせるためpositionを持たせる
-	//	（子レイヤはstyChildで絶対配置されるので、この要素自体のサイズは0のままでよい）
-	const styPage = css`position: absolute; top: 0; left: 0;`;
+	// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
+	//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
+	//	不透明な黒地にしておくことで、画像の無い部分は黒く塗り潰される
+	const styPage = css`
+		position: absolute; top: 0; left: 0;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		background-color: black;
+	`;
 
 	const styBtn = css`
 		position: relative; z-index: 1;
@@ -125,10 +149,9 @@ export default function Stage({
 	`;
 
 	// useMouseWheel だと preventDefault() できないので手作り
-	const divRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
-	// const divRef = useRef<HTMLDivElement>(null);
+	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
 	useMount(()=> {
-		const div = divRef.current!;
+		const div = stageRef.current!;
 		div.addEventListener('mousedown', ()=> isDrag = false);
 
 		const fnc = (e: WheelEvent)=> {
@@ -151,7 +174,7 @@ export default function Stage({
 	}, {isPreventDefault: true, delay: 300,});
 
 	const [show, tglFlScr] = useToggle(false);
-	const isFullscreen = useFullscreen(divRef, show, {onClose: ()=> tglFlScr(false)});
+	const isFullscreen = useFullscreen(stageRef, show, {onClose: ()=> tglFlScr(false)});
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
@@ -160,7 +183,7 @@ export default function Stage({
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
-	return <div css={styParent} onClick={onClick} {...longPressEvent} ref={divRef}>
+	return <div css={styStage} onClick={onClick} {...longPressEvent} ref={stageRef}>
 		{isDesignMode && <>
 			<button onClick={()=> tglFlScr()} css={styBtn}>FullScr</button>
 			<button onClick={()=> {}} css={styBtn}>Back</button>

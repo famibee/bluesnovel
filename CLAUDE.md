@@ -192,6 +192,14 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   `chgPic`, `chgBAlpha`, `chgStr`, `addBtn`, `setWait`, …) are the only way the engine's
   actions reach the UI. **Layer `nm` must be globally unique across `grp` and `txt` classes**
   (lookups key on `nm` alone; duplicates throw and would collide React keys).
+- **The stage** is `<div id="skynovel">` — same term as upstream. Its size is **fixed to
+  `prj.json`'s `window.width`/`height`** (`Config.generate()` → `CmnLib.stageW`/`stageH`), it
+  is `overflow: hidden` so nothing outside it draws, and it is black where no image is
+  placed. `Stage.tsx` renders the inner box at that exact size and scales it with
+  `transform: scale(cvsScale)` to fit the browser window; because `transform` does not change
+  layout size, a `useLayoutEffect` also writes the **scaled** size onto `#skynovel` itself —
+  without that the element collapses to height 0 and every layer spills outside it.
+  `test/e2e/stage.e2e.ts` pins this down.
 - **`src/components/`** — React 19 with **`@emotion/react` JSX** (`jsxImportSource` in
   tsconfig; `css` prop available). `Main.tsx` wires keyboard/click events and the `ev_next`
   progression loop. `Stage.tsx` renders `aLay`; `TxtLayer`/`GrpLayer`/`BtnLayer` render the
