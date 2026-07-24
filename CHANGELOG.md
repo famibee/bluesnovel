@@ -325,6 +325,16 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `import type`だけなら型は消えるので警告の原因にならないが、区別が事故のもとなので参照先ごと`Lay.ts`へ寄せている。この制約は`CLAUDE.md`にも書いた
   - ユニット821件・E2E 57件とも変化なし（挙動は同じ）
 
+- [x] **レイヤ操作タグの残り：`pivot_x`/`pivot_y`・`blendmode`・重なり順（`index`/`float`/`dive`）・`[clear_lay]`の`layer`省略**（2026-07-24）
+  - `pivot_x`/`pivot_y`（本家 `Layer.lay()` のpivot＝pixiの`DisplayObject.pivot`）はCSSの`transform-origin`へ。既定の左上＝`0 0`なので、それまでの`transform-origin: left top`と互換。**pixiのpivotは表示位置そのものもずらす**が、こちらは原点を変えるだけ——回転・拡縮の中心を動かす用途では同じ絵になる
+  - ついでに`[tsy]`のトゥイーン対象へも`pivot_x`/`pivot_y`を追加（本家 `CmnTween.aLayerPrpNm`にあった分）。残るは`width`/`height`だけ
+  - `blendmode`はCSSの`mix-blend-mode`へ。本家（`Layer.getBlendmodeNum()`）が受け付けるのはpixiの`BLEND_MODES`へ引ける4種（`normal`/`add`/`multiply`/`screen`）だけなので、同じ名前だけを通して弾く文言も本家に合わせた。`add`はCSSに同名が無いので`plus-lighter`（加算合成）を当てる
+  - 重なり順`float`（最前面へ）・`index`（指定位置へ）・`dive`（指定レイヤのすぐ下へ）。**表裏とも同じ順に動かす**（本家も`#fore`/`#back`の両方を`setChildIndex`する）ので`page`属性とは無関係。並び替えは現在の並びが要るので、エンジンは`{mode, index?, dive?}`を渡すだけにしてストア側で解決する（`[tsy]`の相対指定と同じ分担）
+  - 本家の忠実な移植として**`index=0`は何も起きない**（`#lay()`が`if (hArg.index)`の内側でさらに数値の真偽を見るため、最背面へ送る指定にはならない）。`dive`が自分より後ろのレイヤなら、自分が抜けた分だけ行き先を1つ下げるのも本家どおり
+  - `[clear_lay]`の`layer`省略（＝全レイヤ）に対応。エンジンはレイヤ一覧を持たないので、`[trans]`/`[dump_lay]`と同じく`aLayNm: null`のまま渡して「全部」の解決はストア側に任せる。**省略（＝全部）と、書いたのに空（＝書き間違い）は区別する**
+  - **ストアのユニットテストを新設**（`test/store_lay.test.ts`）。並び替えの計算はストアにしか無く、E2Eで見るには細かすぎる。zustandの`create()`はDOMを要らないので`bun test`から直接触れる
+  - `test/ScriptEngine_lay.test.ts`に11件追加・`test/store_lay.test.ts`（新規12件）＋`test/e2e/lay.e2e.ts`に3件追加。ユニット821件→844件、E2E 57件→60件
+
 - [ ]
 
 

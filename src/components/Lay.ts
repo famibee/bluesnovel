@@ -35,8 +35,15 @@ export type T_LAY_STY = {
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
+	// 回転・拡縮の原点（本家 Layer.lay() のpivot_x/pivot_y＝pixiのDisplayObject.pivot）。
+	//	既定は左上＝CSSの transform-origin: 0 0 と同じなので、そのまま対応が付く。
+	//	**pixiのpivotは表示位置そのものもずらす**が、こちらはCSSのtransform-originなので
+	//	原点を変えるだけ。回転・拡縮の中心を動かす用途では同じ絵になる
+	pivot_x?	: number;
+	pivot_y?	: number;
+	blendmode?	: string;	// CSSのmix-blend-mode値（[lay blendmode=…]がここへ変換して入れる）
 };
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y'] as const;
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode'] as const;
 
 export type T_LAY_IDX = T_LAY_STY & {
 	cls		: 'grp'|'txt';
@@ -51,10 +58,13 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 	if (l.left !== undefined) sty.left = `${String(l.left)}px`;
 	if (l.top !== undefined) sty.top = `${String(l.top)}px`;
 	if (l.alpha !== undefined) sty.opacity = l.alpha;
-	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined) {
+	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined
+	 || l.pivot_x !== undefined || l.pivot_y !== undefined) {
 		sty.transform = `rotate(${String(l.rotation ?? 0)}deg) scale(${String(l.scale_x ?? 1)}, ${String(l.scale_y ?? 1)})`;
-		sty.transformOrigin = 'left top';
+		// pivot未指定なら 0 0 ＝ 従来の left top と同じ
+		sty.transformOrigin = `${String(l.pivot_x ?? 0)}px ${String(l.pivot_y ?? 0)}px`;
 	}
+	if (l.blendmode !== undefined) sty.mixBlendMode = l.blendmode as CSSProperties['mixBlendMode'];
 	// visible=falseは領域ごと消す（display:none）。visibility:hiddenだと
 	//	表裏ページのvisibility制御（Stageのpage単位）と混ざって分かりにくい
 	if (l.visible === false) sty.display = 'none';

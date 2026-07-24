@@ -186,6 +186,13 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
   `myTrace` debug overlay. Contains a `SAMPLE_SN` fallback that renders a demo when assets
   are missing — this is prototype scaffolding to be removed once the asset pipeline exists.
+- **Stacking order is the array order** in `aPage[i]` (later = in front), matching pixi's
+  child order upstream. `[lay float=/index=/dive=]` reorder it — **always both pages
+  identically**, since `pickPage`/`putPage` and `[trans]`'s layer cloning all assume the two
+  arrays hold the same names in the same order. Anything needing the *current* order (these,
+  and `[tsy]`'s `'=100'` relative values) is resolved in the store, not the engine: the engine
+  emits the intent and the store does the arithmetic. `test/store_lay.test.ts` covers that
+  arithmetic directly — zustand's `create()` needs no DOM, so store logic is unit-testable.
 - **`src/store/store.tsx`** — **zustand** store; single source of truth. `aPage: [T_LAY[],
   T_LAY[]]` holds the **two pages** (本家 `Pages.ts`) and `foreIdx` says which one is the
   fore. `[add_lay]` creates every layer on **both** pages. Store setters (`addLayer`,
@@ -232,7 +239,8 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
 text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
-`scale_y`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
+`scale_y`/`pivot_x`/`pivot_y`/`blendmode`, `index`/`float`/`dive` for stacking order,
+`page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
 `tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy` (GSAP tweens of those same layer
 attributes),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),

@@ -17,10 +17,10 @@
   - [ ] `[button]`の既定ページ。本家は`back`（`LayerMng.ts:1100`）だが、bluesnovelは既存シナリオが`[trans]`を挟まないため`fore`のまま。シナリオが`[trans]`前提になった時点で本家へ寄せる（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[page]`（読み戻り用のページログ）の残り**（`clear`は実装済み）
   - [ ] `to=`（指定ページへ移動）・`style=`（ページ移動中の見た目）・`key=`（移動中に有効なキーの限定）。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- [ ] **レイヤ操作タグの残り**（`[clear_lay]`と`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`b_color`/`style`は実装済み）
+- [ ] **レイヤ操作タグの残り**（`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`pivot_x`/`pivot_y`/`blendmode`/`b_color`/`style`/`index`/`float`/`dive`と`[clear_lay]`は実装済み）
   - [ ] `[lay bura=…]`（ぶら下げ禁則処理）。CSSプロパティ1つで済む話ではなく行分割の実装が要るので、文字組み（縦書き・`r_size`・`max_col`等）とまとめて
-  - [ ] `[lay]`の`pivot_x`/`pivot_y`（回転・拡縮の原点。現状は左上固定）・`blendmode`・`filter`・`index`/`float`/`dive`（レイヤ重なり順の変更）は未対応
-  - [ ] `[clear_lay]`の`layer`省略（＝全レイヤ）。エンジンが`[add_lay]`済みレイヤ名を覚えていないため現状は必須（`ScriptEngine.ts`に`//TODO:`あり）
+  - [ ] `[lay filter=…]`は下の「フィルター」項目と一緒に
+  - [ ] `[add_face blendmode=…]`はCSSの値をそのまま通しているので、`[lay blendmode=…]`（本家の4種だけを受けてCSS値へ変換）へ揃える（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[set_focus]`（フォーカス移動）**。キーボードフォーカスの管理役（本家 `FocusMng`）が要り、`add=`/`del=`は`dom=セレクタ`でHTML要素を対象に取るので、下の`[event]`の`key='dom=…'`と同時に設計する。`to=null`だけ実装しても意味が無いので保留
   - [ ] 同族の`[enable_event]`（レイヤ単位のクリック可否）は実装済み。`[set_focus]`はそれとは別で、キーボード操作の順序管理
 - [ ] **`[let]`の`val`属性（bluesnovel独自の「常に式評価」書式）を廃止する**。本家書式の
@@ -29,7 +29,7 @@
 - [ ] **トゥイーンアニメの残り**（`[tsy]`/`[wait_tsy]`/`[stop_tsy]`/`[pause_tsy]`/`[resume_tsy]`は実装済み）
   - [ ] `[tsy path=…]`（複数区間の経路指定。`ext_fg.sn`の`fg_shake`/`fg_jump`が使う）。本家は`(x,y,o)`の並びを正規表現で切り出して`chain()`で数珠つなぎにする（`CmnTween.ts:167`）。GSAPならtimelineで自然に書けるので、置き換え設計から
   - [ ] `[tsy chain=…]`（他レイヤのトゥイーン終了に続ける）も同様に未対応
-  - [ ] `[tsy]`の`width`/`height`/`pivot_x`/`pivot_y`は、レイヤ属性側（`[lay]`）に無いので未対応。`[lay]`の`pivot_*`と同時に
+  - [ ] `[tsy]`の`width`/`height`は、レイヤ属性側（`[lay]`）に無いので未対応（`pivot_x`/`pivot_y`は対応済み）
   - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）・`[tsy filter=…]`はpixi前提なので、フィルター対応と同時に
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
 - [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`は実装済み）

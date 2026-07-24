@@ -14,11 +14,11 @@
 
 // トゥイーンできるレイヤ属性。本家 CmnTween.aLayerPrpNm はpixiのプロパティ名で
 //	x/y/width/height/pivot_x/pivot_y/alpha/rotation/scale_x/scale_y だが、
-//	bluesnovelのレイヤ属性はCSS寄りのleft/topで、width/height/pivotはまだ持っていない。
+//	bluesnovelのレイヤ属性はCSS寄りのleft/topで、width/heightはまだ持っていない。
 //	x/yはleft/topの別名として受ける（本家 ext_fg.sn が[tsy]にleft/topと書き、
 //	ext_fg2.sn がx/yと書いていて揺れているため。**本家では[tsy left=…]は
 //	aLayerPrpNmに無いので黙って無視される**が、こちらは両方効くようにした）
-export const A_TSY_PRP = ['alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y'] as const;
+export const A_TSY_PRP = ['alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y'] as const;
 export type T_TSY_PRP = typeof A_TSY_PRP[number];
 
 // 目標値。relがtrueなら「現在値からの相対」。現在値はレイヤのストアが持っているので、
@@ -27,7 +27,7 @@ export type T_TSY_TO = {[K in T_TSY_PRP]?: {v: number; rel: boolean}};
 
 // 属性値が未指定のときに現在値として使う既定（＝T_LAY_STYが未指定＝各レイヤのCSS既定の値）
 export const H_TSY_DEF: {[K in T_TSY_PRP]: number} = {
-	alpha: 1, left: 0, top: 0, rotation: 0, scale_x: 1, scale_y: 1,
+	alpha: 1, left: 0, top: 0, rotation: 0, scale_x: 1, scale_y: 1, pivot_x: 0, pivot_y: 0,
 };
 
 

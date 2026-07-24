@@ -1,6 +1,8 @@
 ; E2E用シナリオ（lay.e2e.ts が使用）
 ;	[lay]のレイヤ共通属性と[clear_lay]は、エンジンが積むアクション（ユニット側で検証済み）が
 ;	最終的にCSSへ落ちるかどうかが本題なので、ここでは算出スタイルを見る
+;	重なり順は[add_lay]した順＝配列・DOMの並び（後ろほど手前）なので、base -> mes の順で作る
+[add_lay layer=base class=grp]
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
@@ -18,6 +20,15 @@
 [lay layer=mes visible=false]
 きえた[p]
 
+; 回転原点（pivot）と合成モード
+[lay layer=mes visible=true pivot_x=50 pivot_y=80 blendmode=multiply]
+ぴぼっと[p]
+
+; 重なり順。add_lay順に base -> mes なので mes が手前。[lay float=true]で base を最前面へ
+[lay layer=base float=true]
+まえへ[p]
+
 ; [clear_lay]で見た目は初期値へ、中身（文字・ボタン）も捨てる。visibleだけは触らない
+[lay layer=mes visible=false]
 [clear_lay layer=mes page=fore]
 [s]

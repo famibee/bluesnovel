@@ -47,6 +47,9 @@ export type T_LAY_STY_ARG = {
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
+	pivot_x?	: number;	// 回転・拡縮の原点（本家のpivot。CSSではtransform-origin）
+	pivot_y?	: number;
+	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み（#argBlendmode()）
 	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?		: string;	// 文字レイヤへそのまま足すCSS
 };
@@ -60,7 +63,8 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
-	| {t: 'clearLay'; nm: string; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）
+	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
+	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
@@ -204,6 +208,19 @@ export class ScriptEngine {
 	static #argLayNames(sLay: string | undefined): string[] | null {
 		const a = (sLay ?? '').split(',').map(v=> v.trim()).filter(v=> v !== '');
 		return a.length > 0 ? a : null;
+	}
+
+	// blendmodeをCSSのmix-blend-mode値へ。本家（Layer.getBlendmodeNum()）が受け付けるのは
+	//	pixiのBLEND_MODESへ引ける4種だけなので、同じ名前だけを通す。
+	//	addはCSSに同名が無いので plus-lighter（加算合成）を当てる
+	//TODO: [add_face blendmode=…]はCSSの値をそのまま通しているので、こちらへ揃える
+	static readonly #H_BLENDMODE: {[nm: string]: string} = {
+		normal: 'normal', add: 'plus-lighter', multiply: 'multiply', screen: 'screen',
+	};
+	static #argBlendmode(v: string): string {
+		const s = ScriptEngine.#H_BLENDMODE[v];
+		if (! s) throw `${v} はサポートされない blendmode です`;	// 本家と同じ文言
+		return s;
 	}
 
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
@@ -674,9 +691,25 @@ export class ScriptEngine {
 			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
 			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
 			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
+			if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
+			if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
+			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 			if (args.b_color !== undefined) sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
 			if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
+
+			// レイヤの重なり順（本家 LayerMng.ts:489 #lay() の float/index/dive）。
+			//	**表裏とも同じ順に動かす**（本家も#fore/#backの両方をsetChildIndexする）ので、
+			//	page属性とは無関係。並び替えは現在の並びが要るのでストア側で解決する
+			const nmLay = args.layer ?? '';
+			if ((args.float ?? 'false') !== 'false') aAct.push({t: 'moveLay', nm: nmLay, mode: 'float'});
+			else if (args.index) {
+				// 本家は `if (hArg.index)` の内側でさらに `if (argChk_Num(...))` と数値の真偽を見るので、
+				//	**index=0は何も起きない**（最背面へ送る指定にはならない）。そのまま移植する
+				const i = ScriptEngine.#argNum('lay', 'index', args.index);
+				if (i) aAct.push({t: 'moveLay', nm: nmLay, mode: 'index', index: i});
+			}
+			else if (args.dive) aAct.push({t: 'moveLay', nm: nmLay, mode: 'dive', dive: args.dive});
 			return 'skip';
 		}
 
@@ -685,14 +718,13 @@ export class ScriptEngine {
 			//	page=bothで両面まとめて消せる（本家 LayerMng.ts:535）
 			const sPage = args.page ?? 'back';
 			if (sPage !== 'fore' && sPage !== 'back' && sPage !== 'both') throw `属性 page【${sPage}】が不正です`;
-			// layerはカンマ区切りで複数可。省略時は全レイヤだが、エンジンはレイヤ一覧を持たないので必須とした
-			//TODO: [add_lay]済みレイヤ名をエンジンでも覚え、layer省略＝全レイヤに対応する
-			const sLay = args.layer ?? '';
-			if (! sLay) throw '[clear_lay] layerは必須です（試作仕様）';
-			for (const nm of sLay.split(',').map(v=> v.trim())) {
-				if (! nm) throw '[clear_lay] layer属性に空要素が含まれています';
-				aAct.push({t: 'clearLay', nm, page: sPage});
+			// layerはカンマ区切りで複数可。省略時は全レイヤ（＝null）。
+			//	エンジンはレイヤ一覧を持たないので、[trans]/[dump_lay]と同じくnullのまま渡して
+			//	「全部」の解決はストア側に任せる
+			if (args.layer !== undefined && ScriptEngine.#argLayNames(args.layer) === null) {
+				throw '[clear_lay] layer属性が空です';
 			}
+			aAct.push({t: 'clearLay', aLayNm: ScriptEngine.#argLayNames(args.layer), page: sPage});
 			return 'skip';
 		}
 

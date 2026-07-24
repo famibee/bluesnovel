@@ -87,31 +87,106 @@ it('lay_picAndStyPushedTogether', ()=> {
 });
 
 
+// ============ [lay]の回転原点・合成モード ============
+
+it('lay_pivot', ()=> {
+	// 回転・拡縮の原点（本家のpivot＝pixiのDisplayObject.pivot。CSSではtransform-origin）。
+	//	既定は左上＝0 0 なので、未指定なら従来どおり
+	expect(styOf('[lay layer=base pivot_x=50 pivot_y=80]')).toEqual({pivot_x: 50, pivot_y: 80});
+	expect(styOf('[lay layer=base rotation=30]')).toEqual({rotation: 30});	// pivotは足されない
+});
+
+it('lay_pivot_notNumber', ()=> {
+	expect(()=> styOf('[lay layer=base pivot_x=もじ]')).toThrow('[lay] pivot_xの値が不正です');
+});
+
+it('lay_blendmode', ()=> {
+	// 本家（Layer.getBlendmodeNum()）が受け付ける4種だけを通し、CSSのmix-blend-mode値へ変換する。
+	//	addはCSSに同名が無いのでplus-lighter（加算合成）
+	expect(styOf('[lay layer=base blendmode=normal]')).toEqual({blendmode: 'normal'});
+	expect(styOf('[lay layer=base blendmode=multiply]')).toEqual({blendmode: 'multiply'});
+	expect(styOf('[lay layer=base blendmode=screen]')).toEqual({blendmode: 'screen'});
+	expect(styOf('[lay layer=base blendmode=add]')).toEqual({blendmode: 'plus-lighter'});
+});
+
+it('lay_blendmode_unsupported', ()=> {
+	// 本家と同じ文言で弾く（CSSにはあるがpixiの表に無い値も同様）
+	expect(()=> styOf('[lay layer=base blendmode=overlay]'))
+		.toThrow('overlay はサポートされない blendmode です');
+});
+
+
+// ============ [lay]のレイヤ重なり順（float/index/dive） ============
+
+// 並び替えは現在の並びが要るのでストア側で解決する。ここで見るのは積むアクションだけ
+function moveOf(src: string) {
+	return acts(`${LAYS}${src}[s]`).find(v=> v.t === 'moveLay');
+}
+
+it('layMove_float', ()=> {
+	// 最前面へ（本家 LayerMng.ts:489）
+	expect(moveOf('[lay layer=base float=true]')).toEqual({t: 'moveLay', nm: 'base', mode: 'float'});
+	expect(moveOf('[lay layer=base float=false]')).toBeUndefined();
+});
+
+it('layMove_index', ()=> {
+	expect(moveOf('[lay layer=base index=2]')).toEqual({t: 'moveLay', nm: 'base', mode: 'index', index: 2});
+});
+
+it('layMove_indexZeroDoesNothing', ()=> {
+	// 本家は `if (hArg.index)` の内側でさらに数値の真偽を見るので、**index=0は何も起きない**
+	//	（最背面へ送る指定にはならない）。そのまま移植してある
+	expect(moveOf('[lay layer=base index=0]')).toBeUndefined();
+});
+
+it('layMove_dive', ()=> {
+	expect(moveOf('[lay layer=base dive=mes]')).toEqual({t: 'moveLay', nm: 'base', mode: 'dive', dive: 'mes'});
+});
+
+it('layMove_floatWinsOverIndex', ()=> {
+	// 本家の判定順は float → index → dive
+	expect(moveOf('[lay layer=base float=true index=2 dive=mes]'))
+		.toEqual({t: 'moveLay', nm: 'base', mode: 'float'});
+});
+
+it('layMove_withOtherAttrs', ()=> {
+	// 見た目の変更と重なり順の変更は同じ[lay]で同時に書ける（本家も同様）
+	const a = acts(`${LAYS}[lay layer=base alpha=0.5 float=true][s]`);
+	expect(a.filter(v=> v.t === 'chgLay' || v.t === 'moveLay').map(v=> v.t))
+		.toEqual(['chgLay', 'moveLay']);
+});
+
+
 // ============ [clear_lay] ============
 
 it('clearLay_defaultsToBackPage', ()=> {
 	// 既定は'back'（本家 LayerMng.ts:1100。裏を組む用途が主なため）
 	expect(acts(`${LAYS}[clear_lay layer=mes][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', nm: 'mes', page: 'back'});
+		.toEqual({t: 'clearLay', aLayNm: ['mes'], page: 'back'});
 });
 
 it('clearLay_page', ()=> {
 	expect(acts(`${LAYS}[clear_lay layer=mes page=fore][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', nm: 'mes', page: 'fore'});
+		.toEqual({t: 'clearLay', aLayNm: ['mes'], page: 'fore'});
 	expect(acts(`${LAYS}[clear_lay layer=mes page=both][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', nm: 'mes', page: 'both'});
+		.toEqual({t: 'clearLay', aLayNm: ['mes'], page: 'both'});
 });
 
 it('clearLay_multipleLayers', ()=> {
-	expect(acts(`${LAYS}[clear_lay layer="base,mes"][s]`).filter(v=> v.t === 'clearLay'))
-		.toEqual([
-			{t: 'clearLay', nm: 'base', page: 'back'},
-			{t: 'clearLay', nm: 'mes', page: 'back'},
-		]);
+	expect(acts(`${LAYS}[clear_lay layer="base,mes"][s]`).find(v=> v.t === 'clearLay'))
+		.toEqual({t: 'clearLay', aLayNm: ['base', 'mes'], page: 'back'});
 });
 
-it('clearLay_layerRequired', ()=> {
-	expect(()=> acts(`${LAYS}[clear_lay][s]`)).toThrow('[clear_lay] layerは必須です（試作仕様）');
+it('clearLay_layerOmittedIsAllLayers', ()=> {
+	// layer省略＝全レイヤ（本家 LayerMng.#getLayers()）。エンジンはレイヤ一覧を持たないので、
+	//	[trans]/[dump_lay]と同じくnullのまま渡し、「全部」の解決はストア側
+	expect(acts(`${LAYS}[clear_lay][s]`).find(v=> v.t === 'clearLay'))
+		.toEqual({t: 'clearLay', aLayNm: null, page: 'back'});
+});
+
+it('clearLay_emptyLayerThrows', ()=> {
+	// 省略（＝全部）と、書いたのに空（＝書き間違い）は区別する
+	expect(()=> acts(`${LAYS}[clear_lay layer=""][s]`)).toThrow('[clear_lay] layer属性が空です');
 });
 
 it('clearLay_invalidPageThrows', ()=> {

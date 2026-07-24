@@ -64,8 +64,40 @@ test('visible=falseでレイヤが消える', async ({page})=> {
 	expect(await txtBoxStyle(page, 'display')).toBe('none');
 });
 
+test('pivot_x/pivot_yが回転・拡縮の原点（transform-origin）になる', async ({page})=> {
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('ぴぼっと');
+
+	// 本家のpivot（pixiのDisplayObject.pivot）に当たるものはCSSのtransform-origin。
+	//	未指定なら 0px 0px（＝左上）で、これは従来の指定と同じ
+	expect(await txtBoxStyle(page, 'transform-origin')).toBe('50px 80px');
+});
+
+test('blendmodeがmix-blend-modeになる', async ({page})=> {
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
+	expect(await txtBoxStyle(page, 'mix-blend-mode')).toBe('multiply');
+});
+
+test('[lay float=true]でレイヤが最前面（DOMの末尾）へ移る', async ({page})=> {
+	// 配列・DOMの並びがそのまま描画順（後ろほど手前）。[add_lay]順は base -> mes。
+	//	GrpLayerの根はdiv、TxtLayerの根はspanなので、タグ名の並びで見分けられる
+	const domOrder = async ()=> page.evaluate(()=> [...document.querySelectorAll(
+		'#skynovel [data-page="fore"] > *')].map(e=> e.tagName));
+	expect((await snap(page)).aLay.map(l=> l.nm)).toEqual(['base', 'mes']);
+	expect(await domOrder()).toEqual(['DIV', 'SPAN']);
+
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('まえへ');
+
+	// baseが最前面＝配列の末尾へ。裏ページも同じ並びに保たれる
+	const s = await snap(page);
+	expect(s.aLay.map(l=> l.nm)).toEqual(['mes', 'base']);
+	expect(s.aLayBack.map(l=> l.nm)).toEqual(['mes', 'base']);
+	expect(await domOrder()).toEqual(['SPAN', 'DIV']);
+});
+
 test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibleは触らない', async ({page})=> {
-	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
+	for (let i = 0; i < 6; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
 
 	// 見た目の指定が全て「未指定」へ戻る（＝TxtLayerのCSS既定に従う状態）
 	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');

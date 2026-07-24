@@ -439,7 +439,10 @@ export class ScriptMng {
 			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: act.sty});
 			break;
 		case 'clearLay':
-			this.$fncs.clearLay({nm: act.nm, page: act.page});
+			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
+			break;
+		case 'moveLay':
+			this.$fncs.moveLay({nm: act.nm, mode: act.mode, ...(act.index !== undefined ? {index: act.index} : {}), ...(act.dive !== undefined ? {dive: act.dive} : {})});
 			break;
 		case 'enableEvent':
 			this.$fncs.enableEvent({nm: act.nm, enabled: act.enabled});
