@@ -69,14 +69,24 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	function prev() {
 		if (sys.caretaker.prevKey()) setReadBack(! sys.caretaker.isLast());
 	}
-	useKey(e=> e.code === 'Space', e=> {e.stopPropagation(); e.preventDefault(); next()});
-	useKey(e=> e.code === 'ArrowDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
-	useKey(e=> e.code === 'PageDown', e=> {e.stopPropagation(); e.preventDefault(); next()});
-	useKey(e=> e.code === 'PageUp', e=> {e.stopPropagation(); e.preventDefault(); prev()});
+	// [event]で予約したキー名は「KeyboardEvent.keyの小文字」、クリックは'click'という取り決め
+	//	（本家 EventMng が 'enter'/'arrowdown'/'click' 等の小文字キーで引くのに合わせた）。
+	//	予約があればそちらを発火し、読み進め・読み戻りは行わない
+	useKey(()=> true, e=> {
+		if (scrMng.fireEvent(e.key.toLowerCase())) {e.stopPropagation(); e.preventDefault(); return}
+
+		switch (e.code) {
+			case 'Space':
+			case 'ArrowDown':
+			case 'PageDown':	e.stopPropagation(); e.preventDefault(); next();	break;
+			case 'PageUp':		e.stopPropagation(); e.preventDefault(); prev();	break;
+		}
+	});
 
 	function onClick() {
 		if (isLong) {isLong = false; return}
 		if (isDesignMode) return;
+		if (scrMng.fireEvent('click')) return;
 		next();
 	}
 

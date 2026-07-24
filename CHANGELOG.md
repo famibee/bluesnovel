@@ -146,11 +146,25 @@
   - `extends`元（ルート`tsconfig.json`）の`exclude: ["test/e2e"]`は**extends元からの相対パス**として解決されるため、そのまま継承すると`test/e2e`自身が除外され、`error TS18003: No inputs were found`で1ファイルも型チェックされていなかった
   - `test/e2e/tsconfig.json`で`"exclude": []`と上書き。E2E側のソースは型エラー無しを確認
 
+- [x] **ローカルイベント予約（`[event]`/`[clear_event]`）に対応**（2026-07-24）
+  - `[event key=enter label=*x]`で「そのキーが押されたら読み進めではなく*xへ飛ぶ」予約ができる。`call=true`なら`[call]`扱い（`[return]`でその停止点へ戻る＝再びイベント待ちになる）、`fn=`で別ファイル、`del=true`で取り消し、`arg=`は`tmp:sn.eventArg`へ。発火時に`tmp:sn.eventLabel`/`tmp:sn.eventArg`をセットするのも本家（`Main.ts` `resumeByJumpOrCall()`）と同じ
+  - **ローカルとグローバル**（本家 `ReadingState`の`#hLocalEvt2Fnc`/`#hGlobalEvt2Fnc`）：ローカル予約はjump系の発火で消える一回きりのもので、`[call]`時にコールスタックへ退避され`[return]`で書き戻される。**マクロ呼び出しだけは退避しない**（本家 `ScriptIterator.ts:957`「':hEvt1Time'の扱いだけは[macro]と異なる」）。`global=true`の予約はこれらの影響を受けない
+  - エンジンはDOMに触れない方針を守り、予約は「飛び先の素データ」の表として持つ（本家はキー->コールバック関数の表）。キー名の取り決め（`KeyboardEvent.key`の小文字／クリックは`'click'`）と実際の入力との結び付けは`Main.tsx`の担当で、移動そのものは`[button]`クリックと同じ経路（`ScriptMng.jumpToLabelAndGo()`）を通す
+  - `Main.tsx`のキー処理を、コード別の`useKey`4つから「まず予約を引き、無ければ従来の読み進め/読み戻り」の1つへ統合。クリックも同様に`fireEvent('click')`を先に見る
+  - `ScriptMng.#jumpToLabelAndGo()`：`fn`指定かつ`label`省略（＝そのファイルの先頭へ）を、同一ファイルでもロード経由で扱うよう修正（`jumpToLabel('')`はラベル未定義でthrowになるため）
+  - `test/ScriptEngine_event.test.ts`（新規23件）＋`test/e2e/event.e2e.ts`（新規4件・`prj_event`フィクスチャ）。ユニット611件→634件、E2E 22件→26件
+  - E2Eに残したのは「ユニットでは届かないもの」だけ＝キー名の対応付け・クリック経路・予約が無いキーが従来どおり読み進めになること。予約表の挙動はすべてユニット側
+
 - [ ]
 
 
 
-
+- タグや機能のテスト・動作について参考になるかも
+  - https://github.com/famibee/SKYNovel_gallery/blob/master/index.html
+  - https://github.com/famibee/SKYNovel_gallery
+  例えば起動処理は
+    - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/kidoku
+    - https://github.com/famibee/SKYNovel_gallery/blob/master/public/prj/kidoku/mat/main.sn
 
 
 

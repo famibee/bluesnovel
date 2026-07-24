@@ -116,12 +116,29 @@ export class ScriptMng {
 	jumpToLabelAndGo(label: string, call: boolean, fn = '') {
 		void this.#jumpToLabelAndGo(label, call, fn).catch(()=> {/* myTraceで表示済み */});
 	}
+
+	// [event]で予約したキー・クリックが押された時にMain.tsxから呼ばれる。
+	//	戻り値true＝予約イベントとして処理した（＝呼び出し側は通常の読み進めを行わない）。
+	//	移動そのものは[button]クリックと全く同じ経路を通す
+	fireEvent(key: string): boolean {
+		const engine = this.#engine;
+		if (! engine) return false;
+
+		const ev = engine.beginEvent(key);
+		if (! ev) return false;
+
+		this.jumpToLabelAndGo(ev.label, ev.call, ev.fn);
+		return true;
+	}
+
 	async #jumpToLabelAndGo(label: string, call: boolean, fn: string) {
 		const engine = this.#engine;
 		if (! engine) return;
 
 		try {
-			if (fn && fn !== engine.fn) {
+			// label省略（＝そのファイルの先頭へ）の場合は、同一ファイルでもロード経由で切り替える
+			//	（jumpToLabel('')はラベル未定義でthrowになるため）
+			if (fn && (fn !== engine.fn || ! label)) {
 				const scr = await this.#getScript(fn);
 				if (call) engine.callToScript(scr, label);
 				else engine.switchScript(scr, label);
@@ -129,7 +146,7 @@ export class ScriptMng {
 			else if (call) engine.callToLabel(label);
 			else engine.jumpToLabel(label);
 		} catch (e) {
-			this.myTrace(`[button] ジャンプ先エラー fn:${fn || engine.fn} ${String(e)}`, 'ET');
+			this.myTrace(`[button]/[event] ジャンプ先エラー fn:${fn || engine.fn} ${String(e)}`, 'ET');
 			return;
 		}
 		this.#goSafe();

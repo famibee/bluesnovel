@@ -43,6 +43,12 @@ export type T_TAG_PARSED = {
 	args: {[k: string]: string};
 };
 
+// [event]で予約したイベント1件分の「飛び先」。
+//	本家（ReadingState の T_HEvt2Fnc）はキー -> コールバック関数の表だが、
+//	試作のエンジンはDOMに触れない＝関数を作れないので、素のデータとして持つ。
+//	実際にキー入力・クリックと結びつけるのは呼び出し側（ScriptMng/Main.tsx）の責務
+export type T_EVENT_RSV = {fn: string; label: string; call: boolean; arg: string};
+
 
 export class ScriptEngine {
 	// タグトークン1件を「タグ名」と「属性の連想配列」へ分解する。
@@ -89,7 +95,17 @@ export class ScriptEngine {
 	//	hMpは本家 #callSub()（ScriptIterator.ts:962）のcsArg[':hMp']相当：
 	//	callSub時点のmp:値を保存し、returnで復元する（[call]/マクロ呼び出し共通の仕組み。
 	//	本家は#callSub()を両者で共有するため常にmp:の保存・復元が行われる。ここでも合わせる）
-	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}}[] = [];
+	//	hEvtは[call]系（[call]・[button call=true]・イベントからのcall）のみに入る：
+	//	コール時点のローカル予約イベントを退避し、[return]で書き戻す（本家 ScriptIterator.ts:955
+	//	ReadingState.popLocalEvts() / :hEvt1Time / #return()のpushLocalEvts()）。
+	//	マクロ呼び出しだけは退避しない（本家 ScriptIterator.ts:957「':hEvt1Time'の扱いだけは[macro]と異なる」）
+	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}; hEvt?: {[key: string]: T_EVENT_RSV}}[] = [];
+
+	// 予約イベント表（本家 ReadingState.#hLocalEvt2Fnc / #hGlobalEvt2Fnc 相当）。
+	//	ローカルは[call]で退避・[return]で復元、[jump]系のイベント発火で消去される「一回きり」の予約。
+	//	グローバル（[event global=true]）はそれらに影響されず残り続ける
+	#hLocalEvt: {[key: string]: T_EVENT_RSV} = Object.create(null);
+	readonly #hGlobalEvt: {[key: string]: T_EVENT_RSV} = Object.create(null);
 
 	// マクロ定義：マクロ名 -> 本体開始位置（定義元のスクリプト名と、[macro name=...]の次のトークン索引）
 	//	本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式を採用。
@@ -111,7 +127,7 @@ export class ScriptEngine {
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
-		'button', 'l', 'p', 's',
+		'button', 'event', 'clear_event', 'l', 'p', 's',
 	]);
 
 	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
@@ -181,13 +197,51 @@ export class ScriptEngine {
 		this.switchScript(scr, label);
 	}
 
-	// コールスタックへ1段積む（[call]・マクロ呼び出し・[button call=true]で共通）
-	#pushCallStk(returnIdx: number) {
+	// ===== 予約イベント（[event]） =====
+	//	キー入力・クリックそのものはDOM側の話なので、エンジンは「予約表」と
+	//	「発火時に実行位置をどう動かすか」だけを受け持つ。
+	//	どのキー名で引くか（'click'やe.keyの小文字化）は呼び出し側（Main.tsx）の取り決め
+
+	// 予約を引く。ローカル優先（本家 ReadingState.getEvt2Fnc()）
+	getEvent(key: string): T_EVENT_RSV | undefined {
+		const k = key.toLowerCase();
+		return this.#hLocalEvt[k] ?? this.#hGlobalEvt[k];
+	}
+	clearEvent(global = false) {
+		if (! global) {this.#hLocalEvt = Object.create(null); return}
+		for (const k in this.#hGlobalEvt) delete this.#hGlobalEvt[k];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+	}
+	#popLocalEvt(): {[key: string]: T_EVENT_RSV} {
+		const h = this.#hLocalEvt;
+		this.#hLocalEvt = Object.create(null);
+		return h;
+	}
+
+	// 予約イベントの発火（本家 Main.ts:167 resumeByJumpOrCall() 相当。url指定は試作では非対応）。
+	//	予約が無ければundefinedを返す＝呼び出し側は通常の読み進めを行う。
+	//	予約があればtmp:変数をセットし、jump系ならローカル予約イベントを消して（本家も同じ）
+	//	飛び先を返す。実際の移動（ラベルジャンプ／サブルーチンコール／別ファイルのロード）は
+	//	[button]クリックと同じ経路＝ScriptMng.jumpToLabelAndGo()に任せる
+	beginEvent(key: string): T_EVENT_RSV | undefined {
+		const ev = this.getEvent(key);
+		if (! ev) return undefined;
+
+		this.#val.set('tmp:sn.eventArg', ev.arg);
+		this.#val.set('tmp:sn.eventLabel', ev.label);
+		if (! ev.call) this.clearEvent();	// jump系：一回きりの予約なので消す（callは#pushCallStkが退避する）
+		return ev;
+	}
+
+	// コールスタックへ1段積む（[call]・マクロ呼び出し・[button call=true]で共通）。
+	//	popLocalEvt=trueならローカル予約イベントをここへ退避し、現在の表を空にする
+	//	（＝サブルーチンへは持ち込まない。[return]で書き戻す）。マクロ呼び出しだけはfalse
+	#pushCallStk(returnIdx: number, popLocalEvt = true) {
 		this.#aCallStk.push({
 			fn			: this.fn,
 			returnIdx,
 			lenIfStk	: this.#aIfStk.length,
 			hMp			: this.#val.cloneMp(),
+			...popLocalEvt ?{hEvt: this.#popLocalEvt()} :{},
 		});
 		this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
 	}
@@ -484,6 +538,28 @@ export class ScriptEngine {
 			return 'skip';
 		}
 
+		case 'event': {	// イベント予約（本家 EventMng.ts:543 #event() の、DOM・フォーカス処理を除いた核だけ）
+			const key = (args.key ?? '').toLowerCase();
+			if (! key) throw '[event] keyは必須です';
+			const h = args.global === 'true' ? this.#hGlobalEvt : this.#hLocalEvt;
+
+			if (args.del === 'true') {	// 予約の取り消し
+				if (args.fn || args.label || args.call) throw '[event] fn/label/callとdelは同時指定できません';
+				delete h[key];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+				return 'skip';
+			}
+
+			const label = args.label ?? '';
+			const fn = args.fn ?? this.fn;	// 省略時は現在のスクリプト（本家 hArg.fn ??= scriptFn）
+			if (! label && ! args.fn) throw '[event] fn,label いずれかは必須です';
+			h[key] = {fn, label, call: args.call === 'true', arg: args.arg ?? ''};
+			return 'skip';
+		}
+
+		case 'clear_event':	// 予約イベントを全消去（本家 Reading.ts:69 ReadingState.clear_event()）
+			this.clearEvent(args.global === 'true');
+			return 'skip';
+
 		case 'l': case 'p': case 's':	// 行末クリック待ち／改ページ／停止
 			if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
 			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer});
@@ -498,7 +574,7 @@ export class ScriptEngine {
 			// [call]と同じ枠組みでジャンプし、タグ属性をそのままmp:名前空間へ渡す
 			// （本家 ScriptIterator.ts:1374-1392 のマクロ呼び出しハンドラを簡略化したもの。
 			// const.sn.macro等のスクリプター用ブックキーピング情報は試作では省略）
-			this.#pushCallStk(this.#idx);
+			this.#pushCallStk(this.#idx, false);	// マクロ呼び出しはローカル予約イベントを退避しない（本家と同じ）
 			this.#val.setMp(args);
 			if (to.fn !== this.fn) {	// 別ファイルで定義されたマクロ
 				aAct.push({t: 'loadScript', fn: to.fn, label: '', idx: to.idx});
@@ -592,6 +668,10 @@ export class ScriptEngine {
 		// mp:もコール元の値へ復元する（本家 #return() の csa[':hMp'] 復元と同じ。
 		// 通常の[call]から戻る場合は元々変化していないため実質no-op）
 		this.#val.setMp(cs.hMp);
+		// ローカル予約イベントもコール元のものへ戻す（本家 #return() の pushLocalEvts()）。
+		//	マクロ呼び出し（[endmacro]で戻る場合）は退避していないので、
+		//	マクロ内で予約したイベントはそのまま呼び出し元へ残る（本家と同じ）
+		if (cs.hEvt) this.#hLocalEvt = cs.hEvt;
 
 		const label = args.label ?? '';
 		const fn = args.fn ?? '';

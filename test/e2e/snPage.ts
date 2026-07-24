@@ -28,7 +28,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'basic' | 'button' | 'expr' | 'multi';
+export type T_PRJ = 'basic' | 'button' | 'event' | 'expr' | 'multi';
 
 
 // テスト用ページを開き、最初の停止点で落ち着くまで待つ
@@ -89,8 +89,11 @@ export async function mesStr(page: Page, nm = 'mes'): Promise<string> {
 	return aLay.find(l=> l.nm === nm)?.str ?? '';
 }
 
+// 押下するキー。Enter/Escapeは[event]の予約キー（event.e2e.ts）用
+export type T_KEY = 'Space' | 'PageDown' | 'PageUp' | 'Enter' | 'Escape';
+
 // キー操作（読み進め／読み戻り）。操作後は停止点で落ち着くまで待つ
-export async function pressKey(page: Page, code: 'Space' | 'PageDown' | 'PageUp') {
+export async function pressKey(page: Page, code: T_KEY) {
 	await page.keyboard.press(code);
 	await waitIdle(page);
 }
@@ -102,7 +105,7 @@ export async function pressKey(page: Page, code: 'Space' | 'PageDown' | 'PageUp'
 //	消費されてしまい（Main.tsx next()）、進行が1回分まるごと失われる。
 //	待ちマーカー（store.wait）は#runStep()の各反復の頭でnullに戻り[l]/[p]でだけ立つので、
 //	これを見れば「本物の停止点」だと確実に分かる（[s]では立たないので、その場合はpressKey）
-export async function pressKeyToWaitMark(page: Page, code: 'Space' | 'PageDown' | 'PageUp') {
+export async function pressKeyToWaitMark(page: Page, code: T_KEY) {
 	await page.keyboard.press(code);
 	await page.waitForFunction(
 		()=> (globalThis as any).__sn.store.getState().wait !== null,

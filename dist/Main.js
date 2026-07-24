@@ -1240,21 +1240,28 @@ function Ct({ arg: e, inited: t }) {
 	function S() {
 		r.caretaker.prevKey() && h(!r.caretaker.isLast());
 	}
-	b((e) => e.code === "Space", (e) => {
-		e.stopPropagation(), e.preventDefault(), x();
-	}), b((e) => e.code === "ArrowDown", (e) => {
-		e.stopPropagation(), e.preventDefault(), x();
-	}), b((e) => e.code === "PageDown", (e) => {
-		e.stopPropagation(), e.preventDefault(), x();
-	}), b((e) => e.code === "PageUp", (e) => {
-		e.stopPropagation(), e.preventDefault(), S();
+	b(() => !0, (e) => {
+		if (i.fireEvent(e.key.toLowerCase())) {
+			e.stopPropagation(), e.preventDefault();
+			return;
+		}
+		switch (e.code) {
+			case "Space":
+			case "ArrowDown":
+			case "PageDown":
+				e.stopPropagation(), e.preventDefault(), x();
+				break;
+			case "PageUp":
+				e.stopPropagation(), e.preventDefault(), S();
+				break;
+		}
 	});
 	function w() {
 		if (Et) {
 			Et = !1;
 			return;
 		}
-		wt || x();
+		wt || i.fireEvent("click") || x();
 	}
 	return /* @__PURE__ */ $(a.Suspense, {
 		fallback: /* @__PURE__ */ $(yt, { children: "Loading" }),

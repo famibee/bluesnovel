@@ -1,0 +1,20 @@
+; E2E用シナリオ（event.e2e.ts が使用）
+;	[event]の予約表そのものは ScriptEngine_event.test.ts が受け持つ。
+;	ここで見るのは、ユニットテストでは届かない「実際のキー入力・クリックとの結び付け」
+;	（Main.tsx：KeyboardEvent.keyの小文字で引く／クリックは'click'）だけ
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[event key=enter label=*jumped]
+[event key=escape label=*called call=true]
+[event key=click label=*clicked]
+はじめ[l]
+すすんだ[s]
+
+*jumped
+とんだ[s]
+
+*clicked
+おした[s]
+
+*called
+よばれた[return]

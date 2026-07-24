@@ -222,7 +222,7 @@ expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endi
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
-subroutine-call on click), and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
+subroutine-call on click), `event`/`clear_event`, and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
@@ -235,6 +235,13 @@ into several. Two consequences: `Script` re-derives its label table after every 
 (`Script.defC2M()`), and `step()` must re-read `this.#script.len` each iteration instead of
 caching it. The definition lives on the shared `Grammar`, so files parsed *later* come out of
 `resolveScript()` already substituted; files already parsed are not revisited (same as 本家).
+
+`[event key=… label=… call=… global=… del=…]` reserves a key/click. The engine keeps only the
+**table** (`getEvent`/`beginEvent`/`clearEvent`) — it never touches the DOM — and `Main.tsx`
+decides the key names: `KeyboardEvent.key` lowercased (`enter`, `escape`, …), plus `click`.
+Local reservations are one-shot (cleared when a jump-type one fires) and are stashed on the
+call stack by `[call]`, restored by `[return]`; a **macro** call deliberately does not stash
+them (本家 `ScriptIterator.ts:957`). `global=true` reservations are exempt from all of that.
 
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
