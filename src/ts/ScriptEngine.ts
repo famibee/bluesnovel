@@ -110,9 +110,19 @@ export class ScriptEngine {
 		'add_lay', 'current', 'add_face', 'lay', 'let', 'let_ml', 'endlet_ml',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
-		'jump', 'call', 'return', 'macro', 'endmacro',
+		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
 		'button', 'l', 'p', 's',
 	]);
+
+	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
+	//	本家はマクロもhTagへ動的登録するので `name in this.hTag` で済むが、
+	//	試作はタグをswitch文で捌いているため、予約語表とマクロ表から都度組み立てる
+	#hTagNames(): {[nm: string]: boolean} {
+		const h: {[nm: string]: boolean} = Object.create(null);
+		for (const nm of ScriptEngine.RESERVED_TAGS) h[nm] = true;
+		for (const nm in this.#hMacro) h[nm] = true;
+		return h;
+	}
 
 	// 第一引数はスクリプト名＋ソース、またはパース済みScript。
 	//	変数・スタック等の実行状態はエンジン側が一手に持つので、
@@ -190,8 +200,9 @@ export class ScriptEngine {
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
 		}
-		const len = this.#script.len;
-		while (this.#idx < len) {
+		// トークン数は毎回読み直す。[char2macro]/[bracket2macro]は定義位置より後ろの
+		//	トークンをその場で置換する＝実行中にトークン数が増減しうるため、キャッシュできない
+		while (this.#idx < this.#script.len) {
 			const token = this.#script.aToken[this.#idx++]!;
 
 			// トークン先頭一文字での振り分け。本家 Main.ts:221 #main() と同じ並び
@@ -443,6 +454,15 @@ export class ScriptEngine {
 			if (! found) throw `[macro] マクロ【${macroName}】が[endmacro]で閉じられていません（試作仕様）`;
 			return 'skip';
 		}
+
+		case 'char2macro':		// 一文字マクロの定義（本家 ScriptIterator.ts:1354 #char2macro()）
+		case 'bracket2macro':	// 括弧マクロの定義（本家 ScriptIterator.ts:1347 #bracket2macro()）
+			// 「♡」→[ハート]、「〔梨香〕」→[セリフ text='梨香'] のように、地の文の中の
+			//	一文字／括弧をタグ・マクロ呼び出しへ読み替える定義。実処理はGrammar側にある。
+			//	this.#idxは既に定義タグの次のトークンを指しており、そこから後ろだけが置換される
+			//	（＝定義より前に書いた文字はただの地の文のまま。本家と同じ）
+			this.#script.defC2M(name, args, this.#hTagNames(), this.#idx);
+			return 'skip';
 
 		case 'endmacro':	// マクロ本体の終端。[return]と全く同じ処理
 			// （本家 ScriptIterator.ts:100 hTag.endmacro = ()=> this.#return(o) と同じ規約）

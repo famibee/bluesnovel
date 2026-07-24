@@ -220,13 +220,21 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
-`macro`/`endmacro` (`return label=` changes where a subroutine resumes), `button` (`call=true` for
+`macro`/`endmacro` (`return label=` changes where a subroutine resumes),
+`char2macro`/`bracket2macro`, `button` (`call=true` for
 subroutine-call on click), and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
 Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
 them in scripts meant to run on 本家.
+
+`char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
+from the defining tag onwards — text before it stays literal, and one text token can split
+into several. Two consequences: `Script` re-derives its label table after every definition
+(`Script.defC2M()`), and `step()` must re-read `this.#script.len` each iteration instead of
+caching it. The definition lives on the shared `Grammar`, so files parsed *later* come out of
+`resolveScript()` already substituted; files already parsed are not revisited (same as 本家).
 
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,

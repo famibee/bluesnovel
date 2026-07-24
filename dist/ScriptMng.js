@@ -1217,28 +1217,36 @@ var d = class {
 }, h = class {
 	fn;
 	grm;
-	aToken;
-	#e = Object.create(null);
+	#e;
+	get aToken() {
+		return this.#e.aToken;
+	}
+	#t = Object.create(null);
 	constructor(e, t, n = new d()) {
-		this.fn = e, this.grm = n, this.aToken = n.resolveScript(t).aToken;
-		let r = !1;
-		this.aToken.forEach((e, t) => {
-			if (r) {
-				n.testTagEndLetml(e) && (r = !1);
+		this.fn = e, this.grm = n, this.#e = n.resolveScript(t), this.#n();
+	}
+	#n() {
+		let e = Object.create(null), t = !1;
+		this.aToken.forEach((n, r) => {
+			if (t) {
+				this.grm.testTagEndLetml(n) && (t = !1);
 				return;
 			}
-			if (e.charCodeAt(0) === 42 && e.length > 1) {
-				this.#e[e.trim()] = t + 1;
+			if (n.charCodeAt(0) === 42 && n.length > 1) {
+				e[n.trim()] = r + 1;
 				return;
 			}
-			n.testTagLetml(e) && (r = !0);
-		});
+			this.grm.testTagLetml(n) && (t = !0);
+		}), this.#t = e;
 	}
 	get len() {
-		return this.aToken.length;
+		return this.#e.aToken.length;
 	}
 	label2idx(e) {
-		return this.#e[e];
+		return this.#t[e];
+	}
+	defC2M(e, t, n, r) {
+		this.grm[e](t, n, this.#e, r), this.#n();
 	}
 }, g = class e {
 	static #e = new s();
@@ -1284,11 +1292,19 @@ var d = class {
 		"return",
 		"macro",
 		"endmacro",
+		"char2macro",
+		"bracket2macro",
 		"button",
 		"l",
 		"p",
 		"s"
 	]);
+	#f() {
+		let t = Object.create(null);
+		for (let n of e.RESERVED_TAGS) t[n] = !0;
+		for (let e in this.#d) t[e] = !0;
+		return t;
+	}
 	constructor(e, t = "") {
 		this.#t = e instanceof h ? e : new h(e, t), this.#s.defBuiltin("const.sn.scriptFn", () => this.fn);
 	}
@@ -1321,12 +1337,12 @@ var d = class {
 	callToLabel(e) {
 		let t = this.#t.label2idx(e);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#f(--this.#n), this.#n = t;
+		this.#p(--this.#n), this.#n = t;
 	}
 	callToScript(e, t = "") {
-		this.#f(--this.#n), this.switchScript(e, t);
+		this.#p(--this.#n), this.switchScript(e, t);
 	}
-	#f(e) {
+	#p(e) {
 		this.#u.push({
 			fn: this.fn,
 			returnIdx: e,
@@ -1336,25 +1352,23 @@ var d = class {
 	}
 	step() {
 		let t = [];
-		this.#a && (this.#a = !1, this.#i[this.#r] = "", t.push({
+		for (this.#a && (this.#a = !1, this.#i[this.#r] = "", t.push({
 			t: "chgStr",
 			nm: this.#r,
 			str: ""
-		}));
-		let n = this.#t.len;
-		for (; this.#n < n;) {
+		})); this.#n < this.#t.len;) {
 			let n = this.#t.aToken[this.#n++], r = n.charCodeAt(0);
 			if (r === 9 || r === 10) continue;
 			if (r === 91) {
 				let { name: r, args: i } = e.parseTag(n);
-				if (this.#m(r, i, t) === "stop") return t;
+				if (this.#h(r, i, t) === "stop") return t;
 				continue;
 			}
 			let i = n, a = this.#t.grm.ce;
 			if (a && n.length > 1 && n.startsWith(a)) i = n.slice(1);
 			else if (r === 38) {
 				if (!n.endsWith("&")) {
-					this.#p(n);
+					this.#m(n);
 					continue;
 				}
 				if (n.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
@@ -1362,15 +1376,15 @@ var d = class {
 				i = e == null ? "" : String(e);
 			} else if (r === 59) continue;
 			else if (r === 42 && n.length > 1) continue;
-			this.#v(t, i);
+			this.#y(t, i);
 		}
 		return t;
 	}
-	#p(e) {
+	#m(e) {
 		let { name: t, text: n, cast: r } = u(e.slice(1));
 		this.#s.set(this.#c.getValAmpersand(t.trim()), this.#c.parse(n), r ?? "");
 	}
-	#m(t, n, r) {
+	#h(t, n, r) {
 		let i = this.#t.len;
 		switch (t) {
 			case "add_lay": {
@@ -1439,11 +1453,11 @@ var d = class {
 				return this.#s.set(e, t, "str"), this.#n += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
-			case "if": return this.#h(n), "skip";
+			case "if": return this.#g(n), "skip";
 			case "elsif":
 			case "else":
-			case "endif": return this.#g(), "skip";
-			case "r": return this.#v(r, "\n"), "skip";
+			case "endif": return this.#_(), "skip";
+			case "r": return this.#y(r, "\n"), "skip";
 			case "er": return this.#i[this.#r] = "", r.push({
 				t: "chgStr",
 				nm: this.#r,
@@ -1469,7 +1483,7 @@ var d = class {
 			case "call": {
 				let e = n.label ?? "", t = n.fn ?? "";
 				if (!e && !t) throw "[call] fnまたはlabelは必須です";
-				if (t && t !== this.fn) return this.#f(this.#n), r.push({
+				if (t && t !== this.fn) return this.#p(this.#n), r.push({
 					t: "loadScript",
 					fn: t,
 					label: e,
@@ -1477,9 +1491,9 @@ var d = class {
 				}), "stop";
 				let i = this.#t.label2idx(e);
 				if (i === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
-				return this.#f(this.#n), this.#n = i, "skip";
+				return this.#p(this.#n), this.#n = i, "skip";
 			}
-			case "return": return this.#_(r, n);
+			case "return": return this.#v(r, n);
 			case "macro": {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
@@ -1519,7 +1533,9 @@ var d = class {
 				if (!r) throw `[macro] マクロ【${t}】が[endmacro]で閉じられていません（試作仕様）`;
 				return "skip";
 			}
-			case "endmacro": return this.#_(r);
+			case "char2macro":
+			case "bracket2macro": return this.#t.defC2M(t, n, this.#f(), this.#n), "skip";
+			case "endmacro": return this.#v(r);
 			case "button": {
 				let e = n.layer || this.#r;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
@@ -1546,7 +1562,7 @@ var d = class {
 			}), "stop";
 			default: {
 				let e = this.#d[t];
-				return e === void 0 ? "skip" : (this.#f(this.#n), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
+				return e === void 0 ? "skip" : (this.#p(this.#n), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
 					t: "loadScript",
 					fn: e.fn,
 					label: "",
@@ -1555,7 +1571,7 @@ var d = class {
 			}
 		}
 	}
-	#h(t) {
+	#g(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
 		let r = this.#c.evalBool(n) ? this.#n : -1, i = 0, a = !1, o = this.#t.len;
@@ -1598,12 +1614,12 @@ var d = class {
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#g() {
+	#_() {
 		let e = this.#l.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#n = e;
 	}
-	#_(e, t = {}) {
+	#v(e, t = {}) {
 		let n = this.#u.pop();
 		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
 		this.#l.length = n.lenIfStk, this.#s.setMp(n.hMp);
@@ -1626,7 +1642,7 @@ var d = class {
 			idx: n.returnIdx
 		}), "stop");
 	}
-	#v(e, t) {
+	#y(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",

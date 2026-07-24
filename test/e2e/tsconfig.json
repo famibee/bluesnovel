@@ -10,5 +10,8 @@
 		// dist/ に tsbuildinfo のゴミが残るので切る
 		"incremental": false
 	},
-	"include": ["**/*.ts"]
+	"include": ["**/*.ts"],
+	// ルートの exclude（"test/e2e"）はextends元からの相対パスとして解決されるため、
+	//	そのまま継承するとこのフォルダ自身が除外されて対象0件（TS18003）になる。空で上書きする
+	"exclude": []
 }

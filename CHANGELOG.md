@@ -133,6 +133,19 @@
   - `prj_expr`のシナリオも、残した3件（`[trace]`のDOM表示／`b_alpha`の算出CSS／`init.escape`の配線）だけを扱う最小構成へ縮小。停止点が1つになり押下操作も不要に
   - E2E 26件 → 22件。ユニット602件は変更なし
 
+- [x] **`[char2macro]`/`[bracket2macro]`（一文字マクロ・括弧マクロ）に対応**（2026-07-24）
+  - 地の文の中の「一文字」「括弧で囲んだ範囲」を、タグ・マクロ呼び出しへ読み替える仕組み。`[char2macro char=@ name=ハート]`以降の`@`は`[ハート]`に、`[bracket2macro text="〔〕" name=セリフ]`以降の`〔梨香〕`は`[セリフ text='梨香']`（＝マクロ側は`mp:text`で受け取れる）になる
+  - 置換処理そのものは移植済みの`Grammar`が持っていた（`test/Grammar.test.ts`）ので、`ScriptEngine`にタグを足して繋いだ。`name`は「定義済みのタグかマクロ」でなければならず、本家は`hTag`を引くだけで済むが、試作はタグをswitch文で捌くため`#hTagNames()`（`RESERVED_TAGS`＋`#hMacro`）を都度組み立てて渡す
+  - `Grammar`はトークン列を**その場で書き換える**（1トークンが複数へ割れる）ため、`Script`はトークン配列だけでなくGrammarの`Script`構造ごと保持する形へ変更し、置換のたびにラベル表を作り直すようにした（作り直さないと定義位置より後ろの`[jump label=…]`の飛び先がずれる）
+  - 同じ理由で`step()`のループ条件も、先頭で1回読んだトークン数のキャッシュから`this.#script.len`の都度参照へ変更（実行中にトークン数が増減しうるため、キャッシュだと以降のトークンを取りこぼす）
+  - 定義は共有`Grammar`が抱えるので、これ以降にパースされるファイルは`resolveScript()`の時点で置換済みになる。既にパース済みの他ファイルには及ばない（本家も同じ）
+  - `char2macro`/`bracket2macro`を`RESERVED_TAGS`へ追加（マクロ名として使用不可に）
+  - `test/ScriptEngine_macro.test.ts`に9件追加（定義前の文字は地の文のまま／未定義name・重複char・使用不可文字・2文字以外のtextはthrow／置換後もラベルが解決できる 等）。ユニット602件→611件
+
+- [x] **`bunx tsc --noEmit -p test/e2e`が対象0件だったのを修正**（2026-07-24）
+  - `extends`元（ルート`tsconfig.json`）の`exclude: ["test/e2e"]`は**extends元からの相対パス**として解決されるため、そのまま継承すると`test/e2e`自身が除外され、`error TS18003: No inputs were found`で1ファイルも型チェックされていなかった
+  - `test/e2e/tsconfig.json`で`"exclude": []`と上書き。E2E側のソースは型エラー無しを確認
+
 - [ ]
 
 

@@ -147,3 +147,77 @@ it('endmacro_withoutMacroCall_throws', ()=> {
 	// （[macro]定義ブロックの読み飛ばし対象外の位置に単独で[endmacro]がある場合）
 	expect(()=> new ScriptEngine('t1', '[endmacro]').step()).toThrow();
 });
+
+// ============ [char2macro]／[bracket2macro]（一文字マクロ・括弧マクロ） ============
+//	地の文の中の「一文字」「括弧で囲んだ範囲」を、タグ・マクロ呼び出しへ読み替える仕組み。
+//	置換処理そのものは本家から移植済みのGrammarが持っている（test/Grammar.test.ts）ので、
+//	ここでは「ScriptEngineがタグとして受け付け、以降のトークンが実際に置き換わる」ことを見る
+
+it('char2macro_replacesCharWithMacroCall', ()=> {
+	expect(run(
+		'[macro name=ハート]♡[endmacro]'+
+		'[char2macro char=@ name=ハート]'+
+		'a@b@@c'
+	)).toBe('a♡b♡♡c');
+});
+
+it('char2macro_beforeDefinition_isPlainText', ()=> {
+	// 置換対象は定義タグより後ろのトークンだけ（本家と同じ）。前に書いた「@」は地の文のまま
+	expect(run(
+		'[macro name=ハート]♡[endmacro]'+
+		'a@b'+
+		'[char2macro char=@ name=ハート]'+
+		'c@d'
+	)).toBe('a@bc♡d');
+});
+
+it('char2macro_undefinedName_throws', ()=> {
+	expect(()=> run('[char2macro char=@ name=未定義]')).toThrow();
+});
+
+it('char2macro_duplicateChar_throws', ()=> {
+	expect(()=> run(
+		'[macro name=m]X[endmacro]'+
+		'[char2macro char=@ name=m][char2macro char=@ name=m]'
+	)).toThrow();
+});
+
+it('char2macro_ngChar_throws', ()=> {
+	// 英数字や「[」「=」等はタグ記述と衝突するため一文字マクロに使えない（Grammar #REG_CANTC2M）
+	expect(()=> run(
+		'[macro name=m]X[endmacro][char2macro char=a name=m]'
+	)).toThrow();
+});
+
+it('bracket2macro_passesInnerTextAsTextAttr', ()=> {
+	// 「〔〜〕」が [セリフ text='〜'] へ置き換わる＝マクロ側はmp:textで受け取れる。
+	//	マクロ本体を「&mp:text&」と書けないのは、地の文と地続きだと1トークンになり
+	//	「&表示&」書式が発動しないため（トークン先頭が&のときだけ発動する。本家と同じ）
+	expect(run(
+		'[macro name=セリフ]&mp:text&[endmacro]'+
+		'[bracket2macro text="〔〕" name=セリフ]'+
+		'〔梨香〕と〔黒柳〕'
+	)).toBe('梨香と黒柳');
+});
+
+it('bracket2macro_textMustBeTwoChars_throws', ()=> {
+	expect(()=> run(
+		'[macro name=m]X[endmacro][bracket2macro text="〔〕〕" name=m]'
+	)).toThrow();
+});
+
+it('c2m_labelsAfterDefinitionStillResolve', ()=> {
+	// 置換で1トークンが複数へ割れる＝以降の索引がずれるので、Script側でラベル表を作り直している。
+	//	作り直さないと[jump]の飛び先が本文の途中へずれる
+	expect(run(
+		'[macro name=ハート]♡[endmacro]'+
+		'[char2macro char=@ name=ハート]'+
+		'a@b[jump label=*fin]NG\n*fin\nZ'
+	)).toBe('a♡bZ');
+});
+
+it('c2m_nameIsReservedAsTagName', ()=> {
+	// タグ名なのでマクロ名としては使えない
+	expect(()=> run('[macro name=char2macro]X[endmacro]')).toThrow();
+	expect(()=> run('[macro name=bracket2macro]X[endmacro]')).toThrow();
+});
