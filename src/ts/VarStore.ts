@@ -12,6 +12,8 @@
 //	・mp:   マクロ引数（マクロ呼び出し時にsetMp()で設定し、[return]/[endmacro]でcloneMp()の値へ復元）
 //TODO: 本家の save: 名前空間、自動セーブ、ダーティフラグ管理はスコープ外
 
+import {int, uint} from '../sn/CmnLib';
+
 export type T_VAL = string | number | boolean | null;
 // 「未定義」を含む値。本家Variableに合わせ、未定義変数の取得結果はundefined（nullではない）。
 //	nullは「nullという値が入っている」ことを表す。この区別は本家PropParserが
@@ -21,9 +23,17 @@ export type T_VAL_D = T_VAL | undefined;
 export const A_NS = ['tmp', 'game', 'sys', 'mp'] as const;
 export type T_NS = typeof A_NS[number];
 
+// [let]/[let_ml]/「&計算」書式のcast指定（本家 Variable.ts:317 #let()）
+export const A_CAST = ['num', 'int', 'uint', 'bool', 'str'] as const;
+export type T_CAST = typeof A_CAST[number] | '';
+
 export class VarStore {
 	readonly #h		: {[key: string]: T_VAL_D} = Object.create(null);
 	readonly #hBuiltin	: {[key: string]: ()=> T_VAL_D} = Object.create(null);
+	// cast=strで代入された変数のキー。bluesnovelの自動キャストは読み出し時（get()）に
+	//	効くため、「文字列のまま扱う」という書き込み側の指定はここに覚えておく
+	//	（本家 setVal_Nochk(…, autocast) 相当）
+	readonly #setNoCast	= new Set<string>();
 
 	// 組み込み変数の登録（読み取り専用・遅延評価。本家 val.defTmp() 相当）
 	//	name は"tmp:"を除いたキー（例：'const.sn.scriptFn'）。常にtmp:名前空間に属する
@@ -71,7 +81,9 @@ export class VarStore {
 		}
 
 		const k = `${ns}.${key}`;
-		if (k in this.#h) return atStr ? this.#h[k] : VarStore.castAuto(this.#h[k]);
+		if (k in this.#h) return atStr || this.#setNoCast.has(k)
+			? this.#h[k]
+			: VarStore.castAuto(this.#h[k]);
 
 		if (touch) {
 			this.#h[k] = def;
@@ -137,12 +149,40 @@ export class VarStore {
 
 		return val;
 	}
-	set(name: string, val: T_VAL_D) {
+	// 変数への代入。castは[let]/[let_ml]/「&計算」書式のcast指定（省略時は変換しない）
+	set(name: string, val: T_VAL_D, cast: T_CAST = '') {
 		const {ns, key} = VarStore.parseName(name);
 		// 組み込み変数はget()と同様、tmp:名前空間の場合のみガードする
 		//（game:/sys:で同名のキーを使うこと自体は許容する）
 		if (ns === 'tmp' && key in this.#hBuiltin) throw `組み込み変数【${name}】へは代入できません`;
-		this.#h[`${ns}.${key}`] = val;
+
+		const k = `${ns}.${key}`;
+		if (cast === 'str') this.#setNoCast.add(k); else this.#setNoCast.delete(k);
+		this.#h[k] = VarStore.castTo(val, cast);
+	}
+
+	// cast指定による値の変換（本家 Variable.ts:317 #let() のswitchに対応）。
+	//	str は「値は文字列化するが、自動キャストの抑止はset()側で覚える」という分担にしている
+	static castTo(val: T_VAL_D, cast: T_CAST): T_VAL_D {
+		switch (cast) {
+		case '':	return val;
+		case 'num':	return VarStore.#toNum(val);
+		case 'int':	return int(VarStore.#toNum(val));
+		case 'uint':return uint(VarStore.#toNum(val));
+		// 本家 argChk_Boolean() 準拠：nullは偽、文字列'false'も偽、空文字も偽、'0'は真
+		case 'bool':return val === null || val === undefined
+			? false
+			: String(val) !== 'false' && Boolean(String(val));
+		case 'str':	return val === null || val === undefined ? val : String(val);
+		default:	throw `cast【${String(cast)}】は未定義です`;
+		}
+	}
+	// 本家 argChk_Num() 準拠：0x始まりは16進、それ以外は浮動小数として読む
+	static #toNum(val: T_VAL_D): number {
+		const s = String(val);
+		const n = s.startsWith('0x') ? parseInt(s, 16) : parseFloat(s);
+		if (Number.isNaN(n)) throw `値【${s}】が数値ではありません`;
+		return n;
 	}
 
 	// mp:名前空間のスナップショット・復元（マクロ呼び出し時の引数受け渡し・戻り時の復元用。
@@ -153,16 +193,20 @@ export class VarStore {
 		return h;
 	}
 	setMp(h: {[key: string]: T_VAL_D}) {
-		for (const k of Object.keys(this.#h)) if (k.startsWith('mp.')) delete this.#h[k];
+		this.#delNs('mp.');
 		for (const k of Object.keys(h)) this.#h[`mp.${k}`] = h[k];
 	}
 
 	// [clearvar]相当：gameのみクリア（本家準拠でsys/tmpは対象外）
-	clearGame() {
-		for (const k of Object.keys(this.#h)) if (k.startsWith('game.')) delete this.#h[k];
-	}
+	clearGame() {this.#delNs('game.')}
 	// [clearsysvar]相当
-	clearSys() {
-		for (const k of Object.keys(this.#h)) if (k.startsWith('sys.')) delete this.#h[k];
+	clearSys() {this.#delNs('sys.')}
+	// 指定名前空間の変数を消す（cast=strの記録も一緒に消さないと、
+	//	同名で入れ直したときに自動キャストが効かないままになる）
+	#delNs(prefix: string) {
+		for (const k of Object.keys(this.#h)) if (k.startsWith(prefix)) {
+			delete this.#h[k];
+			this.#setNoCast.delete(k);
+		}
 	}
 }

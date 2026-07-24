@@ -12,7 +12,7 @@
 //	・[l][p][s] で停止し、そこまでに生じた表示変化を T_ENGINE_ACTION[] として返す。
 //	・戻り値をどう画面へ反映するかは呼び出し側（ScriptMng.ts）の責務とする。
 
-import {VarStore, type T_VAL_D} from './VarStore';
+import {VarStore, type T_CAST, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
 import {Grammar, splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
@@ -201,10 +201,13 @@ export class ScriptEngine {
 
 	// 「&名前 = 式 [= キャスト]」書式による変数代入（本家 Main.ts:246、[let]タグ相当）。
 	//	「&&式 = 式」と書くと、変数名の側も式として評価される（本家 #getValAmpersand()）
-	//TODO: キャスト指定（= int 等）は[let]のcast属性同様まだ無視している
 	#letAmpersand(token: string) {
-		const {name, text} = splitAmpersand(token.slice(1));
-		this.#val.set(this.#expr.getValAmpersand(name.trim()), this.#expr.parse(text));
+		const {name, text, cast} = splitAmpersand(token.slice(1));
+		this.#val.set(
+			this.#expr.getValAmpersand(name.trim()),
+			this.#expr.parse(text),
+			<T_CAST>(cast ?? ''),
+		);
 	}
 
 	// [ タグ ]トークン1件分の処理。戻り値：
@@ -271,9 +274,9 @@ export class ScriptEngine {
 			// 「値のままか式評価かを接頭&で切り替える」分岐は未対応）。
 			// そのため文字列リテラルを入れたい場合は val='"もじ"' のように、
 			// タグ属性の引用符とは別に式側の引用符も必要（test/ScriptEngine.test.ts の
-			// let_stringValue 参照、cast属性も未対応）。
+			// let_stringValue 参照）。
 			const exp = args.val ?? '';
-			this.#val.set(varName, this.#expr.parse(exp));
+			this.#val.set(varName, this.#expr.parse(exp), <T_CAST>(args.cast ?? ''));
 			return 'skip';
 		}
 
@@ -292,17 +295,15 @@ export class ScriptEngine {
 			if (this.#grm.testTagEndLetml(ml)) {	// 本文が空（[let_ml …][endlet_ml]）
 				//	この場合Grammarのlet_mlルール（本文が1文字以上必要）にマッチせず、
 				//	[let_ml …]は普通のタグトークンになるため、次は[endlet_ml]そのもの
-				this.#val.set(varName, '');
+				this.#val.set(varName, '', 'str');
 				++this.#idx;
 				return 'skip';
 			}
 			if (! this.#grm.testTagEndLetml(this.#aToken[this.#idx +1] ?? '')) {
 				throw `[let_ml] 変数【${varName}】の終端・[endlet_ml]がありません`;
 			}
-			// 本家は cast='str' を付けて[let]へ渡すが、bluesnovelの自動キャストは
-			//	読み出し時（VarStore.get()）に効くため、書き込み側での指定に相当するものは無い。
-			//	数値だけのテキストを文字列のまま読みたい場合は「名前@str」で参照する
-			this.#val.set(varName, ml);
+			// 本家同様 cast='str'（数値だけの本文でも文字列のまま保持する）
+			this.#val.set(varName, ml, 'str');
 			this.#idx += 2;	// 本文 → [endlet_ml] → その次
 			return 'skip';
 		}
@@ -330,7 +331,7 @@ export class ScriptEngine {
 
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
 			// 先頭が'&'の場合は式として評価する（本家の&接頭辞記法の簡略版。動作確認用にtraceのみ対応）
-			aAct.push({t: 'trace', text: this.#evalAmpArg(args.text ?? '')});
+			aAct.push({t: 'trace', text: this.#expr.getValAmpersand(args.text ?? '')});
 			return 'skip';
 
 		case 'jump': {	// シナリオジャンプ（試作簡略：同一スクリプト内ラベルのみ）
@@ -498,15 +499,6 @@ export class ScriptEngine {
 		// 通常の[call]から戻る場合は元々変化していないため実質no-op）
 		this.#val.setMp(cs.hMp);
 		this.#idx = cs.returnIdx;
-	}
-
-	// タグ属性値の「&」記法対応：先頭が'&'の場合は残りを式として評価し文字列化して返す。
-	// '&'がなければ今まで通りリテラル文字列のまま（本家の&接頭辞記法を必要最小限に簡略化）。
-	// null・undefined（未定義変数の参照）は空文字にする（trace表示用の割り切り）。
-	#evalAmpArg(raw: string): string {
-		if (! raw.startsWith('&')) return raw;
-		const v = this.#expr.parse(raw.slice(1));
-		return v === null || v === undefined ? '' : String(v);
 	}
 
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {

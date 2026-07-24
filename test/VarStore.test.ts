@@ -221,6 +221,53 @@ it('getVal_32_json_notJson', ()=> {
 	expect(vs.get('tmp:ぎょへー.x', 'def')).toBe('def');
 });
 
+// cast指定（本家 Variable.ts:317 #let() 相当）
+it('set_cast_numeric', ()=> {
+	const vs = new VarStore;
+	vs.set('a', '3.9', 'num');
+	vs.set('b', '3.9', 'int');
+	vs.set('c', '-3.9', 'uint');
+	vs.set('d', '0xff', 'num');
+	expect(vs.get('a')).toBe(3.9);
+	expect(vs.get('b')).toBe(3);
+	expect(vs.get('c')).toBe(3);
+	expect(vs.get('d')).toBe(255);
+});
+it('set_cast_bool', ()=> {
+	const vs = new VarStore;
+	vs.set('a', 'false', 'bool');
+	vs.set('b', '0', 'bool');
+	vs.set('c', '', 'bool');
+	vs.set('d', null, 'bool');
+	expect(vs.get('a')).toBe(false);
+	expect(vs.get('b')).toBe(true);
+	expect(vs.get('c')).toBe(false);
+	expect(vs.get('d')).toBe(false);
+});
+it('set_cast_str_suppressesAutoCast', ()=> {
+	const vs = new VarStore;
+	vs.set('a', 123, 'str');
+	expect(vs.get('a')).toBe('123');	// 値も文字列化される
+	vs.set('b', '0123', 'str');
+	expect(vs.get('b')).toBe('0123');	// 読み出し時の自動キャストもされない
+	vs.set('b', '0123');				// cast無しで入れ直すと記録も解除される
+	expect(vs.get('b')).toBe(123);
+});
+it('set_cast_str_isForgottenOnClear', ()=> {
+	const vs = new VarStore;
+	vs.set('game:a', '0123', 'str');
+	expect(vs.get('game:a')).toBe('0123');
+	vs.clearGame();
+	vs.set('game:a', '0123');
+	expect(vs.get('game:a')).toBe(123);
+});
+it('set_cast_errors', ()=> {
+	const vs = new VarStore;
+	expect(()=> vs.set('a', 'もじ', 'num')).toThrow();
+	// @ts-expect-error 未定義のcast名は型でも弾く（実行時も例外）
+	expect(()=> vs.set('a', 1, 'もじ')).toThrow();
+});
+
 it('invalid_name_throws', ()=> {
 	const vs = new VarStore;
 	expect(()=> vs.get('   ')).toThrow();

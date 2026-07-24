@@ -211,10 +211,11 @@ it('step_trace_ampPrefix_numberIsStringified', ()=> {
 	const se = new ScriptEngine('t1', '[let name=mp:n val=1+2][trace text=&mp:n][s]');
 	expect(se.step()[0]).toEqual({t: 'trace', text: '3'});
 });
-it('step_trace_ampPrefix_nullBecomesEmptyString', ()=> {
-	// 未定義変数の参照はundefined。trace表示用の割り切りで空文字にする
+it('step_trace_ampPrefix_undefinedVar', ()=> {
+	// 未定義変数の参照はundefined。本家 getValAmpersand() と同じくString()化するので
+	// 「undefined」と表示される（デバッグ用タグなので、無言で空文字にするより分かりやすい）
 	const se = new ScriptEngine('t1', '[trace text=&mp:undef][s]');
-	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
+	expect(se.step()[0]).toEqual({t: 'trace', text: 'undefined'});
 });
 it('step_trace_withoutAmp_isLiteral', ()=> {
 	// '&'がなければ今まで通りリテラル文字列のまま（式評価しない）
@@ -452,6 +453,69 @@ it('let_invalidExpressionThrows', ()=> {
 	expect(()=> new ScriptEngine('t1', '[let name=foo val="1+"][s]').step()).toThrow();
 });
 
+// ============ cast指定（[let]・「&計算」書式） ============
+
+it('let_cast_num', ()=> {
+	const se = new ScriptEngine('t1', `[let name=a val='"3.5"' cast=num][s]`);
+	se.step();
+	expect(se.getVal('a')).toBe(3.5);
+});
+it('let_cast_int', ()=> {
+	const se = new ScriptEngine('t1', '[let name=a val=3.9 cast=int][s]');
+	se.step();
+	expect(se.getVal('a')).toBe(3);
+});
+it('let_cast_uint', ()=> {	// 本家uint()は負数の符号を反転する（絶対値）
+	const se = new ScriptEngine('t1', '[let name=a val=-3.9 cast=uint][s]');
+	se.step();
+	expect(se.getVal('a')).toBe(3);
+});
+it('let_cast_num_hex', ()=> {	// 本家argChk_Num()同様、0x始まりは16進として読む
+	const se = new ScriptEngine('t1', `[let name=a val='"0xff"' cast=num][s]`);
+	se.step();
+	expect(se.getVal('a')).toBe(255);
+});
+it('let_cast_bool', ()=> {
+	// 本家argChk_Boolean()準拠：文字列'false'と空文字は偽、'0'は真
+	const se = new ScriptEngine('t1',
+		`[let name=a val='"false"' cast=bool][let name=b val='"0"' cast=bool][let name=c val='""' cast=bool][s]`);
+	se.step();
+	expect(se.getVal('a')).toBe(false);
+	expect(se.getVal('b')).toBe(true);
+	expect(se.getVal('c')).toBe(false);
+});
+it('let_cast_str_suppressesAutoCast', ()=> {
+	// cast=strは「読み出し時の自動キャストもしない」指定。'0123'が数値123にならない
+	const se = new ScriptEngine('t1', `[let name=a val='"0123"' cast=str][let name=b val='"0123"'][s]`);
+	se.step();
+	expect(se.getVal('a')).toBe('0123');
+	expect(se.getVal('b')).toBe(123);	// cast無しは読み出し時に数値へ自動キャスト
+});
+it('let_cast_str_isClearedByPlainAssign', ()=> {
+	const se = new ScriptEngine('t1',
+		`[let name=a val='"0123"' cast=str][let name=a val='"0123"'][s]`);
+	se.step();
+	expect(se.getVal('a')).toBe(123);
+});
+it('let_cast_unknownThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', '[let name=a val=1 cast=もじ][s]').step()).toThrow();
+});
+it('let_cast_num_notNumericThrows', ()=> {
+	expect(()=> new ScriptEngine('t1', `[let name=a val='"もじ"' cast=num][s]`).step()).toThrow();
+});
+
+it('amp_let_cast', ()=> {	// 「&名前 = 式 = キャスト」書式
+	const se = new ScriptEngine('t1', '&game:hp = 10 / 4 = int\n[s]');
+	se.step();
+	expect(se.getVal('game:hp')).toBe(2);
+});
+it('amp_let_cast_str', ()=> {
+	const se = new ScriptEngine('t1', `&game:s = '0123' = str\n[s]`);
+	se.step();
+	expect(se.getVal('game:s')).toBe('0123');
+});
+
+
 // ============ [let_ml]〜[endlet_ml]（インラインテキスト代入） ============
 
 it('let_ml_basic', ()=> {
@@ -476,6 +540,13 @@ it('let_ml_keepsBracketsAndSemicolons', ()=> {
 		'[let_ml name=ml]\nvoid main(void) {\n\tgl_FragColor = v[0];\t; これもただの本文\n}\n[endlet_ml][s]');
 	se.step();
 	expect(se.getVal('ml')).toBe('\nvoid main(void) {\n\tgl_FragColor = v[0];\t; これもただの本文\n}\n');
+});
+
+it('let_ml_keepsNumericBodyAsString', ()=> {
+	// 本家同様cast=str扱いなので、数値だけの本文でも文字列のまま
+	const se = new ScriptEngine('t1', '[let_ml name=ml]0123[endlet_ml][s]');
+	se.step();
+	expect(se.getVal('ml')).toBe('0123');
 });
 
 it('let_ml_emptyBody', ()=> {

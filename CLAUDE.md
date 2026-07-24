@@ -146,7 +146,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   returns **`undefined` for an undefined variable** and `null` only when null was stored —
   the distinction is load-bearing (`1 + 未定義` → `NaN` is how 本家 detects undefined).
   Reads auto-cast (`'true'`→true, `'1.20'`→1.2) unless the name ends `@str`; a name whose
-  prefix holds a JSON string descends into it (`const.db.紀子.fn`).
+  prefix holds a JSON string descends into it (`const.db.紀子.fn`). `set()` takes 本家's
+  `cast` (`num`/`int`/`uint`/`bool`/`str`); since auto-cast happens on *read* here,
+  `cast=str` is remembered per key in `#setNoCast` rather than baked into the value.
 - **`src/ts/ExprEval.ts`** — 本家 `PropParser` **ported whole** (parsimmon operator table).
   Ternary, bit ops, `¥` integer division, hex literals, `int`/`parseInt`/`Number`/`ceil`/
   `floor`/`round`/`isNaN`, `#…#` string literals, `$var` / `#{expr}` embedding, and
@@ -188,7 +190,7 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 ### The `.sn` scripting language (current prototype tag set)
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
-text-bg opacity), `let`, `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
+text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro`, `button` (`call=true` for
@@ -199,7 +201,7 @@ cannot be used as macro names live in `ScriptEngine.RESERVED_TAGS`.
 
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
-`&名前 = 式` assignment (`&&式 = 式` evaluates the *name* as an expression too), and
+`&名前 = 式 [= cast]` assignment (`&&式 = 式` evaluates the *name* as an expression too), and
 `&式&` inline display. Both `&` forms only fire when the token **starts** with `&` — i.e.
 at line start or right after a tag/tab/newline, exactly as upstream. Attribute values that
 contain quotes must quote the whole value (`[if exp="mp:v=='X'"]`), since `AnalyzeTagArg`
