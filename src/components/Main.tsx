@@ -41,6 +41,8 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const chgStr = useStore(s=> s.chgStr);
 	const chgLay = useStore(s=> s.chgLay);
 	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
+	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
+	const toggleFullScr = useStore(s=> s.toggleFullScr);
 	const clearLay = useStore(s=> s.clearLay);
 	const enableEvent = useStore(s=> s.enableEvent);
 	const addBtn = useStore(s=> s.addBtn);
@@ -55,7 +57,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, clearLay, enableEvent, addBtn, addTitle, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, getPages, clearLay, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
 
 		inited();
 
@@ -81,7 +83,10 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	//	予約があればそちらを発火し、読み進め・読み戻りは行わない
 	useKey(()=> true, e=> {
 		scrMng.cancelAuto();	// 手動操作が入ったらオート読み・既読スキップは止める（本家 cancelAutoSkip）
-		if (scrMng.fireEvent(e.key.toLowerCase())) {e.stopPropagation(); e.preventDefault(); return}
+		const key = keyName(e);
+		// [toggle_full_screen key=…]は[event]とは別枠（ラベルへ飛ばず全画面を切り替えるだけ）なので先に見る
+		if (scrMng.fireFullScrKey(key)) {e.stopPropagation(); e.preventDefault(); return}
+		if (scrMng.fireEvent(key)) {e.stopPropagation(); e.preventDefault(); return}
 
 		switch (e.code) {
 			case 'Space':
@@ -103,6 +108,18 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		<Stage arg={arg} next={next} prev={prev} onClick={onClick} />
 	</Suspense>;
 };
+
+// 押されたキーの名前（本家 SysBase.modKey() ＋ e.key.toLowerCase()）。
+//	修飾キーは alt+ ctrl+ meta+ shift+ の順に前置する（本家と同じ並び順でないと引けない）。
+//	本家サンプルの main.sn が [event key=alt+enter] や [event key=Meta+0] を使う。
+//	修飾キー自身を押しただけの時に「alt+alt」等にならないよう、e.keyと同じものは前置しない
+function keyName(e: KeyboardEvent): string {
+	return	(e.altKey	&& e.key !== 'Alt'		? 'alt+'	: '')
+		+	(e.ctrlKey	&& e.key !== 'Control'	? 'ctrl+'	: '')
+		+	(e.metaKey	&& e.key !== 'Meta'		? 'meta+'	: '')
+		+	(e.shiftKey	&& e.key !== 'Shift'	? 'shift+'	: '')
+		+	e.key.toLowerCase();
+}
 
 let isDesignMode = false;	// この形でないとちらつく
 export const setDesignMode = (b: boolean)=> isDesignMode = b;

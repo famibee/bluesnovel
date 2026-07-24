@@ -121,6 +121,19 @@ export class ScriptMng {
 		void this.#jumpToLabelAndGo(label, call, fn).catch(()=> {/* myTraceで表示済み */});
 	}
 
+	// [toggle_full_screen key=…]で予約したキー。押されたらその場で全画面を切り替える。
+	//	[event]の予約（ラベルへ飛ぶ）とは別枠なので、Main.tsxはこちらを先に問い合わせる
+	readonly #hFullScrKey = new Set<string>();
+	fireFullScrKey(key: string): boolean {
+		if (! this.#hFullScrKey.has(key)) return false;
+
+		this.$fncs.toggleFullScr();
+		return true;
+	}
+	// 実際の全画面状態をエンジンへ書き戻す（組み込み変数 const.sn.displayState）。
+	//	Escでの解除などブラウザ都合の変化もあるので、Stage.tsxが実状態を見て呼ぶ
+	setFullScr(b: boolean) {this.#engine?.setFullScr(b)}
+
 	// [event]で予約したキー・クリックが押された時にMain.tsxから呼ばれる。
 	//	戻り値true＝予約イベントとして処理した（＝呼び出し側は通常の読み進めを行わない）。
 	//	移動そのものは[button]クリックと全く同じ経路を通す
@@ -446,6 +459,24 @@ export class ScriptMng {
 		case 'pauseTsy':
 			this.#hTw[act.tw_nm]?.tw.paused(act.paused);
 			break;
+		case 'title':
+			this.$fncs.addTitle(act.text);
+			break;
+		case 'toggleFullScr':
+			this.$fncs.toggleFullScr();
+			break;
+		case 'fullScrKey':
+			// [toggle_full_screen key=…]：以降そのキーで全画面を切り替えられるようにする常駐予約。
+			//	本家もdocumentへリスナを足しっぱなしにする（消す手段は無い）
+			this.#hFullScrKey.add(act.key);
+			break;
+		case 'dumpLay': {
+			// [dump_lay]：本家（LayerMng.ts:1068）と同じく表裏まとめてデバッグ表示へ出す
+			const {fore, back} = this.$fncs.getPages();
+			const pick = (a: typeof fore)=> act.aLayNm ? a.filter(l=> act.aLayNm!.includes(l.nm)) : a;
+			this.myTrace(`[dump_lay] ${JSON.stringify({fore: pick(fore), back: pick(back)})}`, 'D');
+			break;
+		}
 		case 'clearPageLog':
 			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
 			this.sys.caretaker.clear();

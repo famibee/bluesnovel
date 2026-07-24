@@ -204,7 +204,12 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   tsconfig; `css` prop available). `Main.tsx` wires keyboard/click events and the `ev_next`
   progression loop. `Stage.tsx` renders `aLay`; `TxtLayer`/`GrpLayer`/`BtnLayer` render the
   three layer roles. `Stage` is `lazy()`-loaded at module top level (not inside a component)
-  to avoid remount flicker.
+  to avoid remount flicker. **Nothing may statically import `Stage.tsx`** — one value import
+  from `GrpLayer`/`TxtLayer`/`store` pulls `Stage` back into the main chunk and the `lazy()`
+  stops splitting anything (rolldown says `INEFFECTIVE_DYNAMIC_IMPORT`). The shared,
+  component-free pieces therefore live in **`src/components/Lay.ts`** (`T_LAY`, `T_LAY_STY`,
+  `A_LAY_STY_KEY`, `T_LAY_IDX`, `T_LAY_CMN`, `styLay`, the drag flag); `import type` from
+  `Stage` would be fine since types erase, but there is no longer a reason to.
 - **`src/ts/Memento.ts`** — `Caretaker` records a state snapshot at every stop point, keyed
   `${fn}:${idx}`. This powers read-back: PageUp/PageDown (`prevKey`/`nextKey`) walk history;
   `isReadBack` in the store drives the read-back visual (yellow text). Button jumps
@@ -242,7 +247,7 @@ expression eval, `[`/`]`/`;` in the body are literal),
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
 subroutine-call on click), `event`/`clear_event`, `enable_event`, `wait`,
-`clearvar`/`clearsysvar`,
+`clearvar`/`clearsysvar`, `pop_stack`, `title`, `toggle_full_screen`, `dump_lay`,
 and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
@@ -312,7 +317,11 @@ caching it. The definition lives on the shared `Grammar`, so files parsed *later
 
 `[event key=… label=… call=… global=… del=…]` reserves a key/click. The engine keeps only the
 **table** (`getEvent`/`beginEvent`/`clearEvent`) — it never touches the DOM — and `Main.tsx`
-decides the key names: `KeyboardEvent.key` lowercased (`enter`, `escape`, …), plus `click`.
+decides the key names (`keyName()`): `KeyboardEvent.key` lowercased, prefixed with
+`alt+`/`ctrl+`/`meta+`/`shift+` in that order when held (本家 `SysBase.modKey()`) — so `enter`,
+`escape`, `alt+enter`, `meta+0` — plus `click`. `[toggle_full_screen key=…]` reserves a key
+too, but in its own table on `ScriptMng` (it toggles fullscreen rather than jumping to a
+label), and `Main.tsx` asks that one first.
 Local reservations are one-shot (cleared when a jump-type one fires) and are stashed on the
 call stack by `[call]`, restored by `[return]`; a **macro** call deliberately does not stash
 them (本家 `ScriptIterator.ts:957`). `global=true` reservations are exempt from all of that.

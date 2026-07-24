@@ -5,69 +5,18 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SysBase} from '../sn/SysBase';
 import {CmnLib, uint} from '../sn/CmnLib';
-import GrpLayer, {type T_GRPLAY_DATA} from './GrpLayer';
-import TxtLayer, {type T_TXTLAY_DATA} from './TxtLayer';
+import GrpLayer from './GrpLayer';
+import TxtLayer from './TxtLayer';
+import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {type CSSProperties, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
-import {css, type SerializedStyles} from '@emotion/react';
+import {css} from '@emotion/react';
 import gsap from 'gsap';
-
-// レイヤ共通の見た目（本家 Layer.ts lay() が扱う分のうち、試作で対応したもの）。
-//	rotationは度（本家も flash 由来で度。pixiのradianではない）。
-//	**全て省略可**にしてあるのが要点で、[lay]で書かれた属性だけが値を持つ。
-//	既定値を入れて常に持たせると、指定していない属性まで毎回インラインstyleへ書き出してしまい、
-//	各レイヤのCSS（TxtLayerのtop: 48%など）を潰してしまう
-//	（本家 Layer.lay() も `'left' in hArg` で書かれたかどうかを見ている）
-export type T_LAY_STY = {
-	visible?	: boolean;
-	alpha?		: number;	// レイヤ全体の不透明度。文字レイヤ背景だけを透かすb_alphaとは別物
-	left?		: number;
-	top?		: number;
-	rotation?	: number;
-	scale_x?	: number;
-	scale_y?	: number;
-};
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y'] as const;
-
-export type T_LAY_IDX = T_LAY_STY & {
-	cls		: 'grp'|'txt';
-	nm		: string;
-};
-
-// 上のT_LAY_STYをCSSへ。**指定された属性だけ**を出す。
-//	位置はstyChild（絶対配置）のleft/topを上書きし、回転・拡縮はtransformでまとめる
-//	（原点は左上＝本家pixiのpivot既定と揃える）
-export function styLay(l: T_LAY_STY): CSSProperties {
-	const sty: CSSProperties = {};
-	if (l.left !== undefined) sty.left = `${String(l.left)}px`;
-	if (l.top !== undefined) sty.top = `${String(l.top)}px`;
-	if (l.alpha !== undefined) sty.opacity = l.alpha;
-	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined) {
-		sty.transform = `rotate(${String(l.rotation ?? 0)}deg) scale(${String(l.scale_x ?? 1)}, ${String(l.scale_y ?? 1)})`;
-		sty.transformOrigin = 'left top';
-	}
-	// visible=falseは領域ごと消す（display:none）。visibility:hiddenだと
-	//	表裏ページのvisibility制御（Stageのpage単位）と混ざって分かりにくい
-	if (l.visible === false) sty.display = 'none';
-	return sty;
-}
-export type T_LAY_CMN = {
-	cmn: {
-		sys			: SysBase;
-		styChild	: SerializedStyles;
-		isDesignMode: boolean;
-		sty4Moveable: any;
-		visible?	: boolean;
-	};
-};
-export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
-
 
 export default function Stage({
 	arg: {heStage, sys, scrMng}, onClick, prev, next,
@@ -187,7 +136,7 @@ export default function Stage({
 	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
 	useMount(()=> {
 		const div = stageRef.current!;
-		div.addEventListener('mousedown', ()=> isDrag = false);
+		div.addEventListener('mousedown', ()=> clearDrag());
 
 		const fnc = (e: WheelEvent)=> {
 			e.preventDefault();
@@ -203,13 +152,20 @@ export default function Stage({
 		e.stopPropagation();	// でも止まらない
 		onLong();			// これで止める
 
-		if (isDrag) return;
+		if (isDragging()) return;
 		tglDesignMode();
 		setDesignMode(! isDesignMode);	// React のくせで取れないので
 	}, {isPreventDefault: true, delay: 300,});
 
-	const [show, tglFlScr] = useToggle(false);
-	const isFullscreen = useFullscreen(stageRef, show, {onClose: ()=> tglFlScr(false)});
+	// 全画面表示。[toggle_full_screen]（＝ストアのfullScr）が「こうしたい」を持ち、
+	//	実際にそうなったかはuseFullscreenの戻り値。Escでの解除などブラウザ都合の変化もあるので、
+	//	実状態をエンジンの組み込み変数const.sn.displayStateへ書き戻す
+	//	（本家もSysWebがfullscreenchangeを拾ってisFullScrを直している）
+	const fullScr = useStore(s=> s.fullScr);
+	const setFullScr = useStore(s=> s.setFullScr);
+	const tglFlScr = useStore(s=> s.toggleFullScr);
+	const isFullscreen = useFullscreen(stageRef, fullScr, {onClose: ()=> setFullScr(false)});
+	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
@@ -300,6 +256,3 @@ export default function Stage({
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
 	}
-
-	let isDrag = false;
-export const noticeDrag = ()=> {isDrag = true}

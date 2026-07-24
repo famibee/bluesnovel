@@ -62,6 +62,10 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'clearLay'; nm: string; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
+	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
+	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
+	| {t: 'fullScrKey'; key: string}	// [toggle_full_screen key=…]。そのキーで全画面切替できるようにする常駐予約
+	| {t: 'dumpLay'; aLayNm: string[] | null}	// [dump_lay]。レイヤの状態をデバッグ表示へ。nullは全レイヤ
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
@@ -195,6 +199,13 @@ export class ScriptEngine {
 		return flags ? new RegExp(reg, flags) : new RegExp(reg);
 	}
 
+	// layer属性のカンマ区切りをレイヤ名の配列に。未指定（空）はnull＝全レイヤ
+	//	（本家 LayerMng.#getLayers() の「省略時は全レイヤ」に対応）
+	static #argLayNames(sLay: string | undefined): string[] | null {
+		const a = (sLay ?? '').split(',').map(v=> v.trim()).filter(v=> v !== '');
+		return a.length > 0 ? a : null;
+	}
+
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
 		const v = args.page ?? def;
 		if (v === 'fore' || v === 'back') return v;
@@ -277,6 +288,7 @@ export class ScriptEngine {
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
+		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -308,7 +320,15 @@ export class ScriptEngine {
 		//	本家はトークンを読むたびtmp:へ代入するが（ScriptIterator.ts:1299）、
 		//	こちらは他の組み込み変数と同じ遅延評価にした（参照時点の値は同じ）
 		this.#val.defBuiltin('const.sn.isKidoku', ()=> this.#isKidoku);
+
+		// 組み込み変数：全画面表示中か（本家 val.defTmp('const.sn.displayState', ()=> this.isFullScr)）。
+		//	**エンジンは自分では倒さない**。Escキーでの解除などブラウザ都合の変化もあるので、
+		//	実際の状態はDOM側（Stage.tsxのfullscreenchange）からsetFullScr()で教えてもらう
+		//	（本家もSysWebがfullscreenchangeを拾ってisFullScrへ書いている）
+		this.#val.defBuiltin('const.sn.displayState', ()=> this.#isFullScr);
 	}
+	#isFullScr = false;
+	setFullScr(b: boolean) {this.#isFullScr = b}
 
 	// 実行中スクリプトの差し替え＝ファイル切替。
 	//	ScriptMngが'loadScript'アクションを受けてfetch・パースした結果を渡してくる。
@@ -1003,6 +1023,44 @@ export class ScriptEngine {
 			//	bluesnovelの読み戻りがPageUp/PageDownとCaretakerで別の作りになっているため未対応
 			if (! ('clear' in args || 'to' in args || 'style' in args)) throw '[page] clear,style,to いずれかは必須です';
 			if (args.clear === 'true') aAct.push({t: 'clearPageLog'});
+			return 'skip';
+		}
+
+		// ---- しおり・システム系 ----
+		case 'title': {	// ウインドウ（ブラウザタブ）のタイトル指定（本家 SysBase.ts:448 title）
+			// 本家サンプルの setting.sn:50 が体験版表記に使っている：
+			//	[title text=#&const.sn.config.book.title +' 体験版'# cond=const.体験版]
+			const {text} = args;
+			if (! text) throw '[title] textは必須です';
+
+			aAct.push({t: 'title', text});
+			return 'skip';
+		}
+
+		case 'toggle_full_screen':	// 全画面状態切替（本家 SysBase.ts:462 #tglFlscr()）
+			// key指定時は「そのキーで全画面を切り替えられるようにする」常駐予約（本家もdocumentへ
+			//	リスナを足しっぱなしにする）。key省略時はその場で切り替える。
+			//	[event]の予約とは別枠：ラベルへ飛ぶのではなく全画面を切り替えるだけなので
+			aAct.push(args.key
+				? {t: 'fullScrKey', key: args.key.toLowerCase()}
+				: {t: 'toggleFullScr'});
+			return 'skip';
+
+		case 'dump_lay':	// レイヤのダンプ（本家 LayerMng.ts:1068 #dump_lay()）
+			aAct.push({t: 'dumpLay', aLayNm: ScriptEngine.#argLayNames(args.layer)});
+			return 'skip';
+
+		case 'pop_stack': {	// コールスタック破棄（本家 ScriptIterator.ts:984 #pop_stack()）
+			// [return]で戻らずにサブルーチンを抜ける時に使う（本家サンプルでは
+			//	_submenu.sn/sub.sn が「タイトルへ戻る」等の脱出で[pop_stack clear=true]する）
+			if ((args.clear ?? 'false') !== 'false') this.#aCallStk.length = 0;
+			else if (! this.#aCallStk.pop()) throw '[pop_stack] スタックが空です';
+
+			// 本家同様、ifスタックは「壁」だけに戻し、マクロ引数（mp:）も捨てる。
+			//	どこまで積まれていたか分からない状態から抜けるので、途中の[if]も無かったことにする
+			this.#aIfStk.length = 0;
+			this.#aIfStk.push(-1);
+			this.#val.setMp({});
 			return 'skip';
 		}
 

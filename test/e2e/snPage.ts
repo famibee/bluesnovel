@@ -41,7 +41,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

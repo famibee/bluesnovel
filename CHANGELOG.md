@@ -308,6 +308,23 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/ScriptEngine_tsy.test.ts`（新規24件）＋`test/e2e/tsy.e2e.ts`（新規4件・`prj_tsy`フィクスチャ）。ユニット781件→805件、E2E 49件→53件
   - `path=`（複数区間の経路）・`chain=`・`render=`・`filter=`・`backlay=`・`width`/`height`/`pivot_*`は未対応（`todo.md`へ）
 
+- [x] **システム系タグ：`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`（＋修飾キー付きのキー名）**（2026-07-24）
+  - `[title text=…]`（本家 `SysBase.ts:448`）。本家サンプルの`setting.sn:50`が体験版表記に使っていて、**`main.sn`から`title.sn`までの経路で実際に実行される数少ないシステム系タグ**。ストアの`title`→`useTitle`は既にあったのでタグを繋いだだけ
+  - `[toggle_full_screen]`（本家 `SysBase.ts:462`）。ストアに「全画面にしたい」という**要求**（`fullScr`）を持たせ、`Stage.tsx`がreact-useの`useFullscreen`へ渡す。実際にそうなったかは戻り値で分かるので、それを組み込み変数`const.sn.displayState`へ書き戻す。**エンジンは自分ではこのフラグを倒さない**——Escでの解除などブラウザ都合の変化があるため（本家も`SysWeb`が`fullscreenchange`を拾って`isFullScr`を直している）
+  - `[toggle_full_screen key=…]`は「そのキーで全画面を切り替えられるようにする」常駐予約。`[event]`の予約（ラベルへ飛ぶ）とは別枠なので`ScriptMng`が別表で持ち、`Main.tsx`が先に問い合わせる
+  - **修飾キー付きのキー名に対応**（`Main.tsx` `keyName()`、本家 `SysBase.modKey()`の移植）。`alt+` `ctrl+` `meta+` `shift+`の順に前置する。本家サンプルの`main.sn`が`[event key=alt+enter]`や`[event key=Meta+0]`を使っており、それまでは`e.key.toLowerCase()`だけだったので引けなかった。修飾キー自身を押した時に`alt+alt`にならないよう、`e.key`と同じものは前置しない
+  - `[pop_stack]`（本家 `ScriptIterator.ts:984`）。`[return]`せずにサブルーチンを抜ける。`clear=true`で全部捨てる。本家同様、ifスタックは「壁」(-1)だけに戻し、マクロ引数（`mp:`）も捨てる。**途中の`[if]`は無かったことになる**ので、抜けた先に残った`[endif]`へ辿り着くとエラーになる——これは本家と同じ挙動（本家 `#endif()` も `t === -1` なら投げる）
+  - `[dump_lay]`（本家 `LayerMng.ts:1068`）。表裏まとめてデバッグ表示へ。ストアに`getPages`を追加
+  - `test/ScriptEngine_sys.test.ts`（新規16件）＋`test/e2e/sys.e2e.ts`（新規4件・`prj_sys`フィクスチャ）。ユニット805件→821件、E2E 53件→57件
+  - E2Eに入れたのはブラウザ側の結び付きだけ（`document.title`、予約キーが`fullScr`を切り替えること、`alt+enter`で`[event]`が引けること）。実フルスクリーンAPIはヘッドレスで当てにならないので、要求が立つところまでを見る
+  - `[record_place]`/`[reload_script]`（セーブ層が要る）・`[window]`/`[close]`（Electron専用。本家もブラウザ版ではno-op）・`[snapshot]`（pixiのcanvas前提でDOM描画では取得手段から検討）は保留（`todo.md`へ）
+- [x] **`Stage.tsx`の`lazy()`が効いていなかったのを修正（`INEFFECTIVE_DYNAMIC_IMPORT`）**（2026-07-24）
+  - `Main.tsx`は`Stage`を`lazy()`（＝動的import）で読み込んでいるが、`GrpLayer`/`TxtLayer`が`noticeDrag`を、`store`が`A_LAY_STY_KEY`を`Stage.tsx`から**値として**静的importしていたため、`Stage`が同じチャンクへ引き戻されて分割が全く効いていなかった
+  - 共有物（`T_LAY`・`T_LAY_STY`・`A_LAY_STY_KEY`・`T_LAY_IDX`・`T_LAY_CMN`・`styLay`・ドラッグ通知）を`src/components/Lay.ts`へ切り出し、`Stage.tsx`はコンポーネント本体だけにした。これで`Stage.tsx`を静的importするモジュールが無くなる
+  - ドラッグ中フラグ（`isDrag`）は`Stage.tsx`が読み書きしていたので、`Lay.ts`側に置いて`noticeDrag()`/`clearDrag()`/`isDragging()`で触る形にした
+  - `import type`だけなら型は消えるので警告の原因にならないが、区別が事故のもとなので参照先ごと`Lay.ts`へ寄せている。この制約は`CLAUDE.md`にも書いた
+  - ユニット821件・E2E 57件とも変化なし（挙動は同じ）
+
 - [ ]
 
 

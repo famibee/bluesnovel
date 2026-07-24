@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Stage';
+import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 
 import {type CSSProperties, MouseEvent, useRef} from 'react';

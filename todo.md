@@ -32,16 +32,11 @@
   - [ ] `[tsy]`の`width`/`height`/`pivot_x`/`pivot_y`は、レイヤ属性側（`[lay]`）に無いので未対応。`[lay]`の`pivot_*`と同時に
   - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）・`[tsy filter=…]`はpixi前提なので、フィルター対応と同時に
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
-- [ ] **しおり・システム系**
-  - [ ] `[record_place]` セーブポイント指定（既読永続化・セーブ層と一緒に）
-  - [ ] `[reload_script]` スクリプト再読込
-  - [ ] `[pop_stack]` コールスタック破棄
-  - [ ] `[title]` タイトル指定（`setting.sn`が体験版表記で使う。ストアの`addTitle`は`prj.json`のbook.title用で、タグは未実装）
-  - [ ] `[toggle_full_screen]` 全画面状態切替
-  - [ ] `[window]` アプリウインドウ設定
-  - [ ] `[close]` アプリの終了
-  - [ ] `[snapshot]` スナップショット
-  - [ ] `[dump_lay]` レイヤのダンプ（デバッグ用）
+- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`は実装済み）
+  - [ ] `[record_place]`（セーブポイント指定）と`[reload_script]`（スクリプト再読込）は、どちらもセーブ層（しおり）が要るので既読情報の永続化と一緒に。`[reload_script]`は本家では「今のスクリプトを読み直して`[record_place]`の位置へ戻る」＝`[record_place]`単体では意味がない
+  - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）はElectron専用。本家もブラウザ版（`SysWeb`）では何もしないno-opなので、`dist_app`側の整備と一緒に
+  - [ ] `[snapshot]`（画面のスナップショット）。本家はpixiのレンダラからcanvasを取るが、bluesnovelはDOM描画なので取得手段から検討（html2canvas等）
+  - [ ] `[toggle_full_screen]`の残り：本家は全画面時にステージを画面中央へ寄せる（`SysBase.cvsResize()`）。bluesnovelは`transform: scale()`での拡縮なので、全画面時の見た目は実機で要確認
 - [ ] **HTMLフレーム**（`_yesno.sn`が全面的に使う。`[event key='dom=...']`とセット）
   - [ ] `[add_frame]` / `[frame]` / `[set_frame]` / `[let_frame]`（＋`[tsy_frame]`）
 - [ ] **フィルター**
@@ -58,6 +53,7 @@
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
 - [ ] `[event]`の`url`（`[navigate_to]`）・`key='dom=セレクタ'`（HTML要素へのイベント割り当て）・`need_err`は未対応
+  - 修飾キー付きのキー名（`alt+enter`・`meta+0`等。本家 `SysBase.modKey()`）は対応済み（`Main.tsx` `keyName()`）
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - face合成そのもの（`add_face`/`[lay fn=... face=...]`）は実装・テスト済み
   - デザインモードでのMoveableリサイズ時、差分画像（face）は`dx`/`dy`が絶対px指定のため、拡大縮小に追随しない（`GrpLayer.tsx`）。比率換算の要否を検討

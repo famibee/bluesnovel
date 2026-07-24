@@ -1,0 +1,20 @@
+; E2E用シナリオ（sys.e2e.ts が使用）
+;	どのアクションを積むかは ScriptEngine_sys.test.ts が受け持つ。
+;	ここで見るのは、ユニットテストでは届かないブラウザ側の結び付きだけ：
+;	・[title]がブラウザタブのタイトル（document.title）になること
+;	・[toggle_full_screen key=…]で予約したキーが全画面要求（store.fullScr）を切り替えること
+;	・修飾キー付きのキー名（alt+enter）で[event]が引けること
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[toggle_full_screen key=w]
+[event key=alt+enter label=*modkey]
+
+[title text=さいしょ]
+はじめ[l]
+
+[title text=あとから]
+かえた[s]
+
+*modkey
+[er]しゅうしょくキー[s]
