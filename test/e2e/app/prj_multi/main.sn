@@ -1,0 +1,10 @@
+; E2E用シナリオ（multi.e2e.ts が使用）
+;	[call fn=…]で別ファイルのサブルーチンを呼び、[return]で戻る。
+;	変数がファイルを跨いで保持されること・別ファイル定義のマクロが呼べることも見る
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[let name=game:hp val=100 cast=int]
+main1[l]
+[er][call fn=sub label=*greet]main2[l]
+[er][よぶ]&game:hp&[l]
+[er][jump fn=sub label=*last]

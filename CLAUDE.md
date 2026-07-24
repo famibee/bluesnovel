@@ -55,7 +55,7 @@ E2E (`playwright test`) are **fully separated**:
   the config's folder. Vite's default 5173/5174 are routinely squatted by other projects' dev
   servers (e.g. `tmp_blues`), and reusing one silently tests the *wrong app*.
 - `test/e2e/app/` is a self-contained fixture: `index.html` + `main.ts` boot `SysWeb` against
-  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button|expr`
+  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button|expr|multi`
   picks the scenario, since `SysBase.loaded()` always loads the script named `main`. No image
   assets are used, so the fixtures need no binaries. Adding a scenario = new `prj_<name>/` +
   a `T_PRJ` member in `snPage.ts`. **`src/` contains no test-only hooks**:
@@ -65,6 +65,9 @@ E2E (`playwright test`) are **fully separated**:
 - Writing fixture `.sn`: `&名前 = 式` and `&式&` only fire when the **token** starts with `&`
   (line start, or straight after a tag) — mid-sentence they render literally. See
   `prj_expr/main.sn`.
+- Scenarios that cross files (`prj_multi/`) need `expect.poll` rather than a bare assertion
+  after `pressKey()`: a script fetch leaves brief moments where store, DOM and `isTyping` all
+  look settled mid-run, and `waitIdle()` cannot tell those from a real stop point.
 - `test/e2e/snPage.ts` holds the helpers. `waitIdle()` must be awaited before every click or
   keypress: it waits until the DOM has caught up with the store, because `Stage` is `lazy()`-loaded
   and a test can otherwise race ahead while Suspense still shows `Loading` — in that window
@@ -128,12 +131,17 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
                                     React (Stage/…) re-renders from store
 ```
 
-- **`src/ts/ScriptEngine.ts`** — the prototype parser+executor. No DOM, no fetch. Tokenizes
-  a `.sn` script, runs until the next `[l]`/`[p]`/`[s]` stop point (or EOF), and returns a
+- **`src/ts/Script.ts`** — one `.sn` file's parse result (token array + label table), read-only.
+  Everything that varies per file lives here.
+- **`src/ts/ScriptEngine.ts`** — the prototype executor. No DOM, no fetch. Runs the current
+  `Script` until the next `[l]`/`[p]`/`[s]` stop point (or EOF), and returns a
   `T_ENGINE_ACTION[]` describing what changed (add layer, change picture, append text, add
-  button, trace, stop…). It owns **all execution state**: token index `#idx`, label table,
-  the if-stack `#aIfStk`, the call-stack `#aCallStk`, the macro table `#hMacro`, and
-  variables (via `VarStore`/`ExprEval`). This is the file most unit tests target directly.
+  button, trace, stop…). It owns **all execution state**: token index `#idx`, the if-stack
+  `#aIfStk`, the call-stack `#aCallStk`, the macro table `#hMacro`, and variables (via
+  `VarStore`/`ExprEval`). **There is exactly one engine**; crossing files swaps the `Script`
+  via `switchScript()`, so variables and stacks survive. When a tag needs another file the
+  engine emits `{t:'loadScript', fn, label, idx}` and stops — fetching is `ScriptMng`'s job,
+  which keeps `step()` synchronous and unit-testable. This is the file most unit tests target.
   Tokenizing and tag-arg parsing are **delegated to 本家 code**: `Grammar.resolveScript()`
   and `tagToken2Name_Args()` + `AnalyzeTagArg`. `step()`'s dispatch mirrors 本家
   `Main.ts#main()` exactly — first char of the token decides (`\t`/`\n` skip, `[` tag,
@@ -159,9 +167,10 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   `floor`/`round`/`isNaN`, `#…#` string literals, `$var` / `#{expr}` embedding, and
   `hA[春夏][ひきす]` index-to-name resolution. Takes a `T_VAR_GET` (`{get(name)}`), not a
   concrete `VarStore`, so tests can pass a flat table like 本家's `ValTest`.
-- **`src/ts/ScriptMng.ts`** — the bridge. `#runStep()` calls `engine.step()`, then
+- **`src/ts/ScriptMng.ts`** — the bridge. `#runStep()` (async) calls `engine.step()`, then
   `#applyAction()` translates each `T_ENGINE_ACTION` into a store mutation (the `T_INIT_FNCS`
-  set passed in from `Main.tsx`). Also owns script fetching (`#fetchScript`) and the
+  set passed in from `Main.tsx`); on `loadScript` it fetches, caches a `Script` and loops.
+  Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
   `myTrace` debug overlay. Contains a `SAMPLE_SN` fallback that renders a demo when assets
   are missing — this is prototype scaffolding to be removed once the asset pipeline exists.
 - **`src/store/store.tsx`** — **zustand** store; single source of truth. `aLay: T_LAY[]` is
@@ -199,9 +208,9 @@ text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text int
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes), `button` (`call=true` for
-subroutine-call on click), and the stop points `l`/`p`/`s`. **Only same-file labels are
-supported** for jump/call/button/macro — cross-file (`jump fn=...`) is a known TODO that
-needs execution state moved out of `ScriptEngine` into `ScriptMng`. Macro names are rejected
+subroutine-call on click), and the stop points `l`/`p`/`s`. `jump`/`call`/`return` take
+`fn=` to cross files, and a macro can be called from a file other than the one that defined
+it; only `[button]` is still same-file-only. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
 Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
 them in scripts meant to run on 本家.

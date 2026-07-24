@@ -1213,8 +1213,32 @@ var m = class {
 	testNoTxt(e) {
 		return this.#u.test(e);
 	}
-}, h = class e {
+}, h = class {
 	fn;
+	aToken;
+	#e = Object.create(null);
+	constructor(e, t, n = new m()) {
+		this.fn = e, this.aToken = n.resolveScript(t).aToken;
+		let r = !1;
+		this.aToken.forEach((e, t) => {
+			if (r) {
+				n.testTagEndLetml(e) && (r = !1);
+				return;
+			}
+			if (e.charCodeAt(0) === 42 && e.length > 1) {
+				this.#e[e.trim()] = t + 1;
+				return;
+			}
+			n.testTagLetml(e) && (r = !0);
+		});
+	}
+	get len() {
+		return this.aToken.length;
+	}
+	label2idx(e) {
+		return this.#e[e];
+	}
+}, g = class e {
 	static #e = new u();
 	static parseTag(t) {
 		let [n, r] = f(t);
@@ -1229,16 +1253,15 @@ var m = class {
 	#t = new m();
 	#n;
 	#r = 0;
-	#i = Object.create(null);
-	#a = "mes";
-	#o = Object.create(null);
-	#s = !1;
-	#c = Object.create(null);
-	#l = new o();
-	#u = new c(this.#l);
+	#i = "mes";
+	#a = Object.create(null);
+	#o = !1;
+	#s = Object.create(null);
+	#c = new o();
+	#l = new c(this.#c);
+	#u = [];
 	#d = [];
-	#f = [];
-	#p = Object.create(null);
+	#f = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
 	static RESERVED_TAGS = /* @__PURE__ */ new Set([
 		"add_lay",
@@ -1265,54 +1288,58 @@ var m = class {
 		"p",
 		"s"
 	]);
-	constructor(e, t) {
-		this.fn = e, this.#n = this.#t.resolveScript(t).aToken, this.#l.defBuiltin("const.sn.scriptFn", () => this.fn);
-		let n = !1;
-		this.#n.forEach((e, t) => {
-			if (n) {
-				this.#t.testTagEndLetml(e) && (n = !1);
-				return;
-			}
-			if (e.charCodeAt(0) === 42 && e.length > 1) {
-				this.#i[e.trim()] = t + 1;
-				return;
-			}
-			this.#t.testTagLetml(e) && (n = !0);
-		});
+	constructor(e, t = "") {
+		this.#n = e instanceof h ? e : new h(e, t, this.#t), this.#c.defBuiltin("const.sn.scriptFn", () => this.fn);
+	}
+	switchScript(e, t = "", n = 0) {
+		if (this.#n = e, !t) {
+			this.#r = n;
+			return;
+		}
+		let r = e.label2idx(t);
+		if (r === void 0) throw `ラベル【${t}】がスクリプト【${e.fn}】に見つかりません`;
+		this.#r = r;
 	}
 	getVal(e) {
-		return this.#l.get(e);
+		return this.#c.get(e);
+	}
+	get fn() {
+		return this.#n.fn;
 	}
 	get idx() {
 		return this.#r;
 	}
 	get atEnd() {
-		return this.#r >= this.#n.length;
+		return this.#r >= this.#n.len;
 	}
 	jumpToLabel(e) {
-		let t = this.#i[e];
-		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		let t = this.#n.label2idx(e);
+		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
 		this.#r = t;
 	}
 	callToLabel(e) {
-		let t = this.#i[e];
-		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
-		this.#f.push({
-			returnIdx: --this.#r,
-			lenIfStk: this.#d.length,
-			hMp: this.#l.cloneMp()
-		}), this.#d.push(-1), this.#r = t;
+		let t = this.#n.label2idx(e);
+		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
+		this.#p(--this.#r), this.#r = t;
+	}
+	#p(e) {
+		this.#d.push({
+			fn: this.fn,
+			returnIdx: e,
+			lenIfStk: this.#u.length,
+			hMp: this.#c.cloneMp()
+		}), this.#u.push(-1);
 	}
 	step() {
 		let t = [];
-		this.#s && (this.#s = !1, this.#o[this.#a] = "", t.push({
+		this.#o && (this.#o = !1, this.#a[this.#i] = "", t.push({
 			t: "chgStr",
-			nm: this.#a,
+			nm: this.#i,
 			str: ""
 		}));
-		let n = this.#n.length;
+		let n = this.#n.len;
 		for (; this.#r < n;) {
-			let n = this.#n[this.#r++], r = n.charCodeAt(0);
+			let n = this.#n.aToken[this.#r++], r = n.charCodeAt(0);
 			if (r === 9 || r === 10) continue;
 			if (r === 91) {
 				let { name: r, args: i } = e.parseTag(n);
@@ -1326,7 +1353,7 @@ var m = class {
 					continue;
 				}
 				if (n.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
-				let e = this.#u.parse(n.slice(1, -1));
+				let e = this.#l.parse(n.slice(1, -1));
 				i = e == null ? "" : String(e);
 			} else if (r === 59) continue;
 			else if (r === 42 && n.length > 1) continue;
@@ -1336,27 +1363,27 @@ var m = class {
 	}
 	#m(e) {
 		let { name: t, text: n, cast: r } = p(e.slice(1));
-		this.#l.set(this.#u.getValAmpersand(t.trim()), this.#u.parse(n), r ?? "");
+		this.#c.set(this.#l.getValAmpersand(t.trim()), this.#l.parse(n), r ?? "");
 	}
 	#h(t, n, r) {
-		let i = this.#n.length;
+		let i = this.#n.len;
 		switch (t) {
 			case "add_lay": {
 				let e = n.layer ?? n.nm ?? "";
 				if (!e) throw "[add_lay] layerは必須です（試作仕様）";
 				let t = (n.class ?? "txt").toLowerCase() === "grp" ? "grp" : "txt";
-				return this.#o[e] = "", r.push({
+				return this.#a[e] = "", r.push({
 					t: "addLay",
 					cls: t,
 					nm: e
 				}), "skip";
 			}
-			case "current": return this.#a = n.layer ?? n.nm ?? this.#a, "skip";
+			case "current": return this.#i = n.layer ?? n.nm ?? this.#i, "skip";
 			case "add_face": {
 				let e = n.name ?? "";
 				if (!e) throw "[add_face] nameは必須です（試作仕様）";
-				if (this.#c[e]) throw `[add_face] 同一のname（${e}）に対して複数の画像を割り当てられません`;
-				return this.#c[e] = {
+				if (this.#s[e]) throw `[add_face] 同一のname（${e}）に対して複数の画像を割り当てられません`;
+				return this.#s[e] = {
 					fn: n.fn || e,
 					dx: Number(n.dx || "0"),
 					dy: Number(n.dy || "0"),
@@ -1369,7 +1396,7 @@ var m = class {
 					let t = [];
 					if (n.face) for (let e of n.face.split(",")) {
 						if (!e) throw "[lay] face属性に空要素が含まれています";
-						let n = this.#c[e];
+						let n = this.#s[e];
 						if (!n) throw `[lay] face【${e}】は[add_face]で未定義です`;
 						t.push(n);
 					}
@@ -1395,16 +1422,16 @@ var m = class {
 				let e = n.name ?? "";
 				if (!e) throw "[let] nameは必須です（試作仕様）";
 				let t = n.val ?? "";
-				return this.#l.set(e, this.#u.parse(t), n.cast ?? ""), "skip";
+				return this.#c.set(e, this.#l.parse(t), n.cast ?? ""), "skip";
 			}
 			case "let_ml": {
 				let e = n.name ?? "";
 				if (!e) throw "[let_ml] nameは必須です";
 				let t = "";
-				for (; this.#r < i && (t = this.#n[this.#r], t === ""); ++this.#r);
-				if (this.#t.testTagEndLetml(t)) return this.#l.set(e, "", "str"), ++this.#r, "skip";
-				if (!this.#t.testTagEndLetml(this.#n[this.#r + 1] ?? "")) throw `[let_ml] 変数【${e}】の終端・[endlet_ml]がありません`;
-				return this.#l.set(e, t, "str"), this.#r += 2, "skip";
+				for (; this.#r < i && (t = this.#n.aToken[this.#r], t === ""); ++this.#r);
+				if (this.#t.testTagEndLetml(t)) return this.#c.set(e, "", "str"), ++this.#r, "skip";
+				if (!this.#t.testTagEndLetml(this.#n.aToken[this.#r + 1] ?? "")) throw `[let_ml] 変数【${e}】の終端・[endlet_ml]がありません`;
+				return this.#c.set(e, t, "str"), this.#r += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
 			case "if": return this.#g(n), "skip";
@@ -1412,42 +1439,55 @@ var m = class {
 			case "else":
 			case "endif": return this.#_(), "skip";
 			case "r": return this.#y(r, "\n"), "skip";
-			case "er": return this.#o[this.#a] = "", r.push({
+			case "er": return this.#a[this.#i] = "", r.push({
 				t: "chgStr",
-				nm: this.#a,
+				nm: this.#i,
 				str: ""
 			}), "skip";
 			case "trace": return r.push({
 				t: "trace",
-				text: this.#u.getValAmpersand(n.text ?? "")
+				text: this.#l.getValAmpersand(n.text ?? "")
 			}), "skip";
 			case "jump": {
-				let e = n.label ?? "", t = this.#i[e];
-				if (t === void 0) throw `[jump] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
-				return this.#r = t, "skip";
+				let e = n.label ?? "", t = n.fn ?? "";
+				if (!e && !t) throw "[jump] fnまたはlabelは必須です";
+				if (t && t !== this.fn) return r.push({
+					t: "loadScript",
+					fn: t,
+					label: e,
+					idx: 0
+				}), "stop";
+				let i = this.#n.label2idx(e);
+				if (i === void 0) throw `[jump] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
+				return this.#r = i, "skip";
 			}
 			case "call": {
-				let e = n.label ?? "";
-				if (!e) throw "[call] labelは必須です（試作仕様）";
-				let t = this.#i[e];
-				if (t === void 0) throw `[call] ラベル【${e}】が見つかりません（試作は同一ファイル内のみ対応）`;
-				return this.#f.push({
-					returnIdx: this.#r,
-					lenIfStk: this.#d.length,
-					hMp: this.#l.cloneMp()
-				}), this.#d.push(-1), this.#r = t, "skip";
+				let e = n.label ?? "", t = n.fn ?? "";
+				if (!e && !t) throw "[call] fnまたはlabelは必須です";
+				if (t && t !== this.fn) return this.#p(this.#r), r.push({
+					t: "loadScript",
+					fn: t,
+					label: e,
+					idx: 0
+				}), "stop";
+				let i = this.#n.label2idx(e);
+				if (i === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
+				return this.#p(this.#r), this.#r = i, "skip";
 			}
-			case "return": return this.#v(n), "skip";
+			case "return": return this.#v(r, n);
 			case "macro": {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
 				if (e.RESERVED_TAGS.has(t)) throw `[${t}]はタグ名のため、マクロ名として使用できません`;
 				if (e.REG_NG4MAC_NM.test(t)) throw `[${t}]はマクロ名として異常です`;
-				if (t in this.#p) throw `[macro] マクロ【${t}】は既に定義済みです`;
-				this.#p[t] = this.#r;
+				if (t in this.#f) throw `[macro] マクロ【${t}】は既に定義済みです`;
+				this.#f[t] = {
+					fn: this.fn,
+					idx: this.#r
+				};
 				let r = !1, a = 0, o = !1;
 				for (; this.#r < i; ++this.#r) {
-					let t = this.#n[this.#r];
+					let t = this.#n.aToken[this.#r];
 					if (o) {
 						this.#t.testTagEndLetml(t) && (o = !1);
 						continue;
@@ -1474,9 +1514,9 @@ var m = class {
 				if (!r) throw `[macro] マクロ【${t}】が[endmacro]で閉じられていません（試作仕様）`;
 				return "skip";
 			}
-			case "endmacro": return this.#v(), "skip";
+			case "endmacro": return this.#v(r);
 			case "button": {
-				let e = n.layer || this.#a;
+				let e = n.layer || this.#i;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
 				let t = n.label ?? "";
 				if (!t) throw "[button] labelは必須です（試作仕様）";
@@ -1492,28 +1532,29 @@ var m = class {
 			}
 			case "l":
 			case "p":
-			case "s": return t === "p" && (this.#s = !0), r.push({
+			case "s": return t === "p" && (this.#o = !0), r.push({
 				t: "stop",
 				kind: t,
 				key: `${this.fn}:${String(this.#r)}`,
-				nm: this.#a
+				nm: this.#i
 			}), "stop";
 			default: {
-				let e = this.#p[t];
-				return e === void 0 ? "skip" : (this.#f.push({
-					returnIdx: this.#r,
-					lenIfStk: this.#d.length,
-					hMp: this.#l.cloneMp()
-				}), this.#d.push(-1), this.#l.setMp(n), this.#r = e, "skip");
+				let e = this.#f[t];
+				return e === void 0 ? "skip" : (this.#p(this.#r), this.#c.setMp(n), e.fn === this.fn ? (this.#r = e.idx, "skip") : (r.push({
+					t: "loadScript",
+					fn: e.fn,
+					label: "",
+					idx: e.idx
+				}), "stop"));
 			}
 		}
 	}
 	#g(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
-		let r = this.#u.evalBool(n) ? this.#r : -1, i = 0, a = !1, o = this.#n.length;
+		let r = this.#l.evalBool(n) ? this.#r : -1, i = 0, a = !1, o = this.#n.len;
 		for (; this.#r < o; ++this.#r) {
-			let t = this.#n[this.#r];
+			let t = this.#n.aToken[this.#r];
 			if (a) {
 				this.#t.testTagEndLetml(t) && (a = !1);
 				continue;
@@ -1532,7 +1573,7 @@ var m = class {
 					if (i > 0 || r > -1) continue;
 					let e = o.exp ?? "";
 					if (!e) throw "[elsif] expは必須です（試作仕様）";
-					this.#u.evalBool(e) && (r = this.#r + 1);
+					this.#l.evalBool(e) && (r = this.#r + 1);
 					continue;
 				}
 				case "else":
@@ -1544,7 +1585,7 @@ var m = class {
 						--i;
 						continue;
 					}
-					r === -1 ? ++this.#r : (this.#d.push(this.#r + 1), this.#r = r);
+					r === -1 ? ++this.#r : (this.#u.push(this.#r + 1), this.#r = r);
 					return;
 				default: continue;
 			}
@@ -1552,39 +1593,49 @@ var m = class {
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
 	#_() {
-		let e = this.#d.pop();
+		let e = this.#u.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#r = e;
 	}
-	#v(e = {}) {
-		let t = this.#f.pop();
-		if (!t) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
-		if (this.#d.length = t.lenIfStk, this.#l.setMp(t.hMp), e.fn) throw "[return] fn指定（別スクリプトへ戻る）は未対応です（試作は同一ファイル内のみ対応）";
-		let n = e.label ?? "";
-		if (!n) {
-			this.#r = t.returnIdx;
-			return;
+	#v(e, t = {}) {
+		let n = this.#d.pop();
+		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
+		this.#u.length = n.lenIfStk, this.#c.setMp(n.hMp);
+		let r = t.label ?? "", i = t.fn ?? "";
+		if (i || r) {
+			if (i && i !== this.fn) return e.push({
+				t: "loadScript",
+				fn: i,
+				label: r,
+				idx: 0
+			}), "stop";
+			let t = this.#n.label2idx(r);
+			if (t === void 0) throw `[return] ラベル【${r}】がスクリプト【${this.fn}】に見つかりません`;
+			return this.#r = t, "skip";
 		}
-		let r = this.#i[n];
-		if (r === void 0) throw `[return] ラベル【${n}】が見つかりません（試作は同一ファイル内のみ対応）`;
-		this.#r = r;
+		return n.fn === this.fn ? (this.#r = n.returnIdx, "skip") : (e.push({
+			t: "loadScript",
+			fn: n.fn,
+			label: "",
+			idx: n.returnIdx
+		}), "stop");
 	}
 	#y(e, t) {
-		let n = this.#a, r = (this.#o[n] ?? "") + t;
-		this.#o[n] = r, e.push({
+		let n = this.#i, r = (this.#a[n] ?? "") + t;
+		this.#a[n] = r, e.push({
 			t: "chgStr",
 			nm: n,
 			str: r
 		});
 	}
-}, g = "[add_lay layer=base class=grp]\n[add_lay layer=mes class=txt]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", _ = class {
+}, _ = "[add_lay layer=base class=grp]\n[add_lay layer=mes class=txt]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", v = class {
 	sys;
 	#e;
 	constructor(e) {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#s(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#d(e);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -1595,15 +1646,14 @@ var m = class {
 	$trgNext;
 	$fncs;
 	#t = Object.create(null);
-	#n = {};
+	#n = Object.create(null);
 	#r;
 	async load(e) {
-		let t = this.#n[e];
-		if (!t) {
-			let n = await this.#o(e);
-			t = this.#n[e] = new h(e, n);
-		}
-		this.#r = t, this.go = () => this.#i(), this.$trgNext();
+		let t = await this.#i(e);
+		this.#r ? this.#r.switchScript(t) : this.#r = new g(t), this.go = () => this.#a(), this.$trgNext();
+	}
+	async #i(e) {
+		return this.#n[e] ??= new h(e, await this.#u(e));
 	}
 	go() {}
 	jumpToLabelAndGo(e, t) {
@@ -1615,24 +1665,51 @@ var m = class {
 				this.myTrace(`[button] ジャンプ先エラー fn:${n.fn} ${String(e)}`, "ET");
 				return;
 			}
-			this.#i();
+			this.#a();
 		}
 	}
-	#i() {
+	#a() {
+		this.#c().catch(() => {});
+	}
+	#o = !1;
+	#s = 0;
+	async #c() {
 		let e = this.#r;
-		if (!e) return;
-		this.$fncs.setWait(null);
-		let t;
-		try {
-			t = e.step();
-		} catch (t) {
-			this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
-			return;
+		if (e) {
+			if (this.#o) {
+				++this.#s;
+				return;
+			}
+			this.#o = !0;
+			try {
+				for (;;) {
+					this.$fncs.setWait(null);
+					let t;
+					try {
+						t = e.step();
+					} catch (t) {
+						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
+						return;
+					}
+					for (let e of t) this.#l(e);
+					let n = t.at(-1);
+					if (n?.t !== "loadScript") {
+						e.atEnd && this.myTrace(`スクリプト終端です fn:${e.fn}`, "I");
+						return;
+					}
+					try {
+						e.switchScript(await this.#i(n.fn), n.label, n.idx);
+					} catch (e) {
+						this.myTrace(`[jump系] スクリプト切替エラー fn:${n.fn} ${String(e)}`, "ET");
+						return;
+					}
+				}
+			} finally {
+				this.#o = !1, this.#s > 0 && (--this.#s, this.#a());
+			}
 		}
-		for (let e of t) this.#a(e);
-		e.atEnd && this.myTrace(`スクリプト終端です fn:${e.fn}`, "I");
 	}
-	#a(e) {
+	#l(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -1677,8 +1754,9 @@ var m = class {
 				});
 				break;
 			case "trace":
-				this.#s({ text: e.text });
+				this.#d({ text: e.text });
 				break;
+			case "loadScript": break;
 			case "stop":
 				this.sys.caretaker.push(e.key), (e.kind === "l" || e.kind === "p") && this.$fncs.setWait({
 					nm: e.nm,
@@ -1687,16 +1765,16 @@ var m = class {
 				break;
 		}
 	}
-	async #o(e) {
+	async #u(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, r.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
 			return await n.text();
 		} catch (t) {
-			return this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${e} ${String(t)}`, "W"), g;
+			return this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${e} ${String(t)}`, "W"), _;
 		}
 	}
-	#s(e) {
+	#d(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
 	myTrace = (e, t = "E") => {
@@ -1734,6 +1812,6 @@ var m = class {
 	};
 };
 //#endregion
-export { _ as ScriptMng };
+export { v as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

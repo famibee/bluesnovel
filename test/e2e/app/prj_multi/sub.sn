@@ -1,0 +1,10 @@
+; main.sn から [call fn=sub] / [jump fn=sub] で呼ばれる別ファイル
+[jump label=*skip]
+
+*greet
+sub1[macro name=よぶ]macro:[endmacro][return]
+
+*last
+sub2[s]
+
+*skip

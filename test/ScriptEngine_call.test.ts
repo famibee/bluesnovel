@@ -126,10 +126,11 @@ it('return_undefinedLabel_throws', ()=> {
 	).step()).toThrow();
 });
 
-it('return_fn_throws', ()=> {	// fn指定（別スクリプトへ戻る）は未対応。黙って無視せず例外にする
-	expect(()=> new ScriptEngine('t1',
-		'[call label=*sub]\n*sub\n[return fn=other]'
-	).step()).toThrow();
+it('return_fn_requestsScriptLoad', ()=> {
+	// fn指定は別スクリプトへの移動要求。ロードは呼び出し側の責務なので
+	// step()は{t:'loadScript'}を返して一旦止まる（test/ScriptEngine_multifile.test.ts 参照）
+	const a = new ScriptEngine('t1', '[call label=*sub]\n*sub\n[return fn=other]').step();
+	expect(a.at(-1)).toEqual({t: 'loadScript', fn: 'other', label: '', idx: 0});
 });
 
 

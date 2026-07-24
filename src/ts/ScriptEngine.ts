@@ -15,6 +15,7 @@
 import {VarStore, type T_CAST, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
 import {Grammar, splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
+import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
@@ -34,6 +35,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
+	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
 ;
 
 export type T_TAG_PARSED = {
@@ -60,12 +62,12 @@ export class ScriptEngine {
 	// 字句解析は本家 Grammar をそのまま使う（cfg無し＝ワイルドカード展開なし。Grammar.ts参照）。
 	//	これにより複数行タグ・文字列リテラル中の[ ] ;・コメント・ラベル・エスケープ文字に対応する
 	readonly #grm = new Grammar;
-	readonly #aToken: string[];
+	// 実行中のスクリプト（1ファイル分のパース結果）。switchScript()で差し替わる＝これがファイル切替
+	#script: Script;
 	#idx = 0;
 	// 連想配列はどれも Object.create(null) で作る。素の{}だと 'toString' 等の
 	//	Object.prototype のキーが `in` や参照でヒットしてしまい、
-	//	その名前のラベル・レイヤ・差分名・マクロを定義できなくなる
-	readonly #hLabel: {[label: string]: number} = Object.create(null);	// *label -> トークン索引
+	//	その名前のレイヤ・差分名・マクロを定義できなくなる
 	#curTxtLayer = 'mes';
 	readonly #hTxt: {[nm: string]: string} = Object.create(null);	// レイヤ名 -> そのページの蓄積文字列
 	#clearOnResume = false;	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか
@@ -82,21 +84,22 @@ export class ScriptEngine {
 	readonly #aIfStk: number[] = [];
 
 	// callスタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:66 #aCallStk 相当の簡略版）
-	//	試作では同一ファイル内ラベルのみ対応（jump/buttonと同じ制約）。
+	//	fnは呼び出し元のスクリプト名。別ファイルへ[call]した場合、[return]で
+	//	そのファイルを読み直して戻る必要があるため保持する（本家 CallStack.fn 相当）。
 	//	本家CallStack.ts（sn/CallStack.ts）のhEvt1Time等マクロ機構前提のフィールドは
 	//	今回も流用せず、必要最小限の型を独自定義する。
 	//	hMpは本家 #callSub()（ScriptIterator.ts:962）のcsArg[':hMp']相当：
 	//	callSub時点のmp:値を保存し、returnで復元する（[call]/マクロ呼び出し共通の仕組み。
 	//	本家は#callSub()を両者で共有するため常にmp:の保存・復元が行われる。ここでも合わせる）
-	readonly #aCallStk: {returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}}[] = [];
+	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}}[] = [];
 
-	// マクロ定義：マクロ名 -> 本体開始位置（[macro name=...]の次のトークンの#idx）
+	// マクロ定義：マクロ名 -> 本体開始位置（定義元のスクリプト名と、[macro name=...]の次のトークン索引）
 	//	本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式を採用。
-	//	#aTokenは一切変更せず、本体トークンはそのままの位置に残したまま、
+	//	トークン列は一切変更せず、本体トークンはそのままの位置に残したまま、
 	//	実行が[macro]に到達した時点で開始位置だけを記録し、[endmacro]まで読み飛ばす。
 	//	呼び出し時は[call]と同じ枠組みでこの位置へジャンプし、[endmacro]は[return]と同じ処理で戻る
 	//	（本家 ScriptIterator.ts:100 hTag.endmacro = ()=> this.#return(o) と同じ規約）
-	readonly #hMacro: {[name: string]: number} = Object.create(null);
+	readonly #hMacro: {[name: string]: {fn: string; idx: number}} = Object.create(null);
 
 	// マクロ名に使えない文字（本家 ScriptIterator.ts:1362 #REG_NG4MAC_NM をそのまま移植）。
 	//	" ' # ; \ ] と全角空白。タグ記述やタグ引数解析と衝突するため
@@ -113,38 +116,40 @@ export class ScriptEngine {
 		'button', 'l', 'p', 's',
 	]);
 
-	constructor(readonly fn: string, src: string) {
-		this.#aToken = this.#grm.resolveScript(src).aToken;
+	// 第一引数はスクリプト名＋ソース、またはパース済みScript。
+	//	変数・スタック等の実行状態はエンジン側が一手に持つので、
+	//	ファイルを跨いでもこのインスタンスは作り直さない（switchScript()で切り替える）
+	constructor(fn: string | Script, src = '') {
+		this.#script = fn instanceof Script ? fn : new Script(fn, src, this.#grm);
 
-		// 組み込み変数：常に自分自身のfnを返す（本家 val.defTmp('const.sn.scriptFn', ...) 相当）
+		// 組み込み変数：常に「実行中の」スクリプト名を返す
+		//	（本家 val.defTmp('const.sn.scriptFn', ...) 相当。遅延評価なので切替に自動追随する）
 		this.#val.defBuiltin('const.sn.scriptFn', ()=> this.fn);
+	}
 
-		// ラベル定義を記録。Grammarのトークンは行頭のタブが別トークンに分かれるため、
-		//	ラベルトークンは必ず「*」始まり（本家 Main.ts:262 の uc===42 && length>1 と同じ判定）。
-		//	末尾に半角空白が残ることはあるのでtrim()する。
-		//	[let_ml]〜[endlet_ml]の本文は「ただのテキスト」なので、中に「*〜」の行があっても
-		//	ラベルとして拾わない（本家 ScriptIterator.ts:1196 の in_let_ml と同じ）
-		let inLetMl = false;
-		this.#aToken.forEach((tkn, i)=> {
-			if (inLetMl) {
-				if (this.#grm.testTagEndLetml(tkn)) inLetMl = false;
-				return;
-			}
-			if (tkn.charCodeAt(0) === 42 && tkn.length > 1) {this.#hLabel[tkn.trim()] = i + 1; return}
-			if (this.#grm.testTagLetml(tkn)) inLetMl = true;
-		});
+	// 実行中スクリプトの差し替え＝ファイル切替。
+	//	ScriptMngが'loadScript'アクションを受けてfetch・パースした結果を渡してくる。
+	//	labelが空ならidx（既定0）の位置から実行する
+	switchScript(scr: Script, label = '', idx = 0) {
+		this.#script = scr;
+		if (! label) {this.#idx = idx; return}
+
+		const to = scr.label2idx(label);
+		if (to === undefined) throw `ラベル【${label}】がスクリプト【${scr.fn}】に見つかりません`;
+		this.#idx = to;
 	}
 
 	// テスト・呼び出し側（将来のif実装等）から変数値を読むためのアクセサ
 	getVal(name: string): T_VAL_D {return this.#val.get(name)}
 
+	get fn() {return this.#script.fn}
 	get idx() {return this.#idx}
-	get atEnd() {return this.#idx >= this.#aToken.length}
+	get atEnd() {return this.#idx >= this.#script.len}
 
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
 	jumpToLabel(label: string) {
-		const to = this.#hLabel[label];
-		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		const to = this.#script.label2idx(label);
+		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		this.#idx = to;
 	}
 
@@ -153,13 +158,23 @@ export class ScriptEngine {
 	//	this.#idxは既に現在の停止点（[l]/[p]/[s]）の次のトークンを指しているため、
 	//	それをreturnIdxとして記録し、step()再開時にそこへ戻る。
 	callToLabel(label: string) {
-		const to = this.#hLabel[label];
-		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		const to = this.#script.label2idx(label);
+		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		// this.#idxは既に停止点の次のトークンを指している（#returnで戻る先）
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
-		this.#aCallStk.push({returnIdx: --this.#idx, lenIfStk: this.#aIfStk.length, hMp: this.#val.cloneMp()});
-		this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
+		this.#pushCallStk(--this.#idx);
 		this.#idx = to;
+	}
+
+	// コールスタックへ1段積む（[call]・マクロ呼び出し・[button call=true]で共通）
+	#pushCallStk(returnIdx: number) {
+		this.#aCallStk.push({
+			fn			: this.fn,
+			returnIdx,
+			lenIfStk	: this.#aIfStk.length,
+			hMp			: this.#val.cloneMp(),
+		});
+		this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
 	}
 
 	// 次の[l][p][s]（またはスクリプト終端）まで進め、その間に生じた表示変化を返す
@@ -170,9 +185,9 @@ export class ScriptEngine {
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, str: ''});
 		}
-		const len = this.#aToken.length;
+		const len = this.#script.len;
 		while (this.#idx < len) {
-			const token = this.#aToken[this.#idx++]!;
+			const token = this.#script.aToken[this.#idx++]!;
 
 			// トークン先頭一文字での振り分け。本家 Main.ts:221 #main() と同じ並び
 			//	（Grammarのトークンは行頭のタブ・改行・コメントが必ず独立するので、
@@ -222,7 +237,7 @@ export class ScriptEngine {
 	//	'skip' … このタグの処理を終え、通常どおり次のトークンへ進む
 	//	'stop' … [l]/[p]/[s]による停止点。呼び出し元（step()）はaActをそのまま返す
 	#execTag(name: string, args: {[k: string]: string}, aAct: T_ENGINE_ACTION[]): 'skip' | 'stop' {
-		const len = this.#aToken.length;
+		const len = this.#script.len;
 		switch (name) {
 		case 'add_lay': {
 			const nm = args.layer ?? args.nm ?? '';
@@ -297,7 +312,7 @@ export class ScriptEngine {
 
 			let ml = '';
 			for (; this.#idx < len; ++this.#idx) {	// 空トークンは読み飛ばす（本家踏襲）
-				ml = this.#aToken[this.#idx]!;
+				ml = this.#script.aToken[this.#idx]!;
 				if (ml !== '') break;
 			}
 			if (this.#grm.testTagEndLetml(ml)) {	// 本文が空（[let_ml …][endlet_ml]）
@@ -307,7 +322,7 @@ export class ScriptEngine {
 				++this.#idx;
 				return 'skip';
 			}
-			if (! this.#grm.testTagEndLetml(this.#aToken[this.#idx +1] ?? '')) {
+			if (! this.#grm.testTagEndLetml(this.#script.aToken[this.#idx +1] ?? '')) {
 				throw `[let_ml] 変数【${varName}】の終端・[endlet_ml]がありません`;
 			}
 			// 本家同様 cast='str'（数値だけの本文でも文字列のまま保持する）
@@ -342,32 +357,44 @@ export class ScriptEngine {
 			aAct.push({t: 'trace', text: this.#expr.getValAmpersand(args.text ?? '')});
 			return 'skip';
 
-		case 'jump': {	// シナリオジャンプ（試作簡略：同一スクリプト内ラベルのみ）
+		case 'jump': {	// シナリオジャンプ（本家 ScriptIterator.ts:1039 #jumpWork() 相当）
 			const label = args.label ?? '';
-			const to = this.#hLabel[label];
-			if (to === undefined) throw `[jump] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+			const fn = args.fn ?? '';
+			if (! label && ! fn) throw '[jump] fnまたはlabelは必須です';
+			if (fn && fn !== this.fn) {	// 別ファイルへ：ロードはScriptMngの責務なのでここで一旦返る
+				aAct.push({t: 'loadScript', fn, label, idx: 0});
+				return 'stop';
+			}
+
+			const to = this.#script.label2idx(label);
+			if (to === undefined) throw `[jump] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#idx = to;
 			return 'skip';
 		}
 
-		case 'call': {	// サブルーチンコール（試作簡略：同一スクリプト内ラベルのみ。本家 ScriptIterator.ts:951 #call() 参照）
+		case 'call': {	// サブルーチンコール（本家 ScriptIterator.ts:951 #call() 参照）
 			const label = args.label ?? '';
-			if (! label) throw '[call] labelは必須です（試作仕様）';
-			const to = this.#hLabel[label];
-			if (to === undefined) throw `[call] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
-			// this.#idxは既に[call ...]の次のトークンを指している（#returnで戻る先）
+			const fn = args.fn ?? '';
+			if (! label && ! fn) throw '[call] fnまたはlabelは必須です';
+			// this.#idxは既に[call ...]の次のトークンを指している（#doReturn()で戻る先）。
 			// hMp：呼び出し時点のmp:値を保存（本家 #callSub() は[call]/マクロ呼び出し共通でこれを行う。
 			// 通常の[call]ではmp:を変更しないため実質no-opの保存・復元だが、
 			// サブルーチン内でmp:へ直接代入した場合に呼び出し元へ影響しないようにする効果がある）
-			this.#aCallStk.push({returnIdx: this.#idx, lenIfStk: this.#aIfStk.length, hMp: this.#val.cloneMp()});
-			this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ
+			if (fn && fn !== this.fn) {	// 別ファイルのサブルーチンを呼ぶ
+				this.#pushCallStk(this.#idx);
+				aAct.push({t: 'loadScript', fn, label, idx: 0});
+				return 'stop';
+			}
+
+			const to = this.#script.label2idx(label);
+			if (to === undefined) throw `[call] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
+			this.#pushCallStk(this.#idx);	// 飛び先が確定してから積む（例外時にスタックを汚さない）
 			this.#idx = to;
 			return 'skip';
 		}
 
-		case 'return':	// サブルーチンから戻る（label指定で戻り先を変えられる。fn指定は未対応）
-			this.#doReturn(args);
-			return 'skip';
+		case 'return':	// サブルーチンから戻る（fn/label指定で戻り先を変えられる）
+			return this.#doReturn(aAct, args);
 
 		case 'macro': {	// マクロ定義の開始（本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式）
 			const macroName = args.name ?? '';
@@ -375,7 +402,9 @@ export class ScriptEngine {
 			if (ScriptEngine.RESERVED_TAGS.has(macroName)) throw `[${macroName}]はタグ名のため、マクロ名として使用できません`;
 			if (ScriptEngine.REG_NG4MAC_NM.test(macroName)) throw `[${macroName}]はマクロ名として異常です`;
 			if (macroName in this.#hMacro) throw `[macro] マクロ【${macroName}】は既に定義済みです`;
-			this.#hMacro[macroName] = this.#idx;	// 本体開始位置（[macro ...]の次のトークン。呼び出し時のジャンプ先）
+			// 本体開始位置（[macro ...]の次のトークン。呼び出し時のジャンプ先）。
+			//	別ファイルから呼ばれてもよいよう、定義元のスクリプト名も覚えておく
+			this.#hMacro[macroName] = {fn: this.fn, idx: this.#idx};
 
 			// [endmacro]まで読み飛ばす（本家同様、マクロ本体は定義時には実行しない）。
 			//	本家は最初に見つけた[endmacro]で終端とみなす（＝入れ子の[macro]定義は壊れる）が、
@@ -385,7 +414,7 @@ export class ScriptEngine {
 			let depth = 0;
 			let inLetMl = false;
 			for (; this.#idx < len; ++this.#idx) {
-				const tkn2 = this.#aToken[this.#idx]!;
+				const tkn2 = this.#script.aToken[this.#idx]!;
 				if (inLetMl) {
 					if (this.#grm.testTagEndLetml(tkn2)) inLetMl = false;
 					continue;
@@ -405,8 +434,7 @@ export class ScriptEngine {
 
 		case 'endmacro':	// マクロ本体の終端。[return]と全く同じ処理
 			// （本家 ScriptIterator.ts:100 hTag.endmacro = ()=> this.#return(o) と同じ規約）
-			this.#doReturn();
-			return 'skip';
+			return this.#doReturn(aAct);
 
 		case 'button': {	// ボタン表示（試作簡略：layer/nm/text/label/callに対応）
 			// クリック後のjump先はjumpToLabel()で別途処理する（読み進め扱いにはしないため）
@@ -437,10 +465,13 @@ export class ScriptEngine {
 			// [call]と同じ枠組みでジャンプし、タグ属性をそのままmp:名前空間へ渡す
 			// （本家 ScriptIterator.ts:1374-1392 のマクロ呼び出しハンドラを簡略化したもの。
 			// const.sn.macro等のスクリプター用ブックキーピング情報は試作では省略）
-			this.#aCallStk.push({returnIdx: this.#idx, lenIfStk: this.#aIfStk.length, hMp: this.#val.cloneMp()});
-			this.#aIfStk.push(-1);
+			this.#pushCallStk(this.#idx);
 			this.#val.setMp(args);
-			this.#idx = to;
+			if (to.fn !== this.fn) {	// 別ファイルで定義されたマクロ
+				aAct.push({t: 'loadScript', fn: to.fn, label: '', idx: to.idx});
+				return 'stop';
+			}
+			this.#idx = to.idx;
 			return 'skip';
 		}
 		}
@@ -455,9 +486,9 @@ export class ScriptEngine {
 		let idxGo = this.#expr.evalBool(exp) ? this.#idx : -1;
 		let cntDepth = 0;	// 入れ子ifの深度カウンター（elsif/elseは深度を跨がないためifとendifのみ数える）
 		let inLetMl = false;	// [let_ml]の本文は「ただのテキスト」なので、[endif]等と読めても反応しない
-		const len = this.#aToken.length;
+		const len = this.#script.len;
 		for (; this.#idx < len; ++this.#idx) {
-			const tkn = this.#aToken[this.#idx]!;
+			const tkn = this.#script.aToken[this.#idx]!;
 			if (inLetMl) {
 				if (this.#grm.testTagEndLetml(tkn)) inLetMl = false;
 				continue;
@@ -519,7 +550,7 @@ export class ScriptEngine {
 	//	（本家 ScriptIterator.ts:994 #return()、及び hTag.endmacro = ()=> this.#return(o) と同じ規約）
 	//	label指定時は、コール元ではなくそのラベルへ戻る。
 	//	コールスタックとifスタック・mp:の巻き戻しは指定の有無にかかわらず行う（本家も同じ順序）
-	#doReturn(args: {[k: string]: string} = {}) {
+	#doReturn(aAct: T_ENGINE_ACTION[], args: {[k: string]: string} = {}): 'skip' | 'stop' {
 		const cs = this.#aCallStk.pop();
 		if (! cs) throw '[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）';
 		// 呼び出し先で[if]が閉じきっていなくても、コール元のifスタックだけを確実に復元する
@@ -529,16 +560,25 @@ export class ScriptEngine {
 		// 通常の[call]から戻る場合は元々変化していないため実質no-op）
 		this.#val.setMp(cs.hMp);
 
-		//TODO: [return]のfn指定（別スクリプトへ戻る）は複数ファイル対応待ち。
-		// 黙って無視すると「戻ったつもりが元の位置」という分かりにくい挙動になるので例外にする
-		if (args.fn) throw '[return] fn指定（別スクリプトへ戻る）は未対応です（試作は同一ファイル内のみ対応）';
-
 		const label = args.label ?? '';
-		if (! label) {this.#idx = cs.returnIdx; return}
+		const fn = args.fn ?? '';
+		if (fn || label) {	// 戻り先の指定あり：コール元ではなくそこへ進む
+			if (fn && fn !== this.fn) {
+				aAct.push({t: 'loadScript', fn, label, idx: 0});
+				return 'stop';
+			}
+			const to = this.#script.label2idx(label);
+			if (to === undefined) throw `[return] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
+			this.#idx = to;
+			return 'skip';
+		}
 
-		const to = this.#hLabel[label];
-		if (to === undefined) throw `[return] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
-		this.#idx = to;
+		if (cs.fn !== this.fn) {	// 別ファイルから呼ばれていた：そのファイルを読み直して戻る
+			aAct.push({t: 'loadScript', fn: cs.fn, label: '', idx: cs.returnIdx});
+			return 'stop';
+		}
+		this.#idx = cs.returnIdx;
+		return 'skip';
 	}
 
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {

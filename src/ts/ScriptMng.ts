@@ -11,6 +11,7 @@ import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib} from '../sn/CmnLib';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
+import {Script} from './Script';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
@@ -68,20 +69,24 @@ export class ScriptMng {
 	// シナリオ解析ループ・開始
 	//	試作版：ScriptEngine（超簡略パーサ・実行器）に処理を委譲する。
 	//	[l][p][s] での状態は Caretaker（Memento.ts）が Stage.tsx 経由で自動記録する。
-	#hEngine: {[fn: string]: ScriptEngine} = {};
-	#curEngine?: ScriptEngine;
+	//	エンジンは**1つだけ**持つ。変数・スタック等の実行状態はエンジンが一手に握っており、
+	//	ファイル切替はパース結果（Script）の差し替えで行う（複数ファイル対応の要）。
+	//	ここ（ScriptMng）はfetchとキャッシュだけを受け持つ
+	readonly #hScript: {[fn: string]: Script} = Object.create(null);
+	#engine?: ScriptEngine;
 
 	async load(fn: string) {
-		let engine = this.#hEngine[fn];
-		if (! engine) {
-			const src = await this.#fetchScript(fn);
-			engine = this.#hEngine[fn] = new ScriptEngine(fn, src);
-		}
-		this.#curEngine = engine;
+		const scr = await this.#getScript(fn);
+		if (this.#engine) this.#engine.switchScript(scr);
+		else this.#engine = new ScriptEngine(scr);
 
-		this.go = ()=> this.#runStep();
+		this.go = ()=> this.#goSafe();
 
 		this.$trgNext();	// -> ev_next -> Main.tsx procNext() -> this.go()
+	}
+
+	async #getScript(fn: string): Promise<Script> {
+		return this.#hScript[fn] ??= new Script(fn, await this.#fetchScript(fn));
 	}
 
 	// 現在の実行位置から次の停止点（[l][p][s]、またはスクリプト終端）まで進める
@@ -92,7 +97,7 @@ export class ScriptMng {
 	//	isReadBackには一切触れないため、ボタンクリックは「読み進め」扱いにはならない（今回の要件）。
 	//	call=true指定時はjumpではなくcall（サブルーチンコール）する。
 	jumpToLabelAndGo(label: string, call: boolean) {
-		const engine = this.#curEngine;
+		const engine = this.#engine;
 		if (! engine) return;
 
 		try {
@@ -102,25 +107,60 @@ export class ScriptMng {
 			this.myTrace(`[button] ジャンプ先エラー fn:${engine.fn} ${String(e)}`, 'ET');
 			return;
 		}
-		this.#runStep();
+		this.#goSafe();
 	}
 
-	#runStep() {
-		const engine = this.#curEngine;
+	// #runStep()は非同期になったので、投げっぱなしにせずここで握る。
+	//	myTrace(…, 'ET')は表示後にthrowする仕様なので、そのままだと未処理のPromise拒否になる
+	//	（同期だった頃はDOMイベントハンドラまで抜けていた）。表示は済んでいるので握って良い
+	#goSafe() {this.#runStep().catch(()=> {/* myTraceで表示済み */})}
+
+	// 停止点（[l][p][s]）かスクリプト終端まで進める。
+	//	途中で'loadScript'（別スクリプトへの移動要求）が返ったら、fetchしてから続きを回す。
+	//	engine.step()自体は同期のまま（DOM/fetch非依存でユニットテストできる設計を保つ）
+	#busy		= false;
+	#cntResv	= 0;
+	async #runStep() {
+		const engine = this.#engine;
 		if (! engine) return;
+		// スクリプトのロード待ち中に来た進行要求。多重に走らせるわけにはいかないが、
+		//	捨てるとクリックが無かったことになるので、回数を数えておいて後で消化する
+		//	（ロードを挟まない場合はクリック1回＝1停止点ぶん進むので、それに合わせる）
+		if (this.#busy) {++this.#cntResv; return}
 
-		this.$fncs.setWait(null);	// 前回の[l]/[p]待ちマーカーをまずクリア（クリックで削除して次の文字表示へ）
-
-		let aAct: T_ENGINE_ACTION[];
+		this.#busy = true;
 		try {
-			aAct = engine.step();
-		} catch (e) {
-			this.myTrace(`シナリオ解析エラー fn:${engine.fn} ${String(e)}`, 'ET');
-			return;
-		}
-		for (const act of aAct) this.#applyAction(act);
+			for (;;) {
+				this.$fncs.setWait(null);	// 前回の[l]/[p]待ちマーカーをまずクリア（クリックで削除して次の文字表示へ）
 
-		if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
+				let aAct: T_ENGINE_ACTION[];
+				try {
+					aAct = engine.step();
+				} catch (e) {
+					this.myTrace(`シナリオ解析エラー fn:${engine.fn} ${String(e)}`, 'ET');
+					return;
+				}
+				for (const act of aAct) this.#applyAction(act);
+
+				// 'loadScript'は必ず最後の要素（step()がそこで打ち切って返すため）
+				const last = aAct.at(-1);
+				if (last?.t !== 'loadScript') {
+					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
+					return;
+				}
+
+				try {
+					engine.switchScript(await this.#getScript(last.fn), last.label, last.idx);
+				} catch (e) {
+					this.myTrace(`[jump系] スクリプト切替エラー fn:${last.fn} ${String(e)}`, 'ET');
+					return;
+				}
+			}
+		}
+		finally {
+			this.#busy = false;
+			if (this.#cntResv > 0) {--this.#cntResv; this.#goSafe()}
+		}
 	}
 
 	#applyAction(act: T_ENGINE_ACTION) {
@@ -146,6 +186,9 @@ export class ScriptMng {
 		case 'trace':
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲
 			this.#trace({text: act.text});
+			break;
+		case 'loadScript':
+			// 実処理は#runStep()側（fetch→switchScript）。表示への影響は無い
 			break;
 		case 'stop':
 			// このタイミングでの表示状態を Caretaker に記録する
