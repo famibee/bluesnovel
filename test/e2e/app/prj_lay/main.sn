@@ -1,0 +1,23 @@
+; E2E用シナリオ（lay.e2e.ts が使用）
+;	[lay]のレイヤ共通属性と[clear_lay]は、エンジンが積むアクション（ユニット側で検証済み）が
+;	最終的にCSSへ落ちるかどうかが本題なので、ここでは算出スタイルを見る
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+きほん[p]
+
+; レイヤ共通の見た目をまとめて指定
+[lay layer=mes left=40 top=80 alpha=0.5 rotation=30 scale_x=2 scale_y=0.5]
+[lay layer=mes b_color=0xFF8000 b_alpha=0.6]
+うごいた[p]
+
+; style属性は既定スタイルを後ろから上書きする
+[lay layer=mes style="letter-spacing: 4px;"]
+すたいる[p]
+
+[lay layer=mes visible=false]
+きえた[p]
+
+; [clear_lay]で見た目は初期値へ、中身（文字・ボタン）も捨てる。visibleだけは触らない
+[clear_lay layer=mes page=fore]
+[s]

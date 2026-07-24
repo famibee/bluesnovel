@@ -20,6 +20,16 @@ export type T_LAY_SNAP = {
 	str?	: string;
 	aBtn?	: T_BTN_SNAP[];
 	b_alpha?: number;
+	b_color?: number;
+	style?	: string;
+	// [lay]のレイヤ共通属性（Stage.tsx T_LAY_STY）。書かれた属性だけが値を持つ
+	visible?: boolean;
+	alpha?	: number;
+	left?	: number;
+	top?	: number;
+	rotation?: number;
+	scale_x?: number;
+	scale_y?: number;
 };
 export type T_SNAP = {
 	aLay		: T_LAY_SNAP[];	// 表ページのレイヤ群（store.aPage[foreIdx]）
@@ -30,7 +40,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'multi' | 'trans';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -175,7 +185,7 @@ export async function traceText(page: Page): Promise<string> {
 
 // 文字レイヤ本体（[lay b_alpha=...]を反映する、点線枠のspan）の算出スタイルを読む。
 //	読み戻り中の文字色（黄色）など、ストアだけでは確かめられない見た目の検証用
-export async function txtBoxStyle(page: Page, prop: 'color' | 'background-color'): Promise<string> {
+export async function txtBoxStyle(page: Page, prop: string): Promise<string> {
 	return page.evaluate(p=> {
 		const el = [...document.querySelectorAll('#skynovel [data-page="fore"] span')]
 			.find(e=> getComputedStyle(e).borderStyle === 'dotted');

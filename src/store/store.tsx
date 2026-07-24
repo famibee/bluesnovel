@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {T_LAY} from '../components/Stage';
+import {A_LAY_STY_KEY, type T_LAY, type T_LAY_STY} from '../components/Stage';
 import type {T_FACE} from '../components/GrpLayer';
 
 import {create} from 'zustand';
@@ -25,6 +25,8 @@ type T_STATE = {
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
+	chgLay	: (arg: T_CHGLAY)=> void,
+	clearLay: (arg: T_CLEARLAY)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
 	addBtn	: (arg: T_ADDBTN)=> void,
 
@@ -74,6 +76,21 @@ export type T_CHGBALPHA = {
 	page	: T_PAGE;
 	b_alpha	: number;
 }
+// [lay]で指定できるレイヤの見た目。書かれた属性だけを持つ（未指定の属性は現状維持）
+export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
+	b_color?: number;	// 文字レイヤ背景色（0xRRGGBB）
+	style?	: string;	// 文字レイヤへそのまま足すCSS
+};
+export type T_CHGLAY = {
+	nm	: string;
+	page: T_PAGE;
+	sty	: T_LAY_STY_ARG;
+}
+// [clear_lay]：レイヤの見た目を初期値へ戻し、中身（画像／文字＋ボタン）も捨てる
+export type T_CLEARLAY = {
+	nm	: string;
+	page: T_PAGE_BOTH;
+}
 export type T_CHGSTR = {
 	nm	: string;
 	page: T_PAGE_BOTH;	// [er]（ページ両面の文字消去）だけが'both'を使う
@@ -90,7 +107,7 @@ export type T_ADDBTN = {
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ（label省略時はそのファイルの先頭）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'clearLay'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -158,6 +175,38 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		const e = findLay(aLay, nm, 'txt');
 
 		e.b_alpha = b_alpha;	// レイヤ全体ではなく文字レイヤ背景の不透明度のみ（TxtLayer.tsxでbackground-colorのrgbaのアルファとして反映）
+		return putPage(s, idx, aLay);
+	}),
+	// [lay]のレイヤ共通属性。書かれた属性だけを上書きする（本家 Layer.lay() も `'x' in hArg` で判定）
+	chgLay	: ({nm, page, sty}: T_CHGLAY)=> set(s=> {
+		const {idx, aLay} = pickPage(s, page);
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+		// b_color/styleは文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
+		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined))
+			throw `${nm} は文字レイヤではありません（b_color/styleは文字レイヤ専用）`;
+
+		Object.assign(e, sty);
+		return putPage(s, idx, aLay);
+	}),
+	// [clear_lay]：見た目を初期値へ戻し、中身も捨てる（本家 Layer.clearLay()＋各レイヤのoverride）。
+	//	**visibleだけは触らない**（本家のコメント「visibleは触らない」そのまま）
+	clearLay: ({nm, page}: T_CLEARLAY)=> set(s=> {
+		const clr = (aLay: T_LAY[])=> {
+			const e = aLay.find(e=> e.nm === nm);
+			if (! e) throw `存在しないレイヤ ${nm} です`;
+			// 見た目は「未指定」へ戻す（＝各レイヤのCSS既定に従う）。
+			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
+			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
+			if (e.cls === 'grp') {e.fn = ''; e.aFace = []}
+			else {e.str = ''; e.aBtn = []; delete e.b_color; delete e.style; e.b_alpha = 1}
+		};
+		if (page === 'both') return {aPage: s.aPage.map(a=> {
+			const aLay = [...a]; clr(aLay); return aLay;
+		}) as [T_LAY[], T_LAY[]]};
+
+		const {idx, aLay} = pickPage(s, page);
+		clr(aLay);
 		return putPage(s, idx, aLay);
 	}),
 	chgStr	: ({nm, page, str}: T_CHGSTR)=> set(s=> {

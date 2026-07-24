@@ -13,15 +13,50 @@ import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 
-import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css, type SerializedStyles} from '@emotion/react';
 import gsap from 'gsap';
 
-export type T_LAY_IDX = {
+// レイヤ共通の見た目（本家 Layer.ts lay() が扱う分のうち、試作で対応したもの）。
+//	rotationは度（本家も flash 由来で度。pixiのradianではない）。
+//	**全て省略可**にしてあるのが要点で、[lay]で書かれた属性だけが値を持つ。
+//	既定値を入れて常に持たせると、指定していない属性まで毎回インラインstyleへ書き出してしまい、
+//	各レイヤのCSS（TxtLayerのtop: 48%など）を潰してしまう
+//	（本家 Layer.lay() も `'left' in hArg` で書かれたかどうかを見ている）
+export type T_LAY_STY = {
+	visible?	: boolean;
+	alpha?		: number;	// レイヤ全体の不透明度。文字レイヤ背景だけを透かすb_alphaとは別物
+	left?		: number;
+	top?		: number;
+	rotation?	: number;
+	scale_x?	: number;
+	scale_y?	: number;
+};
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y'] as const;
+
+export type T_LAY_IDX = T_LAY_STY & {
 	cls		: 'grp'|'txt';
 	nm		: string;
 };
+
+// 上のT_LAY_STYをCSSへ。**指定された属性だけ**を出す。
+//	位置はstyChild（絶対配置）のleft/topを上書きし、回転・拡縮はtransformでまとめる
+//	（原点は左上＝本家pixiのpivot既定と揃える）
+export function styLay(l: T_LAY_STY): CSSProperties {
+	const sty: CSSProperties = {};
+	if (l.left !== undefined) sty.left = `${String(l.left)}px`;
+	if (l.top !== undefined) sty.top = `${String(l.top)}px`;
+	if (l.alpha !== undefined) sty.opacity = l.alpha;
+	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined) {
+		sty.transform = `rotate(${String(l.rotation ?? 0)}deg) scale(${String(l.scale_x ?? 1)}, ${String(l.scale_y ?? 1)})`;
+		sty.transformOrigin = 'left top';
+	}
+	// visible=falseは領域ごと消す（display:none）。visibility:hiddenだと
+	//	表裏ページのvisibility制御（Stageのpage単位）と混ざって分かりにくい
+	if (l.visible === false) sty.display = 'none';
+	return sty;
+}
 export type T_LAY_CMN = {
 	cmn: {
 		sys			: SysBase;
@@ -200,9 +235,12 @@ export default function Stage({
 			pointerEvents	: i === foreIdx ? 'auto' : 'none',
 		}}>
 			{aLay.map(l=> {
-				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} fn={l.fn} aFace={l.aFace}/>;
+				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
+				//	そちらの値（sty4Moveable）より後ろに置いて優先させる
+				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
+				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} fn={l.fn} aFace={l.aFace}/>;
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
-				return <TxtLayer key={l.nm} cmn={c.cmn} nm={l.nm} isFore={i === foreIdx} str={l.str} b_alpha={l.b_alpha} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
+				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} b_color={l.b_color} b_alpha={l.b_alpha} styTxt={l.style} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
 			})}
 		</div>)}
 	</div>;

@@ -17,9 +17,10 @@
   - [ ] `[button]`の既定ページ。本家は`back`（`LayerMng.ts:1100`）だが、bluesnovelは既存シナリオが`[trans]`を挟まないため`fore`のまま。シナリオが`[trans]`前提になった時点で本家へ寄せる（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[page]`（読み戻り用のページログ）の残り**（`clear`は実装済み）
   - [ ] `to=`（指定ページへ移動）・`style=`（ページ移動中の見た目）・`key=`（移動中に有効なキーの限定）。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- [ ] **レイヤ操作タグ**
-  - [ ] `[clear_lay]` レイヤ設定の消去（`layer=`/`page=`）
-  - [ ] `[lay]`属性の拡充：`visible` `alpha` `rotation` `scale_x`/`scale_y` `left`/`top` `b_color` `style` `bura`（`img`/`txt_lay_*`マクロが使う）
+- [ ] **レイヤ操作タグの残り**（`[clear_lay]`と`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`b_color`/`style`は実装済み）
+  - [ ] `[lay bura=…]`（ぶら下げ禁則処理）。CSSプロパティ1つで済む話ではなく行分割の実装が要るので、文字組み（縦書き・`r_size`・`max_col`等）とまとめて
+  - [ ] `[lay]`の`pivot_x`/`pivot_y`（回転・拡縮の原点。現状は左上固定）・`blendmode`・`filter`・`index`/`float`/`dive`（レイヤ重なり順の変更）は未対応
+  - [ ] `[clear_lay]`の`layer`省略（＝全レイヤ）。エンジンが`[add_lay]`済みレイヤ名を覚えていないため現状は必須（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **イベント系タグ**
   - [ ] `[enable_event]` イベント有無の切替（18箇所と最多。`layer=`指定あり）
   - [ ] `[wait]` ウェイトを入れる

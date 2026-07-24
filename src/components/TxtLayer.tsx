@@ -10,7 +10,7 @@ import {useStore} from '../store/store';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
-import {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
 import gsap from 'gsap';
 
@@ -26,20 +26,22 @@ export type T_BTN = {
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ
 };
 type T_TXTARG = T_LAY_CMN & {
+	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	nm		: string;
 	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
 	str		: string;
-	b_color?: number;
+	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
+	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
 	aBtn	: T_BTN[];
 	onActivate: (label: string, call: boolean, fn: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; style?: string; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, isFore, str, b_alpha, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, styTxt: sCss, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -136,12 +138,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 		flex-wrap: wrap;
 		top: 70%;
 	`;
+	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
+	const {r, g, b} = rgbOf(b_color);
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;
-		/* aquamarine相当のRGBに[lay b_alpha=...]をアルファチャンレベルで反映。
-			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない */
-		background-color: rgba(127, 255, 212, ${b_alpha});
+		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
+			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
+			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
+		background-color: rgba(${r}, ${g}, ${b}, ${b_alpha});
 		border: dotted 6px #ffa500;
 
 		font-size: xxx-large;
@@ -149,6 +154,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 		width: 70%;
 		white-space: pre-wrap;
 		color: ${isReadBack ? 'yellow' : 'inherit'};
+
+		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
+		${sCss ?? ''}
 	`;
 
 	const styInp = css`
@@ -217,7 +225,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 		style.transform = transform;
 	}
 	return <>
-		<span css={[styChild, styTxt]} ref={boxRef} style={sty4Moveable}>
+		<span css={[styChild, styTxt]} ref={boxRef} style={sty}>
 			<span ref={charsRef}></span>
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
@@ -267,4 +275,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 			/>
 		</>}
 	</>;
+}
+
+// [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）
+function rgbOf(b_color?: number): {r: number; g: number; b: number} {
+	if (b_color === undefined) return {r: 127, g: 255, b: 212};
+	return {r: (b_color >> 16) & 0xFF, g: (b_color >> 8) & 0xFF, b: b_color & 0xFF};
 }

@@ -34,6 +34,21 @@ export type T_PAGE = 'fore' | 'back';
 // 消去系は両面まとめて指定できる（本家 LayerMng.ts:535 の page='both'）
 export type T_PAGE_BOTH = T_PAGE | 'both';
 
+// [lay]で指定できるレイヤ共通の見た目。**書かれた属性だけ**を持つ（未指定は現状維持。
+//	本家 Layer.lay() も `'alpha' in hArg` のように書かれたかどうかで判定している）。
+//	rotationは度（本家も flash 由来で度。pixiのradianではない）
+export type T_LAY_STY_ARG = {
+	visible?	: boolean;
+	alpha?		: number;	// レイヤ全体の不透明度。文字レイヤ背景だけを透かすb_alphaとは別物
+	left?		: number;
+	top?		: number;
+	rotation?	: number;
+	scale_x?	: number;
+	scale_y?	: number;
+	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
+	style?		: string;	// 文字レイヤへそのまま足すCSS
+};
+
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
@@ -42,6 +57,8 @@ export type T_ENGINE_ACTION =
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
+	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
+	| {t: 'clearLay'; nm: string; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
@@ -142,6 +159,13 @@ export class ScriptEngine {
 
 	// 属性pageの検査（本家 Pages.ts:65 argChk_page()）。既定値は呼ぶ側のタグごとに違う
 	//	（[lay]は'fore'、[clear_lay]は'back'）ので引数で受ける
+	// 数値属性の検査（本家 CmnLib.argChk_Num() 相当。0x始まりは16進として読む）
+	static #argNum(tag: string, nm: string, v: string): number {
+		const n = v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
+		if (! Number.isFinite(n)) throw `[${tag}] ${nm}の値が不正です：${v}`;
+		return n;
+	}
+
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
 		const v = args.page ?? def;
 		if (v === 'fore' || v === 'back') return v;
@@ -220,7 +244,7 @@ export class ScriptEngine {
 	// マクロ名として使用不可（既存タグと同名は不可。本家 ScriptIterator.ts:1366
 	// if (name in this.hTag) throw と同じ意図）
 	static readonly RESERVED_TAGS = new Set([
-		'add_lay', 'current', 'add_face', 'lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
+		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -584,6 +608,35 @@ export class ScriptEngine {
 				//	範囲外の値が残ってしまうため、ここで正規化する。
 				//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
 				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', page, b_alpha: Math.min(1, Math.max(0, v))});
+			}
+
+			// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）
+			const sty: T_LAY_STY_ARG = {};
+			if (args.visible !== undefined) sty.visible = args.visible !== 'false';
+			if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
+			if (args.left !== undefined) sty.left = ScriptEngine.#argNum('lay', 'left', args.left);
+			if (args.top !== undefined) sty.top = ScriptEngine.#argNum('lay', 'top', args.top);
+			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
+			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
+			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
+			if (args.b_color !== undefined) sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
+			if (args.style !== undefined) sty.style = args.style;
+			if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
+			return 'skip';
+		}
+
+		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）
+			// pageの既定は本家同様'back'（LayerMng.ts:1100 の[button]と同じく、裏を組む用途が主なため）。
+			//	page=bothで両面まとめて消せる（本家 LayerMng.ts:535）
+			const sPage = args.page ?? 'back';
+			if (sPage !== 'fore' && sPage !== 'back' && sPage !== 'both') throw `属性 page【${sPage}】が不正です`;
+			// layerはカンマ区切りで複数可。省略時は全レイヤだが、エンジンはレイヤ一覧を持たないので必須とした
+			//TODO: [add_lay]済みレイヤ名をエンジンでも覚え、layer省略＝全レイヤに対応する
+			const sLay = args.layer ?? '';
+			if (! sLay) throw '[clear_lay] layerは必須です（試作仕様）';
+			for (const nm of sLay.split(',').map(v=> v.trim())) {
+				if (! nm) throw '[clear_lay] layer属性に空要素が含まれています';
+				aAct.push({t: 'clearLay', nm, page: sPage});
 			}
 			return 'skip';
 		}

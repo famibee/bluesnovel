@@ -226,7 +226,8 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 ### The `.sn` scripting language (current prototype tag set)
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
-text-bg opacity, `page=fore|back`), `trans`/`wt` (page swap + its wait),
+text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
+`scale_y`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
 `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
@@ -241,6 +242,17 @@ by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbid
 Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
 them in scripts meant to run on 本家.
 
+**"Page" means two unrelated things** — a trap inherited from 本家's vocabulary, so always say
+which one you mean:
+
+- **layer page (fore/back)** — the two drawing surfaces every layer has. `[lay page=…]`,
+  `[clear_lay page=…]`, `[button page=…]`, `[trans]`, `[er]`. In code: `aPage`/`foreIdx`,
+  `T_PAGE`.
+- **text page (the `[p]`-delimited run of text)** — a unit of the read-back log. `[p]`,
+  `[page clear=true]`. In code: the `Caretaker` history.
+
+They never interact. `[page]` operates on the *second* kind despite its name.
+
 **Pages (fore/back) and `[trans]`.** Every layer exists on both pages; a scenario builds the
 next scene on the back page (`[lay … page=back]`) and then swaps with `[trans time=…]`. Three
 rules make this work in React:
@@ -252,6 +264,12 @@ rules make this work in React:
   Fading the back page *in* on top costs the same but pops at the end wherever the back page
   is transparent; fading the fore *out* means what you see mid-transition is already the
   final state.
+- **A layer's display attributes are stored only when the scenario writes them** (`T_LAY_STY`
+  is all-optional, mirroring upstream's `'left' in hArg` checks). Giving them defaults means
+  every layer emits a full inline style on every render, which silently overrides each
+  layer component's own CSS — it once flung the text layer from `top: 48%` to the top of the
+  stage. `[clear_lay]` deletes those keys rather than resetting them to numbers, and leaves
+  `visible` alone.
 - Writes are per-page: `[lay]` defaults to `fore`, `[button]` takes `page=` too, and `[er]`
   clears **both** pages (`chgStr` carries `'fore' | 'back' | 'both'`) — otherwise the previous
   scene's text comes back the moment `[trans]` brings that page forward. `[button]`'s default

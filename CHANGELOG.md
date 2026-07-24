@@ -265,6 +265,15 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `[trans layer=…]`の交換対象外レイヤを裏へ複製するコストを確認：`structuredClone`＋`nm`検索でレイヤ数ぶんのO(n²)だが、実シナリオのレイヤ数は5〜10程度（`tmp_esm_uc`の`dsp_lays`は5）なので問題なしと判断し、`todo.md`から落とした
   - `test/ScriptEngine_trans.test.ts`に7件追加（地の文のページ・`[er]`の両面・`[button]`の既定と`page=back`・`[page]`の3件）、`test/e2e/trans.e2e.ts`に2件追加（`[er]`が裏の文字も消すこと・`[button page=back]`が`[trans]`で表に出ること）。ユニット716件→723件、E2E 36件→38件
 
+- [x] **レイヤ操作タグ：`[clear_lay]`と`[lay]`の属性拡充**（2026-07-24）
+  - `[lay]`に`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`b_color`/`style`を追加。`rotation`は度（本家もflash由来で度。pixiのradianではない）、`alpha`はレイヤ全体の不透明度で文字レイヤ背景だけを透かす`b_alpha`とは別物。数値は本家`argChk_Num`同様`0x`始まりを16進として読む
+  - **未指定の属性は値を持たせない**のが要点。最初は初期値（`left: 0`等）を全レイヤに持たせたが、それだと指定していない属性まで毎回インラインstyleへ書き出してしまい、`TxtLayer`のCSS既定（`top: 48%`）を潰して**文字レイヤが画面上部へ飛ぶ**回帰が出た（`tmp_blues`を`playwright-cli`で実測して発見。y=436→90）。本家 `Layer.lay()` も `'left' in hArg` で書かれたかどうかを見ているので、そちらへ合わせた
+  - `[clear_lay]`を実装（本家 `LayerMng.ts:528`）。見た目を「未指定」へ戻し、中身（画像／文字＋ボタン）も捨てる。**`visible`だけは触らない**（本家 `Layer.clearLay()` のコメントそのまま）。`page`の既定は`back`、`page=both`で両面、`layer`はカンマ区切りで複数可
+  - `b_color`は`0xRRGGBB`を8bit成分へ分解し、`b_alpha`をアルファとして`rgba()`に落とす（未指定時は試作の既定色＝aquamarine相当のまま）。`style`は文字レイヤの既定CSSの後ろに置き、上書きできるようにした
+  - `test/ScriptEngine_lay.test.ts`（新規18件）＋`test/e2e/lay.e2e.ts`（新規5件・`prj_lay`フィクスチャ）。ユニット723件→741件、E2E 38件→43件
+  - E2Eに入れたのは「アクションが算出CSSへ落ちているか」だけ（`transform`の行列成分・`rgba()`・`display`・`letter-spacing`）。どのアクションを積むかはユニット側
+  - `CLAUDE.md`に**「ページ」という語が2つの別物を指す**注意書きを追加：レイヤの裏表（`[lay page=…]`/`[trans]`）と、`[p]`で区切られる文章のページ（`[page]`＝読み戻りログ）。本家由来の用語衝突で、コード上も`aPage`/`foreIdx`と`Caretaker`で別物
+
 - [ ]
 
 

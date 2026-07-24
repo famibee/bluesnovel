@@ -21,6 +21,7 @@ export type T_FACE = {
 	blendmode	: string;
 };
 type T_GRPARG = T_LAY_CMN & {
+	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	fn		: string;
 	aFace	: T_FACE[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
 };
@@ -29,7 +30,7 @@ export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; aFace: T_FACE[]
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
-export default function GrpLayer({cmn: {styChild, sys, isDesignMode, sty4Moveable}, fn, aFace}: T_GRPARG) {
+export default function GrpLayer({cmn: {styChild, sys, isDesignMode}, sty, fn, aFace}: T_GRPARG) {
 	// 試作注意：アセット一式（path.json等）未整備の状態でも画面ごと落ちないようにする
 	//	本実装ではアセット未登録をロードエラーとして扱う方針へ戻すこと
 	const search = (fn: string)=> {
@@ -57,7 +58,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		style.transform = transform;
 	}
 	return <>
-		<div css={styChild} ref={div0} style={sty4Moveable} onMouseDown={e=> onMouseDown(e)}>
+		<div css={styChild} ref={div0} style={sty} onMouseDown={e=> onMouseDown(e)}>
 			{/* fn未設定やアセット未整備でsearch()が''を返す間は<img src="">を描画しない（Reactがページ全体再ダウンロードの可能性を警告するため） */}
 			{fn && search(fn) && <img src={search(fn)} style={{display: 'block'}}/>}
 			{aFace.map(({fn: faceFn, dx, dy, blendmode}, i)=> {

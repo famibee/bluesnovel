@@ -276,6 +276,8 @@ export class ScriptMng {
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
+			// [lay]で変えられる見た目（visible/alpha/left/top/rotation/scale_*）は初期値を持たせない。
+			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
 			this.$fncs.addLayer(act.cls === 'grp'
 				? {cls: 'grp', nm: act.nm, fn: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
 				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
@@ -300,6 +302,12 @@ export class ScriptMng {
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
 			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {})});
+			break;
+		case 'chgLay':
+			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: act.sty});
+			break;
+		case 'clearLay':
+			this.$fncs.clearLay({nm: act.nm, page: act.page});
 			break;
 		case 'clearPageLog':
 			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
