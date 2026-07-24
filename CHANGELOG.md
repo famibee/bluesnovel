@@ -19,6 +19,77 @@
 
 ## 2026/07/25
 
+- skynovel_esm 版テンプレtmp_esm_uc( https://github.com/famibee/tmp_esm_uc/ ) のタイトル画面 snapshot20260724_tmp_esm_uc.jpg を渡す（pngもあるので必要なら伝えて）
+- とりあえず tmp_esm_uc/doc/prj/bg/title.jpg の表示、文字ボタン表示（デザインが違ってもいい、場所だけ正確に）ができないか
+
+
+ボタンの見た目をもう少し寄せられるか。すなわち
+
+最初
+から
+
+ではなく　最初から　と横並びのままwidth=90に収め、https://famibee.github.io/SKYNovel/tag.html#button のデフォルト style(color: black;align: 'center';padding: 5;dropShadow: true;dropShadowAlpha: 0.7;dropShadowColor: white';などcss)
+
+
+ok。ついでに「fontFamily: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;」も
+
+
+ボタン文字は tmp_blues/doc/prj/theme/ext_lang.sn:331-334 のように
+	Start = '最初から'
+	Load = ' ロード '
+	Album = 'アルバム'
+	Config = ' 設 定 '
+として。こちらでやってみたがtrimなしにできるか。
+
+
+かなり近くなった。ちなみにボタン文字、渡したjpgよりやや縦長で線も太いが、寄せられるか。なるべくfont-familyはそのままで。他に手段がなければ「-light」的なfont-family重み指定を使って良い
+
+
+見た目はok。さて実テンプレtmp_blues上でe2e実行して[s]停止し、この見た目の状態まで実行できるか。tmp_blues/doc/prj/script/main.snはこちらでtmp_esm_ucのものに置換した。
+
+- [x] **タイトル画面をブラウザで描画：実背景＋本家準拠の文字ボタン**（2026-07-25 完了）
+	- 確認用フィクスチャ `test/e2e/app/prj_uc/`（`?prj=uc`）。本家 `tmp_esm_uc` の `theme/title.sn` のタイトルを core タグだけで再現。実 `bg/title.jpg`（1024×768）を実体で同梱し、`path.json`→`searchPath`→`<img>` の経路で背景表示
+	- **`[button left=/top=]` の絶対配置バグ修正**（`TxtLayer.tsx`）。座標指定ボタンが流し込み用の箱（`top:70%`）を基準に配置され、`top:360` が画面外（y≈841）へ落ちていた。座標指定ボタンを**ステージ原点基準の箱**（`styChild`＝`top:0/left:0`）へ分離し、書いた `left/top` がそのままステージ座標になるように（本家 `Button.ts` はステージ左上からの絶対配置）
+	- **ボタン既定の見た目を本家 `Button.ts` の TextStyle に準拠**（`BtnLayer.tsx`）。`fill:black`（無効時 gray）/`align:center`/Hiragino系 `fontFamily`/`dropShadow`（white・α0.7・blur7・distance0）→ CSS `text-shadow: 0 0 7px rgba(255,255,255,.7)`。以前の丸枠ピル装飾は撤去。hover は本家 `style_hover.fill='white'` に合わせ白へ。`font-weight` は本家が未指定＝normal（bold を撤去し線を細く）
+	- **文字を箱に収めるフィット**。本家 pixi `Text.width/height`（文字スプライトを箱ちょうどに拡縮）に相当する機能が CSS に無いので、BtnLayer が素の文字寸法を `useLayoutEffect` で実測し `transform:scale` として合成（短い文字は広げ、長い文字は縮めて1行に収める）。`white-space:pre` でスペースを保持し、本家 `ext_lang.sn` の `' ロード '`/`' 設 定 '` のような余白入りラベルが効く
+	- ステージ既定フォント（`Stage.tsx`）に同じ Hiragino スタックを追加（本家 `TxtLayer.ts:272` のメッセージ層デフォルト準拠）。メッセージ文字レイヤが継承する
+	- E2E：`button.e2e.ts` の回転検証を、transform に fit スケールが合成される前提で「行列成分の生値」から `atan2` による角度復元へ更新。**全 E2E 77 件パス**、`tsc` は src/test エラーなし
+	- **実プロジェクト（`tmp_blues`）通しの調査で `const.sn.lay.*` 未実装がブロッカーと判明**。`[add_lay layer=0 cond=!const.sn.lay.0]` の存在ガードが効かず（常に真）、重複追加でストアが throw → title 手前で停止。engine テスト（`uc_goal`）が通るのは純エンジンでストアの重複検査を通らないため。対応は todo.md の `const.sn.lay.*` 項目へ
+
+- [ ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 2026/07/24
 - ts上にTODOを残す場合は【//TODO: 】形式でコメント。Todo+( https://github.com/fabiospampinato/vscode-todo-plus )で一覧できるため
@@ -400,42 +471,6 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/uc_goal.test.ts`（新規2件）で**目標そのものを回帰テストにした**。`[s]`に到達すること、経路上で実際に起きたこと（ファイル横断39回・フレーム1つ・`[trans]`1回・ボタン4つ）、タイトルのボタン4つが本家どおりの座標（`left=250/350/550/650 top=360 width=90 height=30`）と`call`指定で積まれることを見る。`../tmp_esm_uc`が無い環境では丸ごとスキップ
   - ユニット904件→906件、E2Eは変更なし77件
   - **これはシナリオ解釈が通ることの確認**であって、ブラウザで絵と音が出るところまでは別途（`todo.md`冒頭に整理した）
-
-- [ ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-- tmp_bluesプロジェクトで
-	- doc/prj/script/main.sn は main0.sn に退避
-
-
-
-
-
-
-
-
-
-
-
 
 
 ## v0.2.1

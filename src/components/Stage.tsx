@@ -95,6 +95,11 @@ export default function Stage({
 		overflow: hidden;
 		background-color: black;
 
+		/* ステージ既定フォント。本家 TxtLayer.ts:272 のメッセージ層デフォルトと同じ Hiragino 系スタック。
+			ここへ置けば各レイヤ（文字メッセージ等）が継承する。ボタンは本家 sn.button.fontFamily 相当を
+			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
+		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
+
 		transform-origin: left top;
 		transform: scale(${cvsScale});
 	`;

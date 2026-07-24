@@ -9892,9 +9892,11 @@ function Zl() {
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
-function Ql(e) {
-	let t = {};
-	return (e.left !== void 0 || e.top !== void 0) && (t.position = "absolute", t.left = `${String(e.left ?? 0)}px`, t.top = `${String(e.top ?? 0)}px`, t.margin = 0), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`, t.fontSize = `${String(e.height)}px`, t.lineHeight = 1, t.padding = 0, t.boxSizing = "border-box"), e.alpha !== void 0 && (t.opacity = e.alpha), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (t.mixBlendMode = e.blendmode), e.enabled === !1 && (t.color = "gray", t.borderColor = "gray", t.pointerEvents = "none"), t;
+function Ql(e, t) {
+	let n = {};
+	(e.left !== void 0 || e.top !== void 0) && (n.position = "absolute", n.left = `${String(e.left ?? 0)}px`, n.top = `${String(e.top ?? 0)}px`, n.margin = 0), e.width !== void 0 && (n.width = `${String(e.width)}px`), e.height !== void 0 && (n.height = `${String(e.height)}px`, n.fontSize = `${String(e.height)}px`, n.lineHeight = 1, n.padding = 0, n.boxSizing = "border-box"), e.alpha !== void 0 && (n.opacity = e.alpha);
+	let r = (e.scale_x ?? 1) * t.x, i = (e.scale_y ?? 1) * t.y, a = t.x !== 1 || t.y !== 1;
+	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || a) && (n.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(r)}, ${String(i)})`, n.transformOrigin = a ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
 function $l({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 	let o = Zl`
@@ -9902,32 +9904,59 @@ function $l({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		z-index: 2;
 
 		display: inline-block;
-		padding: 0.6em 1.6em;
-		margin: 0.5em;
+		box-sizing: border-box;
+		margin: 0.3em;
+		padding: 5px;
+		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 		font-size: x-large;
-		font-weight: bold;
+		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
+			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */
+		font-weight: normal;
 		text-align: center;
-		white-space: pre-wrap;
-		color: #27acd9;
-		border: 2px solid #27acd9;
-		border-radius: 100vh;
-		background-color: white;
+		/* pre：スペースをそのまま保持する（nowrapだと連続スペース圧縮＋端のスペース除去で、
+			本家 ext_lang.sn の ' ロード ' / ' 設 定 ' のような余白入りラベルが詰められてしまう）。
+			preも折り返さないのでフィット（1行維持）は変わらない */
+		white-space: pre;
+		color: black;
+		text-shadow: 0 0 7px rgba(255, 255, 255, 0.7);
 		cursor: pointer;
 		user-select: none;
-		transition: 0.3s;
-		&:hover {
-			color: #fff;
-			background-color: #27acd9;
-		}
+		transition: color 0.3s;
+		&:hover {color: white;}
 	`, s = (e) => {
 		e.stopPropagation(), a(t, n ?? !1, r);
 	}, c = (0, O.useRef)(null);
-	return (0, O.useEffect)(() => {
+	(0, O.useEffect)(() => {
 		let e = c.current;
 		if (e) return E.add(e), () => E.remove(e);
-	}, []), /* @__PURE__ */ m("span", {
+	}, []);
+	let [l, u] = (0, O.useState)({
+		x: 1,
+		y: 1
+	});
+	return (0, O.useLayoutEffect)(() => {
+		let e = c.current;
+		if (!e || !i || i.width === void 0) {
+			u({
+				x: 1,
+				y: 1
+			});
+			return;
+		}
+		let { width: t, height: n } = i, r = e.style.width, a = e.style.transform, o = e.style.whiteSpace;
+		e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
+		let s = e.offsetWidth, l = e.offsetHeight;
+		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, u({
+			x: s > 0 ? t / s : 1,
+			y: n !== void 0 && l > 0 ? n / l : 1
+		});
+	}, [
+		e,
+		i?.width,
+		i?.height
+	]), /* @__PURE__ */ m("span", {
 		css: o,
-		style: i ? Ql(i) : void 0,
+		style: i ? Ql(i, l) : void 0,
 		ref: c,
 		tabIndex: 0,
 		onClick: s,
@@ -9989,13 +10018,15 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		flex-wrap: wrap;
 		top: 70%;
 		${u ? "" : "pointer-events: none;"}
-	`, { r: M, g: N, b: P } = tu(s), F = Zl`
+	`, M = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, N = d.filter((e) => !M(e)), P = d.filter(M), F = Zl`
+		${u ? "" : "pointer-events: none;"}
+	`, { r: I, g: L, b: R } = tu(s), z = Zl`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
-		background-color: rgba(${M}, ${N}, ${P}, ${c});
+		background-color: rgba(${I}, ${L}, ${R}, ${c});
 		border: dotted 6px #ffa500;
 
 		font-size: xxx-large;
@@ -10006,7 +10037,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${l ?? ""}
-	`, I = Zl`
+	`, B = Zl`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10061,14 +10092,14 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [L, R] = (0, O.useState)("");
-	(0, O.useEffect)(() => R(o), [o]);
-	let z = (0, O.useRef)(null), B = (e, t) => {
+	`, [ee, V] = (0, O.useState)("");
+	(0, O.useEffect)(() => V(o), [o]);
+	let te = (0, O.useRef)(null), ne = (e, t) => {
 		i(), e.transform = t;
 	};
 	return /* @__PURE__ */ v(x, { children: [
 		/* @__PURE__ */ v("span", {
-			css: [e, F],
+			css: [e, z],
 			ref: C,
 			style: n,
 			children: [/* @__PURE__ */ m("span", { ref: w }), k && /* @__PURE__ */ m("span", {
@@ -10076,9 +10107,20 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				children: S.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		d.length > 0 && /* @__PURE__ */ m("span", {
+		N.length > 0 && /* @__PURE__ */ m("span", {
 			css: [e, j],
-			children: d.map((e) => /* @__PURE__ */ m($l, {
+			children: N.map((e) => /* @__PURE__ */ m($l, {
+				text: e.text,
+				label: e.label,
+				call: e.call ?? !1,
+				fn: e.fn ?? "",
+				sty: e.sty,
+				onActivate: f
+			}, e.nm))
+		}),
+		P.length > 0 && /* @__PURE__ */ m("span", {
+			css: [e, F],
+			children: P.map((e) => /* @__PURE__ */ m($l, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10091,37 +10133,37 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: C,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => B(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => ne(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				B(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				ne(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => B(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => ne(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				B(e, n), e.transformOrigin = t;
+				ne(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ v(x, { children: [/* @__PURE__ */ v("label", {
-			css: I,
-			ref: z,
+			css: B,
+			ref: te,
 			children: ["テキスト入力", /* @__PURE__ */ m("textarea", {
 				rows: 3,
-				value: L,
-				onChange: (e) => R(e.target.value)
+				value: ee,
+				onChange: (e) => V(e.target.value)
 			})]
 		}), /* @__PURE__ */ m(Jl, {
-			target: z,
+			target: te,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => B(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => ne(e, t),
 			preventDefault: !1
 		})] })
 	] });
@@ -10185,6 +10227,11 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		height: ${P}px;
 		overflow: hidden;
 		background-color: black;
+
+		/* ステージ既定フォント。本家 TxtLayer.ts:272 のメッセージ層デフォルトと同じ Hiragino 系スタック。
+			ここへ置けば各レイヤ（文字メッセージ等）が継承する。ボタンは本家 sn.button.fontFamily 相当を
+			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
+		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
 		transform-origin: left top;
 		transform: scale(${j});

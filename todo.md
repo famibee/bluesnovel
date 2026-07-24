@@ -16,11 +16,11 @@
 `test/uc_goal.test.ts` が本家サンプルの実シナリオを`main.sn`から`[s]`まで走らせて回帰を防いでいる
 （`../tmp_esm_uc`が無い環境ではスキップ）。**ただしこれはシナリオ解釈が通ることの確認**で、
 ブラウザで実際に絵と音が出るところまでは別途。残っているのは以下。
-- ブラウザで実際に動かす（画像アセットは`prj_pic`で経路確認済み。実プロジェクトでの通しは未実施）
+- ブラウザで実際に動かす。**タイトル画面は確認用フィクスチャ`prj_uc`（`?prj=uc`）で描画済み**（実`bg/title.jpg`＋本家準拠の文字ボタン、2026-07-25）。ただし**実テンプレ`tmp_blues`の通しは`const.sn.lay.*`未実装でブロック中**（下記）。画像アセット経路は`prj_pic`で確認済み
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
 - `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
-- 組み込み変数`const.sn.lay.*`（レイヤの状態。目標経路で24箇所と最多）と`const.sn.sound.*`
+- **組み込み変数`const.sn.lay.*`（レイヤの状態。目標経路で24箇所と最多）** … `tmp_blues`をブラウザで通す際の最初のブロッカー。未実装だと`ext_fg2.sn`の`[add_lay layer=0 cond=!const.sn.lay.0]`等の存在ガードが常に真になり、重複追加でストアが`throw`してtitle手前で停止する。title到達だけなら**存在判定**（`const.sn.lay.<名前>`が真/偽）で足り、`const.sn.lay[N].fore.visible/.alpha/.width`（立ち絵`[fg2]`のGCが使う）は後回し可。設計：ScriptMngがストアのレイヤ一覧から存在マップJSONを`defBuiltin`で供給し、`VarStore.get()`のJSON潜り込みをbuiltinにも効かせる（現状builtinは完全一致のみ）。あわせて`const.sn.sound.*`
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
   - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて

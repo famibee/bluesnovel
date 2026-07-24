@@ -1,0 +1,33 @@
+{
+	"save_ns": "prj_uc",
+	"window": {"width": 1024, "height": 768},
+	"book": {
+		"title": "桜の樹の下には",
+		"creator": "ふぁみべぇ",
+		"cre_url": "",
+		"publisher": "電子演劇部",
+		"pub_url": "",
+		"detail": "本家テンプレ tmp_esm_uc のタイトル画面を core タグだけで再現した確認用",
+		"version": "1.0.0"
+	},
+	"log": {"max_len": 64},
+	"init": {
+		"bg_color": "#000000",
+		"tagch_msecwait": 10,
+		"auto_msecpagewait": 3500,
+		"escape": ""
+	},
+	"debug": {
+		"devtool": false,
+		"dumpHtm": false,
+		"token": false,
+		"tag": false,
+		"putCh": false,
+		"debugLog": false,
+		"baseTx": false,
+		"masume": false,
+		"variable": false
+	},
+	"code": {},
+	"debuger_token": ""
+}

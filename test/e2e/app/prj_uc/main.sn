@@ -1,0 +1,29 @@
+; 本家テンプレ tmp_esm_uc の theme/title.sn のタイトル画面を、bluesnovelのcoreタグだけで
+;	再現した確認用フィクスチャ（?prj=uc で表示）。目的は2つだけ：
+;	・実背景 bg/title.jpg が path.json→searchPath 経由で <img> として出ること
+;	・タイトルボタン4つが本家と同じ座標で並ぶこと（デザインは違ってよい、位置だけ合わせる）
+;
+;	本家の title.sn は [img fn=title …] と [button text=&btn.Start …] を使うが、
+;	[img] や &btn.* はプロジェクト側マクロ／変数（setting.sn・ext_lang.sn 定義）なので、
+;	ここでは core の [lay fn=…] と直書きの日本語ラベルで代用している。
+;	座標は本家 theme/title.sn:11-14 のまま： left=250/350/550/650, top=360, width=90 height=30
+
+; --- 背景（base レイヤ。title.jpg は 1024x768 でステージ全面） ---
+[add_lay layer=base class=grp]
+[lay layer=base fn=title left=0 top=0]
+
+; --- タイトルボタン4つ（mes レイヤ） ---
+;	mes は本来メッセージ窓だが、タイトルではボタンを乗せる器としてのみ使う。
+;	文字が無い空の窓（既定の背景色＋点線枠）が出ないよう、背景透明＋枠なしにしておく
+[add_lay layer=mes class=txt]
+[lay layer=mes b_alpha=0 style="border:none"]
+[current layer=mes]
+[button nm=btn_start text='最初から' left=250 top=360 width=90 height=30 label=*noop]
+[button nm=btn_load  text=' ロード ' left=350 top=360 width=90 height=30 label=*noop]
+[button nm=btn_album text='アルバム' left=550 top=360 width=90 height=30 label=*noop]
+[button nm=btn_config text=' 設 定 ' left=650 top=360 width=90 height=30 label=*noop]
+[s]
+
+; デモなのでボタンを押しても何もしない（同じ画面に留まる）
+*noop
+[s]

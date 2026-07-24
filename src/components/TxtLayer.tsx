@@ -158,6 +158,16 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		top: 70%;
 		${enabled ? '' : 'pointer-events: none;'}
 	`;
+	// [button left=/top=]で座標指定されたボタンは**ステージ原点基準**の絶対配置にする
+	//	（本家 Button.ts はステージ左上からの絶対配置）。上の流し込み用の箱（top:70%）へ
+	//	入れると、その箱の位置を基準にleft/topが効いてしまい画面外へずれる（タイトル画面のボタンで露見）。
+	//	原点の箱（styChild＝top:0/left:0）へ分けて置けば、書いたleft/topがそのままステージ座標になる
+	const isPosBtn = (b: T_BTN)=> b.sty?.left !== undefined || b.sty?.top !== undefined;
+	const aBtnFlow = aBtn.filter(b=> ! isPosBtn(b));
+	const aBtnPos = aBtn.filter(isPosBtn);
+	const styBtnPosBox = css`
+		${enabled ? '' : 'pointer-events: none;'}
+	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
 	const {r, g, b} = rgbOf(b_color);
 	const styTxt = css`
@@ -249,8 +259,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			<span ref={charsRef}></span>
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
-		{aBtn.length > 0 && <span css={[styChild, styBtnBox]}>
-			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
+		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]}>
+			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
+		</span>}
+		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]}>
+			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */
