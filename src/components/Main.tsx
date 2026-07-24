@@ -45,11 +45,13 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const requestSkip = useStore(s=> s.requestSkip);
 	const setWait = useStore(s=> s.setWait);
 	const setSkipping = useStore(s=> s.setSkipping);
+	const startTrans = useStore(s=> s.startTrans);
+	const finishTrans = useStore(s=> s.finishTrans);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, addBtn, addTitle, setWait, requestSkip, setSkipping}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, addBtn, addTitle, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
 
 		inited();
 

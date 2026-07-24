@@ -28,10 +28,16 @@ export type T_FACE = {
 	blendmode	: string;
 };
 
+// ページ裏表（本家 Pages.ts）。表(fore)＝今画面に見えている面、裏(back)＝次の場面を組み立てる面。
+//	[trans]で入れ替えることで場面転換する。属性pageの既定は本家同様'fore'（Pages.argChk_page(hArg,'fore')）
+export type T_PAGE = 'fore' | 'back';
+
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
-	| {t: 'chgPic'; nm: string; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
-	| {t: 'chgBAlpha'; nm: string; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
+	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
+	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
+	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
+	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
 	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
@@ -131,6 +137,15 @@ export class ScriptEngine {
 	}
 
 
+	// 属性pageの検査（本家 Pages.ts:65 argChk_page()）。既定値は呼ぶ側のタグごとに違う
+	//	（[lay]は'fore'、[clear_lay]は'back'）ので引数で受ける
+	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
+		const v = args.page ?? def;
+		if (v === 'fore' || v === 'back') return v;
+		throw `属性 page【${v}】が不正です`;
+	}
+
+
 	// 実行中のスクリプト（1ファイル分のパース結果）。switchScript()で差し替わる＝これがファイル切替。
 	//	字句解析用のGrammarはScriptが持っているもの（＝プロジェクト共有インスタンス）を使う
 	#script: Script;
@@ -202,7 +217,7 @@ export class ScriptEngine {
 	// マクロ名として使用不可（既存タグと同名は不可。本家 ScriptIterator.ts:1366
 	// if (name in this.hTag) throw と同じ意図）
 	static readonly RESERVED_TAGS = new Set([
-		'add_lay', 'current', 'add_face', 'lay', 'let', 'let_ml', 'endlet_ml',
+		'add_lay', 'current', 'add_face', 'lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -540,6 +555,7 @@ export class ScriptEngine {
 		}
 
 		case 'lay': {		// 試作簡略：画像レイヤの絵（picまたはfn属性）変更、face属性による差分合成、及び文字レイヤ背景の不透明度（b_alpha）に対応
+			const page = ScriptEngine.argPage(args, 'fore');	// 書き込み先のページ（本家 Pages.argChk_page(hArg, 'fore')）
 			// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
 			const picFn = args.fn || args.pic;
 			if (picFn) {
@@ -553,7 +569,7 @@ export class ScriptEngine {
 						aFace.push(f);
 					}
 				}
-				aAct.push({t: 'chgPic', nm: args.layer ?? '', fn: picFn, aFace});
+				aAct.push({t: 'chgPic', nm: args.layer ?? '', page, fn: picFn, aFace});
 			}
 
 			// b_alpha：文字レイヤ背景の不透明度。pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
@@ -564,9 +580,33 @@ export class ScriptEngine {
 				//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
 				//	範囲外の値が残ってしまうため、ここで正規化する。
 				//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
-				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', b_alpha: Math.min(1, Math.max(0, v))});
+				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', page, b_alpha: Math.min(1, Math.max(0, v))});
 			}
 			return 'skip';
+		}
+
+		case 'trans': {	// ページ裏表を交換（本家 LayerMng.ts:603 #trans()）
+			// layer属性は交換するレイヤ名のカンマ区切り。省略時は全レイヤ（＝null）。
+			//	指定外のレイヤは交換されず、画面上そのまま残る（本家の「transしないために交換する」相当）
+			const sLay = args.layer ?? '';
+			const aLayNm = sLay ? sLay.split(',').map(v=> v.trim()).filter(v=> v !== '') : null;
+			if (aLayNm?.length === 0) throw '[trans] layer属性が空です';
+
+			const time = Number(args.time ?? '0');
+			if (! Number.isFinite(time) || time < 0) throw `[trans] timeの値が不正です：${args.time ?? ''}`;
+			// 既読スキップ中は演出せず即座に交換する（本家 #trans() の `time === 0 || isSkipping`）
+			aAct.push({t: 'trans', aLayNm, time: this.skipEnabled ? 0 : time});
+			return 'skip';
+			// [trans]自体は待たない（本家 #trans() も false を返す＝待ちに入らない）。
+			//	演出の終了を待ちたい場合はスクリプト側で[wt]を書く
+		}
+
+		case 'wt': {	// [trans]の演出終了待ち（本家 CmnTween.ts:249 wt()）
+			// canskipの既定はtrue＝クリックで飛ばせる。飛ばす際は必ず「演出の終了状態」へ進めるので、
+			//	中途半端な見た目で止まることはない（本家 stopEndTrans() の stop().end() と同じ考え方）。
+			//	実際に待つのはScriptMng（＝演出を動かすDOM側）の担当なので、step()はここで一旦返す
+			aAct.push({t: 'waitTrans', canskip: (args.canskip ?? 'true') !== 'false'});
+			return 'stop';
 		}
 
 		case 'let': {	// 変数代入（試作簡略：単純代入のみ。+=等の複合代入演算子は未対応）

@@ -173,7 +173,7 @@ it('combo_layerTagViaMacro', ()=> {
 		'[add_lay layer=mes class=txt][macro name=t][lay * b_alpha=%b_alpha|1][endmacro]'+
 		'[t layer=mes b_alpha=0.4][s]'
 	).step();
-	expect(a.filter(v=> v.t === 'chgBAlpha').at(-1)).toEqual({t: 'chgBAlpha', nm: 'mes', b_alpha: 0.4});
+	expect(a.filter(v=> v.t === 'chgBAlpha').at(-1)).toEqual({t: 'chgBAlpha', nm: 'mes', page: 'fore', b_alpha: 0.4});
 });
 
 it('combo_textDisplayUnaffected', ()=> {

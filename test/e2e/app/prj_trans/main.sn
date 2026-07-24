@@ -1,0 +1,26 @@
+; E2E用シナリオ（trans.e2e.ts が使用）
+;	ページ裏表・[trans]・[wt]は「表示そのもの」なので、ここで見るのは
+;	エンジン単体（test/ScriptEngine_trans.test.ts）では届かない部分：
+;	・裏ページ（[lay page=back]）へ書いた内容が[trans]で表に出てくること
+;	・演出中は表ページのopacityが下がり、裏ページが見えていること
+;	・[wt]がその間シナリオを止め、クリックで「中途半端ではなく終了状態」へ飛ばせること
+;	画像アセットは使わない。表裏の違いは文字レイヤ背景の不透明度（b_alpha）で見分ける
+;	（[trans]は文字を裏へ持っていかないので、交換後は[er]で消してから次の文を出す）
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+おもて[l]
+
+; 演出あり（600ms）。裏ページのb_alphaを変えておき、表に出たら算出CSSで判別する
+[lay layer=mes b_alpha=0.2 page=back]
+[trans time=600]
+[wt]
+[er]
+うら[l]
+
+; 演出なし（time=0）＝即交換。[wt]も待つものが無いので素通しになる
+[lay layer=mes b_alpha=0.9 page=back]
+[trans time=0]
+[wt]
+[er]
+みっつめ[s]

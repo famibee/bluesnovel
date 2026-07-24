@@ -22,13 +22,20 @@ export type T_LAY_SNAP = {
 	b_alpha?: number;
 };
 export type T_SNAP = {
-	aLay		: T_LAY_SNAP[];
+	aLay		: T_LAY_SNAP[];	// 表ページのレイヤ群（store.aPage[foreIdx]）
+	aLayBack	: T_LAY_SNAP[];	// 裏ページのレイヤ群。[trans]で表に出てくる面
+	foreIdx		: 0 | 1;
 	wait		: T_WAIT;
 	isReadBack	: boolean;
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'multi';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'multi' | 'trans';
+
+// 表ページのコンテナ配下だけを見るためのセレクタ。
+//	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
+//	裏ページのレイヤまで混ざる
+export const SEL_FORE = '#skynovel [data-page="fore"]';
 
 
 // テスト用ページを開き、最初の停止点で落ち着くまで待つ
@@ -50,11 +57,13 @@ export async function waitIdle(page: Page) {
 	await page.waitForFunction(()=> {
 		const g = (globalThis as any).__sn;
 		if (! g) return false;
-		const lay = g.store.getState().aLay.find((l: any)=> l.cls === 'txt');
+		const s = g.store.getState();
+		const lay = s.aPage[s.foreIdx].find((l: any)=> l.cls === 'txt');
 		if (! lay) return false;
 
-		// 文字レイヤ本体＝点線枠のspan（TxtLayer styTxt）。その先頭の子spanに1文字=1spanで文字が入る
-		const box = [...document.querySelectorAll('#skynovel span')]
+		// 文字レイヤ本体＝点線枠のspan（TxtLayer styTxt）。その先頭の子spanに1文字=1spanで文字が入る。
+		//	裏ページにも同じ構造があるので、表ページのコンテナ配下だけを見る
+		const box = [...document.querySelectorAll('#skynovel [data-page="fore"] span')]
 			.find(e=> getComputedStyle(e).borderStyle === 'dotted');
 		if (! box) return false;	// Stage未マウント（Loading表示中）
 
@@ -75,7 +84,9 @@ export async function snap(page: Page): Promise<T_SNAP> {
 	return page.evaluate(()=> {
 		const s = (globalThis as any).__sn.store.getState();
 		return {
-			aLay		: JSON.parse(JSON.stringify(s.aLay)),
+			aLay		: JSON.parse(JSON.stringify(s.aPage[s.foreIdx])),
+			aLayBack	: JSON.parse(JSON.stringify(s.aPage[1 - s.foreIdx])),
+			foreIdx		: s.foreIdx,
 			wait		: s.wait,
 			isReadBack	: s.isReadBack,
 			title		: s.title,
@@ -114,6 +125,24 @@ export async function pressKeyToWaitMark(page: Page, code: T_KEY) {
 	await waitIdle(page);
 }
 
+// [trans]の演出が始まる（store.transが立つ）まで待つ
+export async function waitTransRunning(page: Page) {
+	await page.waitForFunction(
+		()=> (globalThis as any).__sn.store.getState().trans !== null,
+		undefined, {timeout: 15_000},
+	);
+}
+// [trans]の演出が終わり、続きが停止点で落ち着くまで待つ。
+//	waitIdle()だけでは足りない：演出中は文字が変わらないので「ストアとDOMが一致していて
+//	文字送りも終わっている」状態に見えてしまい、その場で通過してしまう
+export async function waitTransDone(page: Page) {
+	await page.waitForFunction(
+		()=> (globalThis as any).__sn.store.getState().trans === null,
+		undefined, {timeout: 15_000},
+	);
+	await waitIdle(page);
+}
+
 // [trace]等のデバッグ表示（ScriptMng が document.body 直下へ挿す span）の内容を取得。
 //	画面（#skynovel）の外に置かれるので、body直下のspanという位置だけで特定できる
 //	（src/にテスト用のid等を足さずに済ませるため）
@@ -125,8 +154,22 @@ export async function traceText(page: Page): Promise<string> {
 //	読み戻り中の文字色（黄色）など、ストアだけでは確かめられない見た目の検証用
 export async function txtBoxStyle(page: Page, prop: 'color' | 'background-color'): Promise<string> {
 	return page.evaluate(p=> {
-		const el = [...document.querySelectorAll('#skynovel span')]
+		const el = [...document.querySelectorAll('#skynovel [data-page="fore"] span')]
 			.find(e=> getComputedStyle(e).borderStyle === 'dotted');
 		return el ? getComputedStyle(el).getPropertyValue(p) : '';
 	}, prop);
+}
+
+// 表・裏それぞれのページコンテナの見え方（[trans]のクロスフェード検証用）。
+//	opacityは演出中だけ1未満になる。visibilityは表＝visible、裏＝演出中のみvisible
+export async function pageStyle(page: Page): Promise<{fore: {opacity: number; visibility: string}; back: {opacity: number; visibility: string}}> {
+	return page.evaluate(()=> {
+		const read = (sel: string)=> {
+			const el = document.querySelector(sel);
+			if (! el) return {opacity: -1, visibility: ''};
+			const st = getComputedStyle(el);
+			return {opacity: Number(st.opacity), visibility: st.visibility};
+		};
+		return {fore: read('#skynovel [data-page="fore"]'), back: read('#skynovel [data-page="back"]')};
+	});
 }

@@ -81,7 +81,7 @@ it('step_chgPic', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
-		{t: 'chgPic', nm: 'base', fn: 'yun_1184', aFace: []},
+		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184', aFace: []},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -115,7 +115,7 @@ it('step_lay_faceComposesMultipleImages', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: '0'},
-		{t: 'chgPic', nm: '0', fn: 'minoura_wasou', aFace: [
+		{t: 'chgPic', nm: '0', page: 'fore', fn: 'minoura_wasou', aFace: [
 			{fn: 'minoura_kuchi_futsu', dx: 200, dy: 239, blendmode: 'multiply'},
 			{fn: 'minoura_me_futsu', dx: 171, dy: 159, blendmode: 'normal'},
 			{fn: 'minoura_mayu_futsu', dx: 167, dy: 146, blendmode: 'multiply'},
@@ -130,7 +130,7 @@ it('step_lay_faceWithFnOmitted_usesNameAsFn', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: '0'},
-		{t: 'chgPic', nm: '0', fn: 'base', aFace: [
+		{t: 'chgPic', nm: '0', page: 'fore', fn: 'base', aFace: [
 			{fn: 'minoura_me_futsu', dx: 1, dy: 2, blendmode: 'normal'},
 		]},
 		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
@@ -146,7 +146,7 @@ it('step_lay_bAlpha', ()=> {
 	const se = new ScriptEngine('t1', '[lay layer=mes b_alpha=0.8][s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'chgBAlpha', nm: 'mes', b_alpha: 0.8},
+		{t: 'chgBAlpha', nm: 'mes', page: 'fore', b_alpha: 0.8},
 		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
 	]);
 });
@@ -157,8 +157,8 @@ it('step_lay_bAlpha_withPic_bothActionsPushed', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
-		{t: 'chgPic', nm: 'base', fn: 'yun_1184', aFace: []},
-		{t: 'chgBAlpha', nm: 'base', b_alpha: 0.5},
+		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184', aFace: []},
+		{t: 'chgBAlpha', nm: 'base', page: 'fore', b_alpha: 0.5},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });

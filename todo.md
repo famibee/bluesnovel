@@ -12,11 +12,11 @@
 `[notice]`はプロジェクト側プラグイン（`tmp_esm_uc/src/plugin/humane`）なのでプラグイン機構ごと対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 
-- [ ] **ページ裏表（fore/back）の概念**。`title.sn`は`[clear_lay layer=mes page=back]`→`[trans]`→`[wt]`で描画するため、これが無いと画面が出ない。React側の持ち方（裏ページ用のストア＋クロスフェード）から要検討
+- [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`は実装済み）
   - [ ] `[page]` ページ移動（`sub.sn`の`sys_title_start`が`[page clear=true key=...]`を使う）
-  - [ ] `[trans]` ページ裏表を交換（`layer=`で対象指定、`time=`、`rule=`ルール画像）
-  - [ ] `[wt]` トランス終了待ち
-  - [ ] `[lay]`の`page=fore|back`属性
+  - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）
+  - [ ] 文字表示（地の文・`[er]`・`[r]`）と`[button]`の書き込み先は表ページ固定。本家は`[ch]`にもページ指定がある
+  - [ ] 交換対象外レイヤ（`[trans layer=…]`で挙げなかったもの）は`startTrans()`で裏へ複製している。レイヤ数が増えたときのコストは要確認
 - [ ] **レイヤ操作タグ**
   - [ ] `[clear_lay]` レイヤ設定の消去（`layer=`/`page=`）
   - [ ] `[lay]`属性の拡充：`visible` `alpha` `rotation` `scale_x`/`scale_y` `left`/`top` `b_color` `style` `bura`（`img`/`txt_lay_*`マクロが使う）

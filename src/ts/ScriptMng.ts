@@ -155,7 +155,15 @@ export class ScriptMng {
 	// #runStep()は非同期になったので、投げっぱなしにせずここで握る。
 	//	myTrace(…, 'ET')は表示後にthrowする仕様なので、そのままだと未処理のPromise拒否になる
 	//	（同期だった頃はDOMイベントハンドラまで抜けていた）。表示は済んでいるので握って良い
-	#goSafe() {this.#runStep().catch(()=> {/* myTraceで表示済み */})}
+	#goSafe() {
+		// [wt]で[trans]の演出待ち中は、読み進め要求を「演出を今すぐ終わらせて続行」に読み替える。
+		//	canskip=falseなら何も起きない（＝クリックでは飛ばせない）
+		if (this.#transWaiting) {
+			if (this.#transWaiting.canskip) this.#finishTrans();
+			return;
+		}
+		this.#runStep().catch(()=> {/* myTraceで表示済み */});
+	}
 
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
@@ -176,6 +184,44 @@ export class ScriptMng {
 		this.#resumeTimer = undefined;
 		this.$fncs?.setSkipping(false);
 		this.#engine?.cancelAutoSkip();
+	}
+
+	// ===== [trans]の演出と、その終了待ち（[wt]） =====
+	//	**演出の終了を宣言するのはここ**（時間切れ／[wt]中のクリック）。
+	//	Stage側のGSAPは見た目を動かすだけにしてあり、その完了コールバックに表裏の交換をやらせない。
+	//	そうしないと「交換」と「シナリオの再開」の前後が保証されず、
+	//	交換前のページへ次の文が書かれてしまう（＝画面が空のまま進む）
+	#transTimer		: ReturnType<typeof setTimeout> | undefined;
+	#transRunning	= false;	// 演出中か（time=0は即交換済みなのでfalseのまま）
+	#transWaiting	: {canskip: boolean} | undefined;	// [wt]で待っている最中か
+
+	// [trans]適用時：演出時間ぶんのタイマーを仕込む。[wt]の有無に関わらず必ず終わらせる
+	#beginTrans(time: number) {
+		clearTimeout(this.#transTimer);
+		this.#transRunning = time > 0;
+		this.#transTimer = this.#transRunning
+			? setTimeout(()=> this.#finishTrans(), time)
+			: undefined;
+	}
+	// 演出終了：表裏を交換し、[wt]で待っていたなら続きを回す。
+	//	演出が途中でも必ず終了状態へ送るので、中途半端な見た目のまま止まることはない
+	#finishTrans() {
+		clearTimeout(this.#transTimer);
+		this.#transTimer = undefined;
+		this.#transRunning = false;
+		this.$fncs.finishTrans();	// zustandのsetは同期＝この行の後は書き込み先が新しい表ページになる
+
+		if (! this.#transWaiting) return;
+		this.#transWaiting = undefined;
+		this.#goSafe();
+	}
+	// [wt]：演出中なら待ちに入る。待つものが無ければそのまま続きへ
+	//	（本家 CmnTween.wt() も、動いているトゥイーンが無ければ待たずに済ませる）
+	#waitTrans(canskip: boolean) {
+		if (this.#transRunning) {this.#transWaiting = {canskip}; return}
+
+		// ここは#runStep()の中なので、同期で続きを回すと#busyが下りる前に再入してしまう
+		setTimeout(()=> this.#goSafe(), 0);
 	}
 
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
@@ -205,8 +251,9 @@ export class ScriptMng {
 				}
 				for (const act of aAct) this.#applyAction(act);
 
-				// 'loadScript'は必ず最後の要素（step()がそこで打ち切って返すため）
+				// 'loadScript'/'waitTrans'は必ず最後の要素（step()がそこで打ち切って返すため）
 				const last = aAct.at(-1);
+				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -234,10 +281,18 @@ export class ScriptMng {
 				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic':
-			this.$fncs.chgPic({nm: act.nm, fn: act.fn, aFace: act.aFace});
+			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, aFace: act.aFace});
 			break;
 		case 'chgBAlpha':
-			this.$fncs.chgBAlpha({nm: act.nm, b_alpha: act.b_alpha});
+			this.$fncs.chgBAlpha({nm: act.nm, page: act.page, b_alpha: act.b_alpha});
+			break;
+		case 'trans':
+			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）
+			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time});
+			this.#beginTrans(act.time);
+			break;
+		case 'waitTrans':
+			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い
 			break;
 		case 'chgStr':
 			this.$fncs.chgStr({nm: act.nm, str: act.str});

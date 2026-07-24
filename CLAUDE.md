@@ -186,11 +186,12 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
   `myTrace` debug overlay. Contains a `SAMPLE_SN` fallback that renders a demo when assets
   are missing — this is prototype scaffolding to be removed once the asset pipeline exists.
-- **`src/store/store.tsx`** — **zustand** store; single source of truth. `aLay: T_LAY[]` is
-  the layer list. Store setters (`addLayer`, `chgPic`, `chgBAlpha`, `chgStr`, `addBtn`,
-  `setWait`, …) are the only way the engine's actions reach the UI. **Layer `nm` must be
-  globally unique across `grp` and `txt` classes** (lookups key on `nm` alone; duplicates
-  throw and would collide React keys).
+- **`src/store/store.tsx`** — **zustand** store; single source of truth. `aPage: [T_LAY[],
+  T_LAY[]]` holds the **two pages** (本家 `Pages.ts`) and `foreIdx` says which one is the
+  fore. `[add_lay]` creates every layer on **both** pages. Store setters (`addLayer`,
+  `chgPic`, `chgBAlpha`, `chgStr`, `addBtn`, `setWait`, …) are the only way the engine's
+  actions reach the UI. **Layer `nm` must be globally unique across `grp` and `txt` classes**
+  (lookups key on `nm` alone; duplicates throw and would collide React keys).
 - **`src/components/`** — React 19 with **`@emotion/react` JSX** (`jsxImportSource` in
   tsconfig; `css` prop available). `Main.tsx` wires keyboard/click events and the `ev_next`
   progression loop. `Stage.tsx` renders `aLay`; `TxtLayer`/`GrpLayer`/`BtnLayer` render the
@@ -217,7 +218,8 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 ### The `.sn` scripting language (current prototype tag set)
 
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
-text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
+text-bg opacity, `page=fore|back`), `trans`/`wt` (page swap + its wait),
+`let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
@@ -229,6 +231,23 @@ defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
 Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
 them in scripts meant to run on 本家.
+
+**Pages (fore/back) and `[trans]`.** Every layer exists on both pages; a scenario builds the
+next scene on the back page (`[lay … page=back]`) and then swaps with `[trans time=…]`. Three
+rules make this work in React:
+
+- The store **never moves layer data between the two arrays** — `[trans]` only flips
+  `foreIdx`. Swapping the contents would replace both containers' children wholesale, so
+  `TxtLayer` would replay its typing animation exactly as the transition lands.
+- The cross-fade takes the fore page's opacity **1 → 0** over a back page rendered beneath.
+  Fading the back page *in* on top costs the same but pops at the end wherever the back page
+  is transparent; fading the fore *out* means what you see mid-transition is already the
+  final state.
+- **`ScriptMng` declares the transition finished**, not GSAP's `onComplete` — `Stage` only
+  paints. `finishTrans()` (a synchronous zustand `set`) flips `foreIdx`, and only then does
+  the scenario resume, so the next text always lands on the new fore page. `[wt]` waits on
+  the same deadline, and a click during it is re-read as "finish now" (`#goSafe()` intercepts
+  it), which always lands on the end state — never a half-faded screen.
 
 `char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
 from the defining tag onwards — text before it stays literal, and one text token can split

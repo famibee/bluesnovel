@@ -27,6 +27,7 @@ export type T_BTN = {
 };
 type T_TXTARG = T_LAY_CMN & {
 	nm		: string;
+	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
 	str		: string;
 	b_color?: number;
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
@@ -38,7 +39,7 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: numb
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, str, b_alpha, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, nm, isFore, str, b_alpha, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -122,7 +123,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 
 	// [l]/[p]待ち中マーカー（🩷/✅）。[s]はマーカーなし。読み戻り中は非表示
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
-	const showWait = ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
+	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
+	const showWait = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
 	const styWaitMark = css`
 		display: inline-block;
 		margin-left: 0.15em;
