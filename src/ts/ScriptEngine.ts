@@ -14,7 +14,7 @@
 
 import {VarStore, type T_CAST, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
-import {Grammar, splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
+import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 
@@ -59,10 +59,8 @@ export class ScriptEngine {
 	}
 
 
-	// 字句解析は本家 Grammar をそのまま使う（cfg無し＝ワイルドカード展開なし。Grammar.ts参照）。
-	//	これにより複数行タグ・文字列リテラル中の[ ] ;・コメント・ラベル・エスケープ文字に対応する
-	readonly #grm = new Grammar;
-	// 実行中のスクリプト（1ファイル分のパース結果）。switchScript()で差し替わる＝これがファイル切替
+	// 実行中のスクリプト（1ファイル分のパース結果）。switchScript()で差し替わる＝これがファイル切替。
+	//	字句解析用のGrammarはScriptが持っているもの（＝プロジェクト共有インスタンス）を使う
 	#script: Script;
 	#idx = 0;
 	// 連想配列はどれも Object.create(null) で作る。素の{}だと 'toString' 等の
@@ -120,7 +118,7 @@ export class ScriptEngine {
 	//	変数・スタック等の実行状態はエンジン側が一手に持つので、
 	//	ファイルを跨いでもこのインスタンスは作り直さない（switchScript()で切り替える）
 	constructor(fn: string | Script, src = '') {
-		this.#script = fn instanceof Script ? fn : new Script(fn, src, this.#grm);
+		this.#script = fn instanceof Script ? fn : new Script(fn, src);
 
 		// 組み込み変数：常に「実行中の」スクリプト名を返す
 		//	（本家 val.defTmp('const.sn.scriptFn', ...) 相当。遅延評価なので切替に自動追随する）
@@ -212,7 +210,14 @@ export class ScriptEngine {
 			}
 
 			let txt = token;
-			if (uc === 38) {	// & 変数操作・変数表示（本家 Main.ts:243）
+			const ce = this.#script.grm.ce;	// エスケープ文字（prj.jsonのinit.escape。未設定なら空文字）
+			if (ce && token.length > 1 && token.startsWith(ce)) {
+				// エスケープシーケンス（\[ など）。Grammarが2文字で1トークンにしているので、
+				//	タグやコメントとして解釈されることはない。表示時に1文字目を落とす
+				//	（本家は表示側 RubySpliter.putTxt() で同じことをしている）
+				txt = token.slice(1);
+			}
+			else if (uc === 38) {	// & 変数操作・変数表示（本家 Main.ts:243）
 				if (! token.endsWith('&')) {this.#letAmpersand(token); continue}	// ＆代入
 
 				// ＆表示＆：式の評価結果をそのまま文字表示へ回す
@@ -322,14 +327,14 @@ export class ScriptEngine {
 				ml = this.#script.aToken[this.#idx]!;
 				if (ml !== '') break;
 			}
-			if (this.#grm.testTagEndLetml(ml)) {	// 本文が空（[let_ml …][endlet_ml]）
+			if (this.#script.grm.testTagEndLetml(ml)) {	// 本文が空（[let_ml …][endlet_ml]）
 				//	この場合Grammarのlet_mlルール（本文が1文字以上必要）にマッチせず、
 				//	[let_ml …]は普通のタグトークンになるため、次は[endlet_ml]そのもの
 				this.#val.set(varName, '', 'str');
 				++this.#idx;
 				return 'skip';
 			}
-			if (! this.#grm.testTagEndLetml(this.#script.aToken[this.#idx +1] ?? '')) {
+			if (! this.#script.grm.testTagEndLetml(this.#script.aToken[this.#idx +1] ?? '')) {
 				throw `[let_ml] 変数【${varName}】の終端・[endlet_ml]がありません`;
 			}
 			// 本家同様 cast='str'（数値だけの本文でも文字列のまま保持する）
@@ -423,11 +428,11 @@ export class ScriptEngine {
 			for (; this.#idx < len; ++this.#idx) {
 				const tkn2 = this.#script.aToken[this.#idx]!;
 				if (inLetMl) {
-					if (this.#grm.testTagEndLetml(tkn2)) inLetMl = false;
+					if (this.#script.grm.testTagEndLetml(tkn2)) inLetMl = false;
 					continue;
 				}
 				if (tkn2.charCodeAt(0) !== 91) continue;	// [ タグ開始以外は読み飛ばす
-				if (this.#grm.testTagLetml(tkn2)) {inLetMl = true; continue}
+				if (this.#script.grm.testTagLetml(tkn2)) {inLetMl = true; continue}
 
 				const {name: nm2} = ScriptEngine.parseTag(tkn2);
 				if (nm2 === 'macro') {++depth; continue}
@@ -498,12 +503,12 @@ export class ScriptEngine {
 		for (; this.#idx < len; ++this.#idx) {
 			const tkn = this.#script.aToken[this.#idx]!;
 			if (inLetMl) {
-				if (this.#grm.testTagEndLetml(tkn)) inLetMl = false;
+				if (this.#script.grm.testTagEndLetml(tkn)) inLetMl = false;
 				continue;
 			}
 			const uc = tkn.charCodeAt(0);
 			if (uc !== 91) continue;	// [ タグ開始以外（地の文・改行）はこの時点ではまだ実行せず読み飛ばすだけ
-			if (this.#grm.testTagLetml(tkn)) {inLetMl = true; continue}
+			if (this.#script.grm.testTagLetml(tkn)) {inLetMl = true; continue}
 
 			const {name, args: a2} = ScriptEngine.parseTag(tkn);
 			switch (name) {

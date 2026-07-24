@@ -12,6 +12,7 @@
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import {Script} from '../src/ts/Script';
+import {Grammar} from '../src/sn/Grammar';
 
 import {expect, it} from 'bun:test';
 
@@ -141,4 +142,34 @@ it('callToScript_pushesCallStackThenSwitches', ()=> {
 	// 戻り先は[l]そのもの＝再びイベント待ちの停止点になる（読み進めてしまわない）
 	expect(se.step().at(-1)).toEqual({t: 'stop', kind: 'l', key: 'main:2', nm: 'mes'});
 	expect(se.fn).toBe('main');
+});
+
+
+// ============ Grammarの共有（エスケープ文字・字句解析器はプロジェクト単位） ============
+
+it('script_sharesGrammarInstance', ()=> {
+	// 実行時（ScriptMng）は1つのGrammarを全Scriptへ渡す。エスケープ文字や
+	//	[char2macro]の定義はGrammarが抱えるので、ファイルごとに別だと設定が行き渡らない
+	const grm = new Grammar;
+	grm.setEscape('\\');
+	const scrA = new Script('a', 'A', grm);
+	const scrB = new Script('b', 'B', grm);
+	expect(scrA.grm).toBe(grm);
+	expect(scrB.grm).toBe(scrA.grm);
+});
+
+it('escape_charIsStrippedOnDisplay', ()=> {
+	// エスケープ文字を設定すると「\[」はタグにならず、表示時に「[」だけになる
+	const grm = new Grammar;
+	grm.setEscape('\\');
+	//	素材は「\[esc\]\;\&\\」＝ [ esc ] ; & \ を表示させたいもの
+	const se = new ScriptEngine(new Script('t1', '\\[esc\\]\\;\\&\\\\[s]', grm));
+	const a = se.step();
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: '[esc];&\\'});
+});
+
+it('escape_notSet_bracketStartsTag', ()=> {
+	// エスケープ文字が未設定（既定）なら従来どおり。[esc]は未対応タグとして無視される
+	const se = new ScriptEngine(new Script('t1', '[esc]あ[s]'));
+	expect(se.step().filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', str: 'あ'});
 });

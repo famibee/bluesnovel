@@ -95,6 +95,22 @@ export async function pressKey(page: Page, code: 'Space' | 'PageDown' | 'PageUp'
 	await waitIdle(page);
 }
 
+// [l]/[p]の停止点まで進める。ファイル切替（[jump fn=…]等）を挟むシナリオではこちらを使う。
+//	fetchの待ち時間中は「ストアもDOMも一致し、文字送りも終わっている」状態が一瞬できるため、
+//	waitIdle()だけではそこを停止点と誤認して次のキーを早く打ちすぎる。
+//	その早すぎるキーは、ロード完了後に始まった文字送り演出の「瞬時完了」として
+//	消費されてしまい（Main.tsx next()）、進行が1回分まるごと失われる。
+//	待ちマーカー（store.wait）は#runStep()の各反復の頭でnullに戻り[l]/[p]でだけ立つので、
+//	これを見れば「本物の停止点」だと確実に分かる（[s]では立たないので、その場合はpressKey）
+export async function pressKeyToWaitMark(page: Page, code: 'Space' | 'PageDown' | 'PageUp') {
+	await page.keyboard.press(code);
+	await page.waitForFunction(
+		()=> (globalThis as any).__sn.store.getState().wait !== null,
+		undefined, {timeout: 15_000},
+	);
+	await waitIdle(page);
+}
+
 // [trace]等のデバッグ表示（ScriptMng が document.body 直下へ挿す span）の内容を取得。
 //	画面（#skynovel）の外に置かれるので、body直下のspanという位置だけで特定できる
 //	（src/にテスト用のid等を足さずに済ませるため）

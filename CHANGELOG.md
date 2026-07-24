@@ -113,6 +113,26 @@
   - `[button]`の必須属性が「label」から「fnまたはlabel」に。`fn`のみ指定ならそのファイルの先頭へ飛ぶ（`nm`省略時は`label`、無ければ`fn`を流用）
   - テスト：ユニット3件（`fn`の受け渡し・`nm`のフォールバック・`callToScript`の往復）、E2E2件（`prj_button/sub2.sn`を追加）
 
+- [x] **`Grammar`をプロジェクト単位で共有＋エスケープ文字の実装**（2026-07-24 完了）
+  - `Script`が使った`Grammar`を公開し、`ScriptMng`が1つだけ作って全`Script`へ渡すようにした。エスケープ文字や`[char2macro]`/`[bracket2macro]`の定義は`Grammar`インスタンスが抱えるので、ファイルごとに別だと設定が行き渡らない
+  - `ScriptEngine`も自前の`Grammar`をやめ、実行中`Script`のものを使う
+  - `ScriptMng`が`Grammar`に`sys.cfg`を渡すようになったので、`[call fn=…*]`/`[loadplugin fn=…*]`のワイルドカード展開も効くようになった（従来はcfg無しで生成していて無効）
+  - **prj.jsonの`init.escape`を実際に適用**。`Grammar.setEscape()`を呼ぶようにし、表示時にエスケープ文字1文字を落とす処理を`ScriptEngine.step()`へ追加した（本家は表示側`RubySpliter.putTxt()`が同じことをしている。bluesnovelにRubySpliterはまだ無いのでエンジン側で行う）。`Grammar`に`get ce()`を追加
+  - テスト：ユニット3件（Grammar共有／`\[`等のエスケープ表示／未設定時は従来どおり）、E2E1件（`prj_expr`の`init.escape`を`\`にし、`\[esc\]`がタグにならず`[esc]`と表示されることを確認）
+
+- [x] **E2E `multi.e2e.ts` のフレーク修正**（2026-07-24）
+  - 症状：`[jump fn=…]で別ファイルへ移動して停止する`等が3回に1回ほど落ち、表示が停止点1つ手前で止まっていた
+  - 原因：ファイル切替のfetch待ちの間に「ストアもDOMも一致し、文字送りも終わっている」瞬間ができる。`waitIdle()`はそれを停止点と区別できないため次のキーを早く打ちすぎ、そのキーがロード完了後に始まった文字送り演出の**「瞬時完了」として消費**されて（`Main.tsx` `next()`は`isTyping`中の入力を進行に使わない）、進行が1回分まるごと失われていた
+  - 対処：`snPage.ts`に`pressKeyToWaitMark()`を追加。待ちマーカー（`store.wait`）は`#runStep()`の各反復の頭でnullに戻り`[l]`/`[p]`でだけ立つので、これを見れば「本物の停止点」だと確実に分かる。`[s]`では立たないため、そこだけ従来の`pressKey`＋`expect.poll`で受ける
+  - `multi.e2e.ts`単体10回反復＋全E2E6回連続で緑を確認（修正前は約1/3で落ちていた）
+
+- [x] **E2Eを「ブラウザでしか確かめられないもの」だけに整理**（2026-07-24）
+  - 判定基準：DOM/算出CSS/`document.title`・入力イベント（クリック/キー）・React描画に依存する仕組み（Caretaker/Memento）・fetch/非同期・prj.json等の設定配線、のいずれかを含むものだけE2Eに残す
+  - `mesStr()`/`snap()`はストアを読むだけなので、それしか見ていないテストは実質「エンジン＋ScriptMngのブリッジ」テスト。エンジン側のロジックがユニットで担保済みなら重複と判断した
+  - 削除4件：`expr.e2e.ts`の「`[let]`と`&計算`」「`[if]`分岐」「マクロ引数`mp:`」（それぞれ`amp_*`／`ScriptEngine_if`36件／`macro_args_passedViaMpNamespace`が担保）、`wait.e2e.ts`の「`[p]`の次の進行でページがクリアされる」（`step_p_clearsOnResume`が担保）
+  - `prj_expr`のシナリオも、残した3件（`[trace]`のDOM表示／`b_alpha`の算出CSS／`init.escape`の配線）だけを扱う最小構成へ縮小。停止点が1つになり押下操作も不要に
+  - E2E 26件 → 22件。ユニット602件は変更なし
+
 - [ ]
 
 

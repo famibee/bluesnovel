@@ -31,16 +31,6 @@ test('[p]で停止し、改ページ待ちマーカー（✅）を表示する',
 	await expect(page.getByText('✅')).toBeVisible();
 });
 
-test('[p]の次の進行でページがクリアされる', async ({page})=> {
-	await pressKey(page, 'Space');	// -> [p]
-	await pressKey(page, 'Space');	// -> 次ページの[l]
-
-	expect(await mesStr(page)).toBe('二ページ目のいち。');
-
-	const {wait} = await snap(page);
-	expect(wait).toEqual({nm: 'mes', kind: 'l'});
-});
-
 test('[s]で停止し、待ちマーカーは表示しない', async ({page})=> {
 	await pressKey(page, 'Space');	// -> [p]
 	await pressKey(page, 'Space');	// -> [l]

@@ -389,6 +389,11 @@ export class Grammar {
 	constructor(private readonly cfg?: T_Config) {this.setEscape('')}
 
 	#REG_TOKEN	: RegExp;
+	#ce			= '';
+	// 設定中のエスケープ文字（未設定なら空文字）。
+	//	本家は表示側（RubySpliter.putTxt()）でエスケープの1文字目を落とすが、
+	//	bluesnovelにRubySpliterはまだ無いので、ScriptEngineが同じことをするために公開する
+	get ce() {return this.#ce}
 	// エスケープ文字の設定（本家 Grammar.ts:381）。トークン化用の正規表現を組み立て直す
 	setEscape(ce: string) {
 		if (this.#hC2M && ce in this.#hC2M) throw '[エスケープ文字] char【'+ ce +'】が登録済みの括弧マクロまたは一文字マクロです';
@@ -436,6 +441,7 @@ export class Grammar {
 		'gs');
 		this.#REG_CANTC2M = new RegExp(`[\\w\\s;[\\]*=&｜《》${ce ?`\\${ce}` :''}]`);
 		this.#REG_TOKEN_NOTXT = new RegExp(`[\\n\\t;\\[*&${ce ?`\\${ce}` :''}]`);
+		this.#ce = ce;
 	}
 
 

@@ -7,6 +7,7 @@
 
 import type {SysBase} from '../sn/SysBase';
 import type {TArg, T_HTag} from '../sn/Grammar';
+import {Grammar} from '../sn/Grammar';
 import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib} from '../sn/CmnLib';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
@@ -86,7 +87,21 @@ export class ScriptMng {
 	}
 
 	async #getScript(fn: string): Promise<Script> {
-		return this.#hScript[fn] ??= new Script(fn, await this.#fetchScript(fn));
+		return this.#hScript[fn] ??= new Script(fn, await this.#fetchScript(fn), this.#getGrm());
+	}
+
+	// 字句解析器はプロジェクトで1つだけ作って全スクリプトで共有する。
+	//	エスケープ文字（prj.jsonのinit.escape）や[char2macro]/[bracket2macro]の定義は
+	//	Grammarインスタンスが抱えるので、ファイルごとに別インスタンスだと設定が行き渡らない。
+	//	cfgを渡すので[call fn=…*]/[loadplugin fn=…*]のワイルドカード展開も効く。
+	//	sys.cfgはConfig.generate()後にしか読めないため、初回アクセス時に作る
+	#grm?: Grammar;
+	#getGrm(): Grammar {
+		if (this.#grm) return this.#grm;
+
+		const grm = this.#grm = new Grammar(this.sys.cfg);
+		grm.setEscape(this.sys.cfg.oCfg.init.escape);
+		return grm;
 	}
 
 	// 現在の実行位置から次の停止点（[l][p][s]、またはスクリプト終端）まで進める

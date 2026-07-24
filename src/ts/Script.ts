@@ -16,9 +16,10 @@ export class Script {
 	readonly aToken	: readonly string[];
 	readonly #hLabel: {[label: string]: number} = Object.create(null);	// *label -> トークン索引
 
-	//TODO: Grammarを1インスタンスずつ持っている。[char2macro]/[bracket2macro]や
-	// エスケープ文字はプロジェクト単位の設定なので、対応時は共有インスタンスを渡すこと
-	constructor(readonly fn: string, src: string, grm = new Grammar) {
+	// grmはプロジェクト単位で共有するもの（エスケープ文字・[char2macro]/[bracket2macro]の
+	//	定義はGrammarインスタンスが保持するため、ファイルごとに別だと設定が行き渡らない）。
+	//	実行時は ScriptMng が1つ作って全Scriptへ渡す。省略時は単体テスト用の既定インスタンス
+	constructor(readonly fn: string, src: string, readonly grm = new Grammar) {
 		this.aToken = grm.resolveScript(src).aToken;
 
 		// ラベル定義を記録。Grammarのトークンは行頭のタブが別トークンに分かれるため、

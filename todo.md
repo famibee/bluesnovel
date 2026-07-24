@@ -1,6 +1,6 @@
 #TODO 優先順位順
 
-- [ ] `Grammar`インスタンスが`Script`ごとに別（`src/ts/Script.ts`）。`[char2macro]`/`[bracket2macro]`・エスケープ文字はプロジェクト単位の設定なので、対応時は共有インスタンスを渡すこと
+- [ ] `[char2macro]`/`[bracket2macro]`タグ自体は未実装（`Grammar`側の受け口は移植済み・共有インスタンスも用意済みなので、`ScriptEngine`にタグを足せば入る）
 - [ ] ローカルイベント予約
 - [ ] 既読処理
 - [ ] `[call]`の`count`/`clear_local_event`属性（本家にあるが、既読処理・ローカルイベント予約が未実装のため対象外のまま）

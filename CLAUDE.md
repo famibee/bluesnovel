@@ -46,6 +46,13 @@ Everything E2E lives under `test/e2e/` — specs, fixture app, `playwright.confi
 `tsconfig.json` — deliberately keeping the repo root clean. Unit tests (`bun test`) and browser
 E2E (`playwright test`) are **fully separated**:
 
+- **Put a test here only if a browser is required for it**: DOM / computed CSS /
+  `document.title`, input events (click, key), things driven by React rendering
+  (`Caretaker`/Memento), fetch and the async script-switch path, or config wiring from
+  `prj.json`. Engine logic belongs in `test/*.test.ts`. Note that `mesStr()`/`snap()` only
+  read the zustand store — a spec asserting nothing else is really an engine test wearing a
+  browser costume, so check whether a unit test already covers it.
+
 - E2E specs are named `*.e2e.ts`, **not** `*.spec.ts` — `bun test` auto-collects `*.spec.*`, and
   it also scans `test/`, so the conventional name would break the unit-test run. `testMatch`
   enforces this.
@@ -65,9 +72,13 @@ E2E (`playwright test`) are **fully separated**:
 - Writing fixture `.sn`: `&名前 = 式` and `&式&` only fire when the **token** starts with `&`
   (line start, or straight after a tag) — mid-sentence they render literally. See
   `prj_expr/main.sn`.
-- Scenarios that cross files (`prj_multi/`) need `expect.poll` rather than a bare assertion
-  after `pressKey()`: a script fetch leaves brief moments where store, DOM and `isTyping` all
-  look settled mid-run, and `waitIdle()` cannot tell those from a real stop point.
+- Scenarios that cross files (`prj_multi/`) must advance with `pressKeyToWaitMark()`, not
+  `pressKey()`: a script fetch leaves brief moments where store, DOM and `isTyping` all look
+  settled mid-run, `waitIdle()` cannot tell those from a real stop point, and a key pressed
+  then is swallowed as "finish the typing animation" (`Main.tsx` `next()`) instead of
+  advancing — losing a whole stop point. `store.wait` is reset every `#runStep()` iteration
+  and only set at `[l]`/`[p]`, so it is a reliable stop-point signal. `[s]` sets no marker,
+  so that last hop still uses `pressKey()` + `expect.poll`.
 - `test/e2e/snPage.ts` holds the helpers. `waitIdle()` must be awaited before every click or
   keypress: it waits until the DOM has caught up with the store, because `Stage` is `lazy()`-loaded
   and a test can otherwise race ahead while Suspense still shows `Loading` — in that window
@@ -132,7 +143,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 ```
 
 - **`src/ts/Script.ts`** — one `.sn` file's parse result (token array + label table), read-only.
-  Everything that varies per file lives here.
+  Everything that varies per file lives here. It holds the `Grammar` that tokenized it;
+  `ScriptMng` builds **one** shared instance (escape char from `prj.json`'s `init.escape`,
+  plus `cfg` so `fn=…*` wildcards expand) and passes it to every `Script`.
 - **`src/ts/ScriptEngine.ts`** — the prototype executor. No DOM, no fetch. Runs the current
   `Script` until the next `[l]`/`[p]`/`[s]` stop point (or EOF), and returns a
   `T_ENGINE_ACTION[]` describing what changed (add layer, change picture, append text, add
