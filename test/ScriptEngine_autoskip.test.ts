@@ -11,6 +11,7 @@
 //	参考：SKYNovel_gallery の kidoku サンプル
 
 import {ScriptEngine, type T_ENGINE_ACTION, type T_RESUME} from '../src/ts/ScriptEngine';
+import {Script} from '../src/ts/Script';
 
 import {expect, it} from 'bun:test';
 
@@ -103,6 +104,24 @@ it('skip_sStopsAndCancels', ()=> {
 });
 
 
+// ============ スキップモード（sys:sn.skip.mode） ============
+
+it('skipMode_default_s_skipsThroughPageBreak', ()=> {
+	// 既定（未設定）は's'＝改ページ[p]も飛ばす
+	const se = new ScriptEngine('t1', '&sn.skip.all = true\n&sn.skip.enabled = true\nA[p]B[s]');
+	expect(resumeOf(se.step())).toEqual({mode: 'skip', msec: 0});	// [p]も飛ばす
+});
+
+it('skipMode_p_stopsAtPageBreakButSkipsLines', ()=> {
+	// 'p'＝行[l]は飛ばすが、改ページ[p]では止まる（本家 Reading p() は mode==='s' のみ飛ばす）
+	const se = new ScriptEngine('t1',
+		`[let name=sys:sn.skip.mode val='"p"']&sn.skip.all = true\n&sn.skip.enabled = true\nA[l]B[p]C[s]`
+	);
+	expect(resumeOf(se.step())).toEqual({mode: 'skip', msec: 0});	// [l]は飛ばす
+	expect(resumeOf(se.step())).toBeUndefined();					// [p]では止まる
+});
+
+
 // ============ フラグ変数・cancelAutoSkip ============
 
 it('flags_readableAsTmpVars', ()=> {
@@ -141,4 +160,44 @@ it('isNextKidoku_falseOnFirstPass_trueOnSecond', ()=> {
 	expect(se.isNextKidoku).toBe(false);	// [l]の次（*top方向の続き）はまだ未読
 	se.step();
 	expect(se.isNextKidoku).toBe(true);
+});
+
+it('isNextKidoku_insideSubroutine_looksAtCaller', ()=> {
+	// サブルーチン内の停止点では、呼び出し元の続き（戻り先）が既読かを見る。
+	//	戻り先を既読のまま残すため[call count=true]を使う（既定の[call]は戻り先を未読へ戻すため）
+	const se = new ScriptEngine('t1',
+		'*top\n[call count=true label=*sub]既読になる続き[l][jump label=*top]'+
+		'\n*sub\n[l][return]'
+	);
+	se.step();	// サブルーチン内の[l]（1周目）：呼び出し元の戻り先はまだ未読
+	expect(se.isNextKidoku).toBe(false);
+	se.step();	// [return]→呼び出し元の続きを読んで既読化→[l]
+	se.step();	// [jump]→[call]→2周目のサブルーチン内の[l]
+	expect(se.isNextKidoku).toBe(true);	// 呼び出し元の戻り先は前周で既読化済み
+});
+
+it('isNextKidoku_crossFile_usesCallerScriptLength', ()=> {
+	// 別ファイルのサブルーチンから、呼び出し元ファイルの続きの既読状態を正しく見る。
+	//	loadScriptプロトコルを手で回す（ScriptMng.#runStepと同じ手順）
+	const main = new Script('main', '*top\n[call fn=sub count=true label=*s]つづき[l][jump label=*top]');
+	const sub = new Script('sub', '*s\n[l][return]');
+	const se = new ScriptEngine(main);
+
+	// 1周目：main→subへ。subの[l]で止まる
+	expect(se.step().at(-1)).toMatchObject({t: 'loadScript', fn: 'sub'});
+	se.switchScript(sub, '*s');
+	se.step();	// subの[l]
+	expect(se.isNextKidoku).toBe(false);	// mainの戻り先「つづき」はまだ未読
+
+	// subから戻り、mainの続き「つづき」を読んで[l]で止まる（ここで戻り先が既読化）
+	const ret = se.step().at(-1) as {t: string; fn: string; idx: number};
+	expect(ret).toMatchObject({t: 'loadScript', fn: 'main'});
+	se.switchScript(main, '', ret.idx);
+	se.step();	// mainの[l]（「つづき」読了）
+
+	// mainの続き→[jump]→[call fn=sub]で再びsubへ。2周目のsubの[l]
+	expect(se.step().at(-1)).toMatchObject({t: 'loadScript', fn: 'sub'});
+	se.switchScript(sub, '*s');
+	se.step();
+	expect(se.isNextKidoku).toBe(true);	// mainの戻り先は前周で既読化済み（別ファイルの長さも正しく参照）
 });

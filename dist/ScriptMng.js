@@ -1367,10 +1367,10 @@ var d = class {
 	callToLabel(e) {
 		let t = this.#t.label2idx(e);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#C(--this.#n), this.#n = t;
+		this.#w(--this.#n), this.#n = t;
 	}
 	callToScript(e, t = "") {
-		this.#C(--this.#n), this.switchScript(e, t);
+		this.#w(--this.#n), this.switchScript(e, t);
 	}
 	get isKidoku() {
 		return this.#m;
@@ -1416,7 +1416,8 @@ var d = class {
 		this.#s.set("tmp:sn.skip.enabled", !1), this.#s.set("tmp:sn.skip.all", !1), this.#s.set("tmp:sn.auto.enabled", !1);
 	}
 	get isNextKidoku() {
-		return this.#p[this.fn]?.search(this.#n) ?? !1;
+		let e = this.fn, t = this.#n, n = this.#t.len, r = this.#u.at(-1);
+		return r && (e = r.fn, t = r.returnIdx, n = r.scr.len), t >= n ? !1 : this.#p[e]?.search(t) ?? !1;
 	}
 	#b(e) {
 		if (e === "s") {
@@ -1425,20 +1426,24 @@ var d = class {
 		}
 		if (this.autoEnabled) return {
 			mode: "auto",
-			msec: this.#x(e === "p")
+			msec: this.#S(e === "p")
 		};
 		if (this.skipEnabled) {
 			if (!this.skipAll && !this.isNextKidoku) {
 				this.cancelAutoSkip();
 				return;
 			}
-			return {
+			return e === "p" && this.#x() !== "s" ? void 0 : {
 				mode: "skip",
 				msec: 0
 			};
 		}
 	}
-	#x(e) {
+	#x() {
+		let e = this.#s.get("sys:sn.skip.mode");
+		return e == null ? "s" : String(e);
+	}
+	#S(e) {
 		let t = e ? "sn.auto.msecPageWait" : "sn.auto.msecLineWait", n = Number(this.#s.get(`sys:${t}${this.isKidoku ? "_Kidoku" : ""}`));
 		return Number.isFinite(n) && n > 0 ? n : e ? 3500 : 500;
 	}
@@ -1453,7 +1458,7 @@ var d = class {
 		}
 		for (let e in this.#f) delete this.#f[e];
 	}
-	#S() {
+	#C() {
 		let e = this.#d;
 		return this.#d = Object.create(null), e;
 	}
@@ -1461,13 +1466,14 @@ var d = class {
 		let t = this.getEvent(e);
 		if (t) return this.#s.set("tmp:sn.eventArg", t.arg), this.#s.set("tmp:sn.eventLabel", t.label), t.call || this.clearEvent(), t;
 	}
-	#C(e, t = !0) {
+	#w(e, t = !0) {
 		this.#u.push({
 			fn: this.fn,
 			returnIdx: e,
 			lenIfStk: this.#l.length,
 			hMp: this.#s.cloneMp(),
-			...t ? { hEvt: this.#S() } : {}
+			scr: this.#t,
+			...t ? { hEvt: this.#C() } : {}
 		}), this.#l.push(-1);
 	}
 	step() {
@@ -1482,14 +1488,14 @@ var d = class {
 			if (r === 9 || r === 10) continue;
 			if (r === 91) {
 				let { name: r, args: i } = e.parseTag(n);
-				if (this.#T(r, i, t) === "stop") return t;
+				if (this.#E(r, i, t) === "stop") return t;
 				continue;
 			}
 			let i = n, a = this.#t.grm.ce;
 			if (a && n.length > 1 && n.startsWith(a)) i = n.slice(1);
 			else if (r === 38) {
 				if (!n.endsWith("&")) {
-					this.#w(n);
+					this.#T(n);
 					continue;
 				}
 				if (n.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
@@ -1497,15 +1503,15 @@ var d = class {
 				i = e == null ? "" : String(e);
 			} else if (r === 59) continue;
 			else if (r === 42 && n.length > 1) continue;
-			this.#k(t, i);
+			this.#A(t, i);
 		}
 		return t;
 	}
-	#w(e) {
+	#T(e) {
 		let { name: t, text: n, cast: r } = u(e.slice(1));
 		this.#s.set(this.#c.getValAmpersand(t.trim()), this.#c.parse(n), r ?? "");
 	}
-	#T(t, n, r) {
+	#E(t, n, r) {
 		let i = this.#t.len;
 		switch (t) {
 			case "add_lay": {
@@ -1574,11 +1580,11 @@ var d = class {
 				return this.#s.set(e, t, "str"), this.#n += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
-			case "if": return this.#E(n), "skip";
+			case "if": return this.#D(n), "skip";
 			case "elsif":
 			case "else":
-			case "endif": return this.#D(), "skip";
-			case "r": return this.#k(r, "\n"), "skip";
+			case "endif": return this.#O(), "skip";
+			case "r": return this.#A(r, "\n"), "skip";
 			case "er": return this.#i[this.#r] = "", r.push({
 				t: "chgStr",
 				nm: this.#r,
@@ -1606,7 +1612,7 @@ var d = class {
 				n.count !== "true" && this.#v();
 				let e = n.label ?? "", t = n.fn ?? "";
 				if (!e && !t) throw "[call] fnまたはlabelは必須です";
-				if (t && t !== this.fn) return this.#C(this.#n), r.push({
+				if (t && t !== this.fn) return this.#w(this.#n), r.push({
 					t: "loadScript",
 					fn: t,
 					label: e,
@@ -1614,9 +1620,9 @@ var d = class {
 				}), "stop";
 				let i = this.#t.label2idx(e);
 				if (i === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
-				return this.#C(this.#n), this.#n = i, "skip";
+				return this.#w(this.#n), this.#n = i, "skip";
 			}
-			case "return": return this.#O(r, n);
+			case "return": return this.#k(r, n);
 			case "macro": {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
@@ -1658,7 +1664,7 @@ var d = class {
 			}
 			case "char2macro":
 			case "bracket2macro": return this.#t.defC2M(t, n, this.#g(), this.#n), "skip";
-			case "endmacro": return this.#O(r);
+			case "endmacro": return this.#k(r);
 			case "button": {
 				let e = n.layer || this.#r;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
@@ -1710,7 +1716,7 @@ var d = class {
 			}
 			default: {
 				let e = this.#h[t];
-				return e === void 0 ? "skip" : (this.#C(this.#n, !1), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
+				return e === void 0 ? "skip" : (this.#w(this.#n, !1), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
 					t: "loadScript",
 					fn: e.fn,
 					label: "",
@@ -1719,7 +1725,7 @@ var d = class {
 			}
 		}
 	}
-	#E(t) {
+	#D(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
 		let r = this.#c.evalBool(n) ? this.#n : -1, i = 0, a = !1, o = this.#t.len;
@@ -1762,12 +1768,12 @@ var d = class {
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#D() {
+	#O() {
 		let e = this.#l.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#n = e;
 	}
-	#O(e, t = {}) {
+	#k(e, t = {}) {
 		let n = this.#u.pop();
 		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
 		this.#l.length = n.lenIfStk, this.#s.setMp(n.hMp), n.hEvt && (this.#d = n.hEvt);
@@ -1790,7 +1796,7 @@ var d = class {
 			idx: n.returnIdx
 		}), "stop");
 	}
-	#k(e, t) {
+	#A(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",

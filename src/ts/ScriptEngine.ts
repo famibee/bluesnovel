@@ -106,7 +106,9 @@ export class ScriptEngine {
 	//	コール時点のローカル予約イベントを退避し、[return]で書き戻す（本家 ScriptIterator.ts:955
 	//	ReadingState.popLocalEvts() / :hEvt1Time / #return()のpushLocalEvts()）。
 	//	マクロ呼び出しだけは退避しない（本家 ScriptIterator.ts:957「':hEvt1Time'の扱いだけは[macro]と異なる」）
-	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}; hEvt?: {[key: string]: T_EVENT_RSV}}[] = [];
+	//	scrは呼び出し元のScript（＝呼び出し時点の#script）。isNextKidokuが別ファイルの
+	//	呼び出し元の続きを見るために、そのトークン数（scr.len）を必要とする（本家 #hScript[cs.fn]）
+	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}; scr: Script; hEvt?: {[key: string]: T_EVENT_RSV}}[] = [];
 
 	// 予約イベント表（本家 ReadingState.#hLocalEvt2Fnc / #hGlobalEvt2Fnc 相当）。
 	//	ローカルは[call]で退避・[return]で復元、[jump]系のイベント発火で消去される「一回きり」の予約。
@@ -281,8 +283,18 @@ export class ScriptEngine {
 
 	// 次に読むトークン（現在位置）が既読か（本家 ScriptIterator.isNextKidoku）。
 	//	既読スキップを「未読に来たら止める」ために使う。
-	//	試作は現在ファイル内のみ判定する（コールスタックが別ファイルにある場合は未対応）
-	get isNextKidoku(): boolean {return this.#hAreaKidoku[this.fn]?.search(this.#idx) ?? false}
+	//	サブルーチン内（コールスタックあり）では、本家同様「呼び出し元の続き」を見る
+	//	（サブルーチンを抜けた後に読む位置＝呼び出し元の戻り先。別ファイルでも可）
+	get isNextKidoku(): boolean {
+		let fn = this.fn;
+		let idx = this.#idx;
+		let len = this.#script.len;
+		const cs = this.#aCallStk.at(-1);
+		if (cs) {fn = cs.fn; idx = cs.returnIdx; len = cs.scr.len}
+
+		if (idx >= len) return false;	// スクリプト終端＝この先に読むものが無い
+		return this.#hAreaKidoku[fn]?.search(idx) ?? false;
+	}
 
 	// 停止点（[l]/[p]/[s]）での自動進行指示を決める（本家 Reading.ts l()/p()/s() のオート・スキップ分岐）
 	#calcResume(kind: 'l' | 'p' | 's'): T_RESUME | undefined {
@@ -293,9 +305,17 @@ export class ScriptEngine {
 		if (this.skipEnabled) {
 			// 未読に来たら止める（skip.all時は未読も飛ばす）。本家 Reading l()/p() と同じ
 			if (! this.skipAll && ! this.isNextKidoku) {this.cancelAutoSkip(); return undefined}
+			// スキップモード（本家 sys:sn.skip.mode。既定's'）。
+			//	's'：行[l]も改ページ[p]も飛ばす。'p'：行は飛ばすが改ページ[p]では止まる。
+			//	（本家 Reading p() は mode==='s' のときだけ改ページを飛ばす）
+			if (kind === 'p' && this.#skipMode() !== 's') return undefined;
 			return {mode: 'skip', msec: 0};
 		}
 		return undefined;	// 通常のクリック待ち
+	}
+	#skipMode(): string {
+		const v = this.#val.get('sys:sn.skip.mode');
+		return v === undefined || v === null ? 's' : String(v);	// 未設定時の既定は本家に合わせ's'
 	}
 	// オート読みの待ち時間。既読なら_Kidoku側の設定を使う（本家 sys:sn.auto.msec*Wait[_Kidoku]）。
 	//	sys変数が未設定でも動くよう既定値を持つ（行=500ms／改ページ=3500ms）
@@ -350,6 +370,7 @@ export class ScriptEngine {
 			returnIdx,
 			lenIfStk	: this.#aIfStk.length,
 			hMp			: this.#val.cloneMp(),
+			scr			: this.#script,	// 呼び出し元（=今の）Script。isNextKidokuで別ファイルのトークン数を引く
 			...popLocalEvt ?{hEvt: this.#popLocalEvt()} :{},
 		});
 		this.#aIfStk.push(-1);	// 壁：このサブルーチン内のelsif/else/endifがコール元のifへ抜けるのを防ぐ

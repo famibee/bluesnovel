@@ -259,8 +259,10 @@ vars). The engine only *decides*: at each `[l]`/`[p]` `#calcResume()` returns a 
 to the `stop` action, cancelling skip when it reaches an unread stop (`skip.all=false`); `[s]` always
 `cancelAutoSkip()`s. `ScriptMng` owns the *timing* — `#scheduleResume()` sets a timer that calls
 `go()` itself, and `cancelAuto()` (called from `Main.tsx` on any manual key/click) clears it. Skip
-sets a `skipping` store flag so `TxtLayer` renders text instantly. `isNextKidoku` is current-file
-only for now.
+sets a `skipping` store flag so `TxtLayer` renders text instantly. `isNextKidoku` follows 本家
+into the caller's file when inside a subroutine (the caller's `Script` is stashed on the call-stack
+entry for its token count). `sys:sn.skip.mode` is honoured: default `'s'` skips through `[p]`,
+`'p'` stops at each page break (but `Main.tsx`'s cancel-on-input currently also cancels skip there).
 
 **Sample scenarios to check tag behaviour against** live in
 [SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery) — one project per feature under
