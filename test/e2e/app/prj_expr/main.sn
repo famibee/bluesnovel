@@ -1,0 +1,25 @@
+; E2E用シナリオ（expr.e2e.ts が使用）
+;	[let]/[if]/&計算/マクロ/[let_ml]/[trace]/[lay b_alpha=…] をブラウザ実機で一通り動かす。
+;	画像アセットに依存させないため、文字レイヤのみで構成する
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[lay layer=mes b_alpha=0.4]
+
+; 変数代入と「&計算」書式。&や&…&は「トークンの先頭が&」の位置でしか効かないため、
+;	行頭かタグ直後に置くこと（地の文の途中に書くとそのまま表示される）
+[let name=game:hp val=100 cast=int]
+[let name=game:name val='"ゆかり"']
+&game:hp = game:hp - 30
+[trace text=&game:name]
+&game:hp&[l]
+
+; [if]/[elsif]/[else]の分岐。hpは70なので「ふつう」になる
+[er][if exp="game:hp >= 80"]げんき[elsif exp="game:hp >= 50"]ふつう[else]よわった[endif][l]
+
+; マクロ定義と呼び出し。タグ属性がmp:名前空間で受け取れる
+[macro name=よぶ]&mp:誰&[endmacro]
+[er][よぶ 誰=ゆかり][l]
+
+; [let_ml]で埋め込んだJSONを、下位階層まで「.」で辿って参照する
+[let_ml name=const.db]{"ゆかり": {"col": "gold"}}[endlet_ml]
+[er]&const.db.ゆかり.col&[s]

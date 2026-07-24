@@ -55,11 +55,16 @@ E2E (`playwright test`) are **fully separated**:
   the config's folder. Vite's default 5173/5174 are routinely squatted by other projects' dev
   servers (e.g. `tmp_blues`), and reusing one silently tests the *wrong app*.
 - `test/e2e/app/` is a self-contained fixture: `index.html` + `main.ts` boot `SysWeb` against
-  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button` picks the
-  scenario, since `SysBase.loaded()` always loads the script named `main`. No image assets are
-  used, so the fixtures need no binaries. **`src/` contains no test-only hooks**:
+  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button|expr`
+  picks the scenario, since `SysBase.loaded()` always loads the script named `main`. No image
+  assets are used, so the fixtures need no binaries. Adding a scenario = new `prj_<name>/` +
+  a `T_PRJ` member in `snPage.ts`. **`src/` contains no test-only hooks**:
   `test/e2e/app/main.ts` publishes `window.__sn = {store: useStore}` and assertions read the
-  zustand store from there.
+  zustand store from there; `traceText()` finds the debug overlay as `body > span` rather than
+  giving it an id.
+- Writing fixture `.sn`: `&名前 = 式` and `&式&` only fire when the **token** starts with `&`
+  (line start, or straight after a tag) — mid-sentence they render literally. See
+  `prj_expr/main.sn`.
 - `test/e2e/snPage.ts` holds the helpers. `waitIdle()` must be awaited before every click or
   keypress: it waits until the DOM has caught up with the store, because `Stage` is `lazy()`-loaded
   and a test can otherwise race ahead while Suspense still shows `Loading` — in that window

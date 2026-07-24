@@ -28,7 +28,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'basic' | 'button';
+export type T_PRJ = 'basic' | 'button' | 'expr';
 
 
 // テスト用ページを開き、最初の停止点で落ち着くまで待つ
@@ -93,6 +93,13 @@ export async function mesStr(page: Page, nm = 'mes'): Promise<string> {
 export async function pressKey(page: Page, code: 'Space' | 'PageDown' | 'PageUp') {
 	await page.keyboard.press(code);
 	await waitIdle(page);
+}
+
+// [trace]等のデバッグ表示（ScriptMng が document.body 直下へ挿す span）の内容を取得。
+//	画面（#skynovel）の外に置かれるので、body直下のspanという位置だけで特定できる
+//	（src/にテスト用のid等を足さずに済ませるため）
+export async function traceText(page: Page): Promise<string> {
+	return page.evaluate(()=> document.querySelector('body > span')?.textContent ?? '');
 }
 
 // 文字レイヤ本体（[lay b_alpha=...]を反映する、点線枠のspan）の算出スタイルを読む。
