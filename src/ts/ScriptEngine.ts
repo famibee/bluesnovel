@@ -62,11 +62,14 @@ export class ScriptEngine {
 	readonly #grm = new Grammar;
 	readonly #aToken: string[];
 	#idx = 0;
-	readonly #hLabel: {[label: string]: number} = {};	// *label -> トークン索引
+	// 連想配列はどれも Object.create(null) で作る。素の{}だと 'toString' 等の
+	//	Object.prototype のキーが `in` や参照でヒットしてしまい、
+	//	その名前のラベル・レイヤ・差分名・マクロを定義できなくなる
+	readonly #hLabel: {[label: string]: number} = Object.create(null);	// *label -> トークン索引
 	#curTxtLayer = 'mes';
-	readonly #hTxt: {[nm: string]: string} = {};		// レイヤ名 -> そのページの蓄積文字列
+	readonly #hTxt: {[nm: string]: string} = Object.create(null);	// レイヤ名 -> そのページの蓄積文字列
 	#clearOnResume = false;	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか
-	readonly #hFace: {[name: string]: T_FACE} = {};	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
+	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
 
 	// 変数ストア・式評価器（本家 Variable.ts/PropParser.ts の簡略版。VarStore.ts/ExprEval.ts参照）
 	readonly #val = new VarStore;
@@ -93,7 +96,12 @@ export class ScriptEngine {
 	//	実行が[macro]に到達した時点で開始位置だけを記録し、[endmacro]まで読み飛ばす。
 	//	呼び出し時は[call]と同じ枠組みでこの位置へジャンプし、[endmacro]は[return]と同じ処理で戻る
 	//	（本家 ScriptIterator.ts:100 hTag.endmacro = ()=> this.#return(o) と同じ規約）
-	readonly #hMacro: {[name: string]: number} = {};
+	readonly #hMacro: {[name: string]: number} = Object.create(null);
+
+	// マクロ名に使えない文字（本家 ScriptIterator.ts:1362 #REG_NG4MAC_NM をそのまま移植）。
+	//	" ' # ; \ ] と全角空白。タグ記述やタグ引数解析と衝突するため
+	// eslint-disable-next-line no-irregular-whitespace
+	static readonly REG_NG4MAC_NM = /["'#;\\\]　]+/;
 
 	// マクロ名として使用不可（既存タグと同名は不可。本家 ScriptIterator.ts:1366
 	// if (name in this.hTag) throw と同じ意図）
@@ -365,17 +373,31 @@ export class ScriptEngine {
 			const macroName = args.name ?? '';
 			if (! macroName) throw '[macro] nameは必須です（試作仕様）';
 			if (ScriptEngine.RESERVED_TAGS.has(macroName)) throw `[${macroName}]はタグ名のため、マクロ名として使用できません`;
+			if (ScriptEngine.REG_NG4MAC_NM.test(macroName)) throw `[${macroName}]はマクロ名として異常です`;
 			if (macroName in this.#hMacro) throw `[macro] マクロ【${macroName}】は既に定義済みです`;
 			this.#hMacro[macroName] = this.#idx;	// 本体開始位置（[macro ...]の次のトークン。呼び出し時のジャンプ先）
 
-			// [endmacro]まで読み飛ばす（本家同様、マクロ本体は定義時には実行しない。
-			// 入れ子の[macro]定義は試作では非対応：最初に見つけた[endmacro]で終端とみなす）
+			// [endmacro]まで読み飛ばす（本家同様、マクロ本体は定義時には実行しない）。
+			//	本家は最初に見つけた[endmacro]で終端とみなす（＝入れ子の[macro]定義は壊れる）が、
+			//	ここでは深度を数えて入れ子の定義も書けるようにした。
+			//	また[let_ml]の本文は「ただのテキスト」なので、中に[endmacro]と読める行があっても反応しない
 			let found = false;
+			let depth = 0;
+			let inLetMl = false;
 			for (; this.#idx < len; ++this.#idx) {
 				const tkn2 = this.#aToken[this.#idx]!;
+				if (inLetMl) {
+					if (this.#grm.testTagEndLetml(tkn2)) inLetMl = false;
+					continue;
+				}
 				if (tkn2.charCodeAt(0) !== 91) continue;	// [ タグ開始以外は読み飛ばす
+				if (this.#grm.testTagLetml(tkn2)) {inLetMl = true; continue}
+
 				const {name: nm2} = ScriptEngine.parseTag(tkn2);
-				if (nm2 === 'endmacro') {++this.#idx; found = true; break}
+				if (nm2 === 'macro') {++depth; continue}
+				if (nm2 !== 'endmacro') continue;
+				if (depth > 0) {--depth; continue}
+				++this.#idx; found = true; break;
 			}
 			if (! found) throw `[macro] マクロ【${macroName}】が[endmacro]で閉じられていません（試作仕様）`;
 			return 'skip';

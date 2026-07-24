@@ -1229,16 +1229,17 @@ var m = class {
 	#t = new m();
 	#n;
 	#r = 0;
-	#i = {};
+	#i = Object.create(null);
 	#a = "mes";
-	#o = {};
+	#o = Object.create(null);
 	#s = !1;
-	#c = {};
+	#c = Object.create(null);
 	#l = new o();
 	#u = new c(this.#l);
 	#d = [];
 	#f = [];
-	#p = {};
+	#p = Object.create(null);
+	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
 	static RESERVED_TAGS = /* @__PURE__ */ new Set([
 		"add_lay",
 		"current",
@@ -1441,14 +1442,31 @@ var m = class {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
 				if (e.RESERVED_TAGS.has(t)) throw `[${t}]はタグ名のため、マクロ名として使用できません`;
+				if (e.REG_NG4MAC_NM.test(t)) throw `[${t}]はマクロ名として異常です`;
 				if (t in this.#p) throw `[macro] マクロ【${t}】は既に定義済みです`;
 				this.#p[t] = this.#r;
-				let r = !1;
+				let r = !1, a = 0, o = !1;
 				for (; this.#r < i; ++this.#r) {
 					let t = this.#n[this.#r];
+					if (o) {
+						this.#t.testTagEndLetml(t) && (o = !1);
+						continue;
+					}
 					if (t.charCodeAt(0) !== 91) continue;
+					if (this.#t.testTagLetml(t)) {
+						o = !0;
+						continue;
+					}
 					let { name: n } = e.parseTag(t);
+					if (n === "macro") {
+						++a;
+						continue;
+					}
 					if (n === "endmacro") {
+						if (a > 0) {
+							--a;
+							continue;
+						}
 						++this.#r, r = !0;
 						break;
 					}

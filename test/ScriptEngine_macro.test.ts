@@ -94,6 +94,54 @@ it('macro_reservedTagName_throws', ()=> {
 	expect(()=> new ScriptEngine('t1', '[macro name=if]X[endmacro]').step()).toThrow();
 });
 
+// ============ マクロ名の禁止文字（本家 ScriptIterator.ts:1362 #REG_NG4MAC_NM） ============
+
+it('macro_ngNameChars_throw', ()=> {
+	// " ' # ; \ ] と全角空白は、タグ記述やタグ引数解析と衝突するためマクロ名に使えない。
+	//	名前自体に引用符が入るので、属性値を囲む引用符は名前に合わせて変える
+	for (const src of [
+		`[macro name='a"b']X[endmacro]`,
+		`[macro name="a'b"]X[endmacro]`,
+		`[macro name='a#b']X[endmacro]`,
+		`[macro name='a;b']X[endmacro]`,
+		`[macro name='a\\b']X[endmacro]`,
+		`[macro name='a]b']X[endmacro]`,
+		`[macro name='a　b']X[endmacro]`,
+	]) expect(()=> new ScriptEngine('t1', src).step()).toThrow();
+});
+it('macro_nonAsciiNameIsOk', ()=> {	// 禁止文字を含まなければ日本語名も使える
+	expect(run('[macro name=あいさつ]HELLO[endmacro][あいさつ]')).toBe('HELLO');
+});
+
+
+// ============ 入れ子の[macro]定義 ============
+
+it('macro_nestedDefinition', ()=> {
+	// 本家は最初の[endmacro]で終端とみなすので入れ子定義は壊れるが、
+	// bluesnovelは深度を数えるので「outerを呼ぶとinnerが定義される」書き方ができる
+	expect(run(
+		'[macro name=outer]A[macro name=inner]B[endmacro]C[endmacro]'+
+		'[outer]'+		// outerの実行時にinnerが定義される（B は出力されない）
+		'[inner]'
+	)).toBe('ACB');
+});
+
+it('macro_nestedDefinition_innerNotDefinedUntilOuterCalled', ()=> {
+	// outerを呼ぶ前にinnerを呼んでも未定義タグ扱い（試作では無視）で何も起きない
+	expect(run(
+		'[macro name=outer][macro name=inner]B[endmacro][endmacro]'+
+		'[inner]X'
+	)).toBe('X');
+});
+
+it('macro_bodySkip_ignoresEndmacroInsideLetMl', ()=> {
+	// [let_ml]の本文は「ただのテキスト」なので、中の[endmacro]で本体が切れてはいけない
+	expect(run(
+		'[macro name=m][let_ml name=doc][endmacro][endlet_ml]OK[endmacro]'+
+		'[m]'
+	)).toBe('OK');
+});
+
 it('endmacro_withoutMacroCall_throws', ()=> {
 	// [call]も[マクロ呼び出し]もされていない状態で[endmacro]に到達するとthrow
 	// （[macro]定義ブロックの読み飛ばし対象外の位置に単独で[endmacro]がある場合）

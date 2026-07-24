@@ -201,8 +201,10 @@ expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endi
 `macro`/`endmacro`, `button` (`call=true` for
 subroutine-call on click), and the stop points `l`/`p`/`s`. **Only same-file labels are
 supported** for jump/call/button/macro — cross-file (`jump fn=...`) is a known TODO that
-needs execution state moved out of `ScriptEngine` into `ScriptMng`. Reserved tag names that
-cannot be used as macro names live in `ScriptEngine.RESERVED_TAGS`.
+needs execution state moved out of `ScriptEngine` into `ScriptMng`. Macro names are rejected
+by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
+Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
+them in scripts meant to run on 本家.
 
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
