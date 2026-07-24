@@ -253,6 +253,15 @@ the opposite (`count=false` to erase). `[clearsysvar]` wipes it, as in the upstr
 There is no save layer yet, so the engine owns the table; `getKidoku()`/`setKidoku()` exist for
 when persistence lands.
 
+**Auto-read / skip-read** (`&sn.auto.enabled` / `&sn.skip.enabled` / `&sn.skip.all`, plain tmp
+vars). The engine only *decides*: at each `[l]`/`[p]` `#calcResume()` returns a `T_RESUME`
+(`{mode:'auto', msec}` using `sys:sn.auto.msec*Wait[_Kidoku]`, or `{mode:'skip', msec:0}`) attached
+to the `stop` action, cancelling skip when it reaches an unread stop (`skip.all=false`); `[s]` always
+`cancelAutoSkip()`s. `ScriptMng` owns the *timing* — `#scheduleResume()` sets a timer that calls
+`go()` itself, and `cancelAuto()` (called from `Main.tsx` on any manual key/click) clears it. Skip
+sets a `skipping` store flag so `TxtLayer` renders text instantly. `isNextKidoku` is current-file
+only for now.
+
 **Sample scenarios to check tag behaviour against** live in
 [SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery) — one project per feature under
 `public/prj/`, e.g. `public/prj/kidoku/mat/main.sn` for 既読. Useful as the de-facto spec for

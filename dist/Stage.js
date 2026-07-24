@@ -11747,14 +11747,14 @@ nh.core.Tween;
 //#endregion
 //#region src/components/TxtLayer.tsx
 function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str: i, b_alpha: a, aBtn: o, onActivate: s }) {
-	let c = u((e) => e.isReadBack), l = u((e) => e.isTyping), f = u((e) => e.setIsTyping), p = u((e) => e.skipReq), m = u((e) => e.wait), g = (0, C.useRef)(null), _ = (0, C.useRef)(null), y = (0, C.useRef)([]), b = (0, C.useRef)(null);
+	let c = u((e) => e.isReadBack), l = u((e) => e.isTyping), f = u((e) => e.setIsTyping), p = u((e) => e.skipReq), m = u((e) => e.skipping), g = u((e) => e.wait), _ = (0, C.useRef)(null), y = (0, C.useRef)(null), b = (0, C.useRef)([]), x = (0, C.useRef)(null);
 	(0, C.useLayoutEffect)(() => {
-		let e = _.current;
+		let e = y.current;
 		if (!e) return;
-		b.current?.kill();
-		let t = y.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
-		!t.startsWith(i) && !i.startsWith(t) && (y.current = [], e.textContent = "");
-		let n = y.current, r = Math.min(i.length, n.length);
+		x.current?.kill();
+		let t = b.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
+		!t.startsWith(i) && !i.startsWith(t) && (b.current = [], e.textContent = "");
+		let n = b.current, r = Math.min(i.length, n.length);
 		for (; e.childNodes.length > r;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < r;) e.appendChild(n[e.childNodes.length]);
 		if (r > 0 && nh.set(n.slice(0, r), {
@@ -11768,14 +11768,14 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 			let t = document.createElement("span");
 			return t.textContent = e === " " ? "\xA0" : e, o.appendChild(t), t;
 		});
-		if (n.push(...s), e.appendChild(o), c) {
+		if (n.push(...s), e.appendChild(o), c || m) {
 			nh.set(s, {
 				opacity: 1,
 				y: 0
 			}), f(!1);
 			return;
 		}
-		f(!0), b.current = nh.timeline({ onComplete: () => f(!1) }).fromTo(s, {
+		f(!0), x.current = nh.timeline({ onComplete: () => f(!1) }).fromTo(s, {
 			opacity: 0,
 			y: "0.3em"
 		}, {
@@ -11786,16 +11786,16 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 			stagger: .035
 		});
 	}, [i, c]), (0, C.useEffect)(() => {
-		b.current && b.current.progress() < 1 && b.current.progress(1);
+		x.current && x.current.progress() < 1 && x.current.progress(1);
 	}, [p]);
-	let x = !c && !l && m !== null && m.nm === r, S = ql`
+	let S = !c && !l && g !== null && g.nm === r, w = ql`
 		display: inline-block;
 		margin-left: 0.15em;
-	`, w = ql`
+	`, T = ql`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-	`, T = ql`
+	`, E = ql`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* aquamarine相当のRGBに[lay b_alpha=...]をアルファチャンレベルで反映。
@@ -11808,7 +11808,7 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 		width: 70%;
 		white-space: pre-wrap;
 		color: ${c ? "yellow" : "inherit"};
-	`, E = ql`
+	`, D = ql`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -11863,23 +11863,23 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 				border-color: #ff9900;
 			}
 		}
-	`, [D, O] = (0, C.useState)("");
-	(0, C.useEffect)(() => O(i), [i]);
-	let k = (0, C.useRef)(null), A = (e, t) => {
+	`, [O, k] = (0, C.useState)("");
+	(0, C.useEffect)(() => k(i), [i]);
+	let A = (0, C.useRef)(null), j = (e, t) => {
 		ch(), e.transform = t;
 	};
 	return /* @__PURE__ */ h(v, { children: [
 		/* @__PURE__ */ h("span", {
-			css: [e, T],
-			ref: g,
+			css: [e, E],
+			ref: _,
 			style: n,
-			children: [/* @__PURE__ */ d("span", { ref: _ }), x && /* @__PURE__ */ d("span", {
-				css: S,
-				children: m.kind === "l" ? "🩷" : "✅"
+			children: [/* @__PURE__ */ d("span", { ref: y }), S && /* @__PURE__ */ d("span", {
+				css: w,
+				children: g.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
 		o.length > 0 && /* @__PURE__ */ d("span", {
-			css: [e, w],
+			css: [e, T],
 			children: o.map((e) => /* @__PURE__ */ d(Jl, {
 				text: e.text,
 				label: e.label,
@@ -11889,40 +11889,40 @@ function rh({ cmn: { styChild: e, isDesignMode: t, sty4Moveable: n }, nm: r, str
 			}, e.nm))
 		}),
 		t && /* @__PURE__ */ d(Wl, {
-			target: g,
+			target: _,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => A(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => j(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				A(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				j(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => A(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => j(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				A(e, n), e.transformOrigin = t;
+				j(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ h(v, { children: [/* @__PURE__ */ h("label", {
-			css: E,
-			ref: k,
+			css: D,
+			ref: A,
 			children: ["テキスト入力", /* @__PURE__ */ d("textarea", {
 				rows: 3,
-				value: D,
-				onChange: (e) => O(e.target.value)
+				value: O,
+				onChange: (e) => k(e.target.value)
 			})]
 		}), /* @__PURE__ */ d(Wl, {
-			target: k,
+			target: A,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => A(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => j(e, t),
 			preventDefault: !1
 		})] })
 	] });

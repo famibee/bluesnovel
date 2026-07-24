@@ -35,7 +35,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgStr'; nm: string; str: string}		// そのレイヤの「そのページでの全文字列」
 	| {t: 'addBtn'; layerNm: string; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
-	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）
+	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
 ;
 
@@ -49,6 +49,12 @@ export type T_TAG_PARSED = {
 //	試作のエンジンはDOMに触れない＝関数を作れないので、素のデータとして持つ。
 //	実際にキー入力・クリックと結びつけるのは呼び出し側（ScriptMng/Main.tsx）の責務
 export type T_EVENT_RSV = {fn: string; label: string; call: boolean; arg: string};
+
+// 停止点での自動進行の指示（本家 Reading.ts l()/p() のオート読み・既読スキップ相当）。
+//	mode='auto'：msec待ってから自動で読み進める（オート読み）。
+//	mode='skip'：即座に読み進める（既読スキップ。msecは基本0）。
+//	実際にタイマーを回す・ユーザー入力で止めるのは呼び出し側（ScriptMng）の責務
+export type T_RESUME = {mode: 'auto' | 'skip'; msec: number};
 
 
 export class ScriptEngine {
@@ -252,6 +258,51 @@ export class ScriptEngine {
 	clearKidoku() {
 		for (const ar of Object.values(this.#hAreaKidoku)) ar.clear();
 		this.#isKidoku = false;
+	}
+
+
+	// ===== オート読み・既読スキップ =====
+	//	3つのフラグはただのtmp変数（`&sn.auto.enabled = true`等で設定）。本家は静的フィールドに
+	//	ミラーして高速参照するが、試作は停止点でのみ参照するので毎回変数を読むだけにした。
+	//	判断はエンジン（純粋ロジック）、タイマーとユーザー入力での中断はScriptMngが持つ
+
+	get autoEnabled() {return this.#flag('sn.auto.enabled')}	// オート読み（一定時間で自動進行）
+	get skipEnabled() {return this.#flag('sn.skip.enabled')}	// 既読スキップ（既読部分を素早く進行）
+	get skipAll()     {return this.#flag('sn.skip.all')}	// falseなら既読のみスキップ、trueなら未読も含め全部
+	#flag(name: string): boolean {return this.#val.get(`tmp:${name}`) === true}
+
+	// オート・スキップの解除（本家 ReadingState.cancelAutoSkip()）。3フラグを倒す。
+	//	[s]到達・未読での停止・ユーザーの手動操作から呼ばれる
+	cancelAutoSkip() {
+		this.#val.set('tmp:sn.skip.enabled', false);
+		this.#val.set('tmp:sn.skip.all', false);
+		this.#val.set('tmp:sn.auto.enabled', false);
+	}
+
+	// 次に読むトークン（現在位置）が既読か（本家 ScriptIterator.isNextKidoku）。
+	//	既読スキップを「未読に来たら止める」ために使う。
+	//	試作は現在ファイル内のみ判定する（コールスタックが別ファイルにある場合は未対応）
+	get isNextKidoku(): boolean {return this.#hAreaKidoku[this.fn]?.search(this.#idx) ?? false}
+
+	// 停止点（[l]/[p]/[s]）での自動進行指示を決める（本家 Reading.ts l()/p()/s() のオート・スキップ分岐）
+	#calcResume(kind: 'l' | 'p' | 's'): T_RESUME | undefined {
+		if (kind === 's') {this.cancelAutoSkip(); return undefined}	// [s]は必ず止まる＝オート・スキップ解除
+
+		if (this.autoEnabled) return {mode: 'auto', msec: this.#autoMsec(kind === 'p')};
+
+		if (this.skipEnabled) {
+			// 未読に来たら止める（skip.all時は未読も飛ばす）。本家 Reading l()/p() と同じ
+			if (! this.skipAll && ! this.isNextKidoku) {this.cancelAutoSkip(); return undefined}
+			return {mode: 'skip', msec: 0};
+		}
+		return undefined;	// 通常のクリック待ち
+	}
+	// オート読みの待ち時間。既読なら_Kidoku側の設定を使う（本家 sys:sn.auto.msec*Wait[_Kidoku]）。
+	//	sys変数が未設定でも動くよう既定値を持つ（行=500ms／改ページ=3500ms）
+	#autoMsec(isPage: boolean): number {
+		const base = isPage ? 'sn.auto.msecPageWait' : 'sn.auto.msecLineWait';
+		const v = Number(this.#val.get(`sys:${base}${this.isKidoku ? '_Kidoku' : ''}`));
+		return Number.isFinite(v) && v > 0 ? v : isPage ? 3500 : 500;
 	}
 
 
@@ -635,10 +686,12 @@ export class ScriptEngine {
 			this.clearEvent(args.global === 'true');
 			return 'skip';
 
-		case 'l': case 'p': case 's':	// 行末クリック待ち／改ページ／停止
+		case 'l': case 'p': case 's': {	// 行末クリック待ち／改ページ／停止
 			if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
-			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer});
+			const resume = this.#calcResume(name);	// オート読み／既読スキップの自動進行指示（該当しなければundefined）
+			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer, ...resume ? {resume} : {}});
 			return 'stop';
+		}
 
 		default: {	// 未対応タグは無視するが、マクロ名として登録されていれば呼び出す
 			// （本家はマクロ名をhTagへ動的登録して呼び出すが、試作はswitch文のため、

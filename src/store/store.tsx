@@ -33,6 +33,8 @@ type T_STATE = {
 	setIsTyping	: (b: boolean)=> void;
 	skipReq		: number;		// TxtLayer側へ「今のアニメを瞬時完了させろ」と伝える合図（インクリメントで通知）
 	requestSkip	: ()=> void;
+	skipping	: boolean;		// 既読スキップ実行中か。trueの間はTxtLayerが文字送り演出を省いて瞬時表示する
+	setSkipping	: (b: boolean)=> void;
 
 	wait		: T_WAIT;		// 現在[l]/[p]待ち中のレイヤと種別（[s]はマーカーなし=null）
 	setWait		: (w: T_WAIT)=> void;
@@ -62,7 +64,7 @@ export type T_ADDBTN = {
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ（label省略時はそのファイルの先頭）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'addBtn'|'addTitle'|'setWait'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'>>;
 
 
 export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
@@ -132,6 +134,8 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 	setIsTyping	: b=> set(()=> ({isTyping: b})),
 	skipReq		: 0,
 	requestSkip	: ()=> set(s=> ({skipReq: s.skipReq + 1})),
+	skipping	: false,
+	setSkipping	: b=> set(()=> ({skipping: b})),
 
 	wait		: null,
 	setWait		: w=> set(()=> ({wait: w})),

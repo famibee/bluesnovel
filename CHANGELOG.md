@@ -173,6 +173,17 @@
   - 判明した点：`[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない。本家の実装をそのまま移した状態なので`todo.md`へ確認事項として残した
   - `CLAUDE.md`に**SKYNovel_gallery**（<https://github.com/famibee/SKYNovel_gallery>）への参照を追加。機能ごとのサンプルシナリオがあり、タグ属性の実際の使われ方を確かめるのに使える
 
+- [x] **オート読み・既読スキップ**（2026-07-24）
+  - `&sn.auto.enabled = true`（一定時間で自動進行）／`&sn.skip.enabled = true`（既読部分を素早く飛ばす）／`&sn.skip.all = true`（未読も含め全部飛ばす）。3つはただのtmp変数で、`[if exp="sn.auto.enabled"]`でモード分岐もできる
+  - **判断はエンジン（純粋ロジック）／タイマーはScriptMng**という分担にした。停止点`[l]`/`[p]`でエンジンが`#calcResume()`を評価し、`stop`アクションに`resume`（`{mode:'auto', msec}` か `{mode:'skip', msec:0}`）を付けて返す。既読スキップは`skip.all=false`なら未読に来た時点で止めて解除（本家 `Reading.ts` l()/p()）、`[s]`は必ず止まって`cancelAutoSkip()`（本家 s()）
+  - `ScriptMng.#scheduleResume()`が`resume`を受けてタイマーで`go()`を自分で呼ぶ。`cancelAuto()`（`Main.tsx`が手動キー・クリックのたびに呼ぶ）でタイマー解除＋エンジンの3フラグを倒す。`[s]`到達・未読での停止でも自然に止まる（`resume`が返らない＝タイマーを仕込まない）
+  - オート読みの待ち時間は`sys:sn.auto.msec{Line,Page}Wait`（既読時は`_Kidoku`側）。sys変数未設定でも既定値（行50…実際は500ms／改ページ3500ms）で動く。`isKidoku`（前回実装）と連動
+  - 既読スキップ中は文字送り演出を省いて瞬時表示：`store.skipping`フラグを`ScriptMng`が立て、`TxtLayer`が読み戻り時と同じ経路（GSAPを使わず`gsap.set`で終端状態へ）で描く
+  - `T_INIT_FNCS`に`requestSkip`/`setSkipping`を追加。`Main.tsx`のキー・クリック処理の先頭で`scrMng.cancelAuto()`を呼ぶ
+  - `test/ScriptEngine_autoskip.test.ts`（新規14件、resume判断・待ち時間・`isNextKidoku`・`cancelAutoSkip`）＋`test/e2e/autoskip.e2e.ts`（新規2件・`prj_autoskip`フィクスチャ、クリック無しで`[l]`を越えて`[s]`まで進むこと）。ユニット651件→665件、E2E 26件→28件
+  - E2Eに入れたのは「ブラウザでしか確かめられないもの」＝ScriptMngのタイマーが実際に画面を進めること。どの停止点で自動進行するかの判断は全部ユニット側
+  - 残課題（`todo.md`へ）：`isNextKidoku`のクロスファイル対応、`sys:sn.skip.mode`、文字送りウェイト（`_Kidoku`）のGSAPパラメータへの接続、オート待ち時間の起点（本家は演出完了後）
+
 - [ ]
 
 
@@ -182,18 +193,14 @@
 
 
 
-CmnTween.test.ts
-Config.test.ts
-HyphTest.test.ts
-Log.test.ts
-RubySpliter.test.ts
-SysTest.ts
-ValTest.ts
 
 
-- skynovel_esmプロジェクトのmain.snからたどり、
+
+- skynovel_esmプロジェクトのmain.snからたどり、callしているsetting.sn, ext_*.sn, sub.sn ... に登場するタグから優先で実装していきたい。
 	- tmp_esm_uc/doc/prj/script/main.sn at main · famibee/tmp_esm_uc https://github.com/famibee/tmp_esm_uc/blob/main/doc/prj/script/main.sn
-- 表示アーキテクチャがpixijsからReactに変更になるのでタグの変更・追加・削除などがありうるが、それはまた別項
+- タグごとにtodo.mdに追加
+- 最後に呼ばれるのはtitle.sn。いったん[s]までとする
+- 表示アーキテクチャがpixijsからReactに変更になるのでタグの変更・追加・削除・いったん無視などがありうるが、それはまた別項
 
 
 - tmp_bluesプロジェクトで

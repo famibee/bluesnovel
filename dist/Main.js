@@ -72,6 +72,8 @@ var c = (e) => {
 	setIsTyping: (t) => e(() => ({ isTyping: t })),
 	skipReq: 0,
 	requestSkip: () => e((e) => ({ skipReq: e.skipReq + 1 })),
+	skipping: !1,
+	setSkipping: (t) => e(() => ({ skipping: t })),
 	wait: null,
 	setWait: (t) => e(() => ({ wait: t }))
 })), u = function() {};
@@ -1209,8 +1211,8 @@ function St(e, t, n) {
 function Ct({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: i } = e, o = l((e) => e.title), s = l((e) => e.addTitle);
 	C(o);
-	let c = l((e) => e.addLayer), u = l((e) => e.chgPic), d = l((e) => e.chgBAlpha), f = l((e) => e.chgStr), p = l((e) => e.addBtn), h = l((e) => e.setReadBack), g = l((e) => e.isTyping), _ = l((e) => e.requestSkip), v = l((e) => e.setWait);
-	function y() {
+	let c = l((e) => e.addLayer), u = l((e) => e.chgPic), d = l((e) => e.chgBAlpha), f = l((e) => e.chgStr), p = l((e) => e.addBtn), h = l((e) => e.setReadBack), g = l((e) => e.isTyping), _ = l((e) => e.requestSkip), v = l((e) => e.setWait), y = l((e) => e.setSkipping);
+	function x() {
 		i.go();
 	}
 	m(() => {
@@ -1223,10 +1225,12 @@ function Ct({ arg: e, inited: t }) {
 			chgStr: f,
 			addBtn: p,
 			addTitle: s,
-			setWait: v
-		}, e), t(), n.addEventListener("ev_next", y), () => n.removeEventListener("ev_next", y);
+			setWait: v,
+			requestSkip: _,
+			setSkipping: y
+		}, e), t(), n.addEventListener("ev_next", x), () => n.removeEventListener("ev_next", x);
 	});
-	function x() {
+	function S() {
 		if (g) {
 			_();
 			return;
@@ -1235,13 +1239,13 @@ function Ct({ arg: e, inited: t }) {
 			h(!r.caretaker.isLast());
 			return;
 		}
-		h(!1), y();
+		h(!1), x();
 	}
-	function S() {
+	function w() {
 		r.caretaker.prevKey() && h(!r.caretaker.isLast());
 	}
 	b(() => !0, (e) => {
-		if (i.fireEvent(e.key.toLowerCase())) {
+		if (i.cancelAuto(), i.fireEvent(e.key.toLowerCase())) {
 			e.stopPropagation(), e.preventDefault();
 			return;
 		}
@@ -1249,27 +1253,27 @@ function Ct({ arg: e, inited: t }) {
 			case "Space":
 			case "ArrowDown":
 			case "PageDown":
-				e.stopPropagation(), e.preventDefault(), x();
+				e.stopPropagation(), e.preventDefault(), S();
 				break;
 			case "PageUp":
-				e.stopPropagation(), e.preventDefault(), S();
+				e.stopPropagation(), e.preventDefault(), w();
 				break;
 		}
 	});
-	function w() {
+	function ee() {
 		if (Et) {
 			Et = !1;
 			return;
 		}
-		wt || i.fireEvent("click") || x();
+		wt || (i.cancelAuto(), !i.fireEvent("click") && S());
 	}
 	return /* @__PURE__ */ $(a.Suspense, {
 		fallback: /* @__PURE__ */ $(yt, { children: "Loading" }),
 		children: /* @__PURE__ */ $(xt, {
 			arg: e,
-			next: x,
-			prev: S,
-			onClick: w
+			next: S,
+			prev: w,
+			onClick: ee
 		})
 	});
 }

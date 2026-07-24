@@ -1,8 +1,10 @@
 #TODO 優先順位順
 
-- [ ] 既読スキップ・オート読み（`&sn.skip.enabled` / `&sn.skip.all` / `&sn.auto.enabled` と、`sys:sn.tagCh.*_Kidoku` / `sys:sn.auto.msec*Wait_Kidoku` の既読用ウェイト設定）。既読の判定（`const.sn.isKidoku`）は実装済みなので、その上に載せる形
-  - 本家の`ScriptIterator.isNextKidoku`（次の停止点が既読か。オート/スキップを未読で止めるための判定）も未実装。実装時は別ファイルのトークン数が要るので、`ScriptMng`のScriptキャッシュを引く形になる
-  - 参考：<https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/kidoku>
+- [ ] オート読み・既読スキップの残課題
+  - `isNextKidoku`はコールスタックが別ファイルにある場合を未対応（現在ファイル内のみ判定）。本家は`#hScript`から呼び出し元ファイルのトークン数を引く。`ScriptMng`のScriptキャッシュをエンジンへ渡す口が要る
+  - スキップの`sys:sn.skip.mode`（'p'/'s'で改行・改ページ待ちの扱いを変える）は未対応。現状は一律で即進行
+  - 文字送りウェイト設定（`sys:sn.tagCh.*_Kidoku`）は、bluesnovelの文字送りがGSAP（duration/stagger）で秒単位のため未接続。既読スキップ中の瞬時表示（`store.skipping`→`TxtLayer`）だけ実装済み。文字送り演出パラメータ確定（別項目）と合わせて調整
+  - オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む。実機調整時に見直し
 - [ ] 既読情報の永続化（本家 `Variable.saveKidoku()` → `SysBase.data.kidoku` → localStorage）。`ScriptEngine.getKidoku()`/`setKidoku()`は用意済みなので、セーブ層ができ次第そこへ繋ぐ。保存タイミングは本家同様に停止点（`[l]`/`[p]`/`[s]`）
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）

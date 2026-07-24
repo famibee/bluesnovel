@@ -44,11 +44,12 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const isTyping = useStore(s=> s.isTyping);
 	const requestSkip = useStore(s=> s.requestSkip);
 	const setWait = useStore(s=> s.setWait);
+	const setSkipping = useStore(s=> s.setSkipping);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, addBtn, addTitle, setWait}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, addBtn, addTitle, setWait, requestSkip, setSkipping}, hTag);
 
 		inited();
 
@@ -73,6 +74,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	//	（本家 EventMng が 'enter'/'arrowdown'/'click' 等の小文字キーで引くのに合わせた）。
 	//	予約があればそちらを発火し、読み進め・読み戻りは行わない
 	useKey(()=> true, e=> {
+		scrMng.cancelAuto();	// 手動操作が入ったらオート読み・既読スキップは止める（本家 cancelAutoSkip）
 		if (scrMng.fireEvent(e.key.toLowerCase())) {e.stopPropagation(); e.preventDefault(); return}
 
 		switch (e.code) {
@@ -86,6 +88,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	function onClick() {
 		if (isLong) {isLong = false; return}
 		if (isDesignMode) return;
+		scrMng.cancelAuto();	// 手動クリックでオート読み・既読スキップを止める
 		if (scrMng.fireEvent('click')) return;
 		next();
 	}

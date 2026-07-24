@@ -44,6 +44,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 	const isTyping = useStore(s=> s.isTyping);
 	const setIsTyping = useStore(s=> s.setIsTyping);
 	const skipReq = useStore(s=> s.skipReq);
+	const skipping = useStore(s=> s.skipping);	// 既読スキップ中は文字送り演出を省いて瞬時表示する
 	const wait = useStore(s=> s.wait);
 
 	// 1文字ずつの文字送り演出（GSAP stagger）
@@ -100,8 +101,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode, sty4Moveable}, n
 		cache.push(...newSpans);
 		el.appendChild(frag);
 
-		if (isReadBack) {
-			// 読み戻り中：staggerを使わず瞬時にアニメ終端状態へ
+		if (isReadBack || skipping) {
+			// 読み戻り中／既読スキップ中：staggerを使わず瞬時にアニメ終端状態へ
 			gsap.set(newSpans, {opacity: 1, y: 0});
 			setIsTyping(false);
 			return;

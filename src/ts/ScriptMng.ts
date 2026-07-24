@@ -157,6 +157,27 @@ export class ScriptMng {
 	//	（同期だった頃はDOMイベントハンドラまで抜けていた）。表示は済んでいるので握って良い
 	#goSafe() {this.#runStep().catch(()=> {/* myTraceで表示済み */})}
 
+	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
+	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
+	#resumeTimer: ReturnType<typeof setTimeout> | undefined;
+	#scheduleResume(mode: 'auto' | 'skip', msec: number) {
+		clearTimeout(this.#resumeTimer);
+		// スキップ中は文字送り演出を省く合図をストアへ立てておく（TxtLayerが瞬時表示にする）
+		this.$fncs.setSkipping(mode === 'skip');
+		this.#resumeTimer = setTimeout(()=> {
+			if (mode === 'skip') this.$fncs.requestSkip();	// 進行前に現在の演出を瞬時完了させる
+			this.#goSafe();
+		}, msec);
+	}
+	// オート読み・既読スキップの中断（本家 ReadingState.cancelAutoSkip 相当）。
+	//	仕込んだタイマーを解除し、エンジン側の3フラグも倒す。手動操作から呼ばれる
+	cancelAuto() {
+		clearTimeout(this.#resumeTimer);
+		this.#resumeTimer = undefined;
+		this.$fncs?.setSkipping(false);
+		this.#engine?.cancelAutoSkip();
+	}
+
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
 	//	途中で'loadScript'（別スクリプトへの移動要求）が返ったら、fetchしてから続きを回す。
 	//	engine.step()自体は同期のまま（DOM/fetch非依存でユニットテストできる設計を保つ）
@@ -238,6 +259,10 @@ export class ScriptMng {
 			this.sys.caretaker.push(act.key);
 			// [l]/[p]待ち中マーカー表示（[s]はマーカーなし＝上のsetWait(null)のままにする）
 			if (act.kind === 'l' || act.kind === 'p') this.$fncs.setWait({nm: act.nm, kind: act.kind});
+			// オート読み・既読スキップ指示があれば、クリックを待たず自分で次へ進むタイマーを仕込む。
+			//	無ければ手動待ち＝スキップ表示も解除する（この停止点でスキップが尽きた場合）
+			if (act.resume) this.#scheduleResume(act.resume.mode, act.resume.msec);
+			else this.$fncs.setSkipping(false);
 			break;
 		}
 	}

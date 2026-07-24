@@ -28,7 +28,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'basic' | 'button' | 'event' | 'expr' | 'multi';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'multi';
 
 
 // テスト用ページを開き、最初の停止点で落ち着くまで待つ

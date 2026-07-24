@@ -1,0 +1,15 @@
+; E2E用シナリオ（autoskip.e2e.ts が使用）
+;	オート読み／既読スキップの「判断」はユニット（ScriptEngine_autoskip.test.ts）が持つ。
+;	ここで見るのはユニットでは届かない部分＝「resume指示を受けたScriptMngが、クリック無しで
+;	実際に次の停止点まで自動で進めること」だけ
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; オート読みの待ち時間を短くして、テストの待ち時間を詰める
+[let name=sys:sn.auto.msecLineWait val=50]
+[let name=sys:sn.auto.msecPageWait val=50]
+&sn.auto.enabled = true
+
+　一行目[l]
+　二行目[l]
+　三行目[s]
