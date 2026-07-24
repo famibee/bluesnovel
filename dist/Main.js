@@ -92,9 +92,9 @@ var b = g()((e, t) => ({
 			...c === void 0 ? {} : { sty: c }
 		}], v(e, l, u);
 	}),
-	chgPic: ({ nm: t, page: n, fn: r, aFace: i }) => e((e) => {
-		let { idx: a, aLay: o } = _(e, n), s = y(o, t, "grp");
-		return s.fn = r, s.aFace = i, v(e, a, o);
+	chgPic: ({ nm: t, page: n, fn: r, src: i, aFace: a }) => e((e) => {
+		let { idx: o, aLay: s } = _(e, n), c = y(s, t, "grp");
+		return c.fn = r, c.src = i, c.aFace = a, v(e, o, s);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r }) => e((e) => {
 		let { idx: i, aLay: a } = _(e, n), o = y(a, t, "txt");
@@ -127,7 +127,7 @@ var b = g()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of i) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.aFace = []) : (e.str = "", e.aBtn = [], delete e.b_color, delete e.style, e.b_alpha = 1);
+			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aBtn = [], delete e.b_color, delete e.style, e.b_alpha = 1);
 		}, a = (e) => {
 			if (!t) {
 				e.forEach(r);

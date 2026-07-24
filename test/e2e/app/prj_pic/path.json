@@ -1,0 +1,5 @@
+{
+	"main": {":cnt": 1, "sn": "main.sn"},
+	"bg": {":cnt": 1, "png": "bg.png"},
+	"face_a": {":cnt": 1, "png": "face_a.png"}
+}

@@ -1,0 +1,21 @@
+; E2E用シナリオ（pic.e2e.ts が使用）
+;	画像は path.json → Config.searchPath() で解決する。ここまで一度も本物の画像を通していなかったので、
+;	フィクスチャに実体（bg.png / face_a.png）を置いて経路全体を確かめる：
+;	・[lay fn=…]がpath.json経由で解決され、<img>として表示されること
+;	・[add_face]＋[lay face=…]の差分合成が重なること
+;	・サーチパスに無い画像はデバッグ表示へエラーを出し、画面は落ちないこと
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[lay layer=base fn=bg]
+はいけい[p]
+
+; 差分合成。dx/dyは親画像（fn）の左上を原点とした相対座標
+[add_face name=face_a dx=5 dy=6]
+[lay layer=base fn=bg face=face_a]
+さぶん[p]
+
+; サーチパスに無い画像。エラーは出るが画面は落ちない
+[lay layer=base fn=nai_gazou]
+みつからない[s]

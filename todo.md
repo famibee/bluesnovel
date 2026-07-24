@@ -80,7 +80,10 @@
 - [ ] 実機（`tmp_blues`）で以下を確認
   - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない
   - [ ] `main.sn`へ`[lay layer=mes b_alpha=...]`を仕込んで、文字レイヤ背景の不透明度変更の見た目を確認（`main.sn`には`[lay layer=mes b_alpha=0.4]`が既にあることを今回確認済み。表示結果の目視確認は未実施）
-- [ ] `SAMPLE_SN`フォールバック（`ScriptMng.ts`）と`GrpLayer.tsx`の`try/catch`を撤去し、正規のアセットパイプライン（`path.json`）を用意した上で正しいロードエラー処理に戻す
+- [ ] アセット周りの残り（`SAMPLE_SN`フォールバックと`GrpLayer.tsx`の`try/catch`撤去は完了）
+  - [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像（`sn_repRes()`）も同じ仕組み
+  - [ ] 画像の**先読み**（本家 `SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので、切替時に一瞬空白になりうる。実機で要確認
+  - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（目標経路の`[img]`が動くか。`prj.json`/`path.json`はそのまま使えるはず）
 - [ ] 文字送り演出のパラメータ（`duration: 0.25`, `stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整
 - [ ] 動画・音声対応
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）

@@ -17,6 +17,8 @@ export type T_BTN_SNAP = {nm: string; text: string; label: string; call?: boolea
 export type T_LAY_SNAP = {
 	cls		: 'grp' | 'txt';
 	nm		: string;
+	fn?		: string;	// 画像レイヤ：[lay fn=…]の論理名
+	src?	: string;	// 画像レイヤ：解決済みURL（ScriptMngがpath.jsonから引く）
 	str?	: string;
 	aBtn?	: T_BTN_SNAP[];
 	b_alpha?: number;
@@ -41,7 +43,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

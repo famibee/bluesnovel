@@ -23,20 +23,6 @@ import gsap from 'gsap';
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
 
-// 試作用：path.json 等のアセット一式が無くても動作確認できるダミーシナリオ
-//	（本実装ではこのフォールバックは撤去する。詳細は docs_handover/ 参照）
-const SAMPLE_SN = `[add_lay layer=base class=grp]
-[add_lay layer=mes class=txt]
-[current layer=mes]
-[lay layer=base pic=yun_1184]
-あいうえお、これはbluesnovelの試作画面です。[l]
-クリックかスペースキーで読み進められます。[p]
-[lay layer=base pic=yun_1317]
-ページが変わり、背景が差し替わりました。[l]
-PageUp/PageDownキーで読み戻り・読み進めができます。[s]
-`;
-
-
 export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
 
@@ -82,7 +68,10 @@ export class ScriptMng {
 	readonly #hScript: {[fn: string]: Script} = Object.create(null);
 	#engine?: ScriptEngine;
 
-	async load(fn: string) {
+	// SysBase.loaded()から投げっぱなしで呼ばれるので、ここで握ってデバッグ表示へ出す
+	//	（握らないと未処理のPromise拒否になり、何が起きたか分からないまま画面が空になる）
+	load(fn: string) {void this.#load(fn).catch(()=> {/* myTraceで表示済み */})}
+	async #load(fn: string) {
 		const scr = await this.#getScript(fn);
 		if (this.#engine) this.#engine.switchScript(scr);
 		else this.#engine = new ScriptEngine(scr);
@@ -436,17 +425,33 @@ export class ScriptMng {
 		for (const [k, v] of Object.entries(h)) this.#engine?.setValNochk(k, v as string);
 	}
 
+	// 画像のパス解決（path.json）。見つからなければ知らせて空を返す。
+	//	1枚の画像が無いだけでゲームごと止めるのはやり過ぎなので、'ET'ではなく'E'（表示のみ）
+	#searchPic(tag: string, fn: string): string {
+		if (! fn) return '';
+		try {return this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)}
+		catch (e) {
+			this.myTrace(`[${tag}] 画像が見つかりません fn:${fn} ${String(e)}`, 'E');
+			return '';
+		}
+	}
+
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
 			// [lay]で変えられる見た目（visible/alpha/left/top/rotation/scale_*）は初期値を持たせない。
 			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
 			this.$fncs.addLayer(act.cls === 'grp'
-				? {cls: 'grp', nm: act.nm, fn: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
+				? {cls: 'grp', nm: act.nm, fn: '', src: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
 				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic':
-			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, aFace: act.aFace});
+			// **画像パスの解決はここ**（描画時ではなく）。searchPath()はサーチパスに無ければ
+			//	例外を投げるが、renderの中で投げるとReactごと落ちるので、
+			//	シナリオ実行時に解決してエラーはデバッグ表示へ出す。GrpLayerは出来上がったURLを描くだけ
+			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn,
+				src: this.#searchPic('lay', act.fn),
+				aFace: act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}))});
 			break;
 		case 'chgBAlpha':
 			this.$fncs.chgBAlpha({nm: act.nm, page: act.page, b_alpha: act.b_alpha});
@@ -585,9 +590,10 @@ export class ScriptMng {
 			if (! res.ok) throw Error(res.statusText);
 			return await res.text();
 		} catch (e) {
-			// 試作：アセット未整備でも表示確認できるようダミーシナリオへ切替
-			this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${fn} ${String(e)}`, 'W');
-			return SAMPLE_SN;
+			// path.jsonに載っていない・取得できない＝シナリオが続けられないので、
+			//	ここは黙って代替せず止める（'ET'は表示してからthrowする）
+			this.myTrace(`[load] スクリプト読込に失敗しました fn:${fn} ${String(e)}`, 'ET');
+			throw e;	// myTraceが投げるので到達しないが、戻り値の型を締めるため
 		}
 	}
 

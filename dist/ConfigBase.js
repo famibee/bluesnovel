@@ -1,39 +1,9 @@
-import { n as e } from "./rolldown-runtime.js";
-//#region src/sn/CmnLib.ts
-function t(e) {
-	return parseInt(String(e), 10);
-}
-function n(e) {
-	let t = parseInt(String(e), 10);
-	return t < 0 ? -t : t;
-}
-var r = /^[^/.]+$|[^/]+(?=\.)/;
-function i(e) {
-	return (r.exec(e) ?? [""])[0];
-}
-var a = class {
-	static async init() {
-		let t = await import("./platform.js").then((t) => /* @__PURE__ */ e(t.default, 1));
-		this.platform = JSON.stringify(t), this.plat_desc = t.description ?? "", this.isSafari = t.name === "Safari", this.isFirefox = t.name === "Firefox", this.isMac = (t.os?.family ?? "").includes("OS X"), this.isMobile = !/(Windows|OS X)/.test(t.os?.family ?? "");
-	}
-	static stageW = 0;
-	static stageH = 0;
-	static debugLog = !1;
-	static platform;
-	static plat_desc;
-	static isSafari;
-	static isFirefox;
-	static isMac;
-	static isMobile;
-	static hDip = {};
-	static isDbg = !1;
-	static isPackaged = !1;
-	static isDarkMode = !1;
-	static cc4ColorName;
-}, o = /* @__PURE__ */ function(e) {
+import { r as e } from "./CmnLib.js";
+//#region src/sn/ConfigBase.ts
+var t = /* @__PURE__ */ function(e) {
 	return e.DEFAULT = "", e.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", e.SCRIPT = "sn|ssn", e.FONT = "woff2|woff|otf|ttf", e.SOUND = "mp3|m4a|ogg|aac|flac|wav", e.HTML = "htm|html", e.CSS = "css", e.SN = "sn", e.TST_PNGPNG_ = "png|png_", e.TST_HH = "hh", e.TST_EEE = "eee", e.TST_GGG = "ggg", e.TST_PNGXML = "png|xml", e;
 }({});
-function s() {
+function n() {
 	return {
 		save_ns: "",
 		window: {
@@ -71,9 +41,9 @@ function s() {
 		debuger_token: ""
 	};
 }
-var c = class {
+var r = class {
 	sys;
-	oCfg = s();
+	oCfg = n();
 	userFnTail = "";
 	hPathFn2Exts = {};
 	constructor(e) {
@@ -124,10 +94,10 @@ var c = class {
 		return `skynovel.${this.oCfg.save_ns} - `;
 	}
 	#n = /([^/\s]+)\.([^\d]\w+)/;
-	searchPath(e, n = "") {
-		if (!e) throw "[searchPath] fnが空です";
-		if (e.startsWith("http://")) return e;
-		let r = e.match(this.#n), i = r ? r[1] ?? "" : e, a = r ? r[2] : "";
+	searchPath(t, n = "") {
+		if (!t) throw "[searchPath] fnが空です";
+		if (t.startsWith("http://")) return t;
+		let r = t.match(this.#n), i = r ? r[1] ?? "" : t, a = r ? r[2] : "";
 		if (this.userFnTail) {
 			let e = i + "@@" + this.userFnTail;
 			if (e in this.hPathFn2Exts) {
@@ -139,24 +109,24 @@ var c = class {
 			}
 		}
 		let o = this.hPathFn2Exts[i];
-		if (!o) throw `サーチパスに存在しないファイル【${e}】です`;
+		if (!o) throw `サーチパスに存在しないファイル【${t}】です`;
 		if (!a) {
-			let r = t(o[":cnt"]);
+			let r = e(o[":cnt"]);
 			if (n === "") {
-				if (r > 1) throw `指定ファイル【${e}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
-				return e;
+				if (r > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
+				return t;
 			}
 			let i = `|${n}|`;
 			if (r > 1) {
-				let t = 0;
-				for (let r of Object.keys(o)) if (i.includes(`|${r}|`) && ++t > 1) throw `指定ファイル【${e}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
+				let e = 0;
+				for (let r of Object.keys(o)) if (i.includes(`|${r}|`) && ++e > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
 			}
 			for (let [e, t] of Object.entries(o)) if (i.includes(`|${e}|`)) return t;
-			throw `サーチ対象拡張子群【${n}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${e}】`;
+			throw `サーチ対象拡張子群【${n}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${t}】`;
 		}
-		if (n !== "" && !`|${n}|`.includes(`|${a}|`)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${e}】`;
+		if (n !== "" && !`|${n}|`.includes(`|${a}|`)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${t}】`;
 		let s = o[a];
-		if (!s) throw `サーチパスに存在しない拡張子【${a}】です。探索ファイル名=【${e}】、サーチ対象拡張子群【${n}】`;
+		if (!s) throw `サーチパスに存在しない拡張子【${a}】です。探索ファイル名=【${t}】、サーチ対象拡張子群【${n}】`;
 		return s;
 	}
 	matchPath(e, t = "") {
@@ -180,6 +150,6 @@ var c = class {
 	}
 };
 //#endregion
-export { t as a, i, o as n, n as o, a as r, c as t };
+export { t as n, r as t };
 
 //# sourceMappingURL=ConfigBase.js.map

@@ -63,9 +63,11 @@ E2E (`playwright test`) are **fully separated**:
   servers (e.g. `tmp_blues`), and reusing one silently tests the *wrong app*.
 - `test/e2e/app/` is a self-contained fixture: `index.html` + `main.ts` boot `SysWeb` against
   `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button|expr|multi`
-  picks the scenario, since `SysBase.loaded()` always loads the script named `main`. No image
-  assets are used, so the fixtures need no binaries. Adding a scenario = new `prj_<name>/` +
-  a `T_PRJ` member in `snPage.ts`. **`src/` contains no test-only hooks**:
+  picks the scenario, since `SysBase.loaded()` always loads the script named `main`. Adding a
+  scenario = new `prj_<name>/` + a `T_PRJ` member in `snPage.ts`. Fixtures avoid binaries
+  where they can; the exception is `prj_pic/`, which carries two tiny generated PNGs because
+  the `path.json` → `searchPath` → `<img>` path is only really tested by loading a real file
+  (`naturalWidth` is 0 when it didn't load). **`src/` contains no test-only hooks**:
   `test/e2e/app/main.ts` publishes `window.__sn = {store: useStore}` and assertions read the
   zustand store from there; `traceText()` finds the debug overlay as `body > span` rather than
   giving it an id.
@@ -184,8 +186,14 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   `#applyAction()` translates each `T_ENGINE_ACTION` into a store mutation (the `T_INIT_FNCS`
   set passed in from `Main.tsx`); on `loadScript` it fetches, caches a `Script` and loops.
   Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
-  `myTrace` debug overlay. Contains a `SAMPLE_SN` fallback that renders a demo when assets
-  are missing — this is prototype scaffolding to be removed once the asset pipeline exists.
+  `myTrace` debug overlay. **It also resolves asset paths** (`path.json` → `searchPath`) when
+  applying `chgPic`, and the store keeps both the logical name (`fn`) and the resolved URL
+  (`src`). That split exists because `searchPath` *throws* when a file is not in the search
+  path, and throwing inside `render` takes React down with it — so `GrpLayer` used to swallow
+  the error and draw nothing. Resolving at scenario-execution time lets the failure reach the
+  debug overlay instead. A missing image is reported at `'E'` (show) rather than `'ET'`
+  (show and stop): one bad asset should not end the game. A missing *script*, on the other
+  hand, is fatal.
 - **Filters are the sharpest case of the pixi→DOM divergence.** Upstream has 22 pixi filters;
   CSS `filter` can express 9 of them natively, so that is what `src/ts/Filter.ts` implements.
   The other 13 are all `ColorMatrixFilter` presets except `noise`, so they *are* reachable

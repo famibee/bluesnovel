@@ -20,7 +20,7 @@ const S = ()=> useStore.getState();
 // レイヤを3枚。配列の並びがそのまま描画順（後ろほど手前）
 beforeEach(()=> {
 	useStore.setState({aPage: [[], []], foreIdx: 0});
-	for (const nm of ['a', 'b', 'c']) S().addLayer({cls: 'grp', nm, fn: '', aFace: []});
+	for (const nm of ['a', 'b', 'c']) S().addLayer({cls: 'grp', nm, fn: '', src: '', aFace: []});
 });
 // 表裏それぞれの並び。**両面が常に同じ順**であることが他の処理の前提
 const order = ()=> useStore.getState().aPage.map(a=> a.map(e=> e.nm).join(''));
@@ -76,8 +76,8 @@ it('moveLay_unknownLayerThrows', ()=> {
 
 
 it('clearLay_allLayers', ()=> {
-	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', aFace: []});
-	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', aFace: []});
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', aFace: []});
+	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', src: '/pc.png', aFace: []});
 	S().chgLay({nm: 'a', page: 'fore', sty: {left: 10, visible: false}});
 
 	S().clearLay({aLayNm: null, page: 'fore'});	// layer省略＝全レイヤ
@@ -90,8 +90,8 @@ it('clearLay_allLayers', ()=> {
 });
 
 it('clearLay_someLayers', ()=> {
-	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', aFace: []});
-	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', aFace: []});
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', aFace: []});
+	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', src: '/pc.png', aFace: []});
 
 	S().clearLay({aLayNm: ['a'], page: 'fore'});
 

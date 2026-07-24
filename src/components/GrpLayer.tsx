@@ -6,7 +6,6 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
-import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 
 import {type CSSProperties, MouseEvent, useRef} from 'react';
 import Moveable from 'react-moveable';
@@ -20,25 +19,22 @@ export type T_FACE = {
 	dy			: number;
 	blendmode	: string;
 };
+// ストアが持つのは上に解決済みURL（src）を足したもの。
+//	パス解決（path.json）はScriptMngが行う＝renderの中でsearchPath()を呼ばない
+//	（サーチパスに無いと例外を投げるので、renderで投げるとReactごと落ちる）
+export type T_FACE_SRC = T_FACE & {src: string};
 type T_GRPARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
-	fn		: string;
-	aFace	: T_FACE[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
+	fn		: string;	// [lay fn=...]で指定された論理名（[dump_lay]・デバッグ用）
+	src		: string;	// 解決済みURL。空なら描かない
+	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; aFace: T_FACE[]};
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; aFace: T_FACE_SRC[]};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
-export default function GrpLayer({cmn: {styChild, sys, isDesignMode}, sty, fn, aFace}: T_GRPARG) {
-	// 試作注意：アセット一式（path.json等）未整備の状態でも画面ごと落ちないようにする
-	//	本実装ではアセット未登録をロードエラーとして扱う方針へ戻すこと
-	const search = (fn: string)=> {
-		if (! fn) return '';
-		try {return sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)}
-		catch (e) {console.warn('GrpLayer search failed (試作：アセット未整備の可能性)', e); return ''}
-	};
-
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, src, aFace}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -59,14 +55,14 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	}
 	return <>
 		<div css={styChild} ref={div0} style={sty} onMouseDown={e=> onMouseDown(e)}>
-			{/* fn未設定やアセット未整備でsearch()が''を返す間は<img src="">を描画しない（Reactがページ全体再ダウンロードの可能性を警告するため） */}
-			{fn && search(fn) && <img src={search(fn)} style={{display: 'block'}}/>}
-			{aFace.map(({fn: faceFn, dx, dy, blendmode}, i)=> {
-				const src = faceFn && search(faceFn);
-				if (! src) return null;
+			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
+				（Reactがページ全体再ダウンロードの可能性を警告するため） */}
+			{src && <img src={src} style={{display: 'block'}}/>}
+			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
+				if (! faceSrc) return null;
 				return <img
 					key={`${faceFn}_${String(i)}`}
-					src={src}
+					src={faceSrc}
 					style={{position: 'absolute', left: dx, top: dy, mixBlendMode: blendmode as CSSProperties['mixBlendMode']}}
 				/>;
 			})}
