@@ -403,6 +403,11 @@ export class ScriptEngine {
 	//	[add_frame]の読込完了や[let_frame]の取得値がこれを通る（本家 val.setVal_Nochk('tmp', …) 相当）
 	setValNochk(name: string, v: T_VAL_D) {this.#val.set(name, v)}
 
+	// 組み込み変数（読み取り専用・遅延評価）の登録口。
+	//	エンジン自身が知りようのない値——prj.jsonの設定やブラウザの情報——を
+	//	ScriptMng（DOM側）から入れてもらうために開けてある（本家 val.defTmp() 相当）
+	defBuiltin(name: string, fnc: ()=> T_VAL_D) {this.#val.defBuiltin(name, fnc)}
+
 	get fn() {return this.#script.fn}
 	get idx() {return this.#idx}
 	get atEnd() {return this.#idx >= this.#script.len}
@@ -875,7 +880,10 @@ export class ScriptEngine {
 			//TODO: 既存のval=書式をtext=&式へ移行し、valを廃止する
 			const varName = args.name ?? '';
 			if (! varName) throw '[let] nameは必須です（試作仕様）';
-			const exp = args.val ?? '';
+			// textもvalも無い＝値が渡っていない。**「&式」の評価がundefinedになって
+			//	属性ごと落ちた**場合もここに来るので、式の書き間違いを空文字の文法エラーにせず知らせる
+			if (args.val === undefined) throw `[let] textまたはvalは必須です（name:${varName}）`;
+			const exp = args.val;
 			this.#val.set(varName, this.#expr.parse(exp), <T_CAST>(args.cast ?? ''));
 			return 'skip';
 		}
@@ -1328,12 +1336,20 @@ export class ScriptEngine {
 			if (to === undefined) return 'skip';	// 試作では未対応タグは無視（後の本実装で拡充）
 
 			// [call]と同じ枠組みでジャンプし、タグ属性をそのままmp:名前空間へ渡す
-			// （本家 ScriptIterator.ts:1374-1392 のマクロ呼び出しハンドラを簡略化したもの。
-			// const.sn.macro等のスクリプター用ブックキーピング情報は試作では省略）
+			// （本家 ScriptIterator.ts:1374-1392 のマクロ呼び出しハンドラを簡略化したもの）。
 			// マクロ呼び出しはローカル予約イベントを退避しない（本家と同じ）。
 			//	属性はmp:名前空間と、マクロ本体の「%属性名」「*」用にhArgsの両方へ渡す
 			this.#pushCallStk(this.#idx, false, args);
-			this.#val.setMp(args);
+			this.#val.setMp({
+				...args,
+				// **マクロを呼んだ側のスクリプト名**（本家 ScriptIterator.ts:1384）。
+				//	マクロ本体は定義元ファイルの中にあるので、そのままではラベルの
+				//	探索先が定義元になってしまう。呼び元のラベルを見に行きたいマクロが
+				//	`fn=%fn|&mp:const.sn.me_call_scriptFn` と書いて使う
+				//	（本家サンプルの[for_call]がまさにこれ）
+				'const.sn.me_call_scriptFn'	: this.fn,
+				'const.sn.macro'			: JSON.stringify({name}),
+			});
 			if (to.fn !== this.fn) {	// 別ファイルで定義されたマクロ
 				aAct.push({t: 'loadScript', fn: to.fn, label: '', idx: to.idx});
 				return 'stop';

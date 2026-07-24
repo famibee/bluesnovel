@@ -170,7 +170,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   Only divergence: `cfg` is optional (it drives wildcard expansion alone), so `ScriptEngine`
   can do `new Grammar` without a `T_Config`.
 - **`src/ts/VarStore.ts`** — 本家 `Variable` minus save/dirty handling. Namespaces are
-  `tmp`/`game`/`sys`/`mp` (本家's `save:` is `game:` here). `get(name, def?, touch?)`
+  `tmp`/`game`/`sys`/`mp` (本家's `save:` is `game:` here — but `save:` is **accepted as an
+  alias**, because every upstream scenario writes it; `ExprEval` needs the alias too, or the
+  `:` gets read as a ternary). `get(name, def?, touch?)`
   returns **`undefined` for an undefined variable** and `null` only when null was stored —
   the distinction is load-bearing (`1 + 未定義` → `NaN` is how 本家 detects undefined).
   Reads auto-cast (`'true'`→true, `'1.20'`→1.2) unless the name ends `@str`; a name whose
@@ -405,6 +407,13 @@ what a tag's attributes look like in real scripts.
 category with a one-line description each, is the `T_HTag` type in
 `../skynovel_esm/src/sn/Grammar.ts`; the implementations are registered as `hTag.<name> = …`
 across `../skynovel_esm/src/sn/*.ts`.
+
+**`test/uc_goal.test.ts` measures the project's stated goal**: it drives the *real* sample
+scenario (`../tmp_esm_uc/doc/prj/`) from `main.sn` through every `[call]` to `title.sn`'s
+`[s]`, using only the engine. Faking the three things `ScriptMng` does DOM-side — fetching
+scripts, loading HTML frames, registering environment builtins — is enough; no DOM, no fetch,
+no image or audio assets. It skips when the sibling checkout is absent. When adding tags,
+run it: it finds the gaps that reading the upstream source does not.
 
 **A full sample game** in 本家 form is `../tmp_esm_uc/doc/prj/` — `script/main.sn` calls
 `theme/setting.sn` / `theme/ext_*.sn` / `script/sub.sn` / `frames/_yesno.sn`, then jumps to

@@ -22,6 +22,10 @@ export type T_VAL_D = T_VAL | undefined;
 
 export const A_NS = ['tmp', 'game', 'sys', 'mp'] as const;
 export type T_NS = typeof A_NS[number];
+// 本家の名前空間名は tmp/save/sys/mp。bluesnovelは'save'を'game'という名前にしているが、
+//	**本家シナリオはどれも`save:`と書く**ので、別名として受けて'game'へ寄せる
+//	（両方が同じ入れ物を指す。片方だけ書き換えると変数を見失うため）
+const H_NS_ALIAS: {[ns: string]: T_NS} = {save: 'game'};
 
 // [let]/[let_ml]/「&計算」書式のcast指定（本家 Variable.ts:317 #let()）
 export const A_CAST = ['num', 'int', 'uint', 'bool', 'str'] as const;
@@ -45,11 +49,12 @@ export class VarStore {
 	//	・「名前空間:」省略時は tmp
 	//	・末尾「@str」指定時は取得時の自動キャストを行わない
 	//	・「["キー"]」「['キー']」記法は「.キー」へ正規化する（本家 #getValName_B2D()）
-	static readonly REG_NAME = /^(?:(tmp|game|sys|mp):)?([^\s:@]+)(@str)?$/;
+	static readonly REG_NAME = /^(?:(tmp|game|save|sys|mp):)?([^\s:@]+)(@str)?$/;
 	static parseName(name: string): {ns: T_NS; key: string; atStr: boolean} {
 		const m = VarStore.REG_NAME.exec(name.trim());
 		if (! m) throw `変数名が不正です：${name}`;
-		const ns = (m[1] ?? 'tmp') as T_NS;	// 省略時の既定は本家に合わせ"tmp"
+		const ns0 = m[1] ?? 'tmp';	// 省略時の既定は本家に合わせ"tmp"
+		const ns = H_NS_ALIAS[ns0] ?? ns0 as T_NS;
 		return {ns, key: VarStore.#bracket2dot(m[2]!), atStr: Boolean(m[3])};
 	}
 	static #bracket2dot(str: string): string {

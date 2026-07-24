@@ -12,13 +12,15 @@
 `[notice]`はプロジェクト側プラグイン（`tmp_esm_uc/src/plugin/humane`）なのでプラグイン機構ごと対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 
-**目標経路の残り（2026-07-24時点で使用タグを洗い出した結果）**：`title.sn`の`[s]`まで
-実際に実行されるタグのうち、未対応で残っているのは以下だけになった。
+**✅ 目標（`title.sn`の`[s]`まで）はエンジン上で到達済み**（2026-07-24）。
+`test/uc_goal.test.ts` が本家サンプルの実シナリオを`main.sn`から`[s]`まで走らせて回帰を防いでいる
+（`../tmp_esm_uc`が無い環境ではスキップ）。**ただしこれはシナリオ解釈が通ることの確認**で、
+ブラウザで実際に絵と音が出るところまでは別途。残っているのは以下。
+- ブラウザで実際に動かす（画像アセットは`prj_pic`で経路確認済み。実プロジェクトでの通しは未実施）
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
-- `[img]`（プロジェクト側マクロ。中身は`[lay]`なので実質対応済みだが、**画像アセットが要る**）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
 - `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
-つまり**残りの山はアセットパイプラインとしおり層**で、タグ単体の実装はおおむね一巡した。
+- 組み込み変数`const.sn.lay.*`（レイヤの状態。目標経路で24箇所と最多）と`const.sn.sound.*`
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
   - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて
@@ -54,6 +56,10 @@
   - [ ] `noise`（ノイズ）はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
   - [ ] `[add_filter blendmode=…]`（フィルター自体のブレンドモード）は未対応
   - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
+- [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等は実装済み。`ScriptMng#defEnvBuiltins()`）
+  - [ ] `const.sn.lay.<レイヤ名>.<fore|back>.<属性>`（**目標経路で24箇所と最多**）。レイヤの状態はストアにあるのでエンジンからは見えない。`VarStore`の「JSON文字列の下位階層を辿る」仕組み（`const.db.紀子.fn`）に乗せて、`const.sn.lay`へレイヤ木のJSONを返す組み込み変数を1つ置くのが筋。ただし現状の`get()`は組み込み変数を完全一致でしか見ないので、そこの手当てが要る
+  - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）・`const.sn.bookmark.json`（しおり）は各層と一緒に
+  - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
   - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に
   - [ ] `style=`/`style_hover=`は**pixiのTextStyleのJSON**なのでCSSへ読み替える設計から。`[lay style=…]`（CSSそのまま）とは別物なので注意

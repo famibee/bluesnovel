@@ -74,11 +74,37 @@ export class ScriptMng {
 	async #load(fn: string) {
 		const scr = await this.#getScript(fn);
 		if (this.#engine) this.#engine.switchScript(scr);
-		else this.#engine = new ScriptEngine(scr);
+		else {this.#engine = new ScriptEngine(scr); this.#defEnvBuiltins(this.#engine)}
 
 		this.go = ()=> this.#goSafe();
 
 		this.$trgNext();	// -> ev_next -> Main.tsx procNext() -> this.go()
+	}
+
+	// 本家の組み込み変数のうち、**エンジンが知りようのないもの**＝prj.jsonの設定と
+	//	ブラウザの情報（本家 SysBase.init() の val.defTmp(…) 群）。
+	//	エンジンをDOM非依存に保ったまま値を渡すため、ここから登録する。
+	//	レイヤの状態（const.sn.lay.*）と音声（const.sn.sound.*）はストア／音声層が要るので未対応
+	#defEnvBuiltins(engine: ScriptEngine) {
+		const {oCfg} = this.sys.cfg;
+		const h: {[name: string]: ()=> string | number | boolean} = {
+			'const.sn.config.window.width'	: ()=> CmnLib.stageW,
+			'const.sn.config.window.height'	: ()=> CmnLib.stageH,
+			'const.sn.config.book.title'	: ()=> oCfg.book.title,
+			'const.sn.config.book.version'	: ()=> oCfg.book.version,
+			'const.sn.navigator.language'	: ()=> globalThis.navigator.language,
+			'const.sn.screenResolutionX'	: ()=> globalThis.screen.width,
+			'const.sn.screenResolutionY'	: ()=> globalThis.screen.height,
+			// ブラウザ版では常にfalse。Electron版（dist_app）を整えるときに繋ぐ
+			'const.sn.isApp'		: ()=> false,
+			'const.sn.isDbg'		: ()=> false,
+			'const.sn.isDebugger'	: ()=> false,
+			'const.sn.isPackaged'	: ()=> false,
+			'const.sn.isFirstBoot'	: ()=> false,
+			// ブラウザは音を鳴らす前にユーザー操作を要求する。音声層が無い今は常にfalse
+			'const.sn.needClick2Play'	: ()=> false,
+		};
+		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
 	}
 
 	async #getScript(fn: string): Promise<Script> {

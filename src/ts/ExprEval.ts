@@ -29,7 +29,9 @@ export type T_VAR_GET = {get(name: string): T_VAL_D};
 //	当初はサブセットの自作実装だったが、本家 test/PropParser.test.ts をテスト駆動で
 //	移植するにあたり、演算子表・評価関数とも本家の実装をそのまま持ち込んだ。
 //	本家との差異：
-//	・名前空間は save: ではなく game:（VarStore.ts の A_NS に合わせる）
+//	・名前空間は本家の save: を game: という名前にしている（VarStore.ts の A_NS）。
+//	　ただし**本家シナリオはどれも save: と書く**ので、こちらも別名として受ける
+//	　（受けないと「save:」の「:」を三項演算子と誤認して文法エラーになる）
 //	・例外メッセージの接頭辞は (PropParser) ではなく (ExprEval)
 //	・evalBool() を追加（[if]/[elsif]用。本家は各タグ側で真偽判定している）
 //TODO: 未サポート：インクリメント／デクリメント（本家同様、構文だけ受けて例外にする）
@@ -113,7 +115,7 @@ export class ExprEval {
 		// 変数参照。hA['args'] や hB[1 + 4] のような添字は、
 		//	中身を先に評価してから「.」区切りの変数名へ組み立て直す
 		const REG_BRACKETS = /\[[^\]]+\]/g;
-		const VarLiteral = regex(/-?(?:(?:tmp|sys|game|mp):)?[^\s!-/:-@[-^`{-~]+(?:\.[^\s!-/:-@[-^`{-~]+|\[[^\]]+\])*(?:@str)?/)
+		const VarLiteral = regex(/-?(?:(?:tmp|sys|game|save|mp):)?[^\s!-/:-@[-^`{-~]+(?:\.[^\s!-/:-@[-^`{-~]+|\[[^\]]+\])*(?:@str)?/)
 		.map(b=> {
 			const s = b.replaceAll(REG_BRACKETS, v=> '.'+ String(this.parse(v.slice(1, -1))));
 			const v = this.val.get(s);
