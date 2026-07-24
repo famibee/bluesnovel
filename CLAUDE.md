@@ -269,6 +269,19 @@ entry for its token count). `sys:sn.skip.mode` is honoured: default `'s'` skips 
 `public/prj/`, e.g. `public/prj/kidoku/mat/main.sn` for 既読. Useful as the de-facto spec for
 what a tag's attributes look like in real scripts.
 
+**The tag reference** is <https://famibee.github.io/skynovel_esm/tag.html> (local copy:
+`../skynovel_esm/docs/tag.html`). The authoritative list of every 本家 tag name, grouped by
+category with a one-line description each, is the `T_HTag` type in
+`../skynovel_esm/src/sn/Grammar.ts`; the implementations are registered as `hTag.<name> = …`
+across `../skynovel_esm/src/sn/*.ts`.
+
+**A full sample game** in 本家 form is `../tmp_esm_uc/doc/prj/` — `script/main.sn` calls
+`theme/setting.sn` / `theme/ext_*.sn` / `script/sub.sn` / `frames/_yesno.sn`, then jumps to
+`theme/title.sn`. `todo.md`'s first section works through the tags that path needs. Note that
+much of what looks like a tag there is a **project-side macro** (`img`, `grp`, `fg*`,
+`txt_lay_*`, `sys_menu`, `ask_ync`, …) defined in those same files, and `[notice]` comes from a
+project plugin (`../tmp_esm_uc/src/plugin/humane`), not from the engine.
+
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
 `&名前 = 式 [= cast]` assignment (`&&式 = 式` evaluates the *name* as an expression too), and
@@ -276,6 +289,31 @@ tags, `;` comments (including inside a tag), string literals containing `[`/`]`/
 at line start or right after a tag/tab/newline, exactly as upstream. Attribute values that
 contain quotes must quote the whole value (`[if exp="mp:v=='X'"]`), since `AnalyzeTagArg`
 ends an unquoted value at the first quote character.
+
+**Tag attributes go through one common pre-processing step** before any tag sees them —
+`ScriptEngine.#resolveTag()`, a port of the first half of 本家 `ScriptIterator.ts:418
+タグ解析()`. It handles four things, so individual tag cases never should:
+
+- `cond=…` — if false the tag is **not executed at all** (`#resolveTag` returns `undefined`
+  and `step()` moves on). Applies to every tag, control-flow ones included. Like `exp`, it
+  must not carry a leading `&`. `'null'`/`'undefined'`/`'false'` count as false.
+- `%属性名` — the value of that attribute as passed to the current macro, with `|省略値` as
+  the fallback. No argument and no default (or a default of literally `null`) means the
+  attribute is **not passed at all**, which is how upstream lets a tag fall back to its own
+  default. Throws outside a macro.
+- `[tag *]` — inherit every attribute the macro was called with; explicit attributes win.
+  Throws outside a macro.
+- `&式` — evaluate the value as an expression. If it evaluates to `undefined` the attribute
+  is dropped and `|省略値` is tried instead.
+
+`%` and `*` read `#aCallStk[].hArgs`, the **raw attribute strings** stashed at call time
+(本家's `csArg`). The same values are also in the `mp:` namespace, but `VarStore` auto-casts
+on read (`'1.20'` → `1.2`), so the raw copy is what gets passed through. `[call]` stashes its
+attributes too, so a plain subroutine can read them with `%` as well — same as upstream.
+
+The two places that scan tokens *without executing them* — `#if()` looking for
+`elsif`/`else`/`endif`, and `[macro]` looking for `[endmacro]` — keep using the raw
+`ScriptEngine.parseTag()`; upstream reads `#alzTagArg.hPrm` directly there too.
 
 ## Conventions & gotchas
 

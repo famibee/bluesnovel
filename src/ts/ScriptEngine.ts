@@ -58,16 +58,75 @@ export type T_RESUME = {mode: 'auto' | 'skip'; msec: number};
 
 
 export class ScriptEngine {
-	// タグトークン1件を「タグ名」と「属性の連想配列」へ分解する。
+	// タグトークン1件を「タグ名」と「属性の連想配列」へ分解する（値は書かれたまま＝未解決）。
 	//	本家と同じ Grammar.tagToken2Name_Args() ＋ AnalyzeTagArg を使うので、
 	//	複数行タグ・タグ内コメント（;〜）・"'#の引用符・非ASCIIの属性名まで正しく扱える。
-	//	（属性の省略値「|省略値」はAnalyzeTagArgが解釈するが、試作では未使用のため捨てている）
+	//	実行時は代わりに#resolveTag()を通すこと。こちらは「実行を伴わない走査」用
+	//	（[if]ブロックのelsif/else/endif探し、[macro]の[endmacro]探し）で、
+	//	本家もその2箇所では#alzTagArg.hPrmの生の値を直接見ている（ScriptIterator.ts:912）
 	static readonly #alzTagArg = new AnalyzeTagArg;
 	static parseTag(token: string): T_TAG_PARSED {
 		const [name, sArgs] = tagToken2Name_Args(token);
 		ScriptEngine.#alzTagArg.parse(sArgs);
 		const args: {[k: string]: string} = {};
 		for (const [k, prm] of Object.entries(ScriptEngine.#alzTagArg.hPrm)) args[k] = prm.val;
+		return {name, args};
+	}
+
+	// タグトークン1件を「タグ名」と「解決済みの属性」へ。全タグ共通の属性前処理で、
+	//	本家 ScriptIterator.ts:418 タグ解析() の前半をそのまま移植したもの。扱うのは4つ：
+	//	・cond属性  … 偽ならそのタグ自体を実行しない（undefinedを返す）
+	//	・「*」     … 呼び出し元がこのマクロへ渡した属性を丸ごと引き継ぐ（isKomeParam）
+	//	・「%属性名」… 同じくマクロ引数の参照。「|省略値」と組で使う
+	//	・「&式」   … 属性値を式として評価する
+	//	戻り値がundefinedなら「cond偽につきこのタグは無かったことにする」
+	#resolveTag(token: string): T_TAG_PARSED | undefined {
+		const [name, sArgs] = tagToken2Name_Args(token);
+		const alz = ScriptEngine.#alzTagArg;
+		alz.parse(sArgs);
+		const hPrm = alz.hPrm;
+
+		// cond属性：条件が偽ならこのタグを実行しない。
+		//	expと同じく「&」は不要（付いていたら二重評価になるので例外）。
+		//	本家は String(値) が 'null'/'undefined' でも偽とするので、それも移植する。
+		//	文字列'false'を偽とするのはbluesnovel側の規約（ExprEval.evalBool()と揃える）
+		const cond = hPrm.cond?.val;
+		if (cond !== undefined) {
+			if (! cond || cond.startsWith('&')) throw '属性condは「&」が不要です';
+			const v = this.#expr.parse(cond);
+			const s = String(v);
+			if (! v || s === 'null' || s === 'undefined' || s === 'false') return undefined;
+		}
+
+		// 「%」「*」が参照するのは、今いるサブルーチン／マクロを呼んだタグの属性
+		//	（本家 #aCallStk.at(-1).csArg）。[call]で積んだ枠でも参照できるのは本家と同じ
+		const cs = this.#aCallStk.at(-1);
+		const args: {[k: string]: string} = Object.create(null);
+		if (alz.isKomeParam) {	// 「*」：受け取った属性を全て引き継ぐ
+			if (! cs) throw '属性「*」はマクロのみ有効です';
+			Object.assign(args, cs.hArgs);
+		}
+
+		for (const [k, {val, def}] of Object.entries(hPrm)) {
+			let v = val;
+			if (v.startsWith('%')) {	// 「%属性名」：このマクロが受け取った属性値
+				if (! cs) throw '属性「%」はマクロ定義内でのみ使用できます（そのマクロの引数を示す簡略文法であるため）';
+
+				const mac = cs.hArgs[v.slice(1)];
+				if (mac) {args[k] = mac; continue}	// 本家は真値判定（空文字は省略値へ回る）
+
+				// 省略値が無い、または'null'指定なら属性そのものを渡さない（本家と同じ）
+				if (def === undefined || def === 'null') continue;
+				v = def;
+			}
+
+			// 「&式」なら評価する。値がundefinedになる場合は属性を渡さず、省略値があればそちらを試す
+			v = this.#expr.getValAmpersand(v);
+			if (v !== 'undefined') {args[k] = v; continue}
+			if (def === undefined) continue;
+			v = this.#expr.getValAmpersand(def);
+			if (v !== 'undefined') args[k] = v;
+		}
 		return {name, args};
 	}
 
@@ -108,7 +167,11 @@ export class ScriptEngine {
 	//	マクロ呼び出しだけは退避しない（本家 ScriptIterator.ts:957「':hEvt1Time'の扱いだけは[macro]と異なる」）
 	//	scrは呼び出し元のScript（＝呼び出し時点の#script）。isNextKidokuが別ファイルの
 	//	呼び出し元の続きを見るために、そのトークン数（scr.len）を必要とする（本家 #hScript[cs.fn]）
-	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}; scr: Script; hEvt?: {[key: string]: T_EVENT_RSV}}[] = [];
+	//	hArgsは「この枠を作った[call]/マクロ呼び出しタグの属性」（本家 csArg = {...hArg, …}）。
+	//	マクロ本体の「%属性名」「*」がこれを参照する（#resolveTag()）。
+	//	mp:変数でも同じ値が引けるが、mp:は読み出し時に自動キャストが掛かるので
+	//	（'1.20'→1.2）、属性値をそのまま渡すために生の文字列を別途持っておく
+	readonly #aCallStk: {fn: string; returnIdx: number; lenIfStk: number; hMp: {[key: string]: T_VAL_D}; hArgs: {[k: string]: string}; scr: Script; hEvt?: {[key: string]: T_EVENT_RSV}}[] = [];
 
 	// 予約イベント表（本家 ReadingState.#hLocalEvt2Fnc / #hGlobalEvt2Fnc 相当）。
 	//	ローカルは[call]で退避・[return]で復元、[jump]系のイベント発火で消去される「一回きり」の予約。
@@ -363,13 +426,15 @@ export class ScriptEngine {
 
 	// コールスタックへ1段積む（[call]・マクロ呼び出し・[button call=true]で共通）。
 	//	popLocalEvt=trueならローカル予約イベントをここへ退避し、現在の表を空にする
-	//	（＝サブルーチンへは持ち込まない。[return]で書き戻す）。マクロ呼び出しだけはfalse
-	#pushCallStk(returnIdx: number, popLocalEvt = true) {
+	//	（＝サブルーチンへは持ち込まない。[return]で書き戻す）。マクロ呼び出しだけはfalse。
+	//	hArgsは呼び出したタグの属性（マクロ本体の「%属性名」「*」が参照する）
+	#pushCallStk(returnIdx: number, popLocalEvt = true, hArgs: {[k: string]: string} = {}) {
 		this.#aCallStk.push({
 			fn			: this.fn,
 			returnIdx,
 			lenIfStk	: this.#aIfStk.length,
 			hMp			: this.#val.cloneMp(),
+			hArgs,
 			scr			: this.#script,	// 呼び出し元（=今の）Script。isNextKidokuで別ファイルのトークン数を引く
 			...popLocalEvt ?{hEvt: this.#popLocalEvt()} :{},
 		});
@@ -397,7 +462,9 @@ export class ScriptEngine {
 			if (uc === 9 || uc === 10) continue;	// \t タブ / \n 改行（連続分がまとめて1トークン）
 
 			if (uc === 91) {	// [ タグ開始
-				const {name, args} = ScriptEngine.parseTag(token);
+				const rt = this.#resolveTag(token);
+				if (! rt) continue;	// cond属性が偽：このタグは実行しない（本家 タグ解析() と同じく丸ごと無視）
+				const {name, args} = rt;
 				// タグ処理は#execTag()へ分離した（switch内を全てcontinueで終端する書き方だと、
 				// 一部のlinter/tscの「フォールスルー」検知が誤検知しやすいため、
 				// 呼び出し元へreturn値で明示的に結果を伝える方式にした。挙動は従来と同じ）
@@ -565,8 +632,8 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
-			// 先頭が'&'の場合は式として評価する（本家の&接頭辞記法の簡略版。動作確認用にtraceのみ対応）
-			aAct.push({t: 'trace', text: this.#expr.getValAmpersand(args.text ?? '')});
+			// 「text=&式」の評価は#resolveTag()が全タグ共通で済ませているので、ここでは受け取るだけ
+			aAct.push({t: 'trace', text: args.text ?? ''});
 			return 'skip';
 
 		case 'jump': {	// シナリオジャンプ（本家 ScriptIterator.ts:1039 #jumpWork() 相当）
@@ -597,15 +664,17 @@ export class ScriptEngine {
 			// hMp：呼び出し時点のmp:値を保存（本家 #callSub() は[call]/マクロ呼び出し共通でこれを行う。
 			// 通常の[call]ではmp:を変更しないため実質no-opの保存・復元だが、
 			// サブルーチン内でmp:へ直接代入した場合に呼び出し元へ影響しないようにする効果がある）
+			// hArgs：[call]の属性もマクロ同様に積む。サブルーチン側から「%属性名」で引ける
+			//	（本家 #callSub({...hArg}) がcsArgへそのまま入れるのと同じ）
 			if (fn && fn !== this.fn) {	// 別ファイルのサブルーチンを呼ぶ
-				this.#pushCallStk(this.#idx);
+				this.#pushCallStk(this.#idx, true, args);
 				aAct.push({t: 'loadScript', fn, label, idx: 0});
 				return 'stop';
 			}
 
 			const to = this.#script.label2idx(label);
 			if (to === undefined) throw `[call] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
-			this.#pushCallStk(this.#idx);	// 飛び先が確定してから積む（例外時にスタックを汚さない）
+			this.#pushCallStk(this.#idx, true, args);	// 飛び先が確定してから積む（例外時にスタックを汚さない）
 			this.#idx = to;
 			return 'skip';
 		}
@@ -727,7 +796,9 @@ export class ScriptEngine {
 			// [call]と同じ枠組みでジャンプし、タグ属性をそのままmp:名前空間へ渡す
 			// （本家 ScriptIterator.ts:1374-1392 のマクロ呼び出しハンドラを簡略化したもの。
 			// const.sn.macro等のスクリプター用ブックキーピング情報は試作では省略）
-			this.#pushCallStk(this.#idx, false);	// マクロ呼び出しはローカル予約イベントを退避しない（本家と同じ）
+			// マクロ呼び出しはローカル予約イベントを退避しない（本家と同じ）。
+			//	属性はmp:名前空間と、マクロ本体の「%属性名」「*」用にhArgsの両方へ渡す
+			this.#pushCallStk(this.#idx, false, args);
 			this.#val.setMp(args);
 			if (to.fn !== this.fn) {	// 別ファイルで定義されたマクロ
 				aAct.push({t: 'loadScript', fn: to.fn, label: '', idx: to.idx});

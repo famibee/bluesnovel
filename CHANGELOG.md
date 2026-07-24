@@ -196,6 +196,26 @@
   - クランプ先はエンジン（`chgBAlpha`アクションを積む時点）。本家はCSSの`rgba()`が描画時に丸めるだけなので、ストア（＝Memento・デザインモードが読む状態）には範囲外の値が残ってしまう。そこを正規化するのが目的
   - `test/ScriptEngine.test.ts`に4件追加（上限・下限・範囲内（境界含む）はそのまま・Infinity）。ユニット669件→673件、E2E 28件は変更なし
 
+
+skynovel_esmプロジェクトのmain.snからたどり、callしているsetting.sn, ext_*.sn, sub.sn ... に登場するタグから優先で実装していきたい。
+- tmp_esm_uc/doc/prj/script/main.sn at main · famibee/tmp_esm_uc https://github.com/famibee/tmp_esm_uc/blob/main/doc/prj/script/main.sn
+- タグごとにtodo.mdに追加
+- 最後に呼ばれるのはtitle.sn。いったん[s]までとする
+- 表示アーキテクチャがpixijsからReactに変更になるのでタグの変更・追加・削除・いったん無視などがありうるが、それはまた別項
+- たとえば動画・音声などは一旦無視でいい。スクリプト処理や画面表示に関わるモノのみ実装
+
+- [x] **タグ属性の共通処理（`cond=` /「%属性名」/「*」/「&式」）**（2026-07-24）
+  - 本家 `ScriptIterator.ts:418 タグ解析()` の前半を`ScriptEngine.#resolveTag()`として移植。個別タグの実装ではなく**全タグ横断の前処理**で、本家シナリオ（`tmp_esm_uc/doc/prj/`）では`cond=`85箇所・`%`111箇所・`*`39箇所と多用されるため、他のタグを足す前提として先に入れた
+  - `cond=`：偽ならそのタグ自体を実行しない（`[jump]`や`[let]`のような処理系タグにも効く）。`exp`と同じく「&」は不要で、付いていたら例外。本家に合わせ`String(値)`が`'null'`/`'undefined'`でも偽、加えてbluesnovelの`[if]`（`ExprEval.evalBool()`）と揃えて文字列`'false'`も偽
+  - `%属性名`：そのマクロが受け取った属性値を参照する。`|省略値`と組で使い、引数が無く省略値も無い（または`'null'`指定）なら**その属性自体を渡さない**（本家の規約）。マクロ外で使うと例外
+  - `[タグ *]`：受け取った属性を丸ごと引き継ぐ。個別指定があればそちらが優先。マクロ外で使うと例外
+  - `&式`：属性値を式として評価する。結果が`undefined`になる属性は渡さず、省略値があればそれを評価して使う。これまで`[trace text=]`だけが個別に`getValAmpersand()`を呼んでいたのを共通層へ移した
+  - 参照元は**コールスタックへ積んだ生の属性文字列**（`#aCallStk[].hArgs`。本家の`csArg`相当）。`mp:`変数でも同じ値は引けるが、読み出し時に自動キャストが掛かり`'1.20'`→`1.2`になってしまうため別途持たせた。本家同様`[call]`の属性も積むので、マクロでないサブルーチンからも`%`で引ける
+  - 実行を伴わない走査（`[if]`ブロックの`elsif`/`else`/`endif`探し、`[macro]`の`[endmacro]`探し）は従来どおり生の値を見る`ScriptEngine.parseTag()`のまま。本家もその2箇所では`#alzTagArg.hPrm`を直接参照している
+  - 挙動変更が1件：`[trace text=&未定義変数]`はこれまで文字列`'undefined'`を表示していたが、本家準拠で「属性を渡さない」＝`[trace]`側の既定（空文字）になった。既存テスト`step_trace_ampPrefix_undefinedVar`を更新し、省略値へフォールバックする例を1件追加
+  - `test/ScriptEngine_tagarg.test.ts`（新規26件）。ユニット673件→700件、E2E 28件は変更なし（属性解決は純粋なエンジンロジックでブラウザ要素が無いため）
+  - `todo.md`の「本家サンプルの`main.sn`をたどってタグを実装」節を新設し、対象ファイル群のタグを棚卸しして優先順位付け（本項目はその1件目）。`CLAUDE.md`にタグリファレンス（<https://famibee.github.io/skynovel_esm/tag.html>、全タグ一覧は`skynovel_esm/src/sn/Grammar.ts`の`T_HTag`）とサンプルゲーム`tmp_esm_uc/doc/prj/`への参照を追加
+
 - [ ]
 
 
@@ -208,11 +228,12 @@
 
 
 
-- skynovel_esmプロジェクトのmain.snからたどり、callしているsetting.sn, ext_*.sn, sub.sn ... に登場するタグから優先で実装していきたい。
-	- tmp_esm_uc/doc/prj/script/main.sn at main · famibee/tmp_esm_uc https://github.com/famibee/tmp_esm_uc/blob/main/doc/prj/script/main.sn
-- タグごとにtodo.mdに追加
-- 最後に呼ばれるのはtitle.sn。いったん[s]までとする
-- 表示アーキテクチャがpixijsからReactに変更になるのでタグの変更・追加・削除・いったん無視などがありうるが、それはまた別項
+
+
+
+
+
+
 
 
 - tmp_bluesプロジェクトで

@@ -242,11 +242,17 @@ it('step_trace_ampPrefix_numberIsStringified', ()=> {
 	const se = new ScriptEngine('t1', '[let name=mp:n val=1+2][trace text=&mp:n][s]');
 	expect(se.step()[0]).toEqual({t: 'trace', text: '3'});
 });
-it('step_trace_ampPrefix_undefinedVar', ()=> {
-	// 未定義変数の参照はundefined。本家 getValAmpersand() と同じくString()化するので
-	// 「undefined」と表示される（デバッグ用タグなので、無言で空文字にするより分かりやすい）
+it('step_trace_ampPrefix_undefinedVar_dropsAttr', ()=> {
+	// 未定義変数を参照した属性は「渡されなかった」ことになる（本家 タグ解析() の
+	// 「存在しない値の場合、属性を渡さない」規約。省略値『|…』があればそちらが使われる）。
+	// よってtextは未指定扱いとなり、[trace]側の既定＝空文字になる
 	const se = new ScriptEngine('t1', '[trace text=&mp:undef][s]');
-	expect(se.step()[0]).toEqual({t: 'trace', text: 'undefined'});
+	expect(se.step()[0]).toEqual({t: 'trace', text: ''});
+});
+it('step_trace_ampPrefix_undefinedVar_fallsBackToDef', ()=> {
+	// 上と同じ状況で省略値を書いておくと、そちらが採用される
+	const se = new ScriptEngine('t1', '[trace text=&mp:undef|"なし"][s]');
+	expect(se.step()[0]).toEqual({t: 'trace', text: 'なし'});
 });
 it('step_trace_withoutAmp_isLiteral', ()=> {
 	// '&'がなければ今まで通りリテラル文字列のまま（式評価しない）
