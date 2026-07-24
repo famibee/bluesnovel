@@ -2,13 +2,13 @@
 ;	[button call=true]→[return] で [l] のイベント待ちへ戻ることの回帰確認を主目的とする
 [add_lay layer=mes class=txt]
 [current layer=mes]
-[button nm=btn_call text="サブルーチンを呼ぶ" label=*sub call=true]
-[button nm=btn_jump text="ジャンプする" label=*goal]
-[button nm=btn_fcall text="別ファイルを呼ぶ" fn=sub2 label=*fcall call=true]
-[button nm=btn_fjump text="別ファイルへ飛ぶ" fn=sub2 label=*fjump]
+[button page=fore nm=btn_call text="サブルーチンを呼ぶ" label=*sub call=true]
+[button page=fore nm=btn_jump text="ジャンプする" label=*goal]
+[button page=fore nm=btn_fcall text="別ファイルを呼ぶ" fn=sub2 label=*fcall call=true]
+[button page=fore nm=btn_fjump text="別ファイルへ飛ぶ" fn=sub2 label=*fjump]
 ; 本家 theme/title.sn のタイトルボタンと同じ座標指定。left/topを書いた時だけ絶対配置になる
-[button nm=btn_pos text="座標指定" left=250 top=360 width=90 height=30 rotation=15 label=*goal]
-[button nm=btn_off text="無効" enabled=false label=*goal]
+[button page=fore nm=btn_pos text="座標指定" left=250 top=360 width=90 height=30 rotation=15 label=*goal]
+[button page=fore nm=btn_off text="無効" enabled=false label=*goal]
 選んでください。[l]
 ＋そのまま進んだ。[s]
 

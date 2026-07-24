@@ -27,8 +27,8 @@
 
 ; [set_focus]。[button]は表示中ずっと輪に居る。フレーム内の要素は
 ;	[event key='dom=…']の最初の1件が自動で入り、[set_focus add=…]でも足せる
-[button nm=b1 text=ボタン1 label=*b1]
-[button nm=b2 text=ボタン2 label=*b2]
+[button page=fore nm=b1 text=ボタン1 label=*b1]
+[button page=fore nm=b2 text=ボタン2 label=*b2]
 [set_focus add='dom=yesno:#close']
 ; 本家 main.sn と同じ形：矢印キーの予約から[set_focus to=&sn.eventArg]を呼ぶ
 [event global=true call=true key=arrowright label=*fcs arg=next]

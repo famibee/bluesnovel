@@ -1111,13 +1111,12 @@ export class ScriptEngine {
 			const nm = args.nm ?? (label || fn);
 			// call=true指定時：クリックでjumpではなくcall（サブルーチンコール）する
 			const call = args.call === 'true';
-			// 書き込み先のページ。**既定は本家（LayerMng.ts:1100 argChk_page(hArg,'back')）と違い'fore'**。
-			//	本家のシナリオは「裏ページを組んでから[trans]で見せる」流儀なので既定がbackだが、
-			//	bluesnovelの既存シナリオは[trans]を挟まないものが多く、既定をbackにすると
-			//	そのままではボタンが裏（不可視）に置かれて消えてしまう。
-			//	page=backと明示すれば本家と同じ組み方ができる
-			//TODO: シナリオが[trans]前提になった時点で既定をbackへ寄せる（本家互換）
-			const page = ScriptEngine.argPage(args, 'fore');
+			// 書き込み先のページ。**既定は本家（LayerMng.ts:1100 argChk_page(hArg,'back')）と同じ'back'**。
+			//	本家のシナリオは「裏ページを組んでから[trans]で見せる」流儀（本家サンプルの title.sn が
+			//	まさにこれ：mesを裏で組み[trans]で表へ）。以前は[trans]を挟まない試作シナリオに合わせ'fore'に
+			//	していたが、実テンプレ tmp_blues のタイトルを通すため本家へ揃えた。
+			//	[trans]を挟まずにその場で見せたいボタンは page=fore と明示する（E2Eフィクスチャはそうしている）
+			const page = ScriptEngine.argPage(args, 'back');
 
 			// 配置・寸法・変形（本家 Button.ts のコンストラクタ）。**書かれた属性だけ**を拾う。
 			//	本家は left/top を必ず持たせる（省略時0）が、こちらは未指定なら流し込み配置のまま。

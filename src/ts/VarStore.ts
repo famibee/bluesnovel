@@ -100,21 +100,29 @@ export class VarStore {
 	}
 
 	// 変数名そのものが未定義の場合、名前を「.」で刻んで前方一致で探し、
-	//	見つかった値をJSONとして解釈できればその下の階層を辿る（本家 Variable.ts:557-599）
+	//	見つかった値をJSONとして解釈できればその下の階層を辿る（本家 Variable.ts:557-599）。
+	//	**格納変数(#h)だけでなく組み込み変数(#hBuiltin。tmp:のみ)も前方一致の起点にする**：
+	//	`const.sn.lay`のように「JSONツリーを返す組み込み変数」の下位（`const.sn.lay.0`）を
+	//	辿れるようにするため（本家の組み込み変数はJSON文字列で階層を持つ）。
 	#getFromJson(ns: T_NS, key: string, def: T_VAL_D): T_VAL_D {
 		const aNm = key.split('.');
 		const len = aNm.length;
 		let n = '';
 		for (let i=0; i<len; ++i, n += '.') {
 			n += aNm[i];
-			if (! (`${ns}.${n}` in this.#h)) continue;	// 未定義なら名前を延ばして探索続行
+			const kk = `${ns}.${n}`;
+			// 前方一致でヒットした「生の値」。格納変数を優先し、無ければ組み込み変数を評価する
+			let raw: T_VAL_D;
+			if (kk in this.#h) raw = this.#h[kk];
+			else if (ns === 'tmp' && this.#hBuiltin[n]) raw = this.#hBuiltin[n]!();
+			else continue;	// 未定義なら名前を延ばして探索続行
 
 			let v: unknown;
-			try {v = JSON.parse(String(this.#h[`${ns}.${n}`]))}
+			try {v = JSON.parse(String(raw))}
 			catch {
 				// JSONとして解釈できない値。本家はここで例外になるが、
 				// bluesnovelでは「JSONではない値がヒットした」だけとみなし探索を続ける
-				if (i +1 === len) return this.#h[`${ns}.${n}`];
+				if (i +1 === len) return raw;
 				continue;
 			}
 			if (Object.prototype.toString.call(v) !== '[object Object]') {

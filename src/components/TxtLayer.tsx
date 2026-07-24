@@ -170,14 +170,19 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
 	const {r, g, b} = rgbOf(b_color);
+	// **文字が無くボタンだけ乗っている層は「メッセージ窓」ではなく「UIコンテナ」**なので、
+	//	メッセージ窓の枠（既定のaquamarine背景＋点線枠）は描かない。本家テンプレのタイトル画面が
+	//	まさにこれ（mes層を空のままボタン置き場に使う）で、箱がボタン帯に被って見えるのを防ぐ。
+	//	空でもボタンが無い層（[clear_lay]直後のメッセージ窓など）は従来どおり既定の箱を出す
+	const isBtnOnly = str.length === 0 && aBtn.length > 0;
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
-		background-color: rgba(${r}, ${g}, ${b}, ${b_alpha});
-		border: dotted 6px #ffa500;
+		background-color: ${isBtnOnly ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${b_alpha})`};
+		border: ${isBtnOnly ? 'none' : 'dotted 6px #ffa500'};
 
 		font-size: xxx-large;
 		top: 48%;

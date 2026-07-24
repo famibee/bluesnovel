@@ -18,10 +18,10 @@
 [add_lay layer=mes class=txt]
 [lay layer=mes b_alpha=0 style="border:none"]
 [current layer=mes]
-[button nm=btn_start text='最初から' left=250 top=360 width=90 height=30 label=*noop]
-[button nm=btn_load  text=' ロード ' left=350 top=360 width=90 height=30 label=*noop]
-[button nm=btn_album text='アルバム' left=550 top=360 width=90 height=30 label=*noop]
-[button nm=btn_config text=' 設 定 ' left=650 top=360 width=90 height=30 label=*noop]
+[button page=fore nm=btn_start text='最初から' left=250 top=360 width=90 height=30 label=*noop]
+[button page=fore nm=btn_load  text=' ロード ' left=350 top=360 width=90 height=30 label=*noop]
+[button page=fore nm=btn_album text='アルバム' left=550 top=360 width=90 height=30 label=*noop]
+[button page=fore nm=btn_config text=' 設 定 ' left=650 top=360 width=90 height=30 label=*noop]
 [s]
 
 ; デモなのでボタンを押しても何もしない（同じ画面に留まる）

@@ -5,7 +5,7 @@
 ;	・[waitclick]はクリックで進み、[s]はクリックでは進まないこと
 [add_lay layer=mes class=txt]
 [current layer=mes]
-[button nm=btn text=ボタン label=*btn]
+[button page=fore nm=btn text=ボタン label=*btn]
 
 ; ボタンを無効化した状態で待つ
 [enable_event enabled=false]

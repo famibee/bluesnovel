@@ -239,25 +239,29 @@ var m = class {
 	#i(e, t, n) {
 		let r = t.split("."), i = r.length, a = "";
 		for (let t = 0; t < i; ++t, a += ".") {
-			if (a += r[t], !(`${e}.${a}` in this.#e)) continue;
-			let o;
+			a += r[t];
+			let o = `${e}.${a}`, s;
+			if (o in this.#e) s = this.#e[o];
+			else if (e === "tmp" && this.#t[a]) s = this.#t[a]();
+			else continue;
+			let c;
 			try {
-				o = JSON.parse(String(this.#e[`${e}.${a}`]));
+				c = JSON.parse(String(s));
 			} catch {
-				if (t + 1 === i) return this.#e[`${e}.${a}`];
+				if (t + 1 === i) return s;
 				continue;
 			}
-			if (Object.prototype.toString.call(o) !== "[object Object]") {
-				if (t + 1 === i) return o;
+			if (Object.prototype.toString.call(c) !== "[object Object]") {
+				if (t + 1 === i) return c;
 				continue;
 			}
-			let s = o, c = t;
-			for (; ++c < i;) {
-				let e = r[c];
-				if (!(e in s)) return n;
-				if (s = s[e], Object.prototype.toString.call(s) !== "[object Object]" || c + 1 === i) break;
+			let l = c, u = t;
+			for (; ++u < i;) {
+				let e = r[u];
+				if (!(e in l)) return n;
+				if (l = l[e], Object.prototype.toString.call(l) !== "[object Object]" || u + 1 === i) break;
 			}
-			return s instanceof Object ? JSON.stringify(s) : s;
+			return l instanceof Object ? JSON.stringify(l) : l;
 		}
 		return n;
 	}
@@ -2007,7 +2011,7 @@ var O = class e {
 				if (!t) throw "[button] layerは必須です（試作仕様）";
 				let n = r.label ?? "", i = r.fn ?? "";
 				if (!n && !i) throw "[button] fnまたはlabelは必須です";
-				let o = r.nm ?? (n || i), s = r.call === "true", c = e.argPage(r, "fore"), l = {};
+				let o = r.nm ?? (n || i), s = r.call === "true", c = e.argPage(r, "back"), l = {};
 				for (let t of e.#l) {
 					let n = r[t];
 					n !== void 0 && Object.assign(l, { [t]: e.#n("button", t, n) });
@@ -2467,6 +2471,25 @@ var O = class e {
 			"const.sn.needClick2Play": () => !1
 		};
 		for (let [t, r] of Object.entries(n)) e.defBuiltin(t, r);
+		e.defBuiltin("const.sn.lay", () => {
+			let { fore: e, back: t } = this.$fncs.getPages(), n = (e) => {
+				if (!e) return;
+				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0;
+				return {
+					visible: e.visible !== !1,
+					alpha: e.alpha ?? 1,
+					left: e.left ?? 0,
+					top: e.top ?? 0,
+					width: +!!t,
+					height: +!!t
+				};
+			}, r = {};
+			for (let i of e) r[i.nm] = {
+				fore: n(i),
+				back: n(t.find((e) => e.nm === i.nm))
+			};
+			return JSON.stringify(r);
+		});
 	}
 	async #o(e) {
 		return this.#n[e] ??= new y(e, await this.#R(e), this.#c());

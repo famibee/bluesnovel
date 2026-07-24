@@ -16,15 +16,14 @@
 `test/uc_goal.test.ts` が本家サンプルの実シナリオを`main.sn`から`[s]`まで走らせて回帰を防いでいる
 （`../tmp_esm_uc`が無い環境ではスキップ）。**ただしこれはシナリオ解釈が通ることの確認**で、
 ブラウザで実際に絵と音が出るところまでは別途。残っているのは以下。
-- ブラウザで実際に動かす。**タイトル画面は確認用フィクスチャ`prj_uc`（`?prj=uc`）で描画済み**（実`bg/title.jpg`＋本家準拠の文字ボタン、2026-07-25）。ただし**実テンプレ`tmp_blues`の通しは`const.sn.lay.*`未実装でブロック中**（下記）。画像アセット経路は`prj_pic`で確認済み
+- ブラウザで実際に動かす。**実テンプレ`tmp_blues`がブラウザで title の`[s]`まで到達済み**（背景`title.jpg`＋ボタン4つ描画、2026-07-25。`const.sn.lay.*`存在判定＋`[button]`既定back＋空メッセージ窓の非表示で実現）。確認用フィクスチャ`prj_uc`（`?prj=uc`）でも描画可。音声・立ち絵・文字装飾など先の表示は下記各項目
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
 - `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
-- **組み込み変数`const.sn.lay.*`（レイヤの状態。目標経路で24箇所と最多）** … `tmp_blues`をブラウザで通す際の最初のブロッカー。未実装だと`ext_fg2.sn`の`[add_lay layer=0 cond=!const.sn.lay.0]`等の存在ガードが常に真になり、重複追加でストアが`throw`してtitle手前で停止する。title到達だけなら**存在判定**（`const.sn.lay.<名前>`が真/偽）で足り、`const.sn.lay[N].fore.visible/.alpha/.width`（立ち絵`[fg2]`のGCが使う）は後回し可。設計：ScriptMngがストアのレイヤ一覧から存在マップJSONを`defBuiltin`で供給し、`VarStore.get()`のJSON潜り込みをbuiltinにも効かせる（現状builtinは完全一致のみ）。あわせて`const.sn.sound.*`
+- **組み込み変数`const.sn.lay.*`** … **存在判定版は実装済み**（2026-07-25。`const.sn.lay.<名前>`が真/偽。`ScriptMng`がストアの表ページ層名から存在マップJSONを`defBuiltin`で供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。これで`[add_lay cond=!const.sn.lay.N]`の重複防止と`*max_lay_lp`が効く。**残りは`const.sn.lay[N].<fore|back>.visible/.alpha/.width`の詳細ツリー**（立ち絵`[fg2]`のGCが使う。下記レイヤ操作の項目）。あわせて`const.sn.sound.*`
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
   - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて
-  - [ ] `[button]`の既定ページ。本家は`back`（`LayerMng.ts:1100`）だが、bluesnovelは既存シナリオが`[trans]`を挟まないため`fore`のまま。シナリオが`[trans]`前提になった時点で本家へ寄せる（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[page]`（読み戻り用のページログ）の残り**（`clear`は実装済み）
   - [ ] `to=`（指定ページへ移動）・`style=`（ページ移動中の見た目）・`key=`（移動中に有効なキーの限定）。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **レイヤ操作タグの残り**（`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`pivot_x`/`pivot_y`/`blendmode`/`b_color`/`style`/`index`/`float`/`dive`と`[clear_lay]`は実装済み）
@@ -57,7 +56,7 @@
   - [ ] `[add_filter blendmode=…]`（フィルター自体のブレンドモード）は未対応
   - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
 - [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等は実装済み。`ScriptMng#defEnvBuiltins()`）
-  - [ ] `const.sn.lay.<レイヤ名>.<fore|back>.<属性>`（**目標経路で24箇所と最多**）。レイヤの状態はストアにあるのでエンジンからは見えない。`VarStore`の「JSON文字列の下位階層を辿る」仕組み（`const.db.紀子.fn`）に乗せて、`const.sn.lay`へレイヤ木のJSONを返す組み込み変数を1つ置くのが筋。ただし現状の`get()`は組み込み変数を完全一致でしか見ないので、そこの手当てが要る
+  - [ ] `const.sn.lay[N].<fore|back>.<属性>`（visible/alpha/width/left/top…）の**詳細ツリー**。**存在判定版（`const.sn.lay.<名前>`が真/偽）は実装済み**（2026-07-25。`VarStore`のJSON潜り込みを組み込み変数へ拡張し、`ScriptMng`が`const.sn.lay`へ存在マップJSONを供給）。残りは同じ仕組みで**レイヤ木のJSON**（各層の表裏の表示属性）を返すよう`const.sn.lay`を拡張すること。立ち絵`[fg2]`のGC（`ext_fg2.sn`の`const.sn.lay[N].fore.visible/.alpha/.width`）が使う。ストアの`getLaySty(nm,page)`から表裏の属性を集めればよい
   - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）・`const.sn.bookmark.json`（しおり）は各層と一緒に
   - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）

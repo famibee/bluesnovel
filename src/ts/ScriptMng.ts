@@ -105,6 +105,33 @@ export class ScriptMng {
 			'const.sn.needClick2Play'	: ()=> false,
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
+
+		// レイヤの状態（本家 const.sn.lay.*）。ストアの表裏ページから毎回**レイヤ木のJSON**を作る。
+		//	VarStore.get()のJSON潜り込みが組み込み変数にも効くので、`const.sn.lay.0`（存在判定・truthy）も
+		//	`const.sn.lay[N].fore.visible`（詳細）も同じ木を辿って解決できる。
+		//	・存在判定：`const.sn.lay.<名前>`はオブジェクト（＝truthy）を返し、未定義レイヤはundefined（falsy）。
+		//	  `[add_lay layer=0 cond=!const.sn.lay.0]`の重複防止や`*max_lay_lp`が効く。
+		//	・詳細：`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`。立ち絵[fg2]のGCが使う。
+		//	  visible/alpha/left/top は T_LAY_STY の実値。**width/height はストアに実寸が無いので
+		//	  「表示物があるか（grp=画像src有り／txt=文字かボタン有り）」を 1/0 で代用**（GCは width>0 判定に使う）
+		engine.defBuiltin('const.sn.lay', ()=> {
+			const {fore, back} = this.$fncs.getPages();
+			const attrs = (l: (typeof fore)[number] | undefined)=> {
+				if (! l) return undefined;
+				const has = l.cls === 'grp' ? Boolean(l.src) : l.str.length > 0 || l.aBtn.length > 0;
+				return {
+					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）
+					alpha	: l.alpha ?? 1,
+					left	: l.left ?? 0,
+					top		: l.top ?? 0,
+					width	: has ? 1 : 0,
+					height	: has ? 1 : 0,
+				};
+			};
+			const hLay: {[nm: string]: {fore: unknown; back: unknown}} = {};
+			for (const l of fore) hLay[l.nm] = {fore: attrs(l), back: attrs(back.find(b=> b.nm === l.nm))};
+			return JSON.stringify(hLay);
+		});
 	}
 
 	async #getScript(fn: string): Promise<Script> {

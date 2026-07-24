@@ -130,11 +130,17 @@ it('er_clearsBothPages', ()=> {
 		.toEqual({t: 'chgStr', nm: 'mes', page: 'both', str: ''});
 });
 
-it('button_defaultsToFore', ()=> {
-	// **本家の既定はback**（LayerMng.ts:1100）だが、bluesnovelの既存シナリオは
-	//	[trans]を挟まないものが多く、既定をbackにするとボタンが不可視の裏に置かれてしまう
+it('button_defaultsToBack', ()=> {
+	// **本家と同じく既定はback**（LayerMng.ts:1100）。本家サンプルの title.sn が
+	//	「mesを裏で組んで[trans]で表へ」流儀で、実テンプレ tmp_blues を通すため本家へ揃えた。
+	//	[trans]を挟まずその場で見せたいボタンは page=fore と明示する
 	expect(acts(`${LAYS}[button text=OK label=*x][s]`).find(v=> v.t === 'addBtn'))
-		.toMatchObject({t: 'addBtn', layerNm: 'mes', page: 'fore', text: 'OK', label: '*x'});
+		.toMatchObject({t: 'addBtn', layerNm: 'mes', page: 'back', text: 'OK', label: '*x'});
+});
+it('button_page_fore', ()=> {
+	// page=foreと明示すれば、[trans]を挟まずその場のページへ置ける（E2Eフィクスチャの流儀）
+	expect(acts(`${LAYS}[button page=fore text=OK label=*x][s]`).find(v=> v.t === 'addBtn'))
+		.toMatchObject({page: 'fore'});
 });
 
 it('button_page_back', ()=> {

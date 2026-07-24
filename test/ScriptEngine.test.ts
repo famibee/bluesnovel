@@ -350,7 +350,7 @@ it('step_button_addsBtnAction', ()=> {
 	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal]あ[s]\n*goal\ni[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'btn1', text: 'つづき', label: '*goal', call: false},
+		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'btn1', text: 'つづき', label: '*goal', call: false},
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
@@ -361,7 +361,7 @@ it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
 	// nmも省略した場合はlabelを流用する（試作の割り切り）。
 	const se = new ScriptEngine('t1', '[button text=x label=*goal]あ[s]');
 	const a = se.step();
-	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', page: 'fore', nm: '*goal', text: 'x', label: '*goal', call: false});
+	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', nm: '*goal', text: 'x', label: '*goal', call: false});
 });
 
 it('step_button_requiresLabelOrFn', ()=> {
@@ -374,13 +374,13 @@ it('step_button_fn_isPassedThrough', ()=> {
 	// 実際のロードと切替はクリック時にScriptMng側が行う
 	const se = new ScriptEngine('t1', '[button text=x fn=other label=*goal]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
 });
 it('step_button_fnOnly_nmFallsBackToFn', ()=> {
 	// label省略時はそのファイルの先頭へ。nm省略時はlabelが無いのでfnを流用する
 	const se = new ScriptEngine('t1', '[button text=x fn=other]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
 });
 
 it('step_button_callTrue_setsCallFlag', ()=> {
@@ -389,7 +389,7 @@ it('step_button_callTrue_setsCallFlag', ()=> {
 	const se = new ScriptEngine('t1', '[button layer=mes nm=btn1 text=つづき label=*goal call=true]あ[s]\n*goal\ni[s]');
 	const a = se.step();
 	expect(a).toEqual([
-		{t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'btn1', text: 'つづき', label: '*goal', call: true},
+		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'btn1', text: 'つづき', label: '*goal', call: true},
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);

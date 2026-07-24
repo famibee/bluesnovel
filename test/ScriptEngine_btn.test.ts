@@ -61,6 +61,6 @@ it('btnSty_notNumber', ()=> {
 it('btnSty_keepsOtherAttrs', ()=> {
 	// 見た目を足しても既存の属性はそのまま
 	expect(acts('[button nm=b1 text=x label=*a call=true left=10]').find(v=> v.t === 'addBtn'))
-		.toEqual({t: 'addBtn', layerNm: 'mes', page: 'fore', nm: 'b1', text: 'x',
+		.toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'b1', text: 'x',
 			label: '*a', call: true, sty: {left: 10}});
 });

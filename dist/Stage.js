@@ -10020,14 +10020,14 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		${u ? "" : "pointer-events: none;"}
 	`, M = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, N = d.filter((e) => !M(e)), P = d.filter(M), F = Zl`
 		${u ? "" : "pointer-events: none;"}
-	`, { r: I, g: L, b: R } = tu(s), z = Zl`
+	`, { r: I, g: L, b: R } = tu(s), z = o.length === 0 && d.length > 0, B = Zl`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
-		background-color: rgba(${I}, ${L}, ${R}, ${c});
-		border: dotted 6px #ffa500;
+		background-color: ${z ? "transparent" : `rgba(${I}, ${L}, ${R}, ${c})`};
+		border: ${z ? "none" : "dotted 6px #ffa500"};
 
 		font-size: xxx-large;
 		top: 48%;
@@ -10037,7 +10037,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${l ?? ""}
-	`, B = Zl`
+	`, ee = Zl`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10092,14 +10092,14 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [ee, V] = (0, O.useState)("");
-	(0, O.useEffect)(() => V(o), [o]);
-	let te = (0, O.useRef)(null), ne = (e, t) => {
+	`, [V, te] = (0, O.useState)("");
+	(0, O.useEffect)(() => te(o), [o]);
+	let ne = (0, O.useRef)(null), re = (e, t) => {
 		i(), e.transform = t;
 	};
 	return /* @__PURE__ */ v(x, { children: [
 		/* @__PURE__ */ v("span", {
-			css: [e, z],
+			css: [e, B],
 			ref: C,
 			style: n,
 			children: [/* @__PURE__ */ m("span", { ref: w }), k && /* @__PURE__ */ m("span", {
@@ -10133,37 +10133,37 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: C,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => ne(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => re(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				ne(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				re(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => ne(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => re(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				ne(e, n), e.transformOrigin = t;
+				re(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ v(x, { children: [/* @__PURE__ */ v("label", {
-			css: B,
-			ref: te,
+			css: ee,
+			ref: ne,
 			children: ["テキスト入力", /* @__PURE__ */ m("textarea", {
 				rows: 3,
-				value: ee,
-				onChange: (e) => V(e.target.value)
+				value: V,
+				onChange: (e) => te(e.target.value)
 			})]
 		}), /* @__PURE__ */ m(Jl, {
-			target: te,
+			target: ne,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => ne(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => re(e, t),
 			preventDefault: !1
 		})] })
 	] });

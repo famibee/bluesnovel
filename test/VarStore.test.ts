@@ -220,6 +220,19 @@ it('getVal_32_json_notJson', ()=> {
 	vs.set('tmp:ぎょへー', 'もきゅ');
 	expect(vs.get('tmp:ぎょへー.x', 'def')).toBe('def');
 });
+it('getVal_33_builtin_json_descend', ()=> {
+	// **組み込み変数(defBuiltin)もJSON潜り込みの起点になる**。
+	//	本家 const.sn.lay.* のように「JSONツリーを返す組み込み変数」の下位を辿れること。
+	//	ScriptMngがストアのレイヤ存在マップを const.sn.lay として供給する用途（tmp_bluesのタイトル到達）。
+	const vs = new VarStore;
+	vs.defBuiltin('const.sn.lay', ()=> JSON.stringify({0: true, 1: true, 2: true, mes: true}));
+
+	expect(vs.get('const.sn.lay.0', 'def')).toBe(true);		// 存在するレイヤ → 真
+	expect(vs.get('const.sn.lay.mes', 'def')).toBe(true);
+	expect(vs.get('const.sn.lay.3', 'def')).toBe('def');	// 未定義レイヤ → 既定値（＝偽扱い）
+	// 完全一致で読めば、組み込み変数の値（JSON文字列）そのもの
+	expect(vs.get('const.sn.lay@str')).toBe('{"0":true,"1":true,"2":true,"mes":true}');
+});
 
 // cast指定（本家 Variable.ts:317 #let() 相当）
 it('set_cast_numeric', ()=> {
