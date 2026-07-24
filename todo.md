@@ -1,7 +1,11 @@
 #TODO 優先順位順
 
-- [ ] 既読処理
-- [ ] `[call]`の`count`/`clear_local_event`属性（本家にあるが、`count`は既読処理が未実装のため対象外。`clear_local_event`は本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
+- [ ] 既読スキップ・オート読み（`&sn.skip.enabled` / `&sn.skip.all` / `&sn.auto.enabled` と、`sys:sn.tagCh.*_Kidoku` / `sys:sn.auto.msec*Wait_Kidoku` の既読用ウェイト設定）。既読の判定（`const.sn.isKidoku`）は実装済みなので、その上に載せる形
+  - 本家の`ScriptIterator.isNextKidoku`（次の停止点が既読か。オート/スキップを未読で止めるための判定）も未実装。実装時は別ファイルのトークン数が要るので、`ScriptMng`のScriptキャッシュを引く形になる
+  - 参考：<https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/kidoku>
+- [ ] 既読情報の永続化（本家 `Variable.saveKidoku()` → `SysBase.data.kidoku` → localStorage）。`ScriptEngine.getKidoku()`/`setKidoku()`は用意済みなので、セーブ層ができ次第そこへ繋ぐ。保存タイミングは本家同様に停止点（`[l]`/`[p]`/`[s]`）
+- [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
+- [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
 - [ ] `[event]`の`url`（`[navigate_to]`）・`key='dom=セレクタ'`（HTML要素へのイベント割り当て）・`need_err`は未対応
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - face合成そのもの（`add_face`/`[lay fn=... face=...]`）は実装・テスト済み

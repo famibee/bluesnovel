@@ -222,7 +222,8 @@ expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endi
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
-subroutine-call on click), `event`/`clear_event`, and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
+subroutine-call on click), `event`/`clear_event`, `clearvar`/`clearsysvar`,
+and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
@@ -242,6 +243,20 @@ decides the key names: `KeyboardEvent.key` lowercased (`enter`, `escape`, …), 
 Local reservations are one-shot (cleared when a jump-type one fires) and are stashed on the
 call stack by `[call]`, restored by `[return]`; a **macro** call deliberately does not stash
 them (本家 `ScriptIterator.ts:957`). `global=true` reservations are exempt from all of that.
+
+**既読 (already-read) tracking** runs on every token `step()` fetches: `#recordKidoku()` stores the
+index in a per-file `Areas` (本家's own class, ported) and sets the builtin `const.sn.isKidoku`.
+Two rules carry over verbatim: while the call stack is non-empty the flag is *not* updated (a
+subroutine is reached from both read and unread contexts, so only the recording happens), and
+`[call]` erases the return position from the read set unless `count=true` — `[jump]`'s default is
+the opposite (`count=false` to erase). `[clearsysvar]` wipes it, as in the upstream kidoku sample.
+There is no save layer yet, so the engine owns the table; `getKidoku()`/`setKidoku()` exist for
+when persistence lands.
+
+**Sample scenarios to check tag behaviour against** live in
+[SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery) — one project per feature under
+`public/prj/`, e.g. `public/prj/kidoku/mat/main.sn` for 既読. Useful as the de-facto spec for
+what a tag's attributes look like in real scripts.
 
 Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
 tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,

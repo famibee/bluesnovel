@@ -17,6 +17,7 @@ import {ExprEval} from './ExprEval';
 import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
+import {Areas, type T_H_Areas} from '../sn/Areas';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -107,6 +108,13 @@ export class ScriptEngine {
 	#hLocalEvt: {[key: string]: T_EVENT_RSV} = Object.create(null);
 	readonly #hGlobalEvt: {[key: string]: T_EVENT_RSV} = Object.create(null);
 
+	// 既読領域（スクリプト名 -> 読んだトークン索引の集合。本家 Variable.#hAreaKidoku 相当）。
+	//	本家はVariableが持ちSysBase.data.kidoku経由でlocalStorageへ保存するが、
+	//	bluesnovelにはまだセーブ層が無いのでエンジンが抱える。
+	//	セーブ層ができた時に繋げられるよう、getKidoku()/setKidoku()で出し入れできるようにしてある
+	readonly #hAreaKidoku: {[fn: string]: Areas} = Object.create(null);
+	#isKidoku = false;
+
 	// マクロ定義：マクロ名 -> 本体開始位置（定義元のスクリプト名と、[macro name=...]の次のトークン索引）
 	//	本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式を採用。
 	//	トークン列は一切変更せず、本体トークンはそのままの位置に残したまま、
@@ -127,7 +135,7 @@ export class ScriptEngine {
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
-		'button', 'event', 'clear_event', 'l', 'p', 's',
+		'button', 'event', 'clear_event', 'clearvar', 'clearsysvar', 'l', 'p', 's',
 	]);
 
 	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
@@ -149,6 +157,11 @@ export class ScriptEngine {
 		// 組み込み変数：常に「実行中の」スクリプト名を返す
 		//	（本家 val.defTmp('const.sn.scriptFn', ...) 相当。遅延評価なので切替に自動追随する）
 		this.#val.defBuiltin('const.sn.scriptFn', ()=> this.fn);
+
+		// 組み込み変数：今いる位置が既読か。
+		//	本家はトークンを読むたびtmp:へ代入するが（ScriptIterator.ts:1299）、
+		//	こちらは他の組み込み変数と同じ遅延評価にした（参照時点の値は同じ）
+		this.#val.defBuiltin('const.sn.isKidoku', ()=> this.#isKidoku);
 	}
 
 	// 実行中スクリプトの差し替え＝ファイル切替。
@@ -196,6 +209,51 @@ export class ScriptEngine {
 		this.#pushCallStk(--this.#idx);	// callToLabel()と同じく、戻り先は今いる停止点そのもの
 		this.switchScript(scr, label);
 	}
+
+	// ===== 既読処理 =====
+	//	「どのスクリプトのどのトークンまで読んだか」を領域集合（Areas）で覚える。
+	//	用途は既読スキップ・オート読みの待ち時間切替・[if exp="const.sn.isKidoku"]による分岐
+
+	// 今いる位置が既読か（本家 ScriptIterator.isKidoku）
+	get isKidoku() {return this.#isKidoku}
+
+	// 現在位置（これから読むトークン）の既読判定と記録（本家 ScriptIterator.ts:1292 #recordKidoku()）。
+	//	本家同様、保存（saveKidoku相当）はここでは行わない＝毎トークンでは重いので、
+	//	セーブ層を作る際に停止点（[l]/[p]/[s]）で吐き出す形にする
+	#recordKidoku() {
+		const ar = this.#hAreaKidoku[this.fn] ??= new Areas;
+
+		// マクロ内やサブルーチンではisKidokuを変更させない（本家のコメントそのまま）。
+		//	同じサブルーチンが未読・既読どちらの文脈からも呼ばれるため
+		if (this.#aCallStk.length > 0) {ar.record(this.#idx); return}
+
+		this.#isKidoku = ar.search(this.#idx);
+		if (this.#isKidoku) return;
+		ar.record(this.#idx);
+	}
+	// 現在位置を未読へ戻す（本家 #eraseKidoku()）。[jump count=false]／[call]（count=true以外）から呼ばれる
+	#eraseKidoku() {
+		this.#hAreaKidoku[this.fn]?.erase(this.#idx);
+		this.#isKidoku = false;
+	}
+
+	// 既読情報の出し入れ。将来のセーブ層（本家 Variable.saveKidoku() / SysBase.data.kidoku）用
+	getKidoku(): {[fn: string]: T_H_Areas} {
+		const h: {[fn: string]: T_H_Areas} = {};
+		for (const [fn, ar] of Object.entries(this.#hAreaKidoku)) h[fn] = ar.val();
+		return h;
+	}
+	setKidoku(h: {[fn: string]: T_H_Areas}) {	// ロード＝丸ごと置き換え
+		for (const fn in this.#hAreaKidoku) delete this.#hAreaKidoku[fn];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+		this.#isKidoku = false;
+		for (const [fn, v] of Object.entries(h)) this.#hAreaKidoku[fn] = Areas.from(v);
+	}
+	// [clearsysvar]から呼ばれる既読情報の全消去（本家 Variable #clearsysvar() の ar.clear()）
+	clearKidoku() {
+		for (const ar of Object.values(this.#hAreaKidoku)) ar.clear();
+		this.#isKidoku = false;
+	}
+
 
 	// ===== 予約イベント（[event]） =====
 	//	キー入力・クリックそのものはDOM側の話なので、エンジンは「予約表」と
@@ -257,6 +315,7 @@ export class ScriptEngine {
 		// トークン数は毎回読み直す。[char2macro]/[bracket2macro]は定義位置より後ろの
 		//	トークンをその場で置換する＝実行中にトークン数が増減しうるため、キャッシュできない
 		while (this.#idx < this.#script.len) {
+			this.#recordKidoku();	// 読む直前の位置で既読判定・記録する（本家 #nextToken_Proc() と同じ場所）
 			const token = this.#script.aToken[this.#idx++]!;
 
 			// トークン先頭一文字での振り分け。本家 Main.ts:221 #main() と同じ並び
@@ -435,6 +494,8 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'jump': {	// シナリオジャンプ（本家 ScriptIterator.ts:1039 #jumpWork() 相当）
+			// count=falseなら、この位置を未読へ戻す（本家 #jump() は既定true＝既読のまま）
+			if (args.count === 'false') this.#eraseKidoku();
 			const label = args.label ?? '';
 			const fn = args.fn ?? '';
 			if (! label && ! fn) throw '[jump] fnまたはlabelは必須です';
@@ -450,6 +511,9 @@ export class ScriptEngine {
 		}
 
 		case 'call': {	// サブルーチンコール（本家 ScriptIterator.ts:951 #call() 参照）
+			// [jump]と既定が逆で、count=trueと明示しない限りこの位置を未読へ戻す（本家 #call()）。
+			//	同じサブルーチンを何度も呼ぶ書き方が普通なので、コール位置は既読に数えない
+			if (args.count !== 'true') this.#eraseKidoku();
 			const label = args.label ?? '';
 			const fn = args.fn ?? '';
 			if (! label && ! fn) throw '[call] fnまたはlabelは必須です';
@@ -537,6 +601,17 @@ export class ScriptEngine {
 			aAct.push({t: 'addBtn', layerNm, nm, text: args.text ?? '', label, call, ...(fn ? {fn} : {})});
 			return 'skip';
 		}
+
+		case 'clearvar':	// ゲーム変数の全消去（本家 Variable.ts:48 hTag.clearvar）
+			this.#val.clearGame();
+			return 'skip';
+
+		case 'clearsysvar':	// システム変数の全消去。本家同様、既読情報もここで消える
+			// （本家 Variable #clearsysvar()。SKYNovel_gallery の kidoku サンプルが
+			// 「既読情報クリア」ボタンでこのタグを使っている）
+			this.#val.clearSys();
+			this.clearKidoku();
+			return 'skip';
 
 		case 'event': {	// イベント予約（本家 EventMng.ts:543 #event() の、DOM・フォーカス処理を除いた核だけ）
 			const key = (args.key ?? '').toLowerCase();

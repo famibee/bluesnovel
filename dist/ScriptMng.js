@@ -1249,6 +1249,58 @@ var d = class {
 		this.grm[e](t, n, this.#e, r), this.#n();
 	}
 }, g = class e {
+	#e = {};
+	clear() {
+		this.#e = {};
+	}
+	static from(t) {
+		let n = new e();
+		return n.#e = { ...t }, n;
+	}
+	val() {
+		return { ...this.#e };
+	}
+	search(e) {
+		return Object.entries(this.#e).some(([t, n]) => e >= parseInt(t) && e <= n);
+	}
+	record(e) {
+		if (!this.search(e)) {
+			for (let [t, n] of Object.entries(this.#e)) if (n + 1 === e) {
+				String(e + 1) in this.#e ? (this.#e[t] = this.#e[e + 1], delete this.#e[e + 1]) : this.#e[t] = e;
+				return;
+			}
+			if (String(e + 1) in this.#e) {
+				this.#e[e] = this.#e[e + 1], delete this.#e[e + 1];
+				return;
+			}
+			this.#e[e] = e;
+		}
+	}
+	erase(e) {
+		if (this.search(e)) {
+			if (String(e) in this.#e) {
+				this.#e[e] > e && (this.#e[e + 1] = this.#e[e]), delete this.#e[e];
+				return;
+			}
+			for (let [t, n] of Object.entries(this.#e)) if (!(e < parseInt(t) || n < e)) {
+				if (this.#e[t] === e) {
+					this.#e[t] = e - 1;
+					return;
+				}
+				this.#e[e + 1] = n, this.#e[t] = e - 1;
+				return;
+			}
+		}
+	}
+	get count() {
+		return Object.keys(this.#e).length;
+	}
+	toString() {
+		let e = "";
+		for (let t of Object.keys(this.#e).map((e) => parseInt(e)).sort((e, t) => e - t)) e += t === this.#e[t] ? "," + String(t) : "," + String(t) + "~" + String(this.#e[String(t)]);
+		return e;
+	}
+}, _ = class e {
 	static #e = new s();
 	static parseTag(t) {
 		let [n, r] = l(t);
@@ -1273,16 +1325,18 @@ var d = class {
 	#d = Object.create(null);
 	#f = Object.create(null);
 	#p = Object.create(null);
+	#m = !1;
+	#h = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.let.let_ml.endlet_ml.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.l.p.s".split("."));
-	#m() {
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.let.let_ml.endlet_ml.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.clearvar.clearsysvar.l.p.s".split("."));
+	#g() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
-		for (let e in this.#p) t[e] = !0;
+		for (let e in this.#h) t[e] = !0;
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#t = e instanceof h ? e : new h(e, t), this.#s.defBuiltin("const.sn.scriptFn", () => this.fn);
+		this.#t = e instanceof h ? e : new h(e, t), this.#s.defBuiltin("const.sn.scriptFn", () => this.fn), this.#s.defBuiltin("const.sn.isKidoku", () => this.#m);
 	}
 	switchScript(e, t = "", n = 0) {
 		if (this.#t = e, !t) {
@@ -1313,10 +1367,38 @@ var d = class {
 	callToLabel(e) {
 		let t = this.#t.label2idx(e);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#g(--this.#n), this.#n = t;
+		this.#b(--this.#n), this.#n = t;
 	}
 	callToScript(e, t = "") {
-		this.#g(--this.#n), this.switchScript(e, t);
+		this.#b(--this.#n), this.switchScript(e, t);
+	}
+	get isKidoku() {
+		return this.#m;
+	}
+	#_() {
+		let e = this.#p[this.fn] ??= new g();
+		if (this.#u.length > 0) {
+			e.record(this.#n);
+			return;
+		}
+		this.#m = e.search(this.#n), !this.#m && e.record(this.#n);
+	}
+	#v() {
+		this.#p[this.fn]?.erase(this.#n), this.#m = !1;
+	}
+	getKidoku() {
+		let e = {};
+		for (let [t, n] of Object.entries(this.#p)) e[t] = n.val();
+		return e;
+	}
+	setKidoku(e) {
+		for (let e in this.#p) delete this.#p[e];
+		this.#m = !1;
+		for (let [t, n] of Object.entries(e)) this.#p[t] = g.from(n);
+	}
+	clearKidoku() {
+		for (let e of Object.values(this.#p)) e.clear();
+		this.#m = !1;
 	}
 	getEvent(e) {
 		let t = e.toLowerCase();
@@ -1329,7 +1411,7 @@ var d = class {
 		}
 		for (let e in this.#f) delete this.#f[e];
 	}
-	#h() {
+	#y() {
 		let e = this.#d;
 		return this.#d = Object.create(null), e;
 	}
@@ -1337,13 +1419,13 @@ var d = class {
 		let t = this.getEvent(e);
 		if (t) return this.#s.set("tmp:sn.eventArg", t.arg), this.#s.set("tmp:sn.eventLabel", t.label), t.call || this.clearEvent(), t;
 	}
-	#g(e, t = !0) {
+	#b(e, t = !0) {
 		this.#u.push({
 			fn: this.fn,
 			returnIdx: e,
 			lenIfStk: this.#l.length,
 			hMp: this.#s.cloneMp(),
-			...t ? { hEvt: this.#h() } : {}
+			...t ? { hEvt: this.#y() } : {}
 		}), this.#l.push(-1);
 	}
 	step() {
@@ -1353,18 +1435,19 @@ var d = class {
 			nm: this.#r,
 			str: ""
 		})); this.#n < this.#t.len;) {
+			this.#_();
 			let n = this.#t.aToken[this.#n++], r = n.charCodeAt(0);
 			if (r === 9 || r === 10) continue;
 			if (r === 91) {
 				let { name: r, args: i } = e.parseTag(n);
-				if (this.#v(r, i, t) === "stop") return t;
+				if (this.#S(r, i, t) === "stop") return t;
 				continue;
 			}
 			let i = n, a = this.#t.grm.ce;
 			if (a && n.length > 1 && n.startsWith(a)) i = n.slice(1);
 			else if (r === 38) {
 				if (!n.endsWith("&")) {
-					this.#_(n);
+					this.#x(n);
 					continue;
 				}
 				if (n.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
@@ -1372,15 +1455,15 @@ var d = class {
 				i = e == null ? "" : String(e);
 			} else if (r === 59) continue;
 			else if (r === 42 && n.length > 1) continue;
-			this.#S(t, i);
+			this.#E(t, i);
 		}
 		return t;
 	}
-	#_(e) {
+	#x(e) {
 		let { name: t, text: n, cast: r } = u(e.slice(1));
 		this.#s.set(this.#c.getValAmpersand(t.trim()), this.#c.parse(n), r ?? "");
 	}
-	#v(t, n, r) {
+	#S(t, n, r) {
 		let i = this.#t.len;
 		switch (t) {
 			case "add_lay": {
@@ -1449,11 +1532,11 @@ var d = class {
 				return this.#s.set(e, t, "str"), this.#n += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
-			case "if": return this.#y(n), "skip";
+			case "if": return this.#C(n), "skip";
 			case "elsif":
 			case "else":
-			case "endif": return this.#b(), "skip";
-			case "r": return this.#S(r, "\n"), "skip";
+			case "endif": return this.#w(), "skip";
+			case "r": return this.#E(r, "\n"), "skip";
 			case "er": return this.#i[this.#r] = "", r.push({
 				t: "chgStr",
 				nm: this.#r,
@@ -1464,6 +1547,7 @@ var d = class {
 				text: this.#c.getValAmpersand(n.text ?? "")
 			}), "skip";
 			case "jump": {
+				n.count === "false" && this.#v();
 				let e = n.label ?? "", t = n.fn ?? "";
 				if (!e && !t) throw "[jump] fnまたはlabelは必須です";
 				if (t && t !== this.fn) return r.push({
@@ -1477,9 +1561,10 @@ var d = class {
 				return this.#n = i, "skip";
 			}
 			case "call": {
+				n.count !== "true" && this.#v();
 				let e = n.label ?? "", t = n.fn ?? "";
 				if (!e && !t) throw "[call] fnまたはlabelは必須です";
-				if (t && t !== this.fn) return this.#g(this.#n), r.push({
+				if (t && t !== this.fn) return this.#b(this.#n), r.push({
 					t: "loadScript",
 					fn: t,
 					label: e,
@@ -1487,16 +1572,16 @@ var d = class {
 				}), "stop";
 				let i = this.#t.label2idx(e);
 				if (i === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
-				return this.#g(this.#n), this.#n = i, "skip";
+				return this.#b(this.#n), this.#n = i, "skip";
 			}
-			case "return": return this.#x(r, n);
+			case "return": return this.#T(r, n);
 			case "macro": {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
 				if (e.RESERVED_TAGS.has(t)) throw `[${t}]はタグ名のため、マクロ名として使用できません`;
 				if (e.REG_NG4MAC_NM.test(t)) throw `[${t}]はマクロ名として異常です`;
-				if (t in this.#p) throw `[macro] マクロ【${t}】は既に定義済みです`;
-				this.#p[t] = {
+				if (t in this.#h) throw `[macro] マクロ【${t}】は既に定義済みです`;
+				this.#h[t] = {
 					fn: this.fn,
 					idx: this.#n
 				};
@@ -1530,8 +1615,8 @@ var d = class {
 				return "skip";
 			}
 			case "char2macro":
-			case "bracket2macro": return this.#t.defC2M(t, n, this.#m(), this.#n), "skip";
-			case "endmacro": return this.#x(r);
+			case "bracket2macro": return this.#t.defC2M(t, n, this.#g(), this.#n), "skip";
+			case "endmacro": return this.#T(r);
 			case "button": {
 				let e = n.layer || this.#r;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
@@ -1548,6 +1633,8 @@ var d = class {
 					...i ? { fn: i } : {}
 				}), "skip";
 			}
+			case "clearvar": return this.#s.clearGame(), "skip";
+			case "clearsysvar": return this.#s.clearSys(), this.clearKidoku(), "skip";
 			case "event": {
 				let e = (n.key ?? "").toLowerCase();
 				if (!e) throw "[event] keyは必須です";
@@ -1575,8 +1662,8 @@ var d = class {
 				nm: this.#r
 			}), "stop";
 			default: {
-				let e = this.#p[t];
-				return e === void 0 ? "skip" : (this.#g(this.#n, !1), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
+				let e = this.#h[t];
+				return e === void 0 ? "skip" : (this.#b(this.#n, !1), this.#s.setMp(n), e.fn === this.fn ? (this.#n = e.idx, "skip") : (r.push({
 					t: "loadScript",
 					fn: e.fn,
 					label: "",
@@ -1585,7 +1672,7 @@ var d = class {
 			}
 		}
 	}
-	#y(t) {
+	#C(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
 		let r = this.#c.evalBool(n) ? this.#n : -1, i = 0, a = !1, o = this.#t.len;
@@ -1628,12 +1715,12 @@ var d = class {
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#b() {
+	#w() {
 		let e = this.#l.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#n = e;
 	}
-	#x(e, t = {}) {
+	#T(e, t = {}) {
 		let n = this.#u.pop();
 		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
 		this.#l.length = n.lenIfStk, this.#s.setMp(n.hMp), n.hEvt && (this.#d = n.hEvt);
@@ -1656,7 +1743,7 @@ var d = class {
 			idx: n.returnIdx
 		}), "stop");
 	}
-	#S(e, t) {
+	#E(e, t) {
 		let n = this.#r, r = (this.#i[n] ?? "") + t;
 		this.#i[n] = r, e.push({
 			t: "chgStr",
@@ -1664,7 +1751,7 @@ var d = class {
 			str: r
 		});
 	}
-}, _ = "[add_lay layer=base class=grp]\n[add_lay layer=mes class=txt]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", v = class {
+}, v = "[add_lay layer=base class=grp]\n[add_lay layer=mes class=txt]\n[current layer=mes]\n[lay layer=base pic=yun_1184]\nあいうえお、これはbluesnovelの試作画面です。[l]\nクリックかスペースキーで読み進められます。[p]\n[lay layer=base pic=yun_1317]\nページが変わり、背景が差し替わりました。[l]\nPageUp/PageDownキーで読み戻り・読み進めができます。[s]\n", y = class {
 	sys;
 	#e;
 	constructor(e) {
@@ -1686,7 +1773,7 @@ var d = class {
 	#r;
 	async load(e) {
 		let t = await this.#i(e);
-		this.#r ? this.#r.switchScript(t) : this.#r = new g(t), this.go = () => this.#c(), this.$trgNext();
+		this.#r ? this.#r.switchScript(t) : this.#r = new _(t), this.go = () => this.#c(), this.$trgNext();
 	}
 	async #i(e) {
 		return this.#n[e] ??= new h(e, await this.#p(e), this.#o());
@@ -1826,7 +1913,7 @@ var d = class {
 			if (!n.ok) throw Error(n.statusText);
 			return await n.text();
 		} catch (t) {
-			return this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${e} ${String(t)}`, "W"), _;
+			return this.myTrace(`[load] スクリプト読込に失敗、試作サンプルで代替します fn:${e} ${String(t)}`, "W"), v;
 		}
 	}
 	#m(e) {
@@ -1867,6 +1954,6 @@ var d = class {
 	};
 };
 //#endregion
-export { v as ScriptMng };
+export { y as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

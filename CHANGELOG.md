@@ -155,16 +155,25 @@
   - `test/ScriptEngine_event.test.ts`（新規23件）＋`test/e2e/event.e2e.ts`（新規4件・`prj_event`フィクスチャ）。ユニット611件→634件、E2E 22件→26件
   - E2Eに残したのは「ユニットでは届かないもの」だけ＝キー名の対応付け・クリック経路・予約が無いキーが従来どおり読み進めになること。予約表の挙動はすべてユニット側
 
-- [ ]
 
-
-
+- ok, 次の【既読処理】
 - タグや機能のテスト・動作について参考になるかも
   - https://github.com/famibee/SKYNovel_gallery/blob/master/index.html
   - https://github.com/famibee/SKYNovel_gallery
-  例えば起動処理は
+  例えば既読処理は
     - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/kidoku
     - https://github.com/famibee/SKYNovel_gallery/blob/master/public/prj/kidoku/mat/main.sn
+
+- [x] **既読処理**（2026-07-24）
+  - `step()`がトークンを読むたび、その位置をスクリプト別の`Areas`（本家から移植済みのクラス）へ記録する（本家 `ScriptIterator.ts:1292 #recordKidoku()`）。組み込み変数`const.sn.isKidoku`で参照でき、`[if exp="const.sn.isKidoku"]`で既読・未読を分岐できる
+  - 本家の2つのルールをそのまま移植：**コールスタックがある間（サブルーチン・マクロ内）は既読フラグを更新しない**（同じサブルーチンが未読・既読どちらの文脈からも呼ばれるため、記録だけ行う）／**`[call]`は既定で戻り先の位置を未読へ戻す**（`count=true`で維持）。`[jump]`は既定が逆で既読のまま（`count=false`で消す）
+  - `[clearvar]`/`[clearsysvar]`タグを追加。`VarStore`側の`clearGame()`/`clearSys()`は前からあったが、タグとしては未接続だった。既読情報が消えるのは`[clearsysvar]`（本家 `Variable #clearsysvar()`。gallery の kidoku サンプルが「既読情報クリア」ボタンでこのタグを使っている）
+  - 保存は未実装。本家は`Variable.saveKidoku()`→`SysBase.data.kidoku`→localStorageだが、bluesnovelにはまだセーブ層が無いので当面エンジンが抱える。繋ぎ込み用に`getKidoku()`/`setKidoku()`を用意した
+  - `test/ScriptEngine_kidoku.test.ts`（新規17件）。同じ位置を2周させ、1周目=未読／2周目=既読で確かめる形。ユニット634件→651件。E2Eは追加なし（ブラウザ側の配線が無い＝純粋なエンジンロジックのため）
+  - 判明した点：`[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない。本家の実装をそのまま移した状態なので`todo.md`へ確認事項として残した
+  - `CLAUDE.md`に**SKYNovel_gallery**（<https://github.com/famibee/SKYNovel_gallery>）への参照を追加。機能ごとのサンプルシナリオがあり、タグ属性の実際の使われ方を確かめるのに使える
+
+- [ ]
 
 
 
