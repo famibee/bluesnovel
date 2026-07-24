@@ -167,6 +167,37 @@ it('step_lay_bAlpha_invalidValueThrows', ()=> {
 	expect(()=> new ScriptEngine('t1', '[lay layer=mes b_alpha=abc][s]').step()).toThrow();
 });
 
+// b_alphaの値域（0.0〜1.0）。範囲外は例外にせずクランプする。
+//	本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しし、CSSのrgba()が描画時に丸めるだけなので、
+//	ストア（Memento・デザインモードが読む状態）に範囲外の値が残ってしまう。それを防ぐための正規化。
+//	例外にしないのは、本家が通すスクリプトをbluesnovelだけが弾かないようにするため
+function bAlphaOf(src: string): number {
+	const a = new ScriptEngine('t1', src).step();
+	const act = a.find(v=> v.t === 'chgBAlpha');
+	if (act?.t !== 'chgBAlpha') throw 'chgBAlphaアクションがありません';
+	return act.b_alpha;
+}
+
+it('step_lay_bAlpha_clampsOverOne', ()=> {
+	expect(bAlphaOf('[lay layer=mes b_alpha=1.5][s]')).toBe(1);
+	expect(bAlphaOf('[lay layer=mes b_alpha=40][s]')).toBe(1);	// 0.4のつもりの打ち間違い等
+});
+
+it('step_lay_bAlpha_clampsBelowZero', ()=> {
+	expect(bAlphaOf('[lay layer=mes b_alpha=-0.5][s]')).toBe(0);
+});
+
+it('step_lay_bAlpha_keepsInRangeValues', ()=> {	// 範囲内はそのまま（境界含む）
+	expect(bAlphaOf('[lay layer=mes b_alpha=0][s]')).toBe(0);
+	expect(bAlphaOf('[lay layer=mes b_alpha=1][s]')).toBe(1);
+	expect(bAlphaOf('[lay layer=mes b_alpha=0.4][s]')).toBe(0.4);
+});
+
+it('step_lay_bAlpha_clampsInfinity', ()=> {
+	// Number('Infinity')はNaNではないので上のNaN判定を素通りする。クランプ側で受け止める
+	expect(bAlphaOf('[lay layer=mes b_alpha=Infinity][s]')).toBe(1);
+});
+
 it('step_jumpLabel', ()=> {
 	const se = new ScriptEngine('t1', '[jump label=*goal]むし[s]\n*goal\nあ[s]');
 	const a = se.step();

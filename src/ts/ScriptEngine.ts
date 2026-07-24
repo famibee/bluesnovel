@@ -491,9 +491,13 @@ export class ScriptEngine {
 
 			// b_alpha：文字レイヤ背景の不透明度。pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
 			if (args.b_alpha !== undefined) {
-				const b_alpha = Number(args.b_alpha);
-				if (Number.isNaN(b_alpha)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
-				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', b_alpha});
+				const v = Number(args.b_alpha);
+				if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+				// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
+				//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
+				//	範囲外の値が残ってしまうため、ここで正規化する。
+				//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
+				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', b_alpha: Math.min(1, Math.max(0, v))});
 			}
 			return 'skip';
 		}

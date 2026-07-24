@@ -1559,7 +1559,7 @@ var d = class {
 					r.push({
 						t: "chgBAlpha",
 						nm: n.layer ?? "",
-						b_alpha: e
+						b_alpha: Math.min(1, Math.max(0, e))
 					});
 				}
 				return "skip";

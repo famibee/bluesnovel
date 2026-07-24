@@ -15,7 +15,6 @@
 - [ ] 実機（`tmp_blues`）で以下を確認
   - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない
   - [ ] `main.sn`へ`[lay layer=mes b_alpha=...]`を仕込んで、文字レイヤ背景の不透明度変更の見た目を確認（`main.sn`には`[lay layer=mes b_alpha=0.4]`が既にあることを今回確認済み。表示結果の目視確認は未実施）
-- [ ] `b_alpha`の値域（0.0〜1.0）を超える値のバリデーション（クランプ）は未実装
 - [ ] `SAMPLE_SN`フォールバック（`ScriptMng.ts`）と`GrpLayer.tsx`の`try/catch`を撤去し、正規のアセットパイプライン（`path.json`）を用意した上で正しいロードエラー処理に戻す
 - [ ] 文字送り演出のパラメータ（`duration: 0.25`, `stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整
 - [ ] 動画・音声対応
