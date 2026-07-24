@@ -229,13 +229,15 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
 `scale_y`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
+
 `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
-subroutine-call on click), `event`/`clear_event`, `clearvar`/`clearsysvar`,
-and the stop points `l`/`p`/`s`. `jump`/`call`/`return`/`button`
+subroutine-call on click), `event`/`clear_event`, `enable_event`, `wait`,
+`clearvar`/`clearsysvar`,
+and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
 by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).

@@ -21,6 +21,7 @@ export type T_LAY_SNAP = {
 	aBtn?	: T_BTN_SNAP[];
 	b_alpha?: number;
 	b_color?: number;
+	enabled?: boolean;	// [enable_event]
 	style?	: string;
 	// [lay]のレイヤ共通属性（Stage.tsx T_LAY_STY）。書かれた属性だけが値を持つ
 	visible?: boolean;
@@ -40,7 +41,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

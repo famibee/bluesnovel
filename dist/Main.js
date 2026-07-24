@@ -12630,36 +12630,36 @@ var Og = ah.registerPlugin(Dg) || ah;
 Og.core.Tween;
 //#endregion
 //#region src/components/TxtLayer.tsx
-function kg({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, str: a, b_color: o, b_alpha: c, styTxt: l, aBtn: u, onActivate: d }) {
-	let f = g_((e) => e.isReadBack), p = g_((e) => e.isTyping), m = g_((e) => e.setIsTyping), h = g_((e) => e.skipReq), g = g_((e) => e.skipping), _ = g_((e) => e.wait), v = (0, s.useRef)(null), y = (0, s.useRef)(null), b = (0, s.useRef)([]), x = (0, s.useRef)(null);
+function kg({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, str: a, b_color: o, b_alpha: c, styTxt: l, enabled: u, aBtn: d, onActivate: f }) {
+	let p = g_((e) => e.isReadBack), m = g_((e) => e.isTyping), h = g_((e) => e.setIsTyping), g = g_((e) => e.skipReq), _ = g_((e) => e.skipping), v = g_((e) => e.wait), y = (0, s.useRef)(null), b = (0, s.useRef)(null), x = (0, s.useRef)([]), S = (0, s.useRef)(null);
 	(0, s.useLayoutEffect)(() => {
-		let e = y.current;
+		let e = b.current;
 		if (!e) return;
-		x.current?.kill();
-		let t = b.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
-		!t.startsWith(a) && !a.startsWith(t) && (b.current = [], e.textContent = "");
-		let n = b.current, r = Math.min(a.length, n.length);
+		S.current?.kill();
+		let t = x.current.map((e) => e.textContent === "\xA0" ? " " : e.textContent).join("");
+		!t.startsWith(a) && !a.startsWith(t) && (x.current = [], e.textContent = "");
+		let n = x.current, r = Math.min(a.length, n.length);
 		for (; e.childNodes.length > r;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < r;) e.appendChild(n[e.childNodes.length]);
 		if (r > 0 && Og.set(n.slice(0, r), {
 			opacity: 1,
 			y: 0
 		}), a.length <= n.length) {
-			m(!1);
+			h(!1);
 			return;
 		}
 		let i = a.slice(n.length), o = document.createDocumentFragment(), s = [...i].map((e) => {
 			let t = document.createElement("span");
 			return t.textContent = e === " " ? "\xA0" : e, o.appendChild(t), t;
 		});
-		if (n.push(...s), e.appendChild(o), f || g) {
+		if (n.push(...s), e.appendChild(o), p || _) {
 			Og.set(s, {
 				opacity: 1,
 				y: 0
-			}), m(!1);
+			}), h(!1);
 			return;
 		}
-		m(!0), x.current = Og.timeline({ onComplete: () => m(!1) }).fromTo(s, {
+		h(!0), S.current = Og.timeline({ onComplete: () => h(!1) }).fromTo(s, {
 			opacity: 0,
 			y: "0.3em"
 		}, {
@@ -12669,34 +12669,35 @@ function kg({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			ease: "power1.out",
 			stagger: .035
 		});
-	}, [a, f]), (0, s.useEffect)(() => {
-		x.current && x.current.progress() < 1 && x.current.progress(1);
-	}, [h]);
-	let S = i && !f && !p && _ !== null && _.nm === r, C = vd`
+	}, [a, p]), (0, s.useEffect)(() => {
+		S.current && S.current.progress() < 1 && S.current.progress(1);
+	}, [g]);
+	let C = i && !p && !m && v !== null && v.nm === r, w = vd`
 		display: inline-block;
 		margin-left: 0.15em;
-	`, w = vd`
+	`, T = vd`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-	`, { r: T, g: E, b: D } = Ag(o), O = vd`
+		${u ? "" : "pointer-events: none;"}
+	`, { r: E, g: D, b: O } = Ag(o), k = vd`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
-		background-color: rgba(${T}, ${E}, ${D}, ${c});
+		background-color: rgba(${E}, ${D}, ${O}, ${c});
 		border: dotted 6px #ffa500;
 
 		font-size: xxx-large;
 		top: 48%;
 		width: 70%;
 		white-space: pre-wrap;
-		color: ${f ? "yellow" : "inherit"};
+		color: ${p ? "yellow" : "inherit"};
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${l ?? ""}
-	`, k = vd`
+	`, A = vd`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -12751,66 +12752,66 @@ function kg({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				border-color: #ff9900;
 			}
 		}
-	`, [A, j] = (0, s.useState)("");
-	(0, s.useEffect)(() => j(a), [a]);
-	let M = (0, s.useRef)(null), N = (e, t) => {
+	`, [j, M] = (0, s.useState)("");
+	(0, s.useEffect)(() => M(a), [a]);
+	let N = (0, s.useRef)(null), P = (e, t) => {
 		o_(), e.transform = t;
 	};
 	return /* @__PURE__ */ hd(pd, { children: [
 		/* @__PURE__ */ hd("span", {
-			css: [e, O],
-			ref: v,
+			css: [e, k],
+			ref: y,
 			style: n,
-			children: [/* @__PURE__ */ md("span", { ref: y }), S && /* @__PURE__ */ md("span", {
-				css: C,
-				children: _.kind === "l" ? "🩷" : "✅"
+			children: [/* @__PURE__ */ md("span", { ref: b }), C && /* @__PURE__ */ md("span", {
+				css: w,
+				children: v.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		u.length > 0 && /* @__PURE__ */ md("span", {
-			css: [e, w],
-			children: u.map((e) => /* @__PURE__ */ md(yd, {
+		d.length > 0 && /* @__PURE__ */ md("span", {
+			css: [e, T],
+			children: d.map((e) => /* @__PURE__ */ md(yd, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
-				onActivate: d
+				onActivate: f
 			}, e.nm))
 		}),
 		t && /* @__PURE__ */ md(vl, {
-			target: v,
+			target: y,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => N(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => P(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				N(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				P(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => N(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => P(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				N(e, n), e.transformOrigin = t;
+				P(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ hd(pd, { children: [/* @__PURE__ */ hd("label", {
-			css: k,
-			ref: M,
+			css: A,
+			ref: N,
 			children: ["テキスト入力", /* @__PURE__ */ md("textarea", {
 				rows: 3,
-				value: A,
-				onChange: (e) => j(e.target.value)
+				value: j,
+				onChange: (e) => M(e.target.value)
 			})]
 		}), /* @__PURE__ */ md(vl, {
-			target: M,
+			target: N,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => N(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => P(e, t),
 			preventDefault: !1
 		})] })
 	] });
@@ -13233,6 +13234,7 @@ function n_({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 						b_color: e.b_color,
 						b_alpha: e.b_alpha,
 						styTxt: e.style,
+						enabled: e.enabled,
 						aBtn: e.aBtn,
 						onActivate: (e, t, n) => r.jumpToLabelAndGo(e, t, n)
 					}, e.nm);
@@ -13336,6 +13338,10 @@ var g_ = f_()((e) => ({
 		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0)) throw `${t} は文字レイヤではありません（b_color/styleは文字レイヤ専用）`;
 		return Object.assign(o, r), m_(e, i, a);
 	}),
+	enableEvent: ({ nm: t, enabled: n }) => e((e) => ({ aPage: e.aPage.map((e) => {
+		let r = [...e];
+		return h_(r, t, "txt").enabled = n, r;
+	}) })),
 	clearLay: ({ nm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			let n = e.find((e) => e.nm === t);
@@ -13398,8 +13404,8 @@ function v_(e, t, n) {
 function y_({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: i } = e, a = g_((e) => e.title), o = g_((e) => e.addTitle);
 	$g(a);
-	let c = g_((e) => e.addLayer), l = g_((e) => e.chgPic), u = g_((e) => e.chgBAlpha), d = g_((e) => e.chgStr), f = g_((e) => e.chgLay), p = g_((e) => e.clearLay), m = g_((e) => e.addBtn), h = g_((e) => e.setReadBack), g = g_((e) => e.isTyping), _ = g_((e) => e.requestSkip), v = g_((e) => e.setWait), y = g_((e) => e.setSkipping), b = g_((e) => e.startTrans), x = g_((e) => e.finishTrans);
-	function S() {
+	let c = g_((e) => e.addLayer), l = g_((e) => e.chgPic), u = g_((e) => e.chgBAlpha), d = g_((e) => e.chgStr), f = g_((e) => e.chgLay), p = g_((e) => e.clearLay), m = g_((e) => e.enableEvent), h = g_((e) => e.addBtn), g = g_((e) => e.setReadBack), _ = g_((e) => e.isTyping), v = g_((e) => e.requestSkip), y = g_((e) => e.setWait), b = g_((e) => e.setSkipping), x = g_((e) => e.startTrans), S = g_((e) => e.finishTrans);
+	function C() {
 		i.go();
 	}
 	Rg(() => {
@@ -13412,28 +13418,29 @@ function y_({ arg: e, inited: t }) {
 			chgStr: d,
 			chgLay: f,
 			clearLay: p,
-			addBtn: m,
+			enableEvent: m,
+			addBtn: h,
 			addTitle: o,
-			setWait: v,
-			requestSkip: _,
-			setSkipping: y,
-			startTrans: b,
-			finishTrans: x
-		}, e), t(), n.addEventListener("ev_next", S), () => n.removeEventListener("ev_next", S);
+			setWait: y,
+			requestSkip: v,
+			setSkipping: b,
+			startTrans: x,
+			finishTrans: S
+		}, e), t(), n.addEventListener("ev_next", C), () => n.removeEventListener("ev_next", C);
 	});
-	function C() {
-		if (g) {
-			_();
+	function w() {
+		if (_) {
+			v();
 			return;
 		}
 		if (r.caretaker.nextKey()) {
-			h(!r.caretaker.isLast());
+			g(!r.caretaker.isLast());
 			return;
 		}
-		h(!1), S();
+		g(!1), C();
 	}
-	function w() {
-		r.caretaker.prevKey() && h(!r.caretaker.isLast());
+	function T() {
+		r.caretaker.prevKey() && g(!r.caretaker.isLast());
 	}
 	Kg(() => !0, (e) => {
 		if (i.cancelAuto(), i.fireEvent(e.key.toLowerCase())) {
@@ -13444,27 +13451,27 @@ function y_({ arg: e, inited: t }) {
 			case "Space":
 			case "ArrowDown":
 			case "PageDown":
-				e.stopPropagation(), e.preventDefault(), C();
+				e.stopPropagation(), e.preventDefault(), w();
 				break;
 			case "PageUp":
-				e.stopPropagation(), e.preventDefault(), w();
+				e.stopPropagation(), e.preventDefault(), T();
 				break;
 		}
 	});
-	function T() {
+	function E() {
 		if (S_) {
 			S_ = !1;
 			return;
 		}
-		b_ || (i.cancelAuto(), !i.fireEvent("click") && C());
+		b_ || (i.cancelAuto(), !i.fireEvent("click") && w());
 	}
 	return /* @__PURE__ */ md(s.Suspense, {
 		fallback: /* @__PURE__ */ md(pd, { children: "Loading" }),
 		children: /* @__PURE__ */ md(__, {
 			arg: e,
-			next: C,
-			prev: w,
-			onClick: T
+			next: w,
+			prev: T,
+			onClick: E
 		})
 	});
 }

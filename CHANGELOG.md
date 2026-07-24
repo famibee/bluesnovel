@@ -274,6 +274,16 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - E2Eに入れたのは「アクションが算出CSSへ落ちているか」だけ（`transform`の行列成分・`rgba()`・`display`・`letter-spacing`）。どのアクションを積むかはユニット側
   - `CLAUDE.md`に**「ページ」という語が2つの別物を指す**注意書きを追加：レイヤの裏表（`[lay page=…]`/`[trans]`）と、`[p]`で区切られる文章のページ（`[page]`＝読み戻りログ）。本家由来の用語衝突で、コード上も`aPage`/`foreIdx`と`Caretaker`で別物
 
+- [x] **イベント系タグ：`[enable_event]`・`[wait]`・`[waitclick]`（と`[s]`の完全停止）**（2026-07-24）
+  - `[enable_event]`（対象ファイル群で18箇所と単体最多）。文字レイヤ単位でクリックの可否を切り替える（本家 `LayerMng.ts:1088`）。`layer`省略時は現在の文字レイヤ、`enabled`省略時はtrue。`TxtLayer`のボタン群へ`pointer-events: none`を掛ける形で実装し、本家同様に変数からも読める（本家は`save:const.sn.layer.<レイヤ名>.enabled`、bluesnovelは`game:`名前空間）。表裏どちらのページにも同じ値を入れる（レイヤ自体の状態なので`[trans]`で揺れないように）
+  - `[wait time=…]`（本家 `Reading.ts:320`）。`[wt]`と同じ形で、待つのは`ScriptMng`。`canskip`の既定はtrueでクリックで打ち切れる。**既読スキップ中は待たない**（未読に来ていたらそこでスキップ解除）のも本家どおり
+  - `[waitclick]`。本家では`[s]`と**同じ関数**を通り（`Reading.ts:712` `hTag.waitclick = o=> rs.s(o)`）、`ReadingState_wait4Tag`がタグ名で振り分けている。`'s'`はユーザー操作に反応せず予約イベントだけを受け、`'waitclick'`はクリックで進む。停止点の種類に`'waitclick'`を足して同じ構造にした
+  - **その過程で`[s]`が実は素通りしていたのを発見**。bluesnovelの`[s]`は「止まる」と言いながらクリックすれば次のトークンへ進んでしまう状態で、既存E2Eが通っていたのは`[s]`が全てファイル末尾にあったため。`ScriptMng`に`#stopped`を持たせ、`[s]`以降は`go()`を無視するようにした。`[event]`/`[button]`の予約だけは停止を越えて動かせる（本家も予約イベントだけは受ける）
+  - `[set_focus]`は保留にした。キーボードフォーカスの管理役（本家 `FocusMng`）が要り、`add=`/`del=`が`dom=セレクタ`でHTML要素を対象に取るため、既に保留中の`[event]`の`key='dom=…'`と同時に設計するのが筋。`to=null`だけ実装しても意味が無い
+  - 併せて数値属性の検査を厳しくした：`Number('')`が0になるJSの癖で、`[wait]`のように必須の数値属性を書き忘れても0として通ってしまっていた
+  - `test/ScriptEngine_wait.test.ts`（新規13件）＋`test/e2e/waitev.e2e.ts`（新規6件・`prj_wait`フィクスチャ）。ユニット741件→754件、E2E 43件→49件
+  - E2Eに入れたのは「ユーザー操作にどう反応するか」だけ。`pointer-events: none`のボタンはPlaywrightの通常の`click()`だと「他要素が横取りする」と判断されて待ち続けるので、`{force: true}`でその位置を実際にクリックし、読み進めへ抜けることを確かめている
+
 - [ ]
 
 

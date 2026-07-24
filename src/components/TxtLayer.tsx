@@ -33,15 +33,16 @@ type T_TXTARG = T_LAY_CMN & {
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
+	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
 	aBtn	: T_BTN[];
 	onActivate: (label: string, call: boolean, fn: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; style?: string; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; style?: string; enabled: boolean; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, styTxt: sCss, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -133,10 +134,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	`;
 	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
 	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。
+	//	[enable_event enabled=false]の間はクリックを受けない（本家 TxtLayer.enabled 相当）
 	const styBtnBox = css`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
+		${enabled ? '' : 'pointer-events: none;'}
 	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
 	const {r, g, b} = rgbOf(b_color);

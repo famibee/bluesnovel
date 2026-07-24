@@ -26,6 +26,7 @@ type T_STATE = {
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
 	chgLay	: (arg: T_CHGLAY)=> void,
+	enableEvent: (arg: T_ENABLEEVENT)=> void,
 	clearLay: (arg: T_CLEARLAY)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
 	addBtn	: (arg: T_ADDBTN)=> void,
@@ -86,6 +87,11 @@ export type T_CHGLAY = {
 	page: T_PAGE;
 	sty	: T_LAY_STY_ARG;
 }
+// [enable_event]：文字レイヤのボタン等を有効／無効にする。無効の間はクリックを受けない
+export type T_ENABLEEVENT = {
+	nm		: string;
+	enabled	: boolean;
+}
 // [clear_lay]：レイヤの見た目を初期値へ戻し、中身（画像／文字＋ボタン）も捨てる
 export type T_CLEARLAY = {
 	nm	: string;
@@ -107,7 +113,7 @@ export type T_ADDBTN = {
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ（label省略時はそのファイルの先頭）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'clearLay'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'clearLay'|'enableEvent'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -189,6 +195,13 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		Object.assign(e, sty);
 		return putPage(s, idx, aLay);
 	}),
+	// [enable_event]：表裏どちらのページにも同じ値を入れる。
+	//	本家はレイヤ（Pagesの片面ではなくレイヤ自体）が持つ状態なので、[trans]で入れ替わっても揺れないようにする
+	enableEvent: ({nm, enabled}: T_ENABLEEVENT)=> set(s=> ({aPage: s.aPage.map(a=> {
+		const aLay = [...a];
+		findLay(aLay, nm, 'txt').enabled = enabled;
+		return aLay;
+	}) as [T_LAY[], T_LAY[]]})),
 	// [clear_lay]：見た目を初期値へ戻し、中身も捨てる（本家 Layer.clearLay()＋各レイヤのoverride）。
 	//	**visibleだけは触らない**（本家のコメント「visibleは触らない」そのまま）
 	clearLay: ({nm, page}: T_CLEARLAY)=> set(s=> {

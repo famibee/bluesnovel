@@ -1,0 +1,26 @@
+; E2E用シナリオ（waitev.e2e.ts が使用）
+;	イベント系タグは「ユーザー操作にどう反応するか」が本題なのでブラウザで見る：
+;	・[enable_event enabled=false]でボタンがクリックを受けなくなること
+;	・[wait time=…]がその間シナリオを止め、クリックで打ち切れること
+;	・[waitclick]はクリックで進み、[s]はクリックでは進まないこと
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[button nm=btn text=ボタン label=*btn]
+
+; ボタンを無効化した状態で待つ
+[enable_event enabled=false]
+むこう[p]
+
+[enable_event enabled=true]
+ゆうこう[p]
+
+; ウェイト（クリックで打ち切れる）
+[wait time=1500]
+まった[waitclick]
+
+; [waitclick]はクリックで進む。[s]はクリックでは進まない
+とまった[s]
+このさきへは進まない
+
+*btn
+[er]おされた[s]

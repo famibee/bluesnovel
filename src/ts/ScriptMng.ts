@@ -135,6 +135,7 @@ export class ScriptMng {
 		const engine = this.#engine;
 		if (! engine) return;
 
+		this.#stopped = false;	// [event]/[button]の予約は[s]の停止を越えて動かせる（本家も予約イベントだけは受ける）
 		try {
 			// label省略（＝そのファイルの先頭へ）の場合は、同一ファイルでもロード経由で切り替える
 			//	（jumpToLabel('')はラベル未定義でthrowになるため）
@@ -156,14 +157,25 @@ export class ScriptMng {
 	//	myTrace(…, 'ET')は表示後にthrowする仕様なので、そのままだと未処理のPromise拒否になる
 	//	（同期だった頃はDOMイベントハンドラまで抜けていた）。表示は済んでいるので握って良い
 	#goSafe() {
-		// [wt]で[trans]の演出待ち中は、読み進め要求を「演出を今すぐ終わらせて続行」に読み替える。
+		// [s]で停止中は、クリック・キーでは進まない（進めるのは[event]/[button]の予約だけ）。
+		//	本家 ReadingState_wait4Tag も、タグ名が's'のときだけonUserActを付けずに待つ。
+		//	[waitclick]は同じ停止でもクリックで進む（＝ここを通らない）
+		if (this.#stopped) return;
+
+		// [wt]で[trans]の演出待ち中、または[wait]のウェイト中は、
+		//	読み進め要求を「今すぐ待ちを打ち切って続行」に読み替える。
 		//	canskip=falseなら何も起きない（＝クリックでは飛ばせない）
 		if (this.#transWaiting) {
 			if (this.#transWaiting.canskip) this.#finishTrans();
 			return;
 		}
+		if (this.#waiting) {
+			if (this.#waiting.canskip) this.#endWait();
+			return;
+		}
 		this.#runStep().catch(()=> {/* myTraceで表示済み */});
 	}
+	#stopped = false;	// [s]で停止中か
 
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
@@ -224,6 +236,21 @@ export class ScriptMng {
 		setTimeout(()=> this.#goSafe(), 0);
 	}
 
+	// ===== [wait time=…]のウェイト =====
+	//	[wt]と同じ形（時間切れ、またはcanskipならクリックで打ち切って続行）。
+	//	違いは「終わったときに片付けるものが無い」ことだけ
+	#waiting: {timer: ReturnType<typeof setTimeout>; canskip: boolean} | undefined;
+
+	#beginWait(msec: number, canskip: boolean) {
+		this.#waiting = {canskip, timer: setTimeout(()=> this.#endWait(), Math.max(0, msec))};
+	}
+	#endWait() {
+		if (! this.#waiting) return;
+		clearTimeout(this.#waiting.timer);
+		this.#waiting = undefined;
+		this.#goSafe();
+	}
+
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
 	//	途中で'loadScript'（別スクリプトへの移動要求）が返ったら、fetchしてから続きを回す。
 	//	engine.step()自体は同期のまま（DOM/fetch非依存でユニットテストできる設計を保つ）
@@ -251,9 +278,10 @@ export class ScriptMng {
 				}
 				for (const act of aAct) this.#applyAction(act);
 
-				// 'loadScript'/'waitTrans'は必ず最後の要素（step()がそこで打ち切って返すため）
+				// 'loadScript'/'waitTrans'/'wait'は必ず最後の要素（step()がそこで打ち切って返すため）
 				const last = aAct.at(-1);
 				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
+				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -280,7 +308,7 @@ export class ScriptMng {
 			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
 			this.$fncs.addLayer(act.cls === 'grp'
 				? {cls: 'grp', nm: act.nm, fn: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
-				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
+				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic':
 			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, aFace: act.aFace});
@@ -309,6 +337,12 @@ export class ScriptMng {
 		case 'clearLay':
 			this.$fncs.clearLay({nm: act.nm, page: act.page});
 			break;
+		case 'enableEvent':
+			this.$fncs.enableEvent({nm: act.nm, enabled: act.enabled});
+			break;
+		case 'wait':
+			// 実処理は#runStep()側（#beginWait()）。表示への影響は無い
+			break;
 		case 'clearPageLog':
 			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
 			this.sys.caretaker.clear();
@@ -324,8 +358,11 @@ export class ScriptMng {
 			// このタイミングでの表示状態を Caretaker に記録する
 			//	（Stage.tsx の再描画で自動的に Memento が生成される）
 			this.sys.caretaker.push(act.key);
-			// [l]/[p]待ち中マーカー表示（[s]はマーカーなし＝上のsetWait(null)のままにする）
+			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
 			if (act.kind === 'l' || act.kind === 'p') this.$fncs.setWait({nm: act.nm, kind: act.kind});
+			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる
+			//	（[waitclick]は同じ「マーカー無しの停止」だがクリックで進む）
+			this.#stopped = act.kind === 's';
 			// オート読み・既読スキップ指示があれば、クリックを待たず自分で次へ進むタイマーを仕込む。
 			//	無ければ手動待ち＝スキップ表示も解除する（この停止点でスキップが尽きた場合）
 			if (act.resume) this.#scheduleResume(act.resume.mode, act.resume.msec);

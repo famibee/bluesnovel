@@ -61,7 +61,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'clearLay'; nm: string; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
-	| {t: 'stop'; kind: 'l' | 'p' | 's'; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
+	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
+	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
+	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
 ;
 
@@ -81,6 +83,11 @@ export type T_EVENT_RSV = {fn: string; label: string; call: boolean; arg: string
 //	mode='skip'：即座に読み進める（既読スキップ。msecは基本0）。
 //	実際にタイマーを回す・ユーザー入力で止めるのは呼び出し側（ScriptMng）の責務
 export type T_RESUME = {mode: 'auto' | 'skip'; msec: number};
+
+// 停止点の種類。本家は[waitclick]も[s]と同じ関数（Reading.ts:712 hTag.waitclick = o=> rs.s(o)）を通り、
+//	ReadingState_wait4Tag がタグ名で振り分けている：
+//	's'はユーザー操作に反応しない（予約イベントのみ）が、'waitclick'はクリックで進む
+export type T_STOP_KIND = 'l' | 'p' | 's' | 'waitclick';
 
 
 export class ScriptEngine {
@@ -159,9 +166,11 @@ export class ScriptEngine {
 
 	// 属性pageの検査（本家 Pages.ts:65 argChk_page()）。既定値は呼ぶ側のタグごとに違う
 	//	（[lay]は'fore'、[clear_lay]は'back'）ので引数で受ける
-	// 数値属性の検査（本家 CmnLib.argChk_Num() 相当。0x始まりは16進として読む）
+	// 数値属性の検査（本家 CmnLib.argChk_Num() 相当。0x始まりは16進として読む）。
+	//	空文字は弾く：JSの Number('') は 0 になってしまうため、属性の書き忘れを見逃さないようにする
 	static #argNum(tag: string, nm: string, v: string): number {
-		const n = v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
+		const n = v.trim() === '' ? NaN
+			: v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
 		if (! Number.isFinite(n)) throw `[${tag}] ${nm}の値が不正です：${v}`;
 		return n;
 	}
@@ -248,7 +257,8 @@ export class ScriptEngine {
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
-		'button', 'event', 'clear_event', 'clearvar', 'clearsysvar', 'page', 'l', 'p', 's',
+		'button', 'event', 'clear_event', 'enable_event', 'clearvar', 'clearsysvar', 'page',
+		'wait', 'waitclick', 'l', 'p', 's',
 	]);
 
 	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
@@ -402,8 +412,10 @@ export class ScriptEngine {
 	}
 
 	// 停止点（[l]/[p]/[s]）での自動進行指示を決める（本家 Reading.ts l()/p()/s() のオート・スキップ分岐）
-	#calcResume(kind: 'l' | 'p' | 's'): T_RESUME | undefined {
-		if (kind === 's') {this.cancelAutoSkip(); return undefined}	// [s]は必ず止まる＝オート・スキップ解除
+	#calcResume(kind: T_STOP_KIND): T_RESUME | undefined {
+		// [s]/[waitclick]は必ず止まる＝オート・スキップ解除（本家 Reading s() の cancelAutoSkip()。
+		//	[waitclick]も同じ関数を通るので同じ扱いになる）
+		if (kind === 's' || kind === 'waitclick') {this.cancelAutoSkip(); return undefined}
 
 		if (this.autoEnabled) return {mode: 'auto', msec: this.#autoMsec(kind === 'p')};
 
@@ -895,7 +907,30 @@ export class ScriptEngine {
 			this.clearEvent(args.global === 'true');
 			return 'skip';
 
-		case 'l': case 'p': case 's': {	// 行末クリック待ち／改ページ／停止
+		case 'enable_event': {	// イベント有無の切替（本家 LayerMng.ts:1088 #enable_event()）
+			// 対象は文字レイヤ。省略時は現在の文字レイヤ（本家 #argChk_layer(hArg, #curTxtlay)）
+			const nm = args.layer || this.#curTxtLayer;
+			const enabled = (args.enabled ?? 'true') !== 'false';
+			// 本家同様、変数からも参照できるようにする（本家は save: 名前空間。bluesnovelでは game:）
+			this.#val.set(`game:const.sn.layer.${nm}.enabled`, enabled);
+			aAct.push({t: 'enableEvent', nm, enabled});
+			return 'skip';
+		}
+
+		case 'wait': {	// ウェイトを入れる（本家 Reading.ts:320 wait()）
+			const msec = ScriptEngine.#argNum('wait', 'time', args.time ?? '');
+			// 既読スキップ中は待たない。未読に来ていたらそこでスキップ解除（本家と同じ）
+			if (this.skipEnabled) {
+				if (! this.skipAll && ! this.isNextKidoku) this.cancelAutoSkip();
+				return 'skip';
+			}
+			// [wt]と同じく、実際に待つのはScriptMngの担当なのでstep()はここで一旦返す。
+			//	canskipの既定はtrue＝クリックで待ちを打ち切れる
+			aAct.push({t: 'wait', msec, canskip: (args.canskip ?? 'true') !== 'false'});
+			return 'stop';
+		}
+
+		case 'l': case 'p': case 's': case 'waitclick': {	// 行末クリック待ち／改ページ／停止／クリック待ち
 			if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
 			const resume = this.#calcResume(name);	// オート読み／既読スキップの自動進行指示（該当しなければundefined）
 			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer, ...resume ? {resume} : {}});

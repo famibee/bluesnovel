@@ -240,7 +240,7 @@ export default function Stage({
 				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
 				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} fn={l.fn} aFace={l.aFace}/>;
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
-				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} b_color={l.b_color} b_alpha={l.b_alpha} styTxt={l.style} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
+				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} b_color={l.b_color} b_alpha={l.b_alpha} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
 			})}
 		</div>)}
 	</div>;
