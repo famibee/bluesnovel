@@ -77,6 +77,62 @@ it('call_wall_blocksSubroutineEndifFromReachingCallerIf', ()=> {
 });
 
 
+// ============ [return]のlabel指定（戻り先変更。本家 #return() の {fn, label} 相当） ============
+
+it('return_label_jumpsElsewhereInsteadOfCaller', ()=> {
+	// [call]元（TAIL）へは戻らず、label指定した*otherへ進む
+	expect(run(
+		'[call label=*sub]TAIL[jump label=*end]\n'+
+		'*sub\nSUB[return label=*other]\n'+
+		'*other\nOTHER[jump label=*end]\n'+
+		'*end\n'
+	)).toBe('SUBOTHER');
+});
+
+it('return_label_stillPopsCallStack', ()=> {
+	// 戻り先を変えても、コールスタックは通常どおり1段外れる。
+	// そのため*otherで再度[return]するとスタックが空でthrow
+	expect(()=> new ScriptEngine('t1',
+		'[call label=*sub]TAIL[jump label=*end]\n'+
+		'*sub\nSUB[return label=*other]\n'+
+		'*other\nOTHER[return]\n'+
+		'*end\n'
+	).step()).toThrow();
+});
+
+it('return_label_restoresCallerIfStack', ()=> {
+	// label指定で戻っても[call]が積んだ壁(-1)は外れるので、
+	// 戻り先で出会う[endif]はコール元の[if]に対応する（＝コール元の[endif]の次へ進む）
+	expect(run(
+		'[if exp=0==0]OUTER[call label=*sub]NG[endif]DONE[jump label=*fin]\n'+
+		'*sub\nSUB[return label=*back]\n'+
+		'*back\nBACK[endif]AFTER[jump label=*fin]\n'+
+		'*fin\n'
+	)).toBe('OUTERSUBBACKDONE');
+});
+
+it('return_label_worksFromMacro', ()=> {	// マクロ本体からでも同じ
+	expect(run(
+		'[macro name=m]M[return label=*other][endmacro]'+
+		'[m]TAIL[jump label=*end]\n'+
+		'*other\nOTHER[jump label=*end]\n'+
+		'*end\n'
+	)).toBe('MOTHER');
+});
+
+it('return_undefinedLabel_throws', ()=> {
+	expect(()=> new ScriptEngine('t1',
+		'[call label=*sub]\n*sub\n[return label=*nope]'
+	).step()).toThrow();
+});
+
+it('return_fn_throws', ()=> {	// fn指定（別スクリプトへ戻る）は未対応。黙って無視せず例外にする
+	expect(()=> new ScriptEngine('t1',
+		'[call label=*sub]\n*sub\n[return fn=other]'
+	).step()).toThrow();
+});
+
+
 // ============ エラー系 ============
 
 it('return_withoutCall_throws', ()=> {

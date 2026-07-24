@@ -2,10 +2,9 @@
 
 （セッション開始時のserena疎通確認・MCPタイムアウト時の注意は`CLAUDE.md`の「MCP pre-flight」へ移動）
 
-- [ ] `[return]`のfn/label指定による戻り先変更（本家`#return()`は対応、未対応のまま）
 - [ ] `[call]`の`count`/`clear_local_event`属性（本家にあるが、既読処理・ローカルイベント予約が未実装のため対象外のまま）
 - [ ] 複数ファイル（`jump fn=...`）対応、`ScriptMng`側でのファイル切替設計の具体化
-  - `[button]`・`[call]`・マクロ呼び出しとも現状は同一ファイル内ラベルのみ対応
+  - `[button]`・`[call]`・マクロ呼び出し・`[return fn=...]`とも現状は同一ファイル内ラベルのみ対応（`[return fn=...]`は例外を投げる）
   - 設計方針（持ち越し）: `ScriptEngine`を「1ファイル分のパース結果保持」に縮小し、実行状態（`#idx`, `#aIfStk`, `#aCallStk`, `#hMacro`, 変数等）は`ScriptMng`または新設`Runtime`クラス側に一本化する
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - face合成そのもの（`add_face`/`[lay fn=... face=...]`）は実装・テスト済み

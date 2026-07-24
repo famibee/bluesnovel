@@ -365,8 +365,8 @@ export class ScriptEngine {
 			return 'skip';
 		}
 
-		case 'return':	// サブルーチンから戻る（試作簡略：fn/label指定による戻り先変更は本家 #return() と異なり未対応）
-			this.#doReturn();
+		case 'return':	// サブルーチンから戻る（label指定で戻り先を変えられる。fn指定は未対応）
+			this.#doReturn(args);
 			return 'skip';
 
 		case 'macro': {	// マクロ定義の開始（本家 ScriptIterator.ts:1363 #macro() と同じ「実行時定義」方式）
@@ -516,8 +516,10 @@ export class ScriptEngine {
 	}
 
 	// [return]/[endmacro]共通の「呼び出し元へ戻る」処理
-	//	（本家 ScriptIterator.ts:995 #return()、及び hTag.endmacro = ()=> this.#return(o) と同じ規約）
-	#doReturn() {
+	//	（本家 ScriptIterator.ts:994 #return()、及び hTag.endmacro = ()=> this.#return(o) と同じ規約）
+	//	label指定時は、コール元ではなくそのラベルへ戻る。
+	//	コールスタックとifスタック・mp:の巻き戻しは指定の有無にかかわらず行う（本家も同じ順序）
+	#doReturn(args: {[k: string]: string} = {}) {
 		const cs = this.#aCallStk.pop();
 		if (! cs) throw '[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）';
 		// 呼び出し先で[if]が閉じきっていなくても、コール元のifスタックだけを確実に復元する
@@ -526,7 +528,17 @@ export class ScriptEngine {
 		// mp:もコール元の値へ復元する（本家 #return() の csa[':hMp'] 復元と同じ。
 		// 通常の[call]から戻る場合は元々変化していないため実質no-op）
 		this.#val.setMp(cs.hMp);
-		this.#idx = cs.returnIdx;
+
+		//TODO: [return]のfn指定（別スクリプトへ戻る）は複数ファイル対応待ち。
+		// 黙って無視すると「戻ったつもりが元の位置」という分かりにくい挙動になるので例外にする
+		if (args.fn) throw '[return] fn指定（別スクリプトへ戻る）は未対応です（試作は同一ファイル内のみ対応）';
+
+		const label = args.label ?? '';
+		if (! label) {this.#idx = cs.returnIdx; return}
+
+		const to = this.#hLabel[label];
+		if (to === undefined) throw `[return] ラベル【${label}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		this.#idx = to;
 	}
 
 	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {

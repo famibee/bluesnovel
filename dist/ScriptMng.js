@@ -1437,7 +1437,7 @@ var m = class {
 					hMp: this.#l.cloneMp()
 				}), this.#d.push(-1), this.#r = t, "skip";
 			}
-			case "return": return this.#v(), "skip";
+			case "return": return this.#v(n), "skip";
 			case "macro": {
 				let t = n.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
@@ -1519,6 +1519,10 @@ var m = class {
 				continue;
 			}
 			if (t.charCodeAt(0) !== 91) continue;
+			if (this.#t.testTagLetml(t)) {
+				a = !0;
+				continue;
+			}
 			let { name: n, args: o } = e.parseTag(t);
 			switch (n) {
 				case "if":
@@ -1552,10 +1556,18 @@ var m = class {
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#r = e;
 	}
-	#v() {
-		let e = this.#f.pop();
-		if (!e) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
-		this.#d.length = e.lenIfStk, this.#l.setMp(e.hMp), this.#r = e.returnIdx;
+	#v(e = {}) {
+		let t = this.#f.pop();
+		if (!t) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
+		if (this.#d.length = t.lenIfStk, this.#l.setMp(t.hMp), e.fn) throw "[return] fn指定（別スクリプトへ戻る）は未対応です（試作は同一ファイル内のみ対応）";
+		let n = e.label ?? "";
+		if (!n) {
+			this.#r = t.returnIdx;
+			return;
+		}
+		let r = this.#i[n];
+		if (r === void 0) throw `[return] ラベル【${n}】が見つかりません（試作は同一ファイル内のみ対応）`;
+		this.#r = r;
 	}
 	#y(e, t) {
 		let n = this.#a, r = (this.#o[n] ?? "") + t;

@@ -198,7 +198,7 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 text-bg opacity), `let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
 expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
-`macro`/`endmacro`, `button` (`call=true` for
+`macro`/`endmacro` (`return label=` changes where a subroutine resumes), `button` (`call=true` for
 subroutine-call on click), and the stop points `l`/`p`/`s`. **Only same-file labels are
 supported** for jump/call/button/macro — cross-file (`jump fn=...`) is a known TODO that
 needs execution state moved out of `ScriptEngine` into `ScriptMng`. Macro names are rejected
