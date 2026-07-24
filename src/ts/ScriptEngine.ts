@@ -18,6 +18,7 @@ import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
+import {int} from '../sn/CmnLib';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -175,6 +176,20 @@ export class ScriptEngine {
 		return n;
 	}
 
+	// 省略可の数値属性（本家 argChk_Num() の「省略値あり」呼び出しに対応）。
+	//	未指定なら既定値、指定ありなら#argNum()と同じ検査を通す
+	static #argNumDef(tag: string, nm: string, v: string | undefined, def: number): number {
+		return v === undefined ? def : ScriptEngine.#argNum(tag, nm, v);
+	}
+
+	// reg属性・flags属性から正規表現を作る（本家 Variable.ts:387 #let_replace() /
+	//	:410 #let_search() が同じ処理を持つので切り出した）
+	static #argReg(tag: string, args: {[k: string]: string}): RegExp {
+		const {reg, flags} = args;
+		if (! reg) throw `[${tag}] regは必須です`;
+		return flags ? new RegExp(reg, flags) : new RegExp(reg);
+	}
+
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
 		const v = args.page ?? def;
 		if (v === 'fore' || v === 'back') return v;
@@ -254,6 +269,8 @@ export class ScriptEngine {
 	// if (name in this.hTag) throw と同じ意図）
 	static readonly RESERVED_TAGS = new Set([
 		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
+		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
+		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -678,17 +695,83 @@ export class ScriptEngine {
 		}
 
 		case 'let': {	// 変数代入（試作簡略：単純代入のみ。+=等の複合代入演算子は未対応）
-			const varName = args.name ?? '';
-			if (! varName) throw '[let] nameは必須です（試作仕様）';
-			// val属性は常に式として評価する（[if]のexp属性と同じ規約。本家の&付与方式のような
-			// 「値のままか式評価かを接頭&で切り替える」分岐は未対応）。
-			// そのため文字列リテラルを入れたい場合は val='"もじ"' のように、
+			// 本家（Variable.ts:313 #let()）の書式はtext属性＝「値そのもの」で、
+			//	式にしたい場合は text=&式 と書く（＝共通の属性前処理#resolveTag()が評価する）。
+			//	本家シナリオはすべてこちらなので、textが来たらそちらを優先する
+			if (args.text !== undefined) {this.#letText('let', args, args.text); return 'skip'}
+
+			// val属性はbluesnovel独自の「常に式評価」書式。#resolveTag()の「&式」が入る前からの
+			// 書き方で、既存のテスト・E2Eシナリオが多数使っているため残してある。
+			// 文字列リテラルを入れたい場合は val='"もじ"' のように、
 			// タグ属性の引用符とは別に式側の引用符も必要（test/ScriptEngine.test.ts の
 			// let_stringValue 参照）。
+			//TODO: 既存のval=書式をtext=&式へ移行し、valを廃止する
+			const varName = args.name ?? '';
+			if (! varName) throw '[let] nameは必須です（試作仕様）';
 			const exp = args.val ?? '';
 			this.#val.set(varName, this.#expr.parse(exp), <T_CAST>(args.cast ?? ''));
 			return 'skip';
 		}
+
+		// ---- 文字列・数値操作タグ（本家 Variable.ts:347-432 を移植） ----
+		// どれも「text属性を加工して、[let]と同じ規則でname変数へ代入する」形。
+		//	本家は加工結果をhArg.textへ書き戻してから#let()を呼ぶが、
+		//	ここは代入部分を#letText()へ切り出し、加工結果の文字列を直接渡している。
+		//	textの中身を式にしたい場合は共通の属性前処理まかせ（text=&式）なので、
+		//	個々のタグは評価済みの文字列だけを見ればよい
+		case 'let_abs': {		// 絶対値（本家 Variable.ts:347）
+			// Math.abs()を使わないのは本家に合わせたもの
+			//	（数値以外を渡した時にbooleanが0/1になる等、紛れの元になるため）
+			const n = ScriptEngine.#argNumDef('let_abs', 'text', args.text, 0);
+			this.#letText('let_abs', args, String(n < 0 ? -n : n));
+			return 'skip';
+		}
+
+		case 'let_round': {		// 四捨五入（本家 Variable.ts:401）
+			const n = ScriptEngine.#argNumDef('let_round', 'text', args.text, 0);
+			this.#letText('let_round', args, String(Math.round(n)));
+			return 'skip';
+		}
+
+		case 'let_length':		// 文字列の長さ（本家 Variable.ts:379）
+			this.#letText('let_length', args, String((args.text ?? '').length));
+			return 'skip';
+
+		case 'let_char_at': {	// 文字列から一字取りだし（本家 Variable.ts:359）
+			const pos = ScriptEngine.#argNumDef('let_char_at', 'pos', args.pos, 0);
+			this.#letText('let_char_at', args, (args.text ?? '').charAt(pos));
+			return 'skip';
+		}
+
+		case 'let_index_of': {	// 文字列で検索（本家 Variable.ts:367）
+			const {val} = args;
+			if (! val) throw '[let_index_of] valは必須です';
+			const start = ScriptEngine.#argNumDef('let_index_of', 'start', args.start, 0);
+			this.#letText('let_index_of', args, String((args.text ?? '').indexOf(val, start)));
+			return 'skip';
+		}
+
+		case 'let_substr': {	// 文字列から抜きだし（本家 Variable.ts:424）
+			// len='all'でposから末尾まで。posが負なら末尾から数える（String.slice()そのまま）
+			const pos = ScriptEngine.#argNumDef('let_substr', 'pos', args.pos, 0);
+			const s = args.text ?? '';
+			this.#letText('let_substr', args, args.len === 'all'
+				? s.slice(pos)
+				: s.slice(pos, pos + int(ScriptEngine.#argNumDef('let_substr', 'len', args.len, 1))));
+			return 'skip';
+		}
+
+		case 'let_replace':		// 正規表現で置換（本家 Variable.ts:387）
+			// val省略時が文字列'undefined'での置換になるのは本家そのまま（String(hArg.val)）。
+			//	消したい場合は本家シナリオ同様 val='' と明示する
+			this.#letText('let_replace', args, (args.text ?? '')
+				.replace(ScriptEngine.#argReg('let_replace', args), String(args.val)));
+			return 'skip';
+
+		case 'let_search':		// 正規表現で検索（本家 Variable.ts:410）
+			this.#letText('let_search', args, String((args.text ?? '')
+				.search(ScriptEngine.#argReg('let_search', args))));
+			return 'skip';
 
 		case 'let_ml': {	// インラインテキスト代入（本家 ScriptIterator.ts:718 #let_ml()）
 			// Grammarが「[let_ml …]」と「その本文」を別トークンに割ってくれているので、
@@ -958,6 +1041,15 @@ export class ScriptEngine {
 			return 'skip';
 		}
 		}
+	}
+
+	// [let]系タグ共通の代入部分（本家 Variable.ts:313 #let()）。
+	//	本家は「castで型変換して代入、cast=strなら自動キャストを止める」という作りだが、
+	//	bluesnovelは自動キャストが読み出し側なので、cast=strの記憶もVarStore.set()が持つ
+	#letText(tag: string, args: {[k: string]: string}, text: string) {
+		const varName = args.name ?? '';
+		if (! varName) throw `[${tag}] nameは必須です`;
+		this.#val.set(varName, text, <T_CAST>(args.cast ?? ''));
 	}
 
 	// [if]の開始処理。呼び出し時点でthis.#idxは既に[if ...]の次のトークンを指している

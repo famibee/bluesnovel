@@ -284,6 +284,16 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/ScriptEngine_wait.test.ts`（新規13件）＋`test/e2e/waitev.e2e.ts`（新規6件・`prj_wait`フィクスチャ）。ユニット741件→754件、E2E 43件→49件
   - E2Eに入れたのは「ユーザー操作にどう反応するか」だけ。`pointer-events: none`のボタンはPlaywrightの通常の`click()`だと「他要素が横取りする」と判断されて待ち続けるので、`{force: true}`でその位置を実際にクリックし、読み進めへ抜けることを確かめている
 
+- [x] **文字列・数値操作タグ：`[let_replace]`・`[let_substr]`・`[let_length]`・`[let_index_of]`・`[let_char_at]`・`[let_abs]`・`[let_round]`・`[let_search]`**（2026-07-24）
+  - 本家 `Variable.ts:347-432` を移植。どれもDOMを触らずエンジン内で完結するので、テストはユニットのみ（E2Eは無し）
+  - 本家と同じく「`text`属性を加工して`[let]`と同じ規則で`name`変数へ代入する」形。本家は加工結果を`hArg.text`へ書き戻してから`#let()`を呼ぶが、こちらは代入部分を`#letText()`へ切り出して加工結果の文字列を直接渡す
+  - **`[let]`に本家書式の`text`属性を実装した**のが実質の要点。本家の`[let]`は`text`＝「値そのもの」で、式にしたい場合は`text=&式`と書く（＝共通の属性前処理`#resolveTag()`が評価する）。本家シナリオは`[let]`が計70箇所ほどあり全て`text=`なので、これが無いと`tmp_esm_uc`のシナリオは動かない。加えて`[let_replace]`/`[let_index_of]`は`val`を**別の意味**（置換文字列・検索文字列）で使うため、bluesnovel独自の`val`＝常に式評価という書式と衝突する
+  - bluesnovel独自の`val`は既存テスト・E2Eシナリオが多数使っているので当面残し、`text`があればそちらを優先する。`val`の廃止は`todo.md`へ
+  - `[let_abs]`が`Math.abs()`を使わないのは本家に合わせたもの（数値以外を渡した時にbooleanが0/1になる等、紛れの元になるため）。`[let_substr]`の`pos`負値（本家 `ext_voice.sn`のゼロ詰め3桁が使う）と`len=all`、`[let_replace]`/`[let_search]`の`flags`もそのまま移植
+  - `[let_replace]`の`val`省略時が文字列`'undefined'`での置換になるのも本家そのまま（`String(hArg.val)`）。消したい場合は本家シナリオ同様`val=''`と明示する
+  - 省略値つきの数値属性用に`#argNumDef()`を追加（本家 `argChk_Num()`の省略値あり呼び出しに対応）。`[let_char_at]`の`pos`、`[let_index_of]`の`start`、`[let_substr]`の`pos`/`len`など
+  - `test/ScriptEngine_letstr.test.ts`（新規27件）。ユニット754件→781件、E2Eは変更なし
+
 - [ ]
 
 

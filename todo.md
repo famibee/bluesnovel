@@ -23,13 +23,9 @@
   - [ ] `[clear_lay]`の`layer`省略（＝全レイヤ）。エンジンが`[add_lay]`済みレイヤ名を覚えていないため現状は必須（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[set_focus]`（フォーカス移動）**。キーボードフォーカスの管理役（本家 `FocusMng`）が要り、`add=`/`del=`は`dom=セレクタ`でHTML要素を対象に取るので、下の`[event]`の`key='dom=…'`と同時に設計する。`to=null`だけ実装しても意味が無いので保留
   - [ ] 同族の`[enable_event]`（レイヤ単位のクリック可否）は実装済み。`[set_focus]`はそれとは別で、キーボード操作の順序管理
-- [ ] **文字列操作タグ**（`ExprEval`の上に載るだけなのでエンジン内で完結。テストしやすい）
-  - [ ] `[let_replace]` 正規表現で置換（6箇所）
-  - [ ] `[let_substr]` 文字列から抜きだし
-  - [ ] `[let_length]` 文字列の長さ
-  - [ ] `[let_index_of]` 文字列で検索
-  - [ ] `[let_char_at]` 文字列から一字取りだし
-  - [ ] 同族で未使用だが揃えたい：`[let_abs]` `[let_round]` `[let_search]`
+- [ ] **`[let]`の`val`属性（bluesnovel独自の「常に式評価」書式）を廃止する**。本家書式の
+  `text=`（値そのもの。式にしたければ`text=&式`）を実装したので役目を終えている。既存テスト・
+  E2Eシナリオが`val=`を多数使っているため一括置換が要る（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **トゥイーンアニメ**（`ext_fg*.sn`の`fg_fi`/`fg_shake`等が使う。bluesnovelはGSAPなので置き換え設計から）
   - [ ] `[tsy]` トゥイーン開始
   - [ ] `[wait_tsy]` トゥイーン終了待ち

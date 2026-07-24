@@ -230,8 +230,12 @@ text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`
 `scale_y`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
 
-`let` (`cast=`), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
-expression eval, `[`/`]`/`;` in the body are literal), `if`/`elsif`/`else`/`endif`, `r`,
+`let` (`cast=`; `text=` is the 本家 form — the value as-is, `text=&式` to evaluate —
+while `val=` is a bluesnovel-only always-expression form kept for existing tests, and `text`
+wins if both are given), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
+expression eval, `[`/`]`/`;` in the body are literal),
+`let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/`let_substr`/
+`let_replace`/`let_search`, `if`/`elsif`/`else`/`endif`, `r`,
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
