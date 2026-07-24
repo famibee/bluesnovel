@@ -186,6 +186,13 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
   `myTrace` debug overlay. Contains a `SAMPLE_SN` fallback that renders a demo when assets
   are missing — this is prototype scaffolding to be removed once the asset pipeline exists.
+- **Filters are the sharpest case of the pixi→DOM divergence.** Upstream has 22 pixi filters;
+  CSS `filter` can express 9 of them natively, so that is what `src/ts/Filter.ts` implements.
+  The other 13 are all `ColorMatrixFilter` presets except `noise`, so they *are* reachable
+  later via an SVG `feColorMatrix` fed the same 5×4 matrix — the error message says so, and
+  deliberately distinguishes "no such filter" (upstream's wording) from "upstream has it, CSS
+  can't". Note `[lay filter=]` **replaces** the list while `[add_filter]` appends; that
+  asymmetry is upstream's.
 - **Stacking order is the array order** in `aPage[i]` (later = in front), matching pixi's
   child order upstream. `[lay float=/index=/dive=]` reorder it — **always both pages
   identically**, since `pickPage`/`putPage` and `[trans]`'s layer cloning all assume the two
@@ -240,7 +247,8 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
 text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
 `scale_y`/`pivot_x`/`pivot_y`/`blendmode`, `index`/`float`/`dive` for stacking order,
-`page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
+`filter=`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
+`add_filter`/`clear_filter`/`enable_filter`,
 `tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy` (GSAP tweens of those same layer
 attributes),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),

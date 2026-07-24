@@ -14,6 +14,7 @@
 //	型だけの参照（import type）は消えるので、下のGrpLayer/TxtLayerからの読み込みは影響しない
 
 import type {SysBase} from '../sn/SysBase';
+import {styFilter, type T_FLT} from '../ts/Filter';
 import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
@@ -42,8 +43,9 @@ export type T_LAY_STY = {
 	pivot_x?	: number;
 	pivot_y?	: number;
 	blendmode?	: string;	// CSSのmix-blend-mode値（[lay blendmode=…]がここへ変換して入れる）
+	aFlt?		: T_FLT[];	// [add_filter]で重ねたフィルター（重なり順＝配列順）
 };
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode'] as const;
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
 
 export type T_LAY_IDX = T_LAY_STY & {
 	cls		: 'grp'|'txt';
@@ -65,6 +67,11 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 		sty.transformOrigin = `${String(l.pivot_x ?? 0)}px ${String(l.pivot_y ?? 0)}px`;
 	}
 	if (l.blendmode !== undefined) sty.mixBlendMode = l.blendmode as CSSProperties['mixBlendMode'];
+	// [add_filter]で重ねたぶんを1つのfilterプロパティへ。全部無効／空なら出さない
+	if (l.aFlt !== undefined) {
+		const f = styFilter(l.aFlt);
+		if (f) sty.filter = f;
+	}
 	// visible=falseは領域ごと消す（display:none）。visibility:hiddenだと
 	//	表裏ページのvisibility制御（Stageのpage単位）と混ざって分かりにくい
 	if (l.visible === false) sty.display = 'none';

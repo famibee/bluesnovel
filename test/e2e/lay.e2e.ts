@@ -96,8 +96,20 @@ test('[lay float=true]でレイヤが最前面（DOMの末尾）へ移る', asyn
 	expect(await domOrder()).toEqual(['SPAN', 'DIV']);
 });
 
+test('[add_filter]が重なってCSSのfilterになり、[enable_filter]で個別に切れる', async ({page})=> {
+	for (let i = 0; i < 6; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('ふぃるた');
+
+	// 重なり順＝[add_filter]の順。CSSのfilterは関数を空白区切りで並べる
+	expect(await txtBoxStyle(page, 'filter')).toBe('sepia(1) blur(3px)');
+
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('きった');
+	expect(await txtBoxStyle(page, 'filter')).toBe('sepia(1)');	// index=1（blur）だけ無効に
+});
+
 test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibleは触らない', async ({page})=> {
-	for (let i = 0; i < 6; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
+	for (let i = 0; i < 8; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
 
 	// 見た目の指定が全て「未指定」へ戻る（＝TxtLayerのCSS既定に従う状態）
 	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');
@@ -112,6 +124,7 @@ test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibl
 	// b_color/styleも捨てられ、既定の背景色・字間へ戻る
 	expect(await txtBoxStyle(page, 'background-color')).toBe('rgb(127, 255, 212)');
 	expect(await txtBoxStyle(page, 'letter-spacing')).toBe('normal');
+	expect(await txtBoxStyle(page, 'filter')).toBe('none');	// フィルターも一緒に落ちる
 	// 中身（文字）も消える
 	expect(await mesStr(page)).toBe('');
 

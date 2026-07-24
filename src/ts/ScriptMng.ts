@@ -472,6 +472,15 @@ export class ScriptMng {
 		case 'clearLay':
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			break;
+		case 'addFilter':
+			this.$fncs.chgFilter({aLayNm: act.aLayNm, page: act.page, mode: act.replace ? 'replace' : 'add', flt: act.flt});
+			break;
+		case 'clearFilter':
+			this.$fncs.chgFilter({aLayNm: act.aLayNm, page: act.page, mode: 'clear'});
+			break;
+		case 'enableFilter':
+			this.$fncs.chgFilter({aLayNm: act.aLayNm, page: act.page, mode: 'enable', index: act.index, enabled: act.enabled});
+			break;
 		case 'moveLay':
 			this.$fncs.moveLay({nm: act.nm, mode: act.mode, ...(act.index !== undefined ? {index: act.index} : {}), ...(act.dive !== undefined ? {dive: act.dive} : {})});
 			break;

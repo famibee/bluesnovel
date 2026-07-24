@@ -44,7 +44,8 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
 	const toggleFullScr = useStore(s=> s.toggleFullScr);
 	const clearLay = useStore(s=> s.clearLay);
-	const moveLay = useStore(s=> s.moveLay);	// [lay float=/index=/dive=]のレイヤ重なり順
+	const moveLay = useStore(s=> s.moveLay);
+	const chgFilter = useStore(s=> s.chgFilter);	// [lay float=/index=/dive=]のレイヤ重なり順
 	const enableEvent = useStore(s=> s.enableEvent);
 	const addBtn = useStore(s=> s.addBtn);
 	const setReadBack = useStore(s=> s.setReadBack);
@@ -58,7 +59,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, getPages, clearLay, moveLay, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, getPages, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
 
 		inited();
 

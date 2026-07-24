@@ -28,6 +28,14 @@
 [lay layer=base float=true]
 まえへ[p]
 
+; フィルター。[add_filter]は重ね、[enable_filter]で個別に効き目を切り替える
+[add_filter layer=mes filter=sepia]
+[add_filter layer=mes filter=blur strength=3]
+ふぃるた[p]
+
+[enable_filter layer=mes index=1 enabled=false]
+きった[p]
+
 ; [clear_lay]で見た目は初期値へ、中身（文字・ボタン）も捨てる。visibleだけは触らない
 [lay layer=mes visible=false]
 [clear_lay layer=mes page=fore]

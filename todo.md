@@ -19,7 +19,6 @@
   - [ ] `to=`（指定ページへ移動）・`style=`（ページ移動中の見た目）・`key=`（移動中に有効なキーの限定）。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **レイヤ操作タグの残り**（`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`pivot_x`/`pivot_y`/`blendmode`/`b_color`/`style`/`index`/`float`/`dive`と`[clear_lay]`は実装済み）
   - [ ] `[lay bura=…]`（ぶら下げ禁則処理）。CSSプロパティ1つで済む話ではなく行分割の実装が要るので、文字組み（縦書き・`r_size`・`max_col`等）とまとめて
-  - [ ] `[lay filter=…]`は下の「フィルター」項目と一緒に
   - [ ] `[add_face blendmode=…]`はCSSの値をそのまま通しているので、`[lay blendmode=…]`（本家の4種だけを受けてCSS値へ変換）へ揃える（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[set_focus]`の残り**（`to=null`/`next`/`prev`・`add=`/`del='dom=…'`は実装済み）
   - [ ] 本家 `FocusMng` のゲームパッド対応（`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）は未対応。ゲームパッド入力そのものが未着手なので同時に
@@ -31,7 +30,7 @@
   - [ ] `[tsy path=…]`（複数区間の経路指定。`ext_fg.sn`の`fg_shake`/`fg_jump`が使う）。本家は`(x,y,o)`の並びを正規表現で切り出して`chain()`で数珠つなぎにする（`CmnTween.ts:167`）。GSAPならtimelineで自然に書けるので、置き換え設計から
   - [ ] `[tsy chain=…]`（他レイヤのトゥイーン終了に続ける）も同様に未対応
   - [ ] `[tsy]`の`width`/`height`は、レイヤ属性側（`[lay]`）に無いので未対応（`pivot_x`/`pivot_y`は対応済み）
-  - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）・`[tsy filter=…]`はpixi前提なので、フィルター対応と同時に
+  - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）はpixi前提なので保留。`[tsy filter=…]`（トゥイーン開始と同時にフィルターを掛ける）は`[lay filter=…]`と同じ仕組みで足せる
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
 - [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`は実装済み）
   - [ ] `[record_place]`（セーブポイント指定）と`[reload_script]`（スクリプト再読込）は、どちらもセーブ層（しおり）が要るので既読情報の永続化と一緒に。`[reload_script]`は本家では「今のスクリプトを読み直して`[record_place]`の位置へ戻る」＝`[record_place]`単体では意味がない
@@ -42,8 +41,11 @@
   - [ ] `[tsy_frame]`（フレームのトゥイーン）。フレームはストアに載っていないので`[tsy]`の仕組みをそのまま使えず、`FrameMng`側にGSAPを持つ形になる。`[tsy]`の`path=`対応と一緒に
   - [ ] フレーム内画像の差し替え（本家 `sn_repRes()`＋`data-src`。暗号化アセットをBlob URLに差し替える仕組み）はアセットパイプライン整備と一緒に。暗号化（`sys.arg.crypto`）も同様
   - [ ] `[event key='dom=…']`の`sn.event.domdata.*`（発火した要素の`data-*`を変数へ）は未対応
-- [ ] **フィルター**
-  - [ ] `[add_filter]` / `[clear_filter]`（＋`[enable_filter]`）
+- [ ] **フィルターの残り**（`[add_filter]`/`[clear_filter]`/`[enable_filter]`と`[lay filter=…]`は実装済み）
+  - [ ] **本家22種のうち、CSSのfilterで素で書ける9種だけ対応**（`blur`/`brightness`/`contrast`/`grayscale`/`black_and_white`/`negative`/`saturate`/`hue`/`sepia`）。残りは`noise`以外すべてpixiの`ColorMatrixFilter`のプリセットなので、**SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる**（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）。行列の実体はpixiのソースから拾ってくる必要があり、SVGフィルタ要素をDOMへ挿す仕組みも要るので別項目とする
+  - [ ] `noise`（ノイズ）はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
+  - [ ] `[add_filter blendmode=…]`（フィルター自体のブレンドモード）は未対応
+  - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
 - [ ] **音声（一旦無視）**：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wq]`（画面揺らし待ち）。`ext_voice.sn`の`voice`系マクロも同様。動画（`[wv]`）も同じく後回し
 
 ## その他

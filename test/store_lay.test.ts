@@ -102,3 +102,67 @@ it('clearLay_someLayers', ()=> {
 it('clearLay_unknownLayerThrows', ()=> {
 	expect(()=> S().clearLay({aLayNm: ['zz'], page: 'fore'})).toThrow('存在しないレイヤ zz です');
 });
+
+
+// ============ フィルター（[add_filter]系） ============
+
+const FLT1 = {css: 'sepia(1)', enabled: true};
+const FLT2 = {css: 'blur(2px)', enabled: true};
+const aFltOf = (nm: string, page: 0 | 1 = 0)=>
+	useStore.getState().aPage[page].find(e=> e.nm === nm)?.aFlt;
+
+it('chgFilter_addStacks', ()=> {
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT2});
+	expect(aFltOf('a')).toEqual([FLT1, FLT2]);	// 重ねる（重なり順＝配列順）
+	expect(aFltOf('b')).toBeUndefined();
+});
+
+it('chgFilter_replaceIsOne', ()=> {
+	// [lay filter=…]は置き換え（本家 Layer.lay()）
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'replace', flt: FLT2});
+	expect(aFltOf('a')).toEqual([FLT2]);
+});
+
+it('chgFilter_clear', ()=> {
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'clear'});
+	expect(aFltOf('a')).toBeUndefined();
+});
+
+it('chgFilter_bothPages', ()=> {
+	// 本家 ext_fg2.sn の [add_filter layer=… page=both filter=…] と同じ形
+	S().chgFilter({aLayNm: ['a'], page: 'both', mode: 'add', flt: FLT1});
+	expect(aFltOf('a', 0)).toEqual([FLT1]);
+	expect(aFltOf('a', 1)).toEqual([FLT1]);
+});
+
+it('chgFilter_allLayers', ()=> {
+	S().chgFilter({aLayNm: null, page: 'fore', mode: 'add', flt: FLT1});
+	expect(useStore.getState().aPage[0].map(e=> e.aFlt)).toEqual([[FLT1], [FLT1], [FLT1]]);
+});
+
+it('chgFilter_enable', ()=> {
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT2});
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'enable', index: 1, enabled: false});
+	expect(aFltOf('a')).toEqual([FLT1, {...FLT2, enabled: false}]);
+});
+
+it('chgFilter_enableChecks', ()=> {
+	// 本家 #enable_filter2() と同じ検査
+	expect(()=> S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'enable', index: 0}))
+		.toThrow('a にフィルターがありません');
+
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	expect(()=> S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'enable', index: 3}))
+		.toThrow('a のフィルターの個数（1）を越えています');
+});
+
+it('chgFilter_clearLayDropsFilters', ()=> {
+	// [clear_lay]は見た目を「未指定」へ戻すので、フィルターも一緒に落ちる
+	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
+	S().clearLay({aLayNm: ['a'], page: 'fore'});
+	expect(aFltOf('a')).toBeUndefined();
+});

@@ -21,6 +21,7 @@ import {Areas, type T_H_Areas} from '../sn/Areas';
 import {int} from '../sn/CmnLib';
 import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
+import {bldFilter, type T_FLT} from './Filter';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -66,6 +67,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
 	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
+	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
+	| {t: 'clearFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_filter]
+	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
@@ -250,6 +254,12 @@ export class ScriptEngine {
 		if (v === 'fore' || v === 'back') return v;
 		throw `属性 page【${v}】が不正です`;
 	}
+	// page=both も受ける版（消去系・フィルター系。本家 LayerMng.ts:535 の page='both'）
+	static #argPageBoth(tag: string, args: {[k: string]: string}, def: T_PAGE_BOTH): T_PAGE_BOTH {
+		const v = args.page ?? def;
+		if (v === 'fore' || v === 'back' || v === 'both') return v;
+		throw `[${tag}] 属性 page【${v}】が不正です`;
+	}
 
 
 	// 実行中のスクリプト（1ファイル分のパース結果）。switchScript()で差し替わる＝これがファイル切替。
@@ -329,6 +339,7 @@ export class ScriptEngine {
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
+		'add_filter', 'clear_filter', 'enable_filter',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -737,8 +748,33 @@ export class ScriptEngine {
 				if (i) aAct.push({t: 'moveLay', nm: nmLay, mode: 'index', index: i});
 			}
 			else if (args.dive) aAct.push({t: 'moveLay', nm: nmLay, mode: 'dive', dive: args.dive});
+
+			// [lay filter=…]はフィルターを**置き換える**（本家 Layer.lay() の
+			//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）
+			if (args.filter !== undefined) {
+				aAct.push({t: 'addFilter', aLayNm: [nmLay], page, flt: bldFilter(args), replace: true});
+			}
 			return 'skip';
 		}
+
+		// ---- フィルター（本家 LayerMng.ts:836 #add_filter() 他） ----
+		case 'add_filter':
+			aAct.push({t: 'addFilter', aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.#argPageBoth('add_filter', args, 'fore'),
+				flt: bldFilter(args), replace: false});
+			return 'skip';
+
+		case 'clear_filter':
+			aAct.push({t: 'clearFilter', aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.#argPageBoth('clear_filter', args, 'fore')});
+			return 'skip';
+
+		case 'enable_filter':	// 何番目のフィルターを効かせるか（本家 LayerMng.ts:894 #enable_filter2()）
+			aAct.push({t: 'enableFilter', aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.#argPageBoth('enable_filter', args, 'fore'),
+				index: ScriptEngine.#argNumDef('enable_filter', 'index', args.index, 0),
+				enabled: (args.enabled ?? 'true') !== 'false'});
+			return 'skip';
 
 		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）
 			// pageの既定は本家同様'back'（LayerMng.ts:1100 の[button]と同じく、裏を組む用途が主なため）。

@@ -359,6 +359,16 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/ScriptEngine_focus.test.ts`（新規8件）＋`test/e2e/focus.e2e.ts`（新規4件・`prj_frame`フィクスチャを拡張）。ユニット866件→874件、E2E 66件→70件
   - ゲームパッド対応（`range`のstepUp/Down等）とフォーカス時の見た目は未対応（`todo.md`へ）
 
+- [x] **フィルター：`[add_filter]`・`[clear_filter]`・`[enable_filter]`と`[lay filter=…]`**（2026-07-24）
+  - 本家 `LayerMng.ts:836 #add_filter()` ＋ `Layer.ts:101 bldFilters()`。**表示アーキテクチャ変更（pixi→React/DOM）の影響が一番大きかった項目**
+  - 本家のフィルターはpixiの`BlurFilter`/`NoiseFilter`/`ColorMatrixFilter`で22種あるが、bluesnovelはCSSの`filter`プロパティなので**素で書ける9種だけ対応**した（`blur`/`brightness`/`contrast`/`grayscale`/`black_and_white`/`negative`/`saturate`/`hue`/`sepia`）。既定値は本家に合わせてあり、`saturate`だけはpixiが「1を基準にamountぶん増やす」形なのでCSSへ渡す際に足している
+  - 未対応のものは**「名前を知らない」のか「本家にはあるがCSSで書けない」のか**を区別して知らせる。前者は本家と同じ`filter が異常です`、後者は書ける9種を挙げた専用メッセージ。残り13種のうち`noise`以外はすべて`ColorMatrixFilter`のプリセットなので、SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる（`todo.md`へ）
+  - 対象レイヤの選び方（`layer`省略＝全レイヤ）とページの扱い（`page=both`可）は`[clear_lay]`と全く同じで、違うのは配列をどういじるかだけなので、3タグ＋`[lay filter=]`をストアの1アクション（`chgFilter`）にまとめた
+  - `[lay filter=…]`は**置き換え**（本家 `Layer.lay()` の `c.filters = [bldFilters(hArg)]`）。重ねたいなら`[add_filter]`。この違いは本家由来なので残した
+  - 純粋な部分（filter名→CSS関数、有効なものだけ並べる）は`src/ts/Filter.ts`へ。GSAPもDOMも触らないのでエンジンから呼べる＝filter名の書き間違いをシナリオ実行時にその場で例外にできる（`Tsy.ts`と同じ流儀）
+  - `test/ScriptEngine_filter.test.ts`（新規15件）＋`test/store_lay.test.ts`に8件追加＋`test/e2e/lay.e2e.ts`に1件追加。ユニット874件→897件、E2E 70件→71件
+  - 本家サンプルが使うのは`[add_filter filter=brightness page=both]`（`ext_fg2.sn`の「最後に変化した立ち絵以外を暗くする」演出）だけなので、対応範囲としては足りている
+
 - [ ]
 
 
