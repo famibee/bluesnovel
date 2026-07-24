@@ -12,6 +12,14 @@
 `[notice]`はプロジェクト側プラグイン（`tmp_esm_uc/src/plugin/humane`）なのでプラグイン機構ごと対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 
+**目標経路の残り（2026-07-24時点で使用タグを洗い出した結果）**：`title.sn`の`[s]`まで
+実際に実行されるタグのうち、未対応で残っているのは以下だけになった。
+- 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
+- `[img]`（プロジェクト側マクロ。中身は`[lay]`なので実質対応済みだが、**画像アセットが要る**）
+- `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
+- `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
+つまり**残りの山はアセットパイプラインとしおり層**で、タグ単体の実装はおおむね一巡した。
+
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
   - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて
   - [ ] `[button]`の既定ページ。本家は`back`（`LayerMng.ts:1100`）だが、bluesnovelは既存シナリオが`[trans]`を挟まないため`fore`のまま。シナリオが`[trans]`前提になった時点で本家へ寄せる（`ScriptEngine.ts`に`//TODO:`あり）
@@ -46,6 +54,11 @@
   - [ ] `noise`（ノイズ）はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
   - [ ] `[add_filter blendmode=…]`（フィルター自体のブレンドモード）は未対応
   - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
+- [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
+  - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に
+  - [ ] `style=`/`style_hover=`は**pixiのTextStyleのJSON**なのでCSSへ読み替える設計から。`[lay style=…]`（CSSそのまま）とは別物なので注意
+  - [ ] `hint=`（ツールチップ。本家はヒント用レイヤを持つ）・`enterse=`/`clickse=`（効果音）は未対応。後者は音声対応と一緒に
+  - [ ] 本家は`width`/`height`で文字そのものを引き伸ばす（pixiの`Text.width/height`は拡縮）。こちらは箱の大きさとして扱い`height`をフォントサイズの基準にしている。実機で見た目を要確認
 - [ ] **音声（一旦無視）**：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wq]`（画面揺らし待ち）。`ext_voice.sn`の`voice`系マクロも同様。動画（`[wv]`）も同じく後回し
 
 ## その他
@@ -73,4 +86,5 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] `package.json`から`store`, `socket.io-client`を除去（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
-- [ ] `[button]`の見た目・レイアウト（現状は簡易スタイルのみ）は未検討
+- [ ] **文字装飾・文字組み**：`[ch]`（文字を追加）・`[span]`（インラインスタイル）・`[link]`/`[endlink]`（ハイパーリンク）・`[ruby2]`・`[tcy]`（縦中横）。`sub.sn`の`txt_lay_*`マクロが使う。`[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`とまとめて設計する
+- [ ] `[button]`の既定の見た目（色・角丸・余白）は仮のまま。座標・寸法指定（`left`/`top`/`width`/`height`等）は実装済み

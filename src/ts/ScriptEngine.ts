@@ -22,6 +22,7 @@ import {int} from '../sn/CmnLib';
 import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
+import type {T_BTN_STY} from '../components/TxtLayer';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -63,7 +64,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
-	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
+	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
 	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
@@ -238,6 +239,8 @@ export class ScriptEngine {
 
 	// [add_frame]/[frame]の見た目属性。**書かれた属性だけ**を拾う（[lay]と同じ流儀）
 	static readonly #A_FRM_NUM = ['alpha', 'x', 'y', 'width', 'height', 'scale_x', 'scale_y', 'rotate'] as const;
+	// [button]の配置・寸法・変形（本家 Button.ts）
+	static readonly #A_BTN_NUM = ['left', 'top', 'width', 'height', 'rotation', 'pivot_x', 'pivot_y', 'scale_x', 'scale_y', 'alpha'] as const;
 	static #argFrmSty(tag: string, args: {[k: string]: string}): T_FRM_STY {
 		const sty: T_FRM_STY = {};
 		if (args.visible !== undefined) sty.visible = args.visible !== 'false';
@@ -1107,7 +1110,20 @@ export class ScriptEngine {
 			//	page=backと明示すれば本家と同じ組み方ができる
 			//TODO: シナリオが[trans]前提になった時点で既定をbackへ寄せる（本家互換）
 			const page = ScriptEngine.argPage(args, 'fore');
-			aAct.push({t: 'addBtn', layerNm, page, nm, text: args.text ?? '', label, call, ...(fn ? {fn} : {})});
+
+			// 配置・寸法・変形（本家 Button.ts のコンストラクタ）。**書かれた属性だけ**を拾う。
+			//	本家は left/top を必ず持たせる（省略時0）が、こちらは未指定なら流し込み配置のまま。
+			//	試作のシナリオは複数ボタンを座標指定なしで並べており、既定を(0,0)にすると全部重なるため
+			const sty: T_BTN_STY = {};
+			for (const k of ScriptEngine.#A_BTN_NUM) {
+				const v = args[k];
+				if (v !== undefined) Object.assign(sty, {[k]: ScriptEngine.#argNum('button', k, v)});
+			}
+			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
+			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
+
+			aAct.push({t: 'addBtn', layerNm, page, nm, text: args.text ?? '', label, call,
+				...(fn ? {fn} : {}), ...(Object.keys(sty).length > 0 ? {sty} : {})});
 			return 'skip';
 		}
 

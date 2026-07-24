@@ -369,6 +369,15 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - `test/ScriptEngine_filter.test.ts`（新規15件）＋`test/store_lay.test.ts`に8件追加＋`test/e2e/lay.e2e.ts`に1件追加。ユニット874件→897件、E2E 70件→71件
   - 本家サンプルが使うのは`[add_filter filter=brightness page=both]`（`ext_fg2.sn`の「最後に変化した立ち絵以外を暗くする」演出）だけなので、対応範囲としては足りている
 
+- [x] **`[button]`の配置・寸法・変形属性と、目標経路の残タグ洗い出し**（2026-07-24）
+  - まず**目標（`title.sn`の`[s]`まで）に何が残っているか**を調べた。実行経路のファイル群から使用タグを全部抜き出し、実装済み一覧・プロジェクト側マクロ・音声系と突き合わせた結果、**一番効いている穴が`[button]`の座標指定**だと分かった。`title.sn`のタイトルボタン4つは`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`で絶対配置しており、bluesnovelの`[button]`は`text`/`label`/`call`/`fn`しか見ていなかった
+  - `left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`を実装（本家 `Button.ts` のコンストラクタ相当）。**書かれた属性だけ**を持つのは`[lay]`と同じ流儀
+  - **`left`/`top`が書かれた時だけ絶対配置**にした。本家は常に絶対配置（省略時0,0）だが、試作のシナリオは複数ボタンを座標指定なしで並べており、既定を(0,0)にすると全部重なってしまうため。書かなければ従来どおり流し込み
+  - 本家は`width`/`height`で**文字そのものを引き伸ばす**（pixiの`Text.width/height`は拡縮）。こちらは箱の大きさとして扱い、`height`をフォントサイズの基準にして収める。見た目の詰めは実機で（`todo.md`へ）
+  - `enabled=false`は文字を灰色にし`pointer-events: none`（本家も`fill`を`gray`にしてイベントを張らない）
+  - `test/ScriptEngine_btn.test.ts`（新規7件）＋`test/e2e/button.e2e.ts`に3件追加。ユニット897件→904件、E2E 71件→74件
+  - **洗い出しの結論を`todo.md`の冒頭へ記録した**：目標経路で未対応なのは音声・画像アセット・文字装飾（`[ch]`/`[span]`/`[link]`）・しおり層だけになり、**タグ単体の実装はおおむね一巡**。残りの山はアセットパイプラインとしおり層
+
 - [ ]
 
 

@@ -9902,8 +9902,12 @@ function Ql() {
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
-function $l({ text: e, label: t, call: n, fn: r, onActivate: i }) {
-	let a = Ql`
+function $l(e) {
+	let t = {};
+	return (e.left !== void 0 || e.top !== void 0) && (t.position = "absolute", t.left = `${String(e.left ?? 0)}px`, t.top = `${String(e.top ?? 0)}px`, t.margin = 0), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`, t.fontSize = `${String(e.height)}px`, t.lineHeight = 1, t.padding = 0, t.boxSizing = "border-box"), e.alpha !== void 0 && (t.opacity = e.alpha), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (t.mixBlendMode = e.blendmode), e.enabled === !1 && (t.color = "gray", t.borderColor = "gray", t.pointerEvents = "none"), t;
+}
+function eu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
+	let o = Ql`
 		position: relative;
 		z-index: 2;
 
@@ -9925,26 +9929,27 @@ function $l({ text: e, label: t, call: n, fn: r, onActivate: i }) {
 			color: #fff;
 			background-color: #27acd9;
 		}
-	`, o = (e) => {
-		e.stopPropagation(), i(t, n ?? !1, r);
-	}, s = (0, k.useRef)(null);
+	`, s = (e) => {
+		e.stopPropagation(), a(t, n ?? !1, r);
+	}, c = (0, k.useRef)(null);
 	return (0, k.useEffect)(() => {
-		let e = s.current;
+		let e = c.current;
 		if (e) return D.add(e), () => D.remove(e);
 	}, []), /* @__PURE__ */ m("span", {
-		css: a,
-		ref: s,
+		css: o,
+		style: i ? $l(i) : void 0,
+		ref: c,
 		tabIndex: 0,
-		onClick: o,
+		onClick: s,
 		onKeyDown: (e) => {
-			e.key !== "Enter" && e.key !== " " || (e.stopPropagation(), e.preventDefault(), i(t, n ?? !1, r));
+			e.key !== "Enter" && e.key !== " " || (e.stopPropagation(), e.preventDefault(), a(t, n ?? !1, r));
 		},
 		children: e
 	});
 }
 //#endregion
 //#region src/components/TxtLayer.tsx
-function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: o, b_color: s, b_alpha: c, styTxt: l, enabled: u, aBtn: d, onActivate: f }) {
+function tu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: o, b_color: s, b_alpha: c, styTxt: l, enabled: u, aBtn: d, onActivate: f }) {
 	let h = p((e) => e.isReadBack), g = p((e) => e.isTyping), _ = p((e) => e.setIsTyping), y = p((e) => e.skipReq), b = p((e) => e.skipping), S = p((e) => e.wait), C = (0, k.useRef)(null), w = (0, k.useRef)(null), T = (0, k.useRef)([]), E = (0, k.useRef)(null);
 	(0, k.useLayoutEffect)(() => {
 		let e = w.current;
@@ -9994,7 +9999,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		flex-wrap: wrap;
 		top: 70%;
 		${u ? "" : "pointer-events: none;"}
-	`, { r: M, g: N, b: P } = tu(s), F = Ql`
+	`, { r: M, g: N, b: P } = nu(s), F = Ql`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10083,11 +10088,12 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		}),
 		d.length > 0 && /* @__PURE__ */ m("span", {
 			css: [e, j],
-			children: d.map((e) => /* @__PURE__ */ m($l, {
+			children: d.map((e) => /* @__PURE__ */ m(eu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
+				sty: e.sty,
 				onActivate: f
 			}, e.nm))
 		}),
@@ -10130,7 +10136,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		})] })
 	] });
 }
-function tu(e) {
+function nu(e) {
 	return e === void 0 ? {
 		r: 127,
 		g: 255,
@@ -10143,7 +10149,7 @@ function tu(e) {
 }
 //#endregion
 //#region src/components/Stage.tsx
-function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next: o }) {
+function ru({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next: o }) {
 	let s = p((e) => e.aPage), c = p((e) => e.foreIdx), d = p((e) => e.trans), f = p((e) => e.replace);
 	class h extends n {
 		nm = "Stage";
@@ -10168,14 +10174,14 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			ease: "none"
 		}));
 	}, [d]);
-	let [T, D] = (0, k.useState)(iu());
+	let [T, D] = (0, k.useState)(au());
 	R(() => {
 		function e() {
-			D(iu());
+			D(au());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: A } = ru(T), { stageW: M, stageH: N } = E;
+	let { cvsScale: A } = iu(T), { stageW: M, stageH: N } = E;
 	(0, k.useLayoutEffect)(() => {
 		e.style.width = `${String(M * A)}px`, e.style.height = `${String(N * A)}px`, e.style.overflow = "hidden";
 	}, [
@@ -10298,7 +10304,7 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 						sty: n,
 						fn: e.fn,
 						aFace: e.aFace
-					}, e.nm) : /* @__PURE__ */ m(eu, {
+					}, e.nm) : /* @__PURE__ */ m(tu, {
 						cmn: se.cmn,
 						sty: n,
 						nm: e.nm,
@@ -10320,7 +10326,7 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		]
 	});
 }
-function ru({ width: e, height: t }) {
+function iu({ width: e, height: t }) {
 	let n = 0, r = 0, i = 1;
 	return E.stageW > e || E.stageH > t ? (E.stageW / E.stageH <= e / t ? (r = t, n = T(E.stageW / E.stageH * t)) : (n = e, r = T(E.stageH / E.stageW * e)), i = n / E.stageW) : (n = E.stageW, r = E.stageH, i = 1), {
 		cvsScale: i,
@@ -10328,7 +10334,7 @@ function ru({ width: e, height: t }) {
 		cvsHeight: r
 	};
 }
-function iu() {
+function au() {
 	let { innerWidth: e, innerHeight: t } = globalThis;
 	return {
 		width: e,
@@ -10336,6 +10342,6 @@ function iu() {
 	};
 }
 //#endregion
-export { nu as default };
+export { ru as default };
 
 //# sourceMappingURL=Stage.js.map

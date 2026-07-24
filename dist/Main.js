@@ -80,16 +80,17 @@ var b = g()((e, t) => ({
 		if (e.aPage[0].some((e) => e.nm === t.nm)) throw `レイヤ名 ${t.nm} は既に使用されています（既存の${e.aPage[0].find((e) => e.nm === t.nm).cls}レイヤと重複）`;
 		return { aPage: [[...e.aPage[0], structuredClone(t)], [...e.aPage[1], structuredClone(t)]] };
 	}),
-	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s }) => e((e) => {
-		let { idx: c, aLay: l } = _(e, n), u = y(l, t, "txt");
-		if (u.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
-		return u.aBtn = [...u.aBtn, {
+	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, sty: c }) => e((e) => {
+		let { idx: l, aLay: u } = _(e, n), d = y(u, t, "txt");
+		if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
+		return d.aBtn = [...d.aBtn, {
 			nm: r,
 			text: i,
 			label: a,
 			...o === void 0 ? {} : { call: o },
-			...s === void 0 ? {} : { fn: s }
-		}], v(e, c, l);
+			...s === void 0 ? {} : { fn: s },
+			...c === void 0 ? {} : { sty: c }
+		}], v(e, l, u);
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, aFace: i }) => e((e) => {
 		let { idx: a, aLay: o } = _(e, n), s = y(o, t, "grp");

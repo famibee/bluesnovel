@@ -18,12 +18,29 @@ import gsap from 'gsap';
 // [button]タグで文字レイヤ（UIコンテナ）に乗せるボタンで1件分のデータ
 //	skynovel_esmのTxtLayerが#cntBtnで複数のButtonを抱えるのと同じ発想：
 //	文字レイヤ自体を「UIコンテナ」とし、ボタンは独立レイヤにしない（表示/非表示を一緒に切り替えやすくするため）。
+// [button]で指定できる配置・寸法・変形（本家 Button.ts のコンストラクタ相当）。
+//	**書かれた属性だけ**を持つ（[lay]と同じ流儀）。left/topが無ければ流し込み配置のまま
+export type T_BTN_STY = {
+	left?		: number;
+	top?		: number;
+	width?		: number;
+	height?		: number;	// 本家は文字の高さ＝フォントサイズでもある
+	rotation?	: number;
+	pivot_x?	: number;
+	pivot_y?	: number;
+	scale_x?	: number;
+	scale_y?	: number;
+	alpha?		: number;
+	enabled?	: boolean;
+	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み
+};
 export type T_BTN = {
 	nm		: string;
 	text	: string;
 	label	: string;
 	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ
+	sty?	: T_BTN_STY;
 };
 type T_TXTARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
@@ -233,7 +250,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
 		{aBtn.length > 0 && <span css={[styChild, styBtnBox]}>
-			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} onActivate={onActivate}/>)}
+			{aBtn.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */

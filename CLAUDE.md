@@ -262,7 +262,9 @@ expression eval, `[`/`]`/`;` in the body are literal),
 `er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
 `macro`/`endmacro` (`return label=` changes where a subroutine resumes),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
-subroutine-call on click), `event`/`clear_event`, `enable_event`, `wait`,
+subroutine-call on click; `left`/`top`/`width`/`height`/`rotation`/`pivot_*`/`scale_*`/
+`alpha`/`enabled`/`blendmode` — but it only goes absolute when `left`/`top` are written,
+unlike upstream which always does), `event`/`clear_event`, `enable_event`, `wait`,
 `clearvar`/`clearsysvar`, `pop_stack`, `title`, `toggle_full_screen`, `dump_lay`,
 `add_frame`/`frame`/`set_frame`/`let_frame` (HTML frames), `set_focus`,
 and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`

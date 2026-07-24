@@ -24,6 +24,10 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 		{nm: 'btn_jump', text: 'ジャンプする', label: '*goal', call: false},
 		{nm: 'btn_fcall', text: '別ファイルを呼ぶ', label: '*fcall', call: true, fn: 'sub2'},
 		{nm: 'btn_fjump', text: '別ファイルへ飛ぶ', label: '*fjump', call: false, fn: 'sub2'},
+		// 見た目の属性は**書かれた分だけ**styへ入る（[lay]と同じ流儀）
+		{nm: 'btn_pos', text: '座標指定', label: '*goal', call: false,
+			sty: {left: 250, top: 360, width: 90, height: 30, rotation: 15}},
+		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {enabled: false}},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();
@@ -93,4 +97,40 @@ test('[button fn=…]で別ファイルのラベルへジャンプする', async
 
 	const {wait} = await snap(page);
 	expect(wait).toBeNull();	// 飛び先は[s]
+});
+
+test('[button left=/top=]は絶対配置になり、width/height/rotationもCSSへ落ちる', async ({page})=> {
+	// 本家 theme/title.sn のタイトルボタンと同じ書き方。
+	//	**left/topを書いた時だけ**絶対配置（本家は常に絶対配置で省略時0,0だが、
+	//	座標指定なしで複数並べる試作シナリオが全部重なってしまうため）
+	const box = await page.getByText('座標指定').evaluate(e=> {
+		const s = getComputedStyle(e);
+		return {pos: s.position, left: s.left, top: s.top, w: s.width, h: s.height, fs: s.fontSize};
+	});
+	expect(box).toEqual({pos: 'absolute', left: '250px', top: '360px',
+		w: '90px', h: '30px', fs: '30px'});
+
+	// rotation=15度。算出値は行列になるので成分で確かめる
+	const m = (await page.getByText('座標指定').evaluate(e=> getComputedStyle(e).transform))
+		.match(/matrix\(([^)]+)\)/)?.[1]?.split(', ').map(Number);
+	expect(m?.[0]).toBeCloseTo(Math.cos(Math.PI / 12), 3);
+	expect(m?.[1]).toBeCloseTo(Math.sin(Math.PI / 12), 3);
+});
+
+test('座標指定していないボタンは流し込み配置のまま', async ({page})=> {
+	expect(await page.getByText('ジャンプする').evaluate(e=> getComputedStyle(e).position))
+		.toBe('relative');
+});
+
+test('[button enabled=false]は灰色でクリックを受けない', async ({page})=> {
+	const st = await page.getByText('無効').evaluate(e=> {
+		const s = getComputedStyle(e);
+		return {color: s.color, pe: s.pointerEvents};
+	});
+	expect(st).toEqual({color: 'rgb(128, 128, 128)', pe: 'none'});
+
+	// pointer-events: none なので、その位置のクリックはステージへ抜けて「読み進め」になる
+	await page.getByText('無効').click({force: true});
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 });
