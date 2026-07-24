@@ -1,0 +1,33 @@
+; E2E用シナリオ（tsy.e2e.ts が使用）
+;	トゥイーンは「時間をかけて値が動く」ことそのものが本題なのでブラウザで見る：
+;	・[tsy]が時間をかけてレイヤ属性を動かし、[wait_tsy]がその終了を待つこと
+;	・相対指定（left='=100'）が現在値に足されること
+;	・[stop_tsy]が即座に終了状態へ送ること
+;	・[wait_tsy]中のクリックで打ち切れ、その場合も必ず終了状態になること
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 開始値をはっきりさせておく（未指定だとレイヤのCSS既定＝H_TSY_DEFが開始値になる）
+[lay layer=base left=0 top=0 alpha=1]
+はじめ[p]
+
+; 1.2秒かけて left: 0 -> 200
+[tsy layer=base time=1200 left=200]
+[wait_tsy layer=base]
+うごいた[p]
+
+; 相対指定：現在値(200)に+100 = 300
+[tsy layer=base time=300 left='=100']
+[wait_tsy layer=base]
+そうたい[p]
+
+; 長いトゥイーンを[stop_tsy]で即座に終了状態(top=400)へ
+[tsy layer=base name=tw1 time=9000 top=400]
+[stop_tsy name=tw1]
+とめた[p]
+
+; [wait_tsy]中のクリックで打ち切る。打ち切っても終了状態(alpha=0)になる
+[tsy layer=base time=9000 alpha=0]
+[wait_tsy layer=base]
+うちきり[s]

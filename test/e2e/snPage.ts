@@ -41,7 +41,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans' | 'wait';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'lay' | 'multi' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -175,6 +175,15 @@ export async function waitTransDone(page: Page) {
 		undefined, {timeout: 15_000},
 	);
 	await waitIdle(page);
+}
+
+// [tsy]（トゥイーン）で動くレイヤ属性を1つ読む。演出中の途中経過も見たいので、
+//	snap()のようにページ全体を取らず、必要な1値だけを即座に読む
+export async function layNum(page: Page, nm: string, prop: 'alpha'|'left'|'top'|'rotation'|'scale_x'|'scale_y'): Promise<number | undefined> {
+	return page.evaluate(([nm, prop])=> {
+		const s = (globalThis as any).__sn.store.getState();
+		return s.aPage[s.foreIdx].find((l: any)=> l.nm === nm)?.[prop!] as number | undefined;
+	}, [nm, prop]);
 }
 
 // [trace]等のデバッグ表示（ScriptMng が document.body 直下へ挿す span）の内容を取得。

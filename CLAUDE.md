@@ -228,6 +228,8 @@ unreadable. Plain `'…'` stays the default when no escaping is involved.
 `add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
 text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
 `scale_y`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
+`tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy` (GSAP tweens of those same layer
+attributes),
 `page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
 
 `let` (`cast=`; `text=` is the 本家 form — the value as-is, `text=&式` to evaluate —
@@ -285,6 +287,21 @@ rules make this work in React:
   the scenario resume, so the next text always lands on the new fore page. `[wt]` waits on
   the same deadline, and a click during it is re-read as "finish now" (`#goSafe()` intercepts
   it), which always lands on the end state — never a half-faded screen.
+
+**Tweens (`[tsy]`) go the other way from `[trans]`: through the store, not the DOM.** GSAP
+animates a plain object and `onUpdate` writes each frame back via `chgLay`, so the store
+always holds the layer's *current* value. Painting only to the DOM would be cheaper, but then
+`Caretaker`'s snapshots and `[trans]`'s layer cloning would read pre-animation values. Two
+consequences: 本家's `arrive` attribute (force the target values at the end) is effectively
+always on here, and **the GSAP target must never be handed to the store as-is** — GSAP hangs
+a `_gsap` cache on it that points back at the target, which makes the layer circular and
+breaks both `structuredClone` (`addLayer`/`[trans]`) and `JSON` (Memento). `ScriptMng`
+copies out only the properties being animated. The pure half — attribute value → target
+(`'=500'` relative, `'250,500'` random), tween.js ease names → GSAP ones, tween naming —
+lives in **`src/ts/Tsy.ts`**, which touches neither GSAP nor the DOM so the engine can call
+it and reject a bad `ease=` at scenario-run time. Note 本家's `[tsy]` only reads `x`/`y`
+(`CmnTween.aLayerPrpNm`) even though `tmp_esm_uc`'s `ext_fg.sn` writes `left=`/`top=` — those
+are silently ignored upstream; here `x`/`y` are aliases of `left`/`top` so both work.
 
 `char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
 from the defining tag onwards — text before it stays literal, and one text token can split

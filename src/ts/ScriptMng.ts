@@ -13,6 +13,10 @@ import {CmnLib} from '../sn/CmnLib';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
+import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
+import type {T_LAY_STY_ARG} from '../store/store';
+
+import gsap from 'gsap';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
@@ -173,6 +177,10 @@ export class ScriptMng {
 			if (this.#waiting.canskip) this.#endWait();
 			return;
 		}
+		if (this.#tsyWaiting) {
+			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
+			return;
+		}
 		this.#runStep().catch(()=> {/* myTraceで表示済み */});
 	}
 	#stopped = false;	// [s]で停止中か
@@ -251,6 +259,88 @@ export class ScriptMng {
 		this.#goSafe();
 	}
 
+	// ===== トゥイーンアニメ（[tsy]/[wait_tsy]/[stop_tsy]/[pause_tsy]/[resume_tsy]） =====
+	//	本家（CmnTween.ts）は@tweenjs/tween.jsでpixiのDisplayObjectを直接動かすが、
+	//	こちらはGSAPで**ストアのレイヤ属性を**動かす。つまり画面の現在値は常にストアが持つ。
+	//	見た目だけをDOMへ書く手もある（[trans]はそうしている）が、それだとMemento（読み戻り）や
+	//	[trans]のレイヤ複製が演出前の古い値を拾ってしまうため、こちらはストア経由にした。
+	//	副作用として本家のarrive属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる。
+	//	トゥイーン名（tw_nm）はname省略時レイヤ名（本家 CmnTween.#tw_nm()）
+	readonly #hTw: {[tw_nm: string]: {tw: gsap.core.Tween; end: ()=> void}} = Object.create(null);
+	#tsyWaiting	: {tw_nm: string; canskip: boolean} | undefined;	// [wait_tsy]で待っている最中か
+
+	#beginTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy'}>) {
+		// 同名のトゥイーンが動いていたら畳んでから始める。本家は#hTwInfを上書きするだけで
+		//	古いトゥイーンはGroupに残ったまま動き続けてしまうので、そこだけ変えている
+		this.#hTw[act.tw_nm]?.tw.kill();
+		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+		delete this.#hTw[act.tw_nm];
+
+		const cur = this.$fncs.getLaySty(act.nm, act.page);
+		// GSAPに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
+		//	相対指定（left='=100'）と、未指定属性の開始値（＝各レイヤのCSS既定＝H_TSY_DEF）を
+		//	ここで解決する。エンジン側は現在値を知らないので相対のまま渡してくる
+		const aPrp = Object.keys(act.hTo) as T_TSY_PRP[];
+		const from: {[k: string]: number} = {};
+		const to	: {[k: string]: number} = {};
+		for (const k of aPrp) {
+			const t = act.hTo[k]!;
+			const now = cur[k] ?? H_TSY_DEF[k];
+			from[k] = now;
+			to[k] = t.rel ? now + t.v : t.v;
+		}
+		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
+		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
+		//	structuredClone（addLayer/[trans]）もJSON化（Memento）も落ちる。
+		//	動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトにする
+		const apply = ()=> {
+			const sty: T_LAY_STY_ARG = {};
+			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
+			this.$fncs.chgLay({nm: act.nm, page: act.page, sty});
+		};
+		// 終了状態の確定。時間切れでも[stop_tsy]でも[wait_tsy]中のクリックでも必ずここを通すので、
+		//	中途半端な見た目のまま止まることはない（本家 stop().end() と同じ考え方）
+		const end = ()=> {Object.assign(from, to); apply()};
+
+		// time=0（既読スキップ中もここ）は演出せず即座に終了状態へ
+		if (act.msec <= 0 && act.delay <= 0) {end(); this.#onTsyEnd(act.tw_nm); return}
+
+		this.#hTw[act.tw_nm] = {end, tw: gsap.to(from, {
+			...to,
+			duration	: act.msec / 1000,	// GSAPは秒、シナリオはミリ秒
+			delay		: act.delay / 1000,
+			ease		: act.ease,
+			repeat		: act.repeat,
+			yoyo		: act.yoyo,
+			onUpdate	: apply,
+			onComplete	: ()=> {end(); this.#onTsyEnd(act.tw_nm)},
+		})};
+	}
+
+	// トゥイーン1件の後片付け。[wait_tsy]で待っていたなら続きを回す
+	#onTsyEnd(tw_nm: string) {
+		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+		delete this.#hTw[tw_nm];
+		if (this.#tsyWaiting?.tw_nm !== tw_nm) return;
+
+		this.#tsyWaiting = undefined;
+		// #runStep()の中から呼ばれる場合がある（[tsy time=0]直後の[wait_tsy]等）ので、
+		//	#busyが下りるのを待ってから回す
+		setTimeout(()=> this.#goSafe(), 0);
+	}
+	// 終了状態へ送って止める（[stop_tsy]、[wait_tsy]中のクリック）
+	#endTsy(tw_nm: string) {
+		const ti = this.#hTw[tw_nm];
+		if (ti) {ti.tw.kill(); ti.end()}
+		this.#onTsyEnd(tw_nm);
+	}
+	// [wait_tsy]：動いているトゥイーンが無ければ待たずに続きへ（本家 wait_tsy() も false を返す）
+	#waitTsy(tw_nm: string, canskip: boolean) {
+		if (! this.#hTw[tw_nm]) {setTimeout(()=> this.#goSafe(), 0); return}
+
+		this.#tsyWaiting = {tw_nm, canskip};
+	}
+
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
 	//	途中で'loadScript'（別スクリプトへの移動要求）が返ったら、fetchしてから続きを回す。
 	//	engine.step()自体は同期のまま（DOM/fetch非依存でユニットテストできる設計を保つ）
@@ -282,6 +372,7 @@ export class ScriptMng {
 				const last = aAct.at(-1);
 				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
 				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
+				if (last?.t === 'waitTsy') {this.#waitTsy(last.tw_nm, last.canskip); return}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -342,6 +433,18 @@ export class ScriptMng {
 			break;
 		case 'wait':
 			// 実処理は#runStep()側（#beginWait()）。表示への影響は無い
+			break;
+		case 'tsy':
+			this.#beginTsy(act);
+			break;
+		case 'waitTsy':
+			// 実処理は#runStep()側（#waitTsy()）。表示への影響は無い
+			break;
+		case 'stopTsy':
+			this.#endTsy(act.tw_nm);
+			break;
+		case 'pauseTsy':
+			this.#hTw[act.tw_nm]?.tw.paused(act.paused);
 			break;
 		case 'clearPageLog':
 			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる

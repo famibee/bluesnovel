@@ -294,6 +294,20 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - 省略値つきの数値属性用に`#argNumDef()`を追加（本家 `argChk_Num()`の省略値あり呼び出しに対応）。`[let_char_at]`の`pos`、`[let_index_of]`の`start`、`[let_substr]`の`pos`/`len`など
   - `test/ScriptEngine_letstr.test.ts`（新規27件）。ユニット754件→781件、E2Eは変更なし
 
+- [x] **トゥイーンアニメ：`[tsy]`・`[wait_tsy]`・`[stop_tsy]`・`[pause_tsy]`・`[resume_tsy]`**（2026-07-24）
+  - 本家 `LayerMng.ts:798 #tsy()` ＋ `CmnTween.ts`。本家は`@tweenjs/tween.js`でpixiの`DisplayObject`を直接動かすが、bluesnovelは**GSAPでストアのレイヤ属性（`T_LAY_STY`）を動かす**形にした。つまり画面の現在値は常にストアが持つ
+  - 見た目だけをDOMへ書く手もある（`[trans]`はそうしている）が、それだと**Memento（読み戻り）や`[trans]`のレイヤ複製が演出前の古い値を拾う**。副作用として、本家の`arrive`属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる
+  - **落とし穴**：GSAPは対象オブジェクトへ自分用のキャッシュ（`_gsap`。中から`target`を指し返す）を生やすので、トゥイーン対象をそのままストアへ渡すとレイヤが循環参照になり、`structuredClone`（`addLayer`/`[trans]`）も`JSON`化（Memento）も落ちる。動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトを作る（E2Eが最初に踏んで発覚）
+  - 純粋な部分（属性値→目標値、イージング名の解決、トゥイーン名）は`src/ts/Tsy.ts`へ分けた。GSAPもDOMも触らないのでエンジンから呼べる＝**書き間違いをシナリオ実行時にその場で例外にできる**（`[tsy ease=Nazo.Out]`等）
+  - 属性値の書式は本家そのまま：`500`／`'=500'`（現在値からの相対）／`'250,500'`（ランダム）／`'=250,500'`。相対はレイヤの現在値が要るので、エンジンは`{v, rel}`のまま渡し、`ScriptMng`がストアの現在値（`getLaySty`を新設）と足し合わせる
+  - イージングはtween.jsの31種をGSAPへ機械的に変換（`Quadratic`〜`Quintic`＝`power1`〜`power4`、`Sinusoidal`=`sine`、`Exponential`=`expo`、`Circular`=`circ`、`Linear.None`=`none`）
+  - **本家の`[tsy]`は`x`/`y`しか見ない**（`CmnTween.aLayerPrpNm`）のに、`tmp_esm_uc`の`ext_fg.sn`は`[tsy left=… top=…]`と書いている＝本家では黙って無視されている。bluesnovelのレイヤ属性は`left`/`top`なので、`x`/`y`をその別名として受けて両方効くようにした
+  - `[stop_tsy]`・`[wait_tsy]`中のクリックは、どちらも必ず「終了状態」へ送る（本家 `stop().end()` と同じ考え方）。中途半端な見た目のまま止まることはない
+  - 既読スキップ中は`time`/`delay`を0にして即座に終了状態へ（本家 `CmnTween.tween()` の`isSkipping`判定）。`repeat`は本家が「`repeat=1`で計1回」なので`repeat-1`を渡す規約で、GSAPも同じ（0で1回、-1で無限）
+  - 本家は同名トゥイーンの開始時に`#hTwInf`を上書きするだけで古いトゥイーンがGroupに残って動き続けるので、そこだけ変えて`kill()`している
+  - `test/ScriptEngine_tsy.test.ts`（新規24件）＋`test/e2e/tsy.e2e.ts`（新規4件・`prj_tsy`フィクスチャ）。ユニット781件→805件、E2E 49件→53件
+  - `path=`（複数区間の経路）・`chain=`・`render=`・`filter=`・`backlay=`・`width`/`height`/`pivot_*`は未対応（`todo.md`へ）
+
 - [ ]
 
 

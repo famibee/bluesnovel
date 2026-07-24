@@ -26,6 +26,7 @@ type T_STATE = {
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
 	chgLay	: (arg: T_CHGLAY)=> void,
+	getLaySty: (nm: string, page: T_PAGE)=> T_LAY_STY,
 	enableEvent: (arg: T_ENABLEEVENT)=> void,
 	clearLay: (arg: T_CLEARLAY)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
@@ -113,7 +114,7 @@ export type T_ADDBTN = {
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ（label省略時はそのファイルの先頭）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'clearLay'|'enableEvent'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'getLaySty'|'clearLay'|'enableEvent'|'addBtn'|'addTitle'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -136,7 +137,7 @@ function findLay<C extends 'grp' | 'txt'>(aLay: T_LAY[], nm: string, cls: C) {
 }
 
 
-export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
+export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリー化
 	txt		: '',
 	addTxt	: t=> set(s=> ({txt: s.txt + t})),
 	clearTxt: ()=> set(()=> ({txt: ''})),
@@ -195,6 +196,20 @@ export const useStore = create<T_STATE>()(set=> ({	// わざとカーリー化
 		Object.assign(e, sty);
 		return putPage(s, idx, aLay);
 	}),
+	// [tsy]（トゥイーン）の開始値を読むための唯一の読み出し口。setterではないのでgetを使う。
+	//	「現在値からの相対」（[tsy left='=100']）と、GSAPへ渡す開始値のために要る。
+	//	未指定の属性は値を持たない（＝各レイヤのCSS既定）ので、ここではundefinedのまま返し、
+	//	既定値の穴埋めは呼ぶ側（ScriptMngのH_TSY_DEF）に任せる
+	getLaySty: (nm: string, page: T_PAGE)=> {
+		const s = get();
+		const aLay = s.aPage[page === 'fore' ? s.foreIdx : (1 - s.foreIdx) as 0 | 1];
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+
+		const sty: T_LAY_STY = {};
+		for (const k of A_LAY_STY_KEY) if (e[k] !== undefined) Object.assign(sty, {[k]: e[k]});
+		return sty;
+	},
 	// [enable_event]：表裏どちらのページにも同じ値を入れる。
 	//	本家はレイヤ（Pagesの片面ではなくレイヤ自体）が持つ状態なので、[trans]で入れ替わっても揺れないようにする
 	enableEvent: ({nm, enabled}: T_ENABLEEVENT)=> set(s=> ({aPage: s.aPage.map(a=> {

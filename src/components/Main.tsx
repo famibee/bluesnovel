@@ -40,6 +40,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const chgBAlpha = useStore(s=> s.chgBAlpha);
 	const chgStr = useStore(s=> s.chgStr);
 	const chgLay = useStore(s=> s.chgLay);
+	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
 	const clearLay = useStore(s=> s.clearLay);
 	const enableEvent = useStore(s=> s.enableEvent);
 	const addBtn = useStore(s=> s.addBtn);
@@ -54,7 +55,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, clearLay, enableEvent, addBtn, addTitle, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, clearLay, enableEvent, addBtn, addTitle, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
 
 		inited();
 

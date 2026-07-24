@@ -26,10 +26,12 @@
 - [ ] **`[let]`の`val`属性（bluesnovel独自の「常に式評価」書式）を廃止する**。本家書式の
   `text=`（値そのもの。式にしたければ`text=&式`）を実装したので役目を終えている。既存テスト・
   E2Eシナリオが`val=`を多数使っているため一括置換が要る（`ScriptEngine.ts`に`//TODO:`あり）
-- [ ] **トゥイーンアニメ**（`ext_fg*.sn`の`fg_fi`/`fg_shake`等が使う。bluesnovelはGSAPなので置き換え設計から）
-  - [ ] `[tsy]` トゥイーン開始
-  - [ ] `[wait_tsy]` トゥイーン終了待ち
-  - [ ] `[stop_tsy]` トゥイーン中断（＋`[pause_tsy]`/`[resume_tsy]`）
+- [ ] **トゥイーンアニメの残り**（`[tsy]`/`[wait_tsy]`/`[stop_tsy]`/`[pause_tsy]`/`[resume_tsy]`は実装済み）
+  - [ ] `[tsy path=…]`（複数区間の経路指定。`ext_fg.sn`の`fg_shake`/`fg_jump`が使う）。本家は`(x,y,o)`の並びを正規表現で切り出して`chain()`で数珠つなぎにする（`CmnTween.ts:167`）。GSAPならtimelineで自然に書けるので、置き換え設計から
+  - [ ] `[tsy chain=…]`（他レイヤのトゥイーン終了に続ける）も同様に未対応
+  - [ ] `[tsy]`の`width`/`height`/`pivot_x`/`pivot_y`は、レイヤ属性側（`[lay]`）に無いので未対応。`[lay]`の`pivot_*`と同時に
+  - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）・`[tsy filter=…]`はpixi前提なので、フィルター対応と同時に
+  - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
 - [ ] **しおり・システム系**
   - [ ] `[record_place]` セーブポイント指定（既読永続化・セーブ層と一緒に）
   - [ ] `[reload_script]` スクリプト再読込

@@ -19,6 +19,7 @@ import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
 import {int} from '../sn/CmnLib';
+import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -65,6 +66,10 @@ export type T_ENGINE_ACTION =
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
+	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）
+	| {t: 'waitTsy'; tw_nm: string; canskip: boolean}	// [wait_tsy]。トゥイーン終了待ち。[wt]と同じくstep()はここで一旦返る
+	| {t: 'stopTsy'; tw_nm: string}		// [stop_tsy]。トゥイーンを終了状態へ送って中断（本家 stop().end()）
+	| {t: 'pauseTsy'; tw_nm: string; paused: boolean}	// [pause_tsy]/[resume_tsy]
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
 ;
 
@@ -271,6 +276,7 @@ export class ScriptEngine {
 		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
+		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -693,6 +699,49 @@ export class ScriptEngine {
 			aAct.push({t: 'waitTrans', canskip: (args.canskip ?? 'true') !== 'false'});
 			return 'stop';
 		}
+
+		// ---- トゥイーンアニメ（本家 LayerMng.ts:798 #tsy()＋CmnTween.ts） ----
+		// 本家は@tweenjs/tween.jsでpixiのDisplayObjectを直接動かすが、bluesnovelは
+		//	GSAPでストアのレイヤ属性（T_LAY_STY）を動かす＝**必ずストアが現在値を持つ**形にした。
+		//	見た目だけをDOMへ書くとMemento（読み戻し）や[trans]の複製が演出前の値を拾ってしまう。
+		//	結果、本家のarrive属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる
+		case 'tsy': {
+			const {layer} = args;
+			if (! layer) throw '[tsy] layerは必須です';
+
+			// 既読スキップ中は演出時間0＝即座に終了状態へ（本家 CmnTween.tween() の isSkipping 判定）
+			const skip = this.skipEnabled;
+			const msec = skip ? 0 : ScriptEngine.#argNum('tsy', 'time', args.time ?? '');
+			const delay = skip ? 0 : ScriptEngine.#argNumDef('tsy', 'delay', args.delay, 0);
+			// 本家は「repeat=1で計1回」なのでtween.jsへは repeat-1 を渡す。GSAPも同じ規約
+			//	（0で1回だけ、-1で無限）なので、0以下は無限＝-1とする
+			const rep = ScriptEngine.#argNumDef('tsy', 'repeat', args.repeat, 1);
+			aAct.push({
+				t: 'tsy', tw_nm: tsyName('tsy', args), nm: layer,
+				page: ScriptEngine.argPage(args, 'fore'),	// 本家は表ページ固定（pg.fore）だが、page指定も受ける
+				msec, delay, ease: easeToGsap(args.ease),
+				repeat: rep > 0 ? rep - 1 : -1, yoyo: (args.yoyo ?? 'false') !== 'false',
+				hTo: cnvTweenArg('tsy', args),
+			});
+			return 'skip';	// [tsy]自体は待たない（本家も false を返す）。待ちたければ[wait_tsy]
+		}
+
+		case 'wait_tsy':	// トゥイーン終了待ち（本家 CmnTween.ts:265 wait_tsy()）
+			// [wt]と同じ形。動いているトゥイーンが無ければ待たずに済ませるのもScriptMng側で本家同様
+			aAct.push({t: 'waitTsy', tw_nm: tsyName('wait_tsy', args), canskip: (args.canskip ?? 'true') !== 'false'});
+			return 'stop';
+
+		case 'stop_tsy':	// トゥイーン中断（本家 CmnTween.ts:284。stop()とend()は別＝終了状態へ送ってから止める）
+			aAct.push({t: 'stopTsy', tw_nm: tsyName('stop_tsy', args)});
+			return 'skip';
+
+		case 'pause_tsy':	// 一時停止（本家 CmnTween.ts:291）
+			aAct.push({t: 'pauseTsy', tw_nm: tsyName('pause_tsy', args), paused: true});
+			return 'skip';
+
+		case 'resume_tsy':	// 一時停止再開（本家 CmnTween.ts:298）
+			aAct.push({t: 'pauseTsy', tw_nm: tsyName('resume_tsy', args), paused: false});
+			return 'skip';
 
 		case 'let': {	// 変数代入（試作簡略：単純代入のみ。+=等の複合代入演算子は未対応）
 			// 本家（Variable.ts:313 #let()）の書式はtext属性＝「値そのもの」で、
