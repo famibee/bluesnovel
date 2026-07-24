@@ -256,6 +256,7 @@ expression eval, `[`/`]`/`;` in the body are literal),
 `char2macro`/`bracket2macro`, `button` (`call=true` for
 subroutine-call on click), `event`/`clear_event`, `enable_event`, `wait`,
 `clearvar`/`clearsysvar`, `pop_stack`, `title`, `toggle_full_screen`, `dump_lay`,
+`add_frame`/`frame`/`set_frame`/`let_frame` (HTML frames),
 and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`
 all take `fn=` to cross files, and a macro can be called from a file other than the one that
 defined it. Macro names are rejected
@@ -315,6 +316,18 @@ lives in **`src/ts/Tsy.ts`**, which touches neither GSAP nor the DOM so the engi
 it and reject a bad `ease=` at scenario-run time. Note 本家's `[tsy]` only reads `x`/`y`
 (`CmnTween.aLayerPrpNm`) even though `tmp_esm_uc`'s `ext_fg.sn` writes `left=`/`top=` — those
 are silently ignored upstream; here `x`/`y` are aliases of `left`/`top` so both work.
+
+**HTML frames (`[add_frame]`) are the one visible thing that is deliberately *not* in the
+store.** A frame is a live HTML document with its own JS state, so a JSON snapshot could not
+restore it; upstream keeps them out of the layer/page system too. `src/ts/FrameMng.ts` owns
+them DOM-side, `srcdoc` (not `src`) makes them same-origin so `[set_frame]`/`[let_frame]` can
+poke the iframe's `var`s directly, and `Stage.tsx` provides the container — a div that is
+**empty in JSX**, so React never reconciles the iframes away. Putting that container *inside*
+the scaled stage box is the one place bluesnovel is simpler than 本家: coordinates are written
+in stage units and window-resize tracking is free, where upstream multiplies by `cvsScale`
+everywhere and rewrites every frame on resize. `[add_frame]` and `[let_frame]` are **stop
+points** — they touch the DOM and must write the result back into engine variables before the
+scenario reads them, and actions are only applied after `step()` returns.
 
 `char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
 from the defining tag onwards — text before it stays literal, and one text token can split

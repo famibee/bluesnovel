@@ -10185,11 +10185,16 @@ function tu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		transform: scale(${j});
 	`, R = Zl`position: absolute; top: 0; left: 0;`, z = Zl`
 		position: absolute; top: 0; left: 0;
+		width: 100%; height: 100%;
+		z-index: 2;
+		pointer-events: none;
+	`, B = Zl`
+		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background-color: black;
-	`, B = Zl`
+	`, ee = Zl`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -10209,28 +10214,30 @@ function tu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, ee = (0, O.useRef)(null);
+	`, V = (0, O.useRef)(null), te = (0, O.useRef)(null);
 	L(() => {
-		let e = ee.current;
+		r.attachFrameBox(te.current);
+	}), L(() => {
+		let e = V.current;
 		e.addEventListener("mousedown", () => u());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [V, te] = A(!1), ne = I((e) => {
-		e.stopPropagation(), g(), !l() && (te(), b(!V));
+	let [ne, re] = A(!1), H = I((e) => {
+		e.stopPropagation(), g(), !l() && (re(), b(!ne));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), re = p((e) => e.fullScr), H = p((e) => e.setFullScr), U = p((e) => e.toggleFullScr), ie = N(ee, re, { onClose: () => H(!1) });
+	}), U = p((e) => e.fullScr), ie = p((e) => e.setFullScr), ae = p((e) => e.toggleFullScr), oe = N(V, U, { onClose: () => ie(!1) });
 	(0, O.useEffect)(() => {
-		r.setFullScr(ie);
-	}, [ie]);
-	let ae = { cmn: {
+		r.setFullScr(oe);
+	}, [oe]);
+	let se = { cmn: {
 		sys: t,
 		styChild: R,
-		isDesignMode: V,
+		isDesignMode: ne,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10242,31 +10249,31 @@ function tu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 	return /* @__PURE__ */ v("div", {
 		css: F,
 		onClick: i,
-		...ne,
-		ref: ee,
+		...H,
+		ref: V,
 		children: [
-			V && /* @__PURE__ */ v(x, { children: [
+			ne && /* @__PURE__ */ v(x, { children: [
 				/* @__PURE__ */ m("button", {
-					onClick: () => U(),
-					css: B,
+					onClick: () => ae(),
+					css: ee,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: B,
+					css: ee,
 					children: "Back"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: B,
+					css: ee,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ m("span", { children: ie }),
+			/* @__PURE__ */ m("span", { children: oe }),
 			s.map((e, t) => /* @__PURE__ */ m("div", {
 				ref: S[t],
 				"data-page": t === c ? "fore" : "back",
-				css: z,
+				css: B,
 				style: {
 					zIndex: +(t === c),
 					visibility: t === c || d ? "visible" : "hidden",
@@ -10274,16 +10281,16 @@ function tu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 				},
 				children: e.map((e) => {
 					let n = {
-						...ae.cmn.sty4Moveable,
+						...se.cmn.sty4Moveable,
 						...C(e)
 					};
 					return e.cls === "grp" ? /* @__PURE__ */ m(Yl, {
-						cmn: ae.cmn,
+						cmn: se.cmn,
 						sty: n,
 						fn: e.fn,
 						aFace: e.aFace
 					}, e.nm) : /* @__PURE__ */ m($l, {
-						cmn: ae.cmn,
+						cmn: se.cmn,
 						sty: n,
 						nm: e.nm,
 						isFore: t === c,
@@ -10296,7 +10303,11 @@ function tu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 						onActivate: (e, t, n) => r.jumpToLabelAndGo(e, t, n)
 					}, e.nm);
 				})
-			}, t))
+			}, t)),
+			/* @__PURE__ */ m("div", {
+				ref: te,
+				css: z
+			})
 		]
 	});
 }

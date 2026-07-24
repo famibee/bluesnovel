@@ -37,8 +37,10 @@
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）はElectron専用。本家もブラウザ版（`SysWeb`）では何もしないno-opなので、`dist_app`側の整備と一緒に
   - [ ] `[snapshot]`（画面のスナップショット）。本家はpixiのレンダラからcanvasを取るが、bluesnovelはDOM描画なので取得手段から検討（html2canvas等）
   - [ ] `[toggle_full_screen]`の残り：本家は全画面時にステージを画面中央へ寄せる（`SysBase.cvsResize()`）。bluesnovelは`transform: scale()`での拡縮なので、全画面時の見た目は実機で要確認
-- [ ] **HTMLフレーム**（`_yesno.sn`が全面的に使う。`[event key='dom=...']`とセット）
-  - [ ] `[add_frame]` / `[frame]` / `[set_frame]` / `[let_frame]`（＋`[tsy_frame]`）
+- [ ] **HTMLフレームの残り**（`[add_frame]`/`[frame]`/`[set_frame]`/`[let_frame]`と`[event key='dom=…']`は実装済み）
+  - [ ] `[tsy_frame]`（フレームのトゥイーン）。フレームはストアに載っていないので`[tsy]`の仕組みをそのまま使えず、`FrameMng`側にGSAPを持つ形になる。`[tsy]`の`path=`対応と一緒に
+  - [ ] フレーム内画像の差し替え（本家 `sn_repRes()`＋`data-src`。暗号化アセットをBlob URLに差し替える仕組み）はアセットパイプライン整備と一緒に。暗号化（`sys.arg.crypto`）も同様
+  - [ ] `[event key='dom=…']`の`sn.event.domdata.*`（発火した要素の`data-*`を変数へ）は未対応
 - [ ] **フィルター**
   - [ ] `[add_filter]` / `[clear_filter]`（＋`[enable_filter]`）
 - [ ] **音声（一旦無視）**：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wq]`（画面揺らし待ち）。`ext_voice.sn`の`voice`系マクロも同様。動画（`[wv]`）も同じく後回し
@@ -52,8 +54,9 @@
 - [ ] 既読情報の永続化（本家 `Variable.saveKidoku()` → `SysBase.data.kidoku` → localStorage）。`ScriptEngine.getKidoku()`/`setKidoku()`は用意済みなので、セーブ層ができ次第そこへ繋ぐ。保存タイミングは本家同様に停止点（`[l]`/`[p]`/`[s]`）
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
-- [ ] `[event]`の`url`（`[navigate_to]`）・`key='dom=セレクタ'`（HTML要素へのイベント割り当て）・`need_err`は未対応
+- [ ] `[event]`の`url`（`[navigate_to]`）は未対応
   - 修飾キー付きのキー名（`alt+enter`・`meta+0`等。本家 `SysBase.modKey()`）は対応済み（`Main.tsx` `keyName()`）
+  - `key='dom=フレームid:セレクタ'`・`need_err`も対応済み（HTMLフレームと同時に実装）
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - face合成そのもの（`add_face`/`[lay fn=... face=...]`）は実装・テスト済み
   - デザインモードでのMoveableリサイズ時、差分画像（face）は`dx`/`dy`が絶対px指定のため、拡大縮小に追随しない（`GrpLayer.tsx`）。比率換算の要否を検討

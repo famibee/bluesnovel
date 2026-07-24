@@ -335,6 +335,19 @@ skynovel_esmプロジェクトのmain.snからたどり、callしているsettin
   - **ストアのユニットテストを新設**（`test/store_lay.test.ts`）。並び替えの計算はストアにしか無く、E2Eで見るには細かすぎる。zustandの`create()`はDOMを要らないので`bun test`から直接触れる
   - `test/ScriptEngine_lay.test.ts`に11件追加・`test/store_lay.test.ts`（新規12件）＋`test/e2e/lay.e2e.ts`に3件追加。ユニット821件→844件、E2E 57件→60件
 
+- [x] **HTMLフレーム：`[add_frame]`・`[frame]`・`[set_frame]`・`[let_frame]`と`[event key='dom=…']`**（2026-07-24）
+  - 本家 `FrameMng.ts` の移植。`main.sn`が`[call fn=_yesno]`する先が全面的にこれを使うので、目標経路上の大物
+  - **フレームはストア（`aPage`）には載せない**。中身は自分のJS状態を持つ生きたHTML文書で、JSONへ写し取っても復元できないため（本家もiframeをcanvasの隣へ挿すだけでレイヤ・ページの仕組みには載せていない）。代わりに`src/ts/FrameMng.ts`がDOM側で抱え、`[set_frame]`/`[let_frame]`はiframeの`window`変数を直接読み書きする。`srcdoc`で作るので同一オリジン＝中の`var`変数・関数へ手が届く
+  - **本家より簡単になった点**：本家は位置・寸法にステージの拡縮（`cvsScale`）を毎回自分で掛けてiframeへ書き、リサイズのたびに全フレームを書き直していた。こちらは`Stage.tsx`が**拡縮される箱の中**にフレーム置き場（JSXでは子を持たない空div）を用意するので、ステージ座標のまま書けばよくリサイズ追従も勝手に効く。Reactは自分が作った子しか触らないので、そこへ`FrameMng`がiframeを足しても衝突しない
+  - `[add_frame]`は**停止点**にした（HTMLのfetchが要る。本家も`Reading.beginProc`で止める）。読み込み完了後、本家と同じ組み込み変数一式（`const.sn.frm.<id>`とその`.alpha`/`.x`/`.width`/`.visible`…）をエンジンへ書き戻してから再開する
+  - `[let_frame]`も停止点にした。**アクションの適用は`step()`が返った後**なので、そうしないと取得した値が同じstep内では古いまま読まれてしまう（本家はタグを1つずつ同期実行するので起きない問題）
+  - `[event key='dom=フレームid:セレクタ']`。**CSSセレクタは大小文字を区別する**ので、予約表の索引には小文字化した値を使いつつ、DOM側へは元の文字列（本家の`rawKeY`）を渡す。要素の種別でイベント名を変える（checkbox/rangeは`input`、text/textareaは`input`+`change`、他は`click`+Enter）のも本家どおり。発火は既存の`fireEvent`経路へ流し込むので、ラベルジャンプの扱いは通常のキー予約と同じ
+  - `srcdoc`に入れる前にHTML内の相対パスをそのHTMLの置き場所基準へ直す（本家 `FrameMng.ts:122`。`srcdoc`の中では相対パスの基準がドキュメント自身でなくなるため）
+  - **`Stage`は`lazy()`ロードなので、フレーム置き場はシナリオ開始より後に届く**（`[add_frame]`がスクリプト冒頭にあると確実にそうなる）。最初は「置き場所がまだありません」と例外にしていたが、待てば必ず来るので届くまで待つ形にした
+  - `test/ScriptEngine_frame.test.ts`（新規22件）＋`test/e2e/frame.e2e.ts`（新規6件・`prj_frame`フィクスチャ。自前の`yesno.html`が`var`変数と関数を持ち、それを読み書きする）。ユニット844件→866件、E2E 60件→66件
+  - E2Eの注意：このシナリオは`[add_frame]`/`[let_frame]`でstep()の途中から一旦返るため、その隙間が`waitIdle()`からは停止点と区別できない（複数ファイルと同じ事情）。表示の確定は`expect.poll`で待つ
+  - `[tsy_frame]`・フレーム内画像の差し替え（本家`sn_repRes()`）・`sn.event.domdata.*`は未対応（`todo.md`へ）
+
 - [ ]
 
 

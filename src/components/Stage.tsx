@@ -99,6 +99,17 @@ export default function Stage({
 		transform: scale(${cvsScale});
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
+	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、
+	//	FrameMng（DOM側）がここへiframeを足す。Reactは自分が作った子しか触らないので衝突しない。
+	//	ステージ（拡縮される内側の箱）の中に置くので、位置・寸法はステージ座標のまま書けばよく、
+	//	ウインドウリサイズ追従も勝手に効く（本家は毎回cvsScaleを掛けて書き直していた）。
+	//	箱自体はクリックを通し（pointer-events: none）、iframe側だけが受ける
+	const styFrames = css`
+		position: absolute; top: 0; left: 0;
+		width: 100%; height: 100%;
+		z-index: 2;
+		pointer-events: none;
+	`;
 	// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
 	//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
 	//	不透明な黒地にしておくことで、画像の無い部分は黒く塗り潰される
@@ -134,6 +145,10 @@ export default function Stage({
 
 	// useMouseWheel だと preventDefault() できないので手作り
 	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
+	// HTMLフレームの置き場所をFrameMng（DOM側）へ渡す
+	const frmRef = useRef<HTMLDivElement>(null);
+	useMount(()=> {scrMng.attachFrameBox(frmRef.current!)});
+
 	useMount(()=> {
 		const div = stageRef.current!;
 		div.addEventListener('mousedown', ()=> clearDrag());
@@ -199,6 +214,7 @@ export default function Stage({
 				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} b_color={l.b_color} b_alpha={l.b_alpha} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
 			})}
 		</div>)}
+		<div ref={frmRef} css={styFrames}/>
 	</div>;
 };
 	type T_WH = {

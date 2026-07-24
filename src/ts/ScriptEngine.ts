@@ -20,6 +20,7 @@ import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
 import {int} from '../sn/CmnLib';
 import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
+import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -70,6 +71,13 @@ export type T_ENGINE_ACTION =
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
 	| {t: 'fullScrKey'; key: string}	// [toggle_full_screen key=…]。そのキーで全画面切替できるようにする常駐予約
 	| {t: 'dumpLay'; aLayNm: string[] | null}	// [dump_lay]。レイヤの状態をデバッグ表示へ。nullは全レイヤ
+	// HTMLフレーム（本家 FrameMng.ts）。中身は生きたHTML文書なのでストアには入れず、
+	//	FrameMng（DOM側）が抱える。エンジンは組み込み変数 const.sn.frm.<id> だけを見る
+	| {t: 'addFrame'; id: string; src: string; sty: T_FRM_STY}	// [add_frame]。HTMLの読込が要るのでstep()はここで一旦返る
+	| {t: 'frame'; id: string; sty: T_FRM_STY; order?: T_FRM_ORDER; disabled?: boolean}	// [frame]
+	| {t: 'setFrame'; id: string; var_name: string; text: string}	// [set_frame]。iframe内のvar変数へ設定
+	| {t: 'letFrame'; id: string; var_name: string; fnc: boolean}	// [let_frame]。iframe内のvar変数／関数戻り値を組み込み変数へ。書き戻してから続けたいのでstep()は一旦返る
+	| {t: 'resvDomEvent'; rawKey: string; key: string; del: boolean; needErr: boolean}	// [event key='dom=…']のDOM側予約
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
@@ -223,6 +231,19 @@ export class ScriptEngine {
 		return s;
 	}
 
+	// [add_frame]/[frame]の見た目属性。**書かれた属性だけ**を拾う（[lay]と同じ流儀）
+	static readonly #A_FRM_NUM = ['alpha', 'x', 'y', 'width', 'height', 'scale_x', 'scale_y', 'rotate'] as const;
+	static #argFrmSty(tag: string, args: {[k: string]: string}): T_FRM_STY {
+		const sty: T_FRM_STY = {};
+		if (args.visible !== undefined) sty.visible = args.visible !== 'false';
+		for (const k of ScriptEngine.#A_FRM_NUM) {
+			const v = args[k];
+			if (v !== undefined) Object.assign(sty, {[k]: ScriptEngine.#argNum(tag, k, v)});
+		}
+		if (args.b_color !== undefined) sty.b_color = args.b_color;	// CSSの色をそのまま渡す（本家も同じ）
+		return sty;
+	}
+
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
 		const v = args.page ?? def;
 		if (v === 'fore' || v === 'back') return v;
@@ -306,6 +327,7 @@ export class ScriptEngine {
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
+		'add_frame', 'frame', 'set_frame', 'let_frame',
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -361,6 +383,10 @@ export class ScriptEngine {
 
 	// テスト・呼び出し側（将来のif実装等）から変数値を読むためのアクセサ
 	getVal(name: string): T_VAL_D {return this.#val.get(name)}
+
+	// ScriptMng（DOM側）が「DOMを触った結果」を組み込み変数へ書き戻すための口。
+	//	[add_frame]の読込完了や[let_frame]の取得値がこれを通る（本家 val.setVal_Nochk('tmp', …) 相当）
+	setValNochk(name: string, v: T_VAL_D) {this.#val.set(name, v)}
 
 	get fn() {return this.#script.fn}
 	get idx() {return this.#idx}
@@ -1107,14 +1133,20 @@ export class ScriptEngine {
 			this.clearKidoku();
 			return 'skip';
 
-		case 'event': {	// イベント予約（本家 EventMng.ts:543 #event() の、DOM・フォーカス処理を除いた核だけ）
-			const key = (args.key ?? '').toLowerCase();
+		case 'event': {	// イベント予約（本家 EventMng.ts:543 #event() の、フォーカス処理を除いた核）
+			const rawKey = args.key ?? '';
+			const key = rawKey.toLowerCase();
 			if (! key) throw '[event] keyは必須です';
+			// key='dom=フレームid:セレクタ' はHTMLフレーム内の要素へイベントを張る。
+			//	**CSSセレクタは大小文字を区別する**ので、表の索引には小文字化した値を使いつつ、
+			//	DOM側へは元の文字列（本家のrawKeY）をそのまま渡す
+			const isDom = key.startsWith('dom=');
 			const h = args.global === 'true' ? this.#hGlobalEvt : this.#hLocalEvt;
 
 			if (args.del === 'true') {	// 予約の取り消し
 				if (args.fn || args.label || args.call) throw '[event] fn/label/callとdelは同時指定できません';
 				delete h[key];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+				if (isDom) aAct.push({t: 'resvDomEvent', rawKey, key, del: true, needErr: false});
 				return 'skip';
 			}
 
@@ -1122,7 +1154,67 @@ export class ScriptEngine {
 			const fn = args.fn ?? this.fn;	// 省略時は現在のスクリプト（本家 hArg.fn ??= scriptFn）
 			if (! label && ! args.fn) throw '[event] fn,label いずれかは必須です';
 			h[key] = {fn, label, call: args.call === 'true', arg: args.arg ?? ''};
+			if (isDom) aAct.push({t: 'resvDomEvent', rawKey, key, del: false,
+				needErr: (args.need_err ?? 'true') !== 'false'});
 			return 'skip';
+		}
+
+		// ---- HTMLフレーム（本家 FrameMng.ts） ----
+		// 中身は自分のJS状態を持つ生きたHTML文書なので、レイヤ（aPage）には載せずFrameMngが抱える。
+		//	エンジンが見るのは組み込み変数 const.sn.frm.<id>（＝読み込み済みかどうか）だけ
+		case 'add_frame': {	// フレーム追加（本家 FrameMng.ts:69 #add_frame()）
+			const {id, src} = args;
+			if (! id) throw '[add_frame] idは必須です';
+			if (! src) throw '[add_frame] srcは必須です';
+			if (this.#val.get(`const.sn.frm.${id}`)) throw `[add_frame] frame【${id}】はすでにあります`;
+
+			aAct.push({t: 'addFrame', id, src, sty: ScriptEngine.#argFrmSty('add_frame', args)});
+			return 'stop';	// HTMLの読込が要る＝ScriptMng待ち（本家も Reading.beginProc で止める）
+		}
+
+		case 'frame': {	// フレームに設定（本家 FrameMng.ts:307 #frame()）
+			const {id} = args;
+			if (! id) throw '[frame] idは必須です';
+			this.#chkFrm('frame', id);
+
+			// 重なり順。本家は判定順が float → index → dive で、diveは「最背面へ」の意味しかない
+			//	（指定したidの下へ潜るのではなく、z-indexを負にするだけ）
+			const order: T_FRM_ORDER | undefined
+				= (args.float ?? 'false') !== 'false' ? {mode: 'float'}
+				: args.index !== undefined ? {mode: 'index', index: ScriptEngine.#argNum('frame', 'index', args.index)}
+				: args.dive ? {mode: 'dive'}
+				: undefined;
+			aAct.push({
+				t: 'frame', id, sty: ScriptEngine.#argFrmSty('frame', args),
+				...(order ? {order} : {}),
+				...(args.disabled !== undefined ? {disabled: args.disabled !== 'false'} : {}),
+			});
+			return 'skip';
+		}
+
+		case 'set_frame': {	// フレーム変数に設定（本家 FrameMng.ts:277 #set_frame()）
+			const {id, var_name, text} = args;
+			if (! id) throw '[set_frame] idは必須です';
+			if (! var_name) throw '[set_frame] var_nameは必須です';
+			if (! text) throw '[set_frame] textは必須です';
+			this.#chkFrm('set_frame', id);
+
+			// 本家同様、組み込み変数にも同じ値を控える（フレーム側と食い違わないように）
+			this.#val.set(`const.sn.frm.${id}.${var_name}`, text);
+			aAct.push({t: 'setFrame', id, var_name, text});
+			return 'skip';
+		}
+
+		case 'let_frame': {	// フレーム変数を取得（本家 FrameMng.ts:250 #let_frame()）
+			const {id, var_name} = args;
+			if (! id) throw '[let_frame] idは必須です';
+			if (! var_name) throw '[let_frame] var_nameは必須です';
+			this.#chkFrm('let_frame', id);
+
+			aAct.push({t: 'letFrame', id, var_name, fnc: (args.function ?? 'false') !== 'false'});
+			// 読み取った値をエンジンへ書き戻してから続ける。アクションの適用はstep()が返った後なので、
+			//	ここで返しておかないと**同じstep内では古い値のまま**になってしまう
+			return 'stop';
 		}
 
 		case 'clear_event':	// 予約イベントを全消去（本家 Reading.ts:69 ReadingState.clear_event()）
@@ -1180,6 +1272,11 @@ export class ScriptEngine {
 			return 'skip';
 		}
 		}
+	}
+
+	// フレームが読み込み済みか（本家も各タグの頭で tmp:const.sn.frm.<id> を見ている）
+	#chkFrm(tag: string, id: string) {
+		if (! this.#val.get(`const.sn.frm.${id}`)) throw `[${tag}] frame【${id}】が読み込まれていません`;
 	}
 
 	// [let]系タグ共通の代入部分（本家 Variable.ts:313 #let()）。

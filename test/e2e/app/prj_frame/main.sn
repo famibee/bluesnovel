@@ -1,0 +1,32 @@
+; E2E用シナリオ（frame.e2e.ts が使用）
+;	HTMLフレームは「本物のiframeを読み込んで、中のvar変数を読み書きする」ものなので
+;	ブラウザでしか確かめられない。ここで見るのは：
+;	・[add_frame]がHTMLを読み込み終えてからシナリオが進むこと（＋組み込み変数）
+;	・[set_frame]がフレーム内のvar変数へ入り、[let_frame function=true]が関数を呼べること
+;	・[frame visible=…]で出し入れできること
+;	・[event key='dom=id:セレクタ']でフレーム内のボタンがラベルへ飛ばせること
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[add_frame id=yesno src=yesno visible=false width=400 height=200]
+[event key='dom=yesno:#ok' label=*y global=true]
+[event key='dom=yesno:#close' label=*cancel global=true]
+; 読み込み完了で立つ組み込み変数（本家と同じ一式）
+[trace text="&'frm:'+ const.sn.frm.yesno +'/'+ const.sn.frm.yesno.width +'/'+ const.sn.frm.yesno.visible"]
+よみこんだ[p]
+
+; フレーム内のvar変数へ設定し、フレーム側の関数を呼んで描画させる
+[set_frame id=yesno var_name=val_dic text=こんにちは]
+[let_frame id=yesno var_name=val2ctrl function=true]
+[frame id=yesno visible=true]
+ひょうじ[p]
+
+; [let_frame]で取った値は同じ停止点までの間に読める
+[trace text="&'ret:'+ const.sn.frm.yesno.val2ctrl"]
+とれた[s]
+
+*y
+[er]おっけー[s]
+
+*cancel
+[er]きゃんせる[s]

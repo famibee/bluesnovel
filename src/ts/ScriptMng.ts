@@ -14,6 +14,7 @@ import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
 import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
+import {FrameMng} from './FrameMng';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -120,6 +121,11 @@ export class ScriptMng {
 	jumpToLabelAndGo(label: string, call: boolean, fn = '') {
 		void this.#jumpToLabelAndGo(label, call, fn).catch(()=> {/* myTraceで表示済み */});
 	}
+
+	// HTMLフレーム（[add_frame]系）。レイヤと違いストアには載せず、ここが抱える（FrameMng.ts参照）。
+	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる
+	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext));
+	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
 
 	// [toggle_full_screen key=…]で予約したキー。押されたらその場で全画面を切り替える。
 	//	[event]の予約（ラベルへ飛ぶ）とは別枠なので、Main.tsxはこちらを先に問い合わせる
@@ -386,6 +392,13 @@ export class ScriptMng {
 				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
 				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
 				if (last?.t === 'waitTsy') {this.#waitTsy(last.tw_nm, last.canskip); return}
+				// HTMLフレーム：DOMを触った結果を組み込み変数へ書き戻してから続きを回す。
+				//	[add_frame]はHTMLのfetchが要るので非同期、[let_frame]は同期だが、
+				//	どちらも「書き戻し→再開」の順を守りたいのでここで一旦返る
+				if (last?.t === 'addFrame' || last?.t === 'letFrame') {
+					this.#procFrame(last).catch(()=> {/* myTraceで表示済み */});
+					return;
+				}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -403,6 +416,23 @@ export class ScriptMng {
 			this.#busy = false;
 			if (this.#cntResv > 0) {--this.#cntResv; this.#goSafe()}
 		}
+	}
+
+	// [add_frame]/[let_frame]：DOMを触り、その結果を組み込み変数へ書き戻してから続きを回す。
+	//	#runStep()の外（#busyが下りた後）から呼ばれるので、そのままgo()して良い
+	async #procFrame(act: Extract<T_ENGINE_ACTION, {t: 'addFrame' | 'letFrame'}>) {
+		try {
+			if (act.t === 'addFrame') this.#setVals(await this.#frmMng.add(act.id, act.src, act.sty));
+			else this.#setVals({[`const.sn.frm.${act.id}.${act.var_name}`]:
+				this.#frmMng.get(act.id, act.var_name, act.fnc) as string});
+		} catch (e) {
+			this.myTrace(`[${act.t === 'addFrame' ? 'add_frame' : 'let_frame'}] エラー id:${act.id} ${String(e)}`, 'ET');
+			return;
+		}
+		this.#goSafe();
+	}
+	#setVals(h: {[name: string]: unknown}) {
+		for (const [k, v] of Object.entries(h)) this.#engine?.setValNochk(k, v as string);
 	}
 
 	#applyAction(act: T_ENGINE_ACTION) {
@@ -480,6 +510,24 @@ export class ScriptMng {
 			this.myTrace(`[dump_lay] ${JSON.stringify({fore: pick(fore), back: pick(back)})}`, 'D');
 			break;
 		}
+		case 'frame':
+			// 変えた分は組み込み変数へも書き戻す（本家 #frame() と同じ）
+			this.#setVals(this.#frmMng.frame(act.id, act.sty, act.order, act.disabled));
+			break;
+		case 'setFrame':
+			this.#frmMng.set(act.id, act.var_name, act.text);
+			break;
+		case 'resvDomEvent':
+			// DOM要素のクリック等を、[event]の予約と同じ経路（fireEvent）へ流し込む
+			this.#frmMng.resvDom(act.rawKey, act.key, act.del, act.needErr, ()=> {
+				this.cancelAuto();
+				this.fireEvent(act.key);
+			});
+			break;
+		case 'addFrame':
+		case 'letFrame':
+			// 実処理は#runStep()側（DOMを触った結果を組み込み変数へ書き戻してから続ける）
+			break;
 		case 'clearPageLog':
 			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
 			this.sys.caretaker.clear();
