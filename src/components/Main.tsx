@@ -92,6 +92,24 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		};
 	});
 
+	// 右クリック（本家 EventMng.ts:145）。**contextmenuイベントで拾う**のは、
+	//	clickイベントでは右ボタンが来ないため。予約名は修飾キー＋'rightclick'で、
+	//	テンプレはこれで枠（アルバム・設定・履歴・確認ダイアログ）を閉じる。
+	//	documentに張るのは、フレーム内のcontextmenuをFrameMngがdocumentへ再dispatchするから
+	//	（本家はcvsとフレームbodyの2箇所に張る。EventMng.resvFlameEvent）。
+	//	予約が無くてもpreventDefault()する（本家と同じ。ブラウザのメニューが出ると
+	//	ゲーム画面の上に居座って操作を邪魔する）
+	useEffectOnce(()=> {
+		const ctx = (e: MouseEvent)=> {
+			e.preventDefault();
+			if (isDesignMode) return;
+			scrMng.cancelAuto();
+			scrMng.fireEvent(modKeyName(e) + 'rightclick');
+		};
+		document.addEventListener('contextmenu', ctx);
+		return ()=> {document.removeEventListener('contextmenu', ctx)};
+	});
+
 	// イベント
 	// space/クリック = 既存の読み戻り範囲内なら読み進め、最新なら未読を進める
 	// PageDown = 読み進め（next()と同じ扱い）／PageUp = 読み戻り
@@ -146,6 +164,15 @@ function keyName(e: KeyboardEvent): string {
 		+	(e.metaKey	&& e.key !== 'Meta'		? 'meta+'	: '')
 		+	(e.shiftKey	&& e.key !== 'Shift'	? 'shift+'	: '')
 		+	e.key.toLowerCase();
+}
+
+// マウスイベントの修飾キー前置（本家 EventMng.ts:355 #modKey4MouseEvent）。
+//	keyName()と違い「修飾キー自身か」の判定が要らない（押されたのはマウスなので）
+function modKeyName(e: MouseEvent): string {
+	return	(e.altKey	? 'alt+'	: '')
+		+	(e.ctrlKey	? 'ctrl+'	: '')
+		+	(e.metaKey	? 'meta+'	: '')
+		+	(e.shiftKey	? 'shift+'	: '');
 }
 
 let isDesignMode = false;	// この形でないとちらつく

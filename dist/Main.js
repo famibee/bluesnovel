@@ -1178,6 +1178,13 @@ function vt({ arg: e, inited: t }) {
 		return document.addEventListener("keydown", e), document.addEventListener("keyup", t), globalThis.addEventListener("blur", n), () => {
 			document.removeEventListener("keydown", e), document.removeEventListener("keyup", t), globalThis.removeEventListener("blur", n);
 		};
+	}), l(() => {
+		let e = (e) => {
+			e.preventDefault(), !xt && (a.cancelAuto(), a.fireEvent(bt(e) + "rightclick"));
+		};
+		return document.addEventListener("contextmenu", e), () => {
+			document.removeEventListener("contextmenu", e);
+		};
 	});
 	function I() {
 		if (ne) {
@@ -1216,11 +1223,11 @@ function vt({ arg: e, inited: t }) {
 		}
 	});
 	function R() {
-		if (St) {
-			St = !1;
+		if (Ct) {
+			Ct = !1;
 			return;
 		}
-		bt || (a.cancelAuto(), !a.fireEvent("click") && I());
+		xt || (a.cancelAuto(), !a.fireEvent("click") && I());
 	}
 	return /* @__PURE__ */ mt(c.Suspense, {
 		fallback: /* @__PURE__ */ mt(pt, { children: "Loading" }),
@@ -1235,11 +1242,14 @@ function vt({ arg: e, inited: t }) {
 function yt(e) {
 	return (e.altKey && e.key !== "Alt" ? "alt+" : "") + (e.ctrlKey && e.key !== "Control" ? "ctrl+" : "") + (e.metaKey && e.key !== "Meta" ? "meta+" : "") + (e.shiftKey && e.key !== "Shift" ? "shift+" : "") + e.key.toLowerCase();
 }
-var bt = !1, xt = (e) => bt = e, St = !1;
-function Ct() {
-	St = !0;
+function bt(e) {
+	return (e.altKey ? "alt+" : "") + (e.ctrlKey ? "ctrl+" : "") + (e.metaKey ? "meta+" : "") + (e.shiftKey ? "shift+" : "");
+}
+var xt = !1, St = (e) => xt = e, Ct = !1;
+function wt() {
+	Ct = !0;
 }
 //#endregion
-export { vt as Main, ut as a, Ve as c, i as d, o as f, ft as i, _t as initMain, l, mt as n, $ as o, Ct as onLong, a as p, ht as r, nt as s, xt as setDesignMode, pt as t, s as u };
+export { vt as Main, ut as a, Ve as c, i as d, o as f, ft as i, _t as initMain, l, mt as n, $ as o, wt as onLong, a as p, ht as r, nt as s, St as setDesignMode, pt as t, s as u };
 
 //# sourceMappingURL=Main.js.map

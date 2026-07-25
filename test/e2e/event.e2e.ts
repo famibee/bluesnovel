@@ -13,7 +13,7 @@
 //	クリックは'click'で引くこと、そして予約が無いキーは従来どおり読み進めになること
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, pressKeyToWaitMark, snap} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, pressKeyToWaitMark, snap, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'event')});
 
@@ -46,3 +46,31 @@ test('call=trueの予約は、[return]で元の[l]待ちへ戻る', async ({page
 	expect(await mesStr(page)).toBe('はじめよばれた');
 	expect((await snap(page)).wait).toEqual({nm: 'mes', kind: 'l'});
 });
+
+test('[event key=rightclick]は右クリック（contextmenu）で発火する', async ({page})=> {
+	// 本家 EventMng.ts:145。右ボタンはclickイベントに来ないのでcontextmenuで拾う。
+	//	テンプレの枠（アルバム・設定・履歴・確認ダイアログ）はこれで自分を閉じる
+	expect(await mesStr(page)).toBe('はじめ');
+
+	await page.locator(SEL_FORE).click({button: 'right'});
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('はじめみぎおした');
+});
+
+test('右クリックにも修飾キーが前置される', async ({page})=> {
+	// 本家 EventMng.ts:355 #modKey4MouseEvent。alt+ ctrl+ meta+ shift+ の順
+	await page.locator(SEL_FORE).click({button: 'right', modifiers: ['Shift']});
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('はじめシフトみぎおした');
+});
+
+test('右クリックはブラウザのメニューを出さない（予約が無くても）', async ({page})=> {
+	// 本家も preventDefault() する。メニューが出るとゲーム画面の上に居座って操作を邪魔する
+	const defaultPrevented = await page.evaluate(()=> new Promise<boolean>(re=> {
+		document.addEventListener('contextmenu', e=> re(e.defaultPrevented), {once: false});
+		document.querySelector('#skynovel')!.dispatchEvent(
+			new MouseEvent('contextmenu', {bubbles: true, cancelable: true}));
+	}));
+	expect(defaultPrevented).toBe(true);
+});
+

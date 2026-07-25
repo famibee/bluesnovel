@@ -7,6 +7,10 @@
 [event key=enter label=*jumped]
 [event key=escape label=*called call=true]
 [event key=click label=*clicked]
+; 右クリックは本家と同じくcontextmenuイベントで拾い、予約名は'rightclick'。
+;	テンプレは枠（アルバム・設定・履歴）をこれで閉じる
+[event key=rightclick label=*rclicked]
+[event key=shift+rightclick label=*srclicked]
 はじめ[l]
 すすんだ[s]
 
@@ -18,3 +22,9 @@
 
 *called
 よばれた[return]
+
+*rclicked
+みぎおした[s]
+
+*srclicked
+シフトみぎおした[s]

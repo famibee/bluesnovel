@@ -2696,6 +2696,14 @@ var F = class e {
 				metaKey: e.metaKey,
 				shiftKey: e.shiftKey
 			}));
+		}), l.contentDocument?.addEventListener("contextmenu", (e) => {
+			e.preventDefault(), document.dispatchEvent(new MouseEvent("contextmenu", {
+				bubbles: !0,
+				altKey: e.altKey,
+				ctrlKey: e.ctrlKey,
+				metaKey: e.metaKey,
+				shiftKey: e.shiftKey
+			}));
 		});
 		let d = `const.sn.frm.${t}`;
 		return {

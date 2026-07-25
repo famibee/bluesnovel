@@ -261,6 +261,25 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  visibleだけでなくalpha・blendmode・filterも同時に効くようになった
 
 
+- [x] 右クリック（`[event key=rightclick]`）が発火していなかった
+	- テンプレは枠（アルバム・設定・履歴・確認ダイアログ）を`[event key=rightclick label=*exit]`で
+	  閉じるが、どこでも開けず閉じられなかった。Shiftキーなど別の予約でしか出られない状態
+	- 原因：右ボタンは`click`イベントに来ない。本家は`contextmenu`イベントで拾っている
+	  （`EventMng.ts:145`）が、こちらは`click`しか見ていなかった
+	- `Main.tsx`に`contextmenu`を追加。予約名は修飾キー＋`'rightclick'`で、修飾キーの前置は
+	  `alt+` `ctrl+` `meta+` `shift+` の順（本家`EventMng.ts:355 #modKey4MouseEvent`）。
+	  キー用の`keyName()`と違い「修飾キー自身か」の判定は要らない（押したのはマウスなので）
+	- **予約が無くても`preventDefault()`する**（本家と同じ）。ブラウザのメニューが出ると
+	  ゲーム画面の上に居座って操作を邪魔するため
+	- フレーム内の右クリックも`FrameMng`が親の`document`へ投げ直す。キー入力と同じ事情で、
+	  フレーム内のイベントは親まで飛んでこない（本家も`resvFlameEvent()`でフレームbodyへ張る）。
+	  これが無いと枠の上で右クリックしても閉じられない（枠は画面全面なので実質どこでも閉じられない）
+	- `document`に張るのは、ステージとフレーム再dispatchの両方を1本で受けられるため
+	  （本家はcvsとフレームbodyの2箇所）
+	- E2E 3件追加（`event.e2e.ts`）：右クリックで発火する・修飾キーが前置される・
+	  予約が無くてもブラウザのメニューを出さない
+
+
 - [ ]
 
 

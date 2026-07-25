@@ -134,6 +134,16 @@ export class FrameMng {
 				altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
 			}));
 		});
+		// 右クリックも同じ事情で投げ直す（本家も resvFlameEvent() でフレームbodyへ張る）。
+		//	テンプレの枠（アルバム・設定・履歴）は[event key=rightclick]で自分を閉じるので、
+		//	これが無いと枠の上で右クリックしても閉じられない
+		f.contentDocument?.addEventListener('contextmenu', e=> {
+			e.preventDefault();
+			document.dispatchEvent(new MouseEvent('contextmenu', {
+				bubbles: true,
+				altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+			}));
+		});
 
 		// 本家と同じ組み込み変数一式。以降[frame]で変えたぶんもここへ書き戻す
 		const vn = `const.sn.frm.${id}`;
