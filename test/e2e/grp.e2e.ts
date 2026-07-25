@@ -15,7 +15,7 @@
 //	3回目までに設定が復活する経路になっているのが理由。実機との差分は追跡中
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, txtBoxStyle} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, txtBoxStyle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'grp')});
 
@@ -34,4 +34,16 @@ test('場面転換（[trans]3連）をまたいでも文字レイヤの設定が
 	await expect.poll(()=> mesStr(page)).toContain('てんかんご');
 	// 場面転換の[trans]が全部終わってからでないと、途中の表ページを見てしまう
 	await expect.poll(()=> txtBoxStyle(page, 'writing-mode')).toBe('vertical-rl');
+});
+
+test('場面転換の[er]で、前の場面のボタンが消える', async ({page})=> {
+	// テンプレでタイトル画面のボタンが本編に入っても残っていた。[grp]の場面転換は[er]しか
+	//	打たないので、[er]がボタンを捨てないと消える機会が無い
+	await expect.poll(()=> mesStr(page)).toContain('はじめ');
+	await expect(page.locator(SEL_FORE).getByText('まえのボタン')).toHaveCount(0);
+
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await expect.poll(()=> mesStr(page)).toContain('てんかんご');
+	await expect(page.locator(SEL_FORE).getByText('まえのボタン')).toHaveCount(0);
 });

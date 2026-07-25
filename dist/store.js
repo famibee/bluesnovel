@@ -183,6 +183,18 @@ var T = y()((e, t) => ({
 		let r = [...e];
 		return w(r, t, "txt").enabled = n, r;
 	}) })),
+	clearBtn: ({ nm: t, page: n }) => e((e) => {
+		let r = (e) => {
+			let n = w(e, t, "txt");
+			n.aBtn.length > 0 && (n.aBtn = []);
+		};
+		if (n === "both") return { aPage: e.aPage.map((e) => {
+			let t = [...e];
+			return r(t), t;
+		}) };
+		let { idx: i, aLay: a } = x(e, n);
+		return r(a), S(e, i, a);
+	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of c) t !== "visible" && delete e[t];

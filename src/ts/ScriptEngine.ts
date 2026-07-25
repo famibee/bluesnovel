@@ -74,6 +74,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'stopQuake'}					// [stop_quake]。揺れを即座に終わらせる（本家は[finish_trans]と同じ処理）
 	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
+	| {t: 'clearBtn'; nm: string; page: T_PAGE_BOTH}				// [er]でのボタン消去。本文はchgStrが消すので、こちらはボタンだけ
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
@@ -1242,6 +1243,12 @@ export class ScriptEngine {
 			//	これが片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
+			// **ボタンも消す**。本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を表裏に呼び、
+			//	本文とボタンを両方捨てる。これが無いと、テンプレでタイトル画面のボタンが
+			//	本編に入っても残り続ける（[grp]の場面転換は[er]しか打たないため）。
+			//	なお本家はここでalpha/blendmode/pivot/angle/scaleも既定へ戻す（Layer.ts clearLay）。
+			//	そちらは未対応（todo.md）
+			aAct.push({t: 'clearBtn', nm: this.#curTxtLayer, page: 'both'});
 			return 'skip';
 
 		// ===== 文字装飾（本家 LayerMng.ts:124-141 hTag.ch/span/ruby2） =====

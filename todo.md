@@ -41,6 +41,7 @@
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
   - [ ] `[graph]`の`width`/`height`（今は全角空白の枠に`background-size: contain`で収める）・`x`/`y`・`id`
   - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
+- [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
 - [ ] **`[button]`の残り**：`pic=`（画像ボタン）・`b_pic=`（背景画像）はアセット整備と一緒に。既定の見た目（色・余白）も仮のまま
   - [ ] 本家は`width`/`height`で文字そのものを引き伸ばす（pixiの`Text.width/height`）。こちらは箱の大きさとして扱い`height`をフォントサイズの基準にしている。実機で見た目を要確認
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）

@@ -101,6 +101,8 @@ test('[trans time=0]は演出なしで即交換され、[wt]も素通しにな�
 	await waitTransDone(page);
 	await page.keyboard.press('Space');	// [trans time=0]
 	await waitTransDone(page);
+	await page.keyboard.press('Space');	// [er]の手前に置いた停止点を越える
+	await waitTransDone(page);
 	expect(await mesStr(page)).toBe('みっつめ');
 	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.45)');	// 0.9 × 0.5
 	// 表裏が2回入れ替わったので、表は元の面（0）へ戻っている
@@ -138,10 +140,18 @@ test('[button page=back]は裏ページに乗り、[trans]で表に出る', asyn
 	const s2 = await snap(page);
 	expect(s2.aLay.find(l=> l.nm === 'mes')?.aBtn?.[0]?.text).toBe('うらボタン');
 	await expect(page.locator(SEL_FORE).getByText('うらボタン')).toHaveCount(1);
+
+	// そして[er]は本文だけでなく**ボタンも**消す（本家 TxtLayer.ts:855 clearLay）
+	await page.keyboard.press('Space');
+	await waitTransDone(page);
+	const s3 = await snap(page);
+	expect(s3.aLay.find(l=> l.nm === 'mes')?.aBtn).toEqual([]);
+	expect(s3.aLayBack.find(l=> l.nm === 'mes')?.aBtn).toEqual([]);
+	await expect(page.locator(SEL_FORE).getByText('うらボタン')).toHaveCount(0);
 });
 
 test('[finish_trans]は長い演出を待たずに終わらせ、表裏の交換まで済ませる', async ({page})=> {
-	for (let i = 0; i < 3; ++i) {	// みっつめ（[trans time=0]の直後）まで進める
+	for (let i = 0; i < 4; ++i) {	// みっつめ（[trans time=0]の直後）まで進める
 		await page.keyboard.press('Space');
 		await waitTransDone(page);
 	}
@@ -185,7 +195,7 @@ async function pixels(page: Page, aPt: {x: number; y: number}[]) {
 
 // [trans rule=…]の場面まで進め、GSAPを止める（＝進度をこちらで決められる状態にする）
 async function toRuleScene(page: Page) {
-	for (let i = 0; i < 4; ++i) {	// うちきった まで
+	for (let i = 0; i < 5; ++i) {	// うちきった まで
 		await page.keyboard.press('Space');
 		await waitTransDone(page);
 	}

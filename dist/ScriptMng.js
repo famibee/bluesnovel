@@ -2147,6 +2147,10 @@ var F = class e {
 				nm: this.#_,
 				page: "both",
 				str: ""
+			}), o.push({
+				t: "clearBtn",
+				nm: this.#_,
+				page: "both"
 			}), "skip";
 			case "span": return this.#Y(o, e.#J("span", a)), "skip";
 			case "link":
@@ -3537,6 +3541,12 @@ var Z = class e {
 			case "clearLay":
 				this.$fncs.clearLay({
 					aLayNm: e.aLayNm,
+					page: e.page
+				});
+				break;
+			case "clearBtn":
+				this.$fncs.clearBtn({
+					nm: e.nm,
 					page: e.page
 				});
 				break;

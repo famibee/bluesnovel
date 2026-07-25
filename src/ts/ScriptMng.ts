@@ -868,6 +868,9 @@ export class ScriptMng {
 		case 'clearLay':
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			break;
+		case 'clearBtn':
+			this.$fncs.clearBtn({nm: act.nm, page: act.page});
+			break;
 		case 'addFilter':
 			this.$fncs.chgFilter({aLayNm: act.aLayNm, page: act.page, mode: act.replace ? 'replace' : 'add', flt: act.flt});
 			break;

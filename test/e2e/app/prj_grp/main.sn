@@ -9,6 +9,10 @@
 [add_lay layer=mes_sysmenu class=txt]
 [current layer=mes]
 
+; --- タイトル画面のボタン相当。場面転換の[er]で消えなければならない
+;	（本家の[er]は TxtLayer.clearLay() を表裏に呼び、本文とボタンを両方捨てる）
+[button page=back text=まえのボタン label=*dummy]
+
 ; --- [txt_lay_fullscreen]相当（横書き）
 [lay layer=mes page=back visible=true left=0 top=40 style="width: 700px; writing-mode: horizontal-tb;"]
 ; --- テンプレは直後にstyleだけを書き直す。[lay style=]は**丸ごと置き換え**なので上のwidthも消える
@@ -44,3 +48,6 @@
 [trans layer=mes time=100]
 [wt]
 てんかんご[s]
+
+*dummy
+おされた[s]

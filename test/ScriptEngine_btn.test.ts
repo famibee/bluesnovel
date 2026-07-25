@@ -92,3 +92,24 @@ it('btnSty_brokenJsonPassesThrough', ()=> {
 	// JSONのつもりで壊れていてもCSSとして渡す（表示ごと止めない）
 	expect(styOf(`[button text=x label=*a style='{こわれ']`)).toEqual({style: '{こわれ'});
 });
+
+
+// ============ [er]でのボタン消去 ============
+
+it('erClearsButtons', ()=> {
+	// 本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を表裏に呼び、本文とボタンを両方捨てる。
+	//	これが無いと、テンプレでタイトル画面のボタンが本編に入っても残り続ける
+	//	（[grp]の場面転換は[er]しか打たないため）
+	const a = acts(`[button text=x label=*a][er]`);
+	expect(a.filter(v=> v.t === 'clearBtn'))
+		.toEqual([{t: 'clearBtn', nm: 'mes', page: 'both'}]);
+	// 本文の消去（chgStr）と両輪。[er]は表裏どちらも消す
+	expect(a.find(v=> v.t === 'chgStr' && v.page === 'both')).toBeDefined();
+});
+
+it('erDoesNotClearLayStyle', ()=> {
+	// [clear_lay]と違い、[er]はレイヤの見た目（style/left/top/b_pic…）を残す。
+	//	本家も TxtLayer.clearLay() でCSSまでは戻さない（戻すのは変形系だけ）
+	expect(acts(`[lay layer=mes style="writing-mode: vertical-rl;"][er]`)
+		.some(v=> v.t === 'clearLay')).toBe(false);
+});
