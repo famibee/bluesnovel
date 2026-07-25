@@ -711,6 +711,7 @@
 </p>
 <h2 id="trans" class="w-heading">[trans]ページ裏表を交換</h2>
 <h4>裏ページを表ページとクロスフェードする。</h4>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>layer</code>／<code>time</code>／<code>rule</code>／<code>vague</code>に対応。<b>演出を動かすのはStage側、終了を宣言するのはScriptMng</b>（時間切れ／<a href="#wt">[wt]</a>中のクリック／<a href="#finish_trans">[finish_trans]</a>）——完了コールバックに表裏の交換をやらせると、シナリオの再開との前後が保証されず交換前のページへ次の文が書かれてしまうため。前の演出が動いている最中に次の[trans]が来たら、まずそれを終わらせて表裏を確定させる。<br/>クロスフェードは<b>表ページのopacityを1→0にして下から裏を出す</b>（裏を上にフェードインさせると、裏が透明な箇所で最後にパチッと切り替わるため）。<br/><b><code>rule</code>（ルール画像によるワイプ）はWebGLを使わずSVGフィルタ＋CSSマスクで実装</b>。本家のフラグメントシェーダ（LayerMng.ts:548）は結局「ルール画像の赤チャンネル R → 表ページの不透明度」の一次関数<code>clamp(R/(2*vague) + (vague - tick)/(2*vague))</code>なので、<code>feComponentTransfer</code>の<code>feFuncA type="linear"</code>（<code>slope</code>／<code>intercept</code>、結果は0〜1へクランプ）へそのまま載せられる。進度<code>tick</code>を0→1へ動かすのがGSAP、<code>tick</code>から係数を出すのが純粋関数（<code>src/ts/Trans.ts</code>）という切り分けなので、<b>任意の進度の絵を時間待ちなしで検証できる</b>（E2Eはそこを画素で見ている）。ルール画像はステージ全面へ引き伸ばす。<br/><b>未対応</b>：<code>glsl</code>（自前シェーダの差し替え。WebGLを使わないため実現しようがないので、指定されたらその場でエラーにする）・<code>delay</code>・<code>ease</code>（進度は常に等速）。</p>
 <p class="mb2 px1">
 
 <p>クロスフェードを開始すると、終了を待たずに次のタグへと処理を進める。<br/>

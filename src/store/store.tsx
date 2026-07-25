@@ -99,10 +99,13 @@ export type T_PAGE = 'fore' | 'back';
 export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号
 //	（timeが同じ値だと参照が変わってもeffectを撃ち直せないため）
-export type T_TRANS = {seq: number; time: number} | null;
+//	ruleSrc指定時はクロスフェードではなくルール画像によるワイプ（Trans.ts）
+export type T_TRANS = {seq: number; time: number; ruleSrc?: string; vague?: number} | null;
 export type T_STARTTRANS = {
 	aLayNm	: string[] | null;	// 交換するレイヤ名。nullは全レイヤ
 	time	: number;			// ミリ秒。0なら演出せず即交換
+	ruleSrc?: string;			// ルール画像の解決済みURL（パス解決はScriptMng）
+	vague?	: number;			// 境界のぼかし幅（0.0〜1.0）
 }
 // 進行中の[quake]。seqの意味は[trans]と同じ（同じ揺れ方を続けて指定されても撃ち直せるように）
 export type T_QUAKE = {seq: number; hmax: number; vmax: number} | null;
@@ -450,7 +453,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	//	ここでやるのは下ごしらえだけ：交換対象外のレイヤは、裏へ表の内容を写しておく。
 	//	こうしておけば裏ページ＝トランジション後のあるべき画面そのものになり、
 	//	最後にforeIdxを反転するだけで完了できる（本家 #trans() の「transしないために交換する」相当）
-	startTrans	: ({aLayNm, time}: T_STARTTRANS)=> set(s=> {
+	startTrans	: ({aLayNm, time, ruleSrc, vague}: T_STARTTRANS)=> set(s=> {
 		const bi = (1 - s.foreIdx) as 0 | 1;
 		const fore = s.aPage[s.foreIdx];
 		const back = s.aPage[bi].map(e=> aLayNm && ! aLayNm.includes(e.nm)
@@ -462,7 +465,10 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		// time=0（または既読スキップ中）は演出せず即交換。transはnullのままなのでStageは何もしない
 		if (time <= 0) return {...st, foreIdx: bi};
 
-		return {...st, trans: {seq: (s.trans?.seq ?? 0) + 1, time}};
+		return {...st, trans: {seq: (s.trans?.seq ?? 0) + 1, time,
+			...ruleSrc !== undefined ? {ruleSrc} : {},
+			...vague !== undefined ? {vague} : {},
+		}};
 	}),
 	// 演出終了。表裏を入れ替える（配列の中身ではなく、どちらを表とみなすかを反転するだけ）。
 	//	zustandのsetは同期なので、これを呼んだ時点で以降の書き込み先は新しい表ページになる。

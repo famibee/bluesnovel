@@ -13,8 +13,9 @@
 //	どのアクションを積むか（layer=の分解・time=0・page属性の既定）は
 //	test/ScriptEngine_trans.test.ts が持っているので、ここでは重ねて確かめない
 
-import {expect, test} from '@playwright/test';
+import {expect, test, type Page} from '@playwright/test';
 import {SEL_FORE, gotoSn, mesStr, pageStyle, snap, txtBoxStyle, waitTransDone, waitTransRunning} from './snPage';
+import {ruleMaskFunc} from '../../src/ts/Trans';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'trans')});
 
@@ -155,4 +156,88 @@ test('[finish_trans]は長い演出を待たずに終わらせ、表裏の交換
 
 	expect((await snap(page)).foreIdx).toBe(1);	// 交換された
 	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');	// 0.4 × 0.5
+});
+
+// ============ ルール画像によるワイプ（[trans rule=…]） ============
+//	**「時間を進める機構」と「進度→見た目」を切り離してある**（src/ts/Trans.ts のコメント）。
+//	進度→係数の計算は単体テスト（test/Trans.test.ts）が全域を押さえているので、ここでは
+//	GSAPを止めて任意の進度の係数を流し込み、**その進度で本当にその絵になるか**だけを画素で見る。
+//	時間待ちに頼らないので、演出の途中という一番撮りにくい瞬間が決定的に検証できる
+
+// 画面を撮って、指定座標の色を拾う。PNGのデコードはブラウザ（canvas）にやらせる＝依存を増やさない
+async function pixels(page: Page, aPt: {x: number; y: number}[]) {
+	const b64 = (await page.screenshot()).toString('base64');
+	return page.evaluate(async ({b64, aPt})=> {
+		const img = new Image;
+		img.src = `data:image/png;base64,${b64}`;
+		await img.decode();
+		const cvs = document.createElement('canvas');
+		cvs.width = img.naturalWidth;
+		cvs.height = img.naturalHeight;
+		const ctx = cvs.getContext('2d')!;
+		ctx.drawImage(img, 0, 0);
+		return aPt.map(({x, y})=> {
+			const d = ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+			return [d[0]!, d[1]!, d[2]!] as [number, number, number];
+		});
+	}, {b64, aPt});
+}
+
+// [trans rule=…]の場面まで進め、GSAPを止める（＝進度をこちらで決められる状態にする）
+async function toRuleScene(page: Page) {
+	for (let i = 0; i < 4; ++i) {	// うちきった まで
+		await page.keyboard.press('Space');
+		await waitTransDone(page);
+	}
+	await page.keyboard.press('Space');	// [trans time=9000 rule=rule_lr]
+	await expect(page.locator('#sn_rule_msk')).toHaveCount(1);
+	await page.evaluate(()=> {(globalThis as any).__sn.gsap.globalTimeline.pause()});
+}
+// 進度tickの係数をSVGフィルタへ流し込む（Stage側が毎フレームやっているのと同じ計算・同じ場所）
+async function setTick(page: Page, tick: number) {
+	const {slope, intercept} = ruleMaskFunc(tick);
+	await page.locator('#sn_rule_flt feFuncA').evaluate((el, {slope, intercept})=> {
+		el.setAttribute('slope', String(slope));
+		el.setAttribute('intercept', String(intercept));
+	}, {slope, intercept});
+}
+
+test('[trans rule=…]は進度に応じてルール画像の暗い所から表ページを消す', async ({page})=> {
+	await toRuleScene(page);
+
+	// 表ページの箱＝ステージそのもの。ここの左右5点をルール画像の位置（0.1〜0.9）で拾う
+	const box = (await page.locator('#skynovel [data-page="fore"]').boundingBox())!;
+	// 既定vague=0.04＝境界の前後0.04がぼけるので、そこを避けた位置で拾う（ぼけ自体は次のテスト）
+	const aFrac = [0.1, 0.3, 0.45, 0.7, 0.9];
+	const aPt = aFrac.map(f=> ({x: box.x + box.width * f, y: box.y + box.height * 0.8}));
+	const RED = [255, 0, 0], BLUE = [0, 0, 255];
+
+	// tick=0：まだ表（赤）が全面
+	await setTick(page, 0);
+	expect(await pixels(page, aPt)).toEqual([RED, RED, RED, RED, RED]);
+
+	// tick=0.5：ルール画像の左半分（暗い側）が消え、裏（青）が出ている
+	await setTick(page, 0.5);
+	expect(await pixels(page, aPt)).toEqual([BLUE, BLUE, BLUE, RED, RED]);
+
+	// tick=0.8：0.8より暗い所まで消える
+	await setTick(page, 0.8);
+	expect(await pixels(page, aPt)).toEqual([BLUE, BLUE, BLUE, BLUE, RED]);
+
+	// tick=1：全部消えて裏だけ
+	await setTick(page, 1);
+	expect(await pixels(page, aPt)).toEqual([BLUE, BLUE, BLUE, BLUE, BLUE]);
+});
+
+test('境界はvague幅でぼける（中間色が出る）', async ({page})=> {
+	await toRuleScene(page);
+	await setTick(page, 0.5);
+
+	const box = (await page.locator('#skynovel [data-page="fore"]').boundingBox())!;
+	const y = box.y + box.height * 0.8;
+	// 既定vague=0.04なので、境界（0.5）のちょうど上は赤と青の中間色になる
+	const [c] = await pixels(page, [{x: box.x + box.width * 0.5, y}]);
+	expect(c![0]).toBeGreaterThan(80);	// 赤成分が半分ほど残る
+	expect(c![0]).toBeLessThan(180);
+	expect(c![2]).toBeGreaterThan(80);	// 青も混ざる
 });

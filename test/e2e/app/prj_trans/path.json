@@ -1,3 +1,4 @@
 {
-	"main": {":cnt": 1, "sn": "main.sn"}
+	"main": {":cnt": 1, "sn": "main.sn"},
+	"rule_lr": {":cnt": 1, "png": "rule_lr.png"}
 }

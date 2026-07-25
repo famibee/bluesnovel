@@ -2011,14 +2011,17 @@ var F = class e {
 				}), "skip";
 			}
 			case "trans": {
-				let e = a.layer ?? "", t = e ? e.split(",").map((e) => e.trim()).filter((e) => e !== "") : null;
-				if (t?.length === 0) throw "[trans] layer属性が空です";
-				let n = Number(a.time ?? "0");
-				if (!Number.isFinite(n) || n < 0) throw `[trans] timeの値が不正です：${a.time ?? ""}`;
+				let t = a.layer ?? "", n = t ? t.split(",").map((e) => e.trim()).filter((e) => e !== "") : null;
+				if (n?.length === 0) throw "[trans] layer属性が空です";
+				let r = Number(a.time ?? "0");
+				if (!Number.isFinite(r) || r < 0) throw `[trans] timeの値が不正です：${a.time ?? ""}`;
+				if (a.glsl !== void 0) throw "[trans] glsl=はサポートされません（WebGLシェーダを使わないため）";
 				return o.push({
 					t: "trans",
-					aLayNm: t,
-					time: this.skipEnabled ? 0 : n
+					aLayNm: n,
+					time: this.skipEnabled ? 0 : r,
+					...a.rule === void 0 ? {} : { rule: a.rule },
+					...a.vague === void 0 ? {} : { vague: e.#n("trans", "vague", a.vague) }
 				}), "skip";
 			}
 			case "wt": return o.push({
@@ -3494,7 +3497,9 @@ var Z = class e {
 			case "trans":
 				this.#A(), this.$fncs.startTrans({
 					aLayNm: e.aLayNm,
-					time: e.time
+					time: e.time,
+					...e.rule ? { ruleSrc: this.#se("trans", e.rule) } : {},
+					...e.vague === void 0 ? {} : { vague: e.vague }
 				}), this.#k(e.time);
 				break;
 			case "waitTrans": break;

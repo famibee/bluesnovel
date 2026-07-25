@@ -279,16 +279,18 @@ var w = y()((e, t) => ({
 		return a(s), S(e, o, s);
 	}),
 	trans: null,
-	startTrans: ({ aLayNm: t, time: n }) => e((e) => {
-		let r = 1 - e.foreIdx, i = e.aPage[e.foreIdx], a = S(e, r, e.aPage[r].map((e) => t && !t.includes(e.nm) ? structuredClone(i.find((t) => t.nm === e.nm) ?? e) : e));
+	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => {
+		let a = 1 - e.foreIdx, o = e.aPage[e.foreIdx], s = S(e, a, e.aPage[a].map((e) => t && !t.includes(e.nm) ? structuredClone(o.find((t) => t.nm === e.nm) ?? e) : e));
 		return n <= 0 ? {
-			...a,
-			foreIdx: r
+			...s,
+			foreIdx: a
 		} : {
-			...a,
+			...s,
 			trans: {
 				seq: (e.trans?.seq ?? 0) + 1,
-				time: n
+				time: n,
+				...r === void 0 ? {} : { ruleSrc: r },
+				...i === void 0 ? {} : { vague: i }
 			}
 		};
 	}),

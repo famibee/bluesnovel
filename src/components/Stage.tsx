@@ -12,6 +12,7 @@ import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
+import {ruleMaskFunc} from '../ts/Trans';
 
 import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
@@ -49,6 +50,11 @@ export default function Stage({
 	const pgRef1 = useRef<HTMLDivElement>(null);
 	const aPgRef = [pgRef0, pgRef1];
 	const twRef = useRef<gsap.core.Tween | null>(null);
+	// ルール画像ワイプ（[trans rule=…]）で毎フレーム書き換えるSVGフィルタの係数。
+	//	本家はWebGLのフラグメントシェーダだが、こちらは
+	//	「ルール画像の赤チャンネル→不透明度」の一次変換1つで書ける（src/ts/Trans.ts）ので、
+	//	feFuncAのslope/interceptだけを動かせば同じ絵になる
+	const funcRef = useRef<SVGFEFuncAElement>(null);
 	useEffect(()=> {
 		twRef.current?.kill();
 		twRef.current = null;
@@ -59,7 +65,27 @@ export default function Stage({
 
 		const el = aPgRef[foreIdx]!.current;
 		if (! el) return;
-		twRef.current = gsap.to(el, {opacity: 0, duration: trans.time / 1000, ease: 'none'});
+
+		if (! trans.ruleSrc) {	// 既定＝クロスフェード
+			twRef.current = gsap.to(el, {opacity: 0, duration: trans.time / 1000, ease: 'none'});
+			return;
+		}
+		// ルール画像ワイプ。**動かすのは進度（tick）だけ**で、tick→見た目はTrans.tsの純粋関数。
+		//	この切り分けにより、進度の計算は単体テストで、絵はE2Eから任意の進度を流し込んで確かめられる
+		const setTick = (tick: number)=> {
+			const fn = funcRef.current;
+			if (! fn) return;
+
+			const {slope, intercept} = ruleMaskFunc(tick, trans.vague);
+			fn.setAttribute('slope', String(slope));
+			fn.setAttribute('intercept', String(intercept));
+		};
+		setTick(0);
+		const o = {tick: 0};
+		twRef.current = gsap.to(o, {
+			tick: 1, duration: trans.time / 1000, ease: 'none',
+			onUpdate: ()=> setTick(o.tick),
+		});
 	}, [trans]);
 
 	// [quake]の画面揺らし。[trans]と同じ役割分担で、**ここは見た目を動かすだけ**。
@@ -233,6 +259,25 @@ export default function Stage({
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
 	return <div css={styStage} onClick={onClick} {...longPressEvent} ref={stageRef}>
+		{/* ルール画像ワイプ（[trans rule=…]）のマスク。本家のフラグメントシェーダの置き換えで、
+			・feColorMatrix：ルール画像の**赤チャンネル**をアルファへ移し、RGBは白に固定する
+			　（本家シェーダも ru.r を読む。RGB白＋輝度マスクなので mask-type の指定に頼らない）
+			・feFuncA：Trans.tsが出すslope/interceptで「R→不透明度」の一次変換（結果は0〜1へクランプ）
+			色空間はsRGB固定。既定のlinearRGBだと赤チャンネルの値が変換されてしまい、
+			テクスチャを素で読む本家シェーダと合わなくなる */}
+		{trans?.ruleSrc && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+			<defs>
+				<filter id="sn_rule_flt" colorInterpolationFilters="sRGB">
+					<feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"/>
+					<feComponentTransfer><feFuncA ref={funcRef} type="linear" slope="1" intercept="0"/></feComponentTransfer>
+				</filter>
+				<mask id="sn_rule_msk" maskUnits="userSpaceOnUse" x="0" y="0" width={stageW} height={stageH}>
+					{/* ルール画像はステージ全面へ引き伸ばす（本家もステージ大のテクスチャとして扱う） */}
+					<image href={trans.ruleSrc} x="0" y="0" width={stageW} height={stageH}
+						preserveAspectRatio="none" filter="url(#sn_rule_flt)"/>
+				</mask>
+			</defs>
+		</svg>}
 		{isDesignMode && <>
 			<button onClick={()=> tglFlScr()} css={styBtn}>FullScr</button>
 			<button onClick={()=> {}} css={styBtn}>Back</button>
@@ -247,6 +292,9 @@ export default function Stage({
 			zIndex			: i === foreIdx ? 1 : 0,
 			visibility		: i === foreIdx || trans ? 'visible' : 'hidden',
 			pointerEvents	: i === foreIdx ? 'auto' : 'none',
+			// ルール画像ワイプは**表ページを部分的に消していく**（下から裏が出る）。
+			//	クロスフェードがopacityでやることを、画素ごとの不透明度に置き換えたもの
+			...trans?.ruleSrc && i === foreIdx ? {mask: 'url(#sn_rule_msk)'} : {},
 		}}>
 			{aLay.map(l=> {
 				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、

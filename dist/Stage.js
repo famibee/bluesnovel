@@ -10407,8 +10407,18 @@ function vu(e) {
 	};
 }
 //#endregion
+//#region src/ts/Trans.ts
+var yu = .04, bu = 1e6;
+function xu(e, t = yu) {
+	let n = t > 0 ? Math.min(1 / (2 * t), bu) : bu;
+	return {
+		slope: n,
+		intercept: .5 - n * e
+	};
+}
+//#endregion
 //#region src/components/Stage.tsx
-function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next: u }) {
+function Su({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next: u }) {
 	let d = o((e) => e.aPage), f = o((e) => e.foreIdx), p = o((e) => e.trans), m = o((e) => e.replace);
 	class g extends n {
 		nm = "Stage";
@@ -10420,32 +10430,50 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 		aPage: d,
 		foreIdx: f
 	})));
-	let v = (0, k.useRef)(null), b = (0, k.useRef)(null), C = [v, b], w = (0, k.useRef)(null);
+	let v = (0, k.useRef)(null), b = (0, k.useRef)(null), C = [v, b], w = (0, k.useRef)(null), E = (0, k.useRef)(null);
 	(0, k.useEffect)(() => {
 		if (w.current?.kill(), w.current = null, !p) {
 			O.set([v.current, b.current].filter((e) => e !== null), { opacity: 1 });
 			return;
 		}
 		let e = C[f].current;
-		e && (w.current = O.to(e, {
-			opacity: 0,
+		if (!e) return;
+		if (!p.ruleSrc) {
+			w.current = O.to(e, {
+				opacity: 0,
+				duration: p.time / 1e3,
+				ease: "none"
+			});
+			return;
+		}
+		let t = (e) => {
+			let t = E.current;
+			if (!t) return;
+			let { slope: n, intercept: r } = xu(e, p.vague);
+			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
+		};
+		t(0);
+		let n = { tick: 0 };
+		w.current = O.to(n, {
+			tick: 1,
 			duration: p.time / 1e3,
-			ease: "none"
-		}));
+			ease: "none",
+			onUpdate: () => t(n.tick)
+		});
 	}, [p]);
-	let E = o((e) => e.quake), D = (0, k.useRef)(null);
+	let D = o((e) => e.quake), A = (0, k.useRef)(null);
 	(0, k.useEffect)(() => {
-		D.current?.kill(), D.current = null;
+		A.current?.kill(), A.current = null;
 		let e = [v.current, b.current].filter((e) => e !== null);
-		if (!E) {
+		if (!D) {
 			O.set(e, {
 				x: 0,
 				y: 0
 			});
 			return;
 		}
-		let { hmax: t, vmax: n } = E;
-		D.current = O.to({ v: 0 }, {
+		let { hmax: t, vmax: n } = D;
+		A.current = O.to({ v: 0 }, {
 			v: 1,
 			duration: 3600,
 			ease: "none",
@@ -10456,30 +10484,30 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 				});
 			}
 		});
-	}, [E]);
-	let [A, M] = (0, k.useState)(xu());
+	}, [D]);
+	let [M, N] = (0, k.useState)(wu());
 	R(() => {
 		function e() {
-			M(xu());
+			N(wu());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: N } = bu(A), { stageW: F, stageH: I } = T;
+	let { cvsScale: F } = Cu(M), { stageW: I, stageH: z } = T;
 	(0, k.useLayoutEffect)(() => {
-		e.style.width = `${String(F * N)}px`, e.style.height = `${String(I * N)}px`, e.style.overflow = "hidden";
+		e.style.width = `${String(I * F)}px`, e.style.height = `${String(z * F)}px`, e.style.overflow = "hidden";
 	}, [
-		N,
 		F,
-		I
+		I,
+		z
 	]);
-	let z = (0, k.useRef)(null), B = o((e) => e.fullScr), ee = o((e) => e.setFullScr), V = o((e) => e.toggleFullScr), te = P(z, B, { onClose: () => ee(!1) });
+	let B = (0, k.useRef)(null), ee = o((e) => e.fullScr), V = o((e) => e.setFullScr), te = o((e) => e.toggleFullScr), ne = P(B, ee, { onClose: () => V(!1) });
 	(0, k.useEffect)(() => {
-		r.setFullScr(te);
-	}, [te]);
-	let ne = du`
+		r.setFullScr(ne);
+	}, [ne]);
+	let re = du`
 		position: relative;
-		width: ${F}px;
-		height: ${I}px;
+		width: ${I}px;
+		height: ${z}px;
 		overflow: hidden;
 		background-color: black;
 
@@ -10493,20 +10521,20 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 			ステージは実寸固定＋transform:scaleで拡縮する作りなので、全画面要素になっても
 			ブラウザ既定のように画面いっぱいには広がらず、放っておくと左上に寄ってしまう。
 			中心へ移してから拡大すれば、縦横比を保ったまま中央に出る */
-		${te ? `position: fixed; left: 50%; top: 50%;
-				transform: translate(-50%, -50%) scale(${String(N)});` : `transform: scale(${String(N)});`}
-	`, re = du`position: absolute; top: 0; left: 0;`, H = du`
+		${ne ? `position: fixed; left: 50%; top: 50%;
+				transform: translate(-50%, -50%) scale(${String(F)});` : `transform: scale(${String(F)});`}
+	`, H = du`position: absolute; top: 0; left: 0;`, U = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, U = du`
+	`, ie = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background-color: black;
-	`, ie = du`
+	`, W = du`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -10526,26 +10554,26 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, W = (0, k.useRef)(null);
+	`, ae = (0, k.useRef)(null);
 	R(() => {
-		r.attachFrameBox(W.current), r.attachStageBox(z.current);
+		r.attachFrameBox(ae.current), r.attachStageBox(B.current);
 	}), R(() => {
-		let e = z.current;
+		let e = B.current;
 		e.addEventListener("mousedown", () => c());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? u() : l();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [ae, oe] = j(!1), se = L((e) => {
-		e.stopPropagation(), _(), !a() && (oe(), x(!ae));
+	let [oe, se] = j(!1), ce = L((e) => {
+		e.stopPropagation(), _(), !a() && (se(), x(!oe));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), ce = { cmn: {
+	}), le = { cmn: {
 		sys: t,
-		styChild: re,
-		isDesignMode: ae,
+		styChild: H,
+		isDesignMode: oe,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10555,52 +10583,88 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 		}
 	} };
 	return /* @__PURE__ */ y("div", {
-		css: ne,
+		css: re,
 		onClick: i,
-		...se,
-		ref: z,
+		...ce,
+		ref: B,
 		children: [
-			ae && /* @__PURE__ */ y(S, { children: [
+			p?.ruleSrc && /* @__PURE__ */ h("svg", {
+				width: "0",
+				height: "0",
+				style: { position: "absolute" },
+				"aria-hidden": !0,
+				children: /* @__PURE__ */ y("defs", { children: [/* @__PURE__ */ y("filter", {
+					id: "sn_rule_flt",
+					colorInterpolationFilters: "sRGB",
+					children: [/* @__PURE__ */ h("feColorMatrix", {
+						type: "matrix",
+						values: "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"
+					}), /* @__PURE__ */ h("feComponentTransfer", { children: /* @__PURE__ */ h("feFuncA", {
+						ref: E,
+						type: "linear",
+						slope: "1",
+						intercept: "0"
+					}) })]
+				}), /* @__PURE__ */ h("mask", {
+					id: "sn_rule_msk",
+					maskUnits: "userSpaceOnUse",
+					x: "0",
+					y: "0",
+					width: I,
+					height: z,
+					children: /* @__PURE__ */ h("image", {
+						href: p.ruleSrc,
+						x: "0",
+						y: "0",
+						width: I,
+						height: z,
+						preserveAspectRatio: "none",
+						filter: "url(#sn_rule_flt)"
+					})
+				})] })
+			}),
+			oe && /* @__PURE__ */ y(S, { children: [
 				/* @__PURE__ */ h("button", {
-					onClick: () => V(),
-					css: ie,
+					onClick: () => te(),
+					css: W,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ h("button", {
 					onClick: () => {},
-					css: ie,
+					css: W,
 					children: "Back"
 				}),
 				/* @__PURE__ */ h("button", {
 					onClick: () => {},
-					css: ie,
+					css: W,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ h("span", { children: te }),
+			/* @__PURE__ */ h("span", { children: ne }),
 			d.map((e, t) => /* @__PURE__ */ h("div", {
 				ref: C[t],
 				"data-page": t === f ? "fore" : "back",
-				css: U,
+				css: ie,
 				style: {
 					zIndex: +(t === f),
 					visibility: t === f || p ? "visible" : "hidden",
-					pointerEvents: t === f ? "auto" : "none"
+					pointerEvents: t === f ? "auto" : "none",
+					...p?.ruleSrc && t === f ? { mask: "url(#sn_rule_msk)" } : {}
 				},
 				children: e.map((e) => {
 					let n = {
-						...ce.cmn.sty4Moveable,
+						...le.cmn.sty4Moveable,
 						...s(e)
 					};
 					return e.cls === "grp" ? /* @__PURE__ */ h(iu, {
-						cmn: ce.cmn,
+						cmn: le.cmn,
 						sty: n,
 						nm: e.nm,
 						fn: e.fn,
 						src: e.src,
 						aFace: e.aFace
 					}, e.nm) : /* @__PURE__ */ h(mu, {
-						cmn: ce.cmn,
+						cmn: le.cmn,
 						sty: n,
 						nm: e.nm,
 						isFore: t === f,
@@ -10622,13 +10686,13 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 				})
 			}, t)),
 			/* @__PURE__ */ h("div", {
-				ref: W,
-				css: H
+				ref: ae,
+				css: U
 			})
 		]
 	});
 }
-function bu({ width: e, height: t }) {
+function Cu({ width: e, height: t }) {
 	let n = 0, r = 0, i = 1;
 	return T.stageW > e || T.stageH > t ? (T.stageW / T.stageH <= e / t ? (r = t, n = w(T.stageW / T.stageH * t)) : (n = e, r = w(T.stageH / T.stageW * e)), i = n / T.stageW) : (n = T.stageW, r = T.stageH, i = 1), {
 		cvsScale: i,
@@ -10636,7 +10700,7 @@ function bu({ width: e, height: t }) {
 		cvsHeight: r
 	};
 }
-function xu() {
+function wu() {
 	let { innerWidth: e, innerHeight: t } = globalThis;
 	return {
 		width: e,
@@ -10644,6 +10708,6 @@ function xu() {
 	};
 }
 //#endregion
-export { yu as default };
+export { Su as default };
 
 //# sourceMappingURL=Stage.js.map

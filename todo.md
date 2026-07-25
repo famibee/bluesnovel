@@ -23,7 +23,7 @@
 - [ ] **文字出現・消去演出** `[ch_in_style]`/`[ch_out_style]`（＋各タグの`ch_in_style`/`ch_out_style`属性）。`[autowc]`（自動ウェイト）も同じ枠
 - [ ] **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
 - [ ] **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- [ ] **`[trans]`の残り**：`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`。ルール画像を読むのでアセット整備と合わせて。`[finish_trans]`も未対応
+- [ ] **`[trans]`の残り**：`delay=`・`ease=`（進度は常に等速）。`glsl=`（自前シェーダ）はWebGLを使わないため実現しようがないので対象外
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`
 - [ ] **フィルターの残り**：本家22種のうちCSSの`filter`で素で書ける9種だけ対応済み。残りは`noise`以外すべてpixiの`ColorMatrixFilter`のプリセットなので、**SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる**（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）。行列はpixiのソースから拾う必要があり、SVGフィルタ要素をDOMへ挿す仕組みも要る
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途

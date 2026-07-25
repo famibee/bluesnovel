@@ -67,7 +67,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
-	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
+	| {t: 'trans'; aLayNm: string[] | null; time: number; rule?: string; vague?: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換。rule指定時はクロスフェードでなくルール画像によるワイプ（vagueは境界のぼかし幅）
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'finishTrans'}				// [finish_trans]。[trans]の演出を今すぐ終わらせる（表裏の交換まで済ませる）
 	| {t: 'quake'; msec: number; hmax: number; vmax: number}	// [quake]。画面揺らし。揺れ幅はステージ座標のpx（0ならその向きには揺れない）。揺らすのも終了を決めるのもScriptMng側
@@ -997,8 +997,16 @@ export class ScriptEngine {
 
 			const time = Number(args.time ?? '0');
 			if (! Number.isFinite(time) || time < 0) throw `[trans] timeの値が不正です：${args.time ?? ''}`;
+			// ルール画像によるワイプ（本家はWebGLのフラグメントシェーダ、こちらはSVGフィルタ＋CSSマスク）。
+			//	glsl=は自前シェーダの差し替えなので、WebGLを使わないこちらでは実現しようがない。
+			//	黙って無視すると「指定したのに違う絵が出る」ので、フィルターと同じくその場で知らせる
+			if (args.glsl !== undefined) throw '[trans] glsl=はサポートされません（WebGLシェーダを使わないため）';
 			// 既読スキップ中は演出せず即座に交換する（本家 #trans() の `time === 0 || isSkipping`）
-			aAct.push({t: 'trans', aLayNm, time: this.skipEnabled ? 0 : time});
+			aAct.push({t: 'trans', aLayNm, time: this.skipEnabled ? 0 : time,
+				...args.rule !== undefined ? {rule: args.rule} : {},
+				...args.vague !== undefined
+					? {vague: ScriptEngine.#argNum('trans', 'vague', args.vague)} : {},
+			});
 			return 'skip';
 			// [trans]自体は待たない（本家 #trans() も false を返す＝待ちに入らない）。
 			//	演出の終了を待ちたい場合はスクリプト側で[wt]を書く

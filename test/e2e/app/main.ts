@@ -13,12 +13,16 @@
 
 import {SysWeb} from '../../../src/web';
 import {useStore} from '../../../src/store/store';
+import gsap from 'gsap';
 
 // ?prj=basic / ?prj=button でシナリオ（プロジェクトフォルダ）を切り替える。
 //	SysBase.loaded() が読むのは常に main（ScriptMng.load('main') 固定）なので、
 //	シナリオごとにプロジェクトフォルダ自体を分ける方式にした。
 const prj = new URLSearchParams(location.search).get('prj') ?? 'basic';
 
-(globalThis as any).__sn = {store: useStore};
+// gsapも公開する。**演出の「時間を進める機構」をテスト側から止めるため**で、
+//	止めてしまえば進度（[trans rule=…]ならSVGフィルタの係数）をこちらで任意の値に置ける＝
+//	時間待ちに頼らず、狙った進度ちょうどの絵を撮れる。src/側と同一モジュール実体を掴む点はstoreと同じ
+(globalThis as any).__sn = {store: useStore, gsap};
 
 new SysWeb({}, {cur: `/test/e2e/app/prj_${prj}/`, crypto: false, dip: ''});

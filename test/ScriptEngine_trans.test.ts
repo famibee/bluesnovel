@@ -208,3 +208,26 @@ it('finishTrans_reservedAsMacroName', ()=> {
 	expect(()=> acts('[macro name=finish_trans][s]'))
 		.toThrow('[finish_trans]はタグ名のため、マクロ名として使用できません');
 });
+
+
+// ============ [trans rule=…]（ルール画像によるワイプ） ============
+
+it('trans_rule', ()=> {
+	// ruleは論理名のまま積む（パス解決はScriptMng）。vagueは省略時**積まない**＝Trans.tsの既定へ落ちる
+	expect(acts(`${LAYS}[trans time=500 rule=wipe_l][s]`).find(v=> v.t === 'trans'))
+		.toEqual({t: 'trans', aLayNm: null, time: 500, rule: 'wipe_l'});
+	expect(acts(`${LAYS}[trans time=500 rule=wipe_l vague=0.2][s]`).find(v=> v.t === 'trans'))
+		.toEqual({t: 'trans', aLayNm: null, time: 500, rule: 'wipe_l', vague: 0.2});
+});
+
+it('trans_ruleVagueNotNumber', ()=> {
+	expect(()=> acts(`${LAYS}[trans time=500 rule=w vague=もじ][s]`))
+		.toThrow('[trans] vagueの値が不正です');
+});
+
+it('trans_glslThrows', ()=> {
+	// 自前シェーダの差し替えはWebGLを使わないこちらでは実現しようがない。
+	//	黙って無視すると「指定したのに違う絵が出る」ので、フィルターと同じくその場で知らせる
+	expect(()=> acts(`${LAYS}[trans time=500 glsl=xxx][s]`))
+		.toThrow('[trans] glsl=はサポートされません');
+});

@@ -837,8 +837,12 @@ export class ScriptMng {
 			//	[quake]が[trans]と同じトゥイーン枠を使い回す都合であって意図ではないので、
 			//	枠を分けたこちらでは[trans]自身と[finish_trans]だけに掛ける
 			this.#finishTrans();
-			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）
-			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time});
+			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）。
+			//	ルール画像のパス解決はここ（[lay fn=]等と同じ。見つからなければ知らせてクロスフェードへ落ちる）
+			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time,
+				...act.rule ? {ruleSrc: this.#searchPic('trans', act.rule)} : {},
+				...act.vague !== undefined ? {vague: act.vague} : {},
+			});
 			this.#beginTrans(act.time);
 			break;
 		case 'waitTrans':
