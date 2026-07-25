@@ -115,6 +115,11 @@ export class ScriptMng {
 			// しおり一覧（本家 Variable.ts:59 defTmp）。ロード画面（テンプレの frames/_archive）が
 			//	[set_frame … text=&const.sn.bookmark.json] で読む
 			'const.sn.bookmark.json'	: ()=> this.#saveMng.bookmarkJson(),
+			// OSのダークモード（本家 EventMng.ts:222 の matchMedia 監視）。
+			//	遅延評価なので、切り替わっても次の参照で新しい値になる＝監視リスナは要らない
+			'const.sn.isDarkMode'	: ()=> globalThis.matchMedia('(prefers-color-scheme: dark)').matches,
+			// 実行環境（本家は platform パッケージの説明文字列。こちらはUA文字列で代用）
+			'const.sn.platform'		: ()=> globalThis.navigator.userAgent,
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
 

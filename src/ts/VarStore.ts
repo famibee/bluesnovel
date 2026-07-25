@@ -250,6 +250,19 @@ export class VarStore {
 		}
 	}
 
+	// [dump_val]用：名前空間ごとに格納変数を並べる（本家 Variable.ts:623 #dump_val()）。
+	//	組み込み変数（遅延評価の関数）は本家同様含めない——参照した瞬間の値でしかなく、
+	//	「今どんな変数が入っているか」を見るという用途からも外れるため
+	dump(): {[ns: string]: {[key: string]: T_VAL_D}} {
+		const h: {[ns: string]: {[key: string]: T_VAL_D}} = {tmp: {}, game: {}, sys: {}, mp: {}};
+		for (const k of Object.keys(this.#h)) {
+			const i = k.indexOf('.');
+			const ns = k.slice(0, i);
+			(h[ns] ??= {})[k.slice(i +1)] = this.#h[k];
+		}
+		return h;
+	}
+
 	// [clearvar]相当：gameのみクリア（本家準拠でsys/tmpは対象外）
 	clearGame() {this.#delNs('game.')}
 	// [clearsysvar]相当。消したあと初期値を入れ直す（本家 #clearsysvar() も

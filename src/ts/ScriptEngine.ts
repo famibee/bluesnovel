@@ -351,7 +351,8 @@ export class ScriptEngine {
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
-		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
+		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
+		'clear_text',
 		'navigate_to', 'loadplugin', 'snapshot',
 		'record_place', 'save', 'load', 'reload_script',
 		'copybookmark', 'erasebookmark', 'export', 'import',
@@ -407,6 +408,16 @@ export class ScriptEngine {
 		//	本家は《》文法とルビを除いた平文だが、こちらはまだ文字装飾が無いので蓄積文字列＝平文
 		this.#val.defBuiltin('const.sn.last_page_plain_text',
 			()=> this.#hTxt[this.#curTxtLayer] ?? '');
+		// 本家（LayerMng.ts:212）は《》やルビ記法を含む生のページ本文。文字装飾がまだ無いので
+		//	last_page_plain_text と同じ値になる
+		this.#val.defBuiltin('const.sn.last_page_text',
+			()=> this.#hTxt[this.#curTxtLayer] ?? '');
+
+		// 円周率（本家 CmnInterface.ts:334）
+		this.#val.defBuiltin('const.sn.Math.PI', ()=> Math.PI);
+		// スタックの深さ（本家 CmnInterface.ts:346-347）。デバッグ・入れ子の見張り用
+		this.#val.defBuiltin('const.sn.aIfStk.length', ()=> this.#aIfStk.length);
+		this.#val.defBuiltin('const.sn.vctCallStk.length', ()=> this.#aCallStk.length);
 	}
 	#isFullScr = false;
 	setFullScr(b: boolean) {this.#isFullScr = b}
@@ -752,6 +763,8 @@ export class ScriptEngine {
 		}
 		case 'current':	// デフォルト文字レイヤ切替（試作簡略：layer属性のみ）
 			this.#curTxtLayer = args.layer ?? args.nm ?? this.#curTxtLayer;
+			// 本家（LayerMng.ts:958）と同じくsave:へも書く。しおりに含まれるので[load]で戻る
+			this.#val.set('save:const.sn.mesLayer', this.#curTxtLayer);
 			return 'skip';
 
 		case 'add_face': {	// 差分名称の定義（本家 SpritesMng.add_face() 相当。dx/dyは親画像基準の相対座標）
@@ -1270,6 +1283,28 @@ export class ScriptEngine {
 			});
 			return 'stop';	// 画像化は非同期＝ScriptMng待ち（本家も撮り終わるまで進めない）
 		}
+
+		case 'clear_text': {	// 文字消去（本家 LayerMng.ts:993 #clear_text()）
+			// [er]が「そのレイヤの表裏どちらも消す」のに対し、こちらは**片面だけ**。
+			//	対象レイヤ省略時は既定文字レイヤ（[current]）
+			const nm = args.layer || this.#curTxtLayer;
+			const pg = ScriptEngine.argPage(args, 'fore');
+			this.#hTxt[nm] = '';
+			aAct.push({t: 'chgStr', nm, page: pg, str: ''});
+			return 'skip';
+		}
+
+		case 'dump_val':	// 変数のダンプ（本家 Variable.ts:623 #dump_val()）
+			aAct.push({t: 'trace', text: `[dump_val] ${JSON.stringify(this.#val.dump())}`});
+			return 'skip';
+
+		case 'dump_stack':	// スタックのダンプ（本家 ScriptIterator.ts:739 #dump_stack()）
+			aAct.push({t: 'trace', text: `[dump_stack] ${JSON.stringify({
+				now		: {fn: this.fn, idx: this.#idx},
+				aCallStk: this.#aCallStk.map(cs=> ({fn: cs.fn, returnIdx: cs.returnIdx})),
+				aIfStk	: [...this.#aIfStk],
+			})}`});
+			return 'skip';
 
 		case 'dump_lay':	// レイヤのダンプ（本家 LayerMng.ts:1068 #dump_lay()）
 			aAct.push({t: 'dumpLay', aLayNm: ScriptEngine.#argLayNames(args.layer)});

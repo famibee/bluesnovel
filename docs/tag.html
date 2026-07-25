@@ -170,7 +170,7 @@
 		<li class="mb1"><a href="#ch">🔴 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🔴 [ch_in_style] 文字出現演出定義</a></li>
 		<li class="mb1"><a href="#ch_out_style">🔴 [ch_out_style] 文字消去演出定義</a></li>
-		<li class="mb1"><a href="#clear_text">🔴 [clear_text] 文字消去</a></li>
+		<li class="mb1"><a href="#clear_text">🟡 [clear_text] 文字消去</a></li>
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🔴 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
@@ -286,8 +286,8 @@
 <!--
 		<li class="mb1"><a href="#dump_script">🔴 [dump_script] 外部へスクリプトを表示</a></li>
 -->
-		<li class="mb1"><a href="#dump_stack">🔴 [dump_stack] スタックのダンプ</a></li>
-		<li class="mb1"><a href="#dump_val">🔴 [dump_val] 変数のダンプ</a></li>
+		<li class="mb1"><a href="#dump_stack">🟡 [dump_stack] スタックのダンプ</a></li>
+		<li class="mb1"><a href="#dump_val">🟢 [dump_val] 変数のダンプ</a></li>
 		<li class="mb1"><a href="#log">🔴 [log] ログ出力</a></li>
 		<li class="mb1"><a href="#trace">🟢 [trace] デバッグ表示へ出力</a></li>
 	</ul>
@@ -1217,6 +1217,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="clear_text" class="w-heading">[clear_text]文字消去</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：対象レイヤ（省略時は[<a href="#current">current</a>]の既定文字レイヤ）の<b>片面だけ</b>の文字を消す（[<a href="#er">er</a>]は表裏どちらも消す）。未対応：本家がここで行う改ページ（履歴ログのページ区切り）——履歴層がまだ無いため。</p>
 <h4>文字のみをクリアする</h4>
 <p class="mb2 px1">
 
@@ -2846,11 +2847,13 @@ Linuxは 100MB 越えなので上げられていません。</p></blockquote>
 
 -->
 <h2 id="dump_stack" class="w-heading">[dump_stack]スタックのダンプ</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：現在位置・コールスタック・ifスタックをデバッグ表示へ出す。本家のように行番号・桁までは出さず、スクリプト名とトークン索引まで。</p>
 <h4>[call]等によるコールスタックの内容をデバッグ表示する</h4>
 <p class="mb2 px1">
 
 </p>
 <h2 id="dump_val" class="w-heading">[dump_val]変数のダンプ</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：名前空間ごとに格納変数を並べて出す。本家はconsoleへ、こちらは[<a href="#dump_lay">dump_lay</a>]と同じくデバッグ表示へ。組み込み変数（遅延評価）は本家同様含めない。</p>
 <h4>変数の内容をデバッグ表示する</h4>
 <p class="mb2 px1">
 

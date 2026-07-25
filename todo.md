@@ -45,7 +45,7 @@
   - [ ] `[tsy]`の`width`/`height`は、レイヤ属性側（`[lay]`）に無いので未対応（`pivot_x`/`pivot_y`は対応済み）
   - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）はpixi前提なので保留。`[tsy filter=…]`（トゥイーン開始と同時にフィルターを掛ける）は`[lay filter=…]`と同じ仕組みで足せる
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
-- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`・`[navigate_to]`・`[loadplugin]`・`[snapshot]`・`[record_place]`・`[save]`・`[load]`・`[reload_script]`・`[copybookmark]`・`[erasebookmark]`・`[export]`・`[import]`は実装済み）
+- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[dump_val]`・`[dump_stack]`・`[pop_stack]`・`[navigate_to]`・`[loadplugin]`・`[snapshot]`・`[record_place]`・`[save]`・`[load]`・`[reload_script]`・`[copybookmark]`・`[erasebookmark]`・`[export]`・`[import]`は実装済み）
   - [ ] `[load]`の残り：**音声の復元**（本家`playLoopFromSaveObj()`。音声層と一緒に）、`index=`（ページ移動用）・`do_rec=`。また**読み戻し履歴（PageUp/PageDown）は捨てている**——ロード後の位置は履歴と繋がらないため。ページログ（`[page to=…]`）を作るときに設計し直す
   - [ ] `[save]`の残り：**サムネイル画像の保存**（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`は`[save pic=…]`で撮った画像を枠に出す想定）。ブラウザ版は本家も代替画像を出すので、まずは`[snapshot]`の結果をどこへ置くかから
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）は`[export]`/`[import]`も含めて未対応。アセット暗号化と一緒に
@@ -65,7 +65,9 @@
   - [ ] `const.sn.lay[N].<fore|back>.width/.height` は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら、描画側（GrpLayerの`<img>`のnaturalWidth等）から集める設計に差し替える
   - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）は各層と一緒に。`const.sn.bookmark.json`（しおり）は実装済み
   - [ ] **システム変数(sys:)は初期値が入り、保存もされるようになった**（`VarStore`が生成時と[clearsysvar]時に`creSYS_DATA()`を適用。停止点ごとに`SaveMng`がlocalStorageへ）。読み書きはできるが、その値を使う機能が無いものが多い（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`＝テキスト窓の背景濃度、`sn.sound.*`/`const.sn.sound.*.volume`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。設定画面から変更しても見た目に反映されないので、各層の実装時に繋ぐ
-  - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
+  - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応。`Main.tsx`でkeydown/keyupを見てエンジンへ書き戻す形になる
+  - [ ] `const.sn.platform`はUA文字列で代用中。本家はPlatform.jsのjson（`const.sn.platform.os.family`のように下位を引ける）
+  - [ ] `const.sn.isPaging`（ページ遷移状態か）・`save:const.sn.layer.（文字レイヤ名）.enabled`は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
   - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に
   - [ ] `style=`/`style_hover=`は**pixiのTextStyleのJSON**なのでCSSへ読み替える設計から。`[lay style=…]`（CSSそのまま）とは別物なので注意

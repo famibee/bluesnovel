@@ -359,6 +359,19 @@ var _ = { save: "game" }, v = class e {
 			this.#e[i] = r, t && this.#n.add(i);
 		}
 	}
+	dump() {
+		let e = {
+			tmp: {},
+			game: {},
+			sys: {},
+			mp: {}
+		};
+		for (let t of Object.keys(this.#e)) {
+			let n = t.indexOf("."), r = t.slice(0, n);
+			(e[r] ??= {})[t.slice(n + 1)] = this.#e[t];
+		}
+		return e;
+	}
 	clearGame() {
 		this.#s("game.");
 	}
@@ -1567,7 +1580,7 @@ var A = class e {
 	#T = !1;
 	#E = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.wait_tsy.stop_tsy.pause_tsy.resume_tsy.title.toggle_full_screen.dump_lay.pop_stack.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.wait_tsy.stop_tsy.pause_tsy.resume_tsy.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
 	#D() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
@@ -1575,7 +1588,7 @@ var A = class e {
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#f = e instanceof x ? e : new x(e, t), this.#v.defBuiltin("const.sn.scriptFn", () => this.fn), this.#v.defBuiltin("const.sn.isKidoku", () => this.#T), this.#v.defBuiltin("const.sn.displayState", () => this.#O), this.#v.defBuiltin("const.Date.getDateStr", () => i()), this.#v.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#v.defBuiltin("const.sn.last_page_plain_text", () => this.#h[this.#m] ?? "");
+		this.#f = e instanceof x ? e : new x(e, t), this.#v.defBuiltin("const.sn.scriptFn", () => this.fn), this.#v.defBuiltin("const.sn.isKidoku", () => this.#T), this.#v.defBuiltin("const.sn.displayState", () => this.#O), this.#v.defBuiltin("const.Date.getDateStr", () => i()), this.#v.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#v.defBuiltin("const.sn.last_page_plain_text", () => this.#h[this.#m] ?? ""), this.#v.defBuiltin("const.sn.last_page_text", () => this.#h[this.#m] ?? ""), this.#v.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#v.defBuiltin("const.sn.aIfStk.length", () => this.#b.length), this.#v.defBuiltin("const.sn.vctCallStk.length", () => this.#x.length);
 	}
 	#O = !1;
 	setFullScr(e) {
@@ -1806,7 +1819,7 @@ var A = class e {
 					nm: e
 				}), "skip";
 			}
-			case "current": return this.#m = i.layer ?? i.nm ?? this.#m, "skip";
+			case "current": return this.#m = i.layer ?? i.nm ?? this.#m, this.#v.set("save:const.sn.mesLayer", this.#m), "skip";
 			case "add_face": {
 				let e = i.name ?? "";
 				if (!e) throw "[add_face] nameは必須です（試作仕様）";
@@ -2159,6 +2172,33 @@ var A = class e {
 				height: e.#r("snapshot", "height", i.height, 0),
 				...i.b_color === void 0 ? {} : { b_color: e.#n("snapshot", "b_color", i.b_color) }
 			}), "stop";
+			case "clear_text": {
+				let t = i.layer || this.#m, n = e.argPage(i, "fore");
+				return this.#h[t] = "", a.push({
+					t: "chgStr",
+					nm: t,
+					page: n,
+					str: ""
+				}), "skip";
+			}
+			case "dump_val": return a.push({
+				t: "trace",
+				text: `[dump_val] ${JSON.stringify(this.#v.dump())}`
+			}), "skip";
+			case "dump_stack": return a.push({
+				t: "trace",
+				text: `[dump_stack] ${JSON.stringify({
+					now: {
+						fn: this.fn,
+						idx: this.#p
+					},
+					aCallStk: this.#x.map((e) => ({
+						fn: e.fn,
+						returnIdx: e.returnIdx
+					})),
+					aIfStk: [...this.#b]
+				})}`
+			}), "skip";
 			case "dump_lay": return a.push({
 				t: "dumpLay",
 				aLayNm: e.#a(i.layer)
@@ -2807,7 +2847,9 @@ var U = class {
 			"const.sn.isPackaged": () => !1,
 			"const.sn.isFirstBoot": () => this.#s,
 			"const.sn.needClick2Play": () => !1,
-			"const.sn.bookmark.json": () => this.#o.bookmarkJson()
+			"const.sn.bookmark.json": () => this.#o.bookmarkJson(),
+			"const.sn.isDarkMode": () => globalThis.matchMedia("(prefers-color-scheme: dark)").matches,
+			"const.sn.platform": () => globalThis.navigator.userAgent
 		};
 		for (let [t, r] of Object.entries(n)) e.defBuiltin(t, r);
 		e.defBuiltin("const.sn.lay", () => {

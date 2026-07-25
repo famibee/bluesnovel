@@ -210,3 +210,85 @@ it('snapshot_args', ()=> {
 			width: 640, height: 480, b_color: 0xFF0000,
 		});
 });
+
+
+// ============ [dump_val] / [dump_stack] ============
+//	本家 Variable.ts:623 #dump_val() / ScriptIterator.ts:739 #dump_stack()。
+//	本家はconsoleへ出すが、こちらは[dump_lay]と同じくデバッグ表示（myTrace）へ流す
+
+it('dumpVal_listsStoredVarsByNamespace', ()=> {
+	const a = acts('[let name=game:hp text=80][let name=sys:v text=1][dump_val][s]');
+	const t = a.find(v=> v.t === 'trace');
+	expect(t?.text).toStartWith('[dump_val] ');
+	const o = JSON.parse(t!.text.slice('[dump_val] '.length)) as {[ns: string]: {[k: string]: unknown}};
+	expect(o.game?.hp).toBe('80');
+	expect(o.sys?.v).toBe('1');
+	// 組み込み変数（遅延評価）は本家同様含めない
+	expect(o.tmp?.['const.sn.scriptFn']).toBeUndefined();
+});
+
+it('dumpStack_showsPositionAndStacks', ()=> {
+	const se = new ScriptEngine('t1', `[call label=*sub]おわり[s]
+*sub
+	[dump_stack]
+[return]`);
+	const t = se.step().find(v=> v.t === 'trace');
+	const o = JSON.parse(t!.text.slice('[dump_stack] '.length)) as {
+		now: {fn: string}; aCallStk: {fn: string}[]; aIfStk: number[]};
+	expect(o.now.fn).toBe('t1');
+	expect(o.aCallStk).toHaveLength(1);	// [call]で1段積まれている
+	expect(o.aIfStk).toEqual([-1]);		// [call]が積む「壁」
+});
+
+
+// ============ [clear_text] ============
+//	本家 LayerMng.ts:993 #clear_text()。[er]が表裏どちらも消すのに対し、こちらは片面だけ
+
+it('clearText_clearsOnePageOfCurrentLayer', ()=> {
+	const a = acts('あいう[clear_text][s]');
+	expect(a.filter(v=> v.t === 'chgStr').at(-1))
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: ''});
+});
+
+it('clearText_layerAndPage', ()=> {
+	const a = acts(`${LAYS}[clear_text layer=mes page=back][s]`);
+	expect(a.find(v=> v.t === 'chgStr'))
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'back', str: ''});
+});
+
+it('clearText_resetsAccumulatedText', ()=> {
+	// 消した後に書いた文字は「続き」ではなく最初から積み直しになる
+	const a = acts('あいう[clear_text]かき[s]');
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)?.str).toBe('かき');
+});
+
+
+// ============ 組み込み変数（雑多） ============
+
+it('builtin_mathPiAndStackLengths', ()=> {
+	const se = new ScriptEngine('t1', '[s]');
+	expect(se.getVal('const.sn.Math.PI')).toBe(Math.PI);
+	expect(se.getVal('const.sn.aIfStk.length')).toBe(0);
+	expect(se.getVal('const.sn.vctCallStk.length')).toBe(0);
+
+	const se2 = new ScriptEngine('t2', `[call label=*sub]
+*sub
+	[if exp=true][s][endif]`);
+	se2.step();
+	expect(se2.getVal('const.sn.vctCallStk.length')).toBe(1);
+	expect(Number(se2.getVal('const.sn.aIfStk.length'))).toBeGreaterThan(1);	// 壁(-1)＋[if]
+});
+
+it('builtin_mesLayerFollowsCurrent', ()=> {
+	// [current]はsave:へも書く（本家 LayerMng.ts:958）。しおりに含まれるので[load]で戻る
+	const se = new ScriptEngine('t1', `${LAYS}[add_lay layer=sub class=txt][current layer=sub][s]`);
+	se.step();
+	expect(se.getVal('save:const.sn.mesLayer')).toBe('sub');
+});
+
+it('builtin_lastPageText', ()=> {
+	// 文字装飾がまだ無いので last_page_plain_text と同じ値
+	const se = new ScriptEngine('t1', 'あいう[s]');
+	se.step();
+	expect(se.getVal('const.sn.last_page_text')).toBe('あいう');
+});
