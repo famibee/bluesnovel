@@ -42,6 +42,8 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const chgLay = useStore(s=> s.chgLay);
 	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
 	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
+	const chgBPic = useStore(s=> s.chgBPic);	// [lay b_pic=…]（文字レイヤ背後の枠画像）
+	const setBackAlpha = useStore(s=> s.setBackAlpha);	// sys:TextLayer.Back.Alpha（全文字レイヤ共通の掛け率）
 	const getPagesJson = useStore(s=> s.getPagesJson);	// しおり（[record_place]/[save]）用
 	const replace = useStore(s=> s.replace);			// しおりからの復元（[load]/[reload_script]）用
 	const toggleFullScr = useStore(s=> s.toggleFullScr);
@@ -61,7 +63,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
 
 		inited();
 

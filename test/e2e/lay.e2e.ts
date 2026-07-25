@@ -40,7 +40,8 @@ test('left/top/alpha/rotation/scale_*が文字レイヤの算出CSSになる', a
 
 test('b_colorが文字レイヤ背景色になる（b_alphaはそのアルファ）', async ({page})=> {
 	await pressKey(page, 'Space');
-	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(255, 128, 0, 0.6)');
+	// 見た目の不透明度は b_alpha × sys:TextLayer.Back.Alpha（本家 TxtLayer.ts:388。sys:の既定は0.5）
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(255, 128, 0, 0.3)');
 
 	const {aLay} = await snap(page);
 	expect(aLay.find(l=> l.nm === 'mes')?.b_alpha).toBe(0.6);

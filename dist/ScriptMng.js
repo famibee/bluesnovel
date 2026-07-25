@@ -1836,16 +1836,25 @@ var A = class e {
 						aFace: e
 					});
 				}
-				if (i.b_alpha !== void 0) {
-					let e = Number(i.b_alpha);
-					if (Number.isNaN(e)) throw `[lay] b_alphaの値が不正です：${i.b_alpha}`;
-					a.push({
+				if (i.b_alpha !== void 0 || i.b_alpha_isfixed !== void 0) {
+					let e = {
 						t: "chgBAlpha",
 						nm: i.layer ?? "",
-						page: n,
-						b_alpha: Math.min(1, Math.max(0, e))
-					});
+						page: n
+					};
+					if (i.b_alpha !== void 0) {
+						let t = Number(i.b_alpha);
+						if (Number.isNaN(t)) throw `[lay] b_alphaの値が不正です：${i.b_alpha}`;
+						e.b_alpha = Math.min(1, Math.max(0, t));
+					}
+					i.b_alpha_isfixed !== void 0 && (e.isFixed = i.b_alpha_isfixed !== "false"), a.push(e);
 				}
+				i.b_pic !== void 0 && a.push({
+					t: "chgBPic",
+					nm: i.layer ?? "",
+					page: n,
+					fn: i.b_pic
+				});
 				let o = {};
 				i.visible !== void 0 && (o.visible = i.visible !== "false"), i.alpha !== void 0 && (o.alpha = e.#n("lay", "alpha", i.alpha)), i.left !== void 0 && (o.left = e.#n("lay", "left", i.left)), i.top !== void 0 && (o.top = e.#n("lay", "top", i.top)), i.rotation !== void 0 && (o.rotation = e.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (o.scale_x = e.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (o.scale_y = e.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (o.pivot_x = e.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (o.pivot_y = e.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (o.blendmode = e.#s(i.blendmode)), i.b_color !== void 0 && (o.b_color = e.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (o.style = i.style), Object.keys(o).length > 0 && a.push({
 					t: "chgLay",
@@ -2758,7 +2767,7 @@ var U = class {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#X(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Z(e);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -2847,7 +2856,7 @@ var U = class {
 	}
 	#d;
 	async #f(e) {
-		return this.#n[e] ??= new x(e, await this.#Y(e), this.#m());
+		return this.#n[e] ??= new x(e, await this.#X(e), this.#m());
 	}
 	#p;
 	#m() {
@@ -2898,61 +2907,62 @@ var U = class {
 	}
 	#y() {
 		if (!this.#b) {
-			if (this.#T) {
-				this.#T.canskip && this.#D();
+			if (this.#E) {
+				this.#E.canskip && this.#O();
 				return;
 			}
-			if (this.#k) {
-				this.#k.canskip && this.#j();
+			if (this.#A) {
+				this.#A.canskip && this.#M();
 				return;
 			}
-			if (this.#N) {
-				this.#N.canskip && this.#I(this.#N.tw_nm);
+			if (this.#P) {
+				this.#P.canskip && this.#L(this.#P.tw_nm);
 				return;
 			}
-			this.#B().catch(() => {});
+			this.#x || this.#V().catch(() => {});
 		}
 	}
 	#b = !1;
-	#x;
-	#S(e, t) {
-		clearTimeout(this.#x), this.$fncs.setSkipping(e === "skip"), this.#x = setTimeout(() => {
+	#x = !1;
+	#S;
+	#C(e, t) {
+		clearTimeout(this.#S), this.$fncs.setSkipping(e === "skip"), this.#S = setTimeout(() => {
 			e === "skip" && this.$fncs.requestSkip(), this.#y();
 		}, t);
 	}
 	cancelAuto() {
-		clearTimeout(this.#x), this.#x = void 0, this.$fncs?.setSkipping(!1), this.#r?.cancelAutoSkip();
+		clearTimeout(this.#S), this.#S = void 0, this.$fncs?.setSkipping(!1), this.#r?.cancelAutoSkip();
 	}
-	#C;
-	#w = !1;
-	#T;
-	#E(e) {
-		clearTimeout(this.#C), this.#w = e > 0, this.#C = this.#w ? setTimeout(() => this.#D(), e) : void 0;
+	#w;
+	#T = !1;
+	#E;
+	#D(e) {
+		clearTimeout(this.#w), this.#T = e > 0, this.#w = this.#T ? setTimeout(() => this.#O(), e) : void 0;
 	}
-	#D() {
-		clearTimeout(this.#C), this.#C = void 0, this.#w = !1, this.$fncs.finishTrans(), this.#T && (this.#T = void 0, this.#y());
+	#O() {
+		clearTimeout(this.#w), this.#w = void 0, this.#T = !1, this.$fncs.finishTrans(), this.#E && (this.#E = void 0, this.#y());
 	}
-	#O(e) {
-		if (this.#w) {
-			this.#T = { canskip: e };
+	#k(e) {
+		if (this.#T) {
+			this.#E = { canskip: e };
 			return;
 		}
 		setTimeout(() => this.#y(), 0);
 	}
-	#k;
-	#A(e, t) {
-		this.#k = {
+	#A;
+	#j(e, t) {
+		this.#A = {
 			canskip: t,
-			timer: setTimeout(() => this.#j(), Math.max(0, e))
+			timer: setTimeout(() => this.#M(), Math.max(0, e))
 		};
 	}
-	#j() {
-		this.#k && (clearTimeout(this.#k.timer), this.#k = void 0, this.#y());
+	#M() {
+		this.#A && (clearTimeout(this.#A.timer), this.#A = void 0, this.#y());
 	}
-	#M = Object.create(null);
-	#N;
-	#P(e) {
-		this.#M[e.tw_nm]?.tw.kill(), delete this.#M[e.tw_nm];
+	#N = Object.create(null);
+	#P;
+	#F(e) {
+		this.#N[e.tw_nm]?.tw.kill(), delete this.#N[e.tw_nm];
 		let t = this.$fncs.getLaySty(e.nm, e.page), n = Object.keys(e.hTo), r = {}, i = {};
 		for (let a of n) {
 			let n = e.hTo[a], o = t[a] ?? w[a];
@@ -2970,10 +2980,10 @@ var U = class {
 			Object.assign(r, i), a();
 		};
 		if (e.msec <= 0 && e.delay <= 0) {
-			o(), this.#F(e.tw_nm);
+			o(), this.#I(e.tw_nm);
 			return;
 		}
-		this.#M[e.tw_nm] = {
+		this.#N[e.tw_nm] = {
 			end: o,
 			tw: c.to(r, {
 				...i,
@@ -2984,38 +2994,38 @@ var U = class {
 				yoyo: e.yoyo,
 				onUpdate: a,
 				onComplete: () => {
-					o(), this.#F(e.tw_nm);
+					o(), this.#I(e.tw_nm);
 				}
 			})
 		};
 	}
-	#F(e) {
-		delete this.#M[e], this.#N?.tw_nm === e && (this.#N = void 0, setTimeout(() => this.#y(), 0));
-	}
 	#I(e) {
-		let t = this.#M[e];
-		t && (t.tw.kill(), t.end()), this.#F(e);
+		delete this.#N[e], this.#P?.tw_nm === e && (this.#P = void 0, setTimeout(() => this.#y(), 0));
 	}
-	#L(e, t) {
-		if (!this.#M[e]) {
+	#L(e) {
+		let t = this.#N[e];
+		t && (t.tw.kill(), t.end()), this.#I(e);
+	}
+	#R(e, t) {
+		if (!this.#N[e]) {
 			setTimeout(() => this.#y(), 0);
 			return;
 		}
-		this.#N = {
+		this.#P = {
 			tw_nm: e,
 			canskip: t
 		};
 	}
-	#R = !1;
-	#z = 0;
-	async #B() {
+	#z = !1;
+	#B = 0;
+	async #V() {
 		let e = this.#r;
 		if (e) {
-			if (this.#R) {
-				++this.#z;
+			if (this.#z) {
+				++this.#B;
 				return;
 			}
-			this.#R = !0;
+			this.#z = !0;
 			try {
 				for (;;) {
 					this.$fncs.setWait(null);
@@ -3026,30 +3036,30 @@ var U = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#J(e);
+					for (let e of t) this.#Y(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
-						this.#O(n.canskip);
+						this.#k(n.canskip);
 						return;
 					}
 					if (n?.t === "wait") {
-						this.#A(n.msec, n.canskip);
+						this.#j(n.msec, n.canskip);
 						return;
 					}
 					if (n?.t === "waitTsy") {
-						this.#L(n.tw_nm, n.canskip);
+						this.#R(n.tw_nm, n.canskip);
 						return;
 					}
 					if (n?.t === "addFrame" || n?.t === "letFrame") {
-						this.#V(n).catch(() => {});
+						this.#x = !0, this.#H(n).catch(() => {});
 						return;
 					}
 					if (n?.t === "loadPlugin" || n?.t === "snapshot") {
-						this.#U(n).catch(() => {});
+						this.#x = !0, this.#W(n).catch(() => {});
 						return;
 					}
 					if (n?.t === "load" || n?.t === "reloadScript") {
-						this.#H(n).catch(() => {});
+						this.#x = !0, this.#U(n).catch(() => {});
 						return;
 					}
 					if (n?.t !== "loadScript") {
@@ -3064,57 +3074,59 @@ var U = class {
 					}
 				}
 			} finally {
-				this.#R = !1, this.#z > 0 && (--this.#z, this.#y());
+				this.#z = !1, this.#B > 0 && (--this.#B, this.#y());
 			}
 		}
-	}
-	async #V(e) {
-		try {
-			e.t === "addFrame" ? this.#K(await this.#h.add(e.id, e.src, e.sty)) : this.#K({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#h.get(e.id, e.var_name, e.fnc) });
-		} catch (t) {
-			this.myTrace(`[${e.t === "addFrame" ? "add_frame" : "let_frame"}] エラー id:${e.id} ${String(t)}`, "ET");
-			return;
-		}
-		this.#y();
 	}
 	async #H(e) {
-		let t = this.#r;
-		if (t) {
-			try {
-				let n = e.t === "reloadScript" ? this.#d : this.#o.getMark(e.place);
-				if (!n) throw e.t === "reloadScript" ? "[record_place]がまだ実行されていません" : `place=${String(e.place)} は存在しません`;
-				t.restoreMarkPart(n), this.$fncs.replace(n.sPages), this.sys.caretaker.clear(), this.#b = !1;
-				let r = String(t.getVal("save:const.sn.scriptFn") ?? ""), i = Number(t.getVal("save:const.sn.scriptIdx") ?? 0);
-				if (!r) throw "再開位置（save:const.sn.scriptFn）が空です";
-				delete this.#n[r];
-				let a = await this.#f(r);
-				if (e.t === "load" && e.label) {
-					t.switchScript(a, "", i);
-					let n = e.fn && e.fn !== r ? await this.#f(e.fn) : a;
-					t.callToScript(n, e.label);
-				} else t.switchScript(a, "", i);
-			} catch (t) {
-				this.myTrace(`[${e.t === "reloadScript" ? "reload_script" : "load"}] ${String(t)}`, "ET");
-				return;
-			}
-			this.#y();
+		try {
+			e.t === "addFrame" ? this.#q(await this.#h.add(e.id, e.src, e.sty)) : this.#q({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#h.get(e.id, e.var_name, e.fnc) });
+		} catch (t) {
+			this.#x = !1, this.myTrace(`[${e.t === "addFrame" ? "add_frame" : "let_frame"}] エラー id:${e.id} ${String(t)}`, "ET");
+			return;
 		}
+		this.#x = !1, this.#y();
 	}
 	async #U(e) {
+		let t = this.#r;
+		if (!t) {
+			this.#x = !1;
+			return;
+		}
 		try {
-			e.t === "loadPlugin" ? await this.#W(e.fn) : await this.#G(e);
+			let n = e.t === "reloadScript" ? this.#d : this.#o.getMark(e.place);
+			if (!n) throw e.t === "reloadScript" ? "[record_place]がまだ実行されていません" : `place=${String(e.place)} は存在しません`;
+			t.restoreMarkPart(n), this.$fncs.replace(n.sPages), this.sys.caretaker.clear(), this.#b = !1;
+			let r = String(t.getVal("save:const.sn.scriptFn") ?? ""), i = Number(t.getVal("save:const.sn.scriptIdx") ?? 0);
+			if (!r) throw "再開位置（save:const.sn.scriptFn）が空です";
+			delete this.#n[r];
+			let a = await this.#f(r);
+			if (e.t === "load" && e.label) {
+				t.switchScript(a, "", i);
+				let n = e.fn && e.fn !== r ? await this.#f(e.fn) : a;
+				t.callToScript(n, e.label);
+			} else t.switchScript(a, "", i);
+		} catch (t) {
+			this.#x = !1, this.myTrace(`[${e.t === "reloadScript" ? "reload_script" : "load"}] ${String(t)}`, "ET");
+			return;
+		}
+		this.#x = !1, this.#y();
+	}
+	async #W(e) {
+		try {
+			e.t === "loadPlugin" ? await this.#G(e.fn) : await this.#K(e);
 		} catch (t) {
 			this.myTrace(`[${e.t === "loadPlugin" ? "loadplugin" : "snapshot"}] ${String(t)}`, "E");
 		}
-		this.#y();
+		this.#x = !1, this.#y();
 	}
-	async #W(e) {
+	async #G(e) {
 		let t = await fetch(e);
 		if (!t.ok) throw `cssが取得できません fn:${e}`;
 		let n = document.createElement("style");
 		n.textContent = await t.text(), document.head.appendChild(n);
 	}
-	async #G(e) {
+	async #K(e) {
 		let t = this.#g;
 		if (!t) throw "ステージがまだ表示されていません";
 		let { stageW: n, stageH: r } = o, i = await M({
@@ -3129,10 +3141,10 @@ var U = class {
 		}), a = (/* @__PURE__ */ new Date()).toISOString().replace(/[:T]/g, "-").slice(0, 19);
 		L(e.fn ? `${e.fn}${a}.png` : `snapshot${a}.png`, i);
 	}
-	#K(e) {
+	#q(e) {
 		for (let [t, n] of Object.entries(e)) this.#r?.setValNochk(t, n);
 	}
-	#q(e, t) {
+	#J(e, t) {
 		if (!t) return "";
 		try {
 			return this.sys.cfg.searchPath(t, l.SP_GSM);
@@ -3140,7 +3152,7 @@ var U = class {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#J(e) {
+	#Y(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -3163,10 +3175,10 @@ var U = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: this.#q("lay", e.fn),
+					src: this.#J("lay", e.fn),
 					aFace: e.aFace.map((e) => ({
 						...e,
-						src: this.#q("add_face", e.fn)
+						src: this.#J("add_face", e.fn)
 					}))
 				});
 				break;
@@ -3174,14 +3186,23 @@ var U = class {
 				this.$fncs.chgBAlpha({
 					nm: e.nm,
 					page: e.page,
-					b_alpha: e.b_alpha
+					...e.b_alpha === void 0 ? {} : { b_alpha: e.b_alpha },
+					...e.isFixed === void 0 ? {} : { isFixed: e.isFixed }
+				});
+				break;
+			case "chgBPic":
+				this.$fncs.chgBPic({
+					nm: e.nm,
+					page: e.page,
+					fn: e.fn,
+					src: e.fn ? this.#J("lay b_pic", e.fn) : ""
 				});
 				break;
 			case "trans":
 				this.$fncs.startTrans({
 					aLayNm: e.aLayNm,
 					time: e.time
-				}), this.#E(e.time);
+				}), this.#D(e.time);
 				break;
 			case "waitTrans": break;
 			case "chgStr":
@@ -3256,14 +3277,14 @@ var U = class {
 				break;
 			case "wait": break;
 			case "tsy":
-				this.#P(e);
+				this.#F(e);
 				break;
 			case "waitTsy": break;
 			case "stopTsy":
-				this.#I(e.tw_nm);
+				this.#L(e.tw_nm);
 				break;
 			case "pauseTsy":
-				this.#M[e.tw_nm]?.tw.paused(e.paused);
+				this.#N[e.tw_nm]?.tw.paused(e.paused);
 				break;
 			case "title":
 				this.$fncs.addTitle(e.text);
@@ -3275,7 +3296,7 @@ var U = class {
 				globalThis.open(e.url, "_blank");
 				break;
 			case "loadPlugin":
-				e.join || this.#W(e.fn).catch(() => {});
+				e.join || this.#G(e.fn).catch(() => {});
 				break;
 			case "snapshot": break;
 			case "recordPlace":
@@ -3316,7 +3337,7 @@ var U = class {
 				break;
 			}
 			case "frame":
-				this.#K(this.#h.frame(e.id, e.sty, e.order, e.disabled));
+				this.#q(this.#h.frame(e.id, e.sty, e.order, e.disabled));
 				break;
 			case "setFrame":
 				this.#h.set(e.id, e.var_name, e.text);
@@ -3353,18 +3374,18 @@ var U = class {
 				this.sys.caretaker.clear();
 				break;
 			case "trace":
-				this.#X({ text: e.text });
+				this.#Z({ text: e.text });
 				break;
 			case "loadScript": break;
 			case "stop":
 				this.sys.caretaker.push(e.key), (e.kind === "l" || e.kind === "p") && this.$fncs.setWait({
 					nm: e.nm,
 					kind: e.kind
-				}), this.#b = e.kind === "s", e.resume ? this.#S(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#l();
+				}), this.#b = e.kind === "s", e.resume ? this.#C(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#l(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1));
 				break;
 		}
 	}
-	async #Y(e) {
+	async #X(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, l.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -3373,7 +3394,7 @@ var U = class {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#X(e) {
+	#Z(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
 	myTrace = (e, t = "E") => {

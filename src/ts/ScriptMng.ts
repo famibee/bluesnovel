@@ -304,9 +304,17 @@ export class ScriptMng {
 			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
 			return;
 		}
+		// DOM絡みの非同期処理中（[add_frame]/[let_frame]/[loadplugin]/[snapshot]/[load]）は
+		//	**クリックを捨てる**。#busyは#runStep()を抜けた時点で下りるので、これが無いと
+		//	処理の完了を待たずにシナリオが再開してしまう（フレーム読み込み中に画面をクリックすると
+		//	[add_frame]の次の[set_frame]が「まだ読み込まれていません」で落ちた）。
+		//	本家も Reading.beginProc()〜endProc() の間は進行を受け付けない
+		if (this.#procing) return;
+
 		this.#runStep().catch(()=> {/* myTraceで表示済み */});
 	}
 	#stopped = false;	// [s]で停止中か
+	#procing = false;	// DOM絡みの非同期処理中か（上記）
 
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
@@ -500,16 +508,19 @@ export class ScriptMng {
 				//	[add_frame]はHTMLのfetchが要るので非同期、[let_frame]は同期だが、
 				//	どちらも「書き戻し→再開」の順を守りたいのでここで一旦返る
 				if (last?.t === 'addFrame' || last?.t === 'letFrame') {
+					this.#procing = true;
 					this.#procFrame(last).catch(()=> {/* myTraceで表示済み */});
 					return;
 				}
 				// [loadplugin join=true]（既定）・[snapshot]も同じ形：DOM絡みの非同期が終わってから続きを回す
 				if (last?.t === 'loadPlugin' || last?.t === 'snapshot') {
+					this.#procing = true;
 					this.#procDom(last).catch(()=> {/* myTraceで表示済み */});
 					return;
 				}
 				// しおりからの復元。スクリプトの読み直し（fetch）が要るのでここで一旦返る
 				if (last?.t === 'load' || last?.t === 'reloadScript') {
+					this.#procing = true;
 					this.#procLoad(last).catch(()=> {/* myTraceで表示済み */});
 					return;
 				}
@@ -540,16 +551,18 @@ export class ScriptMng {
 			else this.#setVals({[`const.sn.frm.${act.id}.${act.var_name}`]:
 				this.#frmMng.get(act.id, act.var_name, act.fnc) as string});
 		} catch (e) {
+			this.#procing = false;
 			this.myTrace(`[${act.t === 'addFrame' ? 'add_frame' : 'let_frame'}] エラー id:${act.id} ${String(e)}`, 'ET');
 			return;
 		}
+		this.#procing = false;
 		this.#goSafe();
 	}
 	// [load]／[reload_script]：しおりから復元して、その位置のスクリプトを読み直してから続きを回す
 	//	（本家 ScriptIterator loadFromMark()）。#procFrame()と同じく#busyが下りた後に呼ばれる
 	async #procLoad(act: Extract<T_ENGINE_ACTION, {t: 'load' | 'reloadScript'}>) {
 		const engine = this.#engine;
-		if (! engine) return;
+		if (! engine) {this.#procing = false; return}
 
 		try {
 			// [reload_script]は「最後の[record_place]位置」＝#mark。[load]は保存済みのしおり
@@ -581,9 +594,11 @@ export class ScriptMng {
 			}
 			else engine.switchScript(scr, '', idx);
 		} catch (e) {
+			this.#procing = false;
 			this.myTrace(`[${act.t === 'reloadScript' ? 'reload_script' : 'load'}] ${String(e)}`, 'ET');
 			return;
 		}
+		this.#procing = false;
 		this.#goSafe();
 	}
 
@@ -597,6 +612,7 @@ export class ScriptMng {
 			// 撮影・css読込が失敗してもゲームは続ける（'ET'ではなく'E'）
 			this.myTrace(`[${act.t === 'loadPlugin' ? 'loadplugin' : 'snapshot'}] ${String(e)}`, 'E');
 		}
+		this.#procing = false;
 		this.#goSafe();
 	}
 
@@ -669,7 +685,15 @@ export class ScriptMng {
 				aFace: act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}))});
 			break;
 		case 'chgBAlpha':
-			this.$fncs.chgBAlpha({nm: act.nm, page: act.page, b_alpha: act.b_alpha});
+			this.$fncs.chgBAlpha({nm: act.nm, page: act.page,
+				...(act.b_alpha === undefined ? {} : {b_alpha: act.b_alpha}),
+				...(act.isFixed === undefined ? {} : {isFixed: act.isFixed}),
+			});
+			break;
+		case 'chgBPic':
+			// 文字レイヤ背後の枠画像。画像レイヤ（chgPic）と同じくここでパスを解決する
+			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn,
+				src: act.fn ? this.#searchPic('lay b_pic', act.fn) : ''});
 			break;
 		case 'trans':
 			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）
@@ -848,6 +872,9 @@ export class ScriptMng {
 			// 既読情報とsys:の保存。本家も停止点で吐き出す（毎トークンでは重すぎるため）。
 			//	立て続けの呼び出しはSaveMng側で500msにまとめられる
 			this.#flushSys();
+			// 設定画面で変わりうる「バック不透明度」をストアへ写す（本家 LayerMng.ts:205 の
+			//	val.defValTrg('sys:TextLayer.Back.Alpha', …) 相当。全文字レイヤの背景に掛かる）
+			this.$fncs.setBackAlpha(Number(this.#engine?.getVal('sys:TextLayer.Back.Alpha') ?? 1));
 			break;
 		}
 	}

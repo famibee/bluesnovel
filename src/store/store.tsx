@@ -27,6 +27,7 @@ type T_STATE = {
 	addLayer: (arg: T_LAY)=> void,
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
+	chgBPic	: (arg: T_CHGBPIC)=> void,
 	chgLay	: (arg: T_CHGLAY)=> void,
 	getLaySty: (nm: string, page: T_PAGE)=> T_LAY_STY,
 	getPages: ()=> {fore: T_LAY[]; back: T_LAY[]},	// [dump_lay]用。表裏まとめて覗く
@@ -70,6 +71,12 @@ type T_STATE = {
 
 	wait		: T_WAIT;		// 現在[l]/[p]待ち中のレイヤと種別（[s]はマーカーなし=null）
 	setWait		: (w: T_WAIT)=> void;
+
+	// sys:TextLayer.Back.Alpha（設定画面の「バック不透明度」）。**全文字レイヤ共通の掛け率**で、
+	//	各レイヤのb_alphaに掛かる（b_alpha_isfixed=trueのレイヤだけは掛からない。本家 TxtLayer.ts:388）。
+	//	変数はエンジンが持つので、ScriptMngが停止点ごとにここへ写す
+	backAlpha	: number;
+	setBackAlpha: (v: number)=> void;
 }
 export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
 export type T_PAGE = 'fore' | 'back';
@@ -88,11 +95,21 @@ export type T_CHGPIC = {
 	src	: string;	// 解決済みURL。パス解決（path.json）はScriptMngが行う
 	aFace	: T_FACE_SRC[];	// [lay face=...]で重ねる差分絵（重なり順＝配列順）
 }
-// [lay b_alpha=...]：文字レイヤ背景の不透明度。値域は0.0（透明）～1.0（不透過）。背景のみを透過させ、文字は透過しない（レイヤ全体の透過度ではない）
+// [lay b_alpha=/b_alpha_isfixed=]：文字レイヤ背景の不透明度。値域は0.0（透明）～1.0（不透過）。
+//	背景のみを透過させ、文字は透過しない（レイヤ全体の透過度ではない）。
+//	isFixed=false（既定）だと sys:TextLayer.Back.Alpha との掛け算になる（本家 TxtLayer.ts:388）
 export type T_CHGBALPHA = {
 	nm		: string;
 	page	: T_PAGE;
-	b_alpha	: number;
+	b_alpha?: number;
+	isFixed?: boolean;
+}
+// [lay b_pic=…]：文字レイヤ背後の枠画像。fnは論理名、srcは解決済みURL（空なら単色塗りへ戻す）
+export type T_CHGBPIC = {
+	nm		: string;
+	page	: T_PAGE;
+	fn		: string;
+	src		: string;
 }
 // [lay]で指定できるレイヤの見た目。書かれた属性だけを持つ（未指定の属性は現状維持）
 export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
@@ -151,7 +168,7 @@ export type T_ADDBTN = {
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -215,11 +232,21 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		e.aFace = aFace;	// [lay face=...]の差分合成情報も同時に更新（未指定時は空配列）
 		return putPage(s, idx, aLay);
 	}),
-	chgBAlpha	: ({nm, page, b_alpha}: T_CHGBALPHA)=> set(s=> {
+	chgBAlpha	: ({nm, page, b_alpha, isFixed}: T_CHGBALPHA)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, nm, 'txt');
 
-		e.b_alpha = b_alpha;	// レイヤ全体ではなく文字レイヤ背景の不透明度のみ（TxtLayer.tsxでbackground-colorのrgbaのアルファとして反映）
+		// レイヤ全体ではなく文字レイヤ背景の不透明度のみ（TxtLayer.tsxで背景のアルファとして反映）
+		if (b_alpha !== undefined) e.b_alpha = b_alpha;
+		if (isFixed !== undefined) e.b_alpha_isfixed = isFixed;
+		return putPage(s, idx, aLay);
+	}),
+	chgBPic	: ({nm, page, fn, src}: T_CHGBPIC)=> set(s=> {
+		const {idx, aLay} = pickPage(s, page);
+		const e = findLay(aLay, nm, 'txt');
+
+		e.b_pic = fn;
+		e.b_src = src;
 		return putPage(s, idx, aLay);
 	}),
 	// [lay]のレイヤ共通属性。書かれた属性だけを上書きする（本家 Layer.lay() も `'x' in hArg` で判定）
@@ -271,7 +298,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
-			else {e.str = ''; e.aBtn = []; delete e.b_color; delete e.style; e.b_alpha = 1}
+			else {e.str = ''; e.aBtn = []; delete e.b_color; delete e.style; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {
@@ -413,6 +440,8 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 	isTyping	: false,
 	setIsTyping	: b=> set(()=> ({isTyping: b})),
+	backAlpha	: 1,
+	setBackAlpha: v=> set(()=> ({backAlpha: v})),
 	skipReq		: 0,
 	requestSkip	: ()=> set(s=> ({skipReq: s.skipReq + 1})),
 	skipping	: false,

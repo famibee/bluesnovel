@@ -166,3 +166,47 @@ it('chgFilter_clearLayDropsFilters', ()=> {
 	S().clearLay({aLayNm: ['a'], page: 'fore'});
 	expect(aFltOf('a')).toBeUndefined();
 });
+
+
+// ============ 文字レイヤ背後の枠画像・背景の不透明度 ============
+//	[lay b_pic=…]／[lay b_alpha=/b_alpha_isfixed=]。描画（どちらを優先するか、掛け算するか）は
+//	TxtLayer側だが、値の持ち方はここ。[clear_lay]で捨てられることも見る
+
+it('chgBPic_setsAndClears', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+
+	S().chgBPic({nm: 'mes', page: 'fore', fn: 'wafuu1', src: '/theme/wafuu1.png'});
+	const lay = ()=> useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	expect(lay()).toMatchObject({b_pic: 'wafuu1', b_src: '/theme/wafuu1.png'});
+
+	S().chgBPic({nm: 'mes', page: 'fore', fn: '', src: ''});
+	expect(lay()).toMatchObject({b_pic: '', b_src: ''});
+});
+
+it('chgBAlpha_writesOnlyWhatWasGiven', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	const lay = ()=> useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+
+	S().chgBAlpha({nm: 'mes', page: 'fore', isFixed: true});	// b_alphaは触らない
+	expect(lay()).toMatchObject({b_alpha: 1, b_alpha_isfixed: true});
+
+	S().chgBAlpha({nm: 'mes', page: 'fore', b_alpha: 0.4});	// isFixedは触らない
+	expect(lay()).toMatchObject({b_alpha: 0.4, b_alpha_isfixed: true});
+});
+
+it('clearLay_dropsBackPicAndFixedFlag', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	S().chgBPic({nm: 'mes', page: 'fore', fn: 'wafuu1', src: '/theme/wafuu1.png'});
+	S().chgBAlpha({nm: 'mes', page: 'fore', b_alpha: 0.4, isFixed: true});
+
+	S().clearLay({aLayNm: null, page: 'fore'});
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.b_pic).toBeUndefined();
+	expect(lay.b_src).toBeUndefined();
+	expect(lay.b_alpha_isfixed).toBeUndefined();
+	expect(lay.b_alpha).toBe(1);
+});

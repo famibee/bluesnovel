@@ -48,18 +48,20 @@ type T_TXTARG = T_LAY_CMN & {
 	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
 	str		: string;
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
-	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景色のrgbaアルファとしてのみ反映し、文字自体は常に不透明
+	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
+	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
+	b_src?	: string | undefined;	// [lay b_pic=…]の解決済みURL。**あればb_colorより優先**（本家 TxtLayer.ts:393）
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
 	aBtn	: T_BTN[];
 	onActivate: (label: string, call: boolean, fn: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; style?: string; enabled: boolean; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -170,6 +172,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
 	const {r, g, b} = rgbOf(b_color);
+	// 背景の不透明度は b_alpha × sys:TextLayer.Back.Alpha（本家 TxtLayer.ts:388）。
+	//	b_alpha_isfixed=true のレイヤだけは掛けずにb_alphaそのもの（クリック待ち画面など、
+	//	設定の「バック不透明度」に影響されたくない層のための指定）
+	const backAlpha = useStore(s=> s.backAlpha);
+	const bAlpha = b_alpha * (b_alpha_isfixed ? 1 : backAlpha);
 	// **文字が1つも無い層には箱（背景＋枠）を描かない**。
 	//	既定のaquamarine背景＋点線枠は試作の*目印*（本来見えない文字層の位置と大きさを分かるようにする
 	//	もの）であって、テンプレが期待する見た目ではない。文字が無いのは
@@ -178,15 +185,31 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	のどちらかで、どちらも本家では何も見えない。とくに後者は[trans]の最中に裏ページが
 	//	見えるので、空のメッセージ窓が水色の帯として一瞬現れてしまっていた。
 	//	ただし[lay b_color=…]で色を明示した層は「意図して置いた板」なので描く
-	const noBox = str.length === 0 && b_color === undefined;
+	const noBox = str.length === 0 && b_color === undefined && ! b_src;
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
-		background-color: ${noBox ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${b_alpha})`};
-		border: ${noBox ? 'none' : 'dotted 6px #ffa500'};
+		/* [lay b_pic=…]があればそれを背景画像にし、**b_colorは無視する**（本家と同じ規約）。
+			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
+			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
+			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
+		background-color: ${noBox || b_src ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${bAlpha})`};
+		border: ${noBox || b_src ? 'none' : 'dotted 6px #ffa500'};
+		${b_src ? `
+		&::before {
+			content: '';
+			position: absolute;
+			left: 0; top: 0; right: 0; bottom: 0;
+			background-image: url(${JSON.stringify(b_src)});
+			background-repeat: no-repeat;
+			background-position: left top;
+			opacity: ${bAlpha};
+			pointer-events: none;
+			z-index: -1;
+		}` : ''}
 
 		font-size: xxx-large;
 		top: 48%;

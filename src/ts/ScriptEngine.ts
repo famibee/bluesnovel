@@ -60,7 +60,8 @@ export type T_LAY_STY_ARG = {
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
-	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha: number}	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない
+	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
+	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
@@ -784,15 +785,28 @@ export class ScriptEngine {
 				aAct.push({t: 'chgPic', nm: args.layer ?? '', page, fn: picFn, aFace});
 			}
 
-			// b_alpha：文字レイヤ背景の不透明度。pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
-			if (args.b_alpha !== undefined) {
-				const v = Number(args.b_alpha);
-				if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
-				// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
-				//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
-				//	範囲外の値が残ってしまうため、ここで正規化する。
-				//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
-				aAct.push({t: 'chgBAlpha', nm: args.layer ?? '', page, b_alpha: Math.min(1, Math.max(0, v))});
+			// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
+			//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
+			if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
+				const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
+				if (args.b_alpha !== undefined) {
+					const v = Number(args.b_alpha);
+					if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+					// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
+					//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
+					//	範囲外の値が残ってしまうため、ここで正規化する。
+					//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
+					o.b_alpha = Math.min(1, Math.max(0, v));
+				}
+				if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
+				aAct.push(o);
+			}
+
+			// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
+			//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
+			//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
+			if (args.b_pic !== undefined) {
+				aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
 			}
 
 			// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）

@@ -207,3 +207,37 @@ it('scenario_titleSnLikeSequence', ()=> {
 		'addLay', 'addLay', 'clearLay', 'addBtn', 'trans', 'waitTrans',
 	]);
 });
+
+
+// ============ 文字レイヤ背後の枠画像（[lay b_pic=…]） ============
+//	本家 TxtLayer.ts:393 #drawBack()。**b_picを指定するとb_colorは無視される**のが本家の規約で、
+//	テンプレのメッセージ窓（wafuu1）がこれ。未対応だと「白地に白文字」で本文が読めなくなる
+
+it('lay_bPic_pushesAction', ()=> {
+	expect(acts('[lay layer=mes b_pic=wafuu1][s]').find(v=> v.t === 'chgBPic'))
+		.toEqual({t: 'chgBPic', nm: 'mes', page: 'fore', fn: 'wafuu1'});
+});
+
+it('lay_bPic_emptyClearsBack', ()=> {
+	// b_pic=''は「枠画像をやめて単色塗りへ戻す」（本家も hArg.b_pic の真偽で分岐）
+	expect(acts(`[lay layer=mes b_pic=''][s]`).find(v=> v.t === 'chgBPic'))
+		.toEqual({t: 'chgBPic', nm: 'mes', page: 'fore', fn: ''});
+});
+
+it('lay_bAlphaIsfixed', ()=> {
+	// b_alpha_isfixed=trueは「sys:TextLayer.Back.Alphaと掛け算しない」指定
+	expect(acts('[lay layer=mes b_alpha=1 b_alpha_isfixed=true][s]').find(v=> v.t === 'chgBAlpha'))
+		.toEqual({t: 'chgBAlpha', nm: 'mes', page: 'fore', b_alpha: 1, isFixed: true});
+	// 片方だけでも積む（書かれた属性だけを運ぶ）
+	expect(acts('[lay layer=mes b_alpha_isfixed=false][s]').find(v=> v.t === 'chgBAlpha'))
+		.toEqual({t: 'chgBAlpha', nm: 'mes', page: 'fore', isFixed: false});
+	expect(acts('[lay layer=mes b_alpha=0.5][s]').find(v=> v.t === 'chgBAlpha'))
+		.toEqual({t: 'chgBAlpha', nm: 'mes', page: 'fore', b_alpha: 0.5});
+});
+
+it('lay_bPic_isSeparateFromBColor', ()=> {
+	// 両方書かれたらどちらのアクションも出る（優先の判断は描画側＝TxtLayer）
+	const a = acts('[lay layer=mes b_pic=wafuu1 b_color=0xffffff][s]');
+	expect(a.some(v=> v.t === 'chgBPic')).toBe(true);
+	expect(a.find(v=> v.t === 'chgLay')?.sty.b_color).toBe(0xffffff);
+});

@@ -175,7 +175,7 @@ function bAlphaOf(src: string): number {
 	const a = new ScriptEngine('t1', src).step();
 	const act = a.find(v=> v.t === 'chgBAlpha');
 	if (act?.t !== 'chgBAlpha') throw 'chgBAlphaアクションがありません';
-	return act.b_alpha;
+	return act.b_alpha!;
 }
 
 it('step_lay_bAlpha_clampsOverOne', ()=> {

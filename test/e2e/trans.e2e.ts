@@ -18,8 +18,10 @@ import {SEL_FORE, gotoSn, mesStr, pageStyle, snap, txtBoxStyle, waitTransDone, w
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'trans')});
 
-// b_alpha=1（既定）はブラウザがrgb()へ正規化する
-const BG_OPAQUE	= 'rgb(127, 255, 212)';
+// **文字レイヤ背景の実際の不透明度は b_alpha × sys:TextLayer.Back.Alpha**（本家 TxtLayer.ts:388）。
+//	sys:の既定は0.5（本家 creSYS_DATA()）なので、b_alpha=1でも見た目は0.5になる。
+//	b_alpha_isfixed=true を指定したレイヤだけが掛け算を免れる
+const BG_OPAQUE	= 'rgba(127, 255, 212, 0.5)';	// b_alpha=1 × 0.5
 
 test('[lay page=back]で裏ページへ書いた内容が、[trans]で表に出る', async ({page})=> {
 	// 開始時：表は既定の不透明（b_alpha=1）。裏にはまだ何も書いていない
@@ -36,7 +38,7 @@ test('[lay page=back]で裏ページへ書いた内容が、[trans]で表に出�
 	// 演出が終われば表裏が入れ替わり、裏に書いた不透明度が画面に効く
 	await waitTransDone(page);
 	expect(await mesStr(page)).toBe('うら');
-	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.1)');	// 0.2 × 0.5
 	expect((await snap(page)).foreIdx).toBe(1);
 });
 
@@ -86,7 +88,7 @@ test('[wt]中のクリックで演出を飛ばせる（中途半端な状態で�
 	expect(st.fore.opacity).toBe(1);
 	expect(st.back.visibility).toBe('hidden');
 	expect(await mesStr(page)).toBe('うら');
-	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.1)');	// 0.2 × 0.5
 });
 
 test('[trans time=0]は演出なしで即交換され、[wt]も素通しになる', async ({page})=> {
@@ -99,7 +101,7 @@ test('[trans time=0]は演出なしで即交換され、[wt]も素通しにな�
 	await page.keyboard.press('Space');	// [trans time=0]
 	await waitTransDone(page);
 	expect(await mesStr(page)).toBe('みっつめ');
-	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.9)');
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.45)');	// 0.9 × 0.5
 	// 表裏が2回入れ替わったので、表は元の面（0）へ戻っている
 	expect((await snap(page)).foreIdx).toBe(0);
 });
