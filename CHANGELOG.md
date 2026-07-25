@@ -329,10 +329,6 @@ ok.次は「設定」ボタンだが、その前に。
 	  `[s]`/`[waitclick]` は必ず `cancelAutoSkip()` する）。テンプレは `ss_000.sn:101` にこれがある。
 	  ユニット970・E2E87 パス、`tsc` クリーン。
 
-- [ ]
-
-
-
 
 - 文字レイヤ関係に着手
   - 順番・後回しは任せる。ただしすべてを一気にやらず、タグ2・3個ぐらいずつでコミットしていきたい（AI使用制限対策）
@@ -344,15 +340,46 @@ ok.次は「設定」ボタンだが、その前に。
     - 本家にあるdumpHtm機能はhtmlテキスト出力によるプログラマルな比較目的。ドットレベルの比較というより文字配置と改行の確認用。使えそうなら使って
   - フォント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/font
 
+- [x] **ルビ記法**（`漢字《かんじ》`・`｜親文字《ルビ》`・傍点`《*》`）。文字レイヤ関係の1回目。
+	- **本家 `RubySpliter.ts` をそのまま移植**（`src/sn/RubySpliter.ts`。相違は`T_PutCh`の置き場だけ）。
+	  `test/RubySpliter.test.ts` も本家のテストを無改変で持ってきて**204件すべてパス**。
+	  漢字の正規表現やサロゲートペア、`《* 》`傍点、空白での区切り指定など、自前で書き直したら
+	  まず合わない類の仕様なので、Grammar/ExprEvalと同じく「テストが契約」の方式に揃えた。
+	- **本文は「表示単位の並び」（`T_CH[] = {c, r?}`）としてストアへ入るようにした**。
+	  割るのは`ScriptMng`（`src/ts/Txt.ts` `splitCh()`）で、**エンジンは生の文字列のまま**
+	  （本家も文字組みはGrammarではなく表示側の仕事）。ストアは平文`str`と表示単位`aCh`の
+	  両方を持つ＝`chgPic`の`fn`と`src`と同じ関係で、`str`はルビを含まない。
+	- `TxtLayer`は1表示単位＝1spanのまま、ルビ付きなら中身を`<ruby>親文字<rt>ルビ</rt></ruby>`に。
+	  文字送り演出のDOMキャッシュ（前方一致で差分だけアニメ）も単位単位の比較へ移した。
+	- `const.sn.last_page_plain_text` が本家同様**ルビを除いた平文**を返すようになった（docs/dev.html 🟢）。
+	- エスケープ文字（`prj.json`の`init.escape`）は本家 `ScriptIterator.ts:120-122` と同じく
+	  Grammarと`RubySpliter`の両方へ配る。**`RubySpliter`は正規表現を`setEscape()`で組み立てるので、
+	  これを忘れると`matchAll`が名前付きグループ無しで回って落ちる**（実際に踏んだ）。
+	- 実テンプレ `tmp_blues` の本編で確認（`選《よ》りに`・`安全｜剃刀《かみそり》`が縦書きでルビ付きに）。
+	  E2Eは `prj_ruby` で4本（3記法＋`[er]`で消える）。ユニット1174・E2E91 パス、`tsc` クリーン。
+	- 未対応：ルビの位置指定（`《center｜るび》`の`r_align`。今は指定を落としてルビ文字だけ出す）、
+	  `[lay sesame=…]`、ルビ付き行の行間の詰め。`[ch]`/`[span]`/`[link]`/`[ruby2]`/`[tcy]`は次回以降。
+
+- [ ]
 
 
-  + ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
-  + 音系 https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
-  + SKYNovel_gallery/public/prj/glsl_slide at master · famibee/SKYNovel_gallery https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
-  + https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
-  + イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
-  + https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
-  + 
+
+
+
+- 音系に着手。だがあなたはこちらのようなテスト可能か？
+  - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
+
+
+- ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
+- GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
+
+- アニメpng https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
+
+- イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
+
+- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+
+
 
 
 

@@ -826,8 +826,8 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🔴 const.sn.key.control</td><td>false</td><td>true、false</td><td>control 〃</td></tr>
 <tr><td>🔴 const.sn.key.end</td><td>false</td><td>true、false</td><td>end 〃</td></tr>
 <tr><td>🔴 const.sn.key.escape</td><td>false</td><td>true、false</td><td>escape 〃</td></tr>
-<tr><td>🟡 const.sn.last_page_plain_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法とルビを含まない）<br/>bluesnovel：既定文字レイヤ（[<a href="tag.html#current">current</a>]）の蓄積文字列そのもの。文字装飾がまだ無いので《》やルビの除去は行っていない</td></tr>
-<tr><td>🟡 const.sn.last_page_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法もそのまま）<br/>bluesnovel：文字装飾がまだ無いので<code>const.sn.last_page_plain_text</code>と同じ値</td></tr>
+<tr><td>🟢 const.sn.last_page_plain_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法とルビを含まない）<br/>bluesnovel：既定文字レイヤ（[<a href="tag.html#current">current</a>]）の蓄積文字列からルビ記法を除いた平文（本家 <code>RubySpliter</code> を移植して割っている）</td></tr>
+<tr><td>🟢 const.sn.last_page_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法もそのまま）<br/>bluesnovel：既定文字レイヤの蓄積文字列そのもの</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）</td><td>true</td><td>true、false</td><td>レイヤが[add_lay]され存在するか</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.alpha</td><td>0.0〜1.0</td><td>0.0〜1.0；透過度</td><td>レイヤの不透明度</td></tr>
 <tr><td>🟡 const.sn.lay.（レイヤ名）.（foreかback）.width</td><td>1</td><td>1〜</td><td>レイヤの横幅。ただし文字レイヤの場合は1、画像レイヤの場合、画像読込後でないと0</td></tr>

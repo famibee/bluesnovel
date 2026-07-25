@@ -9,6 +9,7 @@ import {A_LAY_STY_KEY, type T_LAY, type T_LAY_STY} from '../components/Lay';
 import type {T_FLT} from '../ts/Filter';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
+import type {T_CH} from '../ts/Txt';
 
 import {create} from 'zustand';
 
@@ -154,7 +155,11 @@ export type T_MOVELAY = {
 export type T_CHGSTR = {
 	nm	: string;
 	page: T_PAGE_BOTH;	// [er]（ページ両面の文字消去）だけが'both'を使う
+	// 論理値（平文）と表示用（表示単位の並び）の両方を持つ。chgPicの fn と src と同じ関係で、
+	//	割るのはScriptMng（Txt.ts splitCh）の仕事。strはルビを除いた本文＝
+	//	const.sn.last_page_plain_text と同じ物なので、テストや読み上げはこちらを見れば良い
 	str	: string;
+	aCh	: T_CH[];
 }
 // [button]タグで文字レイヤ（UIコンテナ）にボタンを乗せる（独立レイヤにはしない）
 export type T_ADDBTN = {
@@ -304,7 +309,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
-			else {e.str = ''; e.aBtn = []; delete e.b_color; delete e.style; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
+			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {
@@ -393,17 +398,22 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		chg(aLay);
 		return putPage(s, idx, aLay);
 	}),
-	chgStr	: ({nm, page, str}: T_CHGSTR)=> set(s=> {
+	chgStr	: ({nm, page, str, aCh}: T_CHGSTR)=> set(s=> {
+		const put = (aLay: T_LAY[])=> {
+			const e = findLay(aLay, nm, 'txt');
+			e.str = str;
+			e.aCh = aCh;
+		};
 		// [er]だけが'both'＝両面の文字を消す。片面だけだと[trans]で裏が表に出たときに
 		//	前の場面の文字が蘇ってしまう（本家 hTag.er「ページ両面の文字消去」）
 		if (page === 'both') return {aPage: s.aPage.map(a=> {
 			const aLay = [...a];
-			findLay(aLay, nm, 'txt').str = str;
+			put(aLay);
 			return aLay;
 		}) as [T_LAY[], T_LAY[]]};
 
 		const {idx, aLay} = pickPage(s, page);
-		findLay(aLay, nm, 'txt').str = str;
+		put(aLay);
 		return putPage(s, idx, aLay);
 	}),
 

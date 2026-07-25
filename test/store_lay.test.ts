@@ -174,7 +174,7 @@ it('chgFilter_clearLayDropsFilters', ()=> {
 
 it('chgBPic_setsAndClears', ()=> {
 	useStore.setState({aPage: [[], []], foreIdx: 0});
-	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
 
 	S().chgBPic({nm: 'mes', page: 'fore', fn: 'wafuu1', src: '/theme/wafuu1.png'});
 	const lay = ()=> useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
@@ -186,7 +186,7 @@ it('chgBPic_setsAndClears', ()=> {
 
 it('chgBAlpha_writesOnlyWhatWasGiven', ()=> {
 	useStore.setState({aPage: [[], []], foreIdx: 0});
-	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
 	const lay = ()=> useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
 
 	S().chgBAlpha({nm: 'mes', page: 'fore', isFixed: true});	// b_alphaは触らない
@@ -198,7 +198,7 @@ it('chgBAlpha_writesOnlyWhatWasGiven', ()=> {
 
 it('clearLay_dropsBackPicAndFixedFlag', ()=> {
 	useStore.setState({aPage: [[], []], foreIdx: 0});
-	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
 	S().chgBPic({nm: 'mes', page: 'fore', fn: 'wafuu1', src: '/theme/wafuu1.png'});
 	S().chgBAlpha({nm: 'mes', page: 'fore', b_alpha: 0.4, isFixed: true});
 
@@ -216,7 +216,7 @@ it('clearLay_dropsBackPicAndFixedFlag', ()=> {
 //	省略時に何を使うかはストアの都合＝ストア側でしか決められない
 const addMes = ()=> {
 	useStore.setState({aPage: [[], []], foreIdx: 0});
-	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
 };
 const aBtnNm = ()=> {
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;

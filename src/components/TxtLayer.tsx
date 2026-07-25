@@ -7,6 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
+import {type T_CH, rubyTxt} from '../ts/Txt';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
@@ -46,7 +47,8 @@ type T_TXTARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	nm		: string;
 	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
-	str		: string;
+	str		: string;	// ルビを除いた平文（見た目の判定用。実際に描くのはaCh）
+	aCh		: T_CH[];	// 表示単位の並び（ルビ記法を割った結果。Txt.ts splitCh）
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
@@ -57,11 +59,11 @@ type T_TXTARG = T_LAY_CMN & {
 	onActivate: (label: string, call: boolean, fn: string)=> void;
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -71,15 +73,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const wait = useStore(s=> s.wait);
 
 	// 1文字ずつの文字送り演出（GSAP stagger）
-	//	・str は「そのページの累積全文字列」なので、前回からの差分（新規追加分）だけをspan化してアニメする
+	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
+	//	  前回からの差分（新規追加分）だけをspan化してアニメする
 	//	・isReadBack中（履歴を辿っている間）はstaggerを使わず瞬時に確定表示（要件：パフォーマンス優先、一度アニメ済みの部分は読み戻りから戻っても瞬時表示）
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
-	// 1文字＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
+	// 1表示単位＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
 	// DOM上の表示/非表示だけを切り替える。これにより読み戻りから戻った際に
 	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。
 	const spansRef = useRef<HTMLSpanElement[]>([]);
+	const chRef = useRef<T_CH[]>([]);	// 上のspanに対応する表示単位（前方一致の判定用）
 	const tlRef = useRef<gsap.core.Timeline | null>(null);
 
 	useLayoutEffect(()=> {
@@ -88,39 +92,43 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		tlRef.current?.kill();
 
-		const cachedText = spansRef.current.map(s=> s.textContent === '\u00A0' ? ' ' : s.textContent).join('');
-
-		// 本当のページクリア（strとキャッシュが互いに前方一致しない＝別内容）の場合のみ作り直す
-		if (! cachedText.startsWith(str) && ! str.startsWith(cachedText)) {
+		// 本当のページクリア（aChとキャッシュが互いに前方一致しない＝別内容）の場合のみ作り直す
+		const cacheCh = chRef.current;
+		const min = Math.min(cacheCh.length, aCh.length);
+		let same = 0;
+		while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r) ++same;
+		if (same < min) {
 			spansRef.current = [];
+			chRef.current = [];
 			el.textContent = '';
 		}
 
 		const cache = spansRef.current;
-		const target = Math.min(str.length, cache.length);
+		const target = Math.min(aCh.length, cache.length);
 
 		// 表示DOMをキャッシュ済み範囲まで合わせる
-		//	・読み戻り（strが短い）：末尾を非表示化（キャッシュからは消さない）
-		//	・読み戻りから戻る（strがキャッシュ済み長へ復帰）：非表示にしていた分を瞬時に復帰
+		//	・読み戻り（aChが短い）：末尾を非表示化（キャッシュからは消さない）
+		//	・読み戻りから戻る（aChがキャッシュ済み長へ復帰）：非表示にしていた分を瞬時に復帰
 		while (el.childNodes.length > target) el.removeChild(el.lastChild!);
 		while (el.childNodes.length < target) el.appendChild(cache[el.childNodes.length]!);
 		if (target > 0) gsap.set(cache.slice(0, target), {opacity: 1, y: 0});	// キル時の中途半端な状態を確定させる
 
-		if (str.length <= cache.length) {
+		if (aCh.length <= cache.length) {
 			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要
 			setIsTyping(false);
 			return;
 		}
 
 		// キャッシュを超える分だけが本当に新規表示すべき文字
-		const added = str.slice(cache.length);
+		const added = aCh.slice(cache.length);
 		const frag = document.createDocumentFragment();
-		const newSpans = [...added].map(ch=> {
+		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
-			s.textContent = ch === ' ' ? '\u00A0' : ch;
+			s.appendChild(elCh(ch));
 			frag.appendChild(s);
 			return s;
 		});
+		chRef.current = [...chRef.current, ...added];
 		cache.push(...newSpans);
 		el.appendChild(frag);
 
@@ -135,7 +143,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)}).fromTo(newSpans, {opacity: 0, y: '0.3em'}, {
 			opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', stagger: 0.035,
 		});
-	}, [str, isReadBack]);
+	}, [aCh, isReadBack]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）
@@ -340,6 +348,20 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			/>
 		</>}
 	</>;
+}
+
+// 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
+//	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
+function elCh({c, r}: T_CH): Node {
+	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
+	if (r === undefined) return txt(c);
+
+	const ruby = document.createElement('ruby');
+	ruby.appendChild(txt(c));
+	const rt = document.createElement('rt');
+	rt.textContent = rubyTxt(r);
+	ruby.appendChild(rt);
+	return ruby;
 }
 
 // [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）

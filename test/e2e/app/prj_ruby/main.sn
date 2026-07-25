@@ -1,0 +1,12 @@
+; E2E用シナリオ（ruby.e2e.ts が使用）
+;	ルビ記法の割り方そのものは本家から丸移植した RubySpliter（test/RubySpliter.test.ts が仕様）。
+;	ここで見るのはブラウザでしか確かめられない部分＝「割った結果が<ruby>/<rt>として組まれ、
+;	平文（ストアのstr）はルビを含まないこと」
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+漢字《かんじ》は[l]
+｜親文字《おやもじ》と[l]
+｜傍点《*》[l]
+[er]
+消えた[s]

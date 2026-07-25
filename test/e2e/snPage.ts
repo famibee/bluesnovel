@@ -43,7 +43,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'autostory' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'autoskip' | 'autostory' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -81,7 +81,11 @@ export async function waitIdle(page: Page) {
 		const box = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${lay.nm as string}"]`);
 		if (! box) return false;	// Stage未マウント（Loading表示中）
 
-		const shown = (box.firstElementChild?.textContent ?? '').replace(/\u00A0/g, ' ');
+		// ルビは<ruby>親文字<rt>ルビ</rt></ruby>で組まれる（TxtLayer elCh）ので、
+		//	<rt>を除いてから比べる。ストアのstrはルビを除いた平文なのでこれで一致する
+		const clone = box.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+		clone?.querySelectorAll('rt').forEach(e=> {e.remove()});
+		const shown = (clone?.textContent ?? '').replace(/\u00A0/g, ' ');
 		return shown === lay.str;
 	}, undefined, {timeout: 30_000});
 	// isTyping は TxtLayer の useLayoutEffect で立つので、Reactのコミットとレイアウトエフェクトの

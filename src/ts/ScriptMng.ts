@@ -18,6 +18,7 @@ import {FrameMng} from './FrameMng';
 import {focusMng} from './FocusMng';
 import {savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
+import {plainOf, setEscape, splitCh} from './Txt';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -219,7 +220,10 @@ export class ScriptMng {
 		if (this.#grm) return this.#grm;
 
 		const grm = this.#grm = new Grammar(this.sys.cfg);
+		// エスケープ文字は字句解析（Grammar）と本文の文字組み（RubySpliter）の両方が見る
+		//	（本家 ScriptIterator.ts:120-122 も同じ2箇所へ同じ値を配る）
 		grm.setEscape(this.sys.cfg.oCfg.init.escape);
+		setEscape(this.sys.cfg.oCfg.init.escape);
 		return grm;
 	}
 
@@ -689,7 +693,7 @@ export class ScriptMng {
 			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
 			this.$fncs.addLayer(act.cls === 'grp'
 				? {cls: 'grp', nm: act.nm, fn: '', src: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
-				: {cls: 'txt', nm: act.nm, str: '', aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
+				: {cls: 'txt', nm: act.nm, str: '', aCh: [], aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic':
 			// **画像パスの解決はここ**（描画時ではなく）。searchPath()はサーチパスに無ければ
@@ -719,7 +723,11 @@ export class ScriptMng {
 			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い
 			break;
 		case 'chgStr':
-			this.$fncs.chgStr({nm: act.nm, page: act.page, str: act.str});
+			{	// シナリオが書いた生の文字列をここで表示単位へ割る（ルビ記法。Txt.ts）。
+				//	ストアには平文（str）と表示単位（aCh）の両方を入れる＝chgPicのfnとsrcと同じ関係
+				const aCh = splitCh(act.str);
+				this.$fncs.chgStr({nm: act.nm, page: act.page, str: plainOf(aCh), aCh});
+			}
 			break;
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）

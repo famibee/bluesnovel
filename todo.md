@@ -103,6 +103,8 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
 - [ ] **文字装飾・文字組み**：`[ch]`（文字を追加）・`[span]`（インラインスタイル）・`[link]`/`[endlink]`（ハイパーリンク）・`[ruby2]`・`[tcy]`（縦中横）。`sub.sn`の`txt_lay_*`マクロが使う。`[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`とまとめて設計する
-  - [ ] **ルビ記法`《…》`・`｜…《…》`が生のまま表示される**のが本編で一番目立つ欠落（`ss_000.sn`の本文が「選《よ》りに」のように出る）。本家はGrammarではなくTxtLayer側の文字組みで処理するので、上記とまとめて。`const.sn.last_page_plain_text`が《》を除去していないのも同じ理由
+  - [x] **ルビ記法`《…》`・`｜…《…》`・傍点`《*》`は実装済み**（2026-07-25。本家`RubySpliter`をテストごと丸移植し、`ScriptMng`が本文を表示単位`T_CH[]`へ割って`TxtLayer`が`<ruby>/<rt>`で組む。`const.sn.last_page_plain_text`もルビ除去済み）。残りは下記
+    - [ ] ルビの位置指定（`《center｜るび》`等の`r_align`。今は指定を落としてルビ文字だけ出す）と`[lay sesame=…]`（傍点文字の変更。本家 TxtLayer.ts:303）
+    - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せのため）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
   - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`max_row`未対応、`padding`の解釈差）。実機で見ながら詰める
 - [ ] `[button]`の既定の見た目（色・角丸・余白）は仮のまま。座標・寸法指定（`left`/`top`/`width`/`height`等）は実装済み

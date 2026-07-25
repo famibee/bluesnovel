@@ -139,7 +139,7 @@ var b = g()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of i) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aBtn = [], delete e.b_color, delete e.style, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
+			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
 		}, a = (e) => {
 			if (!t) {
 				e.forEach(r);
@@ -223,13 +223,17 @@ var b = g()((e, t) => ({
 		let { idx: l, aLay: u } = _(e, n);
 		return c(u), v(e, l, u);
 	}),
-	chgStr: ({ nm: t, page: n, str: r }) => e((e) => {
+	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
+		let a = (e) => {
+			let n = y(e, t, "txt");
+			n.str = r, n.aCh = i;
+		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
-			let n = [...e];
-			return y(n, t, "txt").str = r, n;
+			let t = [...e];
+			return a(t), t;
 		}) };
-		let { idx: i, aLay: a } = _(e, n);
-		return y(a, t, "txt").str = r, v(e, i, a);
+		let { idx: o, aLay: s } = _(e, n);
+		return a(s), v(e, o, s);
 	}),
 	trans: null,
 	startTrans: ({ aLayNm: t, time: n }) => e((e) => {

@@ -22,6 +22,7 @@ import {getDateStr, int} from '../sn/CmnLib';
 import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
+import {plainTxt} from './Txt';
 import type {T_BTN_STY} from '../components/TxtLayer';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
@@ -405,11 +406,10 @@ export class ScriptEngine {
 		//	val.defTmp('const.sn.last_page_plain_text', ()=> currentTxtlayFore?.pagePlainText)）。
 		//	既定文字レイヤの蓄積文字列そのもの。テンプレの frames/_archive.sn が
 		//	[save text=&const.sn.last_page_plain_text] でしおりの見出し文に使う。
-		//	本家は《》文法とルビを除いた平文だが、こちらはまだ文字装飾が無いので蓄積文字列＝平文
+		//	本家と同じく**ルビ記法を除いた平文**（`蜊《あさり》`→`蜊`）を返す
 		this.#val.defBuiltin('const.sn.last_page_plain_text',
-			()=> this.#hTxt[this.#curTxtLayer] ?? '');
-		// 本家（LayerMng.ts:212）は《》やルビ記法を含む生のページ本文。文字装飾がまだ無いので
-		//	last_page_plain_text と同じ値になる
+			()=> plainTxt(this.#hTxt[this.#curTxtLayer] ?? ''));
+		// 本家（LayerMng.ts:212）は《》やルビ記法を含む生のページ本文＝蓄積文字列そのもの
 		this.#val.defBuiltin('const.sn.last_page_text',
 			()=> this.#hTxt[this.#curTxtLayer] ?? '');
 
