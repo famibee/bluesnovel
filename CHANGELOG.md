@@ -381,10 +381,31 @@ ok.次は「設定」ボタンだが、その前に。
 	- 未対応：`[link]`/`[endlink]`・`[tcy]`・`[graph]`（`Txt.ts`の命令解釈に足す形。`[link]`は入れ子＝
 	  スタックが要る）、`[span]`/`[ch]`の`layer`/`page`・`wait`・`r_align`・`ch_in_style`/`ch_out_style`・`record`。
 
+- [x] **`[link]` / `[endlink]` / `[tcy]`**。文字レイヤ関係の3回目。前回と同じく本文ストリームへ
+	命令を埋め込む方式（`Txt.ts`が解釈）なので、エンジンとストアの形はまた変えずに済んだ。
+	- **`[link]`〜`[endlink]`のリンク区間**。区間内の表示単位に飛び先（`label`/`fn`/`call`/`arg`）が
+	  付き、クリックで**[button]と同じ経路**（`ScriptMng.jumpToLabelAndGo`）へ流れる。
+	  `arg`は飛び先で`&sn.eventArg`として受け取れる（本家 Main.ts `resumeByJumpOrCall()` と同じ代入）。
+	  本文DOMは文字送り演出のため**Reactの外**で組み立てているので、`BtnLayer`のようなJSXではなく
+	  `TxtLayer`が直接リスナを付ける。読み進めへ伝播させない（`stopPropagation`）のは`[button]`と同じ。
+	  `style`は区間の間だけ足し、`[endlink]`で`[span]`の指定へ戻す（スタックなので**入れ子でも壊れない**。
+	  本家は入れ子不可の仕様）。`style_hover`はマウスが乗っている間だけ足す。
+	- **`[tcy]`（縦中横）**は命令だが**表示単位を作る**唯一の命令。CSSの`text-combine-upright: all`で組む。
+	- テスト：`Txt.test.ts`＋4件、`ScriptEngine_txt.test.ts`＋5件、E2E `prj_ruby`に
+	  「リンクをクリックしてジャンプし、`arg`が飛び先へ渡る」1件。
+	  ユニット1208・E2E93 パス、`tsc` クリーン。実テンプレ `tmp_blues` はこの3タグを使っていない。
+	- 未対応：`[graph]`（インライン画像。パス解決が要るのでアセット周りと一緒に）、`[link]`の
+	  `url`・`global`・`onenter`/`onleave`・`style_clicked`系・効果音・`hint`、各タグ共通の
+	  `layer`/`page`・`wait`・`r_align`・`ch_in_style`/`ch_out_style`。
+
 - [ ]
 
 
 
+
+- アニメpngをサポート
+  - これは[l][p][graph]に関係ある機能
+  - サンプル https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
 
 
 - 音系に着手。だがあなたはこちらのようなテスト可能か？
@@ -393,8 +414,6 @@ ok.次は「設定」ボタンだが、その前に。
 
 - ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
 - GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
-
-- アニメpng https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
 
 - イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
 

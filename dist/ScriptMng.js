@@ -2036,6 +2036,13 @@ var ne = class e {
 				str: ""
 			}), "skip";
 			case "span": return this.#G(a, e.#W("span", i)), "skip";
+			case "link":
+				if (!i.label && !i.fn) throw "[link] fnまたはlabelは必須です";
+				return this.#G(a, e.#W("link", i)), "skip";
+			case "endlink": return this.#G(a, e.#W("endlink", {})), "skip";
+			case "tcy":
+				if (!i.t) throw "[tcy] tは必須です";
+				return this.#G(a, e.#W("tcy", i)), "skip";
 			case "ruby2":
 			case "ch": {
 				if (n === "ruby2") {
@@ -2932,8 +2939,8 @@ var K = class {
 		return e.setEscape(this.sys.cfg.oCfg.init.escape), l(this.sys.cfg.oCfg.init.escape), e;
 	}
 	go() {}
-	jumpToLabelAndGo(e, t, n = "") {
-		this.#b(e, t, n).catch(this.#i);
+	jumpToLabelAndGo(e, t, n = "", r) {
+		r !== void 0 && (this.#r?.setValNochk("tmp:sn.eventArg", r), this.#r?.setValNochk("tmp:sn.eventLabel", e)), this.#b(e, t, n).catch(this.#i);
 	}
 	#_ = new M((e, t) => this.sys.cfg.searchPath(e, t));
 	attachFrameBox(e) {

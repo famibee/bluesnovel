@@ -25,7 +25,6 @@
     - 同じ経路を**オート読み（`a`）でも既読スキップ（`ctrl+f`）でも完走**（2026-07-25。手動クリックは`ss_000.sn:101`の`[waitclick]`の1回だけ＝本家と同じ仕様）
   - 3画面とも、フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
-- `[link]`（文字装飾系の残り。`[ch]`・`[span]`・`[ruby2]`は実装済み。下記「文字装飾・文字組み」項目へ）
 - `[window]`・`[close]`（Electron専用）
 - **組み込み変数`const.sn.lay.*`** … **実装済み**（2026-07-25。存在判定`const.sn.lay.<名前>`＋詳細ツリー`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`。`ScriptMng`がストアの表裏からレイヤ木JSONを`defBuiltin`供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。`width`/`height`のみストアに実寸が無く「表示物があるか」を1/0で代用（立ち絵`[fg2]`GCの`width>0`判定用）。残る組み込み変数は`const.sn.sound.*`・`const.sn.key.*`など
 
@@ -102,9 +101,10 @@
 - [ ] 動画・音声対応
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
-- [ ] **文字装飾・文字組み**（`[span]`・`[ch]`・`[ruby2]`は実装済み。2026-07-25。本家と同じ「本文ストリームへ命令を埋め込む」方式＝`Txt.ts`が解釈）
-  - [ ] `[link]`/`[endlink]`（ハイパーリンク）・`[tcy]`（縦中横）・`[graph]`（インライン画像）。`Txt.ts`の命令解釈に足す形になる（`[link]`は入れ子＝スタックが要る。本家 TxtLayer.ts `#stkASpan`）
-  - [ ] `[span]`/`[ch]`の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
+- [ ] **文字装飾・文字組み**（`[span]`・`[ch]`・`[ruby2]`・`[link]`/`[endlink]`・`[tcy]`は実装済み。2026-07-25。本家と同じ「本文ストリームへ命令を埋め込む」方式＝`Txt.ts`が解釈）
+  - [ ] `[graph]`（インライン画像）。`Txt.ts`の命令解釈に足すだけだが、画像パス解決が要るのでアセット周りと一緒に
+  - [ ] `[link]`の残り：`url`・`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`
+  - [ ] 各タグ共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
   - [ ] `[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`はまとめて設計する
   - [x] **ルビ記法`《…》`・`｜…《…》`・傍点`《*》`は実装済み**（2026-07-25。本家`RubySpliter`をテストごと丸移植し、`ScriptMng`が本文を表示単位`T_CH[]`へ割って`TxtLayer`が`<ruby>/<rt>`で組む。`const.sn.last_page_plain_text`もルビ除去済み）。残りは下記
     - [ ] ルビの位置指定（`《center｜るび》`等の`r_align`。今は指定を落としてルビ文字だけ出す）と`[lay sesame=…]`（傍点文字の変更。本家 TxtLayer.ts:303）

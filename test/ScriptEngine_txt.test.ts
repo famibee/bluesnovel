@@ -93,3 +93,34 @@ it('lastPagePlainText_dropsCmdAndRuby', ()=> {
 	// 生の本文（const.sn.last_page_text）は命令込みなので、割り直せば同じ平文になる
 	expect(plainTxt(String(se.getVal('tmp:const.sn.last_page_text')))).toBe('漢字です');
 });
+
+// ===== [tcy]（縦中横）・[link]〜[endlink]（ハイパーリンク） =====
+
+it('tcy_makesOneUnitWithRuby', ()=> {
+	expect(units('あ[tcy t=628 r=炎]い')).toEqual([
+		{c: 'あ'}, {c: '628', r: '炎', tcy: true}, {c: 'い'},
+	]);
+});
+
+it('tcy_requiresT', ()=> {
+	expect(()=> units('[tcy r=炎]')).toThrow('[tcy] tは必須です');
+});
+
+it('link_marksUnitsUntilEndlink', ()=> {
+	expect(units('あ[link label=*goal]いう[endlink]え')).toEqual([
+		{c: 'あ'},
+		{c: 'い', lnk: {label: '*goal', fn: '', call: false, arg: ''}},
+		{c: 'う', lnk: {label: '*goal', fn: '', call: false, arg: ''}},
+		{c: 'え'},
+	]);
+});
+
+it('link_callFnArg', ()=> {
+	expect(units('[link fn=sub label=*g call=true arg=x]あ[endlink]')).toEqual([
+		{c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x'}},
+	]);
+});
+
+it('link_requiresLabelOrFn', ()=> {
+	expect(()=> units('[link]あ[endlink]')).toThrow('[link] fnまたはlabelは必須です');
+});

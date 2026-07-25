@@ -1103,6 +1103,20 @@ export class ScriptEngine {
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', args));
 			return 'skip';
 
+		case 'link':	// ハイパーリンク開始（本家 LayerMng.ts:1024 #link()）
+			if (! args.label && ! args.fn) throw '[link] fnまたはlabelは必須です';
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('link', args));
+			return 'skip';
+
+		case 'endlink':	// ハイパーリンク終了（本家 LayerMng.ts:1002 #endlink()）
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('endlink', {}));
+			return 'skip';
+
+		case 'tcy':		// 縦中横（本家 LayerMng.ts:1059 #tcy()）
+			if (! args.t) throw '[tcy] tは必須です';
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('tcy', args));
+			return 'skip';
+
 		case 'ruby2':	// 文字列と複数ルビの追加（本家 LayerMng.ts:1040 #ruby2()）
 		case 'ch': {	// 文字を追加する（本家 LayerMng.ts:906 #ch()）
 			if (name === 'ruby2') {

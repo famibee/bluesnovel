@@ -12,7 +12,7 @@
 //	そして文字送り演出のDOMキャッシュがルビ付きでも壊れないこと。
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pressKey, snap} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, snap, waitIdle} from './snPage';
 
 // 表ページの文字レイヤに組まれたルビを「親文字:ルビ」の並びで拾う
 const aRuby = (page: import('@playwright/test').Page)=> page.$$eval(
@@ -78,5 +78,25 @@ test('[span]/[ch]/[ruby2]のstyle・r_styleが実際の色になる', async ({pa
 		'緑:rgb(0, 128, 0)',	// [ch style=…]はそのtextの間だけ
 		'蜊:rgb(0, 0, 0)/あさり:rgb(0, 0, 255)',	// [ruby2 r_style=…]はルビ側だけ
 	]);
-	expect((await snap(page)).wait).toBeNull();	// [s]で停止
+	expect((await snap(page)).wait).toEqual({nm: 'mes', kind: 'l'});
+});
+
+test('[link]はクリックでジャンプし、argを飛び先へ渡す', async ({page})=> {
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+
+	expect(await mesStr(page)).toBe('リンクと628');
+	// リンク区間の文字だけがクリックできる（[link style=…]も当たっている）
+	expect(await aColor(page)).toEqual([
+		'リ:rgb(0, 0, 255)', 'ン:rgb(0, 0, 255)', 'ク:rgb(0, 0, 255)',
+		'と:rgb(0, 0, 0)',
+		'628:rgb(0, 0, 0)/炎:rgb(0, 0, 0)',	// [tcy]はルビ付きで1単位
+	]);
+	// 縦中横はCSSのtext-combine-uprightで組む（横書きなので見た目は変わらないが指定はされる）
+	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby > span`,
+		el=> getComputedStyle(el).textCombineUpright)).toBe('all');
+
+	await page.getByText('リ', {exact: true}).click();
+	await waitIdle(page);
+	// [link arg=…]は飛び先で &sn.eventArg として受け取れる（本家と同じ）
+	expect(await mesStr(page)).toBe('飛んだ:あるぐ');
 });

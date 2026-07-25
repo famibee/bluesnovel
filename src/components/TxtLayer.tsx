@@ -7,7 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
-import {type T_CH, rubyTxt} from '../ts/Txt';
+import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
@@ -56,8 +56,10 @@ type T_TXTARG = T_LAY_CMN & {
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
 	aBtn	: T_BTN[];
-	onActivate: (label: string, call: boolean, fn: string)=> void;
+	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 };
+// [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
+export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
 export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
@@ -79,6 +81,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
+	// [link]のクリック。[button]と同じ経路（ScriptMng.jumpToLabelAndGo）へ流す
+	const onLink: T_ON_LINK = l=> {onActivate(l.label, l.call, l.fn, l.arg)};
 	// 1表示単位＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
 	// DOM上の表示/非表示だけを切り替える。これにより読み戻りから戻った際に
 	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。
@@ -125,7 +129,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const frag = document.createDocumentFragment();
 		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
-			s.appendChild(elCh(ch));
+			s.appendChild(elCh(ch, onLink));
 			frag.appendChild(s);
 			return s;
 		});
@@ -353,21 +357,45 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs}: T_CH): Node {
+function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
-	if (r === undefined && ! s) return txt(c);
+	if (r === undefined && ! s && ! tcy && ! lnk) return txt(c);
 
-	// [span]/[ch]のstyleは本文側の要素へ。ルビが無くても入れ物が要るのでspanで包む
+	// [span]/[ch]/[link]のstyleは本文側の要素へ。ルビが無くても入れ物が要るのでspanで包む
 	const el = document.createElement(r === undefined ? 'span' : 'ruby');
 	if (s) el.style.cssText = s;
-	el.appendChild(txt(c));
-	if (r === undefined) return el;
+	// 縦中横（本家 TxtLayer.ts:672 も同じCSS）。横書き中は効かないので見た目は変わらない
+	const base = tcy ? document.createElement('span') : el;
+	if (tcy) {
+		base.style.textCombineUpright = 'all';
+		el.appendChild(base);
+	}
+	base.appendChild(txt(c));
 
-	const rt = document.createElement('rt');
-	if (rs) rt.style.cssText = rs;
-	rt.textContent = rubyTxt(r);
-	el.appendChild(rt);
+	if (r !== undefined) {
+		const rt = document.createElement('rt');
+		if (rs) rt.style.cssText = rs;
+		rt.textContent = rubyTxt(r);
+		el.appendChild(rt);
+	}
+	if (lnk) mkLink(el, lnk, s ?? '', onLink);
 	return el;
+}
+
+// [link]区間の1単位をクリックできるようにする。
+//	**Reactの外で作るDOM**（文字送り演出のためTxtLayerが直接組み立てている）なので、
+//	BtnLayerのようなJSXではなくここでリスナを付ける。読み進めへ伝播させない点は同じ
+function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK) {
+	el.style.cursor = 'pointer';
+	el.addEventListener('click', e=> {
+		e.stopPropagation();	// クリックで本文も進む、の二重反応を防ぐ（BtnLayerと同じ）
+		onLink(lnk);
+	});
+	if (! lnk.sh) return;
+
+	// style_hover：乗っている間だけ足し、外れたら元のstyleへ戻す
+	el.addEventListener('mouseenter', ()=> {el.style.cssText = sty + lnk.sh});
+	el.addEventListener('mouseleave', ()=> {el.style.cssText = sty; el.style.cursor = 'pointer'});
 }
 
 // [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）

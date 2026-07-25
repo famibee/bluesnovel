@@ -84,8 +84,39 @@ it('splitCh_chStyleStacksOnSpan', ()=> {
 });
 
 it('splitCh_unknownCmdIsDropped', ()=> {
-	// [graph]/[tcy]/[link]等はまだ未実装。命令ごと落として本文表示は続ける
-	expect(splitCh(`あ${cmd('tcy', {t: '628'})}い`)).toEqual([{c: 'あ'}, {c: 'い'}]);
+	// [graph]はまだ未実装。命令ごと落として本文表示は続ける
+	expect(splitCh(`あ${cmd('grp', {pic: 'breakline'})}い`)).toEqual([{c: 'あ'}, {c: 'い'}]);
+});
+
+// ===== [tcy]（縦中横）・[link]（ハイパーリンク） =====
+
+it('splitCh_tcyMakesOneUnit', ()=> {
+	// 命令だが表示単位を作る。tがそのまま1単位になり、rはルビ
+	expect(splitCh(`あ${cmd('tcy', {t: '628', r: '炎'})}い`)).toEqual([
+		{c: 'あ'}, {c: '628', r: '炎', tcy: true}, {c: 'い'},
+	]);
+});
+
+it('splitCh_linkMarksUnitsUntilEndlink', ()=> {
+	const lnk = {label: '*goal', fn: '', call: false, arg: ''};
+	expect(splitCh(`あ${cmd('link', {label: '*goal'})}い${cmd('endlink', {})}う`)).toEqual([
+		{c: 'あ'}, {c: 'い', lnk}, {c: 'う'},
+	]);
+});
+
+it('splitCh_linkStyleIsDroppedAtEndlink', ()=> {
+	// [link style=…]は区間の間だけ。[endlink]で[span]の指定へ戻る
+	const src = `${cmd('span', {style: 'color: red;'})}あ${cmd('link', {label: '*g', style: 'color: blue;'})}い${cmd('endlink', {})}う`;
+	expect(splitCh(src)).toEqual([
+		{c: 'あ', s: 'color: red;'},
+		{c: 'い', s: 'color: red;color: blue;', lnk: {label: '*g', fn: '', call: false, arg: ''}},
+		{c: 'う', s: 'color: red;'},
+	]);
+});
+
+it('splitCh_linkCallAndArg', ()=> {
+	expect(splitCh(`${cmd('link', {fn: 'sub', label: '*g', call: 'true', arg: 'x', style_hover: 'color: lime;'})}あ${cmd('endlink', {})}`))
+		.toEqual([{c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x', sh: 'color: lime;'}}]);
 });
 
 it('splitCh_cmdIsNotCountedAsPlainText', ()=> {

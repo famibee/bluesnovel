@@ -19,16 +19,28 @@ import {RubySpliter} from '../sn/RubySpliter';
 export function setEscape(ce: string) {RubySpliter.setEscape(ce)}
 setEscape('');
 
+// [link]〜[endlink]の区間。クリックで[button]と同じ経路（ScriptMng.jumpToLabelAndGo）へ流す
+export type T_LNK = {
+	label	: string;
+	fn		: string;
+	call	: boolean;
+	arg		: string;	// 飛び先で &sn.eventArg として受け取れる（本家と同じ）
+	sh?		: string;	// style_hover。マウスが乗っている間だけ当てるCSS
+};
 // 表示単位1つ。ルビ付きなら c が親文字（複数文字のこともある）、r がルビ文字。
-//	s / rs は[span]・[ch]で指定されたインラインCSS（本文側／ルビ側）
-export type T_CH = {c: string; r?: string; s?: string; rs?: string};
+//	s / rs は[span]・[ch]・[link]で指定されたインラインCSS（本文側／ルビ側）
+export type T_CH = {c: string; r?: string; s?: string; rs?: string; tcy?: true; lnk?: T_LNK};
 
 // 本文ストリームに埋め込まれた命令（本家 LayerMng.ts:315 #cmdTxt）。
 //	`｜&emsp;《コマンド名｜URIエンコードしたJSON》`の形でルビ側に載っており、
 //	RubySpliterが復号して`コマンド名｜{…}`という「ルビ」として渡してくる。
 //	**ルビの位置指定（`center｜ヽ`）と形が同じ**なので、コマンド名で見分ける（本家も同じ）
 const A_CMD = ['span', 'add', 'add_close', 'grp', 'tcy', 'link', 'endlink', 'del', 'gotxt'];
-type T_CMD_ARG = {style?: string; r_style?: string};
+type T_CMD_ARG = {
+	style?: string; r_style?: string; style_hover?: string;
+	t?: string; r?: string;			// [tcy]
+	label?: string; fn?: string; call?: string; arg?: string;	// [link]
+};
 function parseCmd(r: string): {cmd: string; o: T_CMD_ARG} | undefined {
 	const i = r.indexOf('｜');
 	if (i < 1) return undefined;
@@ -50,28 +62,61 @@ export function splitCh(raw: string): T_CH[] {
 	let rSty = '';	// [span r_style=…]
 	let add: T_CMD_ARG | undefined;	// [ch]／[ruby2]のstyle・r_style。add_closeまでの間だけ効く
 
-	const rs = new RubySpliter;
-	rs.init((c, r)=> {
-		const cmd = r ? parseCmd(r) : undefined;
-		if (cmd) {
-			switch (cmd.cmd) {
-				// 属性なしの[span]は指定の解除（本家 TxtLayer.ts:804 #mergePushSpan の
-				//	「どちらも指定されてなければクリア」）
-				case 'span':	sty = cmd.o.style ?? ''; rSty = cmd.o.r_style ?? '';	break;
-				case 'add':		add = cmd.o;	break;
-				case 'add_close':	add = undefined;	break;
-				default:	break;	// [graph]/[tcy]/[link]等は未実装。命令ごと落とす
-			}
-			return;
-		}
+	let lnk: T_LNK | undefined;	// [link]〜[endlink]の区間
+	const stkLnk: {sty: string; rSty: string}[] = [];	// [link]開始時の指定（[endlink]で戻す）
 
-		const s = sty + (add?.style ?? '');
-		const rst = rSty + (add?.r_style ?? '');
+	// 表示単位1つを積む。スタイルは [span] → [link] → [ch] の順に重ねる（後ろが勝つ）
+	const put = (c: string, r?: string, o?: T_CMD_ARG, tcy?: true)=> {
+		const s = sty + (add?.style ?? '') + (o?.style ?? '');
+		const rst = rSty + (add?.r_style ?? '') + (o?.r_style ?? '');
 		aCh.push({c,
 			...(r ? {r} : {}),
 			...(s ? {s} : {}),
 			...(rst ? {rs: rst} : {}),
+			...(tcy ? {tcy} : {}),
+			...(lnk ? {lnk} : {}),
 		});
+	};
+
+	const rs = new RubySpliter;
+	rs.init((c, r)=> {
+		const cmd = r ? parseCmd(r) : undefined;
+		if (! cmd) {put(c, r); return}
+
+		const {o} = cmd;
+		switch (cmd.cmd) {
+			// 属性なしの[span]は指定の解除（本家 TxtLayer.ts:804 #mergePushSpan の
+			//	「どちらも指定されてなければクリア」）
+			case 'span':	sty = o.style ?? ''; rSty = o.r_style ?? '';	break;
+			case 'add':		add = o;	break;
+			case 'add_close':	add = undefined;	break;
+
+			// [link]の区間。styleは区間の間だけ足す（[endlink]で元へ戻す）。
+			//	本家は入れ子を許さない仕様だが、こちらはスタックで戻すので入れ子でも壊れない
+			case 'link':
+				stkLnk.push({sty, rSty});
+				sty += o.style ?? '';
+				rSty += o.r_style ?? '';
+				lnk = {
+					label	: o.label ?? '',
+					fn		: o.fn ?? '',
+					call	: o.call === 'true',
+					arg		: o.arg ?? '',
+					...(o.style_hover ? {sh: o.style_hover} : {}),
+				};
+				break;
+			case 'endlink': {
+				const stk = stkLnk.pop();
+				if (stk) {sty = stk.sty; rSty = stk.rSty}
+				lnk = undefined;
+				break;
+			}
+
+			// 縦中横。**これだけは命令だが表示単位を作る**（tに書かれた文字がそのまま出る）
+			case 'tcy':	put(o.t ?? '', o.r, o, true);	break;
+
+			default:	break;	// [graph]は未実装。命令ごと落とす
+		}
 	});
 	rs.putTxt(raw);
 	return aCh;

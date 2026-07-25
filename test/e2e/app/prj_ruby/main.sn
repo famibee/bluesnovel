@@ -13,4 +13,12 @@
 
 ; 文字装飾（[span]/[ch]/[ruby2]）。色はcomputed styleで比べたいのでrgb()で書く
 [er]
-[span style='color: rgb(255, 0, 0);']赤[span]黒[ch text=緑 style='color: rgb(0, 128, 0);'][ruby2 t=蜊 r=あさり r_style='color: rgb(0, 0, 255);'][s]
+[span style='color: rgb(255, 0, 0);']赤[span]黒[ch text=緑 style='color: rgb(0, 128, 0);'][ruby2 t=蜊 r=あさり r_style='color: rgb(0, 0, 255);'][l]
+
+; ハイパーリンクと縦中横
+[er]
+[link label=*goal arg=あるぐ style='color: rgb(0, 0, 255);']リンク[endlink]と[tcy t=628 r=炎][s]
+
+*goal
+[er]
+&'飛んだ:'+sn.eventArg&[s]

@@ -236,7 +236,12 @@ export class ScriptMng {
 	//	call=true指定時はjumpではなくcall（サブルーチンコール）する。
 	//	fn指定時は別スクリプトへ飛ぶ。ロードが要るのでここだけ非同期になる
 	//	（クリックハンドラ側は投げっぱなしで良いよう、例外はここで握る）
-	jumpToLabelAndGo(label: string, call: boolean, fn = '') {
+	//	argは[link arg=…]用。予約イベント（[event]）と同じく飛び先で&sn.eventArgとして受け取れる
+	jumpToLabelAndGo(label: string, call: boolean, fn = '', arg?: string) {
+		if (arg !== undefined) {	// 本家 Main.ts resumeByJumpOrCall() が予約イベントで行うのと同じ代入
+			this.#engine?.setValNochk('tmp:sn.eventArg', arg);
+			this.#engine?.setValNochk('tmp:sn.eventLabel', label);
+		}
 		void this.#jumpToLabelAndGo(label, call, fn).catch(this.#catchErr);
 	}
 

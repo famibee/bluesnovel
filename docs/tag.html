@@ -172,10 +172,10 @@
 		<li class="mb1"><a href="#ch_out_style">🔴 [ch_out_style] 文字消去演出定義</a></li>
 		<li class="mb1"><a href="#clear_text">🟡 [clear_text] 文字消去</a></li>
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
-		<li class="mb1"><a href="#endlink">🔴 [endlink] ハイパーリンクの終了</a></li>
+		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
 		<li class="mb1"><a href="#graph">🔴 [graph] インライン画像表示</a></li>
-		<li class="mb1"><a href="#link">🔴 [link] ハイパーリンク</a></li>
+		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
 		<li class="mb1"><a href="#rec_ch">🔴 [rec_ch] 履歴書き込み</a></li>
 		<li class="mb1"><a href="#rec_r">🔴 [rec_r] 履歴改行</a></li>
@@ -183,7 +183,7 @@
 		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
 		<li class="mb1"><a href="#set_focus">🟡 [set_focus] フォーカス移動</a></li>
 		<li class="mb1"><a href="#span">🟡 [span] インラインスタイル設定</a></li>
-		<li class="mb1"><a href="#tcy">🔴 [tcy] 縦中横を表示する</a></li>
+		<li class="mb1"><a href="#tcy">🟡 [tcy] 縦中横を表示する</a></li>
 	</ul>
 	<p>画像・画像レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -1247,6 +1247,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>layer</td><td></td><td>デフォルト文字レイヤ</td><td>文字レイヤ名</td><td>文字を表示するレイヤ</td></tr>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：リンク区間の終了に対応（<code>[link]</code>の指定を元へ戻す）。
+	<code>layer</code>／<code>page</code>は未対応（現在は既定文字レイヤの表ページ固定）。</p>
 
 </p>
 <h2 id="er" class="w-heading">[er]ページ両面の文字消去</h2>
@@ -1344,6 +1346,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td><s>hint_color</s></td><td></td><td><s>'white'</s></td><td><s>css色指定。'white', '#FF0000'など</s></td><td><s>ツールチップス文字色を指定</s></td></tr>
 <tr><td><s>hint_font</s></td><td></td><td><s>'22px Arial'</s></td><td><s>文字サイズとフォント</s></td><td><s>hint文字サイズとフォントを指定</s></td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>と
+	<code>style</code>・<code>r_style</code>・<code>style_hover</code>に対応。クリックは[button]と同じ経路
+	（<code>ScriptMng.jumpToLabelAndGo</code>）へ流し、<code>arg</code>は飛び先で<code>&amp;sn.eventArg</code>として受け取れる。
+	本文DOMは文字送り演出のためReactの外で組み立てているので、リンクのリスナは<code>TxtLayer</code>が直接付けている。<br/>
+	本家は「リンク区間の入れ子は不可」だが、こちらはスタックで戻すので入れ子でも壊れない。
+	<code>url</code>・<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／
+	<code>r_style_hover</code>／<code>r_style_clicked</code>・効果音・<code>hint</code>・<code>layer</code>／<code>page</code>・<code>wait</code>は未対応。</p>
 
 </p>
 <h2 id="r" class="w-heading">[r] 改行</h2>
@@ -1505,6 +1514,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>に対応
+	（CSSの<code>text-combine-upright: all</code>で組む）。<code>layer</code>／<code>page</code>・<code>wait</code>・
+	<code>dummy</code>は未対応。縦書き（<code>writing-mode</code>）の詰めは別項目。</p>
 
 </p>
 

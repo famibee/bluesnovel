@@ -92,32 +92,57 @@ function r(e) {
 	}
 }
 function i(t) {
-	let n = [], i = "", a = "", o, s = new e();
-	return s.init((e, t) => {
-		let s = t ? r(t) : void 0;
-		if (s) {
-			switch (s.cmd) {
-				case "span":
-					i = s.o.style ?? "", a = s.o.r_style ?? "";
-					break;
-				case "add":
-					o = s.o;
-					break;
-				case "add_close":
-					o = void 0;
-					break;
-				default: break;
-			}
-			return;
-		}
-		let c = i + (o?.style ?? ""), l = a + (o?.r_style ?? "");
+	let n = [], i = "", a = "", o, s, c = [], l = (e, t, r, c) => {
+		let l = i + (o?.style ?? "") + (r?.style ?? ""), u = a + (o?.r_style ?? "") + (r?.r_style ?? "");
 		n.push({
 			c: e,
 			...t ? { r: t } : {},
-			...c ? { s: c } : {},
-			...l ? { rs: l } : {}
+			...l ? { s: l } : {},
+			...u ? { rs: u } : {},
+			...c ? { tcy: c } : {},
+			...s ? { lnk: s } : {}
 		});
-	}), s.putTxt(t), n;
+	}, u = new e();
+	return u.init((e, t) => {
+		let n = t ? r(t) : void 0;
+		if (!n) {
+			l(e, t);
+			return;
+		}
+		let { o: u } = n;
+		switch (n.cmd) {
+			case "span":
+				i = u.style ?? "", a = u.r_style ?? "";
+				break;
+			case "add":
+				o = u;
+				break;
+			case "add_close":
+				o = void 0;
+				break;
+			case "link":
+				c.push({
+					sty: i,
+					rSty: a
+				}), i += u.style ?? "", a += u.r_style ?? "", s = {
+					label: u.label ?? "",
+					fn: u.fn ?? "",
+					call: u.call === "true",
+					arg: u.arg ?? "",
+					...u.style_hover ? { sh: u.style_hover } : {}
+				};
+				break;
+			case "endlink": {
+				let e = c.pop();
+				e && (i = e.sty, a = e.rSty), s = void 0;
+				break;
+			}
+			case "tcy":
+				l(u.t ?? "", u.r, u, !0);
+				break;
+			default: break;
+		}
+	}), u.putTxt(t), n;
 }
 function a(e) {
 	return e.map((e) => e.c).join("");
