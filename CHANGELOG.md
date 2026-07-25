@@ -360,6 +360,27 @@ ok.次は「設定」ボタンだが、その前に。
 	- 未対応：ルビの位置指定（`《center｜るび》`の`r_align`。今は指定を落としてルビ文字だけ出す）、
 	  `[lay sesame=…]`、ルビ付き行の行間の詰め。`[ch]`/`[span]`/`[link]`/`[ruby2]`/`[tcy]`は次回以降。
 
+- [x] **文字装飾タグ `[span]` / `[ch]` / `[ruby2]`**。文字レイヤ関係の2回目。
+	- **本家の「本文ストリームへ命令を埋め込む」方式をそのまま採った**（本家 LayerMng.ts:315
+	  `#cmdTxt = cmd=> tl.tagCh('｜&emsp;《'+ cmd +'》')`）。ルビ記法の親文字＋ルビの形を借りて、
+	  ルビ側にURIエンコードしたJSONを載せる仕掛けで、**移植済みの`RubySpliter`がそのまま1単位として
+	  通してくれる**（`putTxtRb`にその分岐が元からある）。おかげで**エンジンは相変わらず文字列を
+	  貯めるだけ**で済み、`chgStr`アクションの形も既存テストも一切変わっていない。
+	- 解釈は`Txt.ts` `splitCh()`の小さな状態機械：`span｜`で以降のスタイルを差し替え（属性なしの
+	  `[span]`は解除。本家 TxtLayer.ts:804 `#mergePushSpan`の「どちらも指定されてなければクリア」）、
+	  `add｜`〜`add_close｜`の間だけ`[ch]`のスタイルを重ねる。命令は表示単位を作らないので
+	  平文（`const.sn.last_page_plain_text`）にも残らない。
+	- `T_CH`に`s`（本文側CSS）と`rs`（ルビ側CSS）が増え、`TxtLayer`が`<span style>`／`<rt style>`に反映。
+	  文字送り演出のDOMキャッシュの前方一致判定もスタイル込みで比べる。
+	- `[ruby2]`は本家同様`[ch]`へ書き換える。`t`/`r`をURIエンコードするので、**ルビに空白があっても
+	  区切り指定と誤解されない**（`[ruby2 t=蜊 r="あさ り"]`が1つのルビになる）。
+	- テスト：`Txt.test.ts`（命令解釈13件）・`ScriptEngine_txt.test.ts`（タグ12件。エンジンが積んだ
+	  文字列を`splitCh`で割って表示単位を確かめる＝ScriptMngと同じ手順）・E2E `prj_ruby`に
+	  computed styleで色を見る1件。ユニット1199・E2E92 パス、`tsc` クリーン。
+	  実テンプレ `tmp_blues` は`[span]`/`[ch]`をマクロの説明文でしか使っていないので影響なし（完走を再確認）。
+	- 未対応：`[link]`/`[endlink]`・`[tcy]`・`[graph]`（`Txt.ts`の命令解釈に足す形。`[link]`は入れ子＝
+	  スタックが要る）、`[span]`/`[ch]`の`layer`/`page`・`wait`・`r_align`・`ch_in_style`/`ch_out_style`・`record`。
+
 - [ ]
 
 

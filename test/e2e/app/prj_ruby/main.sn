@@ -9,4 +9,8 @@
 ｜親文字《おやもじ》と[l]
 ｜傍点《*》[l]
 [er]
-消えた[s]
+消えた[l]
+
+; 文字装飾（[span]/[ch]/[ruby2]）。色はcomputed styleで比べたいのでrgb()で書く
+[er]
+[span style='color: rgb(255, 0, 0);']赤[span]黒[ch text=緑 style='color: rgb(0, 128, 0);'][ruby2 t=蜊 r=あさり r_style='color: rgb(0, 0, 255);'][s]

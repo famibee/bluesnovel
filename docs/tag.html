@@ -167,7 +167,7 @@
 	<p>文字・文字レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#autowc">🔴 [autowc] 文字ごとのウェイト</a></li>
-		<li class="mb1"><a href="#ch">🔴 [ch] 文字を追加する</a></li>
+		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🔴 [ch_in_style] 文字出現演出定義</a></li>
 		<li class="mb1"><a href="#ch_out_style">🔴 [ch_out_style] 文字消去演出定義</a></li>
 		<li class="mb1"><a href="#clear_text">🟡 [clear_text] 文字消去</a></li>
@@ -180,9 +180,9 @@
 		<li class="mb1"><a href="#rec_ch">🔴 [rec_ch] 履歴書き込み</a></li>
 		<li class="mb1"><a href="#rec_r">🔴 [rec_r] 履歴改行</a></li>
 		<li class="mb1"><a href="#reset_rec">🔴 [reset_rec] 履歴リセット</a></li>
-		<li class="mb1"><a href="#ruby2">🔴 [ruby2] 文字列と複数ルビの追加</a></li>
+		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
 		<li class="mb1"><a href="#set_focus">🟡 [set_focus] フォーカス移動</a></li>
-		<li class="mb1"><a href="#span">🔴 [span] インラインスタイル設定</a></li>
+		<li class="mb1"><a href="#span">🟡 [span] インラインスタイル設定</a></li>
 		<li class="mb1"><a href="#tcy">🔴 [tcy] 縦中横を表示する</a></li>
 	</ul>
 	<p>画像・画像レイヤ</p>
@@ -1142,6 +1142,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
 <tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>に対応。
+	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、styleはそのtextの間だけ効く。
+	<code>layer</code>／<code>page</code>（現在は既定文字レイヤの表ページ固定）・<code>record</code>・<code>wait</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
 <p>[ch]を使わない、より簡潔な記述文法があります。<br/>
 	以下の記述は、<br/>
 	[ch text=&amp;test]<br/>
@@ -1418,6 +1421,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>に対応。
+	本家同様[ch]へ書き換えて処理する（t/rはURIエンコードするので、空白や《》を含んでも壊れない）。
+	<code>layer</code>／<code>page</code>・<code>wait</code>・<code>dummy</code>は未対応。</p>
 
 </p>
 <h2 id="set_focus" class="w-heading">[set_focus] フォーカス移動</h2>
@@ -1475,6 +1481,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
 </td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>に対応（次の[span]まで効き、属性なしの[span]で解除）。
+	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。
+	<code>layer</code>／<code>page</code>（現在は既定文字レイヤの表ページ固定）・<code>wait</code>・<code>r_align</code>・
+	<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
 
 </p>
 <h2 id="tcy" class="w-heading">[tcy]縦中横を表示する</h2>

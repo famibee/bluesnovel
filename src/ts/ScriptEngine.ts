@@ -1092,6 +1092,40 @@ export class ScriptEngine {
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
 			return 'skip';
 
+		// ===== 文字装飾（本家 LayerMng.ts:124-141 hTag.ch/span/ruby2） =====
+		//	本家はこれらを**本文ストリームに埋め込む命令**として流す（LayerMng.ts:315
+		//	`#cmdTxt = cmd=> tl.tagCh('｜&emsp;《'+ cmd +'》')`）。ルビ記法の親文字＋ルビの形を
+		//	借りて、ルビ側にURIエンコードしたJSONを載せる仕組みで、RubySpliterがそのまま
+		//	1単位として通してくれる。ここでも同じ形で#hTxtへ積み、解釈はTxt.ts splitCh()が行う
+		//	（エンジンは相変わらず「文字列を貯める」だけで済み、chgStrの形も変わらない）
+		case 'span':	// インラインスタイル設定（本家 LayerMng.ts:1053 #span()）
+			//	属性なしの[span]は指定の解除（本家 #mergePushSpan の「どちらも指定されてなければクリア」）
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', args));
+			return 'skip';
+
+		case 'ruby2':	// 文字列と複数ルビの追加（本家 LayerMng.ts:1040 #ruby2()）
+		case 'ch': {	// 文字を追加する（本家 LayerMng.ts:906 #ch()）
+			if (name === 'ruby2') {
+				// 本家と同じく[ch]の形へ書き換えてから同じ処理へ流す（本家 #ruby2() は最後に #ch() を呼ぶ）。
+				//	t/rをURIエンコードするのは、中に`《`や空白があってもルビ記法として壊れないため
+				//	（RubySpliterが復号する。空白はルビの区切り指定として解釈されてしまう）
+				if (! args.t) throw '[ruby2] tは必須です';
+				if (! args.r) throw '[ruby2] rは必須です';
+				args.text = `｜${encodeURIComponent(args.t)}《${encodeURIComponent(args.r)}》`;
+				delete args.t;
+				delete args.r;
+			}
+			const {text} = args;
+			if (! text) throw `[${name}] textは必須です`;
+
+			// style/r_styleは**このtextの間だけ**効く（本家は add｜…／add_close｜ で挟む）。
+			//	[r]を改行にするのは本家 LayerMng.ts:922（[ch text=…]に改行を含める書き方）
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('add', {...args, text: undefined})
+				+ text.replaceAll('[r]', '\n')
+				+ ScriptEngine.#cmdTxt('add_close', {}));
+			return 'skip';
+		}
+
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
 			// 「text=&式」の評価は#resolveTag()が全タグ共通で済ませているので、ここでは受け取るだけ
 			aAct.push({t: 'trace', text: args.text ?? ''});
@@ -1700,6 +1734,14 @@ export class ScriptEngine {
 		}
 		this.#idx = cs.returnIdx;
 		return 'skip';
+	}
+
+	// 文字装飾タグを「本文ストリームに埋め込む命令」の文字列にする（本家 LayerMng.ts:315 #cmdTxt）。
+	//	`｜&emsp;《コマンド名｜URIエンコードしたJSON》`。ルビ記法の形なのでRubySpliterが
+	//	1単位として通し、ルビ側を復号して`コマンド名｜{…}`にしてくれる
+	static #cmdTxt(cmd: string, args: {[nm: string]: string | undefined}): string {
+		// JSON.stringifyはundefinedの項目を落とすので、除きたい属性はundefinedを入れて渡せば良い
+		return `｜&emsp;《${cmd}｜${encodeURIComponent(JSON.stringify(args))}》`;
 	}
 
 	// 文字表示（地の文・[r]）は表ページ固定。本家は[ch]にpage属性があるが、

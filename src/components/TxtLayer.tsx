@@ -96,7 +96,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const cacheCh = chRef.current;
 		const min = Math.min(cacheCh.length, aCh.length);
 		let same = 0;
-		while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r) ++same;
+		while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r
+			&& cacheCh[same]!.s === aCh[same]!.s && cacheCh[same]!.rs === aCh[same]!.rs) ++same;
 		if (same < min) {
 			spansRef.current = [];
 			chRef.current = [];
@@ -352,16 +353,21 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r}: T_CH): Node {
+function elCh({c, r, s, rs}: T_CH): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
-	if (r === undefined) return txt(c);
+	if (r === undefined && ! s) return txt(c);
 
-	const ruby = document.createElement('ruby');
-	ruby.appendChild(txt(c));
+	// [span]/[ch]のstyleは本文側の要素へ。ルビが無くても入れ物が要るのでspanで包む
+	const el = document.createElement(r === undefined ? 'span' : 'ruby');
+	if (s) el.style.cssText = s;
+	el.appendChild(txt(c));
+	if (r === undefined) return el;
+
 	const rt = document.createElement('rt');
+	if (rs) rt.style.cssText = rs;
 	rt.textContent = rubyTxt(r);
-	ruby.appendChild(rt);
-	return ruby;
+	el.appendChild(rt);
+	return el;
 }
 
 // [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）

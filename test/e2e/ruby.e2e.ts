@@ -54,5 +54,29 @@ test('[er]で消えたら<ruby>も残らない（表示単位のキャッシュ�
 
 	expect(await mesStr(page)).toBe('消えた');
 	expect(await aRuby(page)).toEqual([]);
+});
+
+// 表示単位ごとの「文字と実際の色」。[span]/[ch]のstyleが当たっているかを見る
+const aColor = (page: import('@playwright/test').Page)=> page.$$eval(
+	`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+	aEl=> aEl.map(el=> {
+		const inner = el.firstElementChild ?? el;	// スタイル付きは内側のspan/ruby
+		const rt = inner.querySelector('rt');
+		const t = (inner.textContent ?? '').slice(0, (inner.textContent ?? '').length - (rt?.textContent ?? '').length);
+		return `${t}:${getComputedStyle(inner).color}${rt ? `/${rt.textContent ?? ''}:${getComputedStyle(rt).color}` : ''}`;
+	}),
+);
+
+test('[span]/[ch]/[ruby2]のstyle・r_styleが実際の色になる', async ({page})=> {
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
+
+	// 平文はスタイルもルビも含まない
+	expect(await mesStr(page)).toBe('赤黒緑蜊');
+	expect(await aColor(page)).toEqual([
+		'赤:rgb(255, 0, 0)',	// [span style=…]から
+		'黒:rgb(0, 0, 0)',		// 属性なしの[span]で解除された
+		'緑:rgb(0, 128, 0)',	// [ch style=…]はそのtextの間だけ
+		'蜊:rgb(0, 0, 0)/あさり:rgb(0, 0, 255)',	// [ruby2 r_style=…]はルビ側だけ
+	]);
 	expect((await snap(page)).wait).toBeNull();	// [s]で停止
 });

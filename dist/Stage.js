@@ -9976,7 +9976,7 @@ function tu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		if (!e) return;
 		M.current?.kill();
 		let t = j.current, n = Math.min(t.length, s.length), r = 0;
-		for (; r < n && t[r].c === s[r].c && t[r].r === s[r].r;) ++r;
+		for (; r < n && t[r].c === s[r].c && t[r].r === s[r].r && t[r].s === s[r].s && t[r].rs === s[r].rs;) ++r;
 		r < n && (A.current = [], j.current = [], e.textContent = "");
 		let i = A.current, a = Math.min(s.length, i.length);
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
@@ -10189,13 +10189,13 @@ function tu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		})] })
 	] });
 }
-function nu({ c: e, r: t }) {
-	let n = (e) => document.createTextNode(e === " " ? "\xA0" : e);
-	if (t === void 0) return n(e);
-	let r = document.createElement("ruby");
-	r.appendChild(n(e));
-	let i = document.createElement("rt");
-	return i.textContent = E(t), r.appendChild(i), r;
+function nu({ c: e, r: t, s: n, rs: r }) {
+	let i = (e) => document.createTextNode(e === " " ? "\xA0" : e);
+	if (t === void 0 && !n) return i(e);
+	let a = document.createElement(t === void 0 ? "span" : "ruby");
+	if (n && (a.style.cssText = n), a.appendChild(i(e)), t === void 0) return a;
+	let o = document.createElement("rt");
+	return r && (o.style.cssText = r), o.textContent = E(t), a.appendChild(o), a;
 }
 function ru(e) {
 	return e === void 0 ? {

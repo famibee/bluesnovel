@@ -1798,7 +1798,7 @@ var ne = class e {
 				r = e == null ? "" : String(e);
 			} else if (n === 59) continue;
 			else if (n === 42 && t.length > 1) continue;
-			this.#W(e, r);
+			this.#G(e, r);
 		}
 		return e;
 	}
@@ -2028,13 +2028,28 @@ var ne = class e {
 			case "elsif":
 			case "else":
 			case "endif": return this.#H(), "skip";
-			case "r": return this.#W(a, "\n"), "skip";
+			case "r": return this.#G(a, "\n"), "skip";
 			case "er": return this.#h[this.#m] = "", a.push({
 				t: "chgStr",
 				nm: this.#m,
 				page: "both",
 				str: ""
 			}), "skip";
+			case "span": return this.#G(a, e.#W("span", i)), "skip";
+			case "ruby2":
+			case "ch": {
+				if (n === "ruby2") {
+					if (!i.t) throw "[ruby2] tは必須です";
+					if (!i.r) throw "[ruby2] rは必須です";
+					i.text = `｜${encodeURIComponent(i.t)}《${encodeURIComponent(i.r)}》`, delete i.t, delete i.r;
+				}
+				let { text: t } = i;
+				if (!t) throw `[${n}] textは必須です`;
+				return this.#G(a, e.#W("add", {
+					...i,
+					text: void 0
+				}) + t.replaceAll("[r]", "\n") + e.#W("add_close", {})), "skip";
+			}
 			case "trace": return a.push({
 				t: "trace",
 				text: i.text ?? ""
@@ -2474,7 +2489,10 @@ var ne = class e {
 			idx: n.returnIdx
 		}), "stop");
 	}
-	#W(e, t) {
+	static #W(e, t) {
+		return `｜&emsp;《${e}｜${encodeURIComponent(JSON.stringify(t))}》`;
+	}
+	#G(e, t) {
 		let n = this.#m, r = (this.#h[n] ?? "") + t;
 		this.#h[n] = r, e.push({
 			t: "chgStr",
