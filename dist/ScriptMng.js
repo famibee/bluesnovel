@@ -193,10 +193,49 @@ var m = class {
 	testNoTxt(e) {
 		return this.#d.test(e);
 	}
-}, h = { save: "game" }, g = class e {
+};
+//#endregion
+//#region src/sn/CmnInterface.ts
+function h() {
+	return {
+		"const.sn.cfg.ns": "",
+		"const.sn.aPageLog": "[]",
+		"const.sn.nativeWindow.x": 0,
+		"const.sn.nativeWindow.y": 0,
+		"const.sn.nativeWindow.w": a.stageW,
+		"const.sn.nativeWindow.h": a.stageH,
+		"const.sn.save.place": 1,
+		"const.sn.sound.BGM.volume": 1,
+		"const.sn.sound.SE.volume": 1,
+		"const.sn.sound.SYS.volume": 1,
+		"sn.auto.msecLineWait": 500,
+		"sn.auto.msecLineWait_Kidoku": 500,
+		"sn.auto.msecPageWait": 3500,
+		"sn.auto.msecPageWait_Kidoku": 3500,
+		"sn.skip.mode": "s",
+		"sn.sound.BGM.vol_mul_talking": 1,
+		"sn.sound.global_volume": (e, t) => 1,
+		"sn.sound.movie_volume": (e, t) => 1,
+		"sn.tagCh.canskip": !0,
+		"sn.tagCh.doWait": !0,
+		"sn.tagCh.doWait_Kidoku": !0,
+		"sn.tagCh.msecWait": 10,
+		"sn.tagCh.msecWait_Kidoku": 10,
+		"TextLayer.Back.Alpha": .5
+	};
+}
+//#endregion
+//#region src/ts/VarStore.ts
+var g = { save: "game" }, _ = class e {
 	#e = Object.create(null);
 	#t = Object.create(null);
 	#n = /* @__PURE__ */ new Set();
+	constructor() {
+		this.#r();
+	}
+	#r() {
+		for (let [e, t] of Object.entries(h())) this.#e[`sys.${e}`] = typeof t == "function" ? 1 : t;
+	}
 	defBuiltin(e, t) {
 		this.#t[e] = t;
 	}
@@ -206,12 +245,12 @@ var m = class {
 		if (!n) throw `変数名が不正です：${t}`;
 		let r = n[1] ?? "tmp";
 		return {
-			ns: h[r] ?? r,
-			key: e.#r(n[2]),
+			ns: g[r] ?? r,
+			key: e.#i(n[2]),
 			atStr: !!n[3]
 		};
 	}
-	static #r(e) {
+	static #i(e) {
 		let t = 0, n = 0, r = e;
 		for (;;) {
 			if (t = r.indexOf("[\""), t < 0) {
@@ -233,10 +272,10 @@ var m = class {
 		let s = `${i}.${a}`;
 		if (s in this.#e) return o || this.#n.has(s) ? this.#e[s] : e.castAuto(this.#e[s]);
 		if (r) return this.#e[s] = n, o ? n : e.castAuto(n);
-		let c = this.#i(i, a, n);
+		let c = this.#a(i, a, n);
 		return o ? c : e.castAuto(c);
 	}
-	#i(e, t, n) {
+	#a(e, t, n) {
 		let r = t.split("."), i = r.length, a = "";
 		for (let t = 0; t < i; ++t, a += ".") {
 			a += r[t];
@@ -282,15 +321,15 @@ var m = class {
 	static castTo(t, r) {
 		switch (r) {
 			case "": return t;
-			case "num": return e.#a(t);
-			case "int": return i(e.#a(t));
-			case "uint": return n(e.#a(t));
+			case "num": return e.#o(t);
+			case "int": return i(e.#o(t));
+			case "uint": return n(e.#o(t));
 			case "bool": return t != null && String(t) !== "false" && !!String(t);
 			case "str": return t == null ? t : String(t);
 			default: throw `cast【${String(r)}】は未定義です`;
 		}
 	}
-	static #a(e) {
+	static #o(e) {
 		let t = String(e), n = t.startsWith("0x") ? parseInt(t, 16) : parseFloat(t);
 		if (Number.isNaN(n)) throw `値【${t}】が数値ではありません`;
 		return n;
@@ -301,19 +340,19 @@ var m = class {
 		return e;
 	}
 	setMp(e) {
-		this.#o("mp.");
+		this.#s("mp.");
 		for (let t of Object.keys(e)) this.#e[`mp.${t}`] = e[t];
 	}
 	clearGame() {
-		this.#o("game.");
+		this.#s("game.");
 	}
 	clearSys() {
-		this.#o("sys.");
+		this.#s("sys."), this.#r();
 	}
-	#o(e) {
+	#s(e) {
 		for (let t of Object.keys(this.#e)) t.startsWith(e) && (delete this.#e[t], this.#n.delete(t));
 	}
-}, _ = (/* @__PURE__ */ e(((e, t) => {
+}, v = (/* @__PURE__ */ e(((e, t) => {
 	(function(n, r) {
 		typeof e == "object" && typeof t == "object" ? t.exports = r() : typeof define == "function" && define.amd ? define([], r) : typeof e == "object" ? e.Parsimmon = r() : n.Parsimmon = r();
 	})(typeof self < "u" ? self : e, function() {
@@ -543,7 +582,7 @@ var m = class {
 			function A(e) {
 				if (typeof e != "string") throw Error("not a string: " + e);
 			}
-			var ee = 2, te = 3, j = 8, ne = 5 * j, re = 4 * j, M = "  ";
+			var j = 2, ee = 3, M = 8, te = 5 * M, ne = 4 * M, re = "  ";
 			function N(e, t) {
 				return Array(t + 1).join(e);
 			}
@@ -561,7 +600,7 @@ var m = class {
 				var n, r, i, a, c, l = t.index, u = l.offset, d = 1;
 				if (u === e.length) return "Got the end of the input";
 				if (b(e)) {
-					var f = u - u % j, p = u - f, m = F(f, ne, re + j, e.length), h = s(function(e) {
+					var f = u - u % M, p = u - f, m = F(f, te, ne + M, e.length), h = s(function(e) {
 						return s(function(e) {
 							return P(e.toString(16), 2, "0");
 						}, e);
@@ -570,26 +609,26 @@ var m = class {
 						if (n <= t) return [e.slice()];
 						for (var a = 0; a < n; a++) r[i] || r.push([]), r[i].push(e[a]), (a + 1) % t == 0 && i++;
 						return r;
-					}(e.slice(m.from, m.to).toJSON().data, j));
+					}(e.slice(m.from, m.to).toJSON().data, M));
 					a = function(e) {
 						return e.from === 0 && e.to === 1 ? {
 							from: e.from,
 							to: e.to
 						} : {
-							from: e.from / j,
-							to: Math.floor(e.to / j)
+							from: e.from / M,
+							to: Math.floor(e.to / M)
 						};
-					}(m), r = f / j, n = 3 * p, p >= 4 && (n += 1), d = 2, i = s(function(e) {
+					}(m), r = f / M, n = 3 * p, p >= 4 && (n += 1), d = 2, i = s(function(e) {
 						return e.length <= 4 ? e.join(" ") : e.slice(0, 4).join(" ") + "  " + e.slice(4).join(" ");
 					}, h), (c = (8 * (a.to > 0 ? a.to - 1 : a.to)).toString(16).length) < 2 && (c = 2);
 				} else {
 					var g = e.split(/\r\n|[\n\r\u2028\u2029]/);
-					n = l.column - 1, r = l.line - 1, a = F(r, ee, te, g.length), i = g.slice(a.from, a.to), c = a.to.toString().length;
+					n = l.column - 1, r = l.line - 1, a = F(r, j, ee, g.length), i = g.slice(a.from, a.to), c = a.to.toString().length;
 				}
 				var _ = r - a.from;
 				return b(e) && (c = (8 * (a.to > 0 ? a.to - 1 : a.to)).toString(16).length) < 2 && (c = 2), o(function(t, r, i) {
-					var o, s = i === _, l = s ? "> " : M;
-					return o = b(e) ? P((8 * (a.from + i)).toString(16), c, "0") : P((a.from + i + 1).toString(), c, " "), [].concat(t, [l + o + " | " + r], s ? [M + N(" ", c) + " | " + P("", n, " ") + N("^", d)] : []);
+					var o, s = i === _, l = s ? "> " : re;
+					return o = b(e) ? P((8 * (a.from + i)).toString(16), c, "0") : P((a.from + i + 1).toString(), c, " "), [].concat(t, [l + o + " | " + r], s ? [re + N(" ", c) + " | " + P("", n, " ") + N("^", d)] : []);
 				}, [], i).join("\n");
 			}
 			function I(e, t) {
@@ -996,44 +1035,44 @@ var m = class {
 			}, e.exports = r;
 		}]);
 	});
-})))(), v = class {
+})))(), y = class {
 	val;
 	#e = null;
 	constructor(e, t = "\\") {
 		this.val = e;
 		function n(e) {
 			let t = [];
-			for (let n of e) t.push((typeof n == "string" ? (0, _.string)(n) : (0, _.regex)(n)).trim(_.optWhitespace));
-			return (0, _.alt)(...t);
+			for (let n of e) t.push((typeof n == "string" ? (0, v.string)(n) : (0, v.regex)(n)).trim(v.optWhitespace));
+			return (0, v.alt)(...t);
 		}
 		function r(e) {
-			return (0, _.alt)(...Object.keys(e).sort().map((t) => {
+			return (0, v.alt)(...Object.keys(e).sort().map((t) => {
 				let n = e[t];
-				return (typeof n == "string" ? (0, _.string)(n) : (0, _.regex)(n)).trim(_.optWhitespace).result(t);
+				return (typeof n == "string" ? (0, v.string)(n) : (0, v.regex)(n)).trim(v.optWhitespace).result(t);
 			}));
 		}
 		function a(e, t) {
-			let n = (0, _.lazy)(() => (0, _.seq)(e, n).or(t));
+			let n = (0, v.lazy)(() => (0, v.seq)(e, n).or(t));
 			return n;
 		}
 		function o(e, t) {
-			return (0, _.seqMap)(t, e.many(), (e, t) => t.reduce((e, t) => [t, e], e));
+			return (0, v.seqMap)(t, e.many(), (e, t) => t.reduce((e, t) => [t, e], e));
 		}
 		function s(e, t) {
-			let n = (0, _.lazy)(() => t.chain((t) => (0, _.seq)(e, (0, _.of)(t), n).or((0, _.of)(t))));
+			let n = (0, v.lazy)(() => t.chain((t) => (0, v.seq)(e, (0, v.of)(t), n).or((0, v.of)(t))));
 			return n;
 		}
 		function c(e, t) {
-			return (0, _.seqMap)(t, (0, _.seq)(e, t).many(), (e, t) => t.reduce((e, t) => [
+			return (0, v.seqMap)(t, (0, v.seq)(e, t).many(), (e, t) => t.reduce((e, t) => [
 				t[0],
 				e,
 				t[1]
 			], e));
 		}
-		let l = (0, _.alt)((0, _.alt)((0, _.regex)(/-?(0|[1-9][0-9]*)\.[0-9]+/), (0, _.regex)(/0x[0-9a-fA-F]+/)).map(Number), (0, _.alt)((0, _.regex)(/-?(0|[1-9][0-9]*)/)).map((e) => i(e))).map((e) => ["!num!", e]).desc("number"), u = (0, _.string)("null").map(() => ["!str!", null]), d = (0, _.regex)(/(true|false)/).map((e) => ["!bool!", e === "true"]).desc("boolean"), f = (0, _.regex)(RegExp(`(?:"(?:\\${t}["'#\\n]|[^"])*"|'(?:\\${t}["'#\\n]|[^'])*'|\\#(?:\\${t}["'#\\n]|[^#])*\\#)`)).map((e) => ["!str!", e.slice(1, -1).replaceAll(t, "")]).desc("string"), p = /\[[^\]]+\]/g, m = (0, _.regex)(/-?(?:(?:tmp|sys|game|save|mp):)?[^\s!-/:-@[-^`{-~]+(?:\.[^\s!-/:-@[-^`{-~]+|\[[^\]]+\])*(?:@str)?/).map((e) => {
+		let l = (0, v.alt)((0, v.alt)((0, v.regex)(/-?(0|[1-9][0-9]*)\.[0-9]+/), (0, v.regex)(/0x[0-9a-fA-F]+/)).map(Number), (0, v.alt)((0, v.regex)(/-?(0|[1-9][0-9]*)/)).map((e) => i(e))).map((e) => ["!num!", e]).desc("number"), u = (0, v.string)("null").map(() => ["!str!", null]), d = (0, v.regex)(/(true|false)/).map((e) => ["!bool!", e === "true"]).desc("boolean"), f = (0, v.regex)(RegExp(`(?:"(?:\\${t}["'#\\n]|[^"])*"|'(?:\\${t}["'#\\n]|[^'])*'|\\#(?:\\${t}["'#\\n]|[^#])*\\#)`)).map((e) => ["!str!", e.slice(1, -1).replaceAll(t, "")]).desc("string"), p = /\[[^\]]+\]/g, m = (0, v.regex)(/-?(?:(?:tmp|sys|game|save|mp):)?[^\s!-/:-@[-^`{-~]+(?:\.[^\s!-/:-@[-^`{-~]+|\[[^\]]+\])*(?:@str)?/).map((e) => {
 			let t = e.replaceAll(p, (e) => "." + String(this.parse(e.slice(1, -1)))), n = this.val.get(t);
 			return n == null ? ["!str!", n] : typeof n == "boolean" ? ["!bool!", n] : Object.prototype.toString.call(n) === "[object String]" ? ["!str!", String(n)] : ["!num!", Number(n)];
-		}).desc("string"), h = (0, _.lazy)(() => (0, _.string)("(").then(this.#e).skip((0, _.string)(")")).or(l).or(u).or(d).or(f).or(m)), g = [
+		}).desc("string"), h = (0, v.lazy)(() => (0, v.string)("(").then(this.#e).skip((0, v.string)(")")).or(l).or(u).or(d).or(f).or(m)), g = [
 			{
 				type: a,
 				ops: n([/[A-Za-z_][A-Za-z0-9_]*(?=\()/])
@@ -1120,7 +1159,7 @@ var m = class {
 				ops: n(["?"])
 			}
 		];
-		this.#e = g.reduce((e, t) => t.type(t.ops, e), h).trim(_.optWhitespace);
+		this.#e = g.reduce((e, t) => t.type(t.ops, e), h).trim(v.optWhitespace);
 	}
 	parse(e) {
 		let t = this.#e.parse(e);
@@ -1222,7 +1261,7 @@ var m = class {
 		return e == null ? e : String(e).replaceAll(this.#i, (e) => String(e.startsWith("$") ? this.val.get(e.slice(1)) : this.parse(e.slice(2, -1))));
 	}
 	getValAmpersand = (e) => e.startsWith("&") ? String(this.parse(e.slice(1))) : e;
-}, y = class {
+}, b = class {
 	fn;
 	grm;
 	#e;
@@ -1256,7 +1295,7 @@ var m = class {
 	defC2M(e, t, n, r) {
 		this.grm[e](t, n, this.#e, r), this.#n();
 	}
-}, b = class e {
+}, x = class e {
 	#e = {};
 	clear() {
 		this.#e = {};
@@ -1308,7 +1347,7 @@ var m = class {
 		for (let t of Object.keys(this.#e).map((e) => parseInt(e)).sort((e, t) => e - t)) e += t === this.#e[t] ? "," + String(t) : "," + String(t) + "~" + String(this.#e[String(t)]);
 		return e;
 	}
-}, x = [
+}, S = [
 	"alpha",
 	"left",
 	"top",
@@ -1317,7 +1356,7 @@ var m = class {
 	"scale_y",
 	"pivot_x",
 	"pivot_y"
-], S = {
+], C = {
 	alpha: 1,
 	left: 0,
 	top: 0,
@@ -1327,7 +1366,7 @@ var m = class {
 	pivot_x: 0,
 	pivot_y: 0
 };
-function C(e, t) {
+function w(e, t) {
 	let n = {}, r = (t, r) => {
 		if (!r) return;
 		let i = r.startsWith("="), a = i ? r.slice(1) : r;
@@ -1344,10 +1383,10 @@ function C(e, t) {
 			rel: i
 		};
 	};
-	for (let e of x) r(e, t[e]);
+	for (let e of S) r(e, t[e]);
 	return t.left === void 0 && r("left", t.x), t.top === void 0 && r("top", t.y), n;
 }
-var w = {
+var T = {
 	Quadratic: "power1",
 	Cubic: "power2",
 	Quartic: "power3",
@@ -1358,27 +1397,27 @@ var w = {
 	Elastic: "elastic",
 	Back: "back",
 	Bounce: "bounce"
-}, T = {
+}, E = {
 	In: "in",
 	Out: "out",
 	InOut: "inOut"
 };
-function E(e) {
+function D(e) {
 	if (!e) return "none";
 	let [t = "", n = ""] = e.split(".");
 	if (t === "Linear") return "none";
-	let r = w[t], i = T[n];
+	let r = T[t], i = E[n];
 	if (!r || !i) throw `異常なease指定です：${e}`;
 	return `${r}.${i}`;
 }
-function D(e, t) {
+function O(e, t) {
 	let n = t.name ?? t.layer ?? "";
 	if (!n) throw `[${e}] トゥイーンが指定されていません（name／layerのどちらも無し）`;
 	return n;
 }
 //#endregion
 //#region src/ts/ScriptEngine.ts
-var O = class e {
+var k = class e {
 	static #e = new u();
 	static parseTag(t) {
 		let [n, r] = f(t);
@@ -1502,8 +1541,8 @@ var O = class e {
 	#h = Object.create(null);
 	#g = !1;
 	#_ = Object.create(null);
-	#v = new g();
-	#y = new v(this.#v);
+	#v = new _();
+	#y = new y(this.#v);
 	#b = [];
 	#x = [];
 	#S = Object.create(null);
@@ -1520,7 +1559,7 @@ var O = class e {
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#f = e instanceof y ? e : new y(e, t), this.#v.defBuiltin("const.sn.scriptFn", () => this.fn), this.#v.defBuiltin("const.sn.isKidoku", () => this.#T), this.#v.defBuiltin("const.sn.displayState", () => this.#O);
+		this.#f = e instanceof b ? e : new b(e, t), this.#v.defBuiltin("const.sn.scriptFn", () => this.fn), this.#v.defBuiltin("const.sn.isKidoku", () => this.#T), this.#v.defBuiltin("const.sn.displayState", () => this.#O);
 	}
 	#O = !1;
 	setFullScr(e) {
@@ -1570,7 +1609,7 @@ var O = class e {
 		return this.#T;
 	}
 	#k() {
-		let e = this.#w[this.fn] ??= new b();
+		let e = this.#w[this.fn] ??= new x();
 		if (this.#x.length > 0) {
 			e.record(this.#p);
 			return;
@@ -1588,7 +1627,7 @@ var O = class e {
 	setKidoku(e) {
 		for (let e in this.#w) delete this.#w[e];
 		this.#T = !1;
-		for (let [t, n] of Object.entries(e)) this.#w[t] = b.from(n);
+		for (let [t, n] of Object.entries(e)) this.#w[t] = x.from(n);
 	}
 	clearKidoku() {
 		for (let e of Object.values(this.#w)) e.clear();
@@ -1847,34 +1886,34 @@ var O = class e {
 				let n = this.skipEnabled, i = n ? 0 : e.#n("tsy", "time", r.time ?? ""), o = n ? 0 : e.#r("tsy", "delay", r.delay, 0), s = e.#r("tsy", "repeat", r.repeat, 1);
 				return a.push({
 					t: "tsy",
-					tw_nm: D("tsy", r),
+					tw_nm: O("tsy", r),
 					nm: t,
 					page: e.argPage(r, "fore"),
 					msec: i,
 					delay: o,
-					ease: E(r.ease),
+					ease: D(r.ease),
 					repeat: s > 0 ? s - 1 : -1,
 					yoyo: (r.yoyo ?? "false") !== "false",
-					hTo: C("tsy", r)
+					hTo: w("tsy", r)
 				}), "skip";
 			}
 			case "wait_tsy": return a.push({
 				t: "waitTsy",
-				tw_nm: D("wait_tsy", r),
+				tw_nm: O("wait_tsy", r),
 				canskip: (r.canskip ?? "true") !== "false"
 			}), "stop";
 			case "stop_tsy": return a.push({
 				t: "stopTsy",
-				tw_nm: D("stop_tsy", r)
+				tw_nm: O("stop_tsy", r)
 			}), "skip";
 			case "pause_tsy": return a.push({
 				t: "pauseTsy",
-				tw_nm: D("pause_tsy", r),
+				tw_nm: O("pause_tsy", r),
 				paused: !0
 			}), "skip";
 			case "resume_tsy": return a.push({
 				t: "pauseTsy",
-				tw_nm: D("resume_tsy", r),
+				tw_nm: O("resume_tsy", r),
 				paused: !1
 			}), "skip";
 			case "let": {
@@ -2286,7 +2325,7 @@ var O = class e {
 			str: r
 		});
 	}
-}, k = class e {
+}, A = class e {
 	searchPath;
 	constructor(e) {
 		this.searchPath = e;
@@ -2435,7 +2474,7 @@ var O = class e {
 		let r = e.#u(n);
 		return t.replaceAll(e.#d, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
 	}
-}, A = class {
+}, j = class {
 	sys;
 	#e;
 	constructor(e) {
@@ -2460,7 +2499,7 @@ var O = class e {
 	}
 	async #i(e) {
 		let t = await this.#o(e);
-		this.#r ? this.#r.switchScript(t) : (this.#r = new O(t), this.#a(this.#r)), this.go = () => this.#f(), this.$trgNext();
+		this.#r ? this.#r.switchScript(t) : (this.#r = new k(t), this.#a(this.#r)), this.go = () => this.#f(), this.$trgNext();
 	}
 	#a(e) {
 		let { oCfg: t } = this.sys.cfg, n = {
@@ -2475,12 +2514,12 @@ var O = class e {
 			"const.sn.isDbg": () => !1,
 			"const.sn.isDebugger": () => !1,
 			"const.sn.isPackaged": () => !1,
-			"const.sn.isFirstBoot": () => !1,
+			"const.sn.isFirstBoot": () => !0,
 			"const.sn.needClick2Play": () => !1,
 			"const.sn.bookmark.json": () => "[]"
 		};
 		for (let [t, r] of Object.entries(n)) e.defBuiltin(t, r);
-		e.setValNochk("sys:const.sn.save.place", 1), e.defBuiltin("const.sn.lay", () => {
+		e.defBuiltin("const.sn.lay", () => {
 			let { fore: e, back: t } = this.$fncs.getPages(), n = (e) => {
 				if (!e) return;
 				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0, n = e.left ?? 0, r = e.top ?? 0;
@@ -2503,7 +2542,7 @@ var O = class e {
 		});
 	}
 	async #o(e) {
-		return this.#n[e] ??= new y(e, await this.#R(e), this.#c());
+		return this.#n[e] ??= new b(e, await this.#R(e), this.#c());
 	}
 	#s;
 	#c() {
@@ -2515,7 +2554,7 @@ var O = class e {
 	jumpToLabelAndGo(e, t, n = "") {
 		this.#d(e, t, n).catch(() => {});
 	}
-	#l = new k((e, t) => this.sys.cfg.searchPath(e, t));
+	#l = new A((e, t) => this.sys.cfg.searchPath(e, t));
 	attachFrameBox(e) {
 		this.#l.attachBox(e);
 	}
@@ -2607,7 +2646,7 @@ var O = class e {
 		this.#T[e.tw_nm]?.tw.kill(), delete this.#T[e.tw_nm];
 		let t = this.$fncs.getLaySty(e.nm, e.page), n = Object.keys(e.hTo), r = {}, i = {};
 		for (let a of n) {
-			let n = e.hTo[a], o = t[a] ?? S[a];
+			let n = e.hTo[a], o = t[a] ?? C[a];
 			r[a] = o, i[a] = n.rel ? o + n.v : n.v;
 		}
 		let a = () => {
@@ -2970,6 +3009,6 @@ var O = class e {
 	};
 };
 //#endregion
-export { A as ScriptMng };
+export { j as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

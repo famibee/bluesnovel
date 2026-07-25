@@ -251,6 +251,28 @@ it('getVal_34_builtin_json_tree', ()=> {
 	expect(vs.get('const.sn.lay.0', 'def')).toBe('{"fore":{"visible":true,"alpha":1,"width":1},"back":{"visible":true,"alpha":1,"width":0}}');
 });
 
+it('getVal_35_sys_defaults', ()=> {
+	// システム変数(sys:)は生成時に既定値が入っている（本家 Variable.ts#clearsysvar() 相当）。
+	//	未定義のままだと設定画面の[set_frame text=&sys:…]が「textは必須です」で落ちる
+	const vs = new VarStore;
+	expect(vs.get('sys:sn.tagCh.msecWait')).toBe(10);
+	expect(vs.get('sys:sn.auto.msecLineWait')).toBe(500);
+	expect(vs.get('sys:sn.auto.msecPageWait')).toBe(3500);
+	expect(vs.get('sys:sn.tagCh.doWait')).toBe(true);
+	expect(vs.get('sys:sn.skip.mode')).toBe('s');
+	expect(vs.get('sys:TextLayer.Back.Alpha')).toBe(0.5);
+	expect(vs.get('sys:const.sn.save.place')).toBe(1);
+	// 本家では代入トリガ関数として型が付くが、値としては数値1（SoundMng.ts:67）
+	expect(vs.get('sys:sn.sound.global_volume')).toBe(1);
+
+	// [clearsysvar]は消したあと既定値を入れ直す
+	vs.set('sys:sn.tagCh.msecWait', 999);
+	vs.set('sys:独自', 'x');
+	vs.clearSys();
+	expect(vs.get('sys:独自')).toBeUndefined();
+	expect(vs.get('sys:sn.tagCh.msecWait')).toBe(10);
+});
+
 // cast指定（本家 Variable.ts:317 #let() 相当）
 it('set_cast_numeric', ()=> {
 	const vs = new VarStore;

@@ -1,492 +1,295 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What this is
 
-`@famibee/bluesnovel` — an ESM JavaScript/TypeScript **novel-game framework**. It is a
-ground-up simplification/rewrite of the author's earlier **SKYNovel** engine (referred to
-throughout the code as **本家** = "upstream", often with `skynovel_esm/src/...:line` file
-pointers in comments). The scenario engine is explicitly a **試作版 (prototype)** — many
-features are intentionally minimal, single-file-only, or stubbed. When porting behavior,
-the comments' `本家 <file>:<line>` references are the spec being followed; preserve that
-naming when adding related code.
+`@famibee/bluesnovel` — ESM TypeScript の**ノベルゲームフレームワーク**。作者の旧エンジン
+**SKYNovel**（コード中では **本家**、`skynovel_esm/src/…:line` の形で参照）を簡素化して書き直し
+たもの。シナリオエンジンは明示的に**試作版**で、機能は意図的に最小限。
 
-Ships two targets from one source tree: a **browser** build (`dist/`) and an **Electron
-app** build (`dist_app/`). Both `dist/` and `dist_app/` are committed build artifacts.
+移植時は、コメントの `本家 <file>:<line>` が仕様書。関連コードを足すときもこの記法を踏襲する。
+
+1 ソースツリーから **browser 版 (`dist/`)** と **Electron 版 (`dist_app/`)** を出力。どちらも
+ビルド成果物ごとコミットされている。
 
 ## Commands
 
-Runtime is **Bun** (tests + build driver) with **Vite 8 / rolldown** for bundling. Node >= 22.19.
+Bun（テスト＋ビルドドライバ）+ Vite 8 / rolldown。
 
 ```bash
-bun run build      # build all 4 bundles via src/build.ts (web + electron app/appMain/preload)
-bun run watch      # same, in Vite watch mode (no .d.ts emit in watch)
-bun test           # run unit tests (bun:test)
-bun test --only-failures   # what `bun run test` does; reruns only previously-failed
-bun test test/ScriptEngine.test.ts   # single file
-bun test -t "step_trace_ampPrefix"   # single test by name (it('...') label)
-bunx tsc --noEmit --incremental false   # typecheck only — NOT run by `bun test`; run before committing
-                                        # (`--incremental false` avoids littering dist/ with tsbuildinfo)
-bunx tsc --noEmit -p test/e2e   # typecheck the E2E tree (separate project, see below)
-bun run docs       # vite docs/ playground, opens /tag.html
-bun run test:e2e   # browser E2E via Playwright (starts/stops its own vite on :5199)
-bun run test:e2e:ui        # same, in Playwright's UI mode
-bunx playwright test -c test/e2e button.e2e.ts   # single E2E file
+bun test                                # 単体テスト
+bunx tsc --noEmit --incremental false   # 型チェック（bun test では走らない）
+bunx tsc --noEmit -p test/e2e           # E2E ツリーは別プロジェクト
+bun run test:e2e                        # Playwright（自前で vite:5199 を起動/停止）
+bun run docs                            # docs/ プレイグラウンド
 ```
 
-There is **no `lint` script** despite ESLint devDependencies being present, and **no
-`bunfig.toml`** — tests run with Bun defaults. Unit tests are deliberately DOM/fetch-free
-so they need no happy-dom preload; `@happy-dom/global-registrator` exists for any future
-component tests.
+`bun run build` / `watch` は `src/build.ts` が Vite の `build()` を 4 回呼ぶ
+（`src/web.ts`→`dist/`、`src/{app,appMain,preload}.ts`→`dist_app/`）。`.d.ts` は
+`vite-plugin-dts`（watch 時はスキップ）。lint スクリプトは無い。
 
-## E2E tests (`test/e2e/`)
-
-Everything E2E lives under `test/e2e/` — specs, fixture app, `playwright.config.ts` and its own
-`tsconfig.json` — deliberately keeping the repo root clean. Unit tests (`bun test`) and browser
-E2E (`playwright test`) are **fully separated**:
-
-- **Put a test here only if a browser is required for it**: DOM / computed CSS /
-  `document.title`, input events (click, key), things driven by React rendering
-  (`Caretaker`/Memento), fetch and the async script-switch path, or config wiring from
-  `prj.json`. Engine logic belongs in `test/*.test.ts`. Note that `mesStr()`/`snap()` only
-  read the zustand store — a spec asserting nothing else is really an engine test wearing a
-  browser costume, so check whether a unit test already covers it.
-
-- E2E specs are named `*.e2e.ts`, **not** `*.spec.ts` — `bun test` auto-collects `*.spec.*`, and
-  it also scans `test/`, so the conventional name would break the unit-test run. `testMatch`
-  enforces this.
-- The config is not at the root, so Playwright needs `-c test/e2e` (both `test:e2e` scripts pass
-  it). `webServer` starts/stops vite itself on a **dedicated port 5199** with
-  `reuseExistingServer: false`, and pins `cwd` to the repo root so vite's root is the repo, not
-  the config's folder. Vite's default 5173/5174 are routinely squatted by other projects' dev
-  servers (e.g. `tmp_blues`), and reusing one silently tests the *wrong app*.
-- `test/e2e/app/` is a self-contained fixture: `index.html` + `main.ts` boot `SysWeb` against
-  `test/e2e/app/prj_<name>/` (`prj.json` / `path.json` / `main.sn`). `?prj=basic|button|expr|multi`
-  picks the scenario, since `SysBase.loaded()` always loads the script named `main`. Adding a
-  scenario = new `prj_<name>/` + a `T_PRJ` member in `snPage.ts`. Fixtures avoid binaries
-  where they can; the exception is `prj_pic/`, which carries two tiny generated PNGs because
-  the `path.json` → `searchPath` → `<img>` path is only really tested by loading a real file
-  (`naturalWidth` is 0 when it didn't load). **`src/` contains no test-only hooks**:
-  `test/e2e/app/main.ts` publishes `window.__sn = {store: useStore}` and assertions read the
-  zustand store from there; `traceText()` finds the debug overlay as `body > span` rather than
-  giving it an id.
-- Writing fixture `.sn`: `&名前 = 式` and `&式&` only fire when the **token** starts with `&`
-  (line start, or straight after a tag) — mid-sentence they render literally. See
-  `prj_expr/main.sn`.
-- Scenarios that cross files (`prj_multi/`) must advance with `pressKeyToWaitMark()`, not
-  `pressKey()`: a script fetch leaves brief moments where store, DOM and `isTyping` all look
-  settled mid-run, `waitIdle()` cannot tell those from a real stop point, and a key pressed
-  then is swallowed as "finish the typing animation" (`Main.tsx` `next()`) instead of
-  advancing — losing a whole stop point. `store.wait` is reset every `#runStep()` iteration
-  and only set at `[l]`/`[p]`, so it is a reliable stop-point signal. `[s]` sets no marker,
-  so that last hop still uses `pressKey()` + `expect.poll`.
-- `test/e2e/snPage.ts` holds the helpers. `waitIdle()` must be awaited before every click or
-  keypress: it waits until the DOM has caught up with the store, because `Stage` is `lazy()`-loaded
-  and a test can otherwise race ahead while Suspense still shows `Loading` — in that window
-  `Stage` never renders, so `Caretaker.update()` never records a Memento and read-back silently
-  breaks.
-- The root `tsconfig.json` **excludes `test/e2e`** from its `test/**/*` include (otherwise
-  `vite-plugin-dts` emits `.d.ts` for the tests into `dist/`); `test/e2e/tsconfig.json` typechecks
-  it instead.
-
-## ブラウザ手動操作は playwright-cli スキルで（MCP は使わない）
-
-E2E テストの実行ではなく「画面を開いて動作を目視確認する」用途では、**必ず
-`.claude/skills/playwright-cli/` スキル（`playwright-cli` コマンド）を使う**。playwright MCP
-は同じことができるが、ツール定義とスナップショット応答が丸ごとコンテキストに載るためトークン
-消費が桁違いに多い。CLI 版は結果をファイル（`.playwright-cli/*.yml`）に落として要約だけ返すので
-安い。`.claude/settings.local.json` で `mcp__playwright` を deny 済み。
-
-```bash
-playwright-cli open http://localhost:5199/test/e2e/app/?prj=basic  # vite は別途起動しておく
-playwright-cli snapshot --depth=4        # 全部は取らず浅く。詳細は find/部分snapshot で掘る
-playwright-cli find "テキスト"           # 大きい画面はこれで grep したほうが安い
-playwright-cli --raw eval "JSON.stringify(window.__sn.store.getState().aLay)"
-playwright-cli close
-```
-
-- ストア確認は `window.__sn.store.getState()`（E2E フィクスチャが公開しているもの。`src/` 側には
-  テスト用フックを足さない方針は CLI 操作でも同じ）。
-- `playwright-cli` はグローバル導入済み（`/usr/local/bin/playwright-cli`）。無ければ
-  `npx playwright cli <command>` でローカルの playwright からも呼べる。
-- 自動テストとして残すものは従来どおり `test/e2e/*.e2e.ts` に書く。CLI はあくまで手動確認用。
-
-## Build system (`src/build.ts`)
-
-`bun run build` executes `src/build.ts`, which calls Vite's `build()` programmatically
-**four times** to emit four separate lib bundles:
-
-| Entry           | Output dir  | Externals                          |
-| --------------- | ----------- | ---------------------------------- |
-| `src/web.ts`    | `dist/`     | (bundled for browser)              |
-| `src/app.ts`    | `dist_app/` | node builtins                      |
-| `src/appMain.ts`| `dist_app/` | `electron` + node builtins         |
-| `src/preload.ts`| `dist_app/` | `electron` + node builtins         |
-
-`.d.ts` files are emitted via `vite-plugin-dts` (skipped in watch mode) and rewritten to
-drop the `/src/` path segment. `package.json` `exports` map points consumers at these.
+**ブラウザ手動確認は `playwright-cli` スキルを使う**（playwright MCP は deny 済み。応答が全部
+コンテキストに載って高い）。ストア確認は `window.__sn.store.getState()`。
 
 ## Architecture
 
-The central design is a **strict separation between a pure scenario engine and the UI**,
-so scenario logic can be unit-tested without a browser:
+**純粋なシナリオエンジンと UI の分離**が中心。だからシナリオ処理はブラウザ無しで単体テストできる。
 
 ```
 SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
                                           │
-   'ev_next' CustomEvent on heStage ◀─────┤  (Main.tsx listens, calls scrMng.go)
+   'ev_next' CustomEvent on heStage ◀─────┤  (Main.tsx が listen し scrMng.go)
                                           ▼
                               ScriptEngine.step()  ── pure ──▶ T_ENGINE_ACTION[]
                                           │
-                              ScriptMng.#applyAction() maps each action ──▶ zustand store
+                              ScriptMng.#applyAction() が store へ反映
                                           │
-                                    React (Stage/…) re-renders from store
+                                    React (Stage/…) が store から再描画
 ```
 
-- **`src/ts/Script.ts`** — one `.sn` file's parse result (token array + label table), read-only.
-  Everything that varies per file lives here. It holds the `Grammar` that tokenized it;
-  `ScriptMng` builds **one** shared instance (escape char from `prj.json`'s `init.escape`,
-  plus `cfg` so `fn=…*` wildcards expand) and passes it to every `Script`.
-- **`src/ts/ScriptEngine.ts`** — the prototype executor. No DOM, no fetch. Runs the current
-  `Script` until the next `[l]`/`[p]`/`[s]` stop point (or EOF), and returns a
-  `T_ENGINE_ACTION[]` describing what changed (add layer, change picture, append text, add
-  button, trace, stop…). It owns **all execution state**: token index `#idx`, the if-stack
-  `#aIfStk`, the call-stack `#aCallStk`, the macro table `#hMacro`, and variables (via
-  `VarStore`/`ExprEval`). **There is exactly one engine**; crossing files swaps the `Script`
-  via `switchScript()`, so variables and stacks survive. When a tag needs another file the
-  engine emits `{t:'loadScript', fn, label, idx}` and stops — fetching is `ScriptMng`'s job,
-  which keeps `step()` synchronous and unit-testable. This is the file most unit tests target.
-  Tokenizing and tag-arg parsing are **delegated to 本家 code**: `Grammar.resolveScript()`
-  and `tagToken2Name_Args()` + `AnalyzeTagArg`. `step()`'s dispatch mirrors 本家
-  `Main.ts#main()` exactly — first char of the token decides (`\t`/`\n` skip, `[` tag,
-  `&` assign-or-display, `;` comment, `*` label, else text) — so **no `trimStart()`**:
-  Grammar always splits leading tabs, newline runs and comments into their own tokens.
-- **`src/sn/Grammar.ts`** — 本家's tokenizer, **ported verbatim** (`resolveScript` →
-  `Script{aToken,len,aLNum}`, `setEscape`, `char2macro`/`bracket2macro`, `splitAmpersand`,
-  `tagToken2Name_Args`). Handles multi-line tags, string literals containing `[`/`]`/`;`,
-  comments, `[let_ml]`…`[endlet_ml]`, labels, escape chars and `fn=…*` wildcard expansion.
-  `test/Grammar.test.ts` is the 本家 test file moved over unchanged — keep it that way.
-  Only divergence: `cfg` is optional (it drives wildcard expansion alone), so `ScriptEngine`
-  can do `new Grammar` without a `T_Config`.
-- **`src/ts/VarStore.ts`** — 本家 `Variable` minus save/dirty handling. Namespaces are
-  `tmp`/`game`/`sys`/`mp` (本家's `save:` is `game:` here — but `save:` is **accepted as an
-  alias**, because every upstream scenario writes it; `ExprEval` needs the alias too, or the
-  `:` gets read as a ternary). `get(name, def?, touch?)`
-  returns **`undefined` for an undefined variable** and `null` only when null was stored —
-  the distinction is load-bearing (`1 + 未定義` → `NaN` is how 本家 detects undefined).
-  Reads auto-cast (`'true'`→true, `'1.20'`→1.2) unless the name ends `@str`; a name whose
-  prefix holds a JSON string descends into it (`const.db.紀子.fn`). `set()` takes 本家's
-  `cast` (`num`/`int`/`uint`/`bool`/`str`); since auto-cast happens on *read* here,
-  `cast=str` is remembered per key in `#setNoCast` rather than baked into the value.
-- **`src/ts/ExprEval.ts`** — 本家 `PropParser` **ported whole** (parsimmon operator table).
-  Ternary, bit ops, `¥` integer division, hex literals, `int`/`parseInt`/`Number`/`ceil`/
-  `floor`/`round`/`isNaN`, `#…#` string literals, `$var` / `#{expr}` embedding, and
-  `hA[春夏][ひきす]` index-to-name resolution. Takes a `T_VAR_GET` (`{get(name)}`), not a
-  concrete `VarStore`, so tests can pass a flat table like 本家's `ValTest`.
-- **`src/ts/ScriptMng.ts`** — the bridge. `#runStep()` (async) calls `engine.step()`, then
-  `#applyAction()` translates each `T_ENGINE_ACTION` into a store mutation (the `T_INIT_FNCS`
-  set passed in from `Main.tsx`); on `loadScript` it fetches, caches a `Script` and loops.
-  Advance requests arriving mid-load are counted, not dropped. Also owns script fetching and the
-  `myTrace` debug overlay. **It also resolves asset paths** (`path.json` → `searchPath`) when
-  applying `chgPic`, and the store keeps both the logical name (`fn`) and the resolved URL
-  (`src`). That split exists because `searchPath` *throws* when a file is not in the search
-  path, and throwing inside `render` takes React down with it — so `GrpLayer` used to swallow
-  the error and draw nothing. Resolving at scenario-execution time lets the failure reach the
-  debug overlay instead. A missing image is reported at `'E'` (show) rather than `'ET'`
-  (show and stop): one bad asset should not end the game. A missing *script*, on the other
-  hand, is fatal.
-- **Filters are the sharpest case of the pixi→DOM divergence.** Upstream has 22 pixi filters;
-  CSS `filter` can express 9 of them natively, so that is what `src/ts/Filter.ts` implements.
-  The other 13 are all `ColorMatrixFilter` presets except `noise`, so they *are* reachable
-  later via an SVG `feColorMatrix` fed the same 5×4 matrix — the error message says so, and
-  deliberately distinguishes "no such filter" (upstream's wording) from "upstream has it, CSS
-  can't". Note `[lay filter=]` **replaces** the list while `[add_filter]` appends; that
-  asymmetry is upstream's.
-- **Stacking order is the array order** in `aPage[i]` (later = in front), matching pixi's
-  child order upstream. `[lay float=/index=/dive=]` reorder it — **always both pages
-  identically**, since `pickPage`/`putPage` and `[trans]`'s layer cloning all assume the two
-  arrays hold the same names in the same order. Anything needing the *current* order (these,
-  and `[tsy]`'s `'=100'` relative values) is resolved in the store, not the engine: the engine
-  emits the intent and the store does the arithmetic. `test/store_lay.test.ts` covers that
-  arithmetic directly — zustand's `create()` needs no DOM, so store logic is unit-testable.
-- **`src/store/store.tsx`** — **zustand** store; single source of truth. `aPage: [T_LAY[],
-  T_LAY[]]` holds the **two pages** (本家 `Pages.ts`) and `foreIdx` says which one is the
-  fore. `[add_lay]` creates every layer on **both** pages. Store setters (`addLayer`,
-  `chgPic`, `chgBAlpha`, `chgStr`, `addBtn`, `setWait`, …) are the only way the engine's
-  actions reach the UI. **Layer `nm` must be globally unique across `grp` and `txt` classes**
-  (lookups key on `nm` alone; duplicates throw and would collide React keys).
-- **The stage** is `<div id="skynovel">` — same term as upstream. Its size is **fixed to
-  `prj.json`'s `window.width`/`height`** (`Config.generate()` → `CmnLib.stageW`/`stageH`), it
-  is `overflow: hidden` so nothing outside it draws, and it is black where no image is
-  placed. `Stage.tsx` renders the inner box at that exact size and scales it with
-  `transform: scale(cvsScale)` to fit the browser window; because `transform` does not change
-  layout size, a `useLayoutEffect` also writes the **scaled** size onto `#skynovel` itself —
-  without that the element collapses to height 0 and every layer spills outside it.
-  `test/e2e/stage.e2e.ts` pins this down.
-- **`src/components/`** — React 19 with **`@emotion/react` JSX** (`jsxImportSource` in
-  tsconfig; `css` prop available). `Main.tsx` wires keyboard/click events and the `ev_next`
-  progression loop. `Stage.tsx` renders `aLay`; `TxtLayer`/`GrpLayer`/`BtnLayer` render the
-  three layer roles. `Stage` is `lazy()`-loaded at module top level (not inside a component)
-  to avoid remount flicker. **Nothing may statically import `Stage.tsx`** — one value import
-  from `GrpLayer`/`TxtLayer`/`store` pulls `Stage` back into the main chunk and the `lazy()`
-  stops splitting anything (rolldown says `INEFFECTIVE_DYNAMIC_IMPORT`). The shared,
-  component-free pieces therefore live in **`src/components/Lay.ts`** (`T_LAY`, `T_LAY_STY`,
-  `A_LAY_STY_KEY`, `T_LAY_IDX`, `T_LAY_CMN`, `styLay`, the drag flag); `import type` from
-  `Stage` would be fine since types erase, but there is no longer a reason to.
-- **`src/ts/Memento.ts`** — `Caretaker` records a state snapshot at every stop point, keyed
-  `${fn}:${idx}`. This powers read-back: PageUp/PageDown (`prevKey`/`nextKey`) walk history;
-  `isReadBack` in the store drives the read-back visual (yellow text). Button jumps
-  deliberately do **not** touch this history (they aren't "reading forward").
-- **`src/sn/`** — support layer largely carried from 本家 SKYNovel: `SysBase`, `Config`/
-  `ConfigBase`, `Grammar`, `CmnLib`, `AnalyzeTagArg`, `Areas`, `CallStack`.
+- **`src/ts/ScriptEngine.ts`** — 試作版の実行器。DOM も fetch も持たない。次の `[l]`/`[p]`/`[s]`
+  まで進めて `T_ENGINE_ACTION[]` を返す。実行状態（トークン位置、if スタック、コールスタック、
+  マクロ表、変数）を全部持つ。**エンジンはただ 1 つ**で、ファイル跨ぎは `switchScript()` による
+  `Script` 差し替えなので変数もスタックも生き残る。他ファイルが要るときは
+  `{t:'loadScript',…}` を出して停止し、fetch は `ScriptMng` の仕事（`step()` を同期に保つため）。
+  `step()` の分岐は本家 `Main.ts#main()` そのまま＝トークン先頭 1 文字で決める。だから
+  **`trimStart()` してはいけない**（Grammar が先頭タブ・改行・コメントを別トークンに割る前提）。
+- **`src/ts/Script.ts`** — `.sn` 1 ファイルのパース結果（トークン配列＋ラベル表）。読み取り専用。
+  `Grammar` は `ScriptMng` が**1 個だけ**作って全 `Script` に渡す。
+- **`src/sn/Grammar.ts`** — 本家のトークナイザを**そのまま移植**。`test/Grammar.test.ts` は本家の
+  テストファイルを無改変で持ってきたもの。唯一の相違は `cfg` が optional なこと。
+- **`src/ts/VarStore.ts`** — 本家 `Variable` から save/dirty を除いたもの。名前空間は
+  `tmp`/`game`/`sys`/`mp`（本家の `save:` は `game:`。ただし `save:` も**別名として受ける**、
+  上流シナリオが全部そう書くので。`ExprEval` 側にも別名が要る、でないと `:` が三項演算子に読まれる）。
+  `get()` は**未定義変数に `undefined`**、格納された null にのみ `null` を返す（`1 + 未定義` → `NaN`
+  が本家の未定義検出法なので、この区別が効いている）。読み取り時に自動キャスト（`@str` 終端は除く）、
+  prefix が JSON 文字列ならその中へ降りる（`const.db.紀子.fn`）。
+- **`src/ts/ExprEval.ts`** — 本家 `PropParser` を丸ごと移植（parsimmon）。`T_VAR_GET` を取るので
+  テストは本家 `ValTest` 的なフラット表を渡せる。
+- **`src/ts/ScriptMng.ts`** — 橋渡し。`#runStep()` が `engine.step()` を呼び、`#applyAction()` が
+  各アクションを store 更新に翻訳、`loadScript` なら fetch してループ。**アセットパス解決
+  (`path.json`→`searchPath`) もここ**で、store は論理名 `fn` と解決後 URL `src` の両方を持つ。
+  `searchPath` は見つからないと throw し、render 中の throw は React ごと落とすため。画像欠損は
+  `'E'`（表示のみ）、スクリプト欠損は致命的。
+- **`src/store/store.tsx`** — zustand。単一の真実。`aPage: [T_LAY[], T_LAY[]]` が fore/back 2 ページ
+  （本家 `Pages.ts`）で `foreIdx` がどちらが fore かを示す。`[add_lay]` は**両ページ**に作る。
+  **レイヤ `nm` は `grp`/`txt` を跨いで一意**（重複は throw、React key も衝突する）。
+- **`src/components/`** — React 19 + `@emotion/react` JSX。`Main.tsx` がキー/クリックと `ev_next`
+  ループ、`Stage.tsx` が `aLay` 描画、`TxtLayer`/`GrpLayer`/`BtnLayer` が 3 役。`Stage` は
+  モジュールトップで `lazy()`。**`Stage.tsx` を静的 import してはいけない**（value import 1 つで
+  分割が効かなくなる／rolldown が `INEFFECTIVE_DYNAMIC_IMPORT` を言う）。共有部品は
+  **`src/components/Lay.ts`**（`T_LAY` 等、`styLay`、ドラッグフラグ）に置く。
+- **`src/ts/Memento.ts`** — `Caretaker` が停止点ごとに `${fn}:${idx}` キーでスナップショット。
+  PageUp/Down の既読読み返し用。ボタンジャンプはこの履歴を**触らない**。
+- **`src/sn/`** — 本家から持ってきた土台（`SysBase`, `Config`, `Grammar`, `CmnLib`,
+  `AnalyzeTagArg`, `Areas`, `CallStack`）。
 
-**Ported-from-本家 files carry their 本家 tests verbatim** (`test/Grammar.test.ts`,
-`test/ExprEval.test.ts`, the lower half of `test/VarStore.test.ts`). When touching those
-modules, diff against `../skynovel_esm/src/sn/…` first: the tests are the contract, and
-intentional divergences are listed in each test file's header comment. String-literal
-quoting is the one thing normalized away from upstream — see below.
+**本家由来ファイルは本家のテストを無改変で持っている**（`test/Grammar.test.ts`,
+`test/ExprEval.test.ts`, `test/VarStore.test.ts` の後半）。これらを触るときはまず
+`../skynovel_esm/src/sn/…` と diff を取る。テストが契約で、意図的な相違は各テストの冒頭コメント。
 
-**No escaped quotes in string literals.** A string that would need `\'` or `\"` is written
-as a template literal instead: `` `[if exp="mp:v=='X'"]` ``, not `'[if exp="mp:v==\'X\'"]'`.
-`.sn` snippets in tests are full of both quote kinds, and the backslashes made them
-unreadable. Plain `'…'` stays the default when no escaping is involved.
+**文字列リテラルにエスケープを書かない。** `\'` や `\"` が要る文字列はテンプレートリテラルにする
+（`` `[if exp="mp:v=='X'"]` ``）。`.sn` 断片は両方の引用符だらけで、バックスラッシュだと読めない。
 
-### The `.sn` scripting language (current prototype tag set)
+### 実装済みタグ
 
-`add_lay`, `current`, `add_face`, `lay` (pic/fn, `face=` diff-image compositing, `b_alpha=`
-text-bg opacity, `b_color=`, `style=`, `visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/
-`scale_y`/`pivot_x`/`pivot_y`/`blendmode`, `index`/`float`/`dive` for stacking order,
-`filter=`, `page=fore|back`), `clear_lay`, `trans`/`wt` (page swap + its wait),
+`add_lay`, `current`, `add_face`, `lay`, `clear_lay`, `trans`/`wt`,
 `add_filter`/`clear_filter`/`enable_filter`,
-`tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy` (GSAP tweens of those same layer
-attributes),
-`page` (`clear=true` only — upstream's `[page]` is the read-back **page log**, not fore/back),
+`tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`（`clear=true` のみ）,
+`let`, `let_ml`/`endlet_ml`, `let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/
+`let_substr`/`let_replace`/`let_search`, `if`/`elsif`/`else`/`endif`, `r`, `er`, `trace`,
+`jump`, `call`/`return`, `macro`/`endmacro`, `char2macro`/`bracket2macro`, `button`,
+`event`/`clear_event`, `enable_event`, `wait`, `clearvar`/`clearsysvar`, `pop_stack`, `title`,
+`toggle_full_screen`, `dump_lay`, `add_frame`/`frame`/`set_frame`/`let_frame`, `set_focus`,
+停止点 `l`/`p`/`s`/`waitclick`。
 
-`let` (`cast=`; `text=` is the 本家 form — the value as-is, `text=&式` to evaluate —
-while `val=` is a bluesnovel-only always-expression form kept for existing tests, and `text`
-wins if both are given), `let_ml`/`endlet_ml` (raw multi-line text into a variable — no
-expression eval, `[`/`]`/`;` in the body are literal),
-`let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/`let_substr`/
-`let_replace`/`let_search`, `if`/`elsif`/`else`/`endif`, `r`,
-`er`, `trace` (`text=&expr` for expression eval), `jump`, `call`/`return`,
-`macro`/`endmacro` (`return label=` changes where a subroutine resumes),
-`char2macro`/`bracket2macro`, `button` (`call=true` for
-subroutine-call on click; `left`/`top`/`width`/`height`/`rotation`/`pivot_*`/`scale_*`/
-`alpha`/`enabled`/`blendmode` — but it only goes absolute when `left`/`top` are written,
-unlike upstream which always does), `event`/`clear_event`, `enable_event`, `wait`,
-`clearvar`/`clearsysvar`, `pop_stack`, `title`, `toggle_full_screen`, `dump_lay`,
-`add_frame`/`frame`/`set_frame`/`let_frame` (HTML frames), `set_focus`,
-and the stop points `l`/`p`/`s`/`waitclick`. `jump`/`call`/`return`/`button`
-all take `fn=` to cross files, and a macro can be called from a file other than the one that
-defined it. Macro names are rejected
-by `ScriptEngine.RESERVED_TAGS` (tag names) and `REG_NG4MAC_NM` (本家's forbidden chars).
-Nested `[macro]` definitions **do** work here (depth-counted) but not upstream — don't use
-them in scripts meant to run on 本家.
+**属性ごとの詳細と実装状況は `docs/tag.html`**（変数は `docs/dev.html`）。名前に
+🟢実装済 / 🟡一部 / 🔴未実装 のマークが付いており、bluesnovel 固有の相違・メモは各タグの詳細部に
+書く。**タグや変数を実装・変更したらこのマークを更新する**（「何が動くか」の唯一の情報源。おかげで
+`todo.md` は状況一覧でなく作業計画のままでいられる）。
 
-**"Page" means two unrelated things** — a trap inherited from 本家's vocabulary, so always say
-which one you mean:
+`jump`/`call`/`return`/`button` は `fn=` でファイルを跨げる。マクロは定義元と別ファイルからも
+呼べる。マクロ名は `ScriptEngine.RESERVED_TAGS` と `REG_NG4MAC_NM` で弾く。`[macro]` の入れ子は
+ここでは動くが本家では動かない。
 
-- **layer page (fore/back)** — the two drawing surfaces every layer has. `[lay page=…]`,
-  `[clear_lay page=…]`, `[button page=…]`, `[trans]`, `[er]`. In code: `aPage`/`foreIdx`,
-  `T_PAGE`.
-- **text page (the `[p]`-delimited run of text)** — a unit of the read-back log. `[p]`,
-  `[page clear=true]`. In code: the `Caretaker` history.
+非タグ構文も本家互換（Grammar 由来）: 複数行タグ、`;` コメント、`[`/`]`/`;` を含む文字列リテラル、
+`&名前 = 式 [= cast]` 代入（`&&式 = 式` は名前も式評価）、`&式&` インライン表示。`&` 系はトークンが
+`&` で**始まる**ときだけ発火（行頭かタグ直後）。引用符を含む属性値は値全体を引用する
+（`[if exp="mp:v=='X'"]`）。`AnalyzeTagArg` は無引用値を最初の引用符で切るため。
 
-They never interact. `[page]` operates on the *second* kind despite its name.
+### タグ属性の共通前処理
 
-**Pages (fore/back) and `[trans]`.** Every layer exists on both pages; a scenario builds the
-next scene on the back page (`[lay … page=back]`) and then swaps with `[trans time=…]`. Three
-rules make this work in React:
+`ScriptEngine.#resolveTag()`（本家 `ScriptIterator.ts:418 タグ解析()` 前半の移植）が全タグ共通で
+処理するので、個別タグ側でやってはいけない:
 
-- The store **never moves layer data between the two arrays** — `[trans]` only flips
-  `foreIdx`. Swapping the contents would replace both containers' children wholesale, so
-  `TxtLayer` would replay its typing animation exactly as the transition lands.
-- The cross-fade takes the fore page's opacity **1 → 0** over a back page rendered beneath.
-  Fading the back page *in* on top costs the same but pops at the end wherever the back page
-  is transparent; fading the fore *out* means what you see mid-transition is already the
-  final state.
-- **A layer's display attributes are stored only when the scenario writes them** (`T_LAY_STY`
-  is all-optional, mirroring upstream's `'left' in hArg` checks). Giving them defaults means
-  every layer emits a full inline style on every render, which silently overrides each
-  layer component's own CSS — it once flung the text layer from `top: 48%` to the top of the
-  stage. `[clear_lay]` deletes those keys rather than resetting them to numbers, and leaves
-  `visible` alone.
-- Writes are per-page: `[lay]` defaults to `fore`, `[button]` takes `page=` too, and `[er]`
-  clears **both** pages (`chgStr` carries `'fore' | 'back' | 'both'`) — otherwise the previous
-  scene's text comes back the moment `[trans]` brings that page forward. `[button]`'s default
-  is `fore` here where upstream uses `back`; see the `//TODO:` in `ScriptEngine.ts`.
-- **`ScriptMng` declares the transition finished**, not GSAP's `onComplete` — `Stage` only
-  paints. `finishTrans()` (a synchronous zustand `set`) flips `foreIdx`, and only then does
-  the scenario resume, so the next text always lands on the new fore page. `[wt]` waits on
-  the same deadline, and a click during it is re-read as "finish now" (`#goSafe()` intercepts
-  it), which always lands on the end state — never a half-faded screen.
+- `cond=…` — 偽ならタグを**実行しない**。制御構文タグ含め全タグに効く。`exp` 同様、先頭 `&` は不可。
+- `%属性名` — 現マクロに渡された属性値、`|省略値` がフォールバック。引数も既定値も無ければ
+  **属性そのものが渡らない**（タグ自身の既定値に落ちるための仕組み）。マクロ外では throw。
+- `[tag *]` — マクロが受けた属性を全部継承。明示指定が勝つ。マクロ外では throw。
+- `&式` — 値を式評価。`undefined` なら属性を落として `|省略値` を試す。
 
-**Tweens (`[tsy]`) go the other way from `[trans]`: through the store, not the DOM.** GSAP
-animates a plain object and `onUpdate` writes each frame back via `chgLay`, so the store
-always holds the layer's *current* value. Painting only to the DOM would be cheaper, but then
-`Caretaker`'s snapshots and `[trans]`'s layer cloning would read pre-animation values. Two
-consequences: 本家's `arrive` attribute (force the target values at the end) is effectively
-always on here, and **the GSAP target must never be handed to the store as-is** — GSAP hangs
-a `_gsap` cache on it that points back at the target, which makes the layer circular and
-breaks both `structuredClone` (`addLayer`/`[trans]`) and `JSON` (Memento). `ScriptMng`
-copies out only the properties being animated. The pure half — attribute value → target
-(`'=500'` relative, `'250,500'` random), tween.js ease names → GSAP ones, tween naming —
-lives in **`src/ts/Tsy.ts`**, which touches neither GSAP nor the DOM so the engine can call
-it and reject a bad `ease=` at scenario-run time. Note 本家's `[tsy]` only reads `x`/`y`
-(`CmnTween.aLayerPrpNm`) even though `tmp_esm_uc`'s `ext_fg.sn` writes `left=`/`top=` — those
-are silently ignored upstream; here `x`/`y` are aliases of `left`/`top` so both work.
+`%` と `*` が読むのは `#aCallStk[].hArgs`＝呼び出し時に退避した**生の属性文字列**（本家 `csArg`）。
+同じ値は `mp:` にもあるが `VarStore` が読み取り時に自動キャストする（`'1.20'`→`1.2`）ため。
+`[call]` も属性を退避するので、素のサブルーチンでも `%` が使える。
 
-**HTML frames (`[add_frame]`) are the one visible thing that is deliberately *not* in the
-store.** A frame is a live HTML document with its own JS state, so a JSON snapshot could not
-restore it; upstream keeps them out of the layer/page system too. `src/ts/FrameMng.ts` owns
-them DOM-side, `srcdoc` (not `src`) makes them same-origin so `[set_frame]`/`[let_frame]` can
-poke the iframe's `var`s directly, and `Stage.tsx` provides the container — a div that is
-**empty in JSX**, so React never reconciles the iframes away. Putting that container *inside*
-the scaled stage box is the one place bluesnovel is simpler than 本家: coordinates are written
-in stage units and window-resize tracking is free, where upstream multiplies by `cvsScale`
-everywhere and rewrites every frame on resize. `[add_frame]` and `[let_frame]` are **stop
-points** — they touch the DOM and must write the result back into engine variables before the
-scenario reads them, and actions are only applied after `step()` returns. Two things about
-frames are easy to forget: **keys pressed inside a frame never reach the parent document**, so
-`FrameMng` re-dispatches them onto `document` (upstream's `EventMng.resvFlameEvent`), and
-blurring an element inside a frame leaves the *iframe itself* focused in the parent, so
-`[set_focus to=null]` blurs on both sides.
+トークンを**実行せず走査する** 2 箇所（`#if()` の `elsif`/`else`/`endif` 探索、`[macro]` の
+`[endmacro]` 探索）は生の `ScriptEngine.parseTag()` を使う。本家もそこは `hPrm` を直読みしている。
 
-**`src/ts/FocusMng.ts`** is the `[set_focus]` ring — one module-level instance, because it is
-screen-wide state touched from both the React tree (`BtnLayer`) and the DOM side
-(`ScriptMng`), the same shape as `Lay.ts`'s drag flag. Elements enter it from three places, as
-upstream: a `[button]` while it is mounted, the **first** match of an `[event key='dom=…']`,
-and `[set_focus add='dom=…']`.
+## 落とし穴
 
-`char2macro`/`bracket2macro` rewrite the **token array in place** (`Grammar#replaceScr_C2M`),
-from the defining tag onwards — text before it stays literal, and one text token can split
-into several. Two consequences: `Script` re-derives its label table after every definition
-(`Script.defC2M()`), and `step()` must re-read `this.#script.len` each iteration instead of
-caching it. The definition lives on the shared `Grammar`, so files parsed *later* come out of
-`resolveScript()` already substituted; files already parsed are not revisited (same as 本家).
+**「ページ」が 2 つの別物を指す**（本家由来の語彙の罠）。どちらか必ず明示すること。
 
-`[event key=… label=… call=… global=… del=…]` reserves a key/click. The engine keeps only the
-**table** (`getEvent`/`beginEvent`/`clearEvent`) — it never touches the DOM — and `Main.tsx`
-decides the key names (`keyName()`): `KeyboardEvent.key` lowercased, prefixed with
-`alt+`/`ctrl+`/`meta+`/`shift+` in that order when held (本家 `SysBase.modKey()`) — so `enter`,
-`escape`, `alt+enter`, `meta+0` — plus `click`. `[toggle_full_screen key=…]` reserves a key
-too, but in its own table on `ScriptMng` (it toggles fullscreen rather than jumping to a
-label), and `Main.tsx` asks that one first.
-Local reservations are one-shot (cleared when a jump-type one fires) and are stashed on the
-call stack by `[call]`, restored by `[return]`; a **macro** call deliberately does not stash
-them (本家 `ScriptIterator.ts:957`). `global=true` reservations are exempt from all of that.
+- **レイヤページ (fore/back)** — 全レイヤが持つ 2 枚の描画面。`[lay page=…]`, `[trans]`, `[er]`。
+  コード上は `aPage`/`foreIdx`/`T_PAGE`。
+- **テキストページ (`[p]` 区切りの本文)** — 読み返しログの単位。`[p]`, `[page clear=true]`。
+  コード上は `Caretaker` の履歴。
 
-**既読 (already-read) tracking** runs on every token `step()` fetches: `#recordKidoku()` stores the
-index in a per-file `Areas` (本家's own class, ported) and sets the builtin `const.sn.isKidoku`.
-Two rules carry over verbatim: while the call stack is non-empty the flag is *not* updated (a
-subroutine is reached from both read and unread contexts, so only the recording happens), and
-`[call]` erases the return position from the read set unless `count=true` — `[jump]`'s default is
-the opposite (`count=false` to erase). `[clearsysvar]` wipes it, as in the upstream kidoku sample.
-There is no save layer yet, so the engine owns the table; `getKidoku()`/`setKidoku()` exist for
-when persistence lands.
+両者は無関係。`[page]` は名前に反して**後者**を操作する。
 
-**Auto-read / skip-read** (`&sn.auto.enabled` / `&sn.skip.enabled` / `&sn.skip.all`, plain tmp
-vars). The engine only *decides*: at each `[l]`/`[p]` `#calcResume()` returns a `T_RESUME`
-(`{mode:'auto', msec}` using `sys:sn.auto.msec*Wait[_Kidoku]`, or `{mode:'skip', msec:0}`) attached
-to the `stop` action, cancelling skip when it reaches an unread stop (`skip.all=false`); `[s]` always
-`cancelAutoSkip()`s. `ScriptMng` owns the *timing* — `#scheduleResume()` sets a timer that calls
-`go()` itself, and `cancelAuto()` (called from `Main.tsx` on any manual key/click) clears it. Skip
-sets a `skipping` store flag so `TxtLayer` renders text instantly. `isNextKidoku` follows 本家
-into the caller's file when inside a subroutine (the caller's `Script` is stashed on the call-stack
-entry for its token count). `sys:sn.skip.mode` is honoured: default `'s'` skips through `[p]`,
-`'p'` stops at each page break (but `Main.tsx`'s cancel-on-input currently also cancels skip there).
+**fore/back と `[trans]`。** シナリオは back に次のシーンを組んで `[trans]` で入れ替える。
 
-**Sample scenarios to check tag behaviour against** live in
-[SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery) — one project per feature under
-`public/prj/`, e.g. `public/prj/kidoku/mat/main.sn` for 既読. Useful as the de-facto spec for
-what a tag's attributes look like in real scripts.
+- store は**2 配列間でレイヤデータを動かさない**。`[trans]` は `foreIdx` を反転するだけ。中身を
+  入れ替えると両コンテナの子が丸ごと差し替わり、`TxtLayer` が遷移と同時にタイピングを再生する。
+- クロスフェードは fore の opacity **1→0**（下に back）。back を上にフェードインさせると、back が
+  透明な箇所で最後にパチッと切り替わる。fore を消す方式なら遷移中の見た目が既に最終状態。
+- **表示属性はシナリオが書いたときだけ格納する**（`T_LAY_STY` は全 optional、本家の
+  `'left' in hArg` 判定と同じ）。既定値を持たせると毎 render で全属性のインラインスタイルが出て、
+  各レイヤ component 自身の CSS を黙って上書きする。`[clear_lay]` はキーを**削除**する（数値に
+  戻すのではなく）。`visible` は触らない。
+- 書き込みはページ単位。`[lay]` の既定は `fore`、`[button]` は本家同様 `back`、`[er]` は**両ページ**
+  を消す（でないと `[trans]` で前シーンの本文が戻ってくる）。
+- **遷移の完了を宣言するのは `ScriptMng`**（GSAP の `onComplete` ではない）。`Stage` は描くだけ。
+  `finishTrans()` が同期的に `foreIdx` を反転し、その後シナリオが再開する。`[wt]` も同じ期限を待ち、
+  途中クリックは「今すぐ終われ」と読み替える（`#goSafe()`）ので必ず最終状態に着地する。
 
-**The tag reference** is <https://famibee.github.io/skynovel_esm/tag.html> (local copy:
-`../skynovel_esm/docs/tag.html`). The authoritative list of every 本家 tag name, grouped by
-category with a one-line description each, is the `T_HTag` type in
-`../skynovel_esm/src/sn/Grammar.ts`; the implementations are registered as `hTag.<name> = …`
-across `../skynovel_esm/src/sn/*.ts`.
+**`[tsy]` は `[trans]` と逆で、DOM でなく store を通す。** GSAP はプレーンオブジェクトを動かし、
+`onUpdate` が `chgLay` で毎フレーム store に書き戻す。DOM だけ塗る方が安いが、それだと Memento と
+`[trans]` のレイヤ複製がアニメ前の値を読む。帰結が 2 つ: 本家の `arrive` 属性は実質常時 on、
+そして **GSAP のターゲットをそのまま store に渡してはいけない**（`_gsap` キャッシュが循環参照を
+作り `structuredClone` と `JSON` を壊す。`ScriptMng` はアニメ対象プロパティだけコピーする）。
+純粋な部分（属性値→ターゲット、ease 名変換、tween 命名）は **`src/ts/Tsy.ts`**。本家の `[tsy]` は
+`x`/`y` しか読まないが、ここでは `left`/`top` の別名なのでどちらでも動く。
 
-**bluesnovel's own implementation status lives in `docs/tag.html` (tag list) and `docs/dev.html`
-(save:/sys:/tmp: reserved variables)** — this repo's copies, not upstream's. Each tag/variable
-name carries a status mark: 🟢 done / 🟡 partial (implemented but with a known gap) / 🔴 not yet.
-bluesnovel-specific divergences and notes go in each tag's detail section (e.g. `#button`,
-`#page`). **Keep these marks current when you implement or change a tag/variable** — they are the
-single source of truth for "what works", so `todo.md` can stay a work-plan rather than a status list.
+**HTML フレーム (`[add_frame]`) は意図的に store の外**。フレームは自前の JS 状態を持つ生きた HTML
+文書なので JSON スナップショットでは復元できない（本家もレイヤ/ページ系から外している）。
+`src/ts/FrameMng.ts` が DOM 側で所有し、`src` でなく `srcdoc` にすることで same-origin となり
+`[set_frame]`/`[let_frame]` が iframe 内の `var` を直接叩ける。`Stage.tsx` はコンテナ div を出すだけ
+（**JSX 上は空**なので React が iframe を回収しない）。それをスケール済みステージ箱の**内側**に置く
+のが本家より簡単な唯一の点＝座標がステージ単位で書け、リサイズ追従がタダになる。`[add_frame]` と
+`[let_frame]` は**停止点**（DOM を触り、結果をシナリオが読む前に変数へ書き戻す必要があるが、
+アクション適用は `step()` 復帰後なので）。忘れがちな 2 点: **フレーム内のキーは親文書に届かない**
+ので `FrameMng` が `document` へ再 dispatch する（本家 `EventMng.resvFlameEvent`）。フレーム内要素の
+blur は親では iframe 自身が focus されたままになるので `[set_focus to=null]` は両側で blur する。
 
-**`test/uc_goal.test.ts` measures the project's stated goal**: it drives the *real* sample
-scenario (`../tmp_esm_uc/doc/prj/`) from `main.sn` through every `[call]` to `title.sn`'s
-`[s]`, using only the engine. Faking the three things `ScriptMng` does DOM-side — fetching
-scripts, loading HTML frames, registering environment builtins — is enough; no DOM, no fetch,
-no image or audio assets. It skips when the sibling checkout is absent. When adding tags,
-run it: it finds the gaps that reading the upstream source does not.
+**`src/ts/FocusMng.ts`** は `[set_focus]` のリング。モジュールレベルに 1 インスタンス置くのは、
+React ツリー (`BtnLayer`) と DOM 側 (`ScriptMng`) の両方から触る画面規模の状態だから（`Lay.ts` の
+ドラッグフラグと同じ形）。要素が入るのは本家同様 3 経路: マウント中の `[button]`、
+`[event key='dom=…']` の**最初の**一致、`[set_focus add='dom=…']`。
 
-**A full sample game** in 本家 form is `../tmp_esm_uc/doc/prj/` — `script/main.sn` calls
-`theme/setting.sn` / `theme/ext_*.sn` / `script/sub.sn` / `frames/_yesno.sn`, then jumps to
-`theme/title.sn`. `todo.md`'s first section works through the tags that path needs. Note that
-much of what looks like a tag there is a **project-side macro** (`img`, `grp`, `fg*`,
-`txt_lay_*`, `sys_menu`, `ask_ync`, …) defined in those same files, and `[notice]` comes from a
-project plugin (`../tmp_esm_uc/src/plugin/humane`), not from the engine.
+**フィルタは pixi→DOM 相違が最も出る箇所。** 本家は pixi フィルタ 22 種、CSS `filter` でそのまま
+書けるのは 9 種、それが `src/ts/Filter.ts` の実装範囲。残り 13 種は `noise` 以外すべて
+`ColorMatrixFilter` プリセットなので、同じ 5×4 行列を SVG `feColorMatrix` に食わせれば後から到達
+できる（エラーメッセージがそう言っており、「そんなフィルタは無い」と「本家にはあるが CSS で無理」
+を区別している）。`[lay filter=]` はリストを**置換**、`[add_filter]` は追加。この非対称は本家由来。
 
-Non-tag syntax now understood too (all 本家-compatible, courtesy of `Grammar`): multi-line
-tags, `;` comments (including inside a tag), string literals containing `[`/`]`/`;`,
-`&名前 = 式 [= cast]` assignment (`&&式 = 式` evaluates the *name* as an expression too), and
-`&式&` inline display. Both `&` forms only fire when the token **starts** with `&` — i.e.
-at line start or right after a tag/tab/newline, exactly as upstream. Attribute values that
-contain quotes must quote the whole value (`[if exp="mp:v=='X'"]`), since `AnalyzeTagArg`
-ends an unquoted value at the first quote character.
+**重ね順は `aPage[i]` の配列順**（後ろ＝手前）。pixi の child 順と同じ。`[lay float=/index=/dive=]`
+が並べ替えるが、**必ず両ページ同一に**（`pickPage`/`putPage` と `[trans]` のレイヤ複製が、2 配列に
+同じ名前が同じ順で並んでいることを前提にしている）。*現在の*順序が要るもの（これらと `[tsy]` の
+`'=100'` 相対値）はエンジンでなく store で解決する。エンジンは意図を出し、store が算術をやる。
 
-**Tag attributes go through one common pre-processing step** before any tag sees them —
-`ScriptEngine.#resolveTag()`, a port of the first half of 本家 `ScriptIterator.ts:418
-タグ解析()`. It handles four things, so individual tag cases never should:
+**ステージ**は `<div id="skynovel">`（本家と同じ語）。サイズは `prj.json` の `window.width`/`height`
+に固定、`overflow: hidden`、画像の無い所は黒。`Stage.tsx` が内箱をその実寸で描き
+`transform: scale(cvsScale)` で窓に合わせる。`transform` はレイアウトサイズを変えないので、
+`useLayoutEffect` が**スケール後**のサイズを `#skynovel` 自身にも書く（でないと高さ 0 に潰れて
+全レイヤがはみ出す）。
 
-- `cond=…` — if false the tag is **not executed at all** (`#resolveTag` returns `undefined`
-  and `step()` moves on). Applies to every tag, control-flow ones included. Like `exp`, it
-  must not carry a leading `&`. `'null'`/`'undefined'`/`'false'` count as false.
-- `%属性名` — the value of that attribute as passed to the current macro, with `|省略値` as
-  the fallback. No argument and no default (or a default of literally `null`) means the
-  attribute is **not passed at all**, which is how upstream lets a tag fall back to its own
-  default. Throws outside a macro.
-- `[tag *]` — inherit every attribute the macro was called with; explicit attributes win.
-  Throws outside a macro.
-- `&式` — evaluate the value as an expression. If it evaluates to `undefined` the attribute
-  is dropped and `|省略値` is tried instead.
+`char2macro`/`bracket2macro` は**トークン配列をその場で書き換える**（`Grammar#replaceScr_C2M`）。
+定義タグ以降のみで、前のテキストはリテラルのまま。1 テキストトークンが複数に割れることもある。
+帰結 2 つ: `Script` は定義のたびラベル表を再導出する（`Script.defC2M()`）。`step()` は
+`this.#script.len` をキャッシュせず毎回読み直す。定義は共有 `Grammar` に載るので、後からパースされる
+ファイルは置換済みで出てくる（パース済みファイルは遡らない。本家同様）。
 
-`%` and `*` read `#aCallStk[].hArgs`, the **raw attribute strings** stashed at call time
-(本家's `csArg`). The same values are also in the `mp:` namespace, but `VarStore` auto-casts
-on read (`'1.20'` → `1.2`), so the raw copy is what gets passed through. `[call]` stashes its
-attributes too, so a plain subroutine can read them with `%` as well — same as upstream.
+`[event key=… label=… call=… global=… del=…]` はキー/クリックを予約する。エンジンは**表だけ**持ち
+DOM を触らない。キー名を決めるのは `Main.tsx` の `keyName()`＝`KeyboardEvent.key` の小文字に
+`alt+`/`ctrl+`/`meta+`/`shift+` をこの順で前置（本家 `SysBase.modKey()`）、それと `click`。
+`[toggle_full_screen key=…]` も予約するが `ScriptMng` 上の別表で、`Main.tsx` はそちらを先に見る。
+ローカル予約は 1 回限りで、`[call]` がコールスタックに退避し `[return]` が復元する。**マクロ呼び出し
+では退避しない**（本家 `ScriptIterator.ts:957`）。`global=true` はこれら全部の対象外。
 
-The two places that scan tokens *without executing them* — `#if()` looking for
-`elsif`/`else`/`endif`, and `[macro]` looking for `[endmacro]` — keep using the raw
-`ScriptEngine.parseTag()`; upstream reads `#alzTagArg.hPrm` directly there too.
+**既読管理**は `step()` が取る全トークンで走る。`#recordKidoku()` がファイル別 `Areas`（本家のクラス
+を移植）に位置を記録し、組み込み `const.sn.isKidoku` を立てる。本家からそのまま来た規則が 2 つ:
+コールスタックが空でない間はフラグを**更新しない**（サブルーチンは既読/未読どちらからも来るので
+記録だけする）。`[call]` は `count=true` でない限り戻り位置を既読集合から消す（`[jump]` は既定が逆）。
+`[clearsysvar]` で全消去。永続化層がまだ無いのでエンジンが表を持つ（`getKidoku()`/`setKidoku()` は
+その日のため）。
 
-## Conventions & gotchas
+**オート/スキップ** (`&sn.auto.enabled` / `&sn.skip.enabled` / `&sn.skip.all`)。エンジンは*判断*
+だけする＝`[l]`/`[p]` ごとに `#calcResume()` が `T_RESUME` を返し `stop` アクションに乗せる。
+未読の停止点に来たらスキップを解除（`skip.all=false` 時）、`[s]` は常に `cancelAutoSkip()`。
+*タイミング*は `ScriptMng` の担当で、`#scheduleResume()` のタイマが自分で `go()` を呼び、
+`cancelAuto()`（`Main.tsx` が手動入力時に呼ぶ）が止める。`isNextKidoku` はサブルーチン内なら本家に
+倣って呼び出し元ファイルを見る。`sys:sn.skip.mode` は既定 `'s'`（`[p]` を貫通）、`'p'` はページ毎停止。
 
-- **Communicate with the user in Japanese** (chat responses, explanations, questions).
-- **Comments and commit messages are in Japanese.** Match the surrounding comment density —
-  this codebase comments heavily, especially explaining divergence from 本家.
-- **TODOs in .ts/.tsx must use the exact `//TODO: ` form** (no space before `//`, one after
-  the colon). The author lists them with the VSCode extension *Todo+*
-  (`fabiospampinato.vscode-todo-plus`), which only picks up that prefix — a TODO written as
-  prose inside a comment block is invisible to it.
-- **Backlog**: `todo.md` at the repo root is the running task list, in *Todo+* checkbox format
-  and roughly priority-ordered. Read it at the start of a session.
-  (It replaced the older per-session `引き継ぎ_YYYY-MM-DD_NN.md` handoff notes, now deleted.)
-  **A finished item does not stay in `todo.md` — it moves to `CHANGELOG.md`.** Write the
-  `- [x] …` block at the lone `- [ ]` marker near the end of `CHANGELOG.md`, followed by one
-  blank line, and **leave that `- [ ]` marker in place** so the next entry can be appended
-  the same way. Delete the item from `todo.md` in the same pass.
-- **MCP pre-flight**: **serena** MCP tools have hung in this project, and have been seen to
-  execute an action anyway despite reporting a timeout. Do a cheap serena
-  call first (e.g. `get_current_config`) and ask the user to restart the MCP server if it
-  hangs; after any MCP timeout, verify state before retrying rather than repeating the call.
-  serena also needs its project activated (`activate_project` with `bluesnovel`) before the
-  symbol tools work.
-- **Strict TypeScript**: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
-  `noUnusedLocals`/`Parameters` (prefix unused params with `_` to allow), `noImplicitOverride`.
-  `strictPropertyInitialization` is off. Run `bunx tsc --noEmit` before committing since the
-  test command does not typecheck.
-- **Releases** use `semantic-release` with the **conventionalcommits** preset — commit
-  message format determines version bumps and CHANGELOG entries.
+## E2E テスト (`test/e2e/`)
+
+spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json` も全部この下（ルートを汚さない
+ため）。単体テストと完全分離。
+
+- **ブラウザが必要なものだけここに書く**: DOM／computed CSS／`document.title`、入力イベント、
+  React 描画に依るもの（Caretaker/Memento）、fetch とスクリプト切替の非同期経路、`prj.json` 配線。
+  エンジンの論理は `test/*.test.ts`。`mesStr()`/`snap()` は zustand を読むだけなので、それしか
+  assert しない spec はブラウザの衣を着た単体テスト。
+- spec 名は `*.spec.ts` でなく **`*.e2e.ts`**（`bun test` が `*.spec.*` を拾って単体実行を壊すため）。
+  `testMatch` で強制。
+- config がルートに無いので `-c test/e2e` が必要。`webServer` は**専用ポート 5199** で
+  `reuseExistingServer: false`、`cwd` はリポジトリルート固定。vite 既定の 5173/5174 は他プロジェクト
+  （`tmp_blues` 等）に占有されがちで、再利用すると黙って**別アプリをテスト**してしまう。
+- `test/e2e/app/` は自己完結フィクスチャ。`?prj=…` でシナリオを選ぶ（`SysBase.loaded()` が常に
+  `main` という名前のスクリプトを読むため）。追加は `prj_<name>/` ＋ `snPage.ts` の `T_PRJ` メンバ。
+  バイナリは極力置かないが `prj_pic/` だけは実 PNG を持つ（`naturalWidth` は未ロード時 0 なので
+  実ファイルでないと経路を検証できない）。**`src/` にテスト専用フックは足さない**方針:
+  `test/e2e/app/main.ts` が `window.__sn` を公開し、デバッグ表示は id でなく `body > span` で拾う。
+- ファイルを跨ぐシナリオは `pressKey()` でなく **`pressKeyToWaitMark()`** で進める。スクリプト fetch
+  の最中に store も DOM も `isTyping` も落ち着いて見える瞬間があり、`waitIdle()` が本物の停止点と
+  区別できず、そこで押したキーが「タイピングを終わらせる」方に食われて停止点を 1 つ失う。
+  `store.wait` は `#runStep()` 毎にリセットされ `[l]`/`[p]` でのみ立つので停止点の信号として使える。
+  `[s]` はマーカを立てないので最後の 1 歩だけ `pressKey()` ＋ `expect.poll`。
+- `waitIdle()` はクリック/キー入力の**前に必ず await** する。`Stage` は `lazy()` なので、Suspense が
+  `Loading` を出している間にテストが先走ると `Caretaker.update()` が Memento を記録せず、読み返しが
+  黙って壊れる。
+- ルート `tsconfig.json` は `test/e2e` を**除外**している（さもないと `vite-plugin-dts` がテストの
+  `.d.ts` を `dist/` に吐く）。型チェックは `test/e2e/tsconfig.json` 側。
+
+## 参考資料
+
+- **タグ仕様**: <https://famibee.github.io/skynovel_esm/tag.html>（ローカル
+  `../skynovel_esm/docs/tag.html`）。本家の全タグ名の正典は
+  `../skynovel_esm/src/sn/Grammar.ts` の `T_HTag` 型、実装は `../skynovel_esm/src/sn/*.ts` の
+  `hTag.<name> = …`。
+- **機能別サンプル**: [SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery) の
+  `public/prj/<機能>/`。実シナリオでの属性の書かれ方の事実上の仕様。
+- **フルサンプルゲーム**（本家形式）: `../tmp_esm_uc/doc/prj/`。`script/main.sn` が
+  `theme/setting.sn` / `theme/ext_*.sn` / `script/sub.sn` / `frames/_yesno.sn` を呼び、
+  `theme/title.sn` へ jump する。タグに見えるものの多くは**プロジェクト側マクロ**（`img`, `grp`,
+  `fg*`, `txt_lay_*`, `sys_menu`, `ask_ync` …）で、`[notice]` はプラグイン由来でエンジンではない。
+- **`test/uc_goal.test.ts` がプロジェクトの到達目標を測る**: 上記サンプルを `main.sn` から
+  `title.sn` の `[s]` までエンジンだけで走らせる。`ScriptMng` が DOM 側でやる 3 つ（スクリプト
+  fetch、フレーム読み込み、環境組み込み変数の登録）を偽装すれば足りる。兄弟チェックアウトが
+  無ければ skip。タグを足したら走らせること。上流ソースを読むだけでは見えない穴が見つかる。
+
+## 規約
+
+- コメントとコミットメッセージは**日本語**。周囲のコメント密度に合わせる（このコードベースは
+  特に本家との相違について厚く書く）。
+- **TODO は `.ts`/`.tsx` で `//TODO: ` の形ちょうど**（`//` の前に空白なし、コロンの後に 1 個）。
+  VSCode 拡張 *Todo+* がこの prefix しか拾わない。
+- **`todo.md`** がルートの作業計画（*Todo+* のチェックボックス形式、ほぼ優先度順）。セッション開始
+  時に読む。**終わった項目は `todo.md` に残さず `CHANGELOG.md` へ移す**。`CHANGELOG.md` 末尾付近の
+  単独の `- [ ]` マーカの位置に `- [x] …` ブロックを書き、後ろに空行 1 つ、**マーカはそのまま残す**
+  （次回も同じ手順で追記できるように）。同じ作業で `todo.md` からは消す。
+- **strict TypeScript**: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+  `noUnusedLocals`/`Parameters`（未使用引数は `_` 前置で許可）, `noImplicitOverride`。
+  `strictPropertyInitialization` は off。
+- **serena MCP はこのプロジェクトでハングした実績がある**（タイムアウトを返しつつ処理は実行された
+  ことも）。まず軽い呼び出し（`get_current_config`）で生死を見る。タイムアウト後は再実行の前に
+  状態を確認する。シンボル系ツールは `activate_project`（`bluesnovel`）が先に要る。
+- リリースは `semantic-release` ＋ conventionalcommits プリセット。

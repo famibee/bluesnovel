@@ -21,6 +21,8 @@
 （`../tmp_esm_uc`が無い環境ではスキップ）。**ただしこれはシナリオ解釈が通ることの確認**で、
 ブラウザで実際に絵と音が出るところまでは別途。残っているのは以下。
 - ブラウザで実際に動かす。**実テンプレ`tmp_blues`がブラウザで title の`[s]`まで到達済み**（背景`title.jpg`＋ボタン4つ描画、2026-07-25。`const.sn.lay.*`存在判定＋`[button]`既定back＋空メッセージ窓の非表示で実現）。確認用フィクスチャ`prj_uc`（`?prj=uc`）でも描画可。音声・立ち絵・文字装飾など先の表示は下記各項目
+  - タイトルの**「アルバム」「ロード」「設定」の3ボタンは、それぞれ`frames/_album.sn`・`_archive.sn`・`_config.sn`の`[s]`まで到達済み**（2026-07-25。見た目も本家pixi版とほぼ一致）。残るは**「最初から」**＝本編。音声・立ち絵・文字装飾がまとめて要る
+  - 3画面とも、フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
 - `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
@@ -62,6 +64,8 @@
 - [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等、および`const.sn.lay.*`（存在判定＋レイヤ木の詳細ツリー）は実装済み。`ScriptMng#defEnvBuiltins()`）
   - [ ] `const.sn.lay[N].<fore|back>.width/.height` は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら、描画側（GrpLayerの`<img>`のnaturalWidth等）から集める設計に差し替える
   - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）・`const.sn.bookmark.json`（しおり）は各層と一緒に
+  - [ ] **システム変数(sys:)は初期値だけ入るようになった**（`VarStore`が生成時と[clearsysvar]時に`creSYS_DATA()`を適用）。読み書きはできるが、その値を使う機能が無いものが多い（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`＝テキスト窓の背景濃度、`sn.sound.*`/`const.sn.sound.*.volume`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。設定画面から変更しても見た目に反映されないので、各層の実装時に繋ぐ
+  - [ ] **sys: がまだ保存されない**ので`const.sn.isFirstBoot`は常にtrue（毎回まっさらな起動）。しおり層でsys:の永続化を入れるとき一緒に直す
   - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
   - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に

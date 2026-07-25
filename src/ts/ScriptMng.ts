@@ -100,7 +100,11 @@ export class ScriptMng {
 			'const.sn.isDbg'		: ()=> false,
 			'const.sn.isDebugger'	: ()=> false,
 			'const.sn.isPackaged'	: ()=> false,
-			'const.sn.isFirstBoot'	: ()=> false,
+			// 本家は「sys:の保存データが空だったか」で決める（SysWeb.ts:90）。こちらはまだ
+			//	sys:を保存しないので**毎回が初回起動**＝常にtrue。テンプレの theme/setting.sn は
+			//	[if exp=const.sn.isFirstBoot] の中で sys:TextLayer.Back.Alpha などの初期値を
+			//	入れるので、falseのままだと設定画面がどれも既定値のままになる
+			'const.sn.isFirstBoot'	: ()=> true,
 			// ブラウザは音を鳴らす前にユーザー操作を要求する。音声層が無い今は常にfalse
 			'const.sn.needClick2Play'	: ()=> false,
 			// **しおり（セーブ）層の暫定既定値**。まだ保存機能が無いので、ロード画面（frames/_archive）が
@@ -111,11 +115,6 @@ export class ScriptMng {
 			'const.sn.bookmark.json'	: ()=> '[]',
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
-
-		// sys:const.sn.save.place（次のセーブ枠）は本家で 1 に初期化される（CmnInterface.ts:197）。
-		//	組み込み変数(defBuiltin)はtmp:専用なので、sys:名前空間へ初期値として書いておく。
-		//	保存機能実装時に書き換わる想定なので、読み取り専用のbuiltinにはしない
-		engine.setValNochk('sys:const.sn.save.place', 1);
 
 		// レイヤの状態（本家 const.sn.lay.*）。ストアの表裏ページから毎回**レイヤ木のJSON**を作る。
 		//	VarStore.get()のJSON潜り込みが組み込み変数にも効くので、`const.sn.lay.0`（存在判定・truthy）も

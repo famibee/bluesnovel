@@ -67,7 +67,9 @@ function runToStop(): {fn: string; stops: number; hCnt: {[t: string]: number}; a
 		'const.sn.navigator.language': 'ja-JP',
 		'const.sn.screenResolutionX': 1920, 'const.sn.screenResolutionY': 1080,
 		'const.sn.isApp': false, 'const.sn.isDbg': false, 'const.sn.isDebugger': false,
-		'const.sn.isPackaged': false, 'const.sn.isFirstBoot': false,
+		// isFirstBootは本番（ScriptMng）と同じくtrue。theme/setting.snの初期値設定ブロックが
+		//	[if exp=const.sn.isFirstBoot]の中なので、falseだとそこを丸ごと素通りしてしまう
+		'const.sn.isPackaged': false, 'const.sn.isFirstBoot': true,
 		'const.sn.needClick2Play': false,
 	})) se.defBuiltin(nm, ()=> v);
 

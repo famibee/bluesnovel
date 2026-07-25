@@ -101,14 +101,14 @@ pixi 版が動くようになった後のbluesnovel版機能追加で、React版
 	- 結果：ロードクリック→`[call fn=_archive]`→`*title_load`→`*main`→`[frame id=archive visible=true]`→`[s]` に到達。**空のセーブ枠を表示するロード画面が本家と完全一致**（ヘッダ「× / ロード / 削除」＋空ボディ）。ユニット **909件パス**、E2E **77件パス**、`tsc` クリーン。
 
 ok.次は「設定」ボタンだが、その前に。
-+ TODO.mdやらあちこちに実装済/未済情報が分散しているので、以下に記載を集約し随時更新。ヒトだけでなくあなたも参考にしやすいように
-  - タグの実装済/未済情報: docs/tag.html:127 付近の【タグ一覧】
-    - BluesNovelならではのSKYNovelからの変更点、メモは <a href="#clearsysvar"> などジャンプ先の詳細部に記載
-  - セーブ変数(save:)、システム変数(sys:)、雑用変数(tmp:)は docs/dev.html ジャンプ先の詳細部に
+- TODO.mdやらあちこちに実装済/未済情報が分散しているので、以下に記載を集約し随時更新。ヒトだけでなくあなたも参考にしやすいように
+  + タグの実装済/未済情報: docs/tag.html:127 付近の【タグ一覧】
+    - BluesNovelならではのSKYNovelからの変更点、メモは #clearsysvar などジャンプ先の詳細部に記載
+  + セーブ変数(save:)、システム変数(sys:)、雑用変数(tmp:)は docs/dev.html ジャンプ先の詳細部に
     - #reserve_value_save save:
     - #reserve_value_sys sys:
     - #reserve_value_tmp tmp:
-  - この件で<table>列数は増やさず、名称部にぱっと見で分かる色マークを。🔴:未済, 🟡:実装中・機能未達, 🟢:実装済
+  + この件で＜table＞列数は増やさず、名称部にぱっと見で分かる色マークを。🔴:未済, 🟡:実装中・機能未達, 🟢:実装済
 
 - [x] **実装済/未済の状況を docs に集約（タグ・変数へ色マーク）**（2026-07-25 完了）
 	- `docs/tag.html` のタグ一覧（サイドバー）の各タグ名先頭へ **🟢実装済／🟡実装中・機能未達／🔴未済** を付与（🟢51・🟡9・🔴55）。🟡は既知の欠落があるもの（`add_face`/`add_filter`/`button`/`lay`/`let`/`page`/`set_focus`/`trans`/`tsy`）。判定は `ScriptEngine.RESERVED_TAGS` と todo.md/CLAUDE.md の記述に基づく。
@@ -117,13 +117,58 @@ ok.次は「設定」ボタンだが、その前に。
 	- `todo.md` 冒頭と `CLAUDE.md` に「タグ／変数の実装状況の一次情報は docs/tag.html・docs/dev.html」と明記（todo.mdは作業計画に集中）。
 	- あわせて `const.sn.lay[N].<fore|back>` の詳細ツリーに **`x`/`y`（本家の座標名。left/top の別名）** を追加（`ScriptMng`）。`tsc` クリーン、ユニット・E2E 影響なし。
 
+
+## Claude 5
+
+- まずCLAUDE.md、過度な制約を大幅に減らす。当たり前のことは書かない。ツール説明をシンプルに。Auto memoryに任せる
+- 「設定」ボタンクリックから[s]停止まで通す
+
+- [x] **CLAUDE.md を大幅に整理**（2026-07-25 完了）
+	- 493行 → 約240行。当たり前のこと（応答は日本語・ビルドやコミットの担当）は auto memory に任せて削除、ツール説明（`playwright-cli`・ビルド4本の表・E2E周辺）は要点だけに圧縮、コードを読めば分かる説明は落とした。
+	- 残したのは**コードから読み取れない事実**＝本家との相違、そうしてある理由、踏むと分からなくなる落とし穴。日本語化して密度を上げ、「落とし穴」節へ集約。
+	- ついでに古くなっていた記述を修正：`[button]`の既定ページは`fore`ではなく本家同様`back`。
+
+- [x] **タイトルの「設定」→ `frames/_config.sn` の `[s]` まで到達**（2026-07-25 完了）
+	- 原因は**システム変数(sys:)の初期値が入っていなかった**こと。`_config.sn`の`*val2ctrl`が
+	  `[set_frame text=&sys:sn.tagCh.msecWait]`のように sys: を読むが、未定義だと`&式`が`undefined`になり
+	  属性ごと落ちて「[set_frame] textは必須です」で停止していた。
+	- `VarStore`が生成時と`clearSys()`（[clearsysvar]）時に `creSYS_DATA()` の初期値を入れるようにした
+	  （本家 `Variable.ts#clearsysvar()` 相当）。`creSYS_DATA()`は本家から移植済みだったが**どこからも呼ばれていなかった**。
+	  `sn.sound.global_volume`/`movie_volume` は本家では代入トリガ関数の型だが、値としては本家も起動時に1を入れる（`SoundMng.ts:67`）ので数値1を置く。
+	  これに伴い `ScriptMng` の `sys:const.sn.save.place = 1` の個別初期化は不要になり削除。
+	- `const.sn.isFirstBoot` を **false → true** に。sys: をまだ保存しないので毎回が初回起動。テンプレの
+	  `theme/setting.sn` は `[if exp=const.sn.isFirstBoot]` の中で `sys:TextLayer.Back.Alpha = 0.7` 等の
+	  初期値を設定しており、false のままだとそこを丸ごと素通りして設定画面が既定値のままだった。
+	  `test/uc_goal.test.ts` の疑似環境も本番に合わせて true に。
+	- 結果、設定画面は**バック不透明度70%・各待ち時間・スキップ・システム欄まで本家(pixi版)と一致**。
+	  ×ボタンでタイトルへ戻るところまで確認。残差は「ボイスのみ」音量（`sys:const.sn.sound.VOICE.volume`は
+	  本家では`[volume]`＝音声層が触れて初めて入る）と、フレーム内幅が本家960に対しこちらは1024なため
+	  bootstrap の`row-cols`が1列多くなる点（アルバムと同じ、不具合ではない）。
+	- `docs/dev.html` の sys: 表を更新：初期値が入るようになった変数を🔴→🟡（読み書きと初期値はあるが、
+	  その値を使う機能＝音声層・文字表示ウェイト等がまだ無い、の意）とし、節の冒頭にその旨を明記。
+	  `const.sn.isFirstBoot` の初期値も true に。
+	- `test/VarStore.test.ts` に `getVal_35_sys_defaults`（初期値と[clearsysvar]後の入れ直し）を追加。
+	  ユニット910・E2E77 パス、`tsc` クリーン。
+
 - [ ]
 
 
 
-
-
-
+- タグ実装
+  - 🟡 [let] 変数代入・演算
+  - 🔴[loadplugin] プラグインの読み込み
+  - 🔴[navigate_to] ＵＲＬを開く
+  - 🔴[snapshot] スナップショット
+- そろそろデータ系に着手。修正・タグ実装
+  - TODO.md:`package.json`から`store`を除去
+  - 🔴[copybookmark] しおりの複写
+  - 🔴[erasebookmark] しおりの消去
+  - 🔴[load] しおりの読込
+  - 🔴[record_place] セーブポイント指定
+  - 🔴[reload_script] スクリプト再読込
+  - 🔴[save] しおりの保存
+  - 🔴[export] プレイデータをエクスポート
+  - 🔴[import] プレイデータをインポート
 
 
 

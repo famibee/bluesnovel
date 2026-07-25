@@ -13,6 +13,7 @@
 //TODO: 本家の save: 名前空間、自動セーブ、ダーティフラグ管理はスコープ外
 
 import {int, uint} from '../sn/CmnLib';
+import {creSYS_DATA} from '../sn/CmnInterface';
 
 export type T_VAL = string | number | boolean | null;
 // 「未定義」を含む値。本家Variableに合わせ、未定義変数の取得結果はundefined（nullではない）。
@@ -38,6 +39,21 @@ export class VarStore {
 	//	効くため、「文字列のまま扱う」という書き込み側の指定はここに覚えておく
 	//	（本家 setVal_Nochk(…, autocast) 相当）
 	readonly #setNoCast	= new Set<string>();
+
+	constructor() {this.#initSys()}
+
+	// システム変数(sys:)の初期値。本家 Variable.ts#clearsysvar() が起動時と[clearsysvar]時に
+	//	creSYS_DATA()で入れ物ごと作り直すのと同じ意味。**未定義のままだと落ちる**のが実害で、
+	//	たとえば設定画面(frames/_config.sn)の[set_frame text=&sys:sn.tagCh.msecWait]は
+	//	&式がundefinedだと属性ごと落ち「textは必須です」になる
+	#initSys() {
+		for (const [k, v] of Object.entries(creSYS_DATA())) {
+			// sn.sound.global_volume / movie_volume は本家では「代入時に効くトリガ関数」として
+			//	型が付いているが、値としては本家も起動時に1を入れ直す（SoundMng.ts:67）。
+			//	音声層が無いこちらは最初から数値1を置く
+			this.#h[`sys.${k}`] = typeof v === 'function' ? 1 : v;
+		}
+	}
 
 	// 組み込み変数の登録（読み取り専用・遅延評価。本家 val.defTmp() 相当）
 	//	name は"tmp:"を除いたキー（例：'const.sn.scriptFn'）。常にtmp:名前空間に属する
@@ -212,8 +228,9 @@ export class VarStore {
 
 	// [clearvar]相当：gameのみクリア（本家準拠でsys/tmpは対象外）
 	clearGame() {this.#delNs('game.')}
-	// [clearsysvar]相当
-	clearSys() {this.#delNs('sys.')}
+	// [clearsysvar]相当。消したあと初期値を入れ直す（本家 #clearsysvar() も
+	//	creSYS_DATA()で作り直すので、消去後も既定値は生きている）
+	clearSys() {this.#delNs('sys.'); this.#initSys()}
 	// 指定名前空間の変数を消す（cast=strの記録も一緒に消さないと、
 	//	同名で入れ直したときに自動キャストが効かないままになる）
 	#delNs(prefix: string) {
