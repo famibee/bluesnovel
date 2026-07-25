@@ -416,6 +416,24 @@ ok.次は「設定」ボタンだが、その前に。
 	  （文字詰め）・`max_row`・`r_size`。本家は`Hyphenation.ts`で自前の行分割をしているので、
 	  CSSの`line-break`/`hanging-punctuation`でどこまで代替できるかの見極めから。
 
+- [x] **文字詰め `[lay ffs=/noffs=]` とぶら下げ禁則 `[lay bura=]`**（ギャラリーの`line_breaking_rules`の範囲）。
+	**まず方針を決めた：行分割そのものはブラウザ任せにする。** 本家は`Hyphenation.ts`（431行）で
+	Rangeを使って文字位置を実測し、禁則にかかる文字を見つけて自分で改行位置を決めている。
+	pixiのテキストでは自前でやるしかないが、こちらはDOMなので**ブラウザの行分割がそのまま使える**。
+	同じものを移植し直すより、CSSへ読み替えられる範囲を素直に当てるほうが筋が良いと判断した。
+	- `ffs`（文字詰め）は表示単位ごとに`font-feature-settings`を当てる。**1文字ずつ当てる必要がある**
+	  のは`noffs`で「この文字だけ詰めない」と外せる仕様のため（本家 TxtLayer.ts:480 #fncFFSStyle）。
+	  全角空白を常に除くのも本家と同じ。前回までに本文を表示単位へ割ってあるので素直に書けた。
+	- `bura`（ぶら下げ禁則）は文字レイヤ本体へ`hanging-punctuation: allow-end`＋`line-break: strict`。
+	  **ぶら下げが実際に効くかは閲覧ブラウザ次第**（Safariは対応、Chromeは`hanging-punctuation`未対応）。
+	  この割り切りの帰結として、禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は
+	  受け付けない——ブラウザに渡す手段が無いため。docs/tag.htmlの[lay]にその旨を明記した。
+	- テスト：エンジン3件・ストア2件（文字レイヤ専用の検査と[clear_lay]での消去）・E2E1件
+	  （`noffs`に挙げた文字だけ`font-feature-settings`が`normal`になること、`line-break`が`strict`になること）。
+	  ユニット1217・E2E95 パス、`tsc` クリーン。
+	- 残り：`max_row`（最大行数を超えたら自動改ページ）・`r_size`（ルビサイズ）・`break_fixed`系。
+	  ギャラリーの`line_breaking_rules`と実機で見比べて、ブラウザ任せで足りなければ自前計算へ寄せる。
+
 - [ ]
 
 

@@ -249,3 +249,23 @@ it('addBtn_autoNm_restartsAfterClearLay', ()=> {
 	S().addBtn({layerNm: 'mes', page: 'fore', text: 'y', label: '*a'});
 	expect(aBtnNm()).toEqual(['*a#0']);
 });
+
+// ===== 文字組み（[lay ffs=/noffs=/bura=]）は文字レイヤ専用 =====
+
+it('chgLay_ffsOnGrpLayerThrows', ()=> {
+	// b_color/styleと同じ扱い。画像レイヤへ来たら黙って無視せず知らせる
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {ffs: '"palt"'}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {bura: true}})).toThrow();
+});
+
+it('clearLay_dropsFfsAndBura', ()=> {
+	addMes();
+	S().chgLay({nm: 'mes', page: 'fore', sty: {ffs: '"palt"', noffs: '・', bura: true}});
+	S().clearLay({aLayNm: null, page: 'fore'});
+
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.ffs).toBeUndefined();
+	expect(lay.noffs).toBeUndefined();
+	expect(lay.bura).toBeUndefined();
+});

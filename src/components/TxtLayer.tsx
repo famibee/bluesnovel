@@ -11,7 +11,7 @@ import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
-import {type CSSProperties, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
 import gsap from 'gsap';
 
@@ -49,6 +49,9 @@ type T_TXTARG = T_LAY_CMN & {
 	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
 	str		: string;	// ルビを除いた平文（見た目の判定用。実際に描くのはaCh）
 	aCh		: T_CH[];	// 表示単位の並び（ルビ記法を割った結果。Txt.ts splitCh）
+	ffs?	: string | undefined;	// [lay ffs=…]。文字詰め（font-feature-settingsの値）
+	noffs?	: string | undefined;	// [lay noffs=…]。ffsを効かせない文字の並び
+	bura?	: boolean | undefined;	// [lay bura=…]。ぶら下げ禁則
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
@@ -61,11 +64,11 @@ type T_TXTARG = T_LAY_CMN & {
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -89,6 +92,13 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const spansRef = useRef<HTMLSpanElement[]>([]);
 	const chRef = useRef<T_CH[]>([]);	// 上のspanに対応する表示単位（前方一致の判定用）
 	const tlRef = useRef<gsap.core.Timeline | null>(null);
+
+	// 文字詰め（本家 TxtLayer.ts:480 #fncFFSStyle）。**1文字ずつ当てる**必要があるのは
+	//	noffsで「この文字だけ詰めない」と外せる仕様のため（全角空白は本家も常に除く）
+	const fncFfs = useCallback((c: string)=> {
+		if (! ffs) return '';
+		return new RegExp(`[　${noffs ?? ''}]`).test(c) ? '' : ffs;
+	}, [ffs, noffs]);
 
 	useLayoutEffect(()=> {
 		const el = charsRef.current;
@@ -129,7 +139,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const frag = document.createDocumentFragment();
 		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
-			s.appendChild(elCh(ch, onLink));
+			s.appendChild(elCh(ch, onLink, fncFfs));
 			frag.appendChild(s);
 			return s;
 		});
@@ -148,7 +158,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)}).fromTo(newSpans, {opacity: 0, y: '0.3em'}, {
 			opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', stagger: 0.035,
 		});
-	}, [aCh, isReadBack]);
+	}, [aCh, isReadBack, fncFfs]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）
@@ -224,6 +234,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			z-index: -1;
 		}` : ''}
 
+		/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
+			本家Hyphenationのような自前計算ではなくCSSで頼む。
+			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
+		${bura ? 'hanging-punctuation: allow-end; line-break: strict;' : ''}
+
 		font-size: xxx-large;
 		top: 48%;
 		width: 70%;
@@ -283,7 +298,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			border: 2px solid gray;
 			outline: none;
 			padding: 0 0.3em;
-			font-size: xxx-large;
+			/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
+			本家Hyphenationのような自前計算ではなくCSSで頼む。
+			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
+		${bura ? 'hanging-punctuation: allow-end; line-break: strict;' : ''}
+
+		font-size: xxx-large;
 			line-height: 1.2;
 			&:focus {
 				border-color: #ff9900;
@@ -357,13 +377,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK): Node {
+function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
-	if (r === undefined && ! s && ! tcy && ! lnk) return txt(c);
+	const ffs = fncFfs(c);
+	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs) return txt(c);
 
 	// [span]/[ch]/[link]のstyleは本文側の要素へ。ルビが無くても入れ物が要るのでspanで包む
 	const el = document.createElement(r === undefined ? 'span' : 'ruby');
 	if (s) el.style.cssText = s;
+	if (ffs) el.style.fontFeatureSettings = ffs;
 	// 縦中横（本家 TxtLayer.ts:672 も同じCSS）。横書き中は効かないので見た目は変わらない
 	const base = tcy ? document.createElement('span') : el;
 	if (tcy) {

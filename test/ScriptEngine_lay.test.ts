@@ -157,6 +157,26 @@ it('layMove_withOtherAttrs', ()=> {
 });
 
 
+// ============ 文字組み（[lay ffs=/noffs=/bura=]） ============
+
+it('lay_ffsAndNoffs', ()=> {
+	// 文字詰め。値はCSSのfont-feature-settingsそのままで、エンジンは解釈しない
+	expect(styOf(`[lay layer=mes ffs='"palt"' noffs='・']`))
+		.toEqual({ffs: '"palt"', noffs: '・'});
+});
+
+it('lay_bura', ()=> {
+	// ぶら下げ禁則。本家 Hyphenation.ts:85 と同じく真偽値
+	expect(styOf('[lay layer=mes bura=true]')).toEqual({bura: true});
+	expect(styOf('[lay layer=mes bura=false]')).toEqual({bura: false});
+});
+
+it('lay_ffsIsNotPushedWhenUnspecified', ()=> {
+	// 書かれた属性だけを積む（他の[lay]属性と同じ流儀）
+	expect(styOf('[lay layer=mes alpha=0.5]')).toEqual({alpha: 0.5});
+});
+
+
 // ============ [clear_lay] ============
 
 it('clearLay_defaultsToBackPage', ()=> {

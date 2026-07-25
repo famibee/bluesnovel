@@ -21,4 +21,9 @@
 
 *goal
 [er]
-&'飛んだ:'+sn.eventArg&[s]
+&'飛んだ:'+sn.eventArg&[l]
+
+; 文字組み（[lay ffs=/noffs=/bura=]）。noffsに挙げた文字だけ文字詰めを外す
+[er]
+[lay layer=mes ffs='"palt"' noffs='・' bura=true]
+あ・い[s]

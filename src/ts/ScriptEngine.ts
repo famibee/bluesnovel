@@ -56,6 +56,10 @@ export type T_LAY_STY_ARG = {
 	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み（#argBlendmode()）
 	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?		: string;	// 文字レイヤへそのまま足すCSS
+	// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）
+	ffs?		: string;	// 文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
+	noffs?		: string;	// ffsを効かせない文字の並び
+	bura?		: boolean;	// ぶら下げ禁則
 };
 
 export type T_ENGINE_ACTION =
@@ -836,6 +840,13 @@ export class ScriptEngine {
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 			if (args.b_color !== undefined) sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
+			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）。
+			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
+			//	buraはぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
+			//	本家Hyphenationの禁則文字指定（kinsoku_*）は受けない
+			if (args.ffs !== undefined) sty.ffs = args.ffs;
+			if (args.noffs !== undefined) sty.noffs = args.noffs;
+			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
 			if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
 
 			// レイヤの重なり順（本家 LayerMng.ts:489 #lay() の float/index/dive）。

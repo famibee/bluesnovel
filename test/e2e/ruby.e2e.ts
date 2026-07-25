@@ -101,6 +101,24 @@ test('[link]はクリックでジャンプし、argを飛び先へ渡す', async
 	expect(await mesStr(page)).toBe('飛んだ:あるぐ');
 });
 
+test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当て、[lay bura=]はぶら下げ禁則のCSSを足す', async ({page})=> {
+	// このページは[link]の飛び先（*goal）の続きにある＝リンクを踏まないと辿り着けない
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	await page.getByText('リ', {exact: true}).click();
+	await waitIdle(page);
+	await pressKey(page, 'Space');
+
+	expect(await mesStr(page)).toBe('あ・い');
+	// noffsに挙げた文字だけ font-feature-settings が外れる（本家 TxtLayer.ts:480 #fncFFSStyle）
+	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+		aEl=> aEl.map(el=> `${el.textContent ?? ''}:${getComputedStyle(el.firstElementChild ?? el).fontFeatureSettings}`)))
+		.toEqual(['あ:"palt"', '・:normal', 'い:"palt"']);
+
+	// ぶら下げ禁則は文字レイヤ本体のCSSへ（行分割そのものはブラウザ任せ）
+	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"]`,
+		el=> getComputedStyle(el).lineBreak)).toBe('strict');
+});
+
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
 	// path.jsonにあるフォントは全部、拡張子を除いたファイル名がそのままfont-family名になる
 	//	（本家 TxtLayer.ts:97。シナリオ側に読み込みタグは無い）。

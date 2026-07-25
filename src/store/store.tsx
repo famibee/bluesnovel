@@ -116,6 +116,9 @@ export type T_CHGBPIC = {
 export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	b_color?: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?	: string;	// 文字レイヤへそのまま足すCSS
+	ffs?	: string;	// [lay ffs=…]。文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
+	noffs?	: string;	// [lay noffs=…]。ffsを効かせない文字の並び
+	bura?	: boolean;	// [lay bura=…]。ぶら下げ禁則
 };
 export type T_CHGLAY = {
 	nm	: string;
@@ -265,9 +268,10 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/styleは文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
-		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined))
-			throw `${nm} は文字レイヤではありません（b_color/styleは文字レイヤ専用）`;
+		// b_color/style/文字組み（ffs/noffs/bura）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
+		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined
+			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined))
+			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/buraは文字レイヤ専用）`;
 
 		Object.assign(e, sty);
 		return putPage(s, idx, aLay);
@@ -309,7 +313,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
-			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
+			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.bura; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {
