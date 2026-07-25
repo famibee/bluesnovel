@@ -30,6 +30,15 @@ type T_BTNARG = {
 //	fit は「文字を箱(width×height)ちょうどに収める倍率」。本家は pixi Text.width/height が
 //	文字スプライトを拡縮して箱に合わせる（短い文字は広げ、長い文字は縮めて1行に収める）が、
 //	CSSに相当機能が無いのでBtnLayer側で実測した倍率を transform:scale として合成する。
+// 文字ボタンの箱の大きさ。**省略時も既定値が入る**のが本家（Button.ts:122 height=30 /
+//	:151 width=100）。pixiの Text.width/height は文字スプライトそのものを拡縮するので、
+//	文字数に関わらず必ずこの大きさに揃う。テンプレのシステムメニューは width/height を
+//	省いて並べるので、既定が無いと文字量なりの幅になって隣と重なる
+const BTN_DEF_W = 100;
+const BTN_DEF_H = 30;
+export function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
+	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
+}
 function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {
 	const sty: CSSProperties = {};
 	if (o.left !== undefined || o.top !== undefined) {
@@ -38,12 +47,13 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {
 		sty.top = `${String(o.top ?? 0)}px`;
 		sty.margin = 0;
 	}
-	if (o.width !== undefined) sty.width = `${String(o.width)}px`;
-	if (o.height !== undefined) {
-		sty.height = `${String(o.height)}px`;
-		sty.fontSize = `${String(o.height)}px`;	// 本家も fontSize:height（Button.ts:133）
+	{
+		const {w, h} = btnSize(o);
+		sty.width = `${String(w)}px`;
+		sty.height = `${String(h)}px`;
+		sty.fontSize = `${String(h)}px`;	// 本家も fontSize:height（Button.ts:133）
 		sty.lineHeight = 1;
-		sty.padding = 0;	// 箱に文字をぴったり収めたいので、座標指定ボタンはpadding無し（fit実測の基準を素の文字寸法にする）
+		sty.padding = 0;	// 箱に文字をぴったり収めたいので padding 無し（fit実測の基準を素の文字寸法にする）
 		sty.boxSizing = 'border-box';
 	}
 	if (o.alpha !== undefined) sty.opacity = o.alpha;
@@ -151,9 +161,9 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 	const [fit, setFit] = useState({x: 1, y: 1});
 	useLayoutEffect(()=> {
 		const el = ref.current;
-		if (! el || ! sty || sty.width === undefined) {setFit({x: 1, y: 1}); return}
+		if (! el) {setFit({x: 1, y: 1}); return}
 
-		const {width: bw, height: bh} = sty;
+		const {w: bw, h: bh} = btnSize(sty);
 		const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
 		el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
 		const natW = el.offsetWidth, natH = el.offsetHeight;
@@ -161,7 +171,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 
 		setFit({
 			x: natW > 0 ? bw / natW : 1,
-			y: (bh !== undefined && natH > 0) ? bh / natH : 1,
+			y: natH > 0 ? bh / natH : 1,
 		});
 	}, [text, sty?.width, sty?.height]);
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）

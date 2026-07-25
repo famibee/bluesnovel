@@ -139,7 +139,8 @@ test('フレーム内の<img data-src=…>はプロジェクトのパス解決�
 		await advance(page, t);
 	}
 
-	const pics = await page.evaluate(()=> {
+	// **絵の読み込みを待つ**：srcが入った直後はnaturalWidthがまだ0
+	const readPics = ()=> page.evaluate(()=> {
 		const d = (document.getElementById('yesno') as HTMLIFrameElement).contentDocument!;
 		const get = (id: string)=> {
 			const i = d.getElementById(id) as HTMLImageElement;
@@ -147,6 +148,9 @@ test('フレーム内の<img data-src=…>はプロジェクトのパス解決�
 		};
 		return {asset: get('pic_asset'), local: get('pic_local')};
 	});
+	await expect.poll(async ()=> (await readPics()).asset.w + (await readPics()).local.w,
+		{timeout: 10_000}).toBeGreaterThan(0);
+	const pics = await readPics();
 	// path.jsonに載る名前は解決されたURLになり、実際に絵が出る（naturalWidth>0）
 	expect(pics.asset.src).toContain('asset_pic.png');
 	expect(pics.asset.w).toBeGreaterThan(0);

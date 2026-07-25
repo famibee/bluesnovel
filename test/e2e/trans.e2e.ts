@@ -14,7 +14,7 @@
 //	test/ScriptEngine_trans.test.ts が持っているので、ここでは重ねて確かめない
 
 import {expect, test, type Page} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pageStyle, snap, txtBoxStyle, waitTransDone, waitTransRunning} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pageStyle, pressKeyToWaitMark, snap, txtBoxStyle, waitTransDone, waitTransRunning} from './snPage';
 import {ruleMaskFunc} from '../../src/ts/Trans';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'trans')});
@@ -195,8 +195,12 @@ async function pixels(page: Page, aPt: {x: number; y: number}[]) {
 
 // [trans rule=…]の場面まで進め、GSAPを止める（＝進度をこちらで決められる状態にする）
 async function toRuleScene(page: Page) {
+	// **待ちマーカーで本物の停止点を確かめてから次を押す**。[trans]の演出中は
+	//	「ストアもDOMも一致して文字送りも終わっている」瞬間があり、waitTransDone()だけだと
+	//	そこで押したキーが進行に使われず失われる（Main.tsx next()）。5つとも[l]/[p]なので
+	//	マーカーが立つ
 	for (let i = 0; i < 5; ++i) {	// うちきった まで
-		await page.keyboard.press('Space');
+		await pressKeyToWaitMark(page, 'Space');
 		await waitTransDone(page);
 	}
 	await page.keyboard.press('Space');	// [trans time=9000 rule=rule_lr]
