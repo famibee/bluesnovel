@@ -35,9 +35,8 @@
 - [ ] **レイヤ操作タグの残り**（`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`pivot_x`/`pivot_y`/`blendmode`/`b_color`/`style`/`index`/`float`/`dive`と`[clear_lay]`は実装済み）
   - [ ] `[lay bura=…]`（ぶら下げ禁則処理）。CSSプロパティ1つで済む話ではなく行分割の実装が要るので、文字組み（縦書き・`r_size`・`max_col`等）とまとめて
   - [ ] `[lay b_pic=…]`の残り：**枠画像に合わせた文字表示領域の自動サイズ調整**（本家は`setMySize(sp.width, sp.height)`）と`b_left`/`b_top`（枠画像のずらし）・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
-- [ ] **`[set_focus]`の残り**（`to=null`/`next`/`prev`・`add=`/`del='dom=…'`は実装済み）
+- [ ] **`[set_focus]`の残り**（`to=null`/`next`/`prev`・`add=`/`del='dom=…'`は実装済み。フレーム内要素とステージ上のボタンが同じ輪に並ぶことも、隠したフレームの中を飛ばすことも対応済み。2026-07-25）
   - [ ] 本家 `FocusMng` のゲームパッド対応（`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）は未対応。ゲームパッド入力そのものが未着手なので同時に
-  - [ ] `[button]`のフォーカス時の見た目（本家は`hv()`/`nr()`でホバー状態を切り替える）。`[button]`の見た目・レイアウト検討と一緒に
 - [ ] **トゥイーンアニメの残り**（`[tsy]`/`[wait_tsy]`/`[stop_tsy]`/`[pause_tsy]`/`[resume_tsy]`は実装済み）
   - [ ] `[tsy path=…]`（複数区間の経路指定。`ext_fg.sn`の`fg_shake`/`fg_jump`が使う）。本家は`(x,y,o)`の並びを正規表現で切り出して`chain()`で数珠つなぎにする（`CmnTween.ts:167`）。GSAPならtimelineで自然に書けるので、置き換え設計から
   - [ ] `[tsy chain=…]`（他レイヤのトゥイーン終了に続ける）も同様に未対応
@@ -70,7 +69,8 @@
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
   - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に
   - [ ] `style=`/`style_hover=`は**pixiのTextStyleのJSON**なのでCSSへ読み替える設計から。`[lay style=…]`（CSSそのまま）とは別物なので注意
-  - [ ] `hint=`（ツールチップ。本家はヒント用レイヤを持つ）・`enterse=`/`clickse=`（効果音）は未対応。後者は音声対応と一緒に
+  - [ ] `enterse=`/`clickse=`（効果音）は未対応。音声対応と一緒に（`hint=`/`hint_style=`/`hint_opt=`は実装済み。2026-07-25。`src/ts/Hint.ts`）
+  - [ ] `hint_opt`は本家popperのオプションJSONだが、`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
   - [ ] 本家は`width`/`height`で文字そのものを引き伸ばす（pixiの`Text.width/height`は拡縮）。こちらは箱の大きさとして扱い`height`をフォントサイズの基準にしている。実機で見た目を要確認
 - [ ] **音声（一旦無視）**：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wq]`（画面揺らし待ち）。`ext_voice.sn`の`voice`系マクロも同様。動画（`[wv]`）も同じく後回し
 
@@ -105,7 +105,7 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
 - [ ] **文字装飾・文字組み**（`[span]`・`[ch]`・`[ruby2]`・`[link]`/`[endlink]`・`[tcy]`は実装済み。2026-07-25。本家と同じ「本文ストリームへ命令を埋め込む」方式＝`Txt.ts`が解釈）
-  - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`（`url`は対応済み）
+  - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音（`url`・`hint`系は対応済み）
   - [ ] 各タグ共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
   - [x] **文字詰め`[lay ffs=/noffs=]`とぶら下げ禁則`[lay bura=]`は対応済み**（2026-07-25）。ffsは表示単位ごとに`font-feature-settings`を当て、noffsの文字だけ外す（本家 TxtLayer.ts:480）。buraはCSSの`hanging-punctuation`+`line-break: strict`へ読み替え
   - [ ] **行分割そのものはブラウザ任せ**にした（本家は`Hyphenation.ts`が自前計算）。帰結として未対応なのは以下。ギャラリーの`line_breaking_rules`と実機で見比べて、必要になったら自前計算へ寄せる

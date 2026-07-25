@@ -130,7 +130,10 @@ function i(t) {
 					call: d.call === "true",
 					arg: d.arg ?? "",
 					...d.url ? { url: d.url } : {},
-					...d.style_hover ? { sh: d.style_hover } : {}
+					...d.style_hover ? { sh: d.style_hover } : {},
+					...d.hint ? { hint: d.hint } : {},
+					...d.hint_style ? { hs: d.hint_style } : {},
+					...d.hint_opt ? { ho: d.hint_opt } : {}
 				};
 				break;
 			case "endlink": {
@@ -162,7 +165,16 @@ var c = new class e {
 	#e = [];
 	#t = -1;
 	static #n(e) {
-		return !e.disabled && e.getClientRects().length > 0;
+		if (e.disabled || e.getClientRects().length === 0) return !1;
+		try {
+			for (let t = e.ownerDocument.defaultView; t && t !== t.parent;) {
+				let e = t.frameElement;
+				if (!e) break;
+				if (e.getClientRects().length === 0) return !1;
+				t = e.ownerDocument.defaultView;
+			}
+		} catch {}
+		return !0;
 	}
 	add(e) {
 		this.#e.includes(e) || (e.addEventListener("focus", () => {

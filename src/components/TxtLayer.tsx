@@ -9,6 +9,7 @@ import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
 import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
+import {hintMng} from '../ts/Hint';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
@@ -35,6 +36,10 @@ export type T_BTN_STY = {
 	alpha?		: number;
 	enabled?	: boolean;
 	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み
+	// ツールチップ（本家 EventMng.ts:418 #dispHint()）。Hint.ts が画面に1つの吹き出しで出す
+	hint?		: string;
+	hint_style?	: string;	// 吹き出しのCSS
+	hint_opt?	: string;	// 本家popperのオプションJSON（placementだけ見る）
 };
 export type T_BTN = {
 	nm		: string;
@@ -452,13 +457,18 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK) {
 	el.style.cursor = 'pointer';
 	el.addEventListener('click', e=> {
 		e.stopPropagation();	// クリックで本文も進む、の二重反応を防ぐ（BtnLayerと同じ）
+		hintMng.hide();
 		onLink(lnk);
 	});
-	if (! lnk.sh) return;
-
-	// style_hover：乗っている間だけ足し、外れたら元のstyleへ戻す
-	el.addEventListener('mouseenter', ()=> {el.style.cssText = sty + lnk.sh});
-	el.addEventListener('mouseleave', ()=> {el.style.cssText = sty; el.style.cursor = 'pointer'});
+	// ツールチップ（[link hint=…]）とstyle_hover。どちらも乗っている間だけ
+	el.addEventListener('mouseenter', ()=> {
+		if (lnk.sh) el.style.cssText = sty + lnk.sh;
+		if (lnk.hint) hintMng.show(el, lnk.hint, lnk.hs, lnk.ho);
+	});
+	el.addEventListener('mouseleave', ()=> {
+		if (lnk.sh) {el.style.cssText = sty; el.style.cursor = 'pointer'}
+		hintMng.hide();
+	});
 }
 
 // [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）

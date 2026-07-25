@@ -34,7 +34,11 @@
 [event global=true call=true key=arrowright label=*fcs arg=next]
 [event global=true call=true key=arrowleft label=*fcs arg=prev]
 [event global=true call=true key=escape label=*fcs arg=null]
-ふぉーかす[s]
+ふぉーかす[l]
+
+; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）
+[frame id=yesno visible=false]
+かくした[s]
 
 *fcs
 [set_focus to=&sn.eventArg]

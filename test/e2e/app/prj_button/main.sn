@@ -9,6 +9,8 @@
 ; 本家 theme/title.sn のタイトルボタンと同じ座標指定。left/topを書いた時だけ絶対配置になる
 [button page=fore nm=btn_pos text="座標指定" left=250 top=360 width=90 height=30 rotation=15 label=*goal]
 [button page=fore nm=btn_off text="無効" enabled=false label=*goal]
+; ツールチップ。hint_styleは吹き出しのCSS、hint_optは本家popperのオプションJSON（placementだけ見る）
+[button page=fore nm=btn_hint text="ヒント付き" label=*goal hint="せつめい" hint_style="color: rgb(0, 255, 0);" hint_opt='{"placement": "bottom"}']
 選んでください。[l]
 ＋そのまま進んだ。[s]
 

@@ -494,6 +494,30 @@ ok.次は「設定」ボタンだが、その前に。
 	  E2E2件（blendmode 3タグぶん、`[link url=…]`が別タブを開いてシナリオは進まないこと）。
 	  ユニット1234・E2E102 パス、`tsc` クリーン。
 
+
+- hint・ツールチップと[button]残件など
+- [set_focus]残件。frameにもまたがるフォーカス移動
+
+- [x] **ツールチップ（`hint`）と、`[set_focus]`のフレーム跨ぎまわり**。
+	- **`hint`／`hint_style`／`hint_opt`**を`[button]`と`[link]`の両方に。吹き出しは**画面に1つ**を
+	  使い回す（本家 EventMng.ts:131 も`.sn_hint`を1つ作る）。マウスを乗せた時とフォーカスが
+	  入った時に出し、外れた時とクリック時に消す（本家 EventMng.ts:418〜424 と同じ出し入れ）。
+	  **本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置く**ので、`hint_opt`は
+	  `placement`（top／bottom／left／right。`bottom-start`のような修飾付きも本体だけ拾う）だけ見る。
+	  `src/ts/Hint.ts`。位置計算とhint_optの読み取りは純粋なのでユニット（6件）、
+	  実際の出し入れ・`hint_style`の反映・placementはE2E（2件）。
+	- **`[button]`はフォーカス時もホバーと同じ見た目**になった（本家 EventMng.ts:435 が
+	  FocusMngへ`hv()`/`nr()`を渡しているのに対応）。既定のフォーカスリングは画面に合わないので消す。
+	- **`[set_focus]`のフレーム跨ぎ**：フレーム内の要素とステージ上のボタンが同じ輪に並ぶのは
+	  元から動いていた（`focus.e2e.ts`が`frm:ok`→`frm:close`→`btn:ボタン1`→`btn:ボタン2`を確認済み）。
+	  **抜けていたのは「隠したフレームの中へフォーカスが落ちる」こと**——フレームの文書は自分が
+	  隠れていることを知らないので`getClientRects()`が普通に返ってしまう。`FocusMng.#canFocus()`が
+	  `frameElement`を辿って**親側まで遡って確かめる**ようにした（同一originのsrcdocなので辿れる）。
+	  E2E1件（`[frame visible=false]`の後は[button]だけを巡る）。
+	- ユニット1242・E2E105 パス、`tsc` クリーン。
+	- 残り：`[button]`の`style`/`style_hover`（**pixiのTextStyle JSON**なのでCSSへの読み替え設計から）・
+	  `pic`/`b_pic`・効果音、`[link]`の`global`/`onenter`/`onleave`、`[set_focus]`のゲームパッド操作。
+
 - [ ]
 
 
@@ -501,10 +525,39 @@ ok.次は「設定」ボタンだが、その前に。
 
 
 
+- [button]のフォーカス・ホバー状態などのcss指定
+- [toggle_full_screen]の残り
+- const.sn.platform について
+  - Public archive の platform.js https://github.com/bestiejs/platform.js 由来なので、インストールしない方針
+  - ただ src/sn/CmnLib.ts:175 で import('platform')し、isSafari, isFirefox, isMac, isMobile を設定したいのが本質。組み込み変数として公開しているが使う予定はない。UA文字列でもよい
+
+- todo.md、tag.html、dev.html などの資料の整合性と🔴更新
+  - たとえばtodo.mdの実績や「実装済み」記述の削除（他への移動）や軽量化。todoはカラになる運命
+- もう実装できそうなタグ、組み込み変数を実装
 
 
-- hint・ツールチップと[button]残件など
-- [set_focus]残件。frameにもまたがるフォーカス移動
+
+
+- 🟡 [tsy]残件、[tsy path=…]など？　と[tsy_frame]
+- HTMLフレーム系タグの残り
+- [event key='dom=…']
+
+- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+
+- ルール画像による[trans]
+  - ゲーム中での[trans]によるトランジション中の様子はテストしづらい？
+
+
+- tmp_bluesテンプレート実行時に気付いた点
+  - 文字レイヤ、メッセージウインドウ（b_color テキスト背後の矩形）の位置とサイズの実装を。周囲に点々修飾も見える
+  - 文字・クリック待ちアニメpngが縦書きになってない
+  - システムボタン（doc/prj/script/sub.sn:111 マクロ [sysmenu_draw_v] による）は回転により縦になっているが、幅広い。タイトル画面ボタンのようにwidth幅（省略でデフォルト値）に収まっていないように見える
+  - 右クリックメニューが開かない。イベントを処理しているか。Shiftキーで開く
+  - システムボタンの「タイトル」を押し、「タイトルに戻りますか？」が出るが、
+    - キャンセルすると本文が消えている
+    - 戻るを選択すると、システムボタンが横書きになり[trans]する
+  - アルバム画面で、本文で表示されたのに「語り手」 doc/prj/image/F_kuchimoto.jpg が表示されずリンク切れ
+  - [trans]終了時に一瞬真っ黒画面になってちらつく
 
 
 
@@ -512,16 +565,11 @@ ok.次は「設定」ボタンだが、その前に。
 - 音系に着手。だがあなたはこちらのようなテスト可能か？
   - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
 
-
-- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
-
-- ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
 - GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
 
 - イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
 
 
-- 🟡 [tsy]残件？　と[tsy_frame]
 
 - 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
 

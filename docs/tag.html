@@ -1357,8 +1357,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	本文DOMは文字送り演出のためReactの外で組み立てているので、リンクのリスナは<code>TxtLayer</code>が直接付けている。<br/>
 	本家は「リンク区間の入れ子は不可」だが、こちらはスタックで戻すので入れ子でも壊れない。<br/>
 	<code>url</code>も対応（指定時はラベルへ飛ばず<a href="tag.html#navigate_to">[navigate_to]</a>と同じ経路で別タブに開く。本家同様 fn・label より優先）。<br/>
+	<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）も[<a href="#button">button</a>]と同じ仕組みで出る。<br/>
 	未対応：<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／
-	<code>r_style_hover</code>／<code>r_style_clicked</code>・効果音・<code>hint</code>・<code>layer</code>／<code>page</code>・<code>wait</code>は未対応。</p>
+	<code>r_style_hover</code>／<code>r_style_clicked</code>・効果音・<code>layer</code>／<code>page</code>・<code>wait</code>。</p>
 
 </p>
 <h2 id="r" class="w-heading">[r] 改行</h2>
@@ -1470,6 +1471,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	HTML内にセレクタ（add・del属性）に対応する要素が見つからない場合にエラーを出すか
 </td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>to</code>（<code>null</code>／<code>next</code>／<code>prev</code>）・
+	<code>add</code>／<code>del</code>（<code>'dom=フレームid:セレクタ'</code>書式）・<code>need_err</code>に対応。
+	輪へ入るのは本家と同じ3経路（表示中の[<a href="#button">button</a>]／
+	[<a href="#event">event</a>]<code>key='dom=…'</code>の最初の1件／<code>[set_focus add=…]</code>）で、
+	<b>HTMLフレームの中の要素とステージ上のボタンが同じ輪に並ぶ</b>。<br/>
+	[<a href="#frame">frame</a>]<code>visible=false</code>で隠したフレームの中は飛ばす
+	（フレームの文書は自分が隠れていることを知らないので、親側のiframeまで遡って確かめている）。<br/>
+	未対応：ゲームパッド操作（本家 FocusMng のrange操作・カーソル移動・ラジオボタン選択）。</p>
 
 </p>
 <h2 id="span" class="w-heading">[span]インラインスタイル設定</h2>
@@ -2148,7 +2157,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <h1><a id="ラベル・ジャンプ"></a>ラベル・ジャンプ</h1>
 <h2 id="button" class="w-heading">[button]ボタンを表示</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：実装中。既定ページは本家準拠の <b>back</b>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら <code>page=fore</code>）。配置は <b>left/top を書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<b>未対応</b>：<code>pic</code>／<code>b_pic</code>／<code>style</code>／<code>hint</code>。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：実装中。既定ページは本家準拠の <b>back</b>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら <code>page=fore</code>）。配置は <b>left/top を書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）に対応：吹き出しは画面に1つを使い回し、マウスを乗せた時とフォーカスが入った時に出す（本家 EventMng.ts:418）。本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置くので <code>hint_opt</code> は <code>placement</code>（top／bottom／left／right）だけ見る。フォーカス時はホバーと同じ見た目にする（本家 EventMng.ts:435 の hv／nr 相当）。<br/><b>未対応</b>：<code>pic</code>／<code>b_pic</code>／<code>style</code>／<code>style_hover</code>（pixiのTextStyle JSONなのでCSSへの読み替え設計から）／効果音（<code>enterse</code>等）。</p>
 <h4>文字レイヤにボタンを配置する。</h4>
 <p class="mb2 px1">
 

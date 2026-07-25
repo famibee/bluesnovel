@@ -64,3 +64,10 @@ it('btnSty_keepsOtherAttrs', ()=> {
 		.toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'b1', text: 'x',
 			label: '*a', call: true, sty: {left: 10}});
 });
+
+it('btnSty_hint', ()=> {
+	// ツールチップ（本家 EventMng.ts:418 #dispHint()）。エンジンは属性を運ぶだけで、
+	//	出すのはDOM側（Hint.ts）。hint_optは本家popperのオプションJSONをそのまま渡す
+	expect(styOf(`[button text=x label=*a hint=ほんぶん hint_style="color: red;" hint_opt='{"placement": "bottom"}']`))
+		.toEqual({hint: 'ほんぶん', hint_style: 'color: red;', hint_opt: `{"placement": "bottom"}`});
+});

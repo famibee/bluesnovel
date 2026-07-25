@@ -28,6 +28,8 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 		{nm: 'btn_pos', text: '座標指定', label: '*goal', call: false,
 			sty: {left: 250, top: 360, width: 90, height: 30, rotation: 15}},
 		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {enabled: false}},
+		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, sty: {
+			hint: 'せつめい', hint_style: 'color: rgb(0, 255, 0);', hint_opt: '{"placement": "bottom"}'}},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();
@@ -134,4 +136,30 @@ test('[button enabled=false]は灰色でクリックを受けない', async ({pa
 	await page.getByText('無効').click({force: true});
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
+});
+
+test('[button hint=…]はマウスを乗せると吹き出しを出す', async ({page})=> {
+	// 吹き出しは画面に1つを使い回す（Hint.ts）。位置決めは test/Hint.test.ts が持つので、
+	//	ここで見るのは「乗せたら出て、外したら消える」ことと hint_style／hint_opt の反映
+	const hint = page.locator('body > div.sn_hint');
+	await expect(hint).toHaveCount(0);	// まだ作られてもいない
+
+	await page.getByText('ヒント付き').hover();
+	await expect(hint).toBeVisible();
+	expect(await hint.textContent()).toBe('せつめい');
+	expect(await hint.evaluate(el=> getComputedStyle(el).color)).toBe('rgb(0, 255, 0)');
+
+	// hint_optのplacement=bottomなので、ボタンより下に出る
+	const rb = (await page.getByText('ヒント付き').boundingBox())!;
+	const rh = (await hint.boundingBox())!;
+	expect(rh.y).toBeGreaterThan(rb.y + rb.height);
+
+	// 外したら消える（本家もpointerout/pointerdownで消す）
+	await page.mouse.move(0, 0);
+	await expect(hint).toBeHidden();
+});
+
+test('hint未指定のボタンでは吹き出しを出さない', async ({page})=> {
+	await page.getByText('ジャンプする').hover();
+	await expect(page.locator('body > div.sn_hint')).toBeHidden();
 });

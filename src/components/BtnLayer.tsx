@@ -6,6 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {focusMng} from '../ts/FocusMng';
+import {hintMng} from '../ts/Hint';
 
 import type {T_BTN_STY} from './TxtLayer';
 
@@ -101,12 +102,23 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		cursor: pointer;
 		user-select: none;
 		transition: color 0.3s;
-		&:hover {color: white;}
+		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
+			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
+			既定のフォーカスリングは画面に合わないので消す */
+		&:hover, &:focus {color: white;}
+		&:focus {outline: none;}
 	`;
 
 	const onClick = (e: MouseEvent)=> {
 		e.stopPropagation();	// 親(Stage)のonClick(=読み進め)へ伝播させないのがポイント
+		hintMng.hide();			// 本家もpointerdownで消す（EventMng.ts:424）
 		onActivate(label, call ?? false, fn);
+	};
+
+	// ツールチップ（[button hint=…]）。本家 EventMng.ts:418 も pointerover/out と
+	//	フォーカスの出入りで出し入れする。吹き出しは画面に1つを使い回す（Hint.ts）
+	const showHint = ()=> {
+		if (sty?.hint) hintMng.show(ref.current!, sty.hint, sty.hint_style, sty.hint_opt);
 	};
 
 	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
@@ -152,5 +164,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
 	return <span css={styBtn} style={sty ? styBtnArg(sty, fit) : undefined} ref={ref}
-		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}>{text}</span>;
+		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
+		onMouseEnter={showHint} onMouseLeave={()=> hintMng.hide()}
+		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;
 }

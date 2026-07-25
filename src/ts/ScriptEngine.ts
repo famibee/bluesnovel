@@ -1291,6 +1291,11 @@ export class ScriptEngine {
 			}
 			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
+			// ツールチップ（本家 EventMng.ts:418 #dispHint()）。hint_styleは吹き出しのCSS、
+			//	hint_optは本家popperのオプションJSON（こちらはplacementだけ見る）
+			if (args.hint !== undefined) sty.hint = args.hint;
+			if (args.hint_style !== undefined) sty.hint_style = args.hint_style;
+			if (args.hint_opt !== undefined) sty.hint_opt = args.hint_opt;
 
 			aAct.push({t: 'addBtn', layerNm, page, text: args.text ?? '', label, call,
 				...(nm === undefined ? {} : {nm}),

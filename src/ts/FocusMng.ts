@@ -26,7 +26,23 @@ export class FocusMng {
 	//	無効化（[frame disabled=true]）された要素は飛ばす（本家 #canFocus()）
 	static #canFocus(el: HTMLElement): boolean {
 		if ((el as HTMLInputElement).disabled) return false;
-		return el.getClientRects().length > 0;
+		if (el.getClientRects().length === 0) return false;
+
+		// **フレーム（iframe）の中の要素は、外側が隠れていても中は見えているつもりになる**。
+		//	その文書は自分が入れ子になっていることを知らないので、getClientRects()が普通に返る。
+		//	[frame visible=false]で隠したフレームへフォーカスが落ちないよう、親側まで遡って確かめる
+		//	（同一originのsrcdocなのでframeElementを辿れる。念のため例外は握る）
+		try {
+			for (let w = el.ownerDocument.defaultView; w && w !== w.parent;) {
+				const fe = w.frameElement as HTMLElement | null;
+				if (! fe) break;
+				if (fe.getClientRects().length === 0) return false;
+
+				w = fe.ownerDocument.defaultView;
+			}
+		}
+		catch {/* 別originのフレームは辿れない。その時は中の要素の見え方だけで判断する */}
+		return true;
 	}
 
 	add(el: HTMLElement) {

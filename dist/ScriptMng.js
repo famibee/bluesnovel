@@ -2145,7 +2145,7 @@ var ne = class e {
 					let n = i[t];
 					n !== void 0 && Object.assign(l, { [t]: e.#n("button", t, n) });
 				}
-				return i.enabled !== void 0 && (l.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (l.blendmode = e.#s(i.blendmode)), a.push({
+				return i.enabled !== void 0 && (l.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (l.blendmode = e.#s(i.blendmode)), i.hint !== void 0 && (l.hint = i.hint), i.hint_style !== void 0 && (l.hint_style = i.hint_style), i.hint_opt !== void 0 && (l.hint_opt = i.hint_opt), a.push({
 					t: "addBtn",
 					layerNm: t,
 					page: c,

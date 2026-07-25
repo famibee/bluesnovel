@@ -14,7 +14,7 @@
 //	・[button]（表示中ずっと。ボタン1 / ボタン2）
 
 import {expect, test, type Page} from '@playwright/test';
-import {gotoSn, mesStr, waitIdle} from './snPage';
+import {gotoSn, mesStr, pressKey, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'frame')});
 
@@ -98,4 +98,22 @@ test('フォーカス中の[button]はEnterで押せる', async ({page})=> {
 
 	await page.keyboard.press('Enter');
 	await seeText(page, 'ぼたん1');
+});
+
+test('隠したフレームの中の要素はフォーカスの輪から飛ばされる', async ({page})=> {
+	await toFocusScene(page);
+	await pressKey(page, 'Space');	// [frame visible=false]のページへ
+	await seeText(page, 'ふぉーかすかくした');	// [l]なので本文は続けて出る
+
+	// フレーム内の#ok・#closeは飛ばされ、[button]だけを巡る。
+	//	**フレームの中の文書は自分が隠れていることを知らない**（getClientRectsは普通に返る）ので、
+	//	FocusMngが親側のiframeまで遡って確かめている
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン1');
+
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
+
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン1');
 });

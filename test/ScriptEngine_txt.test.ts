@@ -152,3 +152,10 @@ it('graph_withRubyAndStyle', ()=> {
 it('graph_requiresPic', ()=> {
 	expect(()=> units('[graph]')).toThrow('[graph] picは必須です');
 });
+
+it('link_hint', ()=> {
+	// [link hint=…]も[button]と同じ吹き出し（Hint.ts）。表示単位に運ぶだけ
+	expect(units(`[link label=*g hint=ヒント hint_style="color: red;" hint_opt='{"placement": "bottom"}']あ[endlink]`))
+		.toEqual([{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '',
+			hint: 'ヒント', hs: 'color: red;', ho: `{"placement": "bottom"}`}}]);
+});

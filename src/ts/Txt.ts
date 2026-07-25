@@ -27,6 +27,9 @@ export type T_LNK = {
 	arg		: string;	// 飛び先で &sn.eventArg として受け取れる（本家と同じ）
 	url?	: string;	// [link url=…]。指定時はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
 	sh?		: string;	// style_hover。マウスが乗っている間だけ当てるCSS
+	hint?	: string;	// ツールチップ（[link hint=…]）
+	hs?		: string;	// hint_style（吹き出しのCSS）
+	ho?		: string;	// hint_opt（本家popperのオプションJSON。placementだけ見る）
 };
 // 表示単位1つ。ルビ付きなら c が親文字（複数文字のこともある）、r がルビ文字。
 //	s / rs は[span]・[ch]・[link]で指定されたインラインCSS（本文側／ルビ側）
@@ -53,6 +56,7 @@ type T_CMD_ARG = {
 	t?: string; r?: string;			// [tcy]
 	pic?: string; width?: string; height?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
+	hint?: string; hint_style?: string; hint_opt?: string;	// ツールチップ
 };
 function parseCmd(r: string): {cmd: string; o: T_CMD_ARG} | undefined {
 	const i = r.indexOf('｜');
@@ -117,6 +121,9 @@ export function splitCh(raw: string): T_CH[] {
 					arg		: o.arg ?? '',
 					...(o.url ? {url: o.url} : {}),
 					...(o.style_hover ? {sh: o.style_hover} : {}),
+					...(o.hint ? {hint: o.hint} : {}),
+					...(o.hint_style ? {hs: o.hint_style} : {}),
+					...(o.hint_opt ? {ho: o.hint_opt} : {}),
 				};
 				break;
 			case 'endlink': {
