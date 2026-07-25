@@ -1,0 +1,28 @@
+; E2E用シナリオ（quake.e2e.ts が使用）
+;	画面揺らしは「ページ箱がフレームごとにランダムな位置へ跳ぶ」ことそのものが本題なので
+;	ブラウザで見る。ここで見るのは：
+;	・[quake]中はページ箱にずれ（transform）が付き、[wq]がその間シナリオを止めること
+;	・hmax=0／vmax=0でその向きには揺れないこと
+;	・[stop_quake]と[wq]中のクリックが、必ずずれ0の状態へ戻すこと
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+はじめ[p]
+
+; 縦横8ドット揺れ。[wq]で終わりを待つ
+[quake time=1200 hmax=8 vmax=8]
+[wq]
+ゆれた[p]
+
+; 横揺れのみ（vmax=0）。揺れている最中を見たいので[wq]せずに一旦止まる
+[quake time=9000 vmax=0]
+よこゆれ[l]
+
+; 長い揺れを[stop_quake]で即座に終わらせる
+[stop_quake]
+とめた[p]
+
+; [wq]中のクリックで打ち切る。打ち切ってもずれ0へ戻る
+[quake time=9000]
+[wq]
+うちきり[s]

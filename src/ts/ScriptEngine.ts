@@ -18,7 +18,7 @@ import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
-import {getDateStr, int} from '../sn/CmnLib';
+import {getDateStr, int, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
@@ -69,6 +69,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
+	| {t: 'quake'; msec: number; hmax: number; vmax: number}	// [quake]。画面揺らし。揺れ幅はステージ座標のpx（0ならその向きには揺れない）。揺らすのも終了を決めるのもScriptMng側
+	| {t: 'stopQuake'}					// [stop_quake]。揺れを即座に終わらせる（本家は[finish_trans]と同じ処理）
+	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
@@ -398,6 +401,7 @@ export class ScriptEngine {
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'tsy_frame', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
+		'quake', 'stop_quake', 'wq',
 		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
 		'clear_text',
 		'navigate_to', 'loadplugin', 'snapshot',
@@ -979,6 +983,31 @@ export class ScriptEngine {
 			aAct.push({t: 'waitTrans', canskip: (args.canskip ?? 'true') !== 'false'});
 			return 'stop';
 		}
+
+		// ---- 画面揺らし（本家 LayerMng.ts:754 #quake()） ----
+		// 本家は[trans]と同じトゥイーン枠（TW_NM_TRANS）を使い回すので[wq]＝[wt]、
+		//	[stop_quake]＝[finish_trans]だが、こちらの[trans]は表裏の交換を伴う別処理なので、
+		//	同じ形の**別の**待ち行列にしてある（揺らしながらの[trans]が破綻しないという副産物つき）
+		case 'quake': {
+			// 既読スキップ中は揺らさない（本家も #hTag2SkipBypass で素通しする）。
+			//	time=0も同じく何もしない（本家 `if (…time…=== 0) return false`）
+			const msec = this.skipEnabled ? 0 : ScriptEngine.#argNum('quake', 'time', args.time ?? '');
+			if (msec <= 0) return 'skip';
+
+			aAct.push({t: 'quake', msec,
+				hmax: uint(ScriptEngine.#argNumDef('quake', 'hmax', args.hmax, 10)),
+				vmax: uint(ScriptEngine.#argNumDef('quake', 'vmax', args.vmax, 10)),
+			});
+			return 'skip';	// [quake]自体は待たない（本家も false を返す）。待ちたければ[wq]
+		}
+
+		case 'stop_quake':	// 揺れを即座に終わらせる
+			aAct.push({t: 'stopQuake'});
+			return 'skip';
+
+		case 'wq':	// 揺れ終了待ち（[wt]と同じ形。実際に待つのはScriptMng）
+			aAct.push({t: 'waitQuake', canskip: (args.canskip ?? 'true') !== 'false'});
+			return 'stop';
 
 		// ---- トゥイーンアニメ（本家 LayerMng.ts:798 #tsy()＋CmnTween.ts） ----
 		// 本家は@tweenjs/tween.jsでpixiのDisplayObjectを直接動かすが、bluesnovelは

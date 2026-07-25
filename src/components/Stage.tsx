@@ -62,6 +62,31 @@ export default function Stage({
 		twRef.current = gsap.to(el, {opacity: 0, duration: trans.time / 1000, ease: 'none'});
 	}, [trans]);
 
+	// [quake]の画面揺らし。[trans]と同じ役割分担で、**ここは見た目を動かすだけ**。
+	//	終了を宣言するのはScriptMng（時間切れ／[wq]中のクリック／[stop_quake]）で、
+	//	store.quakeがnullに戻ったらずれを0へ戻す＝途中で止められても中途半端な位置に残らない。
+	//	本家（LayerMng.ts:754）はレイヤを板テクスチャへ描いてそのスプライトを揺らすが、
+	//	こちらは表裏のページ箱そのものを動かす。ステージ側のoverflow:hiddenが端を切るのも同じ絵。
+	//	**毎フレーム [-hmax,+hmax]／[-vmax,+vmax] のランダム位置へ跳ばす**（補間しない）のも本家どおり
+	const quake = useStore(s=> s.quake);
+	const qkRef = useRef<gsap.core.Tween | null>(null);
+	useEffect(()=> {
+		qkRef.current?.kill();
+		qkRef.current = null;
+		const aEl = [pgRef0.current, pgRef1.current].filter(e=> e !== null);
+		if (! quake) {gsap.set(aEl, {x: 0, y: 0}); return}
+
+		const {hmax: h, vmax: v} = quake;
+		// GSAPは「時間を刻む係」でしかない（動かす値は自前のランダム）ので、
+		//	ダミーの数値をtweenして onUpdate だけ使う。長さは終了宣言側が決めるので余裕をみて長め
+		qkRef.current = gsap.to({v: 0}, {v: 1, duration: 3600, ease: 'none', onUpdate: ()=> {
+			gsap.set(aEl, {
+				x: h === 0 ? 0 : Math.round(Math.random() * h * 2) - h,
+				y: v === 0 ? 0 : Math.round(Math.random() * v * 2) - v,
+			});
+		}});
+	}, [quake]);
+
 	// ウインドウサイズ追従
 	const [wh, setWH] = useState<T_WH>(innWH());
 	useMount(()=> {

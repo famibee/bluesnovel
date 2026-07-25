@@ -263,9 +263,9 @@
 	</ul>
 	<p>画面揺らし</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#quake">🔴 [quake] 画面を揺らす</a></li>
-		<li class="mb1"><a href="#stop_quake">🔴 [stop_quake] 画面揺らし中断</a></li>
-		<li class="mb1"><a href="#wq">🔴 [wq] 画面揺らし終了待ち</a></li>
+		<li class="mb1"><a href="#quake">🟡 [quake] 画面を揺らす</a></li>
+		<li class="mb1"><a href="#stop_quake">🟢 [stop_quake] 画面揺らし中断</a></li>
+		<li class="mb1"><a href="#wq">🟢 [wq] 画面揺らし終了待ち</a></li>
 	</ul>
 	<p>システム</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -2610,6 +2610,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <h1><a id="画面揺らし"></a>画面揺らし</h1>
 <h2 id="quake" class="w-heading">[quake]画面を揺らす</h2>
 <h4>画面全体を揺らす</h4>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>time</code>／<code>hmax</code>／<code>vmax</code>に対応。本家はレイヤを板テクスチャへ描いてそのスプライトを揺らすが、こちらは<b>表裏のページ箱そのもの</b>を動かす（ステージ側の<code>overflow: hidden</code>が端を切るので絵は同じ）。揺れ幅はステージ座標のpxで、<b>毎フレーム <code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code> のランダム位置へ跳ぶ</b>（補間しない）のも本家どおり。<code>time=0</code>と既読スキップ中は揺らさない。<br/>揺れ幅は<b>ストアに入れない</b>（毎フレームのランダム値なのでストア更新には重すぎ、かつ最後は必ず0へ戻る一時的な見た目なので読み戻しにも要らない）。<a href="#trans">[trans]</a>と同じで、揺らすのはStage側・<b>終了を宣言するのはScriptMng</b>（時間切れ／<a href="#wq">[wq]</a>中のクリック／<a href="#stop_quake">[stop_quake]</a>）。<br/><b>未対応</b>：<code>layer</code>（揺らす対象レイヤの限定。常に画面全体）・<code>delay</code>／<code>repeat</code>／<code>ease</code>／<code>yoyo</code>（本家でも揺れ幅はランダムなのでイージングは効かず、実質「揺らす長さ」しか変わらない）。</p>
 <p class="mb2 px1">
 
 <table>
@@ -2626,11 +2627,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="stop_quake" class="w-heading">[stop_quake]画面揺らし中断</h2>
 <h4>画面揺らしを中断する</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：揺れを即座に終わらせ、ずれを0へ戻す。<a href="#wq">[wq]</a>で待っていたならそこから再開する。<br/>本家は<a href="#trans">[trans]</a>と同じトゥイーン枠を使い回すため <code>[stop_quake]</code>＝<code>[finish_trans]</code>・<code>[wq]</code>＝<code>[wt]</code> だが、こちらの<a href="#trans">[trans]</a>は表裏の交換を伴う別処理なので、同じ形の<b>別の</b>待ち行列にしてある（揺らしながらの<a href="#trans">[trans]</a>が破綻しないという副産物つき）。</p>
 <p class="mb2 px1">
 
 </p>
 <h2 id="wq" class="w-heading">[wq]画面揺らし終了待ち</h2>
 <h4>画面揺らしの終了を待ち、再開する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<code>canskip</code>に対応（既定<code>true</code>＝クリックで打ち切れる）。打ち切っても必ずずれ0の状態に着地する。揺れていなければ待たずに素通しする。</p>
 <p class="mb2 px1">
 
 	[event]などでイベントが登録されていても、イベント発生待ちを行わない。<br/>

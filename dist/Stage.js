@@ -10432,29 +10432,53 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			ease: "none"
 		}));
 	}, [d]);
-	let [E, D] = (0, k.useState)(xu());
+	let E = p((e) => e.quake), D = (0, k.useRef)(null);
+	(0, k.useEffect)(() => {
+		D.current?.kill(), D.current = null;
+		let e = [_.current, y.current].filter((e) => e !== null);
+		if (!E) {
+			O.set(e, {
+				x: 0,
+				y: 0
+			});
+			return;
+		}
+		let { hmax: t, vmax: n } = E;
+		D.current = O.to({ v: 0 }, {
+			v: 1,
+			duration: 3600,
+			ease: "none",
+			onUpdate: () => {
+				O.set(e, {
+					x: t === 0 ? 0 : Math.round(Math.random() * t * 2) - t,
+					y: n === 0 ? 0 : Math.round(Math.random() * n * 2) - n
+				});
+			}
+		});
+	}, [E]);
+	let [A, M] = (0, k.useState)(xu());
 	R(() => {
 		function e() {
-			D(xu());
+			M(xu());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: A } = bu(E), { stageW: M, stageH: N } = T;
+	let { cvsScale: N } = bu(A), { stageW: F, stageH: I } = T;
 	(0, k.useLayoutEffect)(() => {
-		e.style.width = `${String(M * A)}px`, e.style.height = `${String(N * A)}px`, e.style.overflow = "hidden";
+		e.style.width = `${String(F * N)}px`, e.style.height = `${String(I * N)}px`, e.style.overflow = "hidden";
 	}, [
-		A,
-		M,
-		N
+		N,
+		F,
+		I
 	]);
-	let F = (0, k.useRef)(null), I = p((e) => e.fullScr), z = p((e) => e.setFullScr), B = p((e) => e.toggleFullScr), ee = P(F, I, { onClose: () => z(!1) });
+	let z = (0, k.useRef)(null), B = p((e) => e.fullScr), ee = p((e) => e.setFullScr), V = p((e) => e.toggleFullScr), te = P(z, B, { onClose: () => ee(!1) });
 	(0, k.useEffect)(() => {
-		r.setFullScr(ee);
-	}, [ee]);
-	let V = du`
+		r.setFullScr(te);
+	}, [te]);
+	let ne = du`
 		position: relative;
-		width: ${M}px;
-		height: ${N}px;
+		width: ${F}px;
+		height: ${I}px;
 		overflow: hidden;
 		background-color: black;
 
@@ -10468,20 +10492,20 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			ステージは実寸固定＋transform:scaleで拡縮する作りなので、全画面要素になっても
 			ブラウザ既定のように画面いっぱいには広がらず、放っておくと左上に寄ってしまう。
 			中心へ移してから拡大すれば、縦横比を保ったまま中央に出る */
-		${ee ? `position: fixed; left: 50%; top: 50%;
-				transform: translate(-50%, -50%) scale(${String(A)});` : `transform: scale(${String(A)});`}
-	`, te = du`position: absolute; top: 0; left: 0;`, ne = du`
+		${te ? `position: fixed; left: 50%; top: 50%;
+				transform: translate(-50%, -50%) scale(${String(N)});` : `transform: scale(${String(N)});`}
+	`, re = du`position: absolute; top: 0; left: 0;`, H = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, re = du`
+	`, U = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background-color: black;
-	`, H = du`
+	`, ie = du`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -10501,26 +10525,26 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, U = (0, k.useRef)(null);
+	`, W = (0, k.useRef)(null);
 	R(() => {
-		r.attachFrameBox(U.current), r.attachStageBox(F.current);
+		r.attachFrameBox(W.current), r.attachStageBox(z.current);
 	}), R(() => {
-		let e = F.current;
+		let e = z.current;
 		e.addEventListener("mousedown", () => u());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [ie, W] = j(!1), ae = L((e) => {
-		e.stopPropagation(), g(), !l() && (W(), b(!ie));
+	let [ae, oe] = j(!1), se = L((e) => {
+		e.stopPropagation(), g(), !l() && (oe(), b(!ae));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), oe = { cmn: {
+	}), ce = { cmn: {
 		sys: t,
-		styChild: te,
-		isDesignMode: ie,
+		styChild: re,
+		isDesignMode: ae,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10530,33 +10554,33 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		}
 	} };
 	return /* @__PURE__ */ v("div", {
-		css: V,
+		css: ne,
 		onClick: i,
-		...ae,
-		ref: F,
+		...se,
+		ref: z,
 		children: [
-			ie && /* @__PURE__ */ v(x, { children: [
+			ae && /* @__PURE__ */ v(x, { children: [
 				/* @__PURE__ */ m("button", {
-					onClick: () => B(),
-					css: H,
+					onClick: () => V(),
+					css: ie,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: H,
+					css: ie,
 					children: "Back"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: H,
+					css: ie,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ m("span", { children: ee }),
+			/* @__PURE__ */ m("span", { children: te }),
 			s.map((e, t) => /* @__PURE__ */ m("div", {
 				ref: S[t],
 				"data-page": t === c ? "fore" : "back",
-				css: re,
+				css: U,
 				style: {
 					zIndex: +(t === c),
 					visibility: t === c || d ? "visible" : "hidden",
@@ -10564,18 +10588,18 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 				},
 				children: e.map((e) => {
 					let n = {
-						...oe.cmn.sty4Moveable,
+						...ce.cmn.sty4Moveable,
 						...C(e)
 					};
 					return e.cls === "grp" ? /* @__PURE__ */ m(iu, {
-						cmn: oe.cmn,
+						cmn: ce.cmn,
 						sty: n,
 						nm: e.nm,
 						fn: e.fn,
 						src: e.src,
 						aFace: e.aFace
 					}, e.nm) : /* @__PURE__ */ m(mu, {
-						cmn: oe.cmn,
+						cmn: ce.cmn,
 						sty: n,
 						nm: e.nm,
 						isFore: t === c,
@@ -10597,8 +10621,8 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 				})
 			}, t)),
 			/* @__PURE__ */ m("div", {
-				ref: U,
-				css: ne
+				ref: W,
+				css: H
 			})
 		]
 	});

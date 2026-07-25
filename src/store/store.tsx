@@ -50,6 +50,14 @@ type T_STATE = {
 	startTrans	: (arg: T_STARTTRANS)=> void,
 	finishTrans	: ()=> void,
 
+	// [quake]の進行状態。[trans]とまったく同じ役割分担で、**終了を宣言するのはScriptMng**
+	//	（時間切れ／[wq]中のクリック／[stop_quake]）。Stage側のGSAPは揺らすだけ。
+	//	揺れ幅そのものはストアに入れない：毎フレームのランダム位置なのでストア更新には重すぎ、
+	//	かつ最後は必ず0へ戻る一時的な見た目なので、Memento（読み戻し）に要らない
+	quake		: T_QUAKE;
+	startQuake	: (arg: T_STARTQUAKE)=> void,
+	finishQuake	: ()=> void,
+
 	title	: string;
 	addTitle	: (t: string)=> void;
 
@@ -90,6 +98,12 @@ export type T_TRANS = {seq: number; time: number} | null;
 export type T_STARTTRANS = {
 	aLayNm	: string[] | null;	// 交換するレイヤ名。nullは全レイヤ
 	time	: number;			// ミリ秒。0なら演出せず即交換
+}
+// 進行中の[quake]。seqの意味は[trans]と同じ（同じ揺れ方を続けて指定されても撃ち直せるように）
+export type T_QUAKE = {seq: number; hmax: number; vmax: number} | null;
+export type T_STARTQUAKE = {
+	hmax	: number;	// 横の最大ずれ幅（px。ステージ座標）。0なら横に揺れない
+	vmax	: number;	// 縦の最大ずれ幅
 }
 export type T_CHGPIC = {
 	nm	: string;
@@ -178,7 +192,7 @@ export type T_ADDBTN = {
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -449,6 +463,13 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		? {foreIdx: (1 - s.foreIdx) as 0 | 1, trans: null}
 		: {}	// 演出していない（time=0で交換済み等）なら何もしない
 	),
+
+	quake		: null,
+	startQuake	: ({hmax, vmax}: T_STARTQUAKE)=> set(s=> ({
+		quake: {seq: (s.quake?.seq ?? 0) + 1, hmax, vmax},
+	})),
+	// 揺れ終了。Stage側が見た目を元（ずれ0）へ戻す。演出が途中でも呼んでよい
+	finishQuake	: ()=> set(()=> ({quake: null})),
 
 	title		: '',
 	addTitle	: title=> set(()=> ({title})),

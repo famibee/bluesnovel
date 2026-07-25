@@ -340,6 +340,10 @@ export class ScriptMng {
 			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
 			return;
 		}
+		if (this.#quakeWaiting) {
+			if (this.#quakeWaiting.canskip) this.#finishQuake();
+			return;
+		}
 		// DOM絡みの非同期処理中（[add_frame]/[let_frame]/[loadplugin]/[snapshot]/[load]）は
 		//	**クリックを捨てる**。#busyは#runStep()を抜けた時点で下りるので、これが無いと
 		//	処理の完了を待たずにシナリオが再開してしまう（フレーム読み込み中に画面をクリックすると
@@ -409,6 +413,34 @@ export class ScriptMng {
 
 		// ここは#runStep()の中なので、同期で続きを回すと#busyが下りる前に再入してしまう
 		setTimeout(()=> this.#goSafe(), 0);
+	}
+
+	// ===== [quake]の画面揺らしと、その終了待ち（[wq]／[stop_quake]） =====
+	//	[trans]とまったく同じ形。揺らすのはStage側のGSAPで、**終わりを決めるのはここ**
+	#quakeTimer		: ReturnType<typeof setTimeout> | undefined;
+	#quakeRunning	= false;
+	#quakeWaiting	: {canskip: boolean} | undefined;
+
+	#beginQuake(act: Extract<T_ENGINE_ACTION, {t: 'quake'}>) {
+		clearTimeout(this.#quakeTimer);
+		this.#quakeRunning = true;
+		this.#quakeTimer = setTimeout(()=> this.#finishQuake(), act.msec);
+		this.$fncs.startQuake({hmax: act.hmax, vmax: act.vmax});
+	}
+	#finishQuake() {
+		clearTimeout(this.#quakeTimer);
+		this.#quakeTimer = undefined;
+		this.#quakeRunning = false;
+		this.$fncs.finishQuake();	// Stage側が揺れを止め、ずれを0へ戻す
+
+		if (! this.#quakeWaiting) return;
+		this.#quakeWaiting = undefined;
+		this.#goSafe();
+	}
+	#waitQuake(canskip: boolean) {
+		if (this.#quakeRunning) {this.#quakeWaiting = {canskip}; return}
+
+		setTimeout(()=> this.#goSafe(), 0);	// #waitTrans()と同じ事情
 	}
 
 	// ===== [wait time=…]のウェイト =====
@@ -585,6 +617,7 @@ export class ScriptMng {
 				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
 				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
 				if (last?.t === 'waitTsy') {this.#waitTsy(last.tw_nm, last.canskip); return}
+				if (last?.t === 'waitQuake') {this.#waitQuake(last.canskip); return}
 				// HTMLフレーム：DOMを触った結果を組み込み変数へ書き戻してから続きを回す。
 				//	[add_frame]はHTMLのfetchが要るので非同期、[let_frame]は同期だが、
 				//	どちらも「書き戻し→再開」の順を守りたいのでここで一旦返る
@@ -839,6 +872,15 @@ export class ScriptMng {
 			break;
 		case 'tsyFrame':
 			this.#beginTsyFrame(act);
+			break;
+		case 'quake':
+			this.#beginQuake(act);
+			break;
+		case 'stopQuake':
+			this.#finishQuake();
+			break;
+		case 'waitQuake':
+			// 実処理は#runStep()側（#waitQuake()）。表示への影響は無い
 			break;
 		case 'waitTsy':
 			// 実処理は#runStep()側（#waitTsy()）。表示への影響は無い

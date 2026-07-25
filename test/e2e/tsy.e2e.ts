@@ -103,7 +103,7 @@ test('[tsy path=…]は区間を順に辿り、相対値はどの区間も開始
 	//	終着点が150になるので、最後の値で見分けられる
 	await page.keyboard.press('Space');
 	await expect.poll(async ()=> {
-		const v = await layNum(page, 'base', 'top');
+		const v = await layNum(page, 'base', 'top') ?? 0;
 		return v > 50 && v < 200;	// 1区間目で50から150へ向かっている途中
 	}, {timeout: 5_000}).toBe(true);
 

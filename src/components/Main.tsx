@@ -59,11 +59,13 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const setSkipping = useStore(s=> s.setSkipping);
 	const startTrans = useStore(s=> s.startTrans);
 	const finishTrans = useStore(s=> s.finishTrans);
+	const startQuake = useStore(s=> s.startQuake);
+	const finishQuake = useStore(s=> s.finishQuake);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
 
 		inited();
 
