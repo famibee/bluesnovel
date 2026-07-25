@@ -105,6 +105,19 @@ export class FrameMng {
 			f.srcdoc = html;
 		});
 
+		// 本家 sn_repRes フック：フレーム内の画像ロード関数を差し替える（関数名は本家仕様で変更不可）。
+		//	フレームの既定は `data-src` をそのまま `src` へ入れるが、srcdocでは相対srcが親ドキュメントの
+		//	URL基準になり見つからない（アルバムのサムネイル `_album_miken.jpg` が404）。ここで
+		//	**フレームHTMLのディレクトリを前置**して解決する（静的src/hrefと同じ流儀）。グリッド構築より前
+		//	（[let_frame init]の前）に差し替わるので、構築時の setImg 呼び出しから効く。
+		//	絶対URL・data:・ルート絶対はそのまま通す
+		const dir = FrameMng.#dirOf(url);
+		(f.contentWindow as unknown as {sn_repRes?: (fnc: (i: HTMLImageElement)=> void)=> void})
+			.sn_repRes?.((i: HTMLImageElement)=> {
+				const ds = i.dataset.src ?? '';
+				i.src = /^(?:https?:|\/|data:)/.test(ds) ? ds : dir + ds.replace(/^\.\//, '');
+			});
+
 		// フレーム内にフォーカスがある間、キー入力は**親のdocumentまで飛んでこない**。
 		//	そのままだと[set_focus to=next]で一度フレームへ入ったら最後、矢印キーが効かなくなる。
 		//	本家も同じ事情で各フレームのbodyへイベントを張っている（EventMng.resvFlameEvent()）。
@@ -247,12 +260,18 @@ export class FrameMng {
 	}
 
 
-	// srcdocへ入れる前に、HTML内の相対パスをそのHTMLの置き場所からの相対へ直す
-	//	（srcdocの中では相対パスの基準がドキュメント自身ではなくなるため。本家 FrameMng.ts:122）。
-	//	【\s】が大事：data-src を巻き込まないため
+	// フレームHTMLのディレクトリ（例 `prj/frames/`）。相対URLはこれを前置して解決する。
+	//	srcdocの相対URLはドキュメント自身ではなく親ドキュメントのURL基準になるため、前置した相対パスが
+	//	結果的に親URL基準で正しい場所を指す。動的に付く画像src（#repImg）でも同じdirを使う
+	static #dirOf(url: string): string {return url.slice(0, url.lastIndexOf('/') + 1)}
+
+	// srcdocへ入れる前に、HTML内の**静的な**相対パス（src/href）をHTMLの置き場所からの相対へ直す
+	//	（本家 FrameMng.ts:122）。【\s】が大事：data-src を巻き込まないため。
+	//	なお`<base>`を1つ置けば静的・動的まとめて解決できるが、`<base>`はdefer付き`<script src>`に
+	//	効かず bootstrap 等が404になるため採らない（動的画像は#repImg＝本家sn_repResフックで別途解決する）
 	static readonly #REG_URL = /\s(?:src|href)=(["'])(\S+?)\1/g;
 	static #resolveUrls(html: string, url: string): string {
-		const dir = url.slice(0, url.lastIndexOf('/') + 1);
+		const dir = FrameMng.#dirOf(url);
 		return html.replaceAll(FrameMng.#REG_URL, (m, br: string, v: string)=> v.startsWith('../')
 			? dir + m.slice(3)
 			: m.replace('./', '').replace(br, br + dir)

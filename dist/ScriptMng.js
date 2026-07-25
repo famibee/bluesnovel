@@ -2319,7 +2319,7 @@ var O = class e {
 		if (this.#r[t]) throw `[add_frame] frame【${t}】はすでにあります`;
 		let i = this.#e ?? await this.#n, o = this.searchPath(n, c.HTML), s = await fetch(o);
 		if (!s.ok) throw `[add_frame] HTMLの読込に失敗しました src:${n} ${s.statusText}`;
-		let l = e.#d(await s.text(), o), u = document.createElement("iframe");
+		let l = e.#f(await s.text(), o), u = document.createElement("iframe");
 		u.id = t, u.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(u), this.#r[t] = u, this.#i[t] = !1, this.#c(u, {
 			visible: !0,
 			alpha: 1,
@@ -2333,6 +2333,11 @@ var O = class e {
 			...r
 		}), await new Promise((e, n) => {
 			u.onload = () => e(), u.onerror = () => n(/* @__PURE__ */ Error(`[add_frame] frame【${t}】の表示に失敗しました`)), u.srcdoc = l;
+		});
+		let d = e.#u(o);
+		u.contentWindow.sn_repRes?.((e) => {
+			let t = e.dataset.src ?? "";
+			e.src = /^(?:https?:|\/|data:)/.test(t) ? t : d + t.replace(/^\.\//, "");
 		}), u.contentDocument?.addEventListener("keydown", (e) => {
 			document.dispatchEvent(new KeyboardEvent("keydown", {
 				key: e.key,
@@ -2344,18 +2349,18 @@ var O = class e {
 				shiftKey: e.shiftKey
 			}));
 		});
-		let d = `const.sn.frm.${t}`;
+		let f = `const.sn.frm.${t}`;
 		return {
-			[d]: !0,
-			[`${d}.alpha`]: r.alpha ?? 1,
-			[`${d}.x`]: r.x ?? 0,
-			[`${d}.y`]: r.y ?? 0,
-			[`${d}.width`]: r.width ?? a.stageW,
-			[`${d}.height`]: r.height ?? a.stageH,
-			[`${d}.scale_x`]: r.scale_x ?? 1,
-			[`${d}.scale_y`]: r.scale_y ?? 1,
-			[`${d}.rotate`]: r.rotate ?? 0,
-			[`${d}.visible`]: r.visible ?? !0
+			[f]: !0,
+			[`${f}.alpha`]: r.alpha ?? 1,
+			[`${f}.x`]: r.x ?? 0,
+			[`${f}.y`]: r.y ?? 0,
+			[`${f}.width`]: r.width ?? a.stageW,
+			[`${f}.height`]: r.height ?? a.stageH,
+			[`${f}.scale_x`]: r.scale_x ?? 1,
+			[`${f}.scale_y`]: r.scale_y ?? 1,
+			[`${f}.rotate`]: r.rotate ?? 0,
+			[`${f}.visible`]: r.visible ?? !0
 		};
 	}
 	frame(e, t, n, r) {
@@ -2422,10 +2427,13 @@ var O = class e {
 		if (r.length === 0 && t) throw `[set_focus] HTML内にセレクタ（${n}）に対応する要素が見つかりません。存在しない場合を許容するなら、need_err=false と指定してください`;
 		return r;
 	}
-	static #u = /\s(?:src|href)=(["'])(\S+?)\1/g;
-	static #d(t, n) {
-		let r = n.slice(0, n.lastIndexOf("/") + 1);
-		return t.replaceAll(e.#u, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
+	static #u(e) {
+		return e.slice(0, e.lastIndexOf("/") + 1);
+	}
+	static #d = /\s(?:src|href)=(["'])(\S+?)\1/g;
+	static #f(t, n) {
+		let r = e.#u(n);
+		return t.replaceAll(e.#d, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
 	}
 }, A = class {
 	sys;

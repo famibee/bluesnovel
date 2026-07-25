@@ -14,3 +14,6 @@ blob-report/
 
 # playwright-cli スキルのスナップショット出力
 /.playwright-cli/
+
+# 手動確認用スクリーンショットの置き場所（コミット対象外）
+/test/.ss/

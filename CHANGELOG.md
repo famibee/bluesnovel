@@ -63,16 +63,36 @@ ok。ついでに「fontFamily: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '�
 	- **空のメッセージ窓の見た目**（`TxtLayer.tsx`）。**文字が無くボタンだけ乗る層（＝メッセージ窓ではなくUIコンテナ）** は既定の箱（aquamarine背景＋オレンジ点線枠）を描かない（`isBtnOnly`）。タイトルの mes がまさにこれ。`[clear_lay]` 直後などボタンの無い空メッセージ窓は従来どおり既定の箱を出す（`lay.e2e` 維持）
 	- 検証：ユニット **909件パス**、E2E **77件パス**、`tsc` クリーン。実 `tmp_blues` のタイトルがリファレンス snapshot とほぼ一致
 
+
+tmp_esm_ucをvite実行できるようなので、見比べながら実装できるか
+まずはタイトルの「アルバム」ボタンをクリックし doc/prj/frames/_album.sn:100 の[s]で停止するまで
+
+  ① サムネイル画像が壊れる（最重要・根本1つ）
+  src="_album_miken.jpg" が natW:0＝404。srcdoc の iframe は相対URLを親ページ基準で解決するため localhost:5273/_album_miken.jpg を見に行く（正しくは .../prj/frames/_album_miken.jpg）。しかもこの img はフレーム内JSが動的生成するので、静的HTMLだけ書き換える FrameMng#resolveUrls() が拾えない。
+  → 修正案：srcdoc に <base href="<framesディレクトリ>/"> を1つ挿入。これで静的・動的問わず相対URLが frames 基準で解決する。FrameMng はフレームHTMLの解決パスを持っているので、その dirname を base にできます。
+
+  ② 列数・ページネーション（本家3列＋1/2ページ、bluesnovel 4列・ページ無し）
+  おそらく ①の副作用。壊れた画像は寸法0でカードが縮み、1行に多く入って全10件が1ページに収まる。サムネが正しく載れば本家同様3列＋ページ送りになるはず（要再確認）。
+
+  ③ now playing: (No BGM)（本家は free0509）
+  音声層が未実装のため。todo の「音声」項目どおり一旦保留。
+
+  提案
+  まずは ①の <base> 挿入を入れれば、②も連動して本家にかなり近づく見込みです。これを実装しますか？（①だけで区切る／②③も含めて詰める、いずれでも）
+
+- ①②系丸文字は見づらいので控えて
+- 1と2のみ
+- ルートに以前のpngが残っている。今後ssはtest下に生成
+
+
+- [x] **HTMLフレームで、JSが動的に付ける画像src（アルバムのサムネイル）が解決されず404だったのを本家 `sn_repRes` フックで修正**（2026-07-25 完了）
+	- タイトルの アルバム クリック →`[call fn=_album]`→ `frames/_album.sn` の `[s]` まで、既存タグ（`[add_frame]`/`[set_frame]`/`[let_frame]`/`[frame visible=]`/`[event]`/`[set_focus]`/`[let_ml]`/マクロ）だけで到達済み。残る不具合はサムネイル画像だけだった。
+	- 原因：`srcdoc` の iframe は相対URLの基準が**親ドキュメントのURL**になる。静的な `src`/`href` は `FrameMng.#resolveUrls()` が書き換えるが、**フレーム内JSが後から付ける `data-src="_album_miken.jpg"` を `.src` へコピーする分**は拾えず、`localhost/_album_miken.jpg` として404になっていた。
+	- 対処：`<base>` 注入も試したが `defer` 付き `<script src>`（bootstrap）に効かず別の404を招くため不採用。**本家の `sn_repRes`（画像ロード関数の差し替えフック。関数名は本家仕様で固定）** をフレーム読込直後に呼び、`data-src` をフレームHTMLのディレクトリ基準で解決する `setImg` を注入した（グリッド構築＝`[let_frame init]` より前に差し替わる）。静的URLは従来の書き換えのまま。結果、サムネイル全10枚＋bootstrap すべて読込・エラー0で、本家どおりのグレースケール配置になった。
+	- 補足：フレームの列数（本家3列／こちら4列）は、フレーム内部幅（こちらはステージ単位の1024px、本家は表示スケールの約960px）に対する bootstrap の `row-cols` レスポンシブの差で、不具合ではない（同じ有効幅なら一致）。
+	- 手動確認スクショの置き場所として `.gitignore` に `/test/.ss/` を追加。検証：ユニット **909件パス**、E2E **77件パス**（frame/focus 系含む）、`tsc` クリーン
+
 - [ ]
-
-
-
-
-
-
-
-
-
 
 
 
