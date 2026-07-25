@@ -8,9 +8,10 @@
 // 変数ストア（本家 skynovel_esm/src/sn/Variable.ts の簡略版）
 //	・tmp:  一時変数（試作割り切り：ページ・スクリプトをまたいでも消えない。本来はページ等で消える）
 //	・game: セーブ・ロード対象のゲーム変数（名前空間省略時は本家に合わせ"tmp:"を既定とする）
-//	・sys:  ゲームシステム設定（試作ではgame同様、通常の変数として扱う）
+//	・sys:  ゲームシステム設定（保存対象。ScriptMngが停止点ごとにlocalStorageへ writes → SaveMng.ts）
 //	・mp:   マクロ引数（マクロ呼び出し時にsetMp()で設定し、[return]/[endmacro]でcloneMp()の値へ復元）
-//TODO: 本家の save: 名前空間、自動セーブ、ダーティフラグ管理はスコープ外
+//	名前空間まるごとの出し入れは cloneNs()/setNs()。しおり（[save]/[load]）とsys:の永続化が使う。
+//TODO: 本家のダーティフラグ管理（変わった変数だけ書き出す）はスコープ外。今は名前空間ごと毎回写している
 
 import {int, uint} from '../sn/CmnLib';
 import {creSYS_DATA} from '../sn/CmnInterface';

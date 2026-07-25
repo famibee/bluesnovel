@@ -74,10 +74,11 @@ export async function waitIdle(page: Page) {
 		const lay = s.aPage[s.foreIdx].find((l: any)=> l.cls === 'txt');
 		if (! lay) return false;
 
-		// 文字レイヤ本体＝点線枠のspan（TxtLayer styTxt）。その先頭の子spanに1文字=1spanで文字が入る。
-		//	裏ページにも同じ構造があるので、表ページのコンテナ配下だけを見る
-		const box = [...document.querySelectorAll('#skynovel [data-page="fore"] span')]
-			.find(e=> getComputedStyle(e).borderStyle === 'dotted');
+		// 文字レイヤ本体＝data-lay付きspanの1つめ（TxtLayer styTxt。2つめ以降はボタンの箱）。
+		//	その先頭の子spanに1文字=1spanで文字が入る。
+		//	裏ページにも同じ構造があるので、表ページのコンテナ配下だけを見る。
+		//	**見た目（点線枠）では探さない**：文字が空の層は枠を描かないため（TxtLayer noBox）
+		const box = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${lay.nm as string}"]`);
 		if (! box) return false;	// Stage未マウント（Loading表示中）
 
 		const shown = (box.firstElementChild?.textContent ?? '').replace(/\u00A0/g, ' ');
@@ -202,14 +203,13 @@ export async function traceText(page: Page): Promise<string> {
 	return page.evaluate(()=> document.querySelector('body > span')?.textContent ?? '');
 }
 
-// 文字レイヤ本体（[lay b_alpha=...]を反映する、点線枠のspan）の算出スタイルを読む。
+// 文字レイヤ本体（[lay b_alpha=...]を反映するspan）の算出スタイルを読む。
 //	読み戻り中の文字色（黄色）など、ストアだけでは確かめられない見た目の検証用
-export async function txtBoxStyle(page: Page, prop: string): Promise<string> {
-	return page.evaluate(p=> {
-		const el = [...document.querySelectorAll('#skynovel [data-page="fore"] span')]
-			.find(e=> getComputedStyle(e).borderStyle === 'dotted');
-		return el ? getComputedStyle(el).getPropertyValue(p) : '';
-	}, prop);
+export async function txtBoxStyle(page: Page, prop: string, nm = 'mes'): Promise<string> {
+	return page.evaluate(([p, nm])=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${nm!}"]`);
+		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
+	}, [prop, nm]);
 }
 
 // 表・裏それぞれのページコンテナの見え方（[trans]のクロスフェード検証用）。

@@ -792,8 +792,8 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	例えば「sn.auto.enabled」は自動読みすすみモードかどうかを変更できます。
 
 <table><tr><th>変数名</th><th>初期値</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>🔴 const.Date.getDateStr</td><td>取得の瞬間の日時</td><td>"2019/02/10 15:47"形式</td><td>変数参照時の日時を返す</td></tr>
-<tr><td>🔴 const.Date.getTime</td><td></td><td>0〜；ミリ秒</td><td>JavaScriptの(new Date).getTime()</td></tr>
+<tr><td>🟢 const.Date.getDateStr</td><td>取得の瞬間の日時</td><td>"2019/02/10 15:47"形式</td><td>変数参照時の日時を返す</td></tr>
+<tr><td>🟢 const.Date.getTime</td><td></td><td>0〜；ミリ秒</td><td>JavaScriptの(new Date).getTime()</td></tr>
 <tr><td>🟢 const.sn.bookmark.json</td><td>'[]'</td><td>json</td><td>SKYNovel内部によるsave:の管理用<br/>bluesnovel：[<a href="tag.html#save">save</a>]の属性に<code>place</code>を足した配列。ロード画面（テンプレの frames/_archive.sn）がこれを読んで枠を並べる</td></tr>
 <tr><td>🟢 const.sn.config.（略）</td><td></td><td></td><td>
 	prj.jsonの内容を返す。<br/>
@@ -826,7 +826,7 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🔴 const.sn.key.control</td><td>false</td><td>true、false</td><td>control 〃</td></tr>
 <tr><td>🔴 const.sn.key.end</td><td>false</td><td>true、false</td><td>end 〃</td></tr>
 <tr><td>🔴 const.sn.key.escape</td><td>false</td><td>true、false</td><td>escape 〃</td></tr>
-<tr><td>🔴 const.sn.last_page_plain_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法とルビを含まない）</td></tr>
+<tr><td>🟡 const.sn.last_page_plain_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法とルビを含まない）<br/>bluesnovel：既定文字レイヤ（[<a href="tag.html#current">current</a>]）の蓄積文字列そのもの。文字装飾がまだ無いので《》やルビの除去は行っていない</td></tr>
 <tr><td>🔴 const.sn.last_page_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法もそのまま）</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）</td><td>true</td><td>true、false</td><td>レイヤが[add_lay]され存在するか</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.alpha</td><td>0.0〜1.0</td><td>0.0〜1.0；透過度</td><td>レイヤの不透明度</td></tr>

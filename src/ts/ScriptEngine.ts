@@ -18,7 +18,7 @@ import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
-import {int} from '../sn/CmnLib';
+import {getDateStr, int} from '../sn/CmnLib';
 import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
@@ -325,9 +325,8 @@ export class ScriptEngine {
 	readonly #hGlobalEvt: {[key: string]: T_EVENT_RSV} = Object.create(null);
 
 	// 既読領域（スクリプト名 -> 読んだトークン索引の集合。本家 Variable.#hAreaKidoku 相当）。
-	//	本家はVariableが持ちSysBase.data.kidoku経由でlocalStorageへ保存するが、
-	//	bluesnovelにはまだセーブ層が無いのでエンジンが抱える。
-	//	セーブ層ができた時に繋げられるよう、getKidoku()/setKidoku()で出し入れできるようにしてある
+	//	本家はVariableが持つが、こちらはエンジンが抱えてgetKidoku()/setKidoku()で出し入れし、
+	//	localStorageへの保存はScriptMng（SaveMng.ts）が停止点ごとに行う
 	readonly #hAreaKidoku: {[fn: string]: Areas} = Object.create(null);
 	#isKidoku = false;
 
@@ -394,6 +393,19 @@ export class ScriptEngine {
 		//	実際の状態はDOM側（Stage.tsxのfullscreenchange）からsetFullScr()で教えてもらう
 		//	（本家もSysWebがfullscreenchangeを拾ってisFullScrへ書いている）
 		this.#val.defBuiltin('const.sn.displayState', ()=> this.#isFullScr);
+
+		// 組み込み変数：参照時の日時（本家 CmnInterface.ts:288 の defTmp と同じ書式）。
+		//	テンプレの frames/_archive.sn が [save dt=&const.Date.getDateStr] でしおりの日付に使う
+		this.#val.defBuiltin('const.Date.getDateStr', ()=> getDateStr());
+		this.#val.defBuiltin('const.Date.getTime', ()=> (new Date).getTime());
+
+		// 組み込み変数：今のページの本文（本家 LayerMng.ts:213
+		//	val.defTmp('const.sn.last_page_plain_text', ()=> currentTxtlayFore?.pagePlainText)）。
+		//	既定文字レイヤの蓄積文字列そのもの。テンプレの frames/_archive.sn が
+		//	[save text=&const.sn.last_page_plain_text] でしおりの見出し文に使う。
+		//	本家は《》文法とルビを除いた平文だが、こちらはまだ文字装飾が無いので蓄積文字列＝平文
+		this.#val.defBuiltin('const.sn.last_page_plain_text',
+			()=> this.#hTxt[this.#curTxtLayer] ?? '');
 	}
 	#isFullScr = false;
 	setFullScr(b: boolean) {this.#isFullScr = b}
@@ -410,7 +422,7 @@ export class ScriptEngine {
 		this.#idx = to;
 	}
 
-	// テスト・呼び出し側（将来のif実装等）から変数値を読むためのアクセサ
+	// テスト・呼び出し側（ScriptMngのしおり処理等）から変数値を読むためのアクセサ
 	getVal(name: string): T_VAL_D {return this.#val.get(name)}
 
 	// ScriptMng（DOM側）が「DOMを触った結果」を組み込み変数へ書き戻すための口。
@@ -502,8 +514,8 @@ export class ScriptEngine {
 	get isKidoku() {return this.#isKidoku}
 
 	// 現在位置（これから読むトークン）の既読判定と記録（本家 ScriptIterator.ts:1292 #recordKidoku()）。
-	//	本家同様、保存（saveKidoku相当）はここでは行わない＝毎トークンでは重いので、
-	//	セーブ層を作る際に停止点（[l]/[p]/[s]）で吐き出す形にする
+	//	本家同様、保存（saveKidoku相当）はここでは行わない＝毎トークンでは重すぎるので、
+	//	停止点（[l]/[p]/[s]）でScriptMngがまとめて吐き出す
 	#recordKidoku() {
 		const ar = this.#hAreaKidoku[this.fn] ??= new Areas;
 
@@ -521,7 +533,7 @@ export class ScriptEngine {
 		this.#isKidoku = false;
 	}
 
-	// 既読情報の出し入れ。将来のセーブ層（本家 Variable.saveKidoku() / SysBase.data.kidoku）用
+	// 既読情報の出し入れ（本家 Variable.saveKidoku() / SysBase.data.kidoku 相当）。ScriptMngが使う
 	getKidoku(): {[fn: string]: T_H_Areas} {
 		const h: {[fn: string]: T_H_Areas} = {};
 		for (const [fn, ar] of Object.entries(this.#hAreaKidoku)) h[fn] = ar.val();

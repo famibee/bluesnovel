@@ -174,3 +174,37 @@ it('saveTags_areReservedForMacroNames', ()=> {
 		expect(ScriptEngine.RESERVED_TAGS.has(nm)).toBe(true);
 	}
 });
+
+
+// ============ しおりが使う組み込み変数 ============
+//	テンプレの frames/_archive.sn が
+//	[save place=… dt=&const.Date.getDateStr text=&const.sn.last_page_plain_text]
+//	と書くので、これらが無いと枠の日付・本文が空になる（&式がundefinedだと属性ごと落ちるため）
+
+it('builtin_dateStr', ()=> {
+	// 本家 CmnInterface.ts:288 defTmp('const.Date.getDateStr') と同じ書式（2026/07/25 15:00）
+	const se = new ScriptEngine('t1', '[s]');
+	expect(String(se.getVal('const.Date.getDateStr'))).toMatch(/^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/);
+	expect(Number(se.getVal('const.Date.getTime'))).toBeGreaterThan(0);
+});
+
+it('builtin_lastPagePlainText', ()=> {
+	// 本家 LayerMng.ts:213 と同じ「今のページの本文」。既定文字レイヤの蓄積文字列
+	const se = new ScriptEngine('t1', 'あいう[s]');
+	se.step();
+	expect(se.getVal('const.sn.last_page_plain_text')).toBe('あいう');
+});
+
+it('builtin_lastPagePlainText_followsCurrentLayer', ()=> {
+	// [current]で既定文字レイヤを切り替えたら、そちらの本文を返す
+	const se = new ScriptEngine('t1',
+		'[add_lay layer=mes class=txt][add_lay layer=sub class=txt]おもて[current layer=sub]うら[s]');
+	se.step();
+	expect(se.getVal('const.sn.last_page_plain_text')).toBe('うら');
+});
+
+it('builtin_lastPagePlainText_clearedByEr', ()=> {
+	const se = new ScriptEngine('t1', 'あいう[er]かきく[s]');
+	se.step();
+	expect(se.getVal('const.sn.last_page_plain_text')).toBe('かきく');
+});

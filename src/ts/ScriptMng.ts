@@ -162,15 +162,14 @@ export class ScriptMng {
 			this.myTrace(`セーブデータが壊れています。初期状態で起動します ${String(e)}`, 'E');
 			this.#isFirstBoot = true;
 		}
-		if (this.#isFirstBoot) {
-			// 本家 SysBase.init() の val.setVal_Nochk('sys','const.sn.cfg.ns', save_ns)。
-			//	[import]で「別のゲームのデータ」を弾く目印になる
-			engine.setValNochk('sys:const.sn.cfg.ns', this.sys.cfg.oCfg.save_ns);
-			this.#flushSys();
-			return;
+		if (! this.#isFirstBoot) {
+			engine.setSys(this.#saveMng.data.sys);
+			engine.setKidoku(this.#saveMng.data.kidoku);
 		}
-		engine.setSys(this.#saveMng.data.sys);
-		engine.setKidoku(this.#saveMng.data.kidoku);
+		// 本家 SysBase.init() と同じく**毎回**入れ直す（SysBase.ts:152）。
+		//	[import]で「別のゲームのデータ」を弾く目印なので、[clearsysvar]で消えたままだと困る
+		engine.setValNochk('sys:const.sn.cfg.ns', this.sys.cfg.oCfg.save_ns);
+		this.#flushSys();
 	}
 	// sys:と既読を書き戻して保存（SaveMng側で500msにまとめられる）。
 	//	sys:は「設定画面で変えたら即保存」が本家の挙動なので、停止点ごとに丸ごと写して良い

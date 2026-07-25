@@ -121,8 +121,10 @@ test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibl
 	expect(lay?.b_color).toBeUndefined();
 	expect(lay?.style).toBeUndefined();
 	expect(await txtBoxStyle(page, 'opacity')).toBe('1');
-	// b_color/styleも捨てられ、既定の背景色・字間へ戻る
-	expect(await txtBoxStyle(page, 'background-color')).toBe('rgb(127, 255, 212)');
+	// b_color/styleも捨てられ、既定の見た目へ戻る。ただし**中身が空になった層は箱を描かない**ので
+	//	背景は透明（既定色のaquamarineが出るのは文字がある層だけ。TxtLayer noBox）
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(0, 0, 0, 0)');
+	expect(await txtBoxStyle(page, 'border-style')).toBe('none');
 	expect(await txtBoxStyle(page, 'letter-spacing')).toBe('normal');
 	expect(await txtBoxStyle(page, 'filter')).toBe('none');	// フィルターも一緒に落ちる
 	// 中身（文字）も消える

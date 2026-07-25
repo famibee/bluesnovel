@@ -2,7 +2,7 @@ import { n as e, t } from "./rolldown-runtime.js";
 import { t as n } from "./Memento.js";
 import { t as r } from "./react.js";
 import { _ as i, a, c as o, d as s, f as c, g as l, h as u, i as d, l as f, m as p, n as m, o as h, onLong as g, p as _, r as v, s as y, setDesignMode as b, t as x, u as S, v as C } from "./Main.js";
-import { i as w, t as T } from "./CmnLib.js";
+import { a as w, t as T } from "./CmnLib.js";
 import { n as E, t as D } from "./gsap.js";
 //#region node_modules/react-use/esm/useToggle.js
 var O = /* @__PURE__ */ e(r()), k = function(e, t) {
@@ -10021,7 +10021,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		${u ? "" : "pointer-events: none;"}
 	`, M = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, N = d.filter((e) => !M(e)), P = d.filter(M), F = Zl`
 		${u ? "" : "pointer-events: none;"}
-	`, { r: I, g: L, b: R } = tu(s), z = o.length === 0 && d.length > 0, B = Zl`
+	`, { r: I, g: L, b: R } = tu(s), z = o.length === 0 && s === void 0, B = Zl`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。

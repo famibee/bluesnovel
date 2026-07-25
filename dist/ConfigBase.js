@@ -1,4 +1,4 @@
-import { r as e } from "./CmnLib.js";
+import { i as e } from "./CmnLib.js";
 //#region src/sn/ConfigBase.ts
 var t = /* @__PURE__ */ function(e) {
 	return e.DEFAULT = "", e.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", e.SCRIPT = "sn|ssn", e.FONT = "woff2|woff|otf|ttf", e.SOUND = "mp3|m4a|ogg|aac|flac|wav", e.HTML = "htm|html", e.CSS = "css", e.SN = "sn", e.TST_PNGPNG_ = "png|png_", e.TST_HH = "hh", e.TST_EEE = "eee", e.TST_GGG = "ggg", e.TST_PNGXML = "png|xml", e;

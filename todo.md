@@ -63,7 +63,6 @@
 - [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等、および`const.sn.lay.*`（存在判定＋レイヤ木の詳細ツリー）は実装済み。`ScriptMng#defEnvBuiltins()`）
   - [ ] `const.sn.lay[N].<fore|back>.width/.height` は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら、描画側（GrpLayerの`<img>`のnaturalWidth等）から集める設計に差し替える
   - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）は各層と一緒に。`const.sn.bookmark.json`（しおり）は実装済み
-  - [ ] `const.Date.getDateStr`・`const.sn.last_page_plain_text`は未対応。テンプレの`_archive.sn`が`[save dt=… text=…]`で使っており、無いと枠の日付・本文が空になる（`&式`がundefinedだと属性ごと落ちるため）
   - [ ] **システム変数(sys:)は初期値が入り、保存もされるようになった**（`VarStore`が生成時と[clearsysvar]時に`creSYS_DATA()`を適用。停止点ごとに`SaveMng`がlocalStorageへ）。読み書きはできるが、その値を使う機能が無いものが多い（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`＝テキスト窓の背景濃度、`sn.sound.*`/`const.sn.sound.*.volume`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。設定画面から変更しても見た目に反映されないので、各層の実装時に繋ぐ
   - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
