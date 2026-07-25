@@ -167,6 +167,31 @@
 	  黙って無視せず**その場でエラー**にする（フィルターと同じ扱い）。`delay`/`ease`は未対応。
 	- ユニット1291・E2E120 パス。
 
+- [x] `package.json`の未使用依存を撤去、ESLintの設定不備を調査
+	- 全依存をimportと突き合わせて撤去：`@tweenjs/tween.js`（GSAPへ置き換え済み）・`devtools-detect`・
+	  `gamepad.js`（本家`EventMng.ts:249`で実使用だが移植前。`src/sn/gamepad.js.d.ts`のシムは
+	  残し、実装時に`bun add`する旨をコメント）・`@happy-dom/global-registrator`・
+	  `@types/electron-json-storage`（本体が依存に無い）・`@types/adm-zip`（adm-zip 0.6.0が
+	  `types.d.ts`を同梱するので重複）。`skynovel_esm`からも`@types/electron-json-storage`を撤去
+	- VSCodeのESLint拡張が出していた`Could not find config file.`は`eslint.config.mts`の欠落。
+	  本家からdevDependenciesだけコピーされ設定ファイルが無かった。本家版をほぼそのまま移植
+	  （相違は`.tsx`を対象に含める・`dist`/`dist_app`/`docs`を`globalIgnores`・
+	  `quotes`に`allowTemplateLiterals`）。`eslint-plugin-jest`は外せない――本家から無改変で
+	  持ってきた`test/Grammar.test.ts`に`eslint-disable-next-line jest/no-conditional-expect`が
+	  残っており、プラグイン未ロードだと「そんなルールは無い」と怒られるため
+	- ただし**ESLintは設定を置いても動かない**。`typescript-eslint`（8.65.0時点で最新）が
+	  TypeScript 7 非対応と明示的にthrowする。TS 7の`typescript`パッケージはコンパイラのJS APIを
+	  公開せず（`exports`が`version.cjs`と`unstable/*`のみ、`require('typescript')`の戻りは
+	  `version`と`versionMajorMinor`の2個だけ）、パーサが無いと`.ts`を解析できないので回避策も無い。
+	  `@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書ける
+	  ツールにしか効かず`require('typescript')`決め打ちには届かない（bunの`resolutions`による
+	  ネスト解決も無視されることを実験で確認）。**TS 7のまま塩漬け**とし、TS 7.1対応を待つ。
+	  設定ファイルを置いたままにするのは、拡張のエラーが「設定が無い」から本当の原因へ変わるため
+	- 同じ原因で`vite-plugin-dts`も動けていないはず（`dist/`に`.d.ts`が1つも無い）。
+	  `todo.md`に項目を追加
+
+skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとする
+
 - [ ]
 
 

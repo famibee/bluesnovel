@@ -77,8 +77,9 @@
 - [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像も同じ仕組み
 - [ ] 画像の**先読み**（本家`SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる。実機で要確認
 - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず）
-- [ ] npmリリース処理を`skynovel_esm`に合わせる
-- [ ] `@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて
+- [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備
+- [ ] **`dist/`に`.d.ts`が出ていない**（`package.json`の`types`は`./dist/web.d.ts`を指している）。TypeScript 7の`typescript`パッケージはコンパイラのJS APIを公開しない（`exports`が`version.cjs`と`unstable/*`のみ）ため、`vite-plugin-dts`→`unplugin-dts`→`@volar/typescript`が動けないのが原因と思われる。npmリリースまでに要解決
+- [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
 
 ## 本家へ確認したいこと
 
