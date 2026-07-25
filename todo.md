@@ -25,7 +25,7 @@
   - 3画面とも、フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
-- `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
+- `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[window]`・`[close]`（Electron専用）
 - **組み込み変数`const.sn.lay.*`** … **実装済み**（2026-07-25。存在判定`const.sn.lay.<名前>`＋詳細ツリー`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`。`ScriptMng`がストアの表裏からレイヤ木JSONを`defBuiltin`供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。`width`/`height`のみストアに実寸が無く「表示物があるか」を1/0で代用（立ち絵`[fg2]`GCの`width>0`判定用）。残る組み込み変数は`const.sn.sound.*`・`const.sn.key.*`など
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
@@ -38,19 +38,16 @@
 - [ ] **`[set_focus]`の残り**（`to=null`/`next`/`prev`・`add=`/`del='dom=…'`は実装済み）
   - [ ] 本家 `FocusMng` のゲームパッド対応（`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）は未対応。ゲームパッド入力そのものが未着手なので同時に
   - [ ] `[button]`のフォーカス時の見た目（本家は`hv()`/`nr()`でホバー状態を切り替える）。`[button]`の見た目・レイアウト検討と一緒に
-- [ ] **`[let]`の`val`属性（bluesnovel独自の「常に式評価」書式）を廃止する**。本家書式の
-  `text=`（値そのもの。式にしたければ`text=&式`）を実装したので役目を終えている。既存テスト・
-  E2Eシナリオが`val=`を多数使っているため一括置換が要る（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **トゥイーンアニメの残り**（`[tsy]`/`[wait_tsy]`/`[stop_tsy]`/`[pause_tsy]`/`[resume_tsy]`は実装済み）
   - [ ] `[tsy path=…]`（複数区間の経路指定。`ext_fg.sn`の`fg_shake`/`fg_jump`が使う）。本家は`(x,y,o)`の並びを正規表現で切り出して`chain()`で数珠つなぎにする（`CmnTween.ts:167`）。GSAPならtimelineで自然に書けるので、置き換え設計から
   - [ ] `[tsy chain=…]`（他レイヤのトゥイーン終了に続ける）も同様に未対応
   - [ ] `[tsy]`の`width`/`height`は、レイヤ属性側（`[lay]`）に無いので未対応（`pivot_x`/`pivot_y`は対応済み）
   - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）はpixi前提なので保留。`[tsy filter=…]`（トゥイーン開始と同時にフィルターを掛ける）は`[lay filter=…]`と同じ仕組みで足せる
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
-- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`は実装済み）
+- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`・`[navigate_to]`・`[loadplugin]`・`[snapshot]`は実装済み）
   - [ ] `[record_place]`（セーブポイント指定）と`[reload_script]`（スクリプト再読込）は、どちらもセーブ層（しおり）が要るので既読情報の永続化と一緒に。`[reload_script]`は本家では「今のスクリプトを読み直して`[record_place]`の位置へ戻る」＝`[record_place]`単体では意味がない
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）はElectron専用。本家もブラウザ版（`SysWeb`）では何もしないno-opなので、`dist_app`側の整備と一緒に
-  - [ ] `[snapshot]`（画面のスナップショット）。本家はpixiのレンダラからcanvasを取るが、bluesnovelはDOM描画なので取得手段から検討（html2canvas等）
+  - [ ] `[snapshot]`の残り：**HTMLフレーム（`[add_frame]`）の中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版もpixiステージだけを撮るので結果は同じ）。`smoothing=`・`fn`の拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁は未対応
   - [ ] `[toggle_full_screen]`の残り：本家は全画面時にステージを画面中央へ寄せる（`SysBase.cvsResize()`）。bluesnovelは`transform: scale()`での拡縮なので、全画面時の見た目は実機で要確認
 - [ ] **HTMLフレームの残り**（`[add_frame]`/`[frame]`/`[set_frame]`/`[let_frame]`と`[event key='dom=…']`は実装済み）
   - [ ] `[tsy_frame]`（フレームのトゥイーン）。フレームはストアに載っていないので`[tsy]`の仕組みをそのまま使えず、`FrameMng`側にGSAPを持つ形になる。`[tsy]`の`path=`対応と一緒に
@@ -83,7 +80,7 @@
 - [ ] 既読情報の永続化（本家 `Variable.saveKidoku()` → `SysBase.data.kidoku` → localStorage）。`ScriptEngine.getKidoku()`/`setKidoku()`は用意済みなので、セーブ層ができ次第そこへ繋ぐ。保存タイミングは本家同様に停止点（`[l]`/`[p]`/`[s]`）
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
-- [ ] `[event]`の`url`（`[navigate_to]`）は未対応
+- [ ] `[event]`の`url`属性（ラベルへ飛ぶ代わりにURLを開く予約）は未対応。タグ単体の`[navigate_to]`は実装済みなので、`[event]`側から呼べるようにするだけ
   - 修飾キー付きのキー名（`alt+enter`・`meta+0`等。本家 `SysBase.modKey()`）は対応済み（`Main.tsx` `keyName()`）
   - `key='dom=フレームid:セレクタ'`・`need_err`も対応済み（HTMLフレームと同時に実装）
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）

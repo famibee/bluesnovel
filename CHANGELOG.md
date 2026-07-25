@@ -150,17 +150,40 @@ ok.次は「設定」ボタンだが、その前に。
 	- `test/VarStore.test.ts` に `getVal_35_sys_defaults`（初期値と[clearsysvar]後の入れ直し）を追加。
 	  ユニット910・E2E77 パス、`tsc` クリーン。
 
-- [ ]
-
-
-
 - タグ実装
-  - 🟡 [let] 変数代入・演算
+  - 🟡[let] 変数代入・演算
   - 🔴[loadplugin] プラグインの読み込み
   - 🔴[navigate_to] ＵＲＬを開く
   - 🔴[snapshot] スナップショット
+
+- [x] **タグ実装：`[let]`の仕上げと`[loadplugin]`・`[navigate_to]`・`[snapshot]`**（2026-07-25 完了）
+	- **`[let]` 🟡→🟢**：bluesnovel独自の`val=`（常に式評価）を廃止し、本家書式の`text=`（値そのもの。
+	  式にしたいときだけ`text=&式`）へ一本化した。テスト・E2Eシナリオの34箇所を機械的に置換。
+	  本家との違いは1点だけ残る＝本家は`text`省略を許すがこちらは必須（`text=&式`の評価が`undefined`
+	  だと属性ごと落ちる仕組みがあるので、黙って空文字が入ると原因追跡が難しい）。
+	- **`[navigate_to]` 🔴→🟢**：本家（`SysWeb.ts:239`）と同じく`open(url, '_blank')`で別タブに開く。
+	- **`[loadplugin]` 🔴→🟢**：本家同様cssのみ（JSプラグインは本家でもビルド時取り込み）。fetchした
+	  内容を`<style>`として`<head>`へ足す。`join=true`（既定）は読み込み完了までシナリオを止める。
+	- **`[snapshot]` 🔴→🟡**：本家はpixiのレンダラで描き直すが、こちらの表示はDOMなので
+	  **DOMを複製 → SVGの`<foreignObject>` → canvas → PNG** で撮る（`src/ts/Snapshot.ts`。
+	  html2canvas等の外部ライブラリは足さない）。`<img>`化したSVGは外部リソースを取りにいけないので、
+	  画像はdata URIへ埋め込み、ページのスタイルシートも文字列にして中へ入れている。
+	  `fn`/`layer`/`page`/`width`/`height`/`b_color`に対応。**HTMLフレームの中身は写らない**
+	  （iframeは描画されないというブラウザ側の制約。本家web版もpixiステージだけを撮るので結果は同じ）。
+	  `smoothing=`・拡張子によるフォーマット指定・`userdata:/`保存・`b_color`の透過2桁は未対応。
+	- `[loadplugin]`/`[snapshot]`は**非同期の停止点**として`[add_frame]`と同じ形で実装（エンジンは
+	  意図をアクションに載せて止まり、`ScriptMng`が終わってから続きを回す）。`[snapshot layer=…]`の
+	  絞り込み用に、`GrpLayer`/`TxtLayer`のルート要素へ`data-lay`属性を出すようにした
+	  （表裏の`data-page`と同じ役割）。
+	- テスト：`test/ScriptEngine_sys.test.ts`に3タグ分（属性解釈・停止するかどうか）。ブラウザでしか
+	  確かめられない部分は新規E2E `test/e2e/snap.e2e.ts`＋フィクスチャ`prj_snap`で、cssが実際に効くこと・
+	  PNGがダウンロードされ中身がPNGでステージ実寸なこと・popupのURLを見る。
+	  `snPage.ts`に`waitWaitMark()`を追加（非同期タグを挟むシナリオは、キーを押す前に本物の停止点を
+	  待たないと`waitIdle()`が処理中の一瞬を停止点と誤認する）。
+	  ユニット920・E2E80 パス、`tsc`クリーン。
+
 - そろそろデータ系に着手。修正・タグ実装
-  - TODO.md:`package.json`から`store`を除去
+  - TODO.md:`package.json`から`store`を除去、など
   - 🔴[copybookmark] しおりの複写
   - 🔴[erasebookmark] しおりの消去
   - 🔴[load] しおりの読込
@@ -170,7 +193,11 @@ ok.次は「設定」ボタンだが、その前に。
   - 🔴[export] プレイデータをエクスポート
   - 🔴[import] プレイデータをインポート
 
+- [ ]
 
+
+
+- データ系未実装につき、中途半端に止めていた実装を再開
 
 
 

@@ -37,14 +37,14 @@ it('noFlag_stopWaitsForClick', ()=> {
 
 it('auto_lResumesAfterLineWait', ()=> {
 	const se = new ScriptEngine('t1',
-		'[let name=sys:sn.auto.msecLineWait val=800]&sn.auto.enabled = true\nA[l]B[s]'
+		'[let name=sys:sn.auto.msecLineWait text=800]&sn.auto.enabled = true\nA[l]B[s]'
 	);
 	expect(resumeOf(se.step())).toEqual({mode: 'auto', msec: 800});
 });
 
 it('auto_pUsesPageWait', ()=> {
 	const se = new ScriptEngine('t1',
-		'[let name=sys:sn.auto.msecPageWait val=2000]&sn.auto.enabled = true\nA[p]B[s]'
+		'[let name=sys:sn.auto.msecPageWait text=2000]&sn.auto.enabled = true\nA[p]B[s]'
 	);
 	expect(resumeOf(se.step())).toEqual({mode: 'auto', msec: 2000});
 });
@@ -59,8 +59,8 @@ it('auto_defaultWaitsWhenSysVarUnset', ()=> {
 it('auto_kidokuUsesKidokuWait', ()=> {
 	// 2周目（既読）は_Kidoku側の待ち時間を使う
 	const se = new ScriptEngine('t1',
-		'[let name=sys:sn.auto.msecLineWait val=800]'+
-		'[let name=sys:sn.auto.msecLineWait_Kidoku val=100]'+
+		'[let name=sys:sn.auto.msecLineWait text=800]'+
+		'[let name=sys:sn.auto.msecLineWait_Kidoku text=100]'+
 		'&sn.auto.enabled = true\n*top\nA[l][jump label=*top]'
 	);
 	expect(resumeOf(se.step())).toEqual({mode: 'auto', msec: 800});	// 1周目=未読
@@ -115,7 +115,7 @@ it('skipMode_default_s_skipsThroughPageBreak', ()=> {
 it('skipMode_p_stopsAtPageBreakButSkipsLines', ()=> {
 	// 'p'＝行[l]は飛ばすが、改ページ[p]では止まる（本家 Reading p() は mode==='s' のみ飛ばす）
 	const se = new ScriptEngine('t1',
-		`[let name=sys:sn.skip.mode val='"p"']&sn.skip.all = true\n&sn.skip.enabled = true\nA[l]B[p]C[s]`
+		`[let name=sys:sn.skip.mode text=p]&sn.skip.all = true\n&sn.skip.enabled = true\nA[l]B[p]C[s]`
 	);
 	expect(resumeOf(se.step())).toEqual({mode: 'skip', msec: 0});	// [l]は飛ばす
 	expect(resumeOf(se.step())).toBeUndefined();					// [p]では止まる

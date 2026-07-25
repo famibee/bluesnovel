@@ -96,7 +96,7 @@ it('macro_definedInAnotherFile_isCallable', ()=> {
 it('variables_surviveFileSwitch', ()=> {
 	// 変数はエンジン側が持つ＝ファイルを跨いでも消えない（複数ファイル対応の主目的）
 	const hScr = {
-		main: '[let name=game:hp val=100][jump fn=other]',
+		main: '[let name=game:hp text=100][jump fn=other]',
 		other: '&game:hp&',
 	};
 	expect(runFiles(hScr)).toBe('100');

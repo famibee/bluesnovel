@@ -139,7 +139,7 @@
 		<li class="mb1"><a href="#let_round">🟢 [let_round] 四捨五入</a></li>
 		<li class="mb1"><a href="#let_search">🟢 [let_search] 正規表現で検索</a></li>
 		<li class="mb1"><a href="#let_substr">🟢 [let_substr] 文字列から抜きだし</a></li>
-		<li class="mb1"><a href="#let">🟡 [let] 変数代入・演算</a></li>
+		<li class="mb1"><a href="#let">🟢 [let] 変数代入・演算</a></li>
 	</ul>
 	<p>レイヤ共通</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -272,9 +272,9 @@
 		<li class="mb1"><a href="#close">🔴 [close] アプリの終了</a></li>
 		<li class="mb1"><a href="#export">🔴 [export] プレイデータをエクスポート</a></li>
 		<li class="mb1"><a href="#import">🔴 [import] プレイデータをインポート</a></li>
-		<li class="mb1"><a href="#loadplugin">🔴 [loadplugin] プラグインの読み込み</a></li>
-		<li class="mb1"><a href="#navigate_to">🔴 [navigate_to] ＵＲＬを開く</a></li>
-		<li class="mb1"><a href="#snapshot">🔴 [snapshot] スナップショット</a></li>
+		<li class="mb1"><a href="#loadplugin">🟢 [loadplugin] プラグインの読み込み</a></li>
+		<li class="mb1"><a href="#navigate_to">🟢 [navigate_to] ＵＲＬを開く</a></li>
+		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
 		<li class="mb1"><a href="#title">🟢 [title] タイトル指定</a></li>
 		<li class="mb1"><a href="#toggle_full_screen">🟢 [toggle_full_screen] 全画面状態切替</a></li>
 		<li class="mb1"><a href="#update_check">🔴 [update_check] 更新チェック機能</a></li>
@@ -421,7 +421,7 @@
 
 </p>
 <h2 id="let" class="w-heading">[let] 変数代入・演算</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家形式の <code>text=</code>（値そのもの。式評価は <code>text=&式</code>）を実装。加えて bluesnovel 独自の <code>val=</code>（常に式評価）が既存テスト向けに残っており、両方あれば <code>text</code> が優先。<code>val=</code> は将来 <code>text=&式</code> へ寄せて廃止予定。<code>cast=</code> 対応。</p>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家形式（<code>name=</code>／<code>text=</code>／<code>cast=</code>）。<code>text=</code> は「値そのもの」で、式にしたいときだけ <code>text=&式</code>。かつて独自にあった <code>val=</code>（常に式評価）は <code>text=&式</code> へ統合して廃止した。<br/>本家との違いは1点だけ：本家は <code>text</code> 省略を許すが、こちらは <b>必須</b>（<code>text=&式</code> の評価が <code>undefined</code> だと属性ごと落ちる仕組みがあり、黙って空文字が入るとバグが追いにくいため）。</p>
 <h4>変数に値を代入する</h4>
 <p class="mb2 px1">
 	変数については「<a href="dev.md#reserve_value_sys">BluesNovel 組み込み変数</a>」を参照して下さい
@@ -2609,6 +2609,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="loadplugin" class="w-heading">[loadplugin] プラグインの読み込み</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家同様 <b>css のみ</b>（JS のプラグイン機構は本家でもビルド時取り込みで、実行時に読むのは css だけ）。fetch した内容を <code>&lt;style&gt;</code> として <code>&lt;head&gt;</code> へ足す。<code>join=true</code>（既定）は読み込み完了までシナリオを止める。パスは本家同様 path.json を通さず、書いた URL をそのまま取りにいく。</p>
 <h4>プラグインとして読み込む</h4>
 <p class="mb2 px1">
 
@@ -2619,6 +2620,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="navigate_to" class="w-heading">[navigate_to]ＵＲＬを開く</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家（SysWeb）と同じく <code>open(url, '_blank')</code> で別タブに開く。ブラウザのポップアップブロックの対象になり得るのも同じ。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2627,6 +2629,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="snapshot" class="w-heading">[snapshot]スナップショット</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家は pixi のレンダラで描き直すが、こちらの表示は DOM なので<b>「DOM を複製 → SVG の <code>&lt;foreignObject&gt;</code> → canvas → PNG」</b>で撮る（外部ライブラリ無し）。<code>fn</code>／<code>layer</code>／<code>page</code>／<code>width</code>／<code>height</code>／<code>b_color</code> に対応し、常に PNG でダウンロードする。<br/>未対応・相違：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。<code>smoothing=</code>、<code>fn</code> の拡張子によるフォーマット指定（常に png）、<code>userdata:/</code> 保存、<code>b_color</code> の透過2桁（アルファ）は未対応。</p>
 <h4>アプリ表示部分全体を画像として保存する</h4>
 <p class="mb2 px1">
 

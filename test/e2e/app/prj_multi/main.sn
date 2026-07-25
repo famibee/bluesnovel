@@ -3,7 +3,7 @@
 ;	変数がファイルを跨いで保持されること・別ファイル定義のマクロが呼べることも見る
 [add_lay layer=mes class=txt]
 [current layer=mes]
-[let name=game:hp val=100 cast=int]
+[let name=game:hp text=100 cast=int]
 main1[l]
 [er][call fn=sub label=*greet]main2[l]
 [er][よぶ]&game:hp&[l]

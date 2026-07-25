@@ -46,13 +46,15 @@ it('let_text_cast', ()=> {
 	expect(val('[let name=a text=3.9 cast=int]', 'a')).toBe(3);
 });
 
-it('let_text_winsOverVal', ()=> {
-	// bluesnovel独自のval（常に式評価）は残してあるが、本家書式のtextがあればそちらが優先
-	expect(val('[let name=a text=99 val=1+1]', 'a')).toBe(99);
-});
-
 it('let_text_nameRequired', ()=> {
 	expect(()=> val('[let text=1]', 'a')).toThrow('[let] nameは必須です');
+});
+
+it('let_text_required', ()=> {
+	// textが無い＝値が渡っていない。**text=&式 の評価がundefinedになって属性ごと落ちた**
+	//	場合もここに来るので、空文字の代入で握りつぶさずエラーにする
+	expect(()=> val('[let name=a]', 'a')).toThrow('[let] textは必須です');
+	expect(()=> val('[let name=a text=&未定義変数]', 'a')).toThrow('[let] textは必須です');
 });
 
 

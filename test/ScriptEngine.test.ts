@@ -234,12 +234,12 @@ it('step_trace_missingText_emitsEmptyString', ()=> {
 
 it('step_trace_ampPrefix_evaluatesExprAndStringifies', ()=> {
 	// textが'&'で始まる場合は式として評価する（mp:などの変数値を[trace]で確認できるようにするための動作確認用対応）
-	// val属性は常に式として評価されるため、文字列リテラルを渡すにはタグ属性の引用符とは別に式側の引用符も必要（let_stringValueと同じ規約）
-	const se = new ScriptEngine('t1', `[let name=mp:t val='"YO"'][trace text=&mp:t][s]`);
+	// [let]のtextは「値そのもの」なので、文字列リテラルはそのまま書ける
+	const se = new ScriptEngine('t1', `[let name=mp:t text=YO][trace text=&mp:t][s]`);
 	expect(se.step()[0]).toEqual({t: 'trace', text: 'YO'});
 });
 it('step_trace_ampPrefix_numberIsStringified', ()=> {
-	const se = new ScriptEngine('t1', '[let name=mp:n val=1+2][trace text=&mp:n][s]');
+	const se = new ScriptEngine('t1', '[let name=mp:n text=&1+2][trace text=&mp:n][s]');
 	expect(se.step()[0]).toEqual({t: 'trace', text: '3'});
 });
 it('step_trace_ampPrefix_undefinedVar_dropsAttr', ()=> {
@@ -273,7 +273,7 @@ it('amp_let_nameIsAlsoExpression', ()=> {	// 「&&」なら変数名の側も式
 	expect(se.getVal('game:hp')).toBe(7);
 });
 it('amp_show', ()=> {	// ＆表示＆：式の評価結果を地の文として表示
-	const se = new ScriptEngine('t1', '[let name=game:hp val=80]&game:hp&[s]');
+	const se = new ScriptEngine('t1', '[let name=game:hp text=80]&game:hp&[s]');
 	expect(se.step()).toEqual([
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: '80'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
@@ -282,7 +282,7 @@ it('amp_show', ()=> {	// ＆表示＆：式の評価結果を地の文として�
 it('amp_show_afterPlainTextIsNotSpecial', ()=> {
 	// 本家と同じ制約：地の文の途中に書いた「&〜&」は独立トークンにならないため、そのまま表示される
 	//	（＆表示＆として効くのは、行頭やタグ直後など「&」でトークンが始まる位置のみ）
-	const se = new ScriptEngine('t1', '[let name=game:hp val=80]HP=&game:hp&[s]');
+	const se = new ScriptEngine('t1', '[let name=game:hp text=80]HP=&game:hp&[s]');
 	expect(se.step()[0]).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: 'HP=&game:hp&'});
 });
 it('amp_show_undefinedVarIsEmpty', ()=> {
@@ -462,7 +462,7 @@ it('jumpToLabel_unknownLabelThrows', ()=> {
 
 it('let_simpleAssign_noAction', ()=> {
 	// [let]はT_ENGINE_ACTIONを何も積まない（画面表示には関与しない内部状態のみの変更）
-	const se = new ScriptEngine('t1', '[let name=game:hp val=100][s]');
+	const se = new ScriptEngine('t1', '[let name=game:hp text=100][s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
@@ -472,7 +472,7 @@ it('let_simpleAssign_noAction', ()=> {
 
 it('let_defaultNamespaceIsTmp', ()=> {
 	// nameに名前空間を付けない場合、本家準拠でtmp:扱い（VarStore.ts:33参照）
-	const se = new ScriptEngine('t1', '[let name=foo val=1][s]');
+	const se = new ScriptEngine('t1', '[let name=foo text=1][s]');
 	se.step();
 	expect(se.getVal('foo')).toBe(1);
 	expect(se.getVal('tmp:foo')).toBe(1);
@@ -480,56 +480,54 @@ it('let_defaultNamespaceIsTmp', ()=> {
 });
 
 it('let_expressionReferencesPreviousValue', ()=> {
-	// val属性は式として評価されるため、自分自身を参照して更新できる
-	const se = new ScriptEngine('t1', '[let name=game:hp val=100][let name=game:hp val="game:hp-30"][s]');
+	// text=&式 は式として評価されるため、自分自身を参照して更新できる
+	const se = new ScriptEngine('t1', '[let name=game:hp text=100][let name=game:hp text="&game:hp-30"][s]');
 	se.step();
 	expect(se.getVal('game:hp')).toBe(70);
 });
 
 it('let_stringValue', ()=> {
-	// val属性は常に式として評価される（ifのexp属性と同じ規約）。
-	// そのため文字列リテラルを渡す場合は、タグ属性の引用符とは別に
-	// 式側の引用符も必要（ここでは属性を'で囲み、式側は"で囲む）。
-	// 引用符の二重化を不要にする構文糖（&付与方式等）の導入はTODO（ExprEval.tsコメント参照）
-	const se = new ScriptEngine('t1', `[let name=game:name val='"ゆかり"'][s]`);
+	// 本家書式のtextは「値そのもの」。文字列リテラルに引用符は要らない
+	//	（式にしたいときだけ text=&式 と書く）
+	const se = new ScriptEngine('t1', `[let name=game:name text=ゆかり][s]`);
 	se.step();
 	expect(se.getVal('game:name')).toBe('ゆかり');
 });
 
 it('let_requiresName', ()=> {
-	expect(()=> new ScriptEngine('t1', '[let val=1][s]').step()).toThrow();
+	expect(()=> new ScriptEngine('t1', '[let text=1][s]').step()).toThrow();
 });
 
 it('let_invalidExpressionThrows', ()=> {
-	expect(()=> new ScriptEngine('t1', '[let name=foo val="1+"][s]').step()).toThrow();
+	expect(()=> new ScriptEngine('t1', '[let name=foo text="&1+"][s]').step()).toThrow();
 });
 
 // ============ cast指定（[let]・「&計算」書式） ============
 
 it('let_cast_num', ()=> {
-	const se = new ScriptEngine('t1', `[let name=a val='"3.5"' cast=num][s]`);
+	const se = new ScriptEngine('t1', `[let name=a text=3.5 cast=num][s]`);
 	se.step();
 	expect(se.getVal('a')).toBe(3.5);
 });
 it('let_cast_int', ()=> {
-	const se = new ScriptEngine('t1', '[let name=a val=3.9 cast=int][s]');
+	const se = new ScriptEngine('t1', '[let name=a text=3.9 cast=int][s]');
 	se.step();
 	expect(se.getVal('a')).toBe(3);
 });
 it('let_cast_uint', ()=> {	// 本家uint()は負数の符号を反転する（絶対値）
-	const se = new ScriptEngine('t1', '[let name=a val=-3.9 cast=uint][s]');
+	const se = new ScriptEngine('t1', '[let name=a text=-3.9 cast=uint][s]');
 	se.step();
 	expect(se.getVal('a')).toBe(3);
 });
 it('let_cast_num_hex', ()=> {	// 本家argChk_Num()同様、0x始まりは16進として読む
-	const se = new ScriptEngine('t1', `[let name=a val='"0xff"' cast=num][s]`);
+	const se = new ScriptEngine('t1', `[let name=a text=0xff cast=num][s]`);
 	se.step();
 	expect(se.getVal('a')).toBe(255);
 });
 it('let_cast_bool', ()=> {
 	// 本家argChk_Boolean()準拠：文字列'false'と空文字は偽、'0'は真
 	const se = new ScriptEngine('t1',
-		`[let name=a val='"false"' cast=bool][let name=b val='"0"' cast=bool][let name=c val='""' cast=bool][s]`);
+		`[let name=a text=false cast=bool][let name=b text=0 cast=bool][let name=c text='' cast=bool][s]`);
 	se.step();
 	expect(se.getVal('a')).toBe(false);
 	expect(se.getVal('b')).toBe(true);
@@ -537,22 +535,22 @@ it('let_cast_bool', ()=> {
 });
 it('let_cast_str_suppressesAutoCast', ()=> {
 	// cast=strは「読み出し時の自動キャストもしない」指定。'0123'が数値123にならない
-	const se = new ScriptEngine('t1', `[let name=a val='"0123"' cast=str][let name=b val='"0123"'][s]`);
+	const se = new ScriptEngine('t1', `[let name=a text=0123 cast=str][let name=b text=0123][s]`);
 	se.step();
 	expect(se.getVal('a')).toBe('0123');
 	expect(se.getVal('b')).toBe(123);	// cast無しは読み出し時に数値へ自動キャスト
 });
 it('let_cast_str_isClearedByPlainAssign', ()=> {
 	const se = new ScriptEngine('t1',
-		`[let name=a val='"0123"' cast=str][let name=a val='"0123"'][s]`);
+		`[let name=a text=0123 cast=str][let name=a text=0123][s]`);
 	se.step();
 	expect(se.getVal('a')).toBe(123);
 });
 it('let_cast_unknownThrows', ()=> {
-	expect(()=> new ScriptEngine('t1', '[let name=a val=1 cast=もじ][s]').step()).toThrow();
+	expect(()=> new ScriptEngine('t1', '[let name=a text=1 cast=もじ][s]').step()).toThrow();
 });
 it('let_cast_num_notNumericThrows', ()=> {
-	expect(()=> new ScriptEngine('t1', `[let name=a val='"もじ"' cast=num][s]`).step()).toThrow();
+	expect(()=> new ScriptEngine('t1', `[let name=a text=もじ cast=num][s]`).step()).toThrow();
 });
 
 it('amp_let_cast', ()=> {	// 「&名前 = 式 = キャスト」書式
@@ -642,5 +640,5 @@ it('builtinVar_scriptFn', ()=> {
 });
 
 it('builtinVar_cannotBeOverwritten', ()=> {
-	expect(()=> new ScriptEngine('t1', '[let name=const.sn.scriptFn val=1][s]').step()).toThrow();
+	expect(()=> new ScriptEngine('t1', '[let name=const.sn.scriptFn text=1][s]').step()).toThrow();
 });

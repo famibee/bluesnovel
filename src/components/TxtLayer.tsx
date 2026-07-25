@@ -260,14 +260,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		style.transform = transform;
 	}
 	return <>
-		<span css={[styChild, styTxt]} ref={boxRef} style={sty}>
+		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={sty}>
 			<span ref={charsRef}></span>
 			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
 		</span>
-		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]}>
+		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm}>
 			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
-		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]}>
+		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm}>
 			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}

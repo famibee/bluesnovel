@@ -6,9 +6,11 @@
 ** ***** END LICENSE BLOCK ***** */
 
 // しおり・システム系タグのうち、エンジンが担当する部分。
-//	[title]・[toggle_full_screen]・[dump_lay]・[pop_stack]。
+//	[title]・[toggle_full_screen]・[dump_lay]・[pop_stack]・
+//	[navigate_to]・[loadplugin]・[snapshot]。
 //	本家：SysBase.ts:448 title / :462 #tglFlscr()、LayerMng.ts:1068 #dump_lay()、
-//	ScriptIterator.ts:984 #pop_stack()
+//	ScriptIterator.ts:984 #pop_stack()、SysWeb.ts:239 navigate_to、
+//	LayerMng.ts:416 #loadplugin() / :338 #snapshot()
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 
@@ -134,4 +136,77 @@ it('popStack_resetsIfStackToWall', ()=> {
 	expect(()=> acts(`[call label=*sub]
 *sub
 [if exp=true][pop_stack][endif]ぬけた[s]`)).toThrow('[elsif]/[else]/[endif]');
+});
+
+
+// ============ [navigate_to] ============
+//	本家 SysWeb.ts:239 navigate_to。実際にタブを開くのはScriptMngの担当で、
+//	エンジンはURLをアクションに載せるだけ
+
+it('navigateTo_pushesAction', ()=> {
+	expect(acts('[navigate_to url=https://example.com/][s]').find(v=> v.t === 'navigateTo'))
+		.toEqual({t: 'navigateTo', url: 'https://example.com/'});
+});
+
+it('navigateTo_urlRequired', ()=> {
+	expect(()=> acts('[navigate_to][s]')).toThrow('[navigate_to] urlは必須です');
+});
+
+it('navigateTo_doesNotStop', ()=> {
+	// 停止点ではない＝同じstep()の中で[s]まで進む
+	expect(acts('[navigate_to url=https://example.com/][s]').at(-1)?.t).toBe('stop');
+});
+
+
+// ============ [loadplugin] ============
+//	本家 LayerMng.ts:416 #loadplugin()。読めるのはcssだけ
+
+it('loadplugin_pushesAction', ()=> {
+	expect(acts('[loadplugin fn=plugin/style.css][s]').find(v=> v.t === 'loadPlugin'))
+		.toEqual({t: 'loadPlugin', fn: 'plugin/style.css', join: true});
+});
+
+it('loadplugin_fnRequired', ()=> {
+	expect(()=> acts('[loadplugin][s]')).toThrow('[loadplugin] fnは必須です');
+});
+
+it('loadplugin_onlyCss', ()=> {
+	// 本家も拡張子で弾く（JSのプラグインはビルド時に取り込まれるので実行時には読まない）
+	expect(()=> acts('[loadplugin fn=plugin/humane.js][s]'))
+		.toThrow('[loadplugin] サポートされない拡張子です');
+});
+
+it('loadplugin_joinStopsUntilLoaded', ()=> {
+	// join=true（既定）は読み込み完了まで待つ＝ここでstep()が返る（[s]までは進まない）
+	const a = acts('[loadplugin fn=a.css][s]');
+	expect(a.at(-1)).toEqual({t: 'loadPlugin', fn: 'a.css', join: true});
+	expect(a.some(v=> v.t === 'stop')).toBe(false);
+});
+
+it('loadplugin_joinFalseContinues', ()=> {
+	// join=falseは投げっぱなし＝そのまま[s]まで進む
+	const a = acts('[loadplugin fn=a.css join=false][s]');
+	expect(a.find(v=> v.t === 'loadPlugin')).toEqual({t: 'loadPlugin', fn: 'a.css', join: false});
+	expect(a.at(-1)?.t).toBe('stop');
+});
+
+
+// ============ [snapshot] ============
+//	本家 LayerMng.ts:338 #snapshot()。画像化そのものはScriptMng（Snapshot.ts）の担当
+
+it('snapshot_defaults', ()=> {
+	const a = acts('[snapshot][s]');
+	expect(a.at(-1)).toEqual({
+		t: 'snapshot', fn: '', aLayNm: null, page: 'fore', width: 0, height: 0,
+	});	// width/heightの0は「ステージ実寸」の意
+	expect(a.some(v=> v.t === 'stop')).toBe(false);	// 撮り終わるまで待つ＝停止する
+});
+
+it('snapshot_args', ()=> {
+	expect(acts(`${LAYS}[snapshot fn=shot layer=base,mes page=back width=640 height=480 b_color=0xFF0000][s]`)
+		.find(v=> v.t === 'snapshot'))
+		.toEqual({
+			t: 'snapshot', fn: 'shot', aLayNm: ['base', 'mes'], page: 'back',
+			width: 640, height: 480, b_color: 0xFF0000,
+		});
 });

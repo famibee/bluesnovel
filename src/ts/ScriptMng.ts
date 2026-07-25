@@ -16,6 +16,7 @@ import {Script} from './Script';
 import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng} from './FrameMng';
 import {focusMng} from './FocusMng';
+import {savePic, snapshotToPng} from './Snapshot';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -180,6 +181,11 @@ export class ScriptMng {
 	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる
 	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext));
 	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
+
+	// ステージの内箱（等倍の座標系そのもの）。[snapshot]がここを複製して画像化する。
+	//	外側の#skynovelではなく内箱なのは、拡縮（transform: scale）が掛かる前の論理サイズで撮るため
+	#heStageBox?: HTMLElement;
+	attachStageBox(el: HTMLElement) {this.#heStageBox = el}
 
 	// [toggle_full_screen key=…]で予約したキー。押されたらその場で全画面を切り替える。
 	//	[event]の予約（ラベルへ飛ぶ）とは別枠なので、Main.tsxはこちらを先に問い合わせる
@@ -453,6 +459,11 @@ export class ScriptMng {
 					this.#procFrame(last).catch(()=> {/* myTraceで表示済み */});
 					return;
 				}
+				// [loadplugin join=true]（既定）・[snapshot]も同じ形：DOM絡みの非同期が終わってから続きを回す
+				if (last?.t === 'loadPlugin' || last?.t === 'snapshot') {
+					this.#procDom(last).catch(()=> {/* myTraceで表示済み */});
+					return;
+				}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -485,6 +496,55 @@ export class ScriptMng {
 		}
 		this.#goSafe();
 	}
+	// [loadplugin join=true]／[snapshot]：DOM絡みの非同期処理を終えてから続きを回す。
+	//	#procFrame()と同じく#runStep()の外（#busyが下りた後）から呼ばれる
+	async #procDom(act: Extract<T_ENGINE_ACTION, {t: 'loadPlugin' | 'snapshot'}>) {
+		try {
+			if (act.t === 'loadPlugin') await this.#loadPlugin(act.fn);
+			else await this.#snapshot(act);
+		} catch (e) {
+			// 撮影・css読込が失敗してもゲームは続ける（'ET'ではなく'E'）
+			this.myTrace(`[${act.t === 'loadPlugin' ? 'loadplugin' : 'snapshot'}] ${String(e)}`, 'E');
+		}
+		this.#goSafe();
+	}
+
+	// [loadplugin]：cssを読んで<style>としてページへ足す（本家 LayerMng.ts:416 #loadplugin()）。
+	//	本家同様パス解決（path.json）は通さず、書かれたURLをそのままfetchする
+	async #loadPlugin(fn: string) {
+		const res = await fetch(fn);
+		if (! res.ok) throw `cssが取得できません fn:${fn}`;
+
+		const st = document.createElement('style');
+		st.textContent = await res.text();
+		document.head.appendChild(st);
+	}
+
+	// [snapshot]：ステージをpngにしてダウンロードさせる（本家 LayerMng.ts:338 #snapshot()）。
+	//	画像化の中身は Snapshot.ts（DOM→SVG→canvas）
+	async #snapshot(act: Extract<T_ENGINE_ACTION, {t: 'snapshot'}>) {
+		const el = this.#heStageBox;
+		if (! el) throw 'ステージがまだ表示されていません';
+
+		const {stageW, stageH} = CmnLib;
+		const dataUrl = await snapshotToPng({
+			el,
+			sw		: stageW,
+			sh		: stageH,
+			width	: act.width || stageW,
+			height	: act.height || stageH,
+			// 未指定はステージと同じ黒（本家も背景色の既定はステージの背景色）
+			bgColor	: act.b_color === undefined
+				? 'black'
+				: `#${act.b_color.toString(16).padStart(6, '0')}`,
+			page	: act.page,
+			aLayNm	: act.aLayNm,
+		});
+		// ファイル名。本家は日時を後ろに付ける（LayerMng.ts:339 getDateStr()）
+		const dt = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
+		savePic(act.fn ? `${act.fn}${dt}.png` : `snapshot${dt}.png`, dataUrl);
+	}
+
 	#setVals(h: {[name: string]: unknown}) {
 		for (const [k, v] of Object.entries(h)) this.#engine?.setValNochk(k, v as string);
 	}
@@ -576,6 +636,18 @@ export class ScriptMng {
 			break;
 		case 'toggleFullScr':
 			this.$fncs.toggleFullScr();
+			break;
+		case 'navigateTo':
+			// 本家（SysWeb.ts:239）と同じく別タブで開く。location.hrefだとゲームごと終わってしまい、
+			//	引数なしのopen()は近年のブラウザで効かない。'_blank'はポップアップブロックの対象になり得る
+			globalThis.open(act.url, '_blank');
+			break;
+		case 'loadPlugin':
+			// join=true（既定）なら#runStep()側で読み終わるまで待つ。ここへ来るのはjoin=falseのときだけ＝投げっぱなし
+			if (! act.join) void this.#loadPlugin(act.fn).catch(()=> {/* myTraceで表示済み */});
+			break;
+		case 'snapshot':
+			// 実処理は#runStep()側（撮り終わってから続きを回す）
 			break;
 		case 'fullScrKey':
 			// [toggle_full_screen key=…]：以降そのキーで全画面を切り替えられるようにする常駐予約。

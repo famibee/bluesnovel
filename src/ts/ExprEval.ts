@@ -25,7 +25,7 @@ type IHFncCalc = {[key: string]: IFncCalc};
 export type T_VAR_GET = {get(name: string): T_VAL_D};
 
 // 式評価器（本家 skynovel_esm/src/sn/PropParser.ts の移植）
-//	[if]のexp属性、[let]のval属性、タグ属性の「&計算」書式で使う式を評価する。
+//	[if]のexp属性、タグ属性の「&式」書式、「&名前 = 式」代入書式で使う式を評価する。
 //	当初はサブセットの自作実装だったが、本家 test/PropParser.test.ts をテスト駆動で
 //	移植するにあたり、演算子表・評価関数とも本家の実装をそのまま持ち込んだ。
 //	本家との差異：

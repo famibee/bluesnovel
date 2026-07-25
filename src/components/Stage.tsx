@@ -152,7 +152,10 @@ export default function Stage({
 	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
 	// HTMLフレームの置き場所をFrameMng（DOM側）へ渡す
 	const frmRef = useRef<HTMLDivElement>(null);
-	useMount(()=> {scrMng.attachFrameBox(frmRef.current!)});
+	useMount(()=> {
+		scrMng.attachFrameBox(frmRef.current!);
+		scrMng.attachStageBox(stageRef.current);	// [snapshot]の撮影対象（等倍の内箱）
+	});
 
 	useMount(()=> {
 		const div = stageRef.current!;
@@ -214,7 +217,7 @@ export default function Stage({
 				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
 				//	そちらの値（sty4Moveable）より後ろに置いて優先させる
 				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
-				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} fn={l.fn} src={l.src} aFace={l.aFace}/>;
+				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} aFace={l.aFace}/>;
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
 				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} b_color={l.b_color} b_alpha={l.b_alpha} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} onActivate={(label, call, fn)=> scrMng.jumpToLabelAndGo(label, call, fn)}/>;
 			})}

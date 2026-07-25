@@ -8,7 +8,7 @@
 [add_lay layer=mes class=txt]
 [current layer=mes]
 [lay layer=mes b_alpha=0.4]
-[let name=game:name val='"ゆかり"']
+[let name=game:name text=ゆかり]
 [trace text=&game:name]
 
 ; エスケープした「[」はタグにならず、表示時にエスケープ文字が落ちて「[esc]」になる

@@ -1,0 +1,2 @@
+/* [loadplugin]で読み込まれるcss。読み込まれたかどうかを見るためだけの規則 */
+.sn_e2e_plugin {color: rgb(1, 2, 3);}

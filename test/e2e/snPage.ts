@@ -43,7 +43,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'autoskip' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -131,6 +131,13 @@ export async function pressKey(page: Page, code: T_KEY) {
 //	これを見れば「本物の停止点」だと確実に分かる（[s]では立たないので、その場合はpressKey）
 export async function pressKeyToWaitMark(page: Page, code: T_KEY) {
 	await page.keyboard.press(code);
+	await waitWaitMark(page);
+}
+
+// [l]/[p]の待ちマーカーが立つまで待つ。キーを押す前に「本物の停止点」に着かせたいとき用
+//	（gotoSn()直後など）。非同期を挟むタグ（[add_frame]/[loadplugin]/[snapshot]/ファイル切替）が
+//	最初の停止点より手前にあるシナリオでは、waitIdle()だけだとその隙間で抜けてしまう
+export async function waitWaitMark(page: Page) {
 	await page.waitForFunction(
 		()=> (globalThis as any).__sn.store.getState().wait !== null,
 		undefined, {timeout: 15_000},

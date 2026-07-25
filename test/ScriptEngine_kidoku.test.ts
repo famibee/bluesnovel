@@ -130,7 +130,7 @@ it('clearsysvar_clearsKidoku', ()=> {
 
 it('clearsysvar_clearsSysVarsOnly', ()=> {
 	const se = new ScriptEngine('t1',
-		'[let name=sys:a val=1][let name=game:b val=2][clearsysvar][s]'
+		'[let name=sys:a text=1][let name=game:b text=2][clearsysvar][s]'
 	);
 	se.step();
 	expect(se.getVal('sys:a')).toBeUndefined();
@@ -139,7 +139,7 @@ it('clearsysvar_clearsSysVarsOnly', ()=> {
 
 it('clearvar_clearsGameVarsOnly', ()=> {
 	const se = new ScriptEngine('t1',
-		'[let name=sys:a val=1][let name=game:b val=2][clearvar][s]'
+		'[let name=sys:a text=1][let name=game:b text=2][clearvar][s]'
 	);
 	se.step();
 	expect(se.getVal('sys:a')).toBe(1);

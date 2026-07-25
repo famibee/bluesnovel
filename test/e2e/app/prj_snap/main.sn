@@ -1,0 +1,18 @@
+; E2E用シナリオ（snap.e2e.ts が使用）
+;	システム系のDOM絡みタグ3つ：
+;	・[loadplugin]……cssを読んで<style>としてページへ足す（join=trueなので読み終わるまで待つ）
+;	・[snapshot]………ステージをpngにしてダウンロードさせる
+;	・[navigate_to]…別タブでURLを開く
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[lay layer=base fn=bg]
+[loadplugin fn=/test/e2e/app/prj_snap/plugin.css]
+よみこんだ[p]
+
+[snapshot fn=e2e_shot]
+とった[p]
+
+[navigate_to url=https://example.com/]
+ひらいた[s]

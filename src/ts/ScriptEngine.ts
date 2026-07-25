@@ -74,6 +74,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
 	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
+	| {t: 'navigateTo'; url: string}	// [navigate_to url=…]。別タブでURLを開く
+	| {t: 'loadPlugin'; fn: string; join: boolean}	// [loadplugin fn=….css]。cssの読み込み。join=true（既定）は読み終わるまで待つのでstep()は一旦返る
+	| {t: 'snapshot'; fn: string; aLayNm: string[] | null; page: T_PAGE; width: number; height: number; b_color?: number}	// [snapshot]。画面をpngで保存（0xRRGGBB）。width/heightの0はステージ実寸、aLayNm=nullは全レイヤ。画像化は非同期なのでstep()は一旦返る
 	| {t: 'fullScrKey'; key: string}	// [toggle_full_screen key=…]。そのキーで全画面切替できるようにする常駐予約
 	| {t: 'dumpLay'; aLayNm: string[] | null}	// [dump_lay]。レイヤの状態をデバッグ表示へ。nullは全レイヤ
 	// HTMLフレーム（本家 FrameMng.ts）。中身は生きたHTML文書なのでストアには入れず、
@@ -341,6 +344,7 @@ export class ScriptEngine {
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
+		'navigate_to', 'loadplugin', 'snapshot',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
 		'if', 'elsif', 'else', 'endif',
@@ -866,27 +870,17 @@ export class ScriptEngine {
 			aAct.push({t: 'pauseTsy', tw_nm: tsyName('resume_tsy', args), paused: false});
 			return 'skip';
 
-		case 'let': {	// 変数代入（試作簡略：単純代入のみ。+=等の複合代入演算子は未対応）
-			// 本家（Variable.ts:313 #let()）の書式はtext属性＝「値そのもの」で、
-			//	式にしたい場合は text=&式 と書く（＝共通の属性前処理#resolveTag()が評価する）。
-			//	本家シナリオはすべてこちらなので、textが来たらそちらを優先する
-			if (args.text !== undefined) {this.#letText('let', args, args.text); return 'skip'}
-
-			// val属性はbluesnovel独自の「常に式評価」書式。#resolveTag()の「&式」が入る前からの
-			// 書き方で、既存のテスト・E2Eシナリオが多数使っているため残してある。
-			// 文字列リテラルを入れたい場合は val='"もじ"' のように、
-			// タグ属性の引用符とは別に式側の引用符も必要（test/ScriptEngine.test.ts の
-			// let_stringValue 参照）。
-			//TODO: 既存のval=書式をtext=&式へ移行し、valを廃止する
-			const varName = args.name ?? '';
-			if (! varName) throw '[let] nameは必須です（試作仕様）';
-			// textもvalも無い＝値が渡っていない。**「&式」の評価がundefinedになって
-			//	属性ごと落ちた**場合もここに来るので、式の書き間違いを空文字の文法エラーにせず知らせる
-			if (args.val === undefined) throw `[let] textまたはvalは必須です（name:${varName}）`;
-			const exp = args.val;
-			this.#val.set(varName, this.#expr.parse(exp), <T_CAST>(args.cast ?? ''));
+		case 'let':		// 変数代入（本家 Variable.ts:313 #let()）
+			// 書式はtext属性＝「値そのもの」。式にしたい場合は text=&式 と書く
+			//	（＝共通の属性前処理#resolveTag()が評価する）
+			if (args.text === undefined) {
+				// 値が渡っていない。**「text=&式」の評価がundefinedになって属性ごと落ちた**
+				//	場合もここに来るので、式の書き間違いを空文字の代入で握りつぶさず知らせる
+				//	（本家はtext省略を許すが、こちらは属性が落ちる仕組みがあるぶん実害が大きい）
+				throw `[let] textは必須です（name:${args.name ?? ''}）`;
+			}
+			this.#letText('let', args, args.text);
 			return 'skip';
-		}
 
 		// ---- 文字列・数値操作タグ（本家 Variable.ts:347-432 を移植） ----
 		// どれも「text属性を加工して、[let]と同じ規則でname変数へ代入する」形。
@@ -1163,6 +1157,42 @@ export class ScriptEngine {
 				? {t: 'fullScrKey', key: args.key.toLowerCase()}
 				: {t: 'toggleFullScr'});
 			return 'skip';
+
+		case 'navigate_to': {	// ＵＲＬを開く（本家 SysWeb.ts:239 navigate_to）
+			const {url} = args;
+			if (! url) throw '[navigate_to] urlは必須です';
+
+			aAct.push({t: 'navigateTo', url});
+			return 'skip';
+		}
+
+		case 'loadplugin': {	// プラグインの読み込み（本家 LayerMng.ts:416 #loadplugin()）
+			// 本家も**cssだけ**（JSのプラグインはビルド時に取り込まれるので、実行時に読むのはcss）
+			const {fn} = args;
+			if (! fn) throw '[loadplugin] fnは必須です';
+			if (! fn.endsWith('.css')) throw '[loadplugin] サポートされない拡張子です';
+
+			const join = (args.join ?? 'true') !== 'false';
+			aAct.push({t: 'loadPlugin', fn, join});
+			// join=true（既定）なら読み込み完了まで待つ＝ScriptMng待ち（本家も Reading.beginProc で止める）。
+			//	join=falseは投げっぱなしにしてそのまま進む
+			return join ? 'stop' : 'skip';
+		}
+
+		case 'snapshot': {	// スナップショット（本家 LayerMng.ts:338 #snapshot()）
+			// 本家はpixiのレンダラで描き直すが、こちらはDOMなので撮るのはScriptMngの仕事。
+			//	ここは属性の解釈だけ（layer/pageの絞り込み、出力サイズ、背景色、ファイル名）
+			aAct.push({
+				t: 'snapshot',
+				fn: args.fn ?? '',
+				aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.argPage(args, 'fore'),
+				width: ScriptEngine.#argNumDef('snapshot', 'width', args.width, 0),
+				height: ScriptEngine.#argNumDef('snapshot', 'height', args.height, 0),
+				...(args.b_color === undefined ? {} : {b_color: ScriptEngine.#argNum('snapshot', 'b_color', args.b_color)}),
+			});
+			return 'stop';	// 画像化は非同期＝ScriptMng待ち（本家も撮り終わるまで進めない）
+		}
 
 		case 'dump_lay':	// レイヤのダンプ（本家 LayerMng.ts:1068 #dump_lay()）
 			aAct.push({t: 'dumpLay', aLayNm: ScriptEngine.#argLayNames(args.layer)});

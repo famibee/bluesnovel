@@ -9829,21 +9829,22 @@ var Jl = /* @__PURE__ */ function(e) {
 }(O.PureComponent));
 //#endregion
 //#region src/components/GrpLayer.tsx
-function Yl({ cmn: { styChild: e, isDesignMode: t }, sty: n, src: r, aFace: a }) {
-	let o = (e) => {
+function Yl({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, src: a, aFace: o }) {
+	let s = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, s = (0, O.useRef)(null), c = (e, t) => {
+	}, c = (0, O.useRef)(null), l = (e, t) => {
 		i(), e.transform = t;
 	};
 	return /* @__PURE__ */ v(x, { children: [/* @__PURE__ */ v("div", {
 		css: e,
-		ref: s,
+		ref: c,
+		"data-lay": r,
 		style: n,
-		onMouseDown: (e) => o(e),
-		children: [r && /* @__PURE__ */ m("img", {
-			src: r,
+		onMouseDown: (e) => s(e),
+		children: [a && /* @__PURE__ */ m("img", {
+			src: a,
 			style: { display: "block" }
-		}), a.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ m("img", {
+		}), o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ m("img", {
 			src: t,
 			style: {
 				position: "absolute",
@@ -9853,24 +9854,24 @@ function Yl({ cmn: { styChild: e, isDesignMode: t }, sty: n, src: r, aFace: a })
 			}
 		}, `${e}_${String(a)}`) : null)]
 	}), t && /* @__PURE__ */ m(Jl, {
-		target: s,
+		target: c,
 		draggable: !0,
 		throttleDrag: 1,
-		onDrag: ({ target: { style: e }, transform: t }) => c(e, t),
+		onDrag: ({ target: { style: e }, transform: t }) => l(e, t),
 		resizable: !0,
 		keepRatio: !0,
 		onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-			c(e, r), e.width = `${t}px`, e.height = `${n}px`;
+			l(e, r), e.width = `${t}px`, e.height = `${n}px`;
 		},
 		rotatable: !0,
 		throttleRotate: 0,
 		startDragRotate: 0,
 		throttleDragRotate: 0,
 		rotationPosition: "top",
-		onRotate: ({ target: { style: e }, drag: { transform: t } }) => c(e, t),
+		onRotate: ({ target: { style: e }, drag: { transform: t } }) => l(e, t),
 		originDraggable: !0,
 		onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-			c(e, n), e.transformOrigin = t;
+			l(e, n), e.transformOrigin = t;
 		}
 	})] });
 }
@@ -10101,6 +10102,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		/* @__PURE__ */ v("span", {
 			css: [e, B],
 			ref: C,
+			"data-lay": r,
 			style: n,
 			children: [/* @__PURE__ */ m("span", { ref: w }), k && /* @__PURE__ */ m("span", {
 				css: A,
@@ -10109,6 +10111,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		}),
 		N.length > 0 && /* @__PURE__ */ m("span", {
 			css: [e, j],
+			"data-lay": r,
 			children: N.map((e) => /* @__PURE__ */ m($l, {
 				text: e.text,
 				label: e.label,
@@ -10120,6 +10123,7 @@ function eu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		}),
 		P.length > 0 && /* @__PURE__ */ m("span", {
 			css: [e, F],
+			"data-lay": r,
 			children: P.map((e) => /* @__PURE__ */ m($l, {
 				text: e.text,
 				label: e.label,
@@ -10268,7 +10272,7 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		}
 	`, V = (0, O.useRef)(null), te = (0, O.useRef)(null);
 	L(() => {
-		r.attachFrameBox(te.current);
+		r.attachFrameBox(te.current), r.attachStageBox(V.current);
 	}), L(() => {
 		let e = V.current;
 		e.addEventListener("mousedown", () => u());
@@ -10339,6 +10343,7 @@ function nu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 					return e.cls === "grp" ? /* @__PURE__ */ m(Yl, {
 						cmn: se.cmn,
 						sty: n,
+						nm: e.nm,
 						fn: e.fn,
 						src: e.src,
 						aFace: e.aFace

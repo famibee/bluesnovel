@@ -6,8 +6,8 @@
 [current layer=mes]
 
 ; オート読みの待ち時間を短くして、テストの待ち時間を詰める
-[let name=sys:sn.auto.msecLineWait val=50]
-[let name=sys:sn.auto.msecPageWait val=50]
+[let name=sys:sn.auto.msecLineWait text=50]
+[let name=sys:sn.auto.msecPageWait text=50]
 &sn.auto.enabled = true
 
 　一行目[l]

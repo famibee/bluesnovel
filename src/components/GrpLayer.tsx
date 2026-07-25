@@ -25,6 +25,7 @@ export type T_FACE = {
 export type T_FACE_SRC = T_FACE & {src: string};
 type T_GRPARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
+	nm		: string;	// レイヤ名。data-lay属性としてDOMへ出す（[snapshot layer=…]の絞り込み用）
 	fn		: string;	// [lay fn=...]で指定された論理名（[dump_lay]・デバッグ用）
 	src		: string;	// 解決済みURL。空なら描かない
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
@@ -34,7 +35,7 @@ export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; aF
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, src, aFace}: T_GRPARG) {
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, src, aFace}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -54,7 +55,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		style.transform = transform;
 	}
 	return <>
-		<div css={styChild} ref={div0} style={sty} onMouseDown={e=> onMouseDown(e)}>
+		<div css={styChild} ref={div0} data-lay={nm} style={sty} onMouseDown={e=> onMouseDown(e)}>
 			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 				（Reactがページ全体再ダウンロードの可能性を警告するため） */}
 			{src && <img src={src} style={{display: 'block'}}/>}

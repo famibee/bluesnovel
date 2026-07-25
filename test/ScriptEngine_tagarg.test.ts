@@ -59,7 +59,7 @@ it('cond_ampPrefixThrows', ()=> {
 
 it('cond_appliesToAnyTag_letIsNotExecuted', ()=> {
 	// 個別タグではなく共通層なので、[let]のような処理系タグにも効く
-	expect(traces('[let name=game:n val=9 cond="1==2"][trace text=&game:n|"未設定"][s]'))
+	expect(traces('[let name=game:n text=9 cond="1==2"][trace text=&game:n|"未設定"][s]'))
 		.toEqual(['未設定']);
 });
 
