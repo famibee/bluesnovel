@@ -19,21 +19,24 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 
 	const {aLay} = await snap(page);
 	const mes = aLay.find(l=> l.nm === 'mes');
+	// 見た目の属性は**書かれた分だけ**styへ入る（[lay]と同じ流儀）が、
+	//	**width/heightだけは省略時も既定が入る**（本家 Button.ts:123/:152。CSSの既定＝文字なりの幅が
+	//	本家の既定と食い違うため、エンジンの入口で埋めている）
+	const DEF = {width: 100, height: 30};
 	expect(mes?.aBtn).toEqual([
-		{nm: 'btn_call', text: 'サブルーチンを呼ぶ', label: '*sub', call: true},
-		{nm: 'btn_jump', text: 'ジャンプする', label: '*goal', call: false},
-		{nm: 'btn_fcall', text: '別ファイルを呼ぶ', label: '*fcall', call: true, fn: 'sub2'},
-		{nm: 'btn_fjump', text: '別ファイルへ飛ぶ', label: '*fjump', call: false, fn: 'sub2'},
-		// 見た目の属性は**書かれた分だけ**styへ入る（[lay]と同じ流儀）
+		{nm: 'btn_call', text: 'サブルーチンを呼ぶ', label: '*sub', call: true, sty: DEF},
+		{nm: 'btn_jump', text: 'ジャンプする', label: '*goal', call: false, sty: DEF},
+		{nm: 'btn_fcall', text: '別ファイルを呼ぶ', label: '*fcall', call: true, fn: 'sub2', sty: DEF},
+		{nm: 'btn_fjump', text: '別ファイルへ飛ぶ', label: '*fjump', call: false, fn: 'sub2', sty: DEF},
 		{nm: 'btn_pos', text: '座標指定', label: '*goal', call: false,
 			sty: {left: 250, top: 360, width: 90, height: 30, rotation: 15}},
-		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {enabled: false}},
-		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, sty: {
+		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {...DEF, enabled: false}},
+		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, sty: {...DEF,
 			hint: 'せつめい', hint_style: 'color: rgb(0, 255, 0);', hint_opt: '{"placement": "bottom"}'}},
-		{nm: 'btn_sty', text: '見た目', label: '*goal', call: false, sty: {
+		{nm: 'btn_sty', text: '見た目', label: '*goal', call: false, sty: {...DEF,
 			style: 'color: rgb(255, 0, 0);', style_hover: 'color: rgb(0, 128, 0);', style_clicked: 'color: rgb(0, 0, 255);'}},
 		// JSON指定はエンジンがCSSへ読み替えるので、ストアに入る時点でCSS
-		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, sty: {style: 'color: rgb(255, 0, 255);'}},
+		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, sty: {...DEF, style: 'color: rgb(255, 0, 255);'}},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();

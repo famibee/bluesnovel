@@ -13,22 +13,32 @@
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import type {T_BTN_STY} from '../src/components/TxtLayer';
+import {BTN_DEF_H, BTN_DEF_W} from '../src/components/Lay';
 
 import {expect, it} from 'bun:test';
 
 
 const LAYS = '[add_lay layer=mes class=txt][current layer=mes]';
 function acts(src: string): T_ENGINE_ACTION[] {return new ScriptEngine('t1', `${LAYS}${src}[s]`).step()}
-// [button]が積んだ見た目の属性だけを取り出す
+// [button]が積んだ見た目の属性。**width/heightは省略時も既定が入る**（本家 Button.ts:123/:152）ので、
+//	以下の比較はその2つを含む前提で書く（含まないと「何が起きているか」が見えなくなるため素で持つ）
 function styOf(src: string): T_BTN_STY | undefined {
 	const a = acts(src).find(v=> v.t === 'addBtn');
 	return a?.t === 'addBtn' ? a.sty : undefined;
 }
+const DEF = {width: BTN_DEF_W, height: BTN_DEF_H};
 
 
-it('btnSty_noneWhenUnwritten', ()=> {
-	// 見た目の属性が1つも無ければstyは持たせない（[lay]と同じ流儀）
-	expect(styOf('[button text=x label=*a]')).toBeUndefined();
+it('btnSty_sizeDefaults', ()=> {
+	// **寸法だけは省略時も既定値が入る**（本家 Button.ts:123 height=30 / :152 width=100）。
+	//	本家のpixi Textは width/height の代入で文字スプライトそのものを拡縮するので、
+	//	文字数に関わらず必ずこの大きさに揃う。CSSの既定（文字なりの幅）とは食い違うため、
+	//	埋めないとテンプレのシステムメニュー（width/height省略）が隣と重なる。
+	//	**他の配置・変形属性は埋めない**：下流のCSSが本家と同じ既定を持っているから
+	//	（left/top=0・rotation=0・scale=1・alpha=1）。ボタンの寸法にはその受け皿が無い
+	expect(styOf('[button text=x label=*a]')).toEqual(DEF);
+	// 書かれていればそちらが勝つ
+	expect(styOf('[button text=x label=*a width=90 height=24]')).toEqual({width: 90, height: 24});
 });
 
 it('btnSty_titleSnLike', ()=> {
@@ -39,17 +49,17 @@ it('btnSty_titleSnLike', ()=> {
 
 it('btnSty_scaleAndAlpha', ()=> {
 	expect(styOf('[button text=x label=*a scale_x=2 scale_y=0.5 alpha=0.3]'))
-		.toEqual({scale_x: 2, scale_y: 0.5, alpha: 0.3});
+		.toEqual({...DEF, scale_x: 2, scale_y: 0.5, alpha: 0.3});
 });
 
 it('btnSty_enabled', ()=> {
-	expect(styOf('[button text=x label=*a enabled=false]')).toEqual({enabled: false});
-	expect(styOf('[button text=x label=*a enabled=true]')).toEqual({enabled: true});
+	expect(styOf('[button text=x label=*a enabled=false]')).toEqual({...DEF, enabled: false});
+	expect(styOf('[button text=x label=*a enabled=true]')).toEqual({...DEF, enabled: true});
 });
 
 it('btnSty_blendmode', ()=> {
 	// [lay blendmode=…]と同じ変換（本家の4種だけを受けてCSSのmix-blend-mode値へ）
-	expect(styOf('[button text=x label=*a blendmode=add]')).toEqual({blendmode: 'plus-lighter'});
+	expect(styOf('[button text=x label=*a blendmode=add]')).toEqual({...DEF, blendmode: 'plus-lighter'});
 	expect(()=> styOf('[button text=x label=*a blendmode=overlay]'))
 		.toThrow('overlay はサポートされない blendmode です');
 });
@@ -62,35 +72,35 @@ it('btnSty_keepsOtherAttrs', ()=> {
 	// 見た目を足しても既存の属性はそのまま
 	expect(acts('[button nm=b1 text=x label=*a call=true left=10]').find(v=> v.t === 'addBtn'))
 		.toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'b1', text: 'x',
-			label: '*a', call: true, sty: {left: 10}});
+			label: '*a', call: true, sty: {...DEF, left: 10}});
 });
 
 it('btnSty_hint', ()=> {
 	// ツールチップ（本家 EventMng.ts:418 #dispHint()）。エンジンは属性を運ぶだけで、
 	//	出すのはDOM側（Hint.ts）。hint_optは本家popperのオプションJSONをそのまま渡す
 	expect(styOf(`[button text=x label=*a hint=ほんぶん hint_style="color: red;" hint_opt='{"placement": "bottom"}']`))
-		.toEqual({hint: 'ほんぶん', hint_style: 'color: red;', hint_opt: `{"placement": "bottom"}`});
+		.toEqual({...DEF, hint: 'ほんぶん', hint_style: 'color: red;', hint_opt: `{"placement": "bottom"}`});
 });
 
 it('btnSty_styleIsCss', ()=> {
 	// **bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON）。CSSはそのまま通す
 	expect(styOf(`[button text=x label=*a style="color: red;" style_hover="color: lime;" style_clicked="color: blue;"]`))
-		.toEqual({style: 'color: red;', style_hover: 'color: lime;', style_clicked: 'color: blue;'});
+		.toEqual({...DEF, style: 'color: red;', style_hover: 'color: lime;', style_clicked: 'color: blue;'});
 });
 
 it('btnSty_pixiTextStyleJsonIsConverted', ()=> {
 	// ギャラリーのサンプルは`{"fill": "plum"}`のようにJSONで書くので、主要キーはCSSへ読み替える
-	expect(styOf(`[button text=x label=*a style='{"fill": "plum"}']`)).toEqual({style: 'color: plum;'});
+	expect(styOf(`[button text=x label=*a style='{"fill": "plum"}']`)).toEqual({...DEF, style: 'color: plum;'});
 	expect(styOf(`[button text=x label=*a style='{"fontSize": 24, "align": "center"}']`))
-		.toEqual({style: 'font-size: 24px;text-align: center;'});
+		.toEqual({...DEF, style: 'font-size: 24px;text-align: center;'});
 	// 未対応キー（dropShadow等）は落とす
 	expect(styOf(`[button text=x label=*a style='{"fill": "red", "dropShadow": true}']`))
-		.toEqual({style: 'color: red;'});
+		.toEqual({...DEF, style: 'color: red;'});
 });
 
 it('btnSty_brokenJsonPassesThrough', ()=> {
 	// JSONのつもりで壊れていてもCSSとして渡す（表示ごと止めない）
-	expect(styOf(`[button text=x label=*a style='{こわれ']`)).toEqual({style: '{こわれ'});
+	expect(styOf(`[button text=x label=*a style='{こわれ']`)).toEqual({...DEF, style: '{こわれ'});
 });
 
 

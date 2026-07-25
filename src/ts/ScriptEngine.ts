@@ -24,6 +24,7 @@ import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
 import {plainTxt} from './Txt';
 import type {T_BTN_STY} from '../components/TxtLayer';
+import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -1434,6 +1435,15 @@ export class ScriptEngine {
 				const v = args[k];
 				if (v !== undefined) Object.assign(sty, {[k]: ScriptEngine.#argNum('button', k, v)});
 			}
+			// **寸法だけは省略時も既定値を入れる**（本家 Button.ts:123 height=30 / :152 width=100）。
+			//	本家のpixi Textは width/height の代入で文字スプライトそのものを拡縮するので、
+			//	文字数に関わらず必ずこの大きさに揃う。CSSの既定（文字なりの幅）とは食い違うため、
+			//	ここで埋めないとテンプレのシステムメニュー（width/height省略）が隣と重なる。
+			//	他の配置・変形属性を埋めないのは、下流のCSSが本家と同じ既定を持っているから
+			//	（left/top=0・rotation=0・scale=1・alpha=1）。ボタンにはその受け皿が無い。
+			//	本家も #o へ確定値を記録する（dump・セーブに乗る）ので、ストアにも実寸で載せる
+			sty.width ??= BTN_DEF_W;
+			sty.height ??= BTN_DEF_H;
 			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 			// ツールチップ（本家 EventMng.ts:418 #dispHint()）。hint_styleは吹き出しのCSS、

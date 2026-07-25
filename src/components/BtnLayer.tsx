@@ -10,6 +10,7 @@ import {hintMng} from '../ts/Hint';
 import {useStore} from '../store/store';
 
 import type {T_BTN_STY} from './TxtLayer';
+import {BTN_DEF_H, BTN_DEF_W} from './Lay';
 
 import {css} from '@emotion/react';
 import {type CSSProperties, type KeyboardEvent, type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -30,13 +31,9 @@ type T_BTNARG = {
 //	fit は「文字を箱(width×height)ちょうどに収める倍率」。本家は pixi Text.width/height が
 //	文字スプライトを拡縮して箱に合わせる（短い文字は広げ、長い文字は縮めて1行に収める）が、
 //	CSSに相当機能が無いのでBtnLayer側で実測した倍率を transform:scale として合成する。
-// 文字ボタンの箱の大きさ。**省略時も既定値が入る**のが本家（Button.ts:122 height=30 /
-//	:151 width=100）。pixiの Text.width/height は文字スプライトそのものを拡縮するので、
-//	文字数に関わらず必ずこの大きさに揃う。テンプレのシステムメニューは width/height を
-//	省いて並べるので、既定が無いと文字量なりの幅になって隣と重なる
-const BTN_DEF_W = 100;
-const BTN_DEF_H = 30;
-export function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
+// 箱の大きさ。**エンジンの[button]入口で必ず埋まっている**（本家 Button.ts と同じ既定）ので、
+//	ここでの ?? は古いセーブ・Mementoから復元した取りこぼし用の保険
+function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
 	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
 }
 function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {

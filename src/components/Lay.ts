@@ -45,6 +45,14 @@ export type T_LAY_STY = {
 	blendmode?	: string;	// CSSのmix-blend-mode値（[lay blendmode=…]がここへ変換して入れる）
 	aFlt?		: T_FLT[];	// [add_filter]で重ねたフィルター（重なり順＝配列順）
 };
+// 文字ボタンの箱の大きさの既定（本家 Button.ts:123 height=30 / :152 width=100）。
+//	pixiの Text.width/height は文字スプライトそのものを拡縮するので、本家のボタンは
+//	文字数に関わらず必ずこの大きさに揃う。**CSSの既定（文字なりの幅）とは食い違う**ので、
+//	エンジンの[button]入口で埋める（ScriptEngine）。ここに置くのは、
+//	表示側（BtnLayer）も古いセーブ・Mementoの取りこぼし用に同じ値を要るため
+export const BTN_DEF_W = 100;
+export const BTN_DEF_H = 30;
+
 export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
 
 export type T_LAY_IDX = T_LAY_STY & {
