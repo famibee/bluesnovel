@@ -2827,8 +2827,22 @@ function G() {
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
+//#region src/ts/Font.ts
+function K(e) {
+	return e.matchPath(".+", p.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
+	font-family: ${JSON.stringify(t)};
+	src: url(${JSON.stringify(e.searchPath(t, p.FONT))});
+}`).join("\n");
+}
+function q(e, t = document) {
+	let n = K(e);
+	if (!n) return;
+	let r = t.createElement("style");
+	r.dataset.sn = "font", r.textContent = n, t.head.appendChild(r);
+}
+//#endregion
 //#region src/ts/ScriptMng.ts
-var K = class {
+var J = class {
 	sys;
 	#e;
 	constructor(e) {
@@ -2860,7 +2874,7 @@ var K = class {
 		if (this.#r) this.#r.switchScript(t);
 		else {
 			let e = this.#r = new ne(t);
-			this.#s(e), this.#u(e);
+			this.#s(e), this.#u(e), q(this.sys.cfg);
 		}
 		this.go = () => this.#x(), this.$trgNext();
 	}
@@ -3511,6 +3525,6 @@ var K = class {
 	};
 };
 //#endregion
-export { K as ScriptMng };
+export { J as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

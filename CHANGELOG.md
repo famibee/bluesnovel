@@ -398,12 +398,30 @@ ok.次は「設定」ボタンだが、その前に。
 	  `url`・`global`・`onenter`/`onleave`・`style_clicked`系・効果音・`hint`、各タグ共通の
 	  `layer`/`page`・`wait`・`r_align`・`ch_in_style`/`ch_out_style`。
 
+- [x] **プロジェクト同梱フォントの`@font-face`自動登録**（ギャラリーの`font`サンプル相当）。
+	- path.jsonにあるフォント（woff2／woff／otf／ttf）を起動時に全部登録する。**シナリオ側に
+	  読み込みタグは無く**、拡張子を除いたファイル名がそのまま`font-family`名になる
+	  （本家 TxtLayer.ts:97 と同じ規約）。`src/ts/Font.ts`。
+	- **実テンプレ `tmp_blues` の本文フォントがようやく効いた**。`theme/setting.sn` の
+	  `&def_fonts = 'ipamjm, "Source Han Sans CN"'` が指す2つがpath.jsonにあり、
+	  今まで`@font-face`が無いので既定のゴシックで出ていた本文が、指定どおりの明朝になった。
+	  フォント名に空白を含むものがあるので、`font-family`もurlも引用符で囲む。
+	- Webフォント（ギャラリーの`[loadplugin fn='https://fonts.googleapis.com/…']`）は
+	  実装済みの`[loadplugin]`がそのまま使えるので、こちらは追加不要だった。
+	- テスト：`Font.test.ts`（CSSの組み立て4件。DOM不要の純粋部分）＋E2Eで`<style data-sn="font">`の
+	  中身を1件。**E2Eのフォント本体はわざと置いていない**（確かめたいのはpath.jsonから
+	  `@font-face`を組み立てて`<head>`へ挿す配線だけで、そのシナリオはそのフォントを使わない＝
+	  ブラウザは取りにも行かないため）。ユニット1212・E2E94 パス、`tsc` クリーン。
+	- 残り（ギャラリー`line_breaking_rules`の範囲）：`[lay bura=…]`（ぶら下げ禁則）・`ffs`/`noffs`
+	  （文字詰め）・`max_row`・`r_size`。本家は`Hyphenation.ts`で自前の行分割をしているので、
+	  CSSの`line-break`/`hanging-punctuation`でどこまで代替できるかの見極めから。
+
 - [ ]
 
 
 
 
-- アニメpngをサポート
+- アニメpng（APNGではなく独自スプライトシート）をサポート
   - これは[l][p][graph]に関係ある機能
   - サンプル https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
 

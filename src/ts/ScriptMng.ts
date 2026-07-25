@@ -19,6 +19,7 @@ import {focusMng} from './FocusMng';
 import {savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
 import {plainOf, setEscape, splitCh} from './Txt';
+import {addFontFaces} from './Font';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -91,6 +92,9 @@ export class ScriptMng {
 			const engine = this.#engine = new ScriptEngine(scr);
 			this.#defEnvBuiltins(engine);
 			this.#loadSaveData(engine);
+			// プロジェクト同梱フォントを`@font-face`で使えるようにする（本家 TxtLayer.ts:97）。
+			//	シナリオ側に読み込みタグは無く、path.jsonにあるフォントは全部登録される
+			addFontFaces(this.sys.cfg);
 		}
 
 		this.go = ()=> this.#goSafe();

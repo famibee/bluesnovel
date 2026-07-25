@@ -1078,8 +1078,17 @@ const.sn.log.json
 
 
 </p>
-<h2 id="font" class="w-heading">フォントの導入</h2>
+<h2 id="font" class="w-heading">🟢 フォントの導入</h2>
 <h4>フォントの導入・指定方法について解説していきます。</h4>
+<p class="mb2 px1">
+	<b>bluesnovel</b>：プロジェクト内のフォントファイル（woff2／woff／otf／ttf）は、
+	path.jsonにあるもの全部が起動時に<code>@font-face</code>として登録される（本家と同じ。
+	拡張子を除いたファイル名がそのまま<code>font-family</code>名）。<br/>
+	シナリオ側は<code>[lay style='font-family: ipamjm;']</code>のように書くだけで使える。
+	WebフォントのCSSを読む場合は<a href="tag.html#loadplugin">[loadplugin]</a>。<br/>
+	※本家がフォント読込に使う<code>[loadplugin]</code>のURL指定・プロジェクト同梱ぶんの両方に対応済み。
+	VSCode拡張機能によるサブセット化はビルド時の話なのでbluesnovel側の対応は不要。
+</p>
 <p class="mb2 px1">
 	<h4 style="color: red">【重要】2022-03-09リリースの「VSCode拡張機能 v3.20.1」からは【2.使用する字形だけ入ったフォントファイルを作成】などが自動化されています</h4>
 	<p class="mb2 px1">

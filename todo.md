@@ -105,7 +105,8 @@
   - [ ] `[graph]`（インライン画像）。`Txt.ts`の命令解釈に足すだけだが、画像パス解決が要るのでアセット周りと一緒に
   - [ ] `[link]`の残り：`url`・`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`
   - [ ] 各タグ共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
-  - [ ] `[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`はまとめて設計する
+  - [ ] `[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`はまとめて設計する。ギャラリーの`line_breaking_rules`が仕様（`ffs`/`noffs`＝文字詰め、要点文字の着色つき）。本家は`Hyphenation.ts`で自前の行分割をしており、CSSの`line-break`/`hanging-punctuation`でどこまで代替できるかの見極めから
+  - [x] **フォントは対応済み**（2026-07-25）。プロジェクト同梱のwoff2/woff/otf/ttfはpath.jsonにあるもの全部が起動時に`@font-face`登録される（`src/ts/Font.ts`。本家 TxtLayer.ts:97）。WebフォントのCSSは`[loadplugin]`で読める（実装済み）
   - [x] **ルビ記法`《…》`・`｜…《…》`・傍点`《*》`は実装済み**（2026-07-25。本家`RubySpliter`をテストごと丸移植し、`ScriptMng`が本文を表示単位`T_CH[]`へ割って`TxtLayer`が`<ruby>/<rt>`で組む。`const.sn.last_page_plain_text`もルビ除去済み）。残りは下記
     - [ ] ルビの位置指定（`《center｜るび》`等の`r_align`。今は指定を落としてルビ文字だけ出す）と`[lay sesame=…]`（傍点文字の変更。本家 TxtLayer.ts:303）
     - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せのため）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて

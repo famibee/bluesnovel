@@ -100,3 +100,15 @@ test('[link]はクリックでジャンプし、argを飛び先へ渡す', async
 	// [link arg=…]は飛び先で &sn.eventArg として受け取れる（本家と同じ）
 	expect(await mesStr(page)).toBe('飛んだ:あるぐ');
 });
+
+test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
+	// path.jsonにあるフォントは全部、拡張子を除いたファイル名がそのままfont-family名になる
+	//	（本家 TxtLayer.ts:97。シナリオ側に読み込みタグは無い）。
+	// **フォント本体はわざと置いていない**：ここで確かめるのは「path.jsonから@font-faceを
+	//	組み立てて<head>へ挿す」配線だけで、実ファイルの中身は要らないため
+	//	（このシナリオはこのフォントを使わないので、ブラウザは取りにも行かない）。
+	//	CSSの中身そのものは test/Font.test.ts が持つ
+	const css = await page.$eval('head style[data-sn="font"]', el=> el.textContent ?? '');
+	expect(css).toContain('font-family: "E2E Test Font";');
+	expect(css).toMatch(/src: url\(".*E2E.?Test.?Font\.woff2"\);/);	// 解決済みURL
+});
