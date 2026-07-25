@@ -233,6 +233,23 @@ it('getVal_33_builtin_json_descend', ()=> {
 	// 完全一致で読めば、組み込み変数の値（JSON文字列）そのもの
 	expect(vs.get('const.sn.lay@str')).toBe('{"0":true,"1":true,"2":true,"mes":true}');
 });
+it('getVal_34_builtin_json_tree', ()=> {
+	// 組み込み変数が**多階層のJSON木**を返す場合、`.fore.visible`のように深く辿れる
+	//	（実運用：ScriptMngが const.sn.lay へレイヤ木＝各層の表裏の表示属性を返す。立ち絵[fg2]のGC用）。
+	const vs = new VarStore;
+	vs.defBuiltin('const.sn.lay', ()=> JSON.stringify({
+		0:   {fore: {visible: true,  alpha: 1,   width: 1}, back: {visible: true, alpha: 1, width: 0}},
+		mes: {fore: {visible: false, alpha: 0.5, width: 0}, back: {visible: true, alpha: 1, width: 0}},
+	}));
+
+	expect(vs.get('const.sn.lay.0.fore.visible', 'def')).toBe(true);
+	expect(vs.get('const.sn.lay.0.fore.width', 'def')).toBe(1);
+	expect(vs.get('const.sn.lay.mes.fore.visible', 'def')).toBe(false);
+	expect(vs.get('const.sn.lay.mes.fore.alpha', 'def')).toBe(0.5);
+	expect(vs.get('const.sn.lay.9.fore.visible', 'def')).toBe('def');	// 未定義レイヤ
+	// 存在判定も両立：中間ノードはオブジェクト（＝truthy）を返す
+	expect(vs.get('const.sn.lay.0', 'def')).toBe('{"fore":{"visible":true,"alpha":1,"width":1},"back":{"visible":true,"alpha":1,"width":0}}');
+});
 
 // cast指定（本家 Variable.ts:317 #let() 相当）
 it('set_cast_numeric', ()=> {

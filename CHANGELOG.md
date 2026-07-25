@@ -57,10 +57,11 @@ ok。ついでに「fontFamily: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '�
 	- **実プロジェクト（`tmp_blues`）通しの調査で `const.sn.lay.*` 未実装がブロッカーと判明**。`[add_lay layer=0 cond=!const.sn.lay.0]` の存在ガードが効かず（常に真）、重複追加でストアが throw → title 手前で停止。engine テスト（`uc_goal`）が通るのは純エンジンでストアの重複検査を通らないため。対応は todo.md の `const.sn.lay.*` 項目へ
 
 - [x] **実テンプレ `tmp_blues` がブラウザでタイトルの `[s]` まで到達（`const.sn.lay.*` 存在判定＋見た目調整）**（2026-07-25 完了）
-	- **`const.sn.lay.*`（存在判定版）**。`VarStore.#getFromJson`（JSON潜り込み）の前方一致の起点を、格納変数(`#h`)だけでなく**組み込み変数(`#hBuiltin`、tmp:のみ)**にも広げ、`const.sn.lay` のように「JSONツリーを返す組み込み変数」の下位（`const.sn.lay.0`）を辿れるようにした。`ScriptMng` が**表ページのレイヤ名から存在マップ JSON を返す builtin `const.sn.lay`** を登録。これで `[add_lay cond=!const.sn.lay.N]` の重複防止ガードと `*max_lay_lp`（`const.sn.lay[N]`）が効き、実テンプレの `main.sn → setting → ext_* → sub → _yesno(frame) → title` が**ブラウザで title の `[s]` まで走り切る**（背景 `title.jpg`＋ボタン4つ描画）。ユニット `getVal_33_builtin_json_descend` 追加。詳細ツリー（`const.sn.lay[N].fore.visible/.alpha/.width`。立ち絵 `[fg2]` のGCが使う）は未実装のまま（todo.md）
+	- **`const.sn.lay.*`**。`VarStore.#getFromJson`（JSON潜り込み）の前方一致の起点を、格納変数(`#h`)だけでなく**組み込み変数(`#hBuiltin`、tmp:のみ)**にも広げ、`const.sn.lay` のように「JSONツリーを返す組み込み変数」の下位（`const.sn.lay.0`）を辿れるようにした。`ScriptMng` が**ストアの表裏ページからレイヤ木の JSON を返す builtin `const.sn.lay`** を登録。これで `[add_lay cond=!const.sn.lay.N]` の重複防止ガードと `*max_lay_lp`（`const.sn.lay[N]`）が効き、実テンプレの `main.sn → setting → ext_* → sub → _yesno(frame) → title` が**ブラウザで title の `[s]` まで走り切る**（背景 `title.jpg`＋ボタン4つ描画）。
+	- **`const.sn.lay` の詳細ツリー**も同じ木で提供：`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`（立ち絵 `[fg2]` のGCが `visible && alpha>0 && width>0` で使う）。visible/alpha/left/top は `T_LAY_STY` の実値、**width/height はストアに実寸が無いので「表示物があるか（grp=画像src／txt=文字orボタン）」を 1/0 で代用**。存在判定（中間ノードはオブジェクト＝truthy）と両立。ユニット `getVal_33_builtin_json_descend`・`getVal_34_builtin_json_tree` 追加
 	- **`[button]` の既定ページを本家準拠の `back` へ**（`ScriptEngine.argPage(args,'back')`）。本家サンプルの `title.sn` は「mesを裏で組んで `[trans]` で表へ」流儀で、既定 `fore` のままだとボタンが裏に取り残され、表の空 mes が既定の箱を出してボタン帯に被っていた。`[trans]` を挟まずその場で見せる E2Eフィクスチャ（`prj_button`/`prj_frame`/`prj_wait`/`prj_uc`）は `page=fore` を明示。関連ユニットの既定期待値も `back` へ更新（`button_defaultsToBack`、`uc_goal` に `page:'back'` 検証追加）
 	- **空のメッセージ窓の見た目**（`TxtLayer.tsx`）。**文字が無くボタンだけ乗る層（＝メッセージ窓ではなくUIコンテナ）** は既定の箱（aquamarine背景＋オレンジ点線枠）を描かない（`isBtnOnly`）。タイトルの mes がまさにこれ。`[clear_lay]` 直後などボタンの無い空メッセージ窓は従来どおり既定の箱を出す（`lay.e2e` 維持）
-	- 検証：ユニット **908件パス**、E2E **77件パス**、`tsc` クリーン。実 `tmp_blues` のタイトルがリファレンス snapshot とほぼ一致
+	- 検証：ユニット **909件パス**、E2E **77件パス**、`tsc` クリーン。実 `tmp_blues` のタイトルがリファレンス snapshot とほぼ一致
 
 - [ ]
 

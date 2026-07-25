@@ -20,7 +20,7 @@
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
 - `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[snapshot]`・`[window]`・`[close]`
-- **組み込み変数`const.sn.lay.*`** … **存在判定版は実装済み**（2026-07-25。`const.sn.lay.<名前>`が真/偽。`ScriptMng`がストアの表ページ層名から存在マップJSONを`defBuiltin`で供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。これで`[add_lay cond=!const.sn.lay.N]`の重複防止と`*max_lay_lp`が効く。**残りは`const.sn.lay[N].<fore|back>.visible/.alpha/.width`の詳細ツリー**（立ち絵`[fg2]`のGCが使う。下記レイヤ操作の項目）。あわせて`const.sn.sound.*`
+- **組み込み変数`const.sn.lay.*`** … **実装済み**（2026-07-25。存在判定`const.sn.lay.<名前>`＋詳細ツリー`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`。`ScriptMng`がストアの表裏からレイヤ木JSONを`defBuiltin`供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。`width`/`height`のみストアに実寸が無く「表示物があるか」を1/0で代用（立ち絵`[fg2]`GCの`width>0`判定用）。残る組み込み変数は`const.sn.sound.*`・`const.sn.key.*`など
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
   - [ ] `[trans]`の`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`は未対応（現状は一様なクロスフェードのみ）。ルール画像を読む必要があるのでアセットパイプライン整備と合わせて
@@ -55,8 +55,8 @@
   - [ ] `noise`（ノイズ）はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
   - [ ] `[add_filter blendmode=…]`（フィルター自体のブレンドモード）は未対応
   - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
-- [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等は実装済み。`ScriptMng#defEnvBuiltins()`）
-  - [ ] `const.sn.lay[N].<fore|back>.<属性>`（visible/alpha/width/left/top…）の**詳細ツリー**。**存在判定版（`const.sn.lay.<名前>`が真/偽）は実装済み**（2026-07-25。`VarStore`のJSON潜り込みを組み込み変数へ拡張し、`ScriptMng`が`const.sn.lay`へ存在マップJSONを供給）。残りは同じ仕組みで**レイヤ木のJSON**（各層の表裏の表示属性）を返すよう`const.sn.lay`を拡張すること。立ち絵`[fg2]`のGC（`ext_fg2.sn`の`const.sn.lay[N].fore.visible/.alpha/.width`）が使う。ストアの`getLaySty(nm,page)`から表裏の属性を集めればよい
+- [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等、および`const.sn.lay.*`（存在判定＋レイヤ木の詳細ツリー）は実装済み。`ScriptMng#defEnvBuiltins()`）
+  - [ ] `const.sn.lay[N].<fore|back>.width/.height` は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら、描画側（GrpLayerの`<img>`のnaturalWidth等）から集める設計に差し替える
   - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）・`const.sn.bookmark.json`（しおり）は各層と一緒に
   - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
