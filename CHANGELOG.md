@@ -100,12 +100,24 @@ pixi 版が動くようになった後のbluesnovel版機能追加で、React版
 	- 対処：本家のしおり層の初期値だけ用意（保存機能はまだ無いので**プレースホルダ**）。`sys:const.sn.save.place`=1（本家 CmnInterface.ts:197）、組み込み変数 `const.sn.bookmark.json`=`'[]'`（同 290。空のしおり）。`ScriptMng#defEnvBuiltins()` に追加。
 	- 結果：ロードクリック→`[call fn=_archive]`→`*title_load`→`*main`→`[frame id=archive visible=true]`→`[s]` に到達。**空のセーブ枠を表示するロード画面が本家と完全一致**（ヘッダ「× / ロード / 削除」＋空ボディ）。ユニット **909件パス**、E2E **77件パス**、`tsc` クリーン。
 
+ok.次は「設定」ボタンだが、その前に。
++ TODO.mdやらあちこちに実装済/未済情報が分散しているので、以下に記載を集約し随時更新。ヒトだけでなくあなたも参考にしやすいように
+  - タグの実装済/未済情報: docs/tag.html:127 付近の【タグ一覧】
+    - BluesNovelならではのSKYNovelからの変更点、メモは <a href="#clearsysvar"> などジャンプ先の詳細部に記載
+  - セーブ変数(save:)、システム変数(sys:)、雑用変数(tmp:)は docs/dev.html ジャンプ先の詳細部に
+    - #reserve_value_save save:
+    - #reserve_value_sys sys:
+    - #reserve_value_tmp tmp:
+  - この件で<table>列数は増やさず、名称部にぱっと見で分かる色マークを。🔴:未済, 🟡:実装中・機能未達, 🟢:実装済
+
+- [x] **実装済/未済の状況を docs に集約（タグ・変数へ色マーク）**（2026-07-25 完了）
+	- `docs/tag.html` のタグ一覧（サイドバー）の各タグ名先頭へ **🟢実装済／🟡実装中・機能未達／🔴未済** を付与（🟢51・🟡9・🔴55）。🟡は既知の欠落があるもの（`add_face`/`add_filter`/`button`/`lay`/`let`/`page`/`set_focus`/`trans`/`tsy`）。判定は `ScriptEngine.RESERVED_TAGS` と todo.md/CLAUDE.md の記述に基づく。
+	- `docs/dev.html` の変数表（save:/sys:/tmp:）の名称セル先頭へ同じマーク（🟢37・🟡2・🔴54）。列は増やさず名称内に。保存・音声・履歴・キー状態・native window 系は🔴、環境(`const.sn.config`等)・`const.sn.frm.*`・`const.sn.lay.*`・auto/skip 系は🟢、`const.sn.lay.*.width/height`（実寸なし1/0代用）は🟡。
+	- 各ドキュメントに凡例を追加。本家からの変更点・メモは**各タグの詳細部**に記載する方針とし、雛形として `#clearsysvar`（既読も消す）・`#button`（既定ページback・座標時のみ絶対・pic/style未対応）・`#page`（clearのみ）・`#let`（text=とval=）へメモを記入。以降は随時。
+	- `todo.md` 冒頭と `CLAUDE.md` に「タグ／変数の実装状況の一次情報は docs/tag.html・docs/dev.html」と明記（todo.mdは作業計画に集中）。
+	- あわせて `const.sn.lay[N].<fore|back>` の詳細ツリーに **`x`/`y`（本家の座標名。left/top の別名）** を追加（`ScriptMng`）。`tsc` クリーン、ユニット・E2E 影響なし。
+
 - [ ]
-
-
-
-
-
 
 
 

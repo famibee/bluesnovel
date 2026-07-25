@@ -408,6 +408,13 @@ category with a one-line description each, is the `T_HTag` type in
 `../skynovel_esm/src/sn/Grammar.ts`; the implementations are registered as `hTag.<name> = …`
 across `../skynovel_esm/src/sn/*.ts`.
 
+**bluesnovel's own implementation status lives in `docs/tag.html` (tag list) and `docs/dev.html`
+(save:/sys:/tmp: reserved variables)** — this repo's copies, not upstream's. Each tag/variable
+name carries a status mark: 🟢 done / 🟡 partial (implemented but with a known gap) / 🔴 not yet.
+bluesnovel-specific divergences and notes go in each tag's detail section (e.g. `#button`,
+`#page`). **Keep these marks current when you implement or change a tag/variable** — they are the
+single source of truth for "what works", so `todo.md` can stay a work-plan rather than a status list.
+
 **`test/uc_goal.test.ts` measures the project's stated goal**: it drives the *real* sample
 scenario (`../tmp_esm_uc/doc/prj/`) from `main.sn` through every `[call]` to `title.sn`'s
 `[s]`, using only the engine. Faking the three things `ScriptMng` does DOM-side — fetching

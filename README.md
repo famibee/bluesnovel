@@ -39,6 +39,14 @@
 ## description（説明）
 
 ---
+## api (method)
+
+- [タグリファレンス](https://famibee.github.io/bluesnovel/tag.html)
+- [マクロ・プラグイン](https://famibee.github.io/bluesnovel/macro_plg.html)
+- [開発者向け情報](https://famibee.github.io/bluesnovel/dev.html)
+	- [組み込み変数](https://famibee.github.io/bluesnovel/dev.html#reserve_value_save)
+
+---
 ## 拡張機能 / Extension
  - [SKYNovel - Visual Studio Marketplace](https://marketplace.visualstudio.com/itesm?itemName=famibee.skynovel)
 

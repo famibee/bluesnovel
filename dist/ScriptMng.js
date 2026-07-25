@@ -2483,12 +2483,14 @@ var O = class e {
 		e.setValNochk("sys:const.sn.save.place", 1), e.defBuiltin("const.sn.lay", () => {
 			let { fore: e, back: t } = this.$fncs.getPages(), n = (e) => {
 				if (!e) return;
-				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0;
+				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0, n = e.left ?? 0, r = e.top ?? 0;
 				return {
 					visible: e.visible !== !1,
 					alpha: e.alpha ?? 1,
-					left: e.left ?? 0,
-					top: e.top ?? 0,
+					x: n,
+					y: r,
+					left: n,
+					top: r,
 					width: +!!t,
 					height: +!!t
 				};
