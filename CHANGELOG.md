@@ -247,6 +247,20 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	- `test/e2e/app/prj_trans/main.sn`に停止点を1つ足した。`[er]`の**手前**で
 	  「裏のボタンが表へ出た」状態を見るため（通り過ぎるとボタンごと消えて確かめられない）
 
+- [x] 文字レイヤの`[lay visible=false]`が**ボタンに効いていなかった**
+	- テンプレの`[sys_menu visible=false]`でシステムボタンが消えず、`[trans]`中も
+	  クリック待ち中も出っぱなしだった。ストアには`visible: false`が表裏とも正しく
+	  入っており、届いていなかったのは描画側
+	- 原因：本家はボタンが文字レイヤのコンテナ（`Layer.ctn`）の**子**なので、コンテナへ掛けた分が
+	  そのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**にしているため
+	  （本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないための作り）、
+	  `styLay()`が付けた`display: none`が本文にしか当たらなかった
+	- 直し方：`[lay]`のうち**位置・変形以外**（visible→display / alpha→opacity / blendmode /
+	  filter）をボタンの箱にも渡す。`left`/`top`/`transform`/`transformOrigin`は渡さない
+	  （ボタンはステージ原点基準に置くという既存の作りを崩さないため）。
+	  visibleだけでなくalpha・blendmode・filterも同時に効くようになった
+
+
 - [ ]
 
 

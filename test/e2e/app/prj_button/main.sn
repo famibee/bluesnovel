@@ -16,6 +16,13 @@
 ; ギャラリーのサンプルのようなJSON指定も主要キーだけCSSへ読み替える
 [button page=fore nm=btn_sty2 text="JSON指定" label=*goal style='{"fill": "rgb(255, 0, 255)"}']
 選んでください。[l]
+; [lay visible=false]は**ボタンも隠す**。本家はボタンが文字レイヤのコンテナの子なので
+;	コンテナごと消えるが、こちらはボタンの箱を本文spanの兄弟にしているため橋渡しが要る。
+;	テンプレの[sys_menu visible=false]がこれ
+[lay layer=mes page=fore visible=false]
+[l]
+[lay layer=mes page=fore visible=true alpha=0.5]
+[l]
 ; ボタンの文字フォントは組み込み変数で差し替えられる（本家 LayerMng.ts:209。全ボタン共通）
 &sn.button.fontFamily = 'monospace'
 ＋そのまま進んだ。[s]

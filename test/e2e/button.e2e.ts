@@ -77,7 +77,7 @@ test('[button]（call指定なし）はジャンプし、戻ってこない', as
 });
 
 test('ボタンを押さずキーで進めた場合は、ボタンと無関係に次の停止点へ進む', async ({page})=> {
-	await pressKey(page, 'Space');	// [l]の次＝[s]まで
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// [l]3つを越えて[s]まで
 
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect((await snap(page)).wait).toBeNull();
@@ -139,6 +139,7 @@ test('[button enabled=false]は灰色でクリックを受けない', async ({pa
 	// pointer-events: none なので、その位置のクリックはステージへ抜けて「読み進め」になる
 	await page.getByText('無効').click({force: true});
 	await waitIdle(page);
+	for (let i = 0; i < 2; ++i) await pressKey(page, 'Space');	// 残りの[l]を越えて[s]まで
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 });
 
@@ -200,7 +201,26 @@ test('sn.button.fontFamilyで全ボタンの文字フォントを差し替えら
 	const font = ()=> page.getByText('ジャンプする').evaluate(el=> getComputedStyle(el).fontFamily);
 	expect(await font()).toContain('Hiragino Sans');	// 既定（本家 CmnInterface.ts:349 と同じスタック）
 
-	await pressKey(page, 'Space');
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect(await font()).toBe('monospace');
+});
+
+// ============ レイヤ単位の指定がボタンにも効くか ============
+
+test('[lay visible=false]はボタンも隠し、alphaも効く', async ({page})=> {
+	// 本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、コンテナへ掛けた分が
+	//	そのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**にしている
+	//	（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
+	//	位置・変形以外を橋渡ししないとボタンだけ残る。
+	//	テンプレの[sys_menu visible=false]でシステムボタンが消えなかったのがこれ
+	const btn = page.getByText('ジャンプする');
+	await expect(btn).toBeVisible();
+
+	await pressKey(page, 'Space');	// [lay visible=false]
+	await expect(btn).toBeHidden();
+
+	await pressKey(page, 'Space');	// [lay visible=true alpha=0.5]
+	await expect(btn).toBeVisible();
+	expect(await btn.evaluate(el=> getComputedStyle(el.parentElement!).opacity)).toBe('0.5');
 });

@@ -216,6 +216,20 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	（本家 Button.ts はステージ左上からの絶対配置）。上の流し込み用の箱（top:70%）へ
 	//	入れると、その箱の位置を基準にleft/topが効いてしまい画面外へずれる（タイトル画面のボタンで露見）。
 	//	原点の箱（styChild＝top:0/left:0）へ分けて置けば、書いたleft/topがそのままステージ座標になる
+	// [lay]のうち**位置・変形以外**（visible→display / alpha→opacity / blendmode / filter）は
+	//	ボタンの箱にも効かせる。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、
+	//	コンテナへ掛けた分がそのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**に
+	//	している（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
+	//	その差をここで埋める。left/top/transform/transformOriginは持ち込まない
+	//	（ボタンはステージ原点基準に置くという上のとおり）。
+	//	これが無いと[sys_menu visible=false]でシステムボタンが消えない
+	const {display, opacity, mixBlendMode, filter} = sty;
+	const styBtnCmn: CSSProperties = {
+		...display !== undefined ? {display} : {},
+		...opacity !== undefined ? {opacity} : {},
+		...mixBlendMode !== undefined ? {mixBlendMode} : {},
+		...filter !== undefined ? {filter} : {},
+	};
 	const isPosBtn = (b: T_BTN)=> b.sty?.left !== undefined || b.sty?.top !== undefined;
 	const aBtnFlow = aBtn.filter(b=> ! isPosBtn(b));
 	const aBtnPos = aBtn.filter(isPosBtn);
@@ -358,10 +372,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 				: wait!.kind === 'l' ? '🩷' : '✅'
 			}</span>}
 		</span>
-		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm}>
+		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
 			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
-		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm}>
+		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnCmn}>
 			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}

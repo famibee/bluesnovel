@@ -10183,9 +10183,14 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		flex-wrap: wrap;
 		top: 70%;
 		${v ? "" : "pointer-events: none;"}
-	`, ie = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, W = b.filter((e) => !ie(e)), ae = b.filter(ie), oe = du`
+	`, { display: ie, opacity: W, mixBlendMode: ae, filter: oe } = n, se = {
+		...ie === void 0 ? {} : { display: ie },
+		...W === void 0 ? {} : { opacity: W },
+		...ae === void 0 ? {} : { mixBlendMode: ae },
+		...oe === void 0 ? {} : { filter: oe }
+	}, ce = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, le = b.filter((e) => !ce(e)), ue = b.filter(ce), de = du`
 		${v ? "" : "pointer-events: none;"}
-	`, { r: se, g: ce, b: le } = vu(f), ue = o((e) => e.backAlpha), de = p * (m ? 1 : ue), fe = s.length === 0 && f === void 0 && !g, pe = du`
+	`, { r: fe, g: pe, b: me } = vu(f), he = o((e) => e.backAlpha), ge = p * (m ? 1 : he), _e = s.length === 0 && f === void 0 && !g, ve = du`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10195,8 +10200,8 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${fe || g ? "transparent" : `rgba(${se}, ${ce}, ${le}, ${de})`};
-		border: ${fe || g ? "none" : "dotted 6px #ffa500"};
+		background-color: ${_e || g ? "transparent" : `rgba(${fe}, ${pe}, ${me}, ${ge})`};
+		border: ${_e || g ? "none" : "dotted 6px #ffa500"};
 		${g ? `
 		&::before {
 			content: '';
@@ -10205,7 +10210,7 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			background-image: url(${JSON.stringify(g)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${de};
+			opacity: ${ge};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10223,7 +10228,7 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${_ ?? ""}
-	`, me = du`
+	`, ye = du`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10283,14 +10288,14 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [he, ge] = (0, k.useState)("");
-	(0, k.useEffect)(() => ge(s), [s]);
-	let _e = (0, k.useRef)(null), ve = (e, t) => {
+	`, [be, xe] = (0, k.useState)("");
+	(0, k.useEffect)(() => xe(s), [s]);
+	let Se = (0, k.useRef)(null), Ce = (e, t) => {
 		i(), e.transform = t;
 	};
 	return /* @__PURE__ */ y(S, { children: [
 		/* @__PURE__ */ y("span", {
-			css: [e, pe],
+			css: [e, ve],
 			ref: M,
 			"data-lay": r,
 			style: n,
@@ -10302,10 +10307,11 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				}) : j.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		W.length > 0 && /* @__PURE__ */ h("span", {
+		le.length > 0 && /* @__PURE__ */ h("span", {
 			css: [e, U],
 			"data-lay": r,
-			children: W.map((e) => /* @__PURE__ */ h(pu, {
+			style: se,
+			children: le.map((e) => /* @__PURE__ */ h(pu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10314,10 +10320,11 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				onActivate: x
 			}, e.nm))
 		}),
-		ae.length > 0 && /* @__PURE__ */ h("span", {
-			css: [e, oe],
+		ue.length > 0 && /* @__PURE__ */ h("span", {
+			css: [e, de],
 			"data-lay": r,
-			children: ae.map((e) => /* @__PURE__ */ h(pu, {
+			style: se,
+			children: ue.map((e) => /* @__PURE__ */ h(pu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10330,37 +10337,37 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: M,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => ve(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Ce(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				ve(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				Ce(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => ve(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => Ce(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				ve(e, n), e.transformOrigin = t;
+				Ce(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ y(S, { children: [/* @__PURE__ */ y("label", {
-			css: me,
-			ref: _e,
+			css: ye,
+			ref: Se,
 			children: ["テキスト入力", /* @__PURE__ */ h("textarea", {
 				rows: 3,
-				value: he,
-				onChange: (e) => ge(e.target.value)
+				value: be,
+				onChange: (e) => xe(e.target.value)
 			})]
 		}), /* @__PURE__ */ h(ru, {
-			target: _e,
+			target: Se,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => ve(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Ce(e, t),
 			preventDefault: !1
 		})] })
 	] });
