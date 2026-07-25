@@ -103,8 +103,19 @@ export class ScriptMng {
 			'const.sn.isFirstBoot'	: ()=> false,
 			// ブラウザは音を鳴らす前にユーザー操作を要求する。音声層が無い今は常にfalse
 			'const.sn.needClick2Play'	: ()=> false,
+			// **しおり（セーブ）層の暫定既定値**。まだ保存機能が無いので、ロード画面（frames/_archive）が
+			//	空のセーブ枠を表示できるよう本家の初期値だけ用意する（本家 CmnInterface.ts:290/197）。
+			//	本家の const.sn.bookmark.json はセーブデータから作る組み込み変数で、空なら '[]'。
+			//	これが無いと _archive の [set_frame … text=&const.sn.bookmark.json] が
+			//	「textは必須です」で落ちる（&式がundefinedだと属性が落ちるため）。
+			'const.sn.bookmark.json'	: ()=> '[]',
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
+
+		// sys:const.sn.save.place（次のセーブ枠）は本家で 1 に初期化される（CmnInterface.ts:197）。
+		//	組み込み変数(defBuiltin)はtmp:専用なので、sys:名前空間へ初期値として書いておく。
+		//	保存機能実装時に書き換わる想定なので、読み取り専用のbuiltinにはしない
+		engine.setValNochk('sys:const.sn.save.place', 1);
 
 		// レイヤの状態（本家 const.sn.lay.*）。ストアの表裏ページから毎回**レイヤ木のJSON**を作る。
 		//	VarStore.get()のJSON潜り込みが組み込み変数にも効くので、`const.sn.lay.0`（存在判定・truthy）も

@@ -2476,10 +2476,11 @@ var O = class e {
 			"const.sn.isDebugger": () => !1,
 			"const.sn.isPackaged": () => !1,
 			"const.sn.isFirstBoot": () => !1,
-			"const.sn.needClick2Play": () => !1
+			"const.sn.needClick2Play": () => !1,
+			"const.sn.bookmark.json": () => "[]"
 		};
 		for (let [t, r] of Object.entries(n)) e.defBuiltin(t, r);
-		e.defBuiltin("const.sn.lay", () => {
+		e.setValNochk("sys:const.sn.save.place", 1), e.defBuiltin("const.sn.lay", () => {
 			let { fore: e, back: t } = this.$fncs.getPages(), n = (e) => {
 				if (!e) return;
 				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0;

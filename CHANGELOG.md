@@ -92,11 +92,15 @@ tmp_esm_ucをvite実行できるようなので、見比べながら実装でき
 	- 補足：フレームの列数（本家3列／こちら4列）は、フレーム内部幅（こちらはステージ単位の1024px、本家は表示スケールの約960px）に対する bootstrap の `row-cols` レスポンシブの差で、不具合ではない（同じ有効幅なら一致）。
 	- 手動確認スクショの置き場所として `.gitignore` に `/test/.ss/` を追加。検証：ユニット **909件パス**、E2E **77件パス**（frame/focus 系含む）、`tsc` クリーン
 
+pixi 版が動くようになった後のbluesnovel版機能追加で、React版frameの新機能もあるやもだが、それはまた後日検討。
+さて、「ロード」ボタン（保存機能なし状態）へ。
+
+- [x] **タイトルの「ロード」→ しおり画面 `frames/_archive.sn` の `[s]` まで到達（保存機能なし状態）**（2026-07-25 完了）
+	- 原因：`*main` の `[set_frame … text=&sys:const.sn.save.place]` で停止していた。`sys:const.sn.save.place` が未定義→`&式`がundefinedだと属性が落ちる→`[set_frame]`の「textは必須です」で throw（本家 set_frame も同じ throw なので、違いは**既定値の有無**）。
+	- 対処：本家のしおり層の初期値だけ用意（保存機能はまだ無いので**プレースホルダ**）。`sys:const.sn.save.place`=1（本家 CmnInterface.ts:197）、組み込み変数 `const.sn.bookmark.json`=`'[]'`（同 290。空のしおり）。`ScriptMng#defEnvBuiltins()` に追加。
+	- 結果：ロードクリック→`[call fn=_archive]`→`*title_load`→`*main`→`[frame id=archive visible=true]`→`[s]` に到達。**空のセーブ枠を表示するロード画面が本家と完全一致**（ヘッダ「× / ロード / 削除」＋空ボディ）。ユニット **909件パス**、E2E **77件パス**、`tsc` クリーン。
+
 - [ ]
-
-
-
-
 
 
 
