@@ -107,12 +107,16 @@ function S(e, t, n) {
 	return r[t] = n, { aPage: r };
 }
 function C(e, t, n) {
+	let r = 1 - t, i = e.aPage[t];
+	return S(e, r, e.aPage[r].map((e) => n && !n.includes(e.nm) ? e : structuredClone(i.find((t) => t.nm === e.nm) ?? e)));
+}
+function w(e, t, n) {
 	let r = e.find((e) => e.nm === t);
 	if (!r) throw `存在しないレイヤ ${t} です`;
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var w = y()((e, t) => ({
+var T = y()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
@@ -124,7 +128,7 @@ var w = y()((e, t) => ({
 		return { aPage: [[...e.aPage[0], structuredClone(t)], [...e.aPage[1], structuredClone(t)]] };
 	}),
 	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, sty: c }) => e((e) => {
-		let { idx: l, aLay: u } = x(e, n), d = C(u, t, "txt");
+		let { idx: l, aLay: u } = x(e, n), d = w(u, t, "txt");
 		if (r === void 0) r = `${a || s || "btn"}#${String(d.aBtn.length)}`;
 		else if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
 		return d.aBtn = [...d.aBtn, {
@@ -137,15 +141,15 @@ var w = y()((e, t) => ({
 		}], S(e, l, u);
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, src: i, aFace: a }) => e((e) => {
-		let { idx: o, aLay: s } = x(e, n), c = C(s, t, "grp");
+		let { idx: o, aLay: s } = x(e, n), c = w(s, t, "grp");
 		return c.fn = r, c.src = i, c.aFace = a, S(e, o, s);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r, isFixed: i }) => e((e) => {
-		let { idx: a, aLay: o } = x(e, n), s = C(o, t, "txt");
+		let { idx: a, aLay: o } = x(e, n), s = w(o, t, "txt");
 		return r !== void 0 && (s.b_alpha = r), i !== void 0 && (s.b_alpha_isfixed = i), S(e, a, o);
 	}),
 	chgBPic: ({ nm: t, page: n, fn: r, src: i }) => e((e) => {
-		let { idx: a, aLay: o } = x(e, n), s = C(o, t, "txt");
+		let { idx: a, aLay: o } = x(e, n), s = w(o, t, "txt");
 		return s.b_pic = r, s.b_src = i, S(e, a, o);
 	}),
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
@@ -177,7 +181,7 @@ var w = y()((e, t) => ({
 	},
 	enableEvent: ({ nm: t, enabled: n }) => e((e) => ({ aPage: e.aPage.map((e) => {
 		let r = [...e];
-		return C(r, t, "txt").enabled = n, r;
+		return w(r, t, "txt").enabled = n, r;
 	}) })),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
@@ -268,7 +272,7 @@ var w = y()((e, t) => ({
 	}),
 	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
 		let a = (e) => {
-			let n = C(e, t, "txt");
+			let n = w(e, t, "txt");
 			n.str = r, n.aCh = i;
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
@@ -280,24 +284,40 @@ var w = y()((e, t) => ({
 	}),
 	trans: null,
 	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => {
-		let a = 1 - e.foreIdx, o = e.aPage[e.foreIdx], s = S(e, a, e.aPage[a].map((e) => t && !t.includes(e.nm) ? structuredClone(o.find((t) => t.nm === e.nm) ?? e) : e));
+		let a = 1 - e.foreIdx, o = e.aPage[e.foreIdx], s = (e) => t !== null && !t.includes(e), c = S(e, a, e.aPage[a].map((e) => s(e.nm) ? o.find((t) => t.nm === e.nm) ?? e : e)), l = S({
+			...e,
+			...c
+		}, e.foreIdx, o.map((t) => s(t.nm) ? e.aPage[a].find((e) => e.nm === t.nm) ?? t : t));
 		return n <= 0 ? {
-			...s,
-			foreIdx: a
+			...l,
+			foreIdx: a,
+			...C({
+				...e,
+				...l
+			}, a, t)
 		} : {
-			...s,
+			...l,
 			trans: {
 				seq: (e.trans?.seq ?? 0) + 1,
+				aLayNm: t,
 				time: n,
 				...r === void 0 ? {} : { ruleSrc: r },
 				...i === void 0 ? {} : { vague: i }
 			}
 		};
 	}),
-	finishTrans: () => e((e) => e.trans ? {
-		foreIdx: 1 - e.foreIdx,
-		trans: null
-	} : {}),
+	finishTrans: () => e((e) => {
+		if (!e.trans) return {};
+		let t = 1 - e.foreIdx;
+		return {
+			foreIdx: t,
+			trans: null,
+			...C({
+				...e,
+				foreIdx: t
+			}, t, e.trans.aLayNm)
+		};
+	}),
 	quake: null,
 	startQuake: ({ hmax: t, vmax: n }) => e((e) => ({ quake: {
 		seq: (e.quake?.seq ?? 0) + 1,
@@ -326,6 +346,6 @@ var w = y()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { d as a, p as i, w as n, l as o, f as r, o as s, b as t };
+export { d as a, p as i, T as n, l as o, f as r, o as s, b as t };
 
 //# sourceMappingURL=store.js.map

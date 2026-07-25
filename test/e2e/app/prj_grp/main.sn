@@ -1,0 +1,46 @@
+; E2E用シナリオ（grp.e2e.ts が使用）
+;	テンプレ（tmp_blues）の[grp]マクロ＝場面転換の並びを、実シナリオを
+;	エンジンに通して採ったアクション列そのままの形で最小再現したもの。
+;	1回の場面転換で[trans]を3回打ち、しかも文字レイヤの[trans]は演出あり（time>0＋[wt]）。
+;	見るのは「文字レイヤの設定（縦書き指定など）が場面転換をまたいで生き残るか」
+[add_lay layer=base class=grp]
+[add_lay layer=0 class=grp]
+[add_lay layer=mes class=txt]
+[add_lay layer=mes_sysmenu class=txt]
+[current layer=mes]
+
+; --- [txt_lay_fullscreen]相当（横書き）
+[lay layer=mes page=back visible=true left=0 top=40 style="width: 700px; writing-mode: horizontal-tb;"]
+; --- テンプレは直後にstyleだけを書き直す。[lay style=]は**丸ごと置き換え**なので上のwidthも消える
+[lay layer=mes page=back style="font-family: serif;"]
+
+; --- [grp bg=black]相当（場面転換その1）
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=100]
+[wt]
+[er]
+[trans layer=base,0 time=0]
+[wt]
+[lay layer=mes page=back visible=true]
+[trans layer=mes time=100]
+[wt]
+はじめ[l]
+
+; --- [txt_lay_v_center]相当（縦書き）。裏へ書くだけなので、この停止点ではまだ表に出ない
+[lay layer=mes page=back visible=true left=366 top=0 style="writing-mode: vertical-rl; width: 310px;"]
+; --- テンプレはこの直後に[sysmenu_draw_v]が**別レイヤだけの[trans]**を打つ。
+;	交換対象外（mes）の裏を表で上書きしてしまうと、上で組んだ縦書き設定がここで消える
+[trans layer=mes_sysmenu time=0]
+ふたつめ[l]
+
+; --- [grp bg=white]相当（場面転換その2）。ここを抜けても縦書きでなければならない
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=100]
+[wt]
+[er]
+[trans layer=base,0 time=200]
+[wt]
+[lay layer=mes page=back visible=true]
+[trans layer=mes time=100]
+[wt]
+てんかんご[s]

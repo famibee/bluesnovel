@@ -192,10 +192,6 @@
 
 skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとする
 
-- [ ]
-
-
-
 
 - tmp_bluesテンプレート操作時に気付いた点。本家テンプレtmp_esm_ucとの相違など
   - [toggle_full_screen]で最大化したさいにウインドウ内側いっぱいに拡大・センタリングしていない。タイトル画面で再現
@@ -215,6 +211,32 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
     - 戻るを選択すると、システムボタンが横書きになり[trans]する
   - アルバム画面で、本文で表示されたのに「語り手」 doc/prj/image/F_kuchimoto.jpg が表示されずリンク切れ
 
+- [x] `[trans layer=…]`（一部レイヤだけの交換）が、交換対象外レイヤの**裏ページを破壊**していた
+	- 症状：実テンプレ（`tmp_blues`）で本文が縦書きにならない・メッセージウインドウの枠画像が出ず
+	  試作の点線枠のまま。`[txt_lay_v_center]`が組んだ設定が丸ごと消えていた
+	- 原因：`startTrans()`が交換対象外レイヤについて**裏へ表をコピー**していた。本家
+	  （`LayerMng.ts:617`「transしないために交換する」）がやっているのは**表と裏の入れ替え**で、
+	  各レイヤ自身のfore/backの中身には触らない。裏には次の場面の組み立て途中が載っていることが
+	  あるので、コピーだとそれを捨ててしまう。テンプレは
+	  「文字レイヤの裏に次の設定を組む →`[sysmenu_draw_v]`が`[trans layer=mes_sysmenu]`を打つ」
+	  という順なので、**別レイヤのtransが文字レイヤの組み立てを消す**という形で露見した
+	- あわせて`finishTrans()`に`cpFore2Back()`を追加。本家`Pages.ts:74 transPage()`は
+	  交換したレイヤについて交換後に`back.copy(fore)`をしており、こちらはそれが抜けていた
+	  （＝新しい裏が1つ前の画面のまま残る）
+	- 切り分けの経緯：エンジンは無実だった。`test/uc_goal.test.ts`の仕掛け（fetchとフレームだけ
+	  偽装してエンジンを回す）を`tmp_blues`へ向けると、`writing-mode: vertical-rl`も`b_pic`も
+	  正しくアクションに出ている。決め手は**実機のストアを購読して`mes`の変化を並べた**こと
+	  （vite dev が配る`dist/store.js`のURLを`performance.getEntriesByType('resource')`から拾って
+	  `import()`すれば同じインスタンスが取れる。`src/`にテスト用フックを足さずに済む）。
+	  縦書きが裏に載った次の瞬間に表裏とも消えており、間にあるのが`[trans layer=mes_sysmenu]`だった
+	- E2E `test/e2e/grp.e2e.ts` ＋ フィクスチャ`app/prj_grp/`を追加。テンプレの`[grp]`＝
+	  1回の場面転換で`[trans]`を3回打つ並びを、上の`[trans layer=mes_sysmenu]`込みで最小再現する。
+	  **旧挙動では`horizontal-tb`に巻き戻って落ちる**ことを確認済み
+
+- 文字レイヤクリアでボタンをクリアしてほしいが、してない？
+
+
+- [ ]
 
 
 
@@ -222,6 +244,31 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 
+
+
+
+- todo.md: 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定）
+  - 立ち絵を震わせる [fg_shake][fg2_shake] で使用しているかと思ったが、[tsy path=]で実現していた
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2
+- todo.md: **文字出現・消去演出**
+- todo.md: **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play
+- todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
+- todo.md: **フィルターの残り**
+  - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter
+- todo.md: **アニメpng（スプライトシート）の残り**
+  - 【現状不使用・優先順位低】文字レイヤの枠画像でのシート再生
+  - `[graph]`の`width`/`height`
+  - `[l]`/`[p]`の待ちマークの位置指定
+- todo.md: **`[button]`の残り**：画像ボタン
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
+
+
+
+- [ ] **しおり・システム系の残り**
+  - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
+  - [ ] `[save pic=…]`のサムネイル保存（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`が枠に出す想定）。まず`[snapshot]`の結果をどこへ置くかから
 
 
 
@@ -229,13 +276,10 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 - 音系に着手。だがあなたはこちらのようなテスト可能か？
   - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
 
-- GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
-
 - イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
 
 
 
-- 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
 
 
 

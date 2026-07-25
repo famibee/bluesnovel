@@ -43,7 +43,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'autoskip' | 'autostory' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'lay' | 'multi' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'anime' | 'autoskip' | 'autostory' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'grp' | 'lay' | 'multi' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

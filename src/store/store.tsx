@@ -100,7 +100,8 @@ export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号
 //	（timeが同じ値だと参照が変わってもeffectを撃ち直せないため）
 //	ruleSrc指定時はクロスフェードではなくルール画像によるワイプ（Trans.ts）
-export type T_TRANS = {seq: number; time: number; ruleSrc?: string; vague?: number} | null;
+//	aLayNmを持ち回るのは、演出終了時に「交換したレイヤだけ」新しい裏へ写し直すため（finishTrans）
+export type T_TRANS = {seq: number; aLayNm: string[] | null; time: number; ruleSrc?: string; vague?: number} | null;
 export type T_STARTTRANS = {
 	aLayNm	: string[] | null;	// 交換するレイヤ名。nullは全レイヤ
 	time	: number;			// ミリ秒。0なら演出せず即交換
@@ -216,6 +217,23 @@ function putPage(s: T_STATE, idx: 0 | 1, aLay: T_LAY[]): {aPage: [T_LAY[], T_LAY
 	const aPage: [T_LAY[], T_LAY[]] = [s.aPage[0], s.aPage[1]];
 	aPage[idx] = aLay;
 	return {aPage};
+}
+// [trans]の交換が済んだ直後、**新しい裏へ新しい表を写す**（本家 Pages.ts:74 transPage() の
+//	`this.#pg.back.copy(this.#pg.fore)`）。写すのは交換したレイヤだけで、それ以外は
+//	startTrans()が交換前に写し済み。
+//	これが無いと、新しい裏＝交換前の表（＝1つ前の画面）のまま残り、次に
+//	[lay page=back]で一部だけ書き換えて[trans]したときに、書き換えなかった部分が
+//	**1つ前の画面へ巻き戻る**。テンプレの[grp]は「文字レイヤを消す→画像を替える→文字レイヤを戻す」と
+//	[trans]を3回打つので、ここが抜けていると2回目の文字レイヤ[trans]で
+//	場面転換前の文字レイヤ設定（縦書き指定など）が復活してしまう
+function cpFore2Back(s: T_STATE, foreIdx: 0 | 1, aLayNm: string[] | null): {aPage: [T_LAY[], T_LAY[]]} {
+	const bi = (1 - foreIdx) as 0 | 1;
+	const fore = s.aPage[foreIdx];
+	const back = s.aPage[bi].map(e=> aLayNm && ! aLayNm.includes(e.nm)
+		? e
+		: structuredClone(fore.find(f=> f.nm === e.nm) ?? e)
+	);
+	return putPage(s, bi, back);
 }
 // レイヤ1件を探す（見つからない・種別違いは例外）
 function findLay<C extends 'grp' | 'txt'>(aLay: T_LAY[], nm: string, cls: C) {
@@ -450,33 +468,39 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 	trans		: null,
 	// [trans]開始。演出の主役は「表ページを次第に透明にし、下から裏ページを出す」こと（Stage.tsx）。
-	//	ここでやるのは下ごしらえだけ：交換対象外のレイヤは、裏へ表の内容を写しておく。
-	//	こうしておけば裏ページ＝トランジション後のあるべき画面そのものになり、
-	//	最後にforeIdxを反転するだけで完了できる（本家 #trans() の「transしないために交換する」相当）
+	//	ここでやるのは下ごしらえだけ：**交換対象外のレイヤは、表と裏の中身を入れ替えておく**
+	//	（本家 LayerMng.ts:617「transしないために交換する」）。表裏の別はストア全体で1つの
+	//	foreIdxが決めるので、最後にそれを反転しても交換対象外のレイヤは元のまま——という形にする。
+	//	**写す（コピー）のではない**：裏には次の場面の組み立て途中が載っていることがあり、
+	//	コピーだとそれを表の内容で上書きして捨ててしまう。テンプレは
+	//	「文字レイヤの裏に次の設定を組む → [sysmenu_draw_v]が[trans layer=mes_sysmenu]を打つ」
+	//	という順で書くので、そこで組み立て中の設定（縦書き指定）が丸ごと消えていた
 	startTrans	: ({aLayNm, time, ruleSrc, vague}: T_STARTTRANS)=> set(s=> {
 		const bi = (1 - s.foreIdx) as 0 | 1;
 		const fore = s.aPage[s.foreIdx];
-		const back = s.aPage[bi].map(e=> aLayNm && ! aLayNm.includes(e.nm)
-			? structuredClone(fore.find(f=> f.nm === e.nm) ?? e)
-			: e
-		);
-		const st = putPage(s, bi, back);
+		const skip = (nm: string)=> aLayNm !== null && ! aLayNm.includes(nm);
+		const back = s.aPage[bi].map(e=> skip(e.nm) ? fore.find(f=> f.nm === e.nm) ?? e : e);
+		const st0 = putPage(s, bi, back);
+		const st = putPage({...s, ...st0}, s.foreIdx,
+			fore.map(e=> skip(e.nm) ? s.aPage[bi].find(f=> f.nm === e.nm) ?? e : e));
 
 		// time=0（または既読スキップ中）は演出せず即交換。transはnullのままなのでStageは何もしない
-		if (time <= 0) return {...st, foreIdx: bi};
+		if (time <= 0) return {...st, foreIdx: bi, ...cpFore2Back({...s, ...st}, bi, aLayNm)};
 
-		return {...st, trans: {seq: (s.trans?.seq ?? 0) + 1, time,
+		return {...st, trans: {seq: (s.trans?.seq ?? 0) + 1, aLayNm, time,
 			...ruleSrc !== undefined ? {ruleSrc} : {},
 			...vague !== undefined ? {vague} : {},
 		}};
 	}),
-	// 演出終了。表裏を入れ替える（配列の中身ではなく、どちらを表とみなすかを反転するだけ）。
+	// 演出終了。表裏を入れ替える（配列の中身ではなく、どちらを表とみなすかを反転するだけ）＋
+	//	交換したレイヤを新しい裏へ写し直す（cpFore2Back）。
 	//	zustandのsetは同期なので、これを呼んだ時点で以降の書き込み先は新しい表ページになる。
 	//	演出が途中でも呼んでよい（Stage側が見た目を終了状態へ確定させる）
-	finishTrans	: ()=> set(s=> s.trans
-		? {foreIdx: (1 - s.foreIdx) as 0 | 1, trans: null}
-		: {}	// 演出していない（time=0で交換済み等）なら何もしない
-	),
+	finishTrans	: ()=> set(s=> {
+		if (! s.trans) return {};	// 演出していない（time=0で交換済み等）なら何もしない
+		const fi = (1 - s.foreIdx) as 0 | 1;
+		return {foreIdx: fi, trans: null, ...cpFore2Back({...s, foreIdx: fi}, fi, s.trans.aLayNm)};
+	}),
 
 	quake		: null,
 	startQuake	: ({hmax, vmax}: T_STARTQUAKE)=> set(s=> ({
