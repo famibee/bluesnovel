@@ -25,7 +25,7 @@
   - 3画面とも、フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
 - 音声（`[bgm]`＝`[playbgm]`。一旦無視の対象）
 - `[ch]`・`[span]`・`[link]`（文字装飾系。`sub.sn`の文字組みマクロが使う。下記「文字組み」項目へ）
-- `[record_place]`・`[reload_script]`・`[save]`（しおり層）、`[window]`・`[close]`（Electron専用）
+- `[window]`・`[close]`（Electron専用）
 - **組み込み変数`const.sn.lay.*`** … **実装済み**（2026-07-25。存在判定`const.sn.lay.<名前>`＋詳細ツリー`const.sn.lay[N].<fore|back>.visible/.alpha/.left/.top/.width`。`ScriptMng`がストアの表裏からレイヤ木JSONを`defBuiltin`供給、`VarStore`のJSON潜り込みを組み込み変数にも拡張）。`width`/`height`のみストアに実寸が無く「表示物があるか」を1/0で代用（立ち絵`[fg2]`GCの`width>0`判定用）。残る組み込み変数は`const.sn.sound.*`・`const.sn.key.*`など
 
 - [ ] **ページ裏表の残り**（`[lay page=…]`・`[trans]`・`[wt]`・`[button page=…]`・`[er]`の両面消去は実装済み）
@@ -44,8 +44,10 @@
   - [ ] `[tsy]`の`width`/`height`は、レイヤ属性側（`[lay]`）に無いので未対応（`pivot_x`/`pivot_y`は対応済み）
   - [ ] `[tsy render=…]`（レイヤを一枚に描画してから動かす）はpixi前提なので保留。`[tsy filter=…]`（トゥイーン開始と同時にフィルターを掛ける）は`[lay filter=…]`と同じ仕組みで足せる
   - [ ] `[tsy backlay=…]`（終了時に裏ページへ同じ値を写す）。bluesnovelは`page=`で対象ページを選べるようにしたので、必要かどうか判断してから
-- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`・`[navigate_to]`・`[loadplugin]`・`[snapshot]`は実装済み）
-  - [ ] `[record_place]`（セーブポイント指定）と`[reload_script]`（スクリプト再読込）は、どちらもセーブ層（しおり）が要るので既読情報の永続化と一緒に。`[reload_script]`は本家では「今のスクリプトを読み直して`[record_place]`の位置へ戻る」＝`[record_place]`単体では意味がない
+- [ ] **しおり・システム系の残り**（`[title]`・`[toggle_full_screen]`・`[dump_lay]`・`[pop_stack]`・`[navigate_to]`・`[loadplugin]`・`[snapshot]`・`[record_place]`・`[save]`・`[load]`・`[reload_script]`・`[copybookmark]`・`[erasebookmark]`・`[export]`・`[import]`は実装済み）
+  - [ ] `[load]`の残り：**音声の復元**（本家`playLoopFromSaveObj()`。音声層と一緒に）、`index=`（ページ移動用）・`do_rec=`。また**読み戻し履歴（PageUp/PageDown）は捨てている**——ロード後の位置は履歴と繋がらないため。ページログ（`[page to=…]`）を作るときに設計し直す
+  - [ ] `[save]`の残り：**サムネイル画像の保存**（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`は`[save pic=…]`で撮った画像を枠に出す想定）。ブラウザ版は本家も代替画像を出すので、まずは`[snapshot]`の結果をどこへ置くかから
+  - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）は`[export]`/`[import]`も含めて未対応。アセット暗号化と一緒に
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）はElectron専用。本家もブラウザ版（`SysWeb`）では何もしないno-opなので、`dist_app`側の整備と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレーム（`[add_frame]`）の中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版もpixiステージだけを撮るので結果は同じ）。`smoothing=`・`fn`の拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁は未対応
   - [ ] `[toggle_full_screen]`の残り：本家は全画面時にステージを画面中央へ寄せる（`SysBase.cvsResize()`）。bluesnovelは`transform: scale()`での拡縮なので、全画面時の見た目は実機で要確認
@@ -60,9 +62,9 @@
   - [ ] `[lay blur_x=/blur_y=]`（軸別のぼかし強度）はCSSの`blur()`が半径1つしか持てないので表現できない
 - [ ] **組み込み変数の残り**（環境・設定まわり＝`const.sn.config.*`/`navigator.language`/`screenResolution*`/`isApp`等、および`const.sn.lay.*`（存在判定＋レイヤ木の詳細ツリー）は実装済み。`ScriptMng#defEnvBuiltins()`）
   - [ ] `const.sn.lay[N].<fore|back>.width/.height` は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら、描画側（GrpLayerの`<img>`のnaturalWidth等）から集める設計に差し替える
-  - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）・`const.sn.bookmark.json`（しおり）は各層と一緒に
-  - [ ] **システム変数(sys:)は初期値だけ入るようになった**（`VarStore`が生成時と[clearsysvar]時に`creSYS_DATA()`を適用）。読み書きはできるが、その値を使う機能が無いものが多い（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`＝テキスト窓の背景濃度、`sn.sound.*`/`const.sn.sound.*.volume`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。設定画面から変更しても見た目に反映されないので、各層の実装時に繋ぐ
-  - [ ] **sys: がまだ保存されない**ので`const.sn.isFirstBoot`は常にtrue（毎回まっさらな起動）。しおり層でsys:の永続化を入れるとき一緒に直す
+  - [ ] `const.sn.sound.*`（音声）・`const.sn.log.json`（履歴）は各層と一緒に。`const.sn.bookmark.json`（しおり）は実装済み
+  - [ ] `const.Date.getDateStr`・`const.sn.last_page_plain_text`は未対応。テンプレの`_archive.sn`が`[save dt=… text=…]`で使っており、無いと枠の日付・本文が空になる（`&式`がundefinedだと属性ごと落ちるため）
+  - [ ] **システム変数(sys:)は初期値が入り、保存もされるようになった**（`VarStore`が生成時と[clearsysvar]時に`creSYS_DATA()`を適用。停止点ごとに`SaveMng`がlocalStorageへ）。読み書きはできるが、その値を使う機能が無いものが多い（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`＝テキスト窓の背景濃度、`sn.sound.*`/`const.sn.sound.*.volume`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。設定画面から変更しても見た目に反映されないので、各層の実装時に繋ぐ
   - [ ] `const.sn.key.*`（修飾キーの押下状態。本家 `EventMng`）は未対応
 - [ ] **`[button]`の残り**（`left`/`top`/`width`/`height`/`rotation`/`pivot_x`/`pivot_y`/`scale_x`/`scale_y`/`alpha`/`enabled`/`blendmode`は実装済み）
   - [ ] `pic=`（画像ボタン）・`b_pic=`（背景画像）はアセットパイプライン整備と一緒に
@@ -77,7 +79,6 @@
   - スキップモード`'p'`（改ページで止まる）は`#calcResume()`で`[p]`をstop扱いにするところまで実装したが、`Main.tsx`が手動操作のたびに`cancelAuto()`を呼ぶため、ユーザーがその改ページをクリックで越えるとスキップも解除されてしまう（本家はスキップ継続）。「モード'p'の改ページ停止」を手動停止と区別する必要がある。既定`'s'`（全部飛ばす）は正しく動く
   - 文字送りウェイト設定（`sys:sn.tagCh.*_Kidoku`）は、bluesnovelの文字送りがGSAP（duration/stagger）で秒単位のため未接続。既読スキップ中の瞬時表示（`store.skipping`→`TxtLayer`）だけ実装済み。文字送り演出パラメータ確定（別項目）と合わせて調整
   - オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む。実機調整時に見直し
-- [ ] 既読情報の永続化（本家 `Variable.saveKidoku()` → `SysBase.data.kidoku` → localStorage）。`ScriptEngine.getKidoku()`/`setKidoku()`は用意済みなので、セーブ層ができ次第そこへ繋ぐ。保存タイミングは本家同様に停止点（`[l]`/`[p]`/`[s]`）
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
 - [ ] `[event]`の`url`属性（ラベルへ飛ぶ代わりにURLを開く予約）は未対応。タグ単体の`[navigate_to]`は実装済みなので、`[event]`側から呼べるようにするだけ
@@ -97,7 +98,6 @@
 - [ ] 文字送り演出のパラメータ（`duration: 0.25`, `stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整
 - [ ] 動画・音声対応
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
-- [ ] `package.json`から`store`, `socket.io-client`を除去（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
 - [ ] **文字装飾・文字組み**：`[ch]`（文字を追加）・`[span]`（インラインスタイル）・`[link]`/`[endlink]`（ハイパーリンク）・`[ruby2]`・`[tcy]`（縦中横）。`sub.sn`の`txt_lay_*`マクロが使う。`[lay bura=…]`（ぶら下げ禁則）や縦書き・`r_size`・`max_col`とまとめて設計する
 - [ ] `[button]`の既定の見た目（色・角丸・余白）は仮のまま。座標・寸法指定（`left`/`top`/`width`/`height`等）は実装済み

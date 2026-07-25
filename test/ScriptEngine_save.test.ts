@@ -1,0 +1,176 @@
+/* ***** BEGIN LICENSE BLOCK *****
+	Copyright (c) 2026-2026 Famibee (famibee.blog38.fc2.com)
+
+	This software is released under the MIT License.
+	http://opensource.org/licenses/mit-license.php
+** ***** END LICENSE BLOCK ***** */
+
+// しおり（セーブ・ロード）系タグのうち、エンジンが担当する部分。
+//	[record_place]・[save]・[load]・[reload_script]・[copybookmark]・[erasebookmark]・
+//	[export]・[import]。
+//	本家：ScriptIterator.ts:1516 #record_place() / :1552 #save() / :1415 #load() /
+//	:1488 #reload_script()、Variable.ts:282 #copybookmark() / :298 #erasebookmark()、
+//	SysWeb.ts:179 _export / :204 _import
+//
+//	**しおり1件の中身はエンジンだけでは決まらない**（表裏ページはストアが持つ）ので、
+//	組み立て・保存・復元はScriptMngの担当。ここで見るのは
+//	・エンジンが持つ分（save:変数・ifスタック・再開位置）の出し入れ
+//	・属性の解釈と、そのタグが停止点かどうか
+
+import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
+
+import {expect, it} from 'bun:test';
+
+
+function acts(src: string): T_ENGINE_ACTION[] {return new ScriptEngine('t1', src).step()}
+
+
+// ============ [record_place] ============
+
+it('recordPlace_writesResumePoint', ()=> {
+	// 再開位置（save:const.sn.scriptFn / scriptIdx）をsave:へ書く。しおりのhSaveに含まれる
+	const se = new ScriptEngine('t1', 'あ[record_place]い[s]');
+	const a = se.step();
+	expect(a.find(v=> v.t === 'recordPlace')).toEqual({t: 'recordPlace'});
+	expect(se.getVal('save:const.sn.scriptFn')).toBe('t1');
+	expect(typeof se.getVal('save:const.sn.scriptIdx')).toBe('number');
+});
+
+it('recordPlace_insideSubroutineRecordsCaller', ()=> {
+	// サブルーチンの中なら**最上位の呼び元**の位置を記録する（本家 nowScrIdx()）。
+	//	中身から再開しても呼び元のスタックが無くて[return]できないため
+	const se = new ScriptEngine('t1', `[call label=*sub]あ[s]
+*sub
+	[record_place]
+[return]`);
+	se.step();
+	const idxCaller = Number(se.getVal('save:const.sn.scriptIdx'));
+	// [call]の次のトークン（＝戻り先）を指す＝サブルーチン内の位置ではない
+	expect(idxCaller).toBeLessThan(5);
+});
+
+it('nowMarkPart_savesGameVarsAndIfStack', ()=> {
+	const se = new ScriptEngine('t1', '[let name=game:hp text=80][if exp=true][record_place][s][endif]');
+	se.step();
+	const mk = se.nowMarkPart();
+	expect(mk.hSave['hp']).toBe('80');
+	expect(mk.aIfStk.length).toBe(1);	// [if]で1つ積まれている
+});
+
+it('restoreMarkPart_restoresGameVarsAndClearsStacks', ()=> {
+	const se = new ScriptEngine('t1', '[let name=game:hp text=80][let name=mp:m text=1][s]');
+	se.step();
+	se.restoreMarkPart({hSave: {hp: 10, name: 'ゆかり'}, aIfStk: [-1]});
+	expect(se.getVal('game:hp')).toBe(10);
+	expect(se.getVal('game:name')).toBe('ゆかり');
+	expect(se.getVal('mp:m')).toBeUndefined();	// マクロ引数は捨てる
+});
+
+it('cloneSys_setSys_roundTrip', ()=> {
+	// sys:の永続化用。cast=strの記録も一緒に運ぶ（でないと'0123'が復元後に123になる）
+	const se = new ScriptEngine('t1', '[let name=sys:a text=0123 cast=str][let name=sys:n text=5][s]');
+	se.step();
+	const h = se.cloneSys();
+
+	const se2 = new ScriptEngine('t2', '[s]');
+	se2.setSys(h);
+	expect(se2.getVal('sys:a')).toBe('0123');
+	expect(se2.getVal('sys:n')).toBe(5);
+});
+
+
+// ============ [save] ============
+
+it('save_pushesActionWithAttrs', ()=> {
+	// place以外の属性がそのまましおりの見出し（const.sn.bookmark.json）になる
+	const a = acts('[save place=3 text=第一章 thumb=t.png][s]');
+	expect(a.find(v=> v.t === 'save'))
+		.toEqual({t: 'save', place: 3, json: {text: '第一章', thumb: 't.png'}});
+});
+
+it('save_placeRequired', ()=> {
+	expect(()=> acts('[save][s]')).toThrow('[save] placeは必須です');
+});
+
+it('save_bumpsNextPlaceOnlyWhenCurrent', ()=> {
+	// 「次に保存する枠」は、今書いた枠が現在値のときだけ進む（本家と同じ）
+	const se = new ScriptEngine('t1', '[save place=1][s]');
+	se.step();
+	expect(se.getVal('sys:const.sn.save.place')).toBe(2);
+
+	const se2 = new ScriptEngine('t2', '[save place=5][s]');
+	se2.step();
+	expect(se2.getVal('sys:const.sn.save.place')).toBe(1);	// 既定値のまま
+});
+
+it('save_defaultTextIsEmpty', ()=> {
+	// text無指定でも見出しにtextキーは入る（本家 hArg.text = hArg.text ?? ''）
+	const a = acts('[save place=0][s]');
+	expect(a.find(v=> v.t === 'save')).toEqual({t: 'save', place: 0, json: {text: ''}});
+});
+
+
+// ============ [load] ============
+
+it('load_defaultsAndStops', ()=> {
+	const a = acts('[load][s]');
+	expect(a.at(-1)).toEqual({t: 'load', place: 0, fn: '', label: ''});
+	expect(a.some(v=> v.t === 'stop')).toBe(false);	// 復元が済むまで待つ＝停止する
+});
+
+it('load_fnAndLabelMustBePaired', ()=> {
+	expect(()=> acts('[load place=1 fn=other][s]')).toThrow('fnとlabelはセットで');
+	expect(()=> acts('[load place=1 label=*a][s]')).toThrow('fnとlabelはセットで');
+	expect(acts('[load place=1 fn=other label=*a][s]').at(-1))
+		.toEqual({t: 'load', place: 1, fn: 'other', label: '*a'});
+});
+
+
+// ============ [reload_script] ============
+
+it('reloadScript_stops', ()=> {
+	const a = acts('[reload_script][s]');
+	expect(a.at(-1)).toEqual({t: 'reloadScript'});
+	expect(a.some(v=> v.t === 'stop')).toBe(false);
+});
+
+
+// ============ [copybookmark] / [erasebookmark] ============
+
+it('copybookmark_pushesAction', ()=> {
+	expect(acts('[copybookmark from=1 to=2][s]').find(v=> v.t === 'copyBookmark'))
+		.toEqual({t: 'copyBookmark', from: 1, to: 2});
+});
+
+it('copybookmark_sameIsNoop', ()=> {
+	// from===toは本家同様なにもしない
+	expect(acts('[copybookmark from=1 to=1][s]').some(v=> v.t === 'copyBookmark')).toBe(false);
+});
+
+it('erasebookmark_pushesAction', ()=> {
+	expect(acts('[erasebookmark place=4][s]').find(v=> v.t === 'eraseBookmark'))
+		.toEqual({t: 'eraseBookmark', place: 4});
+});
+
+
+// ============ [export] / [import] ============
+
+it('export_import_pushActionsWithoutStopping', ()=> {
+	// どちらも停止点ではない（[import]のファイル選択はユーザー任せで、
+	//	終わったら[event key=sn:imported]が発火する。本家と同じ）
+	const a = acts('[export][import][s]');
+	expect(a.find(v=> v.t === 'exportData')).toEqual({t: 'exportData'});
+	expect(a.find(v=> v.t === 'importData')).toEqual({t: 'importData'});
+	expect(a.at(-1)?.t).toBe('stop');
+});
+
+
+// ============ 予約タグ名 ============
+
+it('saveTags_areReservedForMacroNames', ()=> {
+	// タグ名はマクロ名に使えない（本家 REG_NG4MAC_NM ＋ タグ名一覧）
+	for (const nm of ['save', 'load', 'record_place', 'reload_script',
+		'copybookmark', 'erasebookmark', 'export', 'import']) {
+		expect(ScriptEngine.RESERVED_TAGS.has(nm)).toBe(true);
+	}
+});

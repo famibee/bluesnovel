@@ -17,6 +17,7 @@ import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng} from './FrameMng';
 import {focusMng} from './FocusMng';
 import {savePic, snapshotToPng} from './Snapshot';
+import {SaveMng, type T_MARK} from './SaveMng';
 import type {T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
@@ -75,7 +76,11 @@ export class ScriptMng {
 	async #load(fn: string) {
 		const scr = await this.#getScript(fn);
 		if (this.#engine) this.#engine.switchScript(scr);
-		else {this.#engine = new ScriptEngine(scr); this.#defEnvBuiltins(this.#engine)}
+		else {
+			const engine = this.#engine = new ScriptEngine(scr);
+			this.#defEnvBuiltins(engine);
+			this.#loadSaveData(engine);
+		}
 
 		this.go = ()=> this.#goSafe();
 
@@ -101,19 +106,15 @@ export class ScriptMng {
 			'const.sn.isDbg'		: ()=> false,
 			'const.sn.isDebugger'	: ()=> false,
 			'const.sn.isPackaged'	: ()=> false,
-			// 本家は「sys:の保存データが空だったか」で決める（SysWeb.ts:90）。こちらはまだ
-			//	sys:を保存しないので**毎回が初回起動**＝常にtrue。テンプレの theme/setting.sn は
-			//	[if exp=const.sn.isFirstBoot] の中で sys:TextLayer.Back.Alpha などの初期値を
-			//	入れるので、falseのままだと設定画面がどれも既定値のままになる
-			'const.sn.isFirstBoot'	: ()=> true,
+			// 本家（SysWeb.ts:90）と同じく「sys:の保存データが空だったか」で決める。
+			//	テンプレの theme/setting.sn は [if exp=const.sn.isFirstBoot] の中で
+			//	sys:TextLayer.Back.Alpha などの初期値を入れるので、ここが正しくないと設定画面が狂う
+			'const.sn.isFirstBoot'	: ()=> this.#isFirstBoot,
 			// ブラウザは音を鳴らす前にユーザー操作を要求する。音声層が無い今は常にfalse
 			'const.sn.needClick2Play'	: ()=> false,
-			// **しおり（セーブ）層の暫定既定値**。まだ保存機能が無いので、ロード画面（frames/_archive）が
-			//	空のセーブ枠を表示できるよう本家の初期値だけ用意する（本家 CmnInterface.ts:290/197）。
-			//	本家の const.sn.bookmark.json はセーブデータから作る組み込み変数で、空なら '[]'。
-			//	これが無いと _archive の [set_frame … text=&const.sn.bookmark.json] が
-			//	「textは必須です」で落ちる（&式がundefinedだと属性が落ちるため）。
-			'const.sn.bookmark.json'	: ()=> '[]',
+			// しおり一覧（本家 Variable.ts:59 defTmp）。ロード画面（テンプレの frames/_archive）が
+			//	[set_frame … text=&const.sn.bookmark.json] で読む
+			'const.sn.bookmark.json'	: ()=> this.#saveMng.bookmarkJson(),
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
 
@@ -145,6 +146,50 @@ export class ScriptMng {
 			return JSON.stringify(hLay);
 		});
 	}
+
+	// ===== セーブ層（しおり・sys:・既読の永続化。SaveMng.ts） =====
+	//	保存先はlocalStorageで、キーはprj.jsonのsave_nsで分ける。**器はSaveMngが持ち、
+	//	中身の出し入れはここが仲介する**（エンジンはlocalStorageを知らない決まりのため）
+	#saveMng	= new SaveMng('');
+	#isFirstBoot= true;
+
+	// 起動時：保存済みのsys:と既読をエンジンへ流し込む（本家 SysWeb.initVal()）
+	#loadSaveData(engine: ScriptEngine) {
+		this.#saveMng = new SaveMng(this.sys.cfg.oCfg.save_ns);
+		try {this.#isFirstBoot = this.#saveMng.load()}
+		catch (e) {
+			// 壊れたデータで起動できなくなるのが一番困るので、知らせて初期状態から始める
+			this.myTrace(`セーブデータが壊れています。初期状態で起動します ${String(e)}`, 'E');
+			this.#isFirstBoot = true;
+		}
+		if (this.#isFirstBoot) {
+			// 本家 SysBase.init() の val.setVal_Nochk('sys','const.sn.cfg.ns', save_ns)。
+			//	[import]で「別のゲームのデータ」を弾く目印になる
+			engine.setValNochk('sys:const.sn.cfg.ns', this.sys.cfg.oCfg.save_ns);
+			this.#flushSys();
+			return;
+		}
+		engine.setSys(this.#saveMng.data.sys);
+		engine.setKidoku(this.#saveMng.data.kidoku);
+	}
+	// sys:と既読を書き戻して保存（SaveMng側で500msにまとめられる）。
+	//	sys:は「設定画面で変えたら即保存」が本家の挙動なので、停止点ごとに丸ごと写して良い
+	#flushSys() {
+		const engine = this.#engine;
+		if (! engine) return;
+
+		this.#saveMng.data.sys = engine.cloneSys();
+		this.#saveMng.data.kidoku = engine.getKidoku();
+		this.#saveMng.flush();
+	}
+
+	// しおり1件を組み立てる（本家 ScriptIterator #record_place() の後半）。
+	//	エンジン側（save:変数・ifスタック）とストア側（表裏ページ）の合成
+	#mkMark(json: {[k: string]: string} = {}): T_MARK {
+		return {...this.#engine!.nowMarkPart(), sPages: this.$fncs.getPagesJson(), json};
+	}
+	// 直近の[record_place]で覚えたしおり。[save]はこれを保存する（本家 #mark）
+	#mark?: T_MARK;
 
 	async #getScript(fn: string): Promise<Script> {
 		return this.#hScript[fn] ??= new Script(fn, await this.#fetchScript(fn), this.#getGrm());
@@ -464,6 +509,11 @@ export class ScriptMng {
 					this.#procDom(last).catch(()=> {/* myTraceで表示済み */});
 					return;
 				}
+				// しおりからの復元。スクリプトの読み直し（fetch）が要るのでここで一旦返る
+				if (last?.t === 'load' || last?.t === 'reloadScript') {
+					this.#procLoad(last).catch(()=> {/* myTraceで表示済み */});
+					return;
+				}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					return;
@@ -496,6 +546,48 @@ export class ScriptMng {
 		}
 		this.#goSafe();
 	}
+	// [load]／[reload_script]：しおりから復元して、その位置のスクリプトを読み直してから続きを回す
+	//	（本家 ScriptIterator loadFromMark()）。#procFrame()と同じく#busyが下りた後に呼ばれる
+	async #procLoad(act: Extract<T_ENGINE_ACTION, {t: 'load' | 'reloadScript'}>) {
+		const engine = this.#engine;
+		if (! engine) return;
+
+		try {
+			// [reload_script]は「最後の[record_place]位置」＝#mark。[load]は保存済みのしおり
+			const mark = act.t === 'reloadScript' ? this.#mark : this.#saveMng.getMark(act.place);
+			if (! mark) throw act.t === 'reloadScript'
+				? '[record_place]がまだ実行されていません'
+				: `place=${String(act.place)} は存在しません`;
+
+			engine.restoreMarkPart(mark);
+			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
+			this.sys.caretaker.clear();			// 読み戻し履歴は繋がらないので捨てる
+			this.#stopped = false;
+
+			// 再開位置。**スクリプトは必ず読み直す**（本家も「吉里吉里に動作を合わせる」ため
+			//	キャッシュを捨てる。[reload_script]はファイルが編集された後の読み直しが目的なので必須）
+			const fn = String(engine.getVal('save:const.sn.scriptFn') ?? '');
+			const idx = Number(engine.getVal('save:const.sn.scriptIdx') ?? 0);
+			if (! fn) throw '再開位置（save:const.sn.scriptFn）が空です';
+
+			delete this.#hScript[fn];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+			const scr = await this.#getScript(fn);
+
+			// [load fn=… label=…]はセットで指定する決まり（エンジン側で検査済み）。
+			//	指定時は「復元した状態のまま、そのラベルをサブルーチンコールする」（本家と同じ）
+			if (act.t === 'load' && act.label) {
+				engine.switchScript(scr, '', idx);
+				const scrCall = act.fn && act.fn !== fn ? await this.#getScript(act.fn) : scr;
+				engine.callToScript(scrCall, act.label);
+			}
+			else engine.switchScript(scr, '', idx);
+		} catch (e) {
+			this.myTrace(`[${act.t === 'reloadScript' ? 'reload_script' : 'load'}] ${String(e)}`, 'ET');
+			return;
+		}
+		this.#goSafe();
+	}
+
 	// [loadplugin join=true]／[snapshot]：DOM絡みの非同期処理を終えてから続きを回す。
 	//	#procFrame()と同じく#runStep()の外（#busyが下りた後）から呼ばれる
 	async #procDom(act: Extract<T_ENGINE_ACTION, {t: 'loadPlugin' | 'snapshot'}>) {
@@ -649,6 +741,45 @@ export class ScriptMng {
 		case 'snapshot':
 			// 実処理は#runStep()側（撮り終わってから続きを回す）
 			break;
+
+		// ---- しおり（セーブ・ロード）系 ----
+		case 'recordPlace':
+			// 今の状態をしおり1件ぶんに組み立てて覚えるだけ。保存するのは[save]
+			this.#mark = this.#mkMark();
+			break;
+		case 'save':
+			// [record_place]をまだ通っていなければ今の状態で代用する（本家は空の初期値を持つが、
+			//	それだと「保存したのに真っ白」になるので、ここは今の画面を保存する方が親切）
+			this.#saveMng.setMark(act.place, {...this.#mark ?? this.#mkMark(), json: act.json});
+			this.#flushSys();	// sys:const.sn.save.place（次の保存枠）が[save]で進むので一緒に
+			break;
+		case 'load':
+		case 'reloadScript':
+			// 実処理は#runStep()側（復元とスクリプト読み直しが済んでから続きを回す）
+			break;
+		case 'copyBookmark':
+			this.#saveMng.copyMark(act.from, act.to);
+			break;
+		case 'eraseBookmark':
+			this.#saveMng.eraseMark(act.place);
+			break;
+		case 'exportData':
+			this.#flushSys();	// 書き出す前に今のsys:・既読を反映しておく
+			this.#saveMng.export();
+			// 本家同様、終わったら[event key=sn:exported]を発火する（テンプレの _config.sn が拾う）
+			setTimeout(()=> this.fireEvent('sn:exported'), 10);
+			break;
+		case 'importData':
+			// ファイル選択はユーザー任せなのでシナリオは止めない（本家も同じ）
+			void this.#saveMng.import().then(o=> {
+				const engine = this.#engine;
+				if (! engine) return;
+
+				engine.setSys(o.sys);
+				engine.setKidoku(o.kidoku);
+				this.fireEvent('sn:imported');
+			}).catch((e: unknown)=> this.myTrace(`[import] ${String(e)}`, 'E'));
+			break;
 		case 'fullScrKey':
 			// [toggle_full_screen key=…]：以降そのキーで全画面を切り替えられるようにする常駐予約。
 			//	本家もdocumentへリスナを足しっぱなしにする（消す手段は無い）
@@ -715,6 +846,9 @@ export class ScriptMng {
 			//	無ければ手動待ち＝スキップ表示も解除する（この停止点でスキップが尽きた場合）
 			if (act.resume) this.#scheduleResume(act.resume.mode, act.resume.msec);
 			else this.$fncs.setSkipping(false);
+			// 既読情報とsys:の保存。本家も停止点で吐き出す（毎トークンでは重すぎるため）。
+			//	立て続けの呼び出しはSaveMng側で500msにまとめられる
+			this.#flushSys();
 			break;
 		}
 	}

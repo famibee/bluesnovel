@@ -1,0 +1,28 @@
+; E2E用シナリオ（save.e2e.ts が使用）
+;	しおり（セーブ・ロード）はブラウザが要る：保存先がlocalStorageで、
+;	しおりの中身にストアの表裏ページが含まれ、[load]はスクリプトの読み直しを挟むため。
+;	なお「&式&」はトークンの先頭に「&」が来たときだけ効くので、[er]とは行を分ける
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+&game:hp = 100
+[record_place]
+[er]
+&game:hp&[p]
+
+&game:hp = 50
+[er]
+&game:hp&[p]
+
+[save place=1 text=テスト]
+[copybookmark from=1 to=2]
+[er]
+ほぞん[p]
+
+[export]
+[er]
+かきだし[p]
+
+; [record_place]の位置（hp=100の直後）へ戻る＝上の「&game:hp&」をもう一度通る
+[load place=1]

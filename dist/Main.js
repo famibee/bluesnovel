@@ -120,6 +120,13 @@ var b = g()((e, t) => ({
 			back: e.aPage[1 - e.foreIdx]
 		};
 	},
+	getPagesJson: () => {
+		let { aPage: e, foreIdx: n } = t();
+		return JSON.stringify({
+			aPage: e,
+			foreIdx: n
+		});
+	},
 	enableEvent: ({ nm: t, enabled: n }) => e((e) => ({ aPage: e.aPage.map((e) => {
 		let r = [...e];
 		return y(r, t, "txt").enabled = n, r;
@@ -295,9 +302,9 @@ var w = typeof window < "u", ee = function(e) {
 			if (n(e)) return t(e);
 		};
 	}, r), o, s);
-}, O = { restoreOnUnmount: !1 };
-function k(e, t) {
-	t === void 0 && (t = O);
+}, ie = { restoreOnUnmount: !1 };
+function O(e, t) {
+	t === void 0 && (t = ie);
 	var n = (0, f.useRef)(document.title);
 	document.title !== e && (document.title = e), (0, f.useEffect)(function() {
 		if (t && t.restoreOnUnmount) return function() {
@@ -305,7 +312,7 @@ function k(e, t) {
 		};
 	}, []);
 }
-var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) => {
+var ae = typeof document < "u" ? O : function(e) {}, k = /* @__PURE__ */ t(((e) => {
 	var t = Symbol.for("react.transitional.element"), n = Symbol.for("react.fragment");
 	function r(e, n, r) {
 		var i = null;
@@ -320,7 +327,7 @@ var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) 
 		};
 	}
 	e.Fragment = n, e.jsx = r, e.jsxs = r;
-})), ae = /* @__PURE__ */ t(((e) => {
+})), A = /* @__PURE__ */ t(((e) => {
 	process.env.NODE_ENV !== "production" && (function() {
 		function t(e) {
 			if (e == null) return null;
@@ -392,7 +399,7 @@ var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) 
 		}
 		function l(e, t) {
 			function n() {
-				ie || (ie = !0, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", t));
+				ae || (ae = !0, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", t));
 			}
 			n.isReactWarning = !0, Object.defineProperty(e, "key", {
 				get: n,
@@ -401,7 +408,7 @@ var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) 
 		}
 		function u() {
 			var e = t(this.type);
-			return A[e] || (A[e] = !0, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.")), e = this.props.ref, e === void 0 ? null : e;
+			return k[e] || (k[e] = !0, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.")), e = this.props.ref, e === void 0 ? null : e;
 		}
 		function d(e, t, n, r, i, a) {
 			var o = n.ref;
@@ -441,7 +448,7 @@ var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) 
 		}
 		function f(e, n, r, a, s, u) {
 			var f = n.children;
-			if (f !== void 0) if (a) if (O(f)) {
+			if (f !== void 0) if (a) if (ie(f)) {
 				for (a = 0; a < f.length; a++) p(f[a]);
 				Object.freeze && Object.freeze(f);
 			} else console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
@@ -463,23 +470,23 @@ var ie = typeof document < "u" ? k : function(e) {}, A = /* @__PURE__ */ t(((e) 
 		function m(e) {
 			return typeof e == "object" && !!e && e.$$typeof === g;
 		}
-		var h = n(), g = Symbol.for("react.transitional.element"), _ = Symbol.for("react.portal"), v = Symbol.for("react.fragment"), y = Symbol.for("react.strict_mode"), b = Symbol.for("react.profiler"), x = Symbol.for("react.consumer"), S = Symbol.for("react.context"), C = Symbol.for("react.forward_ref"), w = Symbol.for("react.suspense"), ee = Symbol.for("react.suspense_list"), te = Symbol.for("react.memo"), T = Symbol.for("react.lazy"), E = Symbol.for("react.activity"), ne = Symbol.for("react.client.reference"), D = h.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, re = Object.prototype.hasOwnProperty, O = Array.isArray, k = console.createTask ? console.createTask : function() {
+		var h = n(), g = Symbol.for("react.transitional.element"), _ = Symbol.for("react.portal"), v = Symbol.for("react.fragment"), y = Symbol.for("react.strict_mode"), b = Symbol.for("react.profiler"), x = Symbol.for("react.consumer"), S = Symbol.for("react.context"), C = Symbol.for("react.forward_ref"), w = Symbol.for("react.suspense"), ee = Symbol.for("react.suspense_list"), te = Symbol.for("react.memo"), T = Symbol.for("react.lazy"), E = Symbol.for("react.activity"), ne = Symbol.for("react.client.reference"), D = h.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, re = Object.prototype.hasOwnProperty, ie = Array.isArray, O = console.createTask ? console.createTask : function() {
 			return null;
 		};
 		h = { react_stack_bottom_frame: function(e) {
 			return e();
 		} };
-		var ie, A = {}, ae = h.react_stack_bottom_frame.bind(h, s)(), j = k(a(s)), oe = {};
+		var ae, k = {}, A = h.react_stack_bottom_frame.bind(h, s)(), j = O(a(s)), oe = {};
 		e.Fragment = v, e.jsx = function(e, t, n) {
 			var r = 1e4 > D.recentlyCreatedOwnerStacks++;
-			return f(e, t, n, !1, r ? Error("react-stack-top-frame") : ae, r ? k(a(e)) : j);
+			return f(e, t, n, !1, r ? Error("react-stack-top-frame") : A, r ? O(a(e)) : j);
 		}, e.jsxs = function(e, t, n) {
 			var r = 1e4 > D.recentlyCreatedOwnerStacks++;
-			return f(e, t, n, !0, r ? Error("react-stack-top-frame") : ae, r ? k(a(e)) : j);
+			return f(e, t, n, !0, r ? Error("react-stack-top-frame") : A, r ? O(a(e)) : j);
 		};
 	})();
 })), j = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
-	process.env.NODE_ENV === "production" ? t.exports = A() : t.exports = ae();
+	process.env.NODE_ENV === "production" ? t.exports = k() : t.exports = A();
 })))());
 function oe(e) {
 	if (e.sheet) return e.sheet;
@@ -1055,9 +1062,9 @@ var et = [function(e, t, n, r) {
 				}
 			}
 		}
-		var S = l, C = u, w = c, ee = s, te = n, T = d, E = i, ne = h, D = m, re = r, O = o, k = a, ie = f, A = !1;
-		function ae(e) {
-			return A || (A = !0, console.warn("The ReactIs.isAsyncMode() alias has been deprecated, and will be removed in React 17+. Update your code to use ReactIs.isConcurrentMode() instead. It has the exact same API.")), j(e) || x(e) === l;
+		var S = l, C = u, w = c, ee = s, te = n, T = d, E = i, ne = h, D = m, re = r, ie = o, O = a, ae = f, k = !1;
+		function A(e) {
+			return k || (k = !0, console.warn("The ReactIs.isAsyncMode() alias has been deprecated, and will be removed in React 17+. Update your code to use ReactIs.isConcurrentMode() instead. It has the exact same API.")), j(e) || x(e) === l;
 		}
 		function j(e) {
 			return x(e) === u;
@@ -1095,7 +1102,7 @@ var et = [function(e, t, n, r) {
 		function pe(e) {
 			return x(e) === f;
 		}
-		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = w, e.ContextProvider = ee, e.Element = te, e.ForwardRef = T, e.Fragment = E, e.Lazy = ne, e.Memo = D, e.Portal = re, e.Profiler = O, e.StrictMode = k, e.Suspense = ie, e.isAsyncMode = ae, e.isConcurrentMode = j, e.isContextConsumer = oe, e.isContextProvider = se, e.isElement = ce, e.isForwardRef = M, e.isFragment = N, e.isLazy = P, e.isMemo = le, e.isPortal = ue, e.isProfiler = de, e.isStrictMode = fe, e.isSuspense = pe, e.isValidElementType = b, e.typeOf = x;
+		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = w, e.ContextProvider = ee, e.Element = te, e.ForwardRef = T, e.Fragment = E, e.Lazy = ne, e.Memo = D, e.Portal = re, e.Profiler = ie, e.StrictMode = O, e.Suspense = ae, e.isAsyncMode = A, e.isConcurrentMode = j, e.isContextConsumer = oe, e.isContextProvider = se, e.isElement = ce, e.isForwardRef = M, e.isFragment = N, e.isLazy = P, e.isMemo = le, e.isPortal = ue, e.isProfiler = de, e.isStrictMode = fe, e.isSuspense = pe, e.isValidElementType = b, e.typeOf = x;
 	})();
 })), it = /* @__PURE__ */ t(((e, t) => {
 	process.env.NODE_ENV === "production" ? t.exports = nt() : t.exports = rt();
@@ -1386,9 +1393,9 @@ function Nt(e, t, n) {
 }
 function Pt({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: i } = e, a = b((e) => e.title), o = b((e) => e.addTitle);
-	ie(a);
-	let s = b((e) => e.addLayer), c = b((e) => e.chgPic), l = b((e) => e.chgBAlpha), u = b((e) => e.chgStr), d = b((e) => e.chgLay), p = b((e) => e.getLaySty), m = b((e) => e.getPages), h = b((e) => e.toggleFullScr), g = b((e) => e.clearLay), _ = b((e) => e.moveLay), v = b((e) => e.chgFilter), y = b((e) => e.enableEvent), x = b((e) => e.addBtn), S = b((e) => e.setReadBack), C = b((e) => e.isTyping), w = b((e) => e.requestSkip), te = b((e) => e.setWait), T = b((e) => e.setSkipping), E = b((e) => e.startTrans), ne = b((e) => e.finishTrans);
-	function D() {
+	ae(a);
+	let s = b((e) => e.addLayer), c = b((e) => e.chgPic), l = b((e) => e.chgBAlpha), u = b((e) => e.chgStr), d = b((e) => e.chgLay), p = b((e) => e.getLaySty), m = b((e) => e.getPages), h = b((e) => e.getPagesJson), g = b((e) => e.replace), _ = b((e) => e.toggleFullScr), v = b((e) => e.clearLay), y = b((e) => e.moveLay), x = b((e) => e.chgFilter), S = b((e) => e.enableEvent), C = b((e) => e.addBtn), w = b((e) => e.setReadBack), te = b((e) => e.isTyping), T = b((e) => e.requestSkip), E = b((e) => e.setWait), ne = b((e) => e.setSkipping), D = b((e) => e.startTrans), ie = b((e) => e.finishTrans);
+	function O() {
 		i.go();
 	}
 	ee(() => {
@@ -1402,33 +1409,35 @@ function Pt({ arg: e, inited: t }) {
 			chgLay: d,
 			getLaySty: p,
 			getPages: m,
-			clearLay: g,
-			moveLay: _,
-			chgFilter: v,
-			enableEvent: y,
-			addBtn: x,
+			getPagesJson: h,
+			replace: g,
+			clearLay: v,
+			moveLay: y,
+			chgFilter: x,
+			enableEvent: S,
+			addBtn: C,
 			addTitle: o,
-			toggleFullScr: h,
-			setWait: te,
-			requestSkip: w,
-			setSkipping: T,
-			startTrans: E,
-			finishTrans: ne
-		}, e), t(), n.addEventListener("ev_next", D), () => n.removeEventListener("ev_next", D);
+			toggleFullScr: _,
+			setWait: E,
+			requestSkip: T,
+			setSkipping: ne,
+			startTrans: D,
+			finishTrans: ie
+		}, e), t(), n.addEventListener("ev_next", O), () => n.removeEventListener("ev_next", O);
 	});
-	function O() {
-		if (C) {
-			w();
+	function k() {
+		if (te) {
+			T();
 			return;
 		}
 		if (r.caretaker.nextKey()) {
-			S(!r.caretaker.isLast());
+			w(!r.caretaker.isLast());
 			return;
 		}
-		S(!1), D();
+		w(!1), O();
 	}
-	function k() {
-		r.caretaker.prevKey() && S(!r.caretaker.isLast());
+	function A() {
+		r.caretaker.prevKey() && w(!r.caretaker.isLast());
 	}
 	re(() => !0, (e) => {
 		i.cancelAuto();
@@ -1445,27 +1454,27 @@ function Pt({ arg: e, inited: t }) {
 			case "Space":
 			case "ArrowDown":
 			case "PageDown":
-				e.stopPropagation(), e.preventDefault(), O();
+				e.stopPropagation(), e.preventDefault(), k();
 				break;
 			case "PageUp":
-				e.stopPropagation(), e.preventDefault(), k();
+				e.stopPropagation(), e.preventDefault(), A();
 				break;
 		}
 	});
-	function A() {
+	function j() {
 		if (Rt) {
 			Rt = !1;
 			return;
 		}
-		It || (i.cancelAuto(), !i.fireEvent("click") && O());
+		It || (i.cancelAuto(), !i.fireEvent("click") && k());
 	}
 	return /* @__PURE__ */ $(f.Suspense, {
 		fallback: /* @__PURE__ */ $(At, { children: "Loading" }),
 		children: /* @__PURE__ */ $(Mt, {
 			arg: e,
-			next: O,
-			prev: k,
-			onClick: A
+			next: k,
+			prev: A,
+			onClick: j
 		})
 	});
 }

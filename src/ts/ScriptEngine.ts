@@ -77,6 +77,14 @@ export type T_ENGINE_ACTION =
 	| {t: 'navigateTo'; url: string}	// [navigate_to url=…]。別タブでURLを開く
 	| {t: 'loadPlugin'; fn: string; join: boolean}	// [loadplugin fn=….css]。cssの読み込み。join=true（既定）は読み終わるまで待つのでstep()は一旦返る
 	| {t: 'snapshot'; fn: string; aLayNm: string[] | null; page: T_PAGE; width: number; height: number; b_color?: number}	// [snapshot]。画面をpngで保存（0xRRGGBB）。width/heightの0はステージ実寸、aLayNm=nullは全レイヤ。画像化は非同期なのでstep()は一旦返る
+	| {t: 'recordPlace'}	// [record_place]。今の状態をしおり1件ぶんに組み立てて覚えておく（保存はしない）
+	| {t: 'save'; place: number; json: {[k: string]: string}}	// [save]。覚えてあるしおりをplaceへ保存。jsonは見出し（[save]の属性そのまま）
+	| {t: 'load'; place: number; fn: string; label: string}	// [load]。しおりから復元。スクリプトの読み直しが要るのでstep()は一旦返る
+	| {t: 'reloadScript'}	// [reload_script]。最後の[record_place]位置からスクリプトを読み直して再開
+	| {t: 'copyBookmark'; from: number; to: number}	// [copybookmark]
+	| {t: 'eraseBookmark'; place: number}			// [erasebookmark]
+	| {t: 'exportData'}	// [export]。プレイデータをファイルへ書き出す
+	| {t: 'importData'}	// [import]。プレイデータをファイルから読み込む
 	| {t: 'fullScrKey'; key: string}	// [toggle_full_screen key=…]。そのキーで全画面切替できるようにする常駐予約
 	| {t: 'dumpLay'; aLayNm: string[] | null}	// [dump_lay]。レイヤの状態をデバッグ表示へ。nullは全レイヤ
 	// HTMLフレーム（本家 FrameMng.ts）。中身は生きたHTML文書なのでストアには入れず、
@@ -345,6 +353,8 @@ export class ScriptEngine {
 		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'pop_stack',
 		'navigate_to', 'loadplugin', 'snapshot',
+		'record_place', 'save', 'load', 'reload_script',
+		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
 		'if', 'elsif', 'else', 'endif',
@@ -442,6 +452,47 @@ export class ScriptEngine {
 		this.#pushCallStk(--this.#idx);	// callToLabel()と同じく、戻り先は今いる停止点そのもの
 		this.switchScript(scr, label);
 	}
+
+	// ===== しおり（セーブ・ロード）でエンジンが受け持つ分 =====
+	//	ページ（表裏の見た目）はストアが持つので、合成はScriptMngの担当（SaveMng.ts参照）
+
+	// 再開位置（本家 ScriptIterator.nowScrIdx()）。サブルーチン／マクロの中なら
+	//	**最上位の呼び元**を返す。中身から再開しても呼び元のスタックが無くて戻れないため
+	nowScrIdx(): {fn: string; idx: number} {
+		const cs = this.#aCallStk[0];
+		return cs ? {fn: cs.fn, idx: cs.returnIdx} : {fn: this.fn, idx: this.#idx};
+	}
+	// [record_place]：再開位置をsave:へ書く（本家 #record_place() の前半）。
+	//	この2つは復元時にどこへ戻るかそのものなので、しおりのhSaveに含まれる必要がある
+	recordPlace() {
+		const {fn, idx} = this.nowScrIdx();
+		this.#val.set('save:const.sn.scriptFn', fn);
+		this.#val.set('save:const.sn.scriptIdx', idx);
+	}
+	// しおりのエンジン側の中身。ifスタックはコールスタックぶんを切り落とす
+	//	（本家 #aIfStk.slice(#aCallStk.length)。復元時はコールスタックが空になるため）
+	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]} {
+		return {
+			hSave	: this.#val.cloneNs('game'),
+			aIfStk	: this.#aIfStk.slice(this.#aCallStk.length),
+		};
+	}
+	// [load]／[reload_script]での復元（本家 loadFromMark()）。
+	//	コールスタックとマクロ引数は捨てる＝しおりは常に最上位の位置を指しているため
+	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]}) {
+		this.#val.setNs('game', o.hSave);
+		this.#val.setMp({});
+		this.#aIfStk.length = 0;
+		this.#aIfStk.push(...o.aIfStk);
+		this.#aCallStk.length = 0;
+		// 予約イベントも本家同様に消す（loadFromMark冒頭の clear_event({})＝ローカルのみ。
+		//	global=trueの予約は「ゲーム中ずっと有効」の意味なのでロードでも残す）
+		this.clearEvent();
+	}
+	// sys:名前空間の出し入れ（永続化用。本家 SysBase.data.sys ↔ Variable の sys スコープ）
+	cloneSys(): {[k: string]: T_VAL_D} {return this.#val.cloneNs('sys')}
+	setSys(h: {[k: string]: T_VAL_D}) {this.#val.setNs('sys', h)}
+
 
 	// ===== 既読処理 =====
 	//	「どのスクリプトのどのトークンまで読んだか」を領域集合（Areas）で覚える。
@@ -1221,6 +1272,73 @@ export class ScriptEngine {
 			// 「既読情報クリア」ボタンでこのタグを使っている）
 			this.#val.clearSys();
 			this.clearKidoku();
+			return 'skip';
+
+		// ---- しおり（セーブ・ロード）系 ----
+		//	しおり1件の中身は「エンジンが持つ分（save:変数・ifスタック・再開位置）」と
+		//	「ストアが持つ分（表裏ページ）」の合成なので、組み立てはScriptMngが行う。
+		//	ここは再開位置を save: へ記録し、あとは意図をアクションに載せるだけ
+
+		case 'record_place':	// セーブポイント指定（本家 ScriptIterator.ts:1516 #record_place()）
+			this.recordPlace();
+			aAct.push({t: 'recordPlace'});
+			return 'skip';
+
+		case 'save': {	// しおりの保存（本家 ScriptIterator.ts:1552 #save()）
+			if (args.place === undefined) throw '[save] placeは必須です';
+			const place = ScriptEngine.#argNum('save', 'place', args.place);
+
+			// place以外の属性がそのまましおりの見出し（const.sn.bookmark.json）になる。
+			//	本家もタグ名とplaceだけ落として丸ごと持たせる
+			const json: {[k: string]: string} = {text: '', ...args};
+			delete json.place;
+			aAct.push({t: 'save', place, json});
+
+			// 「次に保存する枠」を1つ進める（本家と同じ、今書いた枠が現在値のときだけ）
+			const now = Number(this.#val.get('sys:const.sn.save.place'));
+			if (place === now) this.#val.set('sys:const.sn.save.place', now +1);
+			return 'skip';
+		}
+
+		case 'load':	// しおりの読込（本家 ScriptIterator.ts:1415 #load()）
+			if (('fn' in args) !== ('label' in args)) throw '[load] fnとlabelはセットで指定して下さい';
+
+			aAct.push({
+				t		: 'load',
+				place	: ScriptEngine.#argNumDef('load', 'place', args.place, 0),
+				fn		: args.fn ?? '',
+				label	: args.label ?? '',
+			});
+			return 'stop';	// 復元とスクリプトの読み直しが要る＝ScriptMng待ち
+
+		case 'reload_script':	// スクリプト再読込（本家 ScriptIterator.ts:1488 #reload_script()）
+			// 最後の[record_place]位置から、スクリプトを読み直して再開する。
+			//	テンプレの ext_lang.sn が「表示言語を変えたら本文を読み直す」のに使う
+			aAct.push({t: 'reloadScript'});
+			return 'stop';
+
+		case 'copybookmark': {	// しおりの複写（本家 Variable.ts:282 #copybookmark()）
+			const from = ScriptEngine.#argNum('copybookmark', 'from', args.from ?? '');
+			const to = ScriptEngine.#argNum('copybookmark', 'to', args.to ?? '');
+			if (from === to) return 'skip';
+
+			aAct.push({t: 'copyBookmark', from, to});
+			return 'skip';
+		}
+
+		case 'erasebookmark':	// しおりの消去（本家 Variable.ts:298 #erasebookmark()）
+			aAct.push({t: 'eraseBookmark',
+				place: ScriptEngine.#argNum('erasebookmark', 'place', args.place ?? '')});
+			return 'skip';
+
+		case 'export':	// プレイデータをエクスポート（本家 SysWeb.ts:179 _export）
+			aAct.push({t: 'exportData'});
+			return 'skip';
+
+		case 'import':	// プレイデータをインポート（本家 SysWeb.ts:204 _import）
+			// 本家同様その場では止めない（ファイル選択はユーザー任せで、
+			//	終わったら[event key=sn:imported]が発火する）
+			aAct.push({t: 'importData'});
 			return 'skip';
 
 		case 'event': {	// イベント予約（本家 EventMng.ts:543 #event() の、フォーカス処理を除いた核）

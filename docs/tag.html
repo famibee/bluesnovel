@@ -254,12 +254,12 @@
 	</ul>
 	<p>しおり</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#copybookmark">🔴 [copybookmark] しおりの複写</a></li>
-		<li class="mb1"><a href="#erasebookmark">🔴 [erasebookmark] しおりの消去</a></li>
-		<li class="mb1"><a href="#load">🔴 [load] しおりの読込</a></li>
-		<li class="mb1"><a href="#record_place">🔴 [record_place] セーブポイント指定</a></li>
-		<li class="mb1"><a href="#reload_script">🔴 [reload_script] スクリプト再読込</a></li>
-		<li class="mb1"><a href="#save">🔴 [save] しおりの保存</a></li>
+		<li class="mb1"><a href="#copybookmark">🟢 [copybookmark] しおりの複写</a></li>
+		<li class="mb1"><a href="#erasebookmark">🟢 [erasebookmark] しおりの消去</a></li>
+		<li class="mb1"><a href="#load">🟡 [load] しおりの読込</a></li>
+		<li class="mb1"><a href="#record_place">🟢 [record_place] セーブポイント指定</a></li>
+		<li class="mb1"><a href="#reload_script">🟡 [reload_script] スクリプト再読込</a></li>
+		<li class="mb1"><a href="#save">🟡 [save] しおりの保存</a></li>
 	</ul>
 	<p>画面揺らし</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -270,8 +270,8 @@
 	<p>システム</p>
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#close">🔴 [close] アプリの終了</a></li>
-		<li class="mb1"><a href="#export">🔴 [export] プレイデータをエクスポート</a></li>
-		<li class="mb1"><a href="#import">🔴 [import] プレイデータをインポート</a></li>
+		<li class="mb1"><a href="#export">🟡 [export] プレイデータをエクスポート</a></li>
+		<li class="mb1"><a href="#import">🟡 [import] プレイデータをインポート</a></li>
 		<li class="mb1"><a href="#loadplugin">🟢 [loadplugin] プラグインの読み込み</a></li>
 		<li class="mb1"><a href="#navigate_to">🟢 [navigate_to] ＵＲＬを開く</a></li>
 		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
@@ -2471,6 +2471,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <h1><a id="しおり"></a>しおり</h1>
 <h2 id="copybookmark" class="w-heading">[copybookmark]しおりの複写</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家どおり。<code>from</code>／<code>to</code> のしおりを複写する（同じなら何もしない）。本家がここで行うサムネイル画像フォルダの複写は、アセット保存（<code>userdata:/</code>）が未対応なので無い。</p>
 <h4>しおりデータを複写する</h4>
 <p class="mb2 px1">
 	セーブデータパスに to, from 属性と同名のフォルダがあればコピーする
@@ -2482,6 +2483,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="erasebookmark" class="w-heading">[erasebookmark] しおりの消去</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家どおり。<code>place</code> のしおりを消す。</p>
 <h4>しおりデータを削除する</h4>
 <p class="mb2 px1">
 	セーブデータパスに place 属性と同名のフォルダがあれば削除する
@@ -2492,6 +2494,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="load" class="w-heading">[load]しおりの読込</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<br/>未対応：音声の復元（音声層が無いため。本家は <code>playLoopFromSaveObj()</code> でBGMを鳴らし直す）、<code>index=</code>（ページ移動用）、<code>do_rec=</code>。また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
 <h4>しおりデータを読み込み、スクリプト処理を再開する</h4>
 <p class="mb2 px1">
 
@@ -2502,6 +2505,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="record_place" class="w-heading">[record_place] セーブポイント指定</h2>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家どおり。今の状態をしおり1件ぶんに組み立てて覚える（保存するのは [<a href="#save">save</a>]）。中身は save: 変数・ifスタック・表裏ページ・再開位置。サブルーチンやマクロの中で実行した場合は<b>最上位の呼び元</b>の位置を記録する（本家 <code>nowScrIdx()</code>。中身から再開しても呼び元のスタックが無くて戻れないため）。</p>
 <h4>本タグの位置を、スクリプト読み込み時に再開する位置として設定する。</h4>
 <p class="mb2 px1">
 
@@ -2516,6 +2520,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="reload_script" class="w-heading">[reload_script] スクリプト再読込</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：最後の [<a href="#record_place">record_place</a>] 位置から、スクリプトを<b>キャッシュを捨てて読み直して</b>再開する。テンプレの <code>ext_lang.sn</code> が「表示言語を変えたら本文を読み直す」のに使う。<br/>本家との違い：本家は派生ファイル（<code>fn@</code>）のキャッシュもまとめて捨てるが、こちらは再開位置のファイルだけ。</p>
 <h4>現在処理中のスクリプトをリロードする。</h4>
 <p class="mb2 px1">
 
@@ -2527,6 +2532,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="save" class="w-heading">[save]しおりの保存</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：[<a href="#record_place">record_place</a>] で覚えたしおりを <code>place</code> へ保存する。<code>place</code> 以外の属性はそのまましおりの見出しになり、組み込み変数 <code>const.sn.bookmark.json</code> から読める（ロード画面はこれで枠を並べる）。保存先は localStorage で、キーは prj.json の <code>save_ns</code> ごと。書き込みは本家同様<b>最短500ms間隔にまとめられる</b>。<br/>未対応：サムネイル画像の保存（<code>userdata:/</code> へのファイル保存が要る）、暗号化。</p>
 <h4>しおりデータを保存する。</h4>
 <p class="mb2 px1">
 
@@ -2584,6 +2590,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="export" class="w-heading">[export]プレイデータをエクスポート</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>{sys, mark, kidoku}</code> を <code>.swpd</code> ファイルとしてダウンロードさせる。終わったら本家同様 [<a href="#event">event</a>] の <code>sn:exported</code> が発火する。<br/>未対応：暗号化（常に平文なので、本家の非暗号化と同じく <code>no_crypto_</code> が接頭辞に付く）。</p>
 <h4>プレイデータをファイルとしてエクスポートする</h4>
 <p class="mb2 px1">
 	ダウンロードフォルダにプレイデータファイルが保存される。<br/>
@@ -2597,6 +2604,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="import" class="w-heading">[import]プレイデータをインポート</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：ファイル選択ダイアログから <code>.swpd</code> を読み、sys: と既読を差し替える。<b>別プロジェクトのデータは弾く</b>（<code>sys:const.sn.cfg.ns</code> で判定）。終わったら [<a href="#event">event</a>] の <code>sn:imported</code> が発火する。<br/>未対応：暗号化。</p>
 <h4>プレイデータファイルをインポートする</h4>
 <p class="mb2 px1">
 	読み込みダイアログが表示され、選択したプレイデータファイルをインポートする。<br/>

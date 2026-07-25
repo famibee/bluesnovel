@@ -685,8 +685,8 @@
 	→以前は、'\f'区切りの妙なフォーマットだった。
 </td></tr>
 <tr><td>🔴 save:const.sn.loopPlaying</td><td>'{}'</td><td>json</td><td>ループ中のサウンドバッファ</td></tr>
-<tr><td>🔴 save:const.sn.scriptFn</td><td>''</td><td>スクリプト名</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプト名</td></tr>
-<tr><td>🔴 save:const.sn.scriptIdx</td><td>0</td><td>整数</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプトインデックス（行番号ではなく内部トークン単位）</td></tr>
+<tr><td>🟢 save:const.sn.scriptFn</td><td>''</td><td>スクリプト名</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプト名</td></tr>
+<tr><td>🟢 save:const.sn.scriptIdx</td><td>0</td><td>整数</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプトインデックス（行番号ではなく内部トークン単位）</td></tr>
 <tr><td>🔴 save:const.sn.layer.（文字レイヤ名）.enabled</td><td>true</td><td>true、false</td><td>文字レイヤのenabled値</td></tr>
 </table>
 
@@ -710,10 +710,10 @@
 </p>
 <h2 id="reserve_value_sys" class="w-heading">システム変数(sys:)</h2>
 <p style="font-size:.9em">変数名の先頭マーク：🟢実装済／🟡実装中・機能未達／🔴未済（bluesnovel）<br/>
-bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsysvar</a>]時に本家と同じ初期値が入る。
+bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsysvar</a>]時に本家と同じ初期値が入り、<b>停止点ごとにlocalStorageへ保存される</b>（本家と同じ「skynovel.《save_ns》 - sys」キー）。
 この表の🟡は「読み書きはできて初期値もあるが、その値を実際に使う機能（音声層・文字表示ウェイトなど）がまだ無い」もの。
 設定画面（テンプレの frames/_config.sn）はこれらを表示・変更できるが、変更しても見た目や挙動には反映されない。<br/>
-なお sys: はまだ保存されない（毎回まっさらな状態で起動する）。</p>
+</p>
 <h4>（セーブデータに関わらず）共通でセーブされる変数</h4>
 <p class="mb2 px1">
 	変数の変更が即時に保存される変数。<br/>
@@ -794,7 +794,7 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <table><tr><th>変数名</th><th>初期値</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>🔴 const.Date.getDateStr</td><td>取得の瞬間の日時</td><td>"2019/02/10 15:47"形式</td><td>変数参照時の日時を返す</td></tr>
 <tr><td>🔴 const.Date.getTime</td><td></td><td>0〜；ミリ秒</td><td>JavaScriptの(new Date).getTime()</td></tr>
-<tr><td>🟢 const.sn.bookmark.json</td><td>'[]'</td><td>json</td><td>SKYNovel内部によるsave:の管理用</td></tr>
+<tr><td>🟢 const.sn.bookmark.json</td><td>'[]'</td><td>json</td><td>SKYNovel内部によるsave:の管理用<br/>bluesnovel：[<a href="tag.html#save">save</a>]の属性に<code>place</code>を足した配列。ロード画面（テンプレの frames/_archive.sn）がこれを読んで枠を並べる</td></tr>
 <tr><td>🟢 const.sn.config.（略）</td><td></td><td></td><td>
 	prj.jsonの内容を返す。<br/>
 	例えば「const.sn.config.window.width」だと画面の横幅を返す。
@@ -817,7 +817,7 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🔴 const.sn.isDarkMode</td><td>環境による</td><td>true、false</td><td>ダークモードか</td></tr>
 <tr><td>🟢 const.sn.isDebugger</td><td>true</td><td>true、false</td><td>ブラウザ実行、それもVSCode・npmによる「起動：ブラウザ版」上での実行か</td></tr>
 <tr><td>🟢 const.sn.isFirstBoot</td><td>true</td><td>true、false</td><td>ゲームがインストールされてから、初めての起動か（起動されるまでデータが空だったか）<br/>
-	bluesnovel：sys:をまだ保存しないので<b>常にtrue</b>（毎回が初回起動）。テンプレの theme/setting.sn は
+	bluesnovel：本家同様「sys:の保存データが空だったか」で決まる。テンプレの theme/setting.sn は
 	この変数の[<a href="tag.html#if">if</a>]の中で sys:TextLayer.Back.Alpha などの初期値を設定している</td></tr>
 <tr><td>🟢 const.sn.isKidoku</td><td>true</td><td>true、false</td><td>この変数を参照した位置は既読か。参照「後」必ず既読になる点に注意</td></tr>
 <tr><td>🔴 const.sn.key.alternate</td><td>false</td><td>true、false</td><td>ALTキー（MacならOptionキー）が押されているか</td></tr>

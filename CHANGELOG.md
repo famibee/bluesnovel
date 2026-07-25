@@ -193,13 +193,47 @@ ok.次は「設定」ボタンだが、その前に。
   - 🔴[export] プレイデータをエクスポート
   - 🔴[import] プレイデータをインポート
 
+- [x] **データ系：セーブ層（しおり・sys:・既読の永続化）とタグ8つ**（2026-07-25 完了）
+	- **`src/ts/SaveMng.ts` を新設**。本家 `SysBase.data`（`{sys, mark, kidoku}`）＋ `SysWeb.flushSub()`/
+	  `initVal()` にあたる層で、保存先は localStorage、キーは本家と同じ `skynovel.《save_ns》 - 《種別》`
+	  （同じプロジェクトなら本家が書いたデータをそのまま読める）。書き込みは本家 `SysBase.flush()` と同じく
+	  **最短500ms間隔にまとめる**（既読は停止点ごとに更新されるので、まとめないと1文字進むたびに書く）。
+	- 置き場所の判断：エンジンは DOM も localStorage も触らない決まりなので持てず、ストア（zustand）は
+	  「今の画面」であって保存データの器ではない。そこで `ScriptMng` がこれを1つ抱え、しおりの中身は
+	  **エンジンから貰う分（save:変数・ifスタック・再開位置）とストアから貰う分（表裏ページのJSON）の合成**
+	  として組み立てる。復元は `store.replace()`（読み戻しの Memento と同じ形）。
+	- **`src/sn/localStore.ts`** を本家から移植（eval を使う `store.js` の置き換え）。これで
+	  `package.json` から **`store` / `@types/store` / `socket.io-client` を除去**できた（todo.md の積み残し）。
+	- タグ8つ：**`[record_place]` 🟢**（サブルーチン内なら本家同様*最上位の呼び元*を記録）、
+	  **`[save]` 🟡**、**`[load]` 🟡**、**`[reload_script]` 🟡**、
+	  **`[copybookmark]` 🟢**、**`[erasebookmark]` 🟢**、**`[export]` 🟡**、**`[import]` 🟡**。
+	  `[load]`/`[reload_script]` は `[add_frame]` と同じ非同期の停止点（スクリプトを読み直してから続きを回す。
+	  本家同様キャッシュを必ず捨てる）。`[export]`/`[import]` は終わったら `sn:exported`/`sn:imported` を発火する。
+	  🟡 の残りは主に音声の復元・サムネイル画像の保存・暗号化で、いずれも各層が無いため。
+	- **既読情報とsys:が停止点ごとに保存されるように**なった（todo.md の「既読情報の永続化」）。あわせて
+	  `const.sn.isFirstBoot` が本家どおり「sys:の保存データが空だったか」で決まるようになり、
+	  `const.sn.bookmark.json` が実データを返すようになった（テンプレのロード画面が実際に枠を並べる）。
+	- `VarStore` に名前空間まるごとの `cloneNs()`/`setNs()` を追加（`cast=str` の記録も一緒に運ぶ。
+	  でないと復元後に `'0123'` が `123` へ自動キャストされる）。ストアに `getPagesJson()` を追加。
+	- **`Caretaker` のバグ修正**：`clear()` の直後に `Stage` が再描画されると
+	  `#hScr2AState[''] ` が無いまま書き込もうとして React ごと落ちていた（`[page clear=true]` でも起きる。
+	  今回 `[load]` が履歴を捨てるようになって表面化した）。
+	- テスト：`test/ScriptEngine_save.test.ts`（属性解釈・save:変数とifスタックの出し入れ・停止するかどうか）、
+	  `test/SaveMng.test.ts`（しおり表・bookmark.json・プロジェクトごとのキー分け。localStorage だけ最小の偽物を挿す）、
+	  E2E `test/e2e/save.e2e.ts`＋フィクスチャ `prj_save`（[save]→[load] の往復で変数・再開位置・画面が戻ること、
+	  localStorage への保存、`.swpd` のダウンロード）。
+	  ユニット946・E2E84 パス、`tsc` クリーン。実テンプレ `tmp_blues` のロード画面が、しおりを入れた状態で
+	  日付・本文つきの枠を並べるところまで確認。
+
 - [ ]
 
 
+- web版リロード時にかつての水色横長長方形文字レイヤが見えるのはなぜか。テンプレにもないので、デフォルト表示か
+- しおり・システム系未実装により、中途半端に止めていた実装を再開
 
-- データ系未実装につき、中途半端に止めていた実装を再開
-
-
+- ゲーム本編ともいえる「最初から」ボタンクリックからタイトルに戻るまで通す
+  - DOM・画像切り替え、テキストがきちんと表示されているか
+  - ゲーム中での[trans]はテストしづらいかもしれない
 
 
 

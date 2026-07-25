@@ -30,6 +30,9 @@ type T_STATE = {
 	chgLay	: (arg: T_CHGLAY)=> void,
 	getLaySty: (nm: string, page: T_PAGE)=> T_LAY_STY,
 	getPages: ()=> {fore: T_LAY[]; back: T_LAY[]},	// [dump_lay]用。表裏まとめて覗く
+	// 表裏ページまるごとのJSON。しおり（[save]/[record_place]）が覚えるのはこれで、
+	//	戻すのは replace()。Memento（読み戻し）が記録するものと同じ形
+	getPagesJson: ()=> string,
 	enableEvent: (arg: T_ENABLEEVENT)=> void,
 	clearLay: (arg: T_CLEARLAY)=> void,
 	moveLay	: (arg: T_MOVELAY)=> void,
@@ -148,7 +151,7 @@ export type T_ADDBTN = {
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -248,6 +251,10 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	getPages: ()=> {
 		const s = get();
 		return {fore: s.aPage[s.foreIdx], back: s.aPage[(1 - s.foreIdx) as 0 | 1]};
+	},
+	getPagesJson: ()=> {
+		const {aPage, foreIdx} = get();
+		return JSON.stringify({aPage, foreIdx});
 	},
 	// [enable_event]：表裏どちらのページにも同じ値を入れる。
 	//	本家はレイヤ（Pagesの片面ではなくレイヤ自体）が持つ状態なので、[trans]で入れ替わっても揺れないようにする

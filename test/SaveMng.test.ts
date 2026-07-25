@@ -1,0 +1,119 @@
+/* ***** BEGIN LICENSE BLOCK *****
+	Copyright (c) 2026-2026 Famibee (famibee.blog38.fc2.com)
+
+	This software is released under the MIT License.
+	http://opensource.org/licenses/mit-license.php
+** ***** END LICENSE BLOCK ***** */
+
+// セーブ層（SaveMng.ts）のうち、ブラウザが要らない部分。
+//	localStorageだけは**その場で作る最小の偽物**を挿す（happy-domを持ち込むほどの話ではないため）。
+//	[export]/[import]はダウンロード・ファイル選択ダイアログが要るのでE2E（save.e2e.ts）側。
+//	本家：SysBase.data / SysWeb.flushSub()・initVal()、Variable.ts の setMark/getMark/#copybookmark
+
+import {SaveMng, type T_MARK} from '../src/ts/SaveMng';
+
+import {beforeEach, expect, it} from 'bun:test';
+
+
+// localStorageの偽物。SaveMngが使うのは getItem/setItem/removeItem だけ
+const hStore: {[k: string]: string} = {};
+(globalThis as {localStorage?: unknown}).localStorage = {
+	getItem: (k: string)=> hStore[k] ?? null,
+	setItem: (k: string, v: string)=> {hStore[k] = v},
+	removeItem: (k: string)=> {delete hStore[k]},	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+};
+
+beforeEach(()=> {for (const k of Object.keys(hStore)) delete hStore[k]});	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+
+function mark(text: string): T_MARK {
+	return {hSave: {hp: 80}, sPages: '{"aPage":[[],[]],"foreIdx":0}', aIfStk: [-1], json: {text}};
+}
+
+
+it('load_firstBootWhenEmpty', ()=> {
+	// 保存データが無ければ初回起動（本家 SysWeb.ts:90 の const.sn.isFirstBoot と同じ判定）
+	expect(new SaveMng('prj').load()).toBe(true);
+});
+
+it('load_notFirstBootAfterFlush', ()=> {
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.data.sys = {'const.sn.cfg.ns': 'prj'};
+	sm.flush();
+
+	const sm2 = new SaveMng('prj');
+	expect(sm2.load()).toBe(false);
+	expect(sm2.data.sys['const.sn.cfg.ns']).toBe('prj');
+});
+
+it('load_isPerProject', ()=> {
+	// キーはprj.jsonのsave_nsで分ける＝別プロジェクトのデータは見えない
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.data.sys = {a: 1};
+	sm.flush();
+
+	expect(new SaveMng('別プロジェクト').load()).toBe(true);
+});
+
+it('flush_writesUpstreamCompatibleKeys', ()=> {
+	// 本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式（同じプロジェクトなら本家のデータを読める）
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.flush();
+	expect(Object.keys(hStore).sort())
+		.toEqual(['skynovel.prj - kidoku', 'skynovel.prj - mark', 'skynovel.prj - sys']);
+});
+
+it('mark_setGetErase', ()=> {
+	const sm = new SaveMng('prj');
+	sm.load();
+	expect(sm.getMark(1)).toBeUndefined();
+
+	sm.setMark(1, mark('第一章'));
+	expect(sm.getMark(1)?.json.text).toBe('第一章');
+
+	sm.eraseMark(1);
+	expect(sm.getMark(1)).toBeUndefined();
+});
+
+it('mark_copy', ()=> {
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.setMark(1, mark('第一章'));
+	sm.copyMark(1, 2);
+	expect(sm.getMark(2)?.json.text).toBe('第一章');
+	expect(sm.getMark(1)?.json.text).toBe('第一章');	// 元は残る
+});
+
+it('mark_copyFromMissingThrows', ()=> {
+	const sm = new SaveMng('prj');
+	sm.load();
+	expect(()=> sm.copyMark(9, 2)).toThrow('のセーブデータは存在しません');
+});
+
+it('mark_survivesReload', ()=> {
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.setMark(2, mark('第二章'));
+
+	const sm2 = new SaveMng('prj');
+	sm2.load();
+	expect(sm2.getMark(2)?.hSave.hp).toBe(80);
+	expect(sm2.getMark(2)?.sPages).toBe('{"aPage":[[],[]],"foreIdx":0}');
+});
+
+it('bookmarkJson_isSaveAttrsPlusPlace', ()=> {
+	// 組み込み変数 const.sn.bookmark.json の中身（本家 Variable.ts:59 defTmp）。
+	//	ロード画面（テンプレの frames/_archive.sn）がこれを読んで枠を並べる
+	const sm = new SaveMng('prj');
+	sm.load();
+	expect(sm.bookmarkJson()).toBe('[]');
+
+	sm.setMark(0, mark('序章'));
+	sm.setMark(3, mark('第三章'));
+	expect(JSON.parse(sm.bookmarkJson())).toEqual([
+		{text: '序章', place: 0},
+		{text: '第三章', place: 3},
+	]);
+});

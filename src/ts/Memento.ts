@@ -31,8 +31,14 @@ export class Caretaker {
 	#update(genMeMe: ()=> BaseMemento) {
 		if (this.#idxHistory < this.#aKeyHistory.length -1) return;
 
+		// clear()直後（[page clear=true]・[load]）はまだ何も積んでいないのに、
+		//	Stageの再描画だけは走る。ここで書き込もうとすると落ちるので何もしない
+		//	（次のpush()＝次の停止点から積み直しになる）
+		const h = this.#hScr2AState[this.#key];
+		if (! h) return;
+
 		const m = genMeMe();
-		this.#hScr2AState[this.#key]![m.nm] = m;
+		h[m.nm] = m;
 console.log(`fn:Memento.ts update -- key(${this.#key}) MeMe:%o`, m);
 	}
 
@@ -51,7 +57,7 @@ console.log(`fn:Memento.ts = undo key=(${key})`);
 		this.#key = '';
 		this.#hScr2AState = {};
 		this.#aKeyHistory = [];
-		this.#idxHistory = 0;
+		this.#idxHistory = -1;	// 空の履歴と辻褄が合う値（isLast()がtrue、prev/nextは動かない）
 	}
 
 	#aKeyHistory: string[]	= [];

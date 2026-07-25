@@ -226,6 +226,29 @@ export class VarStore {
 		for (const k of Object.keys(h)) this.#h[`mp.${k}`] = h[k];
 	}
 
+	// 名前空間まるごとのスナップショット・復元（しおり＝T_MARKのhSave、およびsys:の永続化用。
+	//	本家 Variable.cloneSave()/mark2save() と data.sys の出し入れに相当）。
+	//	cast=strの記録（#setNoCast）も一緒に運ぶ。でないと復元後に'0123'が123へ自動キャストされてしまう
+	cloneNs(ns: T_NS): {[key: string]: T_VAL_D} {
+		const p = `${ns}.`;
+		const h: {[key: string]: T_VAL_D} = {};
+		for (const k of Object.keys(this.#h)) if (k.startsWith(p)) {
+			const nm = k.slice(p.length);
+			h[this.#setNoCast.has(k) ? `${nm}@str` : nm] = this.#h[k];
+		}
+		return h;
+	}
+	setNs(ns: T_NS, h: {[key: string]: T_VAL_D}) {
+		const p = `${ns}.`;
+		this.#delNs(p);
+		for (const [nm, v] of Object.entries(h)) {
+			const atStr = nm.endsWith('@str');
+			const k = p + (atStr ? nm.slice(0, -4) : nm);
+			this.#h[k] = v;
+			if (atStr) this.#setNoCast.add(k);
+		}
+	}
+
 	// [clearvar]相当：gameのみクリア（本家準拠でsys/tmpは対象外）
 	clearGame() {this.#delNs('game.')}
 	// [clearsysvar]相当。消したあと初期値を入れ直す（本家 #clearsysvar() も

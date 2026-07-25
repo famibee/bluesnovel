@@ -15,8 +15,10 @@ var e = class {
 	update(e) {}
 	#n(e) {
 		if (this.#i < this.#r.length - 1) return;
-		let t = e();
-		this.#t[this.#e][t.nm] = t, console.log(`fn:Memento.ts update -- key(${this.#e}) MeMe:%o`, t);
+		let t = this.#t[this.#e];
+		if (!t) return;
+		let n = e();
+		t[n.nm] = n, console.log(`fn:Memento.ts update -- key(${this.#e}) MeMe:%o`, n);
 	}
 	undo(e) {
 		console.log(`fn:Memento.ts = undo key=(${e})`);
@@ -25,7 +27,7 @@ var e = class {
 		for (let e of Object.values(t)) e.restore();
 	}
 	clear() {
-		this.#e = "", this.#t = {}, this.#r = [], this.#i = 0;
+		this.#e = "", this.#t = {}, this.#r = [], this.#i = -1;
 	}
 	#r = [];
 	#i = 0;
