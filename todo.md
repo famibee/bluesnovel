@@ -93,11 +93,11 @@
 - [ ] 実機（`tmp_blues`）で以下を確認
   - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない
   - [ ] `main.sn`へ`[lay layer=mes b_alpha=...]`を仕込んで、文字レイヤ背景の不透明度変更の見た目を確認（`main.sn`には`[lay layer=mes b_alpha=0.4]`が既にあることを今回確認済み。表示結果の目視確認は未実施）
-- [ ] **アニメpng（独自スプライトシート）の残り**（画像レイヤ`[lay fn=…]`での再生は実装済み。2026-07-25。`src/ts/Sprite.ts`＋`Lay.ts styAniSprite`。ギャラリーの`anime_png`が仕様）
-  - [ ] `[l]`/`[p]`の待ちマーク（`breakline`/`breakpage`という名の画像・アニメpngがあれば、それを🩷/✅の代わりに出す。本家 LayerMng.ts:159 と`ConfigBase.existsBreakline`）。**ユーザ要望の本題はここ**
-  - [ ] `[graph]`（本文中のインライン画像。アニメpngも置ける）。`Txt.ts`の命令解釈に足す形＋パス解決
+- [ ] **アニメpng（独自スプライトシート）の残り**（画像レイヤ`[lay fn=…]`・`[graph]`・`[l]`/`[p]`の待ちマークでの再生は実装済み。2026-07-25。`src/ts/Sprite.ts`。ギャラリーの`anime_png`が仕様）
   - [ ] 文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）・動画（mp4等）は未対応
+  - [ ] `[graph]`の`width`/`height`（今は全角空白の枠に`background-size: contain`で収める）・`x`/`y`・`id`・`wait`
+  - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
 - [ ] アセット周りの残り（`SAMPLE_SN`フォールバックと`GrpLayer.tsx`の`try/catch`撤去は完了）
   - [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像（`sn_repRes()`）も同じ仕組み
   - [ ] 画像の**先読み**（本家 `SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので、切替時に一瞬空白になりうる。実機で要確認
@@ -107,7 +107,6 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
 - [ ] **文字装飾・文字組み**（`[span]`・`[ch]`・`[ruby2]`・`[link]`/`[endlink]`・`[tcy]`は実装済み。2026-07-25。本家と同じ「本文ストリームへ命令を埋め込む」方式＝`Txt.ts`が解釈）
-  - [ ] `[graph]`（インライン画像）。`Txt.ts`の命令解釈に足すだけだが、画像パス解決が要るのでアセット周りと一緒に
   - [ ] `[link]`の残り：`url`・`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`
   - [ ] 各タグ共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
   - [x] **文字詰め`[lay ffs=/noffs=]`とぶら下げ禁則`[lay bura=]`は対応済み**（2026-07-25）。ffsは表示単位ごとに`font-feature-settings`を当て、noffsの文字だけ外す（本家 TxtLayer.ts:480）。buraはCSSの`hanging-punctuation`+`line-break: strict`へ読み替え

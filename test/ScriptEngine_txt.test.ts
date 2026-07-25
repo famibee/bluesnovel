@@ -124,3 +124,23 @@ it('link_callFnArg', ()=> {
 it('link_requiresLabelOrFn', ()=> {
 	expect(()=> units('[link]あ[endlink]')).toThrow('[link] fnまたはlabelは必須です');
 });
+
+// ===== [graph]（本文中のインライン画像。アニメpngも置ける） =====
+
+it('graph_makesOneUnitWithPic', ()=> {
+	// 本文としては全角空白1つぶんの場所を占める（本家も`&emsp;`を置いてそこへ画像を重ねる）。
+	//	picは論理名のままで、解決済みURLを入れるのはScriptMngの仕事
+	expect(units('あ[graph pic=breakline]い')).toEqual([
+		{c: 'あ'}, {c: '　', pic: 'breakline'}, {c: 'い'},
+	]);
+});
+
+it('graph_withRubyAndStyle', ()=> {
+	expect(units('[graph pic=clock r=るび style="color: red;"]')).toEqual([
+		{c: '　', r: 'るび', s: 'color: red;', pic: 'clock'},
+	]);
+});
+
+it('graph_requiresPic', ()=> {
+	expect(()=> units('[graph]')).toThrow('[graph] picは必須です');
+});

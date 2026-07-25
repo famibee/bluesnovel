@@ -8,6 +8,7 @@
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
 import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
+import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
@@ -166,6 +167,19 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		if (tlRef.current && tlRef.current.progress() < 1) tlRef.current.progress(1);
 	}, [skipReq]);
 
+	// [l]/[p]待ち中マーカーの画像（`breakline`/`breakpage`がプロジェクトにあるとき。ScriptMngが解決）。
+	//	アニメpng（.json）なら読み終わってからクラスを当てる＝GrpLayerと同じ待ち方
+	const waitSrc = wait?.src ?? '';
+	const isWaitSheet = waitSrc.endsWith('.json');
+	const [waitSheet, setWaitSheet] = useState<T_SHEET | undefined>(undefined);
+	useEffect(()=> {
+		if (! isWaitSheet) {setWaitSheet(undefined); return}
+
+		let alive = true;
+		void loadSheet(waitSrc).then(v=> {if (alive) setWaitSheet(v)});
+		return ()=> {alive = false};
+	}, [waitSrc, isWaitSheet]);
+
 	// [l]/[p]待ち中マーカー（🩷/✅）。[s]はマーカーなし。読み戻り中は非表示
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
 	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
@@ -322,7 +336,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	return <>
 		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={sty}>
 			<span ref={charsRef}></span>
-			{showWait && <span css={styWaitMark}>{wait!.kind === 'l' ? '🩷' : '✅'}</span>}
+			{showWait && <span css={styWaitMark}>{
+				// プロジェクトに`breakline`/`breakpage`があればそれを、無ければ試作の絵文字を出す
+				waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
+				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom'}}/>
+				: wait!.kind === 'l' ? '🩷' : '✅'
+			}</span>}
 		</span>
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm}>
 			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
@@ -377,10 +396,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
+function elCh({c, r, s, rs, tcy, lnk, src}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
 	const ffs = fncFfs(c);
-	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs) return txt(c);
+	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs && ! src) return txt(c);
 
 	// [span]/[ch]/[link]のstyleは本文側の要素へ。ルビが無くても入れ物が要るのでspanで包む
 	const el = document.createElement(r === undefined ? 'span' : 'ruby');
@@ -393,6 +412,9 @@ function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK, fncFfs: (c: stri
 		el.appendChild(base);
 	}
 	base.appendChild(txt(c));
+	// [graph]のインライン画像。**全角空白1つぶんの場所を占め、そこへ画像を敷く**
+	//	（本家も`&emsp;`を置いてそこへ画像を重ねる）。文字を残すので平文とも食い違わない
+	if (src) {elGraph(base, src); if (base !== el) el.appendChild(base)}
 
 	if (r !== undefined) {
 		const rt = document.createElement('rt');
@@ -402,6 +424,20 @@ function elCh({c, r, s, rs, tcy, lnk}: T_CH, onLink: T_ON_LINK, fncFfs: (c: stri
 	}
 	if (lnk) mkLink(el, lnk, s ?? '', onLink);
 	return el;
+}
+
+// [graph]の画像1つ。スプライトシート（.json）なら**読み終わってから**中身を差し替える。
+//	ここはReactの外（文字送り演出のためTxtLayerが直接DOMを組む）なので、
+//	Suspenseではなくその場の書き換えで待つ。読めなければ何も置かない（本文は進む）
+function elGraph(box: HTMLElement, src: string) {
+	if (! src.endsWith('.json')) {
+		box.style.backgroundImage = `url(${JSON.stringify(src)})`;
+		box.style.backgroundRepeat = 'no-repeat';
+		box.style.backgroundSize = 'contain';
+		return;
+	}
+
+	void loadSheet(src).then(sh=> {if (sh) box.classList.add(aniSpriteClass(sh))});
 }
 
 // [link]区間の1単位をクリックできるようにする。

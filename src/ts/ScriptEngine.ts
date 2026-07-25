@@ -1123,6 +1123,11 @@ export class ScriptEngine {
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('endlink', {}));
 			return 'skip';
 
+		case 'graph':	// 本文中のインライン画像（本家 LayerMng.ts:1015 #graph()）。アニメpngも置ける
+			if (! args.pic) throw '[graph] picは必須です';
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('grp', args));
+			return 'skip';
+
 		case 'tcy':		// 縦中横（本家 LayerMng.ts:1059 #tcy()）
 			if (! args.t) throw '[tcy] tは必須です';
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('tcy', args));

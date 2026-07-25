@@ -104,18 +104,18 @@ function i(t) {
 		});
 	}, u = new e();
 	return u.init((e, t) => {
-		let n = t ? r(t) : void 0;
-		if (!n) {
+		let u = t ? r(t) : void 0;
+		if (!u) {
 			l(e, t);
 			return;
 		}
-		let { o: u } = n;
-		switch (n.cmd) {
+		let { o: d } = u;
+		switch (u.cmd) {
 			case "span":
-				i = u.style ?? "", a = u.r_style ?? "";
+				i = d.style ?? "", a = d.r_style ?? "";
 				break;
 			case "add":
-				o = u;
+				o = d;
 				break;
 			case "add_close":
 				o = void 0;
@@ -124,12 +124,12 @@ function i(t) {
 				c.push({
 					sty: i,
 					rSty: a
-				}), i += u.style ?? "", a += u.r_style ?? "", s = {
-					label: u.label ?? "",
-					fn: u.fn ?? "",
-					call: u.call === "true",
-					arg: u.arg ?? "",
-					...u.style_hover ? { sh: u.style_hover } : {}
+				}), i += d.style ?? "", a += d.r_style ?? "", s = {
+					label: d.label ?? "",
+					fn: d.fn ?? "",
+					call: d.call === "true",
+					arg: d.arg ?? "",
+					...d.style_hover ? { sh: d.style_hover } : {}
 				};
 				break;
 			case "endlink": {
@@ -138,7 +138,10 @@ function i(t) {
 				break;
 			}
 			case "tcy":
-				l(u.t ?? "", u.r, u, !0);
+				l(d.t ?? "", d.r, d, !0);
+				break;
+			case "grp":
+				d.pic && (l("　", d.r, d), Object.assign(n.at(-1), { pic: d.pic }));
 				break;
 			default: break;
 		}

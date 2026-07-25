@@ -84,8 +84,17 @@ it('splitCh_chStyleStacksOnSpan', ()=> {
 });
 
 it('splitCh_unknownCmdIsDropped', ()=> {
-	// [graph]はまだ未実装。命令ごと落として本文表示は続ける
-	expect(splitCh(`あ${cmd('grp', {pic: 'breakline'})}い`)).toEqual([{c: 'あ'}, {c: 'い'}]);
+	// 未対応の命令（[ch_in_style]等）は命令ごと落として本文表示は続ける
+	expect(splitCh(`あ${cmd('del', {})}い`)).toEqual([{c: 'あ'}, {c: 'い'}]);
+});
+
+it('splitCh_graphMakesOneUnit', ()=> {
+	// [graph]のインライン画像。本文としては全角空白1つぶんの場所を占める（本家も`&emsp;`を置く）。
+	//	picは論理名のままで、解決済みURL（src）を入れるのはScriptMngの仕事
+	expect(splitCh(`あ${cmd('grp', {pic: 'breakline', r: 'るび'})}い`)).toEqual([
+		{c: 'あ'}, {c: '　', r: 'るび', pic: 'breakline'}, {c: 'い'},
+	]);
+	expect(plainTxt(cmd('grp', {pic: 'breakline'}))).toBe('　');
 });
 
 // ===== [tcy]（縦中横）・[link]（ハイパーリンク） =====

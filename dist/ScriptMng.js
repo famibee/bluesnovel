@@ -2040,6 +2040,9 @@ var ne = class e {
 				if (!i.label && !i.fn) throw "[link] fnまたはlabelは必須です";
 				return this.#G(a, e.#W("link", i)), "skip";
 			case "endlink": return this.#G(a, e.#W("endlink", {})), "skip";
+			case "graph":
+				if (!i.pic) throw "[graph] picは必須です";
+				return this.#G(a, e.#W("grp", i)), "skip";
 			case "tcy":
 				if (!i.t) throw "[tcy] tは必須です";
 				return this.#G(a, e.#W("tcy", i)), "skip";
@@ -2849,7 +2852,7 @@ var J = class {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#$(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#te(e);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -2944,7 +2947,7 @@ var J = class {
 	}
 	#p;
 	async #m(e) {
-		return this.#n[e] ??= new T(e, await this.#Q(e), this.#g());
+		return this.#n[e] ??= new T(e, await this.#ee(e), this.#g());
 	}
 	#h;
 	#g() {
@@ -3124,7 +3127,7 @@ var J = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#Z(e);
+					for (let e of t) this.#$(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#j(n.canskip);
@@ -3232,7 +3235,12 @@ var J = class {
 	#Y(e) {
 		for (let [t, n] of Object.entries(e)) this.#r?.setValNochk(t, n);
 	}
-	#X(e, t) {
+	#X = Object.create(null);
+	#Z(e) {
+		let t = e === "l" ? "breakline" : "breakpage";
+		return this.#X[e] ??= this.sys.cfg.matchPath(`^${t}$`, p.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, p.SP_GSM) : "";
+	}
+	#Q(e, t) {
 		if (!t) return "";
 		try {
 			return this.sys.cfg.searchPath(t, p.SP_GSM);
@@ -3240,7 +3248,7 @@ var J = class {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#Z(e) {
+	#$(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -3264,10 +3272,10 @@ var J = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: this.#X("lay", e.fn),
+					src: this.#Q("lay", e.fn),
 					aFace: e.aFace.map((e) => ({
 						...e,
-						src: this.#X("add_face", e.fn)
+						src: this.#Q("add_face", e.fn)
 					}))
 				});
 				break;
@@ -3284,7 +3292,7 @@ var J = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: e.fn ? this.#X("lay b_pic", e.fn) : ""
+					src: e.fn ? this.#Q("lay b_pic", e.fn) : ""
 				});
 				break;
 			case "trans":
@@ -3297,6 +3305,7 @@ var J = class {
 			case "chgStr":
 				{
 					let t = d(e.str);
+					for (let e of t) e.pic && (e.src = this.#Q("graph", e.pic));
 					this.$fncs.chgStr({
 						nm: e.nm,
 						page: e.page,
@@ -3467,18 +3476,23 @@ var J = class {
 				this.sys.caretaker.clear();
 				break;
 			case "trace":
-				this.#$({ text: e.text });
+				this.#te({ text: e.text });
 				break;
 			case "loadScript": break;
 			case "stop":
-				this.sys.caretaker.push(e.key), (e.kind === "l" || e.kind === "p") && this.$fncs.setWait({
-					nm: e.nm,
-					kind: e.kind
-				}), this.#S = e.kind === "s", e.resume ? this.#T(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#d(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1));
+				if (this.sys.caretaker.push(e.key), e.kind === "l" || e.kind === "p") {
+					let t = this.#Z(e.kind);
+					this.$fncs.setWait({
+						nm: e.nm,
+						kind: e.kind,
+						...t ? { src: t } : {}
+					});
+				}
+				this.#S = e.kind === "s", e.resume ? this.#T(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#d(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1));
 				break;
 		}
 	}
-	async #Q(e) {
+	async #ee(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, p.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -3487,7 +3501,7 @@ var J = class {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#$(e) {
+	#te(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
 	myTrace = (e, t = "E") => {

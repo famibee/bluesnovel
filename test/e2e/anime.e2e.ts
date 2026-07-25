@@ -11,7 +11,7 @@
 //	シートの.jsonが<img>として描かれてしまわないこと。
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, snap} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKeyToWaitMark, snap} from './snPage';
 
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'anime')});
@@ -69,4 +69,28 @@ test('コマが実際に進む（背景位置が変わる）', async ({page})=> 
 		await page.waitForTimeout(60);
 	}
 	expect(aPos.size).toBeGreaterThan(1);
+});
+
+test('[graph]は本文中に画像を置く（アニメpngも同じ仕組み）', async ({page})=> {
+	await pressKeyToWaitMark(page, 'Space');
+
+	// 本文としては全角空白1つぶん。平文（ストアのstr）にもその1文字が残る
+	expect(await mesStr(page)).toBe('本文中に　置く');
+
+	// 画像はシートなので<img>ではなくクラス付きのspan（GrpLayerと同じ再生CSS）
+	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] span[class^="sn_ani"]`);
+	await expect(el).toHaveCount(1);
+	expect(await el.evaluate(e=> getComputedStyle(e).backgroundImage)).toMatch(/anime\.4x1\.png/);
+});
+
+test('[l]/[p]の待ちマークはbreakline/breakpageの画像になる', async ({page})=> {
+	// [l]：breakline はアニメpng（.json）なので、読み終わるとクラス付きのspanが出る
+	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	await expect(mark.locator('span[class^="sn_ani"]')).toHaveCount(1);
+	expect(await mark.textContent()).toBe('');	// 🩷は出ない
+
+	// [p]：breakpage は静止画なので<img>
+	await pressKeyToWaitMark(page, 'Space');
+	await expect(mark.locator('img')).toHaveCount(1);
+	expect(await mark.locator('img').getAttribute('src')).toMatch(/anime\.4x1\.png$/);
 });

@@ -1,5 +1,7 @@
 {
 	"main": {":cnt": 1, "sn": "main.sn"},
 	"anime": {":cnt": 1, "json": "anime.json"},
-	"anime.4x1": {":cnt": 1, "png": "anime.4x1.png"}
+	"anime.4x1": {":cnt": 1, "png": "anime.4x1.png"},
+	"breakline": {":cnt": 1, "json": "breakline.json"},
+	"breakpage": {":cnt": 1, "png": "anime.4x1.png"}
 }

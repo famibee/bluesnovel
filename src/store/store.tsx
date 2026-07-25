@@ -79,7 +79,9 @@ type T_STATE = {
 	backAlpha	: number;
 	setBackAlpha: (v: number)=> void;
 }
-export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
+// [l]/[p]の待ちマーク。srcは`breakline`/`breakpage`という名の画像が
+//	プロジェクトにあれば、その解決済みURL（本家 LayerMng.ts:159。無ければ試作の絵文字）
+export type T_WAIT = {nm: string; kind: 'l' | 'p'; src?: string} | null;
 export type T_PAGE = 'fore' | 'back';
 export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号

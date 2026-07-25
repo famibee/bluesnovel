@@ -5,8 +5,8 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag, styAniSprite} from './Lay';
-import {loadSheet, type T_SHEET} from '../ts/Sprite';
+import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
+import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 
 import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
@@ -74,7 +74,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 				（Reactがページ全体再ダウンロードの可能性を警告するため）。
 				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
-			{sheet && <div css={styAniSprite(sheet)}/>}
+			{sheet && <div className={aniSpriteClass(sheet)}/>}
 			{src && ! isSheet && <img src={src} style={{display: 'block'}}/>}
 			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
 				if (! faceSrc) return null;

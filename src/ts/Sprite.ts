@@ -76,3 +76,42 @@ export function sheetImgSrc(jsonSrc: string, json: unknown): string {
 	const img = (json as T_SHEET_JSON).meta.image ?? '';
 	return jsonSrc.replace(/[^/]*$/, '') + img;
 }
+
+
+// 再生用CSSを<head>へ入れ、当てるクラス名を返す。**シートごとに1回だけ**作って使い回す。
+//	emotionのcssではなく素のクラスにしてあるのは、Reactの外で組み立てるDOM
+//	（TxtLayerの本文＝[graph]や[l]/[p]の待ちマーク）からも同じ物を当てたいため。
+//	・JSは1コマも跨がない：背景位置をCSSのstepsアニメで送る（本家はpixiのAnimatedSprite）
+//	・速い軸／遅い軸の2本を重ねて格子を走査する。並びが縦優先（isCol）なら速い軸は縦
+const hCls: {[img: string]: string} = Object.create(null);
+let cntCls = 0;
+
+export function aniSpriteClass(sh: T_SHEET, doc: Document = document): string {
+	const known = hCls[sh.img];
+	if (known) return known;
+
+	const cls = hCls[sh.img] = `sn_ani${String(++cntCls)}`;
+	const st = doc.createElement('style');
+	st.dataset['sn'] = 'sprite';
+	st.textContent = aniSpriteCss(sh, cls);
+	doc.head.appendChild(st);
+	return cls;
+}
+
+// 上のCSS本体（純粋）。テストしたいのはこちら
+export function aniSpriteCss({img, fw, fh, cols, rows, sec, isCol}: T_SHEET, cls: string): string {
+	// 一巡の時間。速い軸は「遅い軸1コマぶん」の間に一巡する
+	const secX = isCol ? sec : sec / rows;
+	const secY = isCol ? sec / cols : sec;
+	return `@keyframes ${cls}_x {to {background-position-x: ${String(-cols * fw)}px}}
+@keyframes ${cls}_y {to {background-position-y: ${String(-rows * fh)}px}}
+.${cls} {
+	display: inline-block;
+	width: ${String(fw)}px;
+	height: ${String(fh)}px;
+	background-image: url(${JSON.stringify(img)});
+	background-repeat: no-repeat;
+	background-position: 0 0;
+	animation: ${cls}_x ${String(secX)}s steps(${String(cols)}) infinite, ${cls}_y ${String(secY)}s steps(${String(rows)}) infinite;
+}`;
+}

@@ -684,6 +684,18 @@ export class ScriptMng {
 		for (const [k, v] of Object.entries(h)) this.#engine?.setValNochk(k, v as string);
 	}
 
+	// [l]/[p]の待ちマークの画像（本家 LayerMng.ts:159 と ConfigBase.existsBreakline）。
+	//	`breakline`/`breakpage`という名の画像・アニメpngがプロジェクトにあればそれを出す
+	//	（無ければ試作の絵文字のまま）。**停止点ごとに引くので結果を覚えておく**
+	#hBreak: {[kind: string]: string} = Object.create(null);
+	#srcBreak(kind: 'l' | 'p'): string {
+		const fn = kind === 'l' ? 'breakline' : 'breakpage';
+		// matchPathで「有るか」を先に見る（searchPathは無いと例外を投げるため）
+		return this.#hBreak[kind] ??= this.sys.cfg.matchPath(`^${fn}$`, SEARCH_PATH_ARG_EXT.SP_GSM).length > 0
+			? this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)
+			: '';
+	}
+
 	// 画像のパス解決（path.json）。見つからなければ知らせて空を返す。
 	//	1枚の画像が無いだけでゲームごと止めるのはやり過ぎなので、'ET'ではなく'E'（表示のみ）
 	#searchPic(tag: string, fn: string): string {
@@ -735,6 +747,9 @@ export class ScriptMng {
 			{	// シナリオが書いた生の文字列をここで表示単位へ割る（ルビ記法。Txt.ts）。
 				//	ストアには平文（str）と表示単位（aCh）の両方を入れる＝chgPicのfnとsrcと同じ関係
 				const aCh = splitCh(act.str);
+				// [graph]のインライン画像だけはパス解決が要る。**splitCh()を純粋なままにしたい**ので
+				//	割った後にここで流し込む（画像レイヤのfn→srcと同じ扱い）
+				for (const ch of aCh) if (ch.pic) ch.src = this.#searchPic('graph', ch.pic);
 				this.$fncs.chgStr({nm: act.nm, page: act.page, str: plainOf(aCh), aCh});
 			}
 			break;
@@ -893,7 +908,10 @@ export class ScriptMng {
 			//	（Stage.tsx の再描画で自動的に Memento が生成される）
 			this.sys.caretaker.push(act.key);
 			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
-			if (act.kind === 'l' || act.kind === 'p') this.$fncs.setWait({nm: act.nm, kind: act.kind});
+			if (act.kind === 'l' || act.kind === 'p') {
+				const src = this.#srcBreak(act.kind);
+				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {})});
+			}
 			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる
 			//	（[waitclick]は同じ「マーカー無しの停止」だがクリックで進む）
 			this.#stopped = act.kind === 's';

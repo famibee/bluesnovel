@@ -29,7 +29,18 @@ export type T_LNK = {
 };
 // 表示単位1つ。ルビ付きなら c が親文字（複数文字のこともある）、r がルビ文字。
 //	s / rs は[span]・[ch]・[link]で指定されたインラインCSS（本文側／ルビ側）
-export type T_CH = {c: string; r?: string; s?: string; rs?: string; tcy?: true; lnk?: T_LNK};
+export type T_CH = {
+	c	: string;
+	r?	: string;
+	s?	: string;
+	rs?	: string;
+	tcy?: true;
+	lnk?: T_LNK;
+	// [graph]のインライン画像。picは論理名で、srcは解決済みURL（**埋めるのはScriptMng**。
+	//	splitCh()は純粋なままにしたいので、パス解決は割った後に上から流し込む）
+	pic?: string;
+	src?: string;
+};
 
 // 本文ストリームに埋め込まれた命令（本家 LayerMng.ts:315 #cmdTxt）。
 //	`｜&emsp;《コマンド名｜URIエンコードしたJSON》`の形でルビ側に載っており、
@@ -39,6 +50,7 @@ const A_CMD = ['span', 'add', 'add_close', 'grp', 'tcy', 'link', 'endlink', 'del
 type T_CMD_ARG = {
 	style?: string; r_style?: string; style_hover?: string;
 	t?: string; r?: string;			// [tcy]
+	pic?: string; width?: string; height?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string;	// [link]
 };
 function parseCmd(r: string): {cmd: string; o: T_CMD_ARG} | undefined {
@@ -112,10 +124,14 @@ export function splitCh(raw: string): T_CH[] {
 				break;
 			}
 
-			// 縦中横。**これだけは命令だが表示単位を作る**（tに書かれた文字がそのまま出る）
+			// 縦中横。命令だが表示単位を作る（tに書かれた文字がそのまま出る）
 			case 'tcy':	put(o.t ?? '', o.r, o, true);	break;
 
-			default:	break;	// [graph]は未実装。命令ごと落とす
+			// インライン画像。これも表示単位を作る。**本文としては全角空白1つ**の扱いで
+			//	（本家も`&emsp;`を置いてそこへ画像を重ねる）、平文にもその1文字が残る
+			case 'grp':	if (o.pic) {put('　', o.r, o); Object.assign(aCh.at(-1)!, {pic: o.pic})}	break;
+
+			default:	break;	// 未対応の命令は落とす
 		}
 	});
 	rs.putTxt(raw);

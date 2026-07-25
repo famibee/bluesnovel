@@ -174,7 +174,7 @@
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
-		<li class="mb1"><a href="#graph">🔴 [graph] インライン画像表示</a></li>
+		<li class="mb1"><a href="#graph">🟡 [graph] インライン画像表示</a></li>
 		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
 		<li class="mb1"><a href="#rec_ch">🔴 [rec_ch] 履歴書き込み</a></li>
@@ -1285,6 +1285,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>pic</code>（アニメpng＝スプライトシートも可）・<code>r</code>（ルビ）・
+	<code>style</code>／<code>r_style</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く
+	（本家も<code>&amp;emsp;</code>を置いてそこへ重ねる）。<br/>
+	未対応：<code>width</code>／<code>height</code>（今は全角空白の枠に<code>background-size: contain</code>で収める）・
+	<code>x</code>／<code>y</code>・<code>id</code>・<code>wait</code>・<code>layer</code>／<code>page</code>。</p>
 <p>※省略時は画像サイズになるが、ロード完了直後に文字配置を決めるのでちらつく。それを嫌う際に指定する<br/>
 	※特にモバイルなどでゲーム画面が自動で拡大縮小される場合、省略したらその時の本文文字サイズとして扱われる。なるべくサイズ指定を推奨。</p>
 
@@ -1814,6 +1819,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>height</td><td></td><td>画像の縦サイズ</td><td>1〜；縦幅</td><td>保存する画像の縦ドットサイズ。<br/>元のサイズと異なる場合は拡大・縮小される</td></tr>
 <tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>breakline</code>という名の画像・アニメpngがプロジェクトにあれば
+	待ちマークとして表示する（本家 LayerMng.ts:159 と同じ規約）。無ければ試作の絵文字🩷。<br/>
+	未対応：<code>visible</code>・<code>x</code>／<code>y</code>・<code>width</code>／<code>height</code>・<code>global</code>
+	（マークは本文の直後に流し込む位置に出る）。</p>
 
 </p>
 <h2 id="p" class="w-heading">[p]改ページクリック待ち</h2>
@@ -1832,6 +1841,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>height</td><td></td><td>画像の縦サイズ</td><td>1〜；縦幅</td><td>保存する画像の縦ドットサイズ。<br/>元のサイズと異なる場合は拡大・縮小される</td></tr>
 <tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>breakpage</code>という名の画像・アニメpngがプロジェクトにあれば
+	待ちマークとして表示する。無ければ試作の絵文字✅。属性の未対応は[l]と同じ（<code>er</code>も未対応）。</p>
 
 </p>
 <h2 id="s" class="w-heading">[s] 停止する</h2>

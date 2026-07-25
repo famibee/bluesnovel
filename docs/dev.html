@@ -613,9 +613,10 @@
 	　　解決結果は.jsonになる。本家はpixiの<code>AnimatedSprite</code>だが、こちらはDOMなので
 	　　<b>CSSのstepsアニメで背景位置をコマ送りする</b>（JSは1コマも跨がない）。
 	　　<code>meta.animationSpeed</code>は本家（pixi）と同じ「1tick=1/60秒あたりに進むコマ数」として読む。<br/>
-	　　未対応：文字レイヤの枠画像（<code>b_pic</code>）・<a href="tag.html#graph">[graph]</a>・
-	　　<a href="tag.html#l">[l]</a>／<a href="tag.html#p">[p]</a>の待ちマーク（breakline／breakpage）でのシート再生、
-	　　コマ数が格子に満たないシート、動画（mp4等）。<br/>
+	　　<a href="tag.html#graph">[graph]</a>（本文中のインライン画像）と
+	　　<a href="tag.html#l">[l]</a>／<a href="tag.html#p">[p]</a>の待ちマーク（<code>breakline</code>／<code>breakpage</code>）でも
+	　　同じ仕組みで再生する。<br/>
+	　　未対応：文字レイヤの枠画像（<code>b_pic</code>）でのシート再生、コマ数が格子に満たないシート、動画（mp4等）。<br/>
 	<br/>
 	・・ＢＧＭ・音声系<br/>
 	　　mp3、m4a、ogg、aac、webm、flac、wav<br/>

@@ -1,10 +1,17 @@
 ; E2E用シナリオ（anime.e2e.ts が使用）
 ;	アニメpng（独自スプライトシート）。path.jsonでは
 ;	「論理名→.json」「論理名.列x行→.png」の2件に分かれて載り、[lay fn=…]の解決結果は.jsonになる。
-;	anime.4x1.png は 20x20 のコマを横に4つ並べた 80x20 の実PNG（テスト用に生成したもの）
+;	anime.4x1.png は 20x20 のコマを横に4つ並べた 80x20 の実PNG（テスト用に生成したもの）。
+;	`breakline`（アニメ）と`breakpage`（静止画）は[l]/[p]の待ちマークとして使われる
 [add_lay layer=bg class=grp]
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
 [lay layer=bg fn=anime]
-アニメ[s]
+アニメ[l]
+
+[er]
+本文中に[graph pic=anime]置く[p]
+
+[er]
+おわり[s]
