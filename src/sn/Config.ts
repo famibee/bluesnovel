@@ -32,7 +32,7 @@ export class Config extends ConfigBase {
 		CmnLib.stageW = oCfg.window.width;
 		CmnLib.stageH = oCfg.window.height;
 		CmnLib.debugLog = oCfg.debug.debugLog;
-		await CmnLib.init();
+		CmnLib.init();	// UA文字列を見るだけなので同期（本家はplatform.jsを動的importしていた）
 
 		return super.load(oCfg);
 	}

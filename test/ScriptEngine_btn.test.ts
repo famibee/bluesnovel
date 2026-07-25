@@ -71,3 +71,24 @@ it('btnSty_hint', ()=> {
 	expect(styOf(`[button text=x label=*a hint=ほんぶん hint_style="color: red;" hint_opt='{"placement": "bottom"}']`))
 		.toEqual({hint: 'ほんぶん', hint_style: 'color: red;', hint_opt: `{"placement": "bottom"}`});
 });
+
+it('btnSty_styleIsCss', ()=> {
+	// **bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON）。CSSはそのまま通す
+	expect(styOf(`[button text=x label=*a style="color: red;" style_hover="color: lime;" style_clicked="color: blue;"]`))
+		.toEqual({style: 'color: red;', style_hover: 'color: lime;', style_clicked: 'color: blue;'});
+});
+
+it('btnSty_pixiTextStyleJsonIsConverted', ()=> {
+	// ギャラリーのサンプルは`{"fill": "plum"}`のようにJSONで書くので、主要キーはCSSへ読み替える
+	expect(styOf(`[button text=x label=*a style='{"fill": "plum"}']`)).toEqual({style: 'color: plum;'});
+	expect(styOf(`[button text=x label=*a style='{"fontSize": 24, "align": "center"}']`))
+		.toEqual({style: 'font-size: 24px;text-align: center;'});
+	// 未対応キー（dropShadow等）は落とす
+	expect(styOf(`[button text=x label=*a style='{"fill": "red", "dropShadow": true}']`))
+		.toEqual({style: 'color: red;'});
+});
+
+it('btnSty_brokenJsonPassesThrough', ()=> {
+	// JSONのつもりで壊れていてもCSSとして渡す（表示ごと止めない）
+	expect(styOf(`[button text=x label=*a style='{こわれ']`)).toEqual({style: '{こわれ'});
+});

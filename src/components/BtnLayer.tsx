@@ -102,11 +102,17 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		cursor: pointer;
 		user-select: none;
 		transition: color 0.3s;
+		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
+			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
+		${sty?.style ?? ''}
 		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
 			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
-			既定のフォーカスリングは画面に合わないので消す */
-		&:hover, &:focus {color: white;}
+			既定のフォーカスリングは画面に合わないので消す。
+			既定のホバーは本家 style_hover の fill:'white' 相当 */
+		&:hover, &:focus {${sty?.style_hover ?? 'color: white;'}}
 		&:focus {outline: none;}
+		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
+		&:active {${sty?.style_clicked ?? 'text-shadow: none;'}}
 	`;
 
 	const onClick = (e: MouseEvent)=> {

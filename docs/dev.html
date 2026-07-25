@@ -852,10 +852,13 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	※AIRNovelにおける「<a href="https://famibee.web.fc2.com/tag_dev/dev.htm#reserve_value" target="_blank">const.flash.system.Capabilities.language</a>」にあたる
 </td></tr>
 <tr><td>🟢 const.sn.needClick2Play</td><td>環境による</td><td>true、false</td><td>ブラウザ実行で、クリックされるまで音声再生が差し止められている状態か。なにかクリックされれば falseになる</td></tr>
-<tr><td>🟡 const.sn.platform</td><td>環境による</td><td>json</td><td>
+<tr><td>🟢 const.sn.platform</td><td>環境による</td><td>文字列（本家はjson）</td><td>
 	プラットフォーム情報。詳細は<a href="https://github.com/bestiejs/platform.js/blob/master/doc/README.md#platformosfamily" target="_blank" rel="noopener">Platform.js </a>を参照のこと。<br/>
 	例えば <a href="https://github.com/bestiejs/platform.js/blob/master/doc/README.md#platformosfamily" target="_blank" rel="noopener">const.sn.platform.os.family</a> だと、「OS X」「Android」などを返す<br/>
-	bluesnovel：Platform.jsを持たないので<b>UA文字列そのもの</b>（json構造ではないため<code>.os.family</code>のような下位参照はできない）
+	<b>bluesnovel：UA文字列そのもの</b>（<code>.os.family</code>のような下位参照はできない）。
+	<b>Platform.jsは入れない方針</b>——bestiejs/platform.js は Public archive で更新が止まっており、
+	本当に要るのは <code>CmnLib</code> の <code>isSafari</code>／<code>isFirefox</code>／<code>isMac</code>／<code>isMobile</code> の4つだけで、
+	それはUA文字列から出せるため（判別は <code>test/CmnLib.test.ts</code> が代表的なUAで押さえている）
 </td></tr>
 <tr><td> <span style="text-decoration: line-through">const.sn.sLog</span>【2019/07/28変名】<br/>
 const.sn.log.json

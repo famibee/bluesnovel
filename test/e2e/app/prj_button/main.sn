@@ -11,6 +11,10 @@
 [button page=fore nm=btn_off text="無効" enabled=false label=*goal]
 ; ツールチップ。hint_styleは吹き出しのCSS、hint_optは本家popperのオプションJSON（placementだけ見る）
 [button page=fore nm=btn_hint text="ヒント付き" label=*goal hint="せつめい" hint_style="color: rgb(0, 255, 0);" hint_opt='{"placement": "bottom"}']
+; 見た目はCSSで書ける（本家はpixiのTextStyle JSON）。通常・ホバー／フォーカス中・押下中の3状態
+[button page=fore nm=btn_sty text="見た目" label=*goal style="color: rgb(255, 0, 0);" style_hover="color: rgb(0, 128, 0);" style_clicked="color: rgb(0, 0, 255);"]
+; ギャラリーのサンプルのようなJSON指定も主要キーだけCSSへ読み替える
+[button page=fore nm=btn_sty2 text="JSON指定" label=*goal style='{"fill": "rgb(255, 0, 255)"}']
 選んでください。[l]
 ＋そのまま進んだ。[s]
 

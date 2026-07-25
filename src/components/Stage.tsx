@@ -85,6 +85,19 @@ export default function Stage({
 		heStage.style.overflow	= 'hidden';
 	}, [cvsScale, stageW, stageH]);
 
+	// ステージの内箱（等倍の座標系そのもの）。全画面要素・[snapshot]の撮影対象を兼ねる
+	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
+
+	// 全画面表示。[toggle_full_screen]（＝ストアのfullScr）が「こうしたい」を持ち、
+	//	実際にそうなったかはuseFullscreenの戻り値。Escでの解除などブラウザ都合の変化もあるので、
+	//	実状態をエンジンの組み込み変数const.sn.displayStateへ書き戻す
+	//	（本家もSysWebがfullscreenchangeを拾ってisFullScrを直している）
+	const fullScr = useStore(s=> s.fullScr);
+	const setFullScr = useStore(s=> s.setFullScr);
+	const tglFlScr = useStore(s=> s.toggleFullScr);
+	const isFullscreen = useFullscreen(stageRef, fullScr, {onClose: ()=> setFullScr(false)});
+	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
+
 	// css
 	//	ステージ本体。ここが座標系の原点かつ表示範囲で、はみ出したレイヤは切り取られる。
 	//	背景は黒（画像を置いていない領域＝素通しの黒。[trans]中も同じ）
@@ -101,7 +114,14 @@ export default function Stage({
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
 		transform-origin: left top;
-		transform: scale(${cvsScale});
+		/* 全画面（[toggle_full_screen]）のときは**画面の中央へ寄せる**（本家 SysBase.cvsResize()）。
+			ステージは実寸固定＋transform:scaleで拡縮する作りなので、全画面要素になっても
+			ブラウザ既定のように画面いっぱいには広がらず、放っておくと左上に寄ってしまう。
+			中心へ移してから拡大すれば、縦横比を保ったまま中央に出る */
+		${isFullscreen
+			? `position: fixed; left: 50%; top: 50%;
+				transform: translate(-50%, -50%) scale(${String(cvsScale)});`
+			: `transform: scale(${String(cvsScale)});`}
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
 	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、
@@ -149,7 +169,6 @@ export default function Stage({
 	`;
 
 	// useMouseWheel だと preventDefault() できないので手作り
-	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
 	// HTMLフレームの置き場所をFrameMng（DOM側）へ渡す
 	const frmRef = useRef<HTMLDivElement>(null);
 	useMount(()=> {
@@ -180,15 +199,6 @@ export default function Stage({
 		setDesignMode(! isDesignMode);	// React のくせで取れないので
 	}, {isPreventDefault: true, delay: 300,});
 
-	// 全画面表示。[toggle_full_screen]（＝ストアのfullScr）が「こうしたい」を持ち、
-	//	実際にそうなったかはuseFullscreenの戻り値。Escでの解除などブラウザ都合の変化もあるので、
-	//	実状態をエンジンの組み込み変数const.sn.displayStateへ書き戻す
-	//	（本家もSysWebがfullscreenchangeを拾ってisFullScrを直している）
-	const fullScr = useStore(s=> s.fullScr);
-	const setFullScr = useStore(s=> s.setFullScr);
-	const tglFlScr = useStore(s=> s.toggleFullScr);
-	const isFullscreen = useFullscreen(stageRef, fullScr, {onClose: ()=> setFullScr(false)});
-	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',

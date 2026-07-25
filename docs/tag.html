@@ -187,7 +187,7 @@
 	</ul>
 	<p>画像・画像レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#add_face">🟡 [add_face] 差分名称の定義</a></li>
+		<li class="mb1"><a href="#add_face">🟢 [add_face] 差分名称の定義</a></li>
 		<li class="mb1"><a href="#wv">🔴 [wv] 動画再生終了待ち</a></li>
 	</ul>
 	<p>HTMLフレーム</p>
@@ -2157,7 +2157,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <h1><a id="ラベル・ジャンプ"></a>ラベル・ジャンプ</h1>
 <h2 id="button" class="w-heading">[button]ボタンを表示</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：実装中。既定ページは本家準拠の <b>back</b>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら <code>page=fore</code>）。配置は <b>left/top を書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）に対応：吹き出しは画面に1つを使い回し、マウスを乗せた時とフォーカスが入った時に出す（本家 EventMng.ts:418）。本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置くので <code>hint_opt</code> は <code>placement</code>（top／bottom／left／right）だけ見る。フォーカス時はホバーと同じ見た目にする（本家 EventMng.ts:435 の hv／nr 相当）。<br/><b>未対応</b>：<code>pic</code>／<code>b_pic</code>／<code>style</code>／<code>style_hover</code>（pixiのTextStyle JSONなのでCSSへの読み替え設計から）／効果音（<code>enterse</code>等）。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：実装中。既定ページは本家準拠の <b>back</b>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら <code>page=fore</code>）。配置は <b>left/top を書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）に対応：吹き出しは画面に1つを使い回し、マウスを乗せた時とフォーカスが入った時に出す（本家 EventMng.ts:418）。本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置くので <code>hint_opt</code> は <code>placement</code>（top／bottom／left／right）だけ見る。フォーカス時はホバーと同じ見た目にする（本家 EventMng.ts:435 の hv／nr 相当）。<br/><code>style</code>／<code>style_hover</code>／<code>style_clicked</code>（通常・ホバー/フォーカス中・押下中）は<b>CSSで書ける</b>——本家はpixiのTextStyle JSONだが、こちらはDOMなのでCSSをそのまま当てるほうが素直なため。ギャラリーのサンプル互換で、<code>{</code>で始まる値だけは主要キー（<code>fill</code>／<code>fontSize</code>／<code>fontFamily</code>／<code>fontWeight</code>／<code>fontStyle</code>／<code>align</code>／<code>letterSpacing</code>／<code>lineHeight</code>）をCSSへ読み替える（<code>dropShadow</code>等は落とす）。<br/><b>未対応</b>：<code>pic</code>／<code>b_pic</code>（画像ボタン）／効果音（<code>enterse</code>等）。</p>
 <h4>文字レイヤにボタンを配置する。</h4>
 <p class="mb2 px1">
 
@@ -2735,6 +2735,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>key</td><td></td><td>イベント登録せずモード切替</td><td>イベントのキー名</td><td>イベントを発生させるトリガーイベントを予約する。<br/>key属性の値は<a href="tag.html#event" target="_blank" rel="noopener">[event]</a>を参照</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>key</code>（切替キーの常駐予約）に対応。全画面時は
+	<b>ステージを画面の中央へ寄せる</b>（本家 SysBase.cvsResize() 相当）。ステージは実寸固定＋
+	<code>transform: scale()</code>で拡縮する作りなので、全画面要素になっても画面いっぱいには広がらず、
+	放っておくと左上に寄るため。<br/>
+	実際に全画面になれたかはブラウザ次第（<code>requestFullscreen()</code>はユーザー操作が要る）なので、
+	組み込み変数へは実状態を書き戻す。</p>
 
 </p>
 <h2 id="update_check" class="w-heading">[update_check] 更新チェック機能</h2>

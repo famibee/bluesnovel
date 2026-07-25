@@ -56,3 +56,27 @@ test('alt+enterは[event]の予約を発火する', async ({page})=> {
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('しゅうしょくキー');
 });
+
+test('全画面のときステージは画面の中央へ寄る', async ({page})=> {
+	// 本家 SysBase.cvsResize() 相当。ステージは実寸固定＋transform:scaleで拡縮する作りなので、
+	//	全画面要素になっても画面いっぱいには広がらない。放っておくと左上に寄るため中央へ移す。
+	//	requestFullscreen()はユーザー操作が要る＝予約キーの押下（本物のキーイベント）から呼ぶ
+	await page.keyboard.press('w');
+	await expect.poll(async ()=> page.evaluate(()=> document.fullscreenElement !== null),
+		{timeout: 5_000}).toBe(true);
+
+	const o = await page.evaluate(()=> {
+		const el = document.fullscreenElement!;
+		const r = el.getBoundingClientRect();
+		return {
+			cx: r.left + r.width / 2, cy: r.top + r.height / 2,
+			w: innerWidth, h: innerHeight,
+			pos: getComputedStyle(el).position,
+		};
+	});
+	expect(o.pos).toBe('fixed');
+	expect(o.cx).toBeCloseTo(o.w / 2, 0);	// 画面の中央
+	expect(o.cy).toBeCloseTo(o.h / 2, 0);
+
+	await page.keyboard.press('w');
+});

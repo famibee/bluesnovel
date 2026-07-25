@@ -36,6 +36,11 @@ export type T_BTN_STY = {
 	alpha?		: number;
 	enabled?	: boolean;
 	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み
+	// 見た目（**bluesnovelはCSS**。本家はpixiのTextStyle JSONで、`{`始まりの値だけ読み替える）。
+	//	通常・ホバー／フォーカス中・押下中の3状態
+	style?		: string;
+	style_hover?: string;
+	style_clicked?: string;
 	// ツールチップ（本家 EventMng.ts:418 #dispHint()）。Hint.ts が画面に1つの吹き出しで出す
 	hint?		: string;
 	hint_style?	: string;	// 吹き出しのCSS

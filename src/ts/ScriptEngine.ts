@@ -250,6 +250,35 @@ export class ScriptEngine {
 	static readonly #H_BLENDMODE: {[nm: string]: string} = {
 		normal: 'normal', add: 'plus-lighter', multiply: 'multiply', screen: 'screen',
 	};
+	// [button style=/style_hover=/style_clicked=]の値をCSSにする。
+	//	**bluesnovelはCSSで書けるようにする**（本家はpixiのTextStyleのJSON）。
+	//	ただしギャラリーのサンプルは`{"fill": "plum"}`のようにJSONで書くので、
+	//	`{`で始まる値だけは主要キーをCSSへ読み替える（本家の見た目に寄せるための互換）
+	static readonly #H_TXTSTY: {[k: string]: string} = {
+		fill: 'color', fontSize: 'font-size', fontFamily: 'font-family',
+		fontWeight: 'font-weight', fontStyle: 'font-style', align: 'text-align',
+		letterSpacing: 'letter-spacing', lineHeight: 'line-height',
+	};
+	static #argBtnStyle(v: string): string {
+		if (! v.trimStart().startsWith('{')) return v;	// CSSはそのまま
+
+		let o: {[k: string]: unknown};
+		try {o = JSON.parse(v) as {[k: string]: unknown}}
+		catch {return v}	// JSONのつもりで壊れていたら、CSSとしてそのまま渡す（表示は止めない）
+
+		return Object.entries(o)
+			.map(([k, val])=> {
+				const p = ScriptEngine.#H_TXTSTY[k];
+				if (! p) return '';	// dropShadow等の未対応キーは落とす
+
+				// pixiは数値＝px（fontSize: 24）。CSSでは単位が要る
+				const sv = typeof val === 'number' && p !== 'line-height' && p !== 'font-weight'
+					? `${String(val)}px` : String(val);
+				return `${p}: ${sv};`;
+			})
+			.join('');
+	}
+
 	static #argBlendmode(v: string): string {
 		const s = ScriptEngine.#H_BLENDMODE[v];
 		if (! s) throw `${v} はサポートされない blendmode です`;	// 本家と同じ文言
@@ -1293,6 +1322,11 @@ export class ScriptEngine {
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 			// ツールチップ（本家 EventMng.ts:418 #dispHint()）。hint_styleは吹き出しのCSS、
 			//	hint_optは本家popperのオプションJSON（こちらはplacementだけ見る）
+			// 見た目（bluesnovelはCSSで指定する。本家はpixiのTextStyle JSON）。
+			//	通常・ホバー／フォーカス中・押下中の3状態
+			if (args.style !== undefined) sty.style = ScriptEngine.#argBtnStyle(args.style);
+			if (args.style_hover !== undefined) sty.style_hover = ScriptEngine.#argBtnStyle(args.style_hover);
+			if (args.style_clicked !== undefined) sty.style_clicked = ScriptEngine.#argBtnStyle(args.style_clicked);
 			if (args.hint !== undefined) sty.hint = args.hint;
 			if (args.hint_style !== undefined) sty.hint_style = args.hint_style;
 			if (args.hint_opt !== undefined) sty.hint_opt = args.hint_opt;

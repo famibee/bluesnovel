@@ -165,14 +165,22 @@ export type T_DIP = {[name: string]: string};
 //import {isMobile} from 'pixi.js';		// 使い物にならないことを確認済み
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CmnLib {
-	static	async	init() {
-		const p = await import('platform');
-		this.platform	= JSON.stringify(p);
-		this.plat_desc	= p.description ?? '';
-		this.isSafari	= p.name === 'Safari';
-		this.isFirefox	= p.name === 'Firefox';
-		this.isMac		= (p.os?.family ?? '').includes('OS X');
-		this.isMobile	= ! /(Windows|OS X)/.test(p.os?.family ?? '');
+	// 実行環境の判別。**本家はplatform.jsを読むが、bluesnovelは入れない**
+	//	（bestiejs/platform.js は Public archive ＝更新が止まっているため）。
+	//	欲しいのは下の4つのフラグだけで、それはUA文字列から出せる。
+	//	組み込み変数 const.sn.platform も本家のJSONではなくUA文字列そのものにする
+	//	（下位を引く用途＝`const.sn.platform.os.family`のような使い方は今のところ無い）
+	static	init() {
+		const ua = globalThis.navigator.userAgent;
+		this.platform	= ua;
+		this.plat_desc	= ua;
+		// Chrome系もUAに"Safari"を含むので、他ブラウザの名前が無いことまで見る
+		this.isSafari	= /safari/i.test(ua) && ! /chrome|chromium|crios|edg|android|fxios/i.test(ua);
+		this.isFirefox	= /firefox|fxios/i.test(ua);
+		// 本家は os.family が'OS X'を含むか。iOSは別family（'iOS'）なのでMac扱いにしない
+		this.isMac		= /macintosh|mac os x/i.test(ua) && ! /iphone|ipad|ipod/i.test(ua);
+		// 本家は「WindowsでもOS Xでもない」＝携帯機扱い。同じ結果になる書き方にする
+		this.isMobile	= ! /windows|macintosh|mac os x/i.test(ua) || /iphone|ipad|ipod|android/i.test(ua);
 	}
 
 	static	stageW		= 0;

@@ -1,24 +1,23 @@
-import { n as e } from "./rolldown-runtime.js";
 //#region src/sn/CmnLib.ts
-function t(e) {
+function e(e) {
 	return parseInt(String(e), 10);
 }
-function n(e) {
+function t(e) {
 	let t = parseInt(String(e), 10);
 	return t < 0 ? -t : t;
 }
-function r(e = "/", t = " ", n = ":", r = "") {
+function n(e = "/", t = " ", n = ":", r = "") {
 	let i = /* @__PURE__ */ new Date();
 	return String(i.getFullYear()) + e + String(100 + i.getMonth() + 1).slice(1, 3) + e + String(100 + i.getDate()).slice(1, 3) + t + String(100 + i.getHours()).slice(1, 3) + n + String(100 + i.getMinutes()).slice(1, 3) + (r === "" ? "" : r + String(i.getMilliseconds()));
 }
-var i = /^[^/.]+$|[^/]+(?=\.)/;
-function a(e) {
-	return (i.exec(e) ?? [""])[0];
+var r = /^[^/.]+$|[^/]+(?=\.)/;
+function i(e) {
+	return (r.exec(e) ?? [""])[0];
 }
-var o = class {
-	static async init() {
-		let t = await import("./platform.js").then((t) => /* @__PURE__ */ e(t.default, 1));
-		this.platform = JSON.stringify(t), this.plat_desc = t.description ?? "", this.isSafari = t.name === "Safari", this.isFirefox = t.name === "Firefox", this.isMac = (t.os?.family ?? "").includes("OS X"), this.isMobile = !/(Windows|OS X)/.test(t.os?.family ?? "");
+var a = class {
+	static init() {
+		let e = globalThis.navigator.userAgent;
+		this.platform = e, this.plat_desc = e, this.isSafari = /safari/i.test(e) && !/chrome|chromium|crios|edg|android|fxios/i.test(e), this.isFirefox = /firefox|fxios/i.test(e), this.isMac = /macintosh|mac os x/i.test(e) && !/iphone|ipad|ipod/i.test(e), this.isMobile = !/windows|macintosh|mac os x/i.test(e) || /iphone|ipad|ipod|android/i.test(e);
 	}
 	static stageW = 0;
 	static stageH = 0;
@@ -36,6 +35,6 @@ var o = class {
 	static cc4ColorName;
 };
 //#endregion
-export { n as a, t as i, r as n, a as r, o as t };
+export { t as a, e as i, n, i as r, a as t };
 
 //# sourceMappingURL=CmnLib.js.map

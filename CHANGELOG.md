@@ -518,22 +518,41 @@ ok.次は「設定」ボタンだが、その前に。
 	- 残り：`[button]`の`style`/`style_hover`（**pixiのTextStyle JSON**なのでCSSへの読み替え設計から）・
 	  `pic`/`b_pic`・効果音、`[link]`の`global`/`onenter`/`onleave`、`[set_focus]`のゲームパッド操作。
 
-- [ ]
-
-
-
-
-
 
 - [button]のフォーカス・ホバー状態などのcss指定
 - [toggle_full_screen]の残り
 - const.sn.platform について
   - Public archive の platform.js https://github.com/bestiejs/platform.js 由来なので、インストールしない方針
   - ただ src/sn/CmnLib.ts:175 で import('platform')し、isSafari, isFirefox, isMac, isMobile を設定したいのが本質。組み込み変数として公開しているが使う予定はない。UA文字列でもよい
-
 - todo.md、tag.html、dev.html などの資料の整合性と🔴更新
   - たとえばtodo.mdの実績や「実装済み」記述の削除（他への移動）や軽量化。todoはカラになる運命
-- もう実装できそうなタグ、組み込み変数を実装
+
+- [x] **`[button]`の見た目CSS・全画面の中央寄せ・platform.js廃止・資料の整理**（まとめて4件）。
+	- **`[button style=/style_hover=/style_clicked=]`をCSSで書けるようにした**（通常・ホバー/フォーカス中・
+	  押下中の3状態）。本家はpixiのTextStyle JSONだが、こちらはDOMなのでCSSをそのまま当てるほうが素直。
+	  ただしギャラリーのサンプルは`{"fill": "plum"}`と書くので、**`{`で始まる値だけ主要キーをCSSへ読み替える**
+	  （`fill`→`color`、`fontSize`は数値ならpx付与、等。`dropShadow`など未対応キーは落とす）。
+	  既定はこれまでどおり本家寄り（ホバーは`fill:'white'`相当、押下中は影を消す）。
+	- **全画面時にステージを画面の中央へ寄せる**（本家 SysBase.cvsResize() 相当）。ステージは実寸固定＋
+	  `transform: scale()`で拡縮する作りなので、全画面要素になっても画面いっぱいには広がらず、
+	  放っておくと左上に寄っていた。E2Eは**実際に全画面へ入って**中心座標を見る（予約キーの押下＝
+	  本物のユーザー操作から`requestFullscreen()`を呼べるため、ヘッドレスでも通る）。
+	- **platform.js への依存をやめた**（bestiejs/platform.js は Public archive）。本当に要るのは
+	  `CmnLib`の`isSafari`/`isFirefox`/`isMac`/`isMobile`の4つだけなので、UA文字列から出すようにし、
+	  `CmnLib.init()`は同期になった（動的importが消えた）。組み込み変数`const.sn.platform`はUA文字列
+	  （本家はplatform.jsのJSONで`.os.family`のように引けるが、使う予定が無いので割り切り）。
+	  判別は`test/CmnLib.test.ts`が代表的なUA5種で押さえる（Chrome系もUAに"Safari"を含む、
+	  iOSのUAは"like Mac OS X"を含む、といった引っかかりどころ込み）。package.jsonからは外したので、
+	  次の`bun install`で`platform`と`@types/platform`が落ちる。
+	- **資料の整理**：`todo.md`を「これからやること」だけに絞った（120行→88行。実績・実装済みの記述は
+	  CHANGELOG.mdとdocsへ寄せ、章立ても タグ／挙動の詰め／アセット基盤／本家へ確認 に整理）。
+	  `docs/tag.html`は`[add_face]`を🟢へ、`[button]`・`[toggle_full_screen]`のメモを更新。
+	  `docs/dev.html`は`const.sn.platform`を🟢＋方針の理由を明記。
+	  現状のマーク集計は **🟢61／🟡20／🔴34**（🔴は音声・動画・画面揺らし・文字出現演出・履歴など、
+	  層ごと未着手のものだけで、実装済みなのに🔴のまま残っている取りこぼしは無い）。
+	- ユニット1251・E2E108 パス、`tsc` クリーン。
+
+- [ ]
 
 
 
@@ -541,8 +560,13 @@ ok.次は「設定」ボタンだが、その前に。
 - 🟡 [tsy]残件、[tsy path=…]など？　と[tsy_frame]
 - HTMLフレーム系タグの残り
 - [event key='dom=…']
-
+- もう実装できそうなタグ、組み込み変数を実装
 - [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+
+
+
+
+
 
 - ルール画像による[trans]
   - ゲーム中での[trans]によるトランジション中の様子はテストしづらい？

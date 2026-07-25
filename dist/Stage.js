@@ -10046,11 +10046,17 @@ function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		cursor: pointer;
 		user-select: none;
 		transition: color 0.3s;
+		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
+			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
+		${i?.style ?? ""}
 		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
 			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
-			既定のフォーカスリングは画面に合わないので消す */
-		&:hover, &:focus {color: white;}
+			既定のフォーカスリングは画面に合わないので消す。
+			既定のホバーは本家 style_hover の fill:'white' 相当 */
+		&:hover, &:focus {${i?.style_hover ?? "color: white;"}}
 		&:focus {outline: none;}
+		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
+		&:active {${i?.style_clicked ?? "text-shadow: none;"}}
 	`, s = (e) => {
 		e.stopPropagation(), lu.hide(), a(t, n ?? !1, r);
 	}, c = () => {
@@ -10441,7 +10447,11 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		M,
 		N
 	]);
-	let F = du`
+	let F = (0, k.useRef)(null), I = p((e) => e.fullScr), z = p((e) => e.setFullScr), B = p((e) => e.toggleFullScr), ee = P(F, I, { onClose: () => z(!1) });
+	(0, k.useEffect)(() => {
+		r.setFullScr(ee);
+	}, [ee]);
+	let V = du`
 		position: relative;
 		width: ${M}px;
 		height: ${N}px;
@@ -10454,19 +10464,24 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
 		transform-origin: left top;
-		transform: scale(${A});
-	`, I = du`position: absolute; top: 0; left: 0;`, z = du`
+		/* 全画面（[toggle_full_screen]）のときは**画面の中央へ寄せる**（本家 SysBase.cvsResize()）。
+			ステージは実寸固定＋transform:scaleで拡縮する作りなので、全画面要素になっても
+			ブラウザ既定のように画面いっぱいには広がらず、放っておくと左上に寄ってしまう。
+			中心へ移してから拡大すれば、縦横比を保ったまま中央に出る */
+		${ee ? `position: fixed; left: 50%; top: 50%;
+				transform: translate(-50%, -50%) scale(${String(A)});` : `transform: scale(${String(A)});`}
+	`, te = du`position: absolute; top: 0; left: 0;`, ne = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, B = du`
+	`, re = du`
 		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background-color: black;
-	`, ee = du`
+	`, H = du`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -10486,30 +10501,26 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, V = (0, k.useRef)(null), te = (0, k.useRef)(null);
+	`, U = (0, k.useRef)(null);
 	R(() => {
-		r.attachFrameBox(te.current), r.attachStageBox(V.current);
+		r.attachFrameBox(U.current), r.attachStageBox(F.current);
 	}), R(() => {
-		let e = V.current;
+		let e = F.current;
 		e.addEventListener("mousedown", () => u());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [ne, re] = j(!1), H = L((e) => {
-		e.stopPropagation(), g(), !l() && (re(), b(!ne));
+	let [ie, W] = j(!1), ae = L((e) => {
+		e.stopPropagation(), g(), !l() && (W(), b(!ie));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), U = p((e) => e.fullScr), ie = p((e) => e.setFullScr), W = p((e) => e.toggleFullScr), ae = P(V, U, { onClose: () => ie(!1) });
-	(0, k.useEffect)(() => {
-		r.setFullScr(ae);
-	}, [ae]);
-	let oe = { cmn: {
+	}), oe = { cmn: {
 		sys: t,
-		styChild: I,
-		isDesignMode: ne,
+		styChild: te,
+		isDesignMode: ie,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10519,33 +10530,33 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		}
 	} };
 	return /* @__PURE__ */ v("div", {
-		css: F,
+		css: V,
 		onClick: i,
-		...H,
-		ref: V,
+		...ae,
+		ref: F,
 		children: [
-			ne && /* @__PURE__ */ v(x, { children: [
+			ie && /* @__PURE__ */ v(x, { children: [
 				/* @__PURE__ */ m("button", {
-					onClick: () => W(),
-					css: ee,
+					onClick: () => B(),
+					css: H,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: ee,
+					css: H,
 					children: "Back"
 				}),
 				/* @__PURE__ */ m("button", {
 					onClick: () => {},
-					css: ee,
+					css: H,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ m("span", { children: ae }),
+			/* @__PURE__ */ m("span", { children: ee }),
 			s.map((e, t) => /* @__PURE__ */ m("div", {
 				ref: S[t],
 				"data-page": t === c ? "fore" : "back",
-				css: B,
+				css: re,
 				style: {
 					zIndex: +(t === c),
 					visibility: t === c || d ? "visible" : "hidden",
@@ -10586,8 +10597,8 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 				})
 			}, t)),
 			/* @__PURE__ */ m("div", {
-				ref: te,
-				css: z
+				ref: U,
+				css: ne
 			})
 		]
 	});

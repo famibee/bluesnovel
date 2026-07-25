@@ -30,6 +30,10 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {enabled: false}},
 		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, sty: {
 			hint: 'せつめい', hint_style: 'color: rgb(0, 255, 0);', hint_opt: '{"placement": "bottom"}'}},
+		{nm: 'btn_sty', text: '見た目', label: '*goal', call: false, sty: {
+			style: 'color: rgb(255, 0, 0);', style_hover: 'color: rgb(0, 128, 0);', style_clicked: 'color: rgb(0, 0, 255);'}},
+		// JSON指定はエンジンがCSSへ読み替えるので、ストアに入る時点でCSS
+		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, sty: {style: 'color: rgb(255, 0, 255);'}},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();
@@ -162,4 +166,30 @@ test('[button hint=…]はマウスを乗せると吹き出しを出す', async 
 test('hint未指定のボタンでは吹き出しを出さない', async ({page})=> {
 	await page.getByText('ジャンプする').hover();
 	await expect(page.locator('body > div.sn_hint')).toBeHidden();
+});
+
+test('[button style=/style_hover=]はCSSとして当たる（ホバー・フォーカスも）', async ({page})=> {
+	const btn = page.getByText('見た目');
+	// 色は transition: color 0.3s で変わるので、落ち着くまで待って比べる
+	const color = ()=> btn.evaluate(el=> getComputedStyle(el).color);
+	const seeColor = async (c: string)=> {
+		await expect.poll(async ()=> color(), {timeout: 5_000}).toBe(c);
+	};
+
+	await seeColor('rgb(255, 0, 0)');		// style
+	await btn.hover();
+	await seeColor('rgb(0, 128, 0)');		// style_hover
+	await page.mouse.move(0, 0);
+	await seeColor('rgb(255, 0, 0)');
+
+	// フォーカスでもホバーと同じ見た目（本家 EventMng.ts:435 の hv／nr 相当）
+	await btn.focus();
+	await seeColor('rgb(0, 128, 0)');
+	expect(await btn.evaluate(el=> getComputedStyle(el).outlineStyle)).toBe('none');
+});
+
+test('pixiのTextStyle JSON指定もCSSへ読み替える', async ({page})=> {
+	// ギャラリーのサンプルが`{"fill": "…"}`で書くための互換（主要キーのみ）
+	expect(await page.getByText('JSON指定').evaluate(el=> getComputedStyle(el).color))
+		.toBe('rgb(255, 0, 255)');
 });
