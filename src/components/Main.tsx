@@ -44,6 +44,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
 	const chgBPic = useStore(s=> s.chgBPic);	// [lay b_pic=…]（文字レイヤ背後の枠画像）
 	const setBackAlpha = useStore(s=> s.setBackAlpha);	// sys:TextLayer.Back.Alpha（全文字レイヤ共通の掛け率）
+	const setBtnFont = useStore(s=> s.setBtnFont);	// tmp:sn.button.fontFamily（[button]の文字フォント）
 	const getPagesJson = useStore(s=> s.getPagesJson);	// しおり（[record_place]/[save]）用
 	const replace = useStore(s=> s.replace);			// しおりからの復元（[load]/[reload_script]）用
 	const toggleFullScr = useStore(s=> s.toggleFullScr);
@@ -65,12 +66,29 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
 
 		inited();
 
 		heStage.addEventListener('ev_next', procNext as EventListenerOrEventListenerObject);
 		return ()=> heStage.removeEventListener('ev_next', procNext);
+	});
+
+	// 組み込み変数 const.sn.key.*（修飾キー等の**今の**押下状態。本家 EventMng.ts:348 の #hDownKeys）。
+	//	下の useKey は読み進め・[event]発火が本業で、離した所までは見ないので別に張る。
+	//	blurで全部落とすのは、押したままウインドウを離れると「押しっぱなし」で残るため
+	useEffectOnce(()=> {
+		const down = (e: KeyboardEvent)=> scrMng.setKeyDown(e.key, true);
+		const up = (e: KeyboardEvent)=> scrMng.setKeyDown(e.key, false);
+		const blur = ()=> scrMng.clearKeyDown();
+		document.addEventListener('keydown', down);
+		document.addEventListener('keyup', up);
+		globalThis.addEventListener('blur', blur);
+		return ()=> {
+			document.removeEventListener('keydown', down);
+			document.removeEventListener('keyup', up);
+			globalThis.removeEventListener('blur', blur);
+		};
 	});
 
 	// イベント

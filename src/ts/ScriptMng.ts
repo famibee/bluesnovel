@@ -20,7 +20,7 @@ import {savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
-import type {T_LAY_STY_ARG} from '../store/store';
+import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
 
 import gsap from 'gsap';
 
@@ -276,6 +276,10 @@ export class ScriptMng {
 	// 実際の全画面状態をエンジンへ書き戻す（組み込み変数 const.sn.displayState）。
 	//	Escでの解除などブラウザ都合の変化もあるので、Stage.tsxが実状態を見て呼ぶ
 	setFullScr(b: boolean) {this.#engine?.setFullScr(b)}
+
+	// 修飾キー等の押下状態（組み込み変数 const.sn.key.*）をエンジンへ。Main.tsxのkeydown/keyupから
+	setKeyDown(key: string, down: boolean) {this.#engine?.setKeyDown(key, down)}
+	clearKeyDown() {this.#engine?.clearKeyDown()}
 
 	// [event]で予約したキー・クリックが押された時にMain.tsxから呼ばれる。
 	//	戻り値true＝予約イベントとして処理した（＝呼び出し側は通常の読み進めを行わない）。
@@ -821,7 +825,18 @@ export class ScriptMng {
 			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn,
 				src: act.fn ? this.#searchPic('lay b_pic', act.fn) : ''});
 			break;
+		case 'finishTrans':
+			// [finish_trans]。動いている演出が無ければ何も起きない
+			this.#finishTrans();
+			break;
 		case 'trans':
+			// 前の[trans]がまだ演出中なら、まず終わらせて表裏を確定させる（本家 ScriptIterator.ts:504
+			//	#setTag2FinishTrans）。そうしないと交換されないまま次の[trans]が同じ裏ページを
+			//	書き換え、前のシーンが表に出ないまま消える。
+			//	**本家はこの畳み込みを[quake]/[stop_quake]/[add_filter]でも行う**が、それは
+			//	[quake]が[trans]と同じトゥイーン枠を使い回す都合であって意図ではないので、
+			//	枠を分けたこちらでは[trans]自身と[finish_trans]だけに掛ける
+			this.#finishTrans();
 			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）
 			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time});
 			this.#beginTrans(act.time);
@@ -1026,6 +1041,8 @@ export class ScriptMng {
 			// 設定画面で変わりうる「バック不透明度」をストアへ写す（本家 LayerMng.ts:205 の
 			//	val.defValTrg('sys:TextLayer.Back.Alpha', …) 相当。全文字レイヤの背景に掛かる）
 			this.$fncs.setBackAlpha(Number(this.#engine?.getVal('sys:TextLayer.Back.Alpha') ?? 1));
+			// [button]の文字フォント（本家 LayerMng.ts:209 の val.defValTrg('tmp:sn.button.fontFamily', …)）も同様に
+			this.$fncs.setBtnFont(String(this.#engine?.getVal('tmp:sn.button.fontFamily') ?? '') || DEF_BTN_FONT);
 			break;
 		}
 	}

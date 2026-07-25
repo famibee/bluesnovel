@@ -145,7 +145,7 @@
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#add_lay">🟢 [add_lay] レイヤを追加する</a></li>
 		<li class="mb1"><a href="#clear_lay">🟢 [clear_lay] レイヤ設定の消去</a></li>
-		<li class="mb1"><a href="#finish_trans">🔴 [finish_trans] トランス強制終了</a></li>
+		<li class="mb1"><a href="#finish_trans">🟢 [finish_trans] トランス強制終了</a></li>
 		<li class="mb1"><a href="#lay">🟡 [lay] レイヤ設定</a></li>
 		<li class="mb1"><a href="#blendMode">　blendModeの解説</a></li>
 		<li class="mb1"><a href="#txtlay">　レイヤ設定(文字レイヤ)</a></li>
@@ -206,7 +206,7 @@
 		<li class="mb1"><a href="#l">🟢 [l] 行末クリック待ち</a></li>
 		<li class="mb1"><a href="#p">🟢 [p] 改ページクリック待ち</a></li>
 		<li class="mb1"><a href="#s">🟢 [s] 停止する</a></li>
-		<li class="mb1"><a href="#set_cancel_skip">🔴 [set_cancel_skip] スキップ中断予約</a></li>
+		<li class="mb1"><a href="#set_cancel_skip">🟢 [set_cancel_skip] スキップ中断予約</a></li>
 		<li class="mb1"><a href="#wait">🟢 [wait] ウェイトを入れる</a></li>
 		<li class="mb1"><a href="#waitclick">🟢 [waitclick] クリックを待つ</a></li>
 	</ul>
@@ -491,6 +491,7 @@
 </p>
 <h2 id="finish_trans" class="w-heading">[finish_trans] トランス強制終了</h2>
 <h4>[trans]で開始したトランスをすぐ終了させる</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：演出を終了状態へ送り、<b>表裏の交換まで済ませる</b>（<a href="#wt">[wt]</a>中のクリックと同じ着地点）。演出していなければ何も起きない。<br/>本家のタグ本体は空で、実処理は「一部タグの直前に演出を畳む」共通処理（ScriptIterator.ts:504 <code>#setTag2FinishTrans</code>）が受け持つ。こちらはその畳み込みをScriptMng側に置き、このタグと<b><a href="#trans">[trans]</a>自身</b>（演出中に次の[trans]が来ると、交換されないまま裏ページが書き換わって前の場面が表に出ないため）だけに掛けた。本家は<a href="#quake">[quake]</a>/<a href="#stop_quake">[stop_quake]</a>/<a href="#add_filter">[add_filter]</a>にも掛けるが、それは[quake]が[trans]と同じトゥイーン枠を使い回す都合であって意図ではないので追随していない。</p>
 <p class="mb2 px1">
 	属性無し。<br/>
 	<br/>
@@ -1881,6 +1882,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="set_cancel_skip" class="w-heading">[set_cancel_skip] スキップ中断予約</h2>
 <h4>スキップ中断を予約</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家同様<b>何もしない</b>（本家も2023/05/27に廃止済みで中身が空。EventMng.ts:55）。上流シナリオに残っている記述を通すためにタグ名だけ受ける。</p>
 <p class="mb2 px1">
 
 	廃止、不要に<br/>

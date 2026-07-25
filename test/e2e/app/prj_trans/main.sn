@@ -29,7 +29,14 @@
 [trans time=0]
 [wt]
 [er]
-みっつめ[s]
+みっつめ[p]
+
+; [finish_trans]：長い演出を待たずに今すぐ終わらせる（表裏の交換まで済ませる）
+[lay layer=mes b_alpha=0.4 page=back]
+[trans time=9000]
+[finish_trans]
+[er]
+うちきった[s]
 
 *btn
 おされた[s]

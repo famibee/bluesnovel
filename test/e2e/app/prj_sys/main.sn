@@ -4,6 +4,7 @@
 ;	・[title]がブラウザタブのタイトル（document.title）になること
 ;	・[toggle_full_screen key=…]で予約したキーが全画面要求（store.fullScr）を切り替えること
 ;	・修飾キー付きのキー名（alt+enter）で[event]が引けること
+;	・組み込み変数 const.sn.key.*（修飾キーの「今の」押下状態）が押下を映すこと
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
@@ -14,6 +15,8 @@
 はじめ[l]
 
 [title text=あとから]
+; 読み進めた「その瞬間」の修飾キーの押下状態
+[trace text="&'key:'+ const.sn.key.alternate +'/'+ const.sn.key.control"]
 かえた[s]
 
 *modkey

@@ -186,3 +186,25 @@ it('scenario_titleSnLikeSequence', ()=> {
 		{t: 'waitTrans', canskip: true},
 	]);
 });
+
+
+// ============ [finish_trans] / [set_cancel_skip] ============
+
+it('finishTrans_pushesAction', ()=> {
+	// 本家のタグ本体は空（LayerMng.ts:102）で、実処理は「一部タグの直前に演出を畳む」
+	//	共通処理（ScriptIterator.ts:504）。こちらはそれをScriptMngへ持たせ、このタグを引き金にした
+	const a = acts(`${LAYS}[trans time=500][finish_trans]あ[s]`);
+	expect(a.find(v=> v.t === 'finishTrans')).toEqual({t: 'finishTrans'});
+	expect(a.some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);	// 待たない
+});
+
+it('setCancelSkip_isNoOp', ()=> {
+	// 本家も2023/05/27に廃止済みで中身は空（EventMng.ts:55）。上流の記述を通すためだけに受ける
+	const a = acts(`${LAYS}[set_cancel_skip]あ[s]`);
+	expect(a.some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);
+});
+
+it('finishTrans_reservedAsMacroName', ()=> {
+	expect(()=> acts('[macro name=finish_trans][s]'))
+		.toThrow('[finish_trans]はタグ名のため、マクロ名として使用できません');
+});

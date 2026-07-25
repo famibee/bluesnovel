@@ -69,6 +69,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
+	| {t: 'finishTrans'}				// [finish_trans]。[trans]の演出を今すぐ終わらせる（表裏の交換まで済ませる）
 	| {t: 'quake'; msec: number; hmax: number; vmax: number}	// [quake]。画面揺らし。揺れ幅はステージ座標のpx（0ならその向きには揺れない）。揺らすのも終了を決めるのもScriptMng側
 	| {t: 'stopQuake'}					// [stop_quake]。揺れを即座に終わらせる（本家は[finish_trans]と同じ処理）
 	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
@@ -397,7 +398,8 @@ export class ScriptEngine {
 	// マクロ名として使用不可（既存タグと同名は不可。本家 ScriptIterator.ts:1366
 	// if (name in this.hTag) throw と同じ意図）
 	static readonly RESERVED_TAGS = new Set([
-		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
+		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'finish_trans',
+		'set_cancel_skip', 'let', 'let_ml', 'endlet_ml',
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'tsy_frame', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
@@ -463,6 +465,17 @@ export class ScriptEngine {
 		this.#val.defBuiltin('const.sn.last_page_text',
 			()=> this.#hTxt[this.#curTxtLayer] ?? '');
 
+		// 組み込み変数：修飾キー等の**今の押下状態**（本家 EventMng.ts:318 の defTmp 一式）。
+		//	押下表を持てるのはDOM側だけなので、Main.tsxのkeydown/keyupがsetKeyDown()で教えてくる。
+		//	`back`はAndroidのBackキー（本家 #hDownKeys の'GoBack'）で、ブラウザには相当する
+		//	キーイベントが無いため常にfalse。変数自体は本家に揃えて用意しておく
+		this.#val.defBuiltin('const.sn.key.alternate',	()=> this.#hDownKey.Alt === true);
+		this.#val.defBuiltin('const.sn.key.command',	()=> this.#hDownKey.Meta === true);
+		this.#val.defBuiltin('const.sn.key.control',	()=> this.#hDownKey.Control === true);
+		this.#val.defBuiltin('const.sn.key.end',		()=> this.#hDownKey.End === true);
+		this.#val.defBuiltin('const.sn.key.escape',	()=> this.#hDownKey.Escape === true);
+		this.#val.defBuiltin('const.sn.key.back',		()=> false);
+
 		// 円周率（本家 CmnInterface.ts:334）
 		this.#val.defBuiltin('const.sn.Math.PI', ()=> Math.PI);
 		// スタックの深さ（本家 CmnInterface.ts:346-347）。デバッグ・入れ子の見張り用
@@ -471,6 +484,13 @@ export class ScriptEngine {
 	}
 	#isFullScr = false;
 	setFullScr(b: boolean) {this.#isFullScr = b}
+
+	// 修飾キー等の押下状態（const.sn.key.*）。DOM側（Main.tsx）が押した・離したを教えてくる。
+	//	キー名はKeyboardEvent.keyそのまま（本家 #hDownKeys と同じ綴り）
+	#hDownKey: {[key: string]: boolean} = Object.create(null);
+	setKeyDown(key: string, down: boolean) {this.#hDownKey[key] = down}
+	// ウインドウのフォーカスが外れた時。押したまま離れたキーが「押しっぱなし」で残らないように
+	clearKeyDown() {this.#hDownKey = Object.create(null)}
 
 	// 実行中スクリプトの差し替え＝ファイル切替。
 	//	ScriptMngが'loadScript'アクションを受けてfetch・パースした結果を渡してくる。
@@ -623,12 +643,20 @@ export class ScriptEngine {
 	get skipAll()     {return this.#flag('sn.skip.all')}	// falseなら既読のみスキップ、trueなら未読も含め全部
 	#flag(name: string): boolean {return this.#val.get(`tmp:${name}`) === true}
 
+	// [l]で止まるか（本家 Reading.tagL_enabled）。**こちらだけ既定がtrue**なので、
+	//	未設定＝trueとして読む。falseにすると[l]を素通りして頁末（[p]/[s]）まで一気に進む。
+	//	ギャラリーの tag_quake が「既読スキップの永久ループ対策」に使う書き方
+	get tagLEnabled() {return this.#val.get('tmp:sn.tagL.enabled') !== false}
+
 	// オート・スキップの解除（本家 ReadingState.cancelAutoSkip()）。3フラグを倒す。
 	//	[s]到達・未読での停止・ユーザーの手動操作から呼ばれる
 	cancelAutoSkip() {
 		this.#val.set('tmp:sn.skip.enabled', false);
 		this.#val.set('tmp:sn.skip.all', false);
 		this.#val.set('tmp:sn.auto.enabled', false);
+		// [l]無視も一緒に戻す（本家 cancelAutoSkip() の先頭）。
+		//	既にtrueなら触らない＝未設定のまま（[dump_val]に要らない変数を生やさない）
+		if (! this.tagLEnabled) this.#val.set('tmp:sn.tagL.enabled', true);
 	}
 
 	// 次に読むトークン（現在位置）が既読か（本家 ScriptIterator.isNextKidoku）。
@@ -983,6 +1011,18 @@ export class ScriptEngine {
 			aAct.push({t: 'waitTrans', canskip: (args.canskip ?? 'true') !== 'false'});
 			return 'stop';
 		}
+
+		case 'finish_trans':	// [trans]の演出を今すぐ終わらせる（＝表裏の交換まで済ませる）
+			// 本家のタグ本体は空（LayerMng.ts:102）で、実処理は「一部タグの直前に演出を畳む」
+			//	共通処理（ScriptIterator.ts:504 #setTag2FinishTrans）が受け持つ。
+			//	こちらはその共通処理をScriptMng側に持たせ、このタグはその引き金にした
+			aAct.push({t: 'finishTrans'});
+			return 'skip';
+
+		case 'set_cancel_skip':	// スキップ中断予約
+			// 本家も2023/05/27に廃止済みで中身は空（EventMng.ts:55）。
+			//	上流シナリオに残っている記述を通すためだけに受ける
+			return 'skip';
 
 		// ---- 画面揺らし（本家 LayerMng.ts:754 #quake()） ----
 		// 本家は[trans]と同じトゥイーン枠（TW_NM_TRANS）を使い回すので[wq]＝[wt]、
@@ -1713,6 +1753,10 @@ export class ScriptEngine {
 		}
 
 		case 'l': case 'p': case 's': case 'waitclick': {	// 行末クリック待ち／改ページ／停止／クリック待ち
+			// &sn.tagL.enabled = false の間は[l]で止まらない（本家 Reading l() の先頭）。
+			//	止まらないので既読判定もオート・スキップの計算もしない
+			if (name === 'l' && ! this.tagLEnabled) return 'skip';
+
 			if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
 			const resume = this.#calcResume(name);	// オート読み／既読スキップの自動進行指示（該当しなければundefined）
 			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer, ...resume ? {resume} : {}});

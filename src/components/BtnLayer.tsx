@@ -7,6 +7,7 @@
 
 import {focusMng} from '../ts/FocusMng';
 import {hintMng} from '../ts/Hint';
+import {useStore} from '../store/store';
 
 import type {T_BTN_STY} from './TxtLayer';
 
@@ -73,6 +74,10 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
 export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTNARG) {
+	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
+	//	ストアへ写しているのはScriptMngで、ステージ既定フォント（Stage.tsx）とは別に差し替えられる
+	const btnFont = useStore(s=> s.btnFont);
+
 	// 既定の見た目は**本家 Button.ts のデフォルト TextStyle**に寄せる（tag.html#button のデフォルトstyle）：
 	//	fill:black / align:center / fontFamily:Hiragino系 / padding:5 /
 	//	dropShadow:white・alpha0.7・blur7・distance0（＝CSSの text-shadow: 0 0 7px rgba(255,255,255,.7)）。
@@ -87,7 +92,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		box-sizing: border-box;
 		margin: 0.3em;
 		padding: 5px;
-		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
+		font-family: ${btnFont};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
 			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */

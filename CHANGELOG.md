@@ -17,6 +17,174 @@
 	- Claude Code には Explore・Plan・general-purpose といった組み込みのサブエージェントが用意されています。自分でカスタムサブエージェントを作ることも可能
 
 
+## 2026/07/26
+
+- hint・ツールチップと[button]残件など
+- [set_focus]残件。frameにもまたがるフォーカス移動
+
+- [x] **ツールチップ（`hint`）と、`[set_focus]`のフレーム跨ぎまわり**。
+	- **`hint`／`hint_style`／`hint_opt`**を`[button]`と`[link]`の両方に。吹き出しは**画面に1つ**を
+	  使い回す（本家 EventMng.ts:131 も`.sn_hint`を1つ作る）。マウスを乗せた時とフォーカスが
+	  入った時に出し、外れた時とクリック時に消す（本家 EventMng.ts:418〜424 と同じ出し入れ）。
+	  **本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置く**ので、`hint_opt`は
+	  `placement`（top／bottom／left／right。`bottom-start`のような修飾付きも本体だけ拾う）だけ見る。
+	  `src/ts/Hint.ts`。位置計算とhint_optの読み取りは純粋なのでユニット（6件）、
+	  実際の出し入れ・`hint_style`の反映・placementはE2E（2件）。
+	- **`[button]`はフォーカス時もホバーと同じ見た目**になった（本家 EventMng.ts:435 が
+	  FocusMngへ`hv()`/`nr()`を渡しているのに対応）。既定のフォーカスリングは画面に合わないので消す。
+	- **`[set_focus]`のフレーム跨ぎ**：フレーム内の要素とステージ上のボタンが同じ輪に並ぶのは
+	  元から動いていた（`focus.e2e.ts`が`frm:ok`→`frm:close`→`btn:ボタン1`→`btn:ボタン2`を確認済み）。
+	  **抜けていたのは「隠したフレームの中へフォーカスが落ちる」こと**——フレームの文書は自分が
+	  隠れていることを知らないので`getClientRects()`が普通に返ってしまう。`FocusMng.#canFocus()`が
+	  `frameElement`を辿って**親側まで遡って確かめる**ようにした（同一originのsrcdocなので辿れる）。
+	  E2E1件（`[frame visible=false]`の後は[button]だけを巡る）。
+	- ユニット1242・E2E105 パス、`tsc` クリーン。
+	- 残り：`[button]`の`style`/`style_hover`（**pixiのTextStyle JSON**なのでCSSへの読み替え設計から）・
+	  `pic`/`b_pic`・効果音、`[link]`の`global`/`onenter`/`onleave`、`[set_focus]`のゲームパッド操作。
+
+
+- [button]のフォーカス・ホバー状態などのcss指定
+- [toggle_full_screen]の残り
+- const.sn.platform について
+  - Public archive の platform.js https://github.com/bestiejs/platform.js 由来なので、インストールしない方針
+  - ただ src/sn/CmnLib.ts:175 で import('platform')し、isSafari, isFirefox, isMac, isMobile を設定したいのが本質。組み込み変数として公開しているが使う予定はない。UA文字列でもよい
+- todo.md、tag.html、dev.html などの資料の整合性と🔴更新
+  - たとえばtodo.mdの実績や「実装済み」記述の削除（他への移動）や軽量化。todoはカラになる運命
+
+- [x] **`[button]`の見た目CSS・全画面の中央寄せ・platform.js廃止・資料の整理**（まとめて4件）。
+	- **`[button style=/style_hover=/style_clicked=]`をCSSで書けるようにした**（通常・ホバー/フォーカス中・
+	  押下中の3状態）。本家はpixiのTextStyle JSONだが、こちらはDOMなのでCSSをそのまま当てるほうが素直。
+	  ただしギャラリーのサンプルは`{"fill": "plum"}`と書くので、**`{`で始まる値だけ主要キーをCSSへ読み替える**
+	  （`fill`→`color`、`fontSize`は数値ならpx付与、等。`dropShadow`など未対応キーは落とす）。
+	  既定はこれまでどおり本家寄り（ホバーは`fill:'white'`相当、押下中は影を消す）。
+	- **全画面時にステージを画面の中央へ寄せる**（本家 SysBase.cvsResize() 相当）。ステージは実寸固定＋
+	  `transform: scale()`で拡縮する作りなので、全画面要素になっても画面いっぱいには広がらず、
+	  放っておくと左上に寄っていた。E2Eは**実際に全画面へ入って**中心座標を見る（予約キーの押下＝
+	  本物のユーザー操作から`requestFullscreen()`を呼べるため、ヘッドレスでも通る）。
+	- **platform.js への依存をやめた**（bestiejs/platform.js は Public archive）。本当に要るのは
+	  `CmnLib`の`isSafari`/`isFirefox`/`isMac`/`isMobile`の4つだけなので、UA文字列から出すようにし、
+	  `CmnLib.init()`は同期になった（動的importが消えた）。組み込み変数`const.sn.platform`はUA文字列
+	  （本家はplatform.jsのJSONで`.os.family`のように引けるが、使う予定が無いので割り切り）。
+	  判別は`test/CmnLib.test.ts`が代表的なUA5種で押さえる（Chrome系もUAに"Safari"を含む、
+	  iOSのUAは"like Mac OS X"を含む、といった引っかかりどころ込み）。package.jsonからは外したので、
+	  次の`bun install`で`platform`と`@types/platform`が落ちる。
+	- **資料の整理**：`todo.md`を「これからやること」だけに絞った（120行→88行。実績・実装済みの記述は
+	  CHANGELOG.mdとdocsへ寄せ、章立ても タグ／挙動の詰め／アセット基盤／本家へ確認 に整理）。
+	  `docs/tag.html`は`[add_face]`を🟢へ、`[button]`・`[toggle_full_screen]`のメモを更新。
+	  `docs/dev.html`は`const.sn.platform`を🟢＋方針の理由を明記。
+	  現状のマーク集計は **🟢61／🟡20／🔴34**（🔴は音声・動画・画面揺らし・文字出現演出・履歴など、
+	  層ごと未着手のものだけで、実装済みなのに🔴のまま残っている取りこぼしは無い）。
+	- ユニット1251・E2E108 パス、`tsc` クリーン。
+
+
+- 🟡 [tsy]残件、[tsy path=…]など？　と[tsy_frame]
+- HTMLフレーム系タグの残り
+- [event key='dom=…']
+- もう実装できそうなタグ、組み込み変数を実装
+- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+
+- [x] **`[tsy path=]`/`[tsy chain=]`・`[tsy_frame]`・`sn.event.domdata.*`**（トゥイーンとフレームの残り）。
+	- **`[tsy path=…]`（複数区間の経路）**。本家の正規表現（`CmnTween.#REG_TSY_PATH`）をそのまま移植し、
+	  `(x,y,alpha)` 並べ書きと `{…}` のJSON書式の両方を受ける。**相対値（先頭`=`）はどの区間も
+	  「トゥイーン開始時の値」が基準**——だからテンプレの`fg_squat`が書く`(,=50) (,=0)`が
+	  「50下げてから元へ戻す」になる（区間ごとの相対だと戻らない）。本家はtween.jsの`chain()`で
+	  区間を繋ぐが、こちらはGSAPのtimeline。JSONの誤りは本家がconsole.errorで流してその区間を
+	  捨てるのに対し、こちらはその場で例外にした（他の属性の扱いと揃えるため）。
+	- **`[tsy chain=…]`**（他トゥイーンの終了に繋ぐ）。止めた状態で作り、繋ぎ元の終了時に動かし始める。
+	  目標値・開始値は**タグ実行時**に解決する（本家も同じで、繋ぎ元が動かした後の値は見ない）。
+	- **`[tsy_frame]`**。`[tsy]`と同じ組み立てを共有し、動かす先だけストアのレイヤ→`FrameMng`が抱える
+	  iframeに差し替える形にした（`#tsyVals()`/`#runTsy()`を共通化）。フレームは`x`/`y`/`rotate`が実名
+	  なので属性表を分けてある。トゥイーン名は本家同様`frm\nID`なので`[wait_tsy id=…]`等で指せる。
+	  併せて**`FrameMng`が各フレームの現在の見た目を持つ**ようにした：`transform`は
+	  scale_x/scale_y/rotateの3つで1つの値なので、現在値を持たないと`[frame scale_x=…]`だけの指定が
+	  残り2つを既定値へ戻してしまう（`[tsy_frame]`の開始値も同じ場所から取る）。
+	- **`sn.event.domdata.*`**：`[event key='dom=…']`の発火時、その要素の`data-*`を組み込み変数へ
+	  （本家 EventMng.ts:591）。フレーム内の「どの項目が押されたか」をシナリオへ渡す口になる。
+	- ユニット1263・E2E111 パス。`docs/tag.html`は`[tsy_frame]`を🟢へ、`[tsy]`と`[event]`のメモを更新、
+	  `docs/dev.html`は`sn.event.domdata.*`を🟢へ。
+
+- [x] **画面揺らし `[quake]`/`[stop_quake]`/`[wq]`**。
+	- 本家（LayerMng.ts:754）はレイヤを板テクスチャへ描いてそのスプライトを揺らすが、こちらは
+	  **表裏のページ箱そのもの**を動かす（ステージ側の`overflow: hidden`が端を切るので絵は同じ）。
+	  **毎フレーム`[-hmax,+hmax]`／`[-vmax,+vmax]`のランダム位置へ跳ぶ**（補間しない）のも本家どおり。
+	- **揺れ幅はストアに入れない**：毎フレームのランダム値なのでストア更新には重すぎ、かつ最後は
+	  必ず0へ戻る一時的な見た目なので読み戻し（Memento）にも要らない。ストアが持つのは
+	  「揺れているか・幅はいくつか」だけで、`[trans]`と同じ役割分担にした——揺らすのはStage側、
+	  **終了を宣言するのはScriptMng**（時間切れ／`[wq]`中のクリック／`[stop_quake]`）。
+	- 本家は`[trans]`と同じトゥイーン枠（`TW_NM_TRANS`）を使い回すので`[stop_quake]`＝`[finish_trans]`・
+	  `[wq]`＝`[wt]`だが、**こちらの`[trans]`は表裏の交換を伴う別処理**なので、同じ形の別の待ち行列に
+	  した（揺らしながらの`[trans]`が破綻しないという副産物つき）。
+	- 未対応は`layer=`（揺らす対象の限定。常に画面全体）と`delay`/`repeat`/`ease`/`yoyo`
+	  （本家でも揺れ幅がランダムなのでイージングは効かず、実質「揺らす長さ」しか変わらない）。
+	- ユニット1275・E2E115 パス。E2Eは揺れ幅がストアに無いのでDOMの`transform`を直接読む。
+
+- [x] **すぐ実装できるタグ・組み込み変数**（`[finish_trans]`・`[set_cancel_skip]`・`sn.tagL.enabled`・
+  `const.sn.key.*`・`sn.button.fontFamily`）。docs の🔴を実装可能なものから消す回。
+	- **`[finish_trans]`**：演出を終了状態へ送り、**表裏の交換まで**済ませる（`[wt]`中のクリックと同じ
+	  着地点）。本家のタグ本体は空で、実処理は「一部タグの直前に演出を畳む」共通処理
+	  （ScriptIterator.ts:504 `#setTag2FinishTrans`）。こちらはその畳み込みをScriptMng側に置き、
+	  このタグと**`[trans]`自身**だけに掛けた——演出中に次の`[trans]`が来ると、交換されないまま
+	  裏ページが書き換わって前の場面が表に出ないまま消えるため（これは実装漏れの修正でもある）。
+	  本家は`[quake]`/`[stop_quake]`/`[add_filter]`にも掛けるが、それは`[quake]`が`[trans]`と同じ
+	  トゥイーン枠を使う都合であって意図ではないので追随していない。
+	- **`[set_cancel_skip]`**：本家同様**何もしない**（本家も2023/05/27に廃止済みで中身が空）。
+	  上流シナリオに残る記述を通すためにタグ名だけ受ける。
+	- **`sn.tagL.enabled`**：falseの間は`[l]`で止まらず頁末（`[p]`/`[s]`）まで一気に進む。
+	  **3フラグと違い既定がtrue**なので「未設定＝true」として読む。手動操作・`[s]`到達での
+	  `cancelAutoSkip()`でtrueへ戻すのも本家どおり。ギャラリーの`tag_quake`が既読スキップの
+	  永久ループ対策に使う書き方。
+	- **`const.sn.key.*`**（修飾キー等の今の押下状態）：押下表を持てるのはDOM側だけなので、
+	  Main.tsxのkeydown/keyupが`setKeyDown()`でエンジンへ教え、変数側は他の組み込み変数と同じ
+	  遅延評価にした。blurで全部落とす（押したままウインドウを離れると押しっぱなしで残るため）。
+	  `back`はAndroidのBackキーで、ブラウザに相当するキーイベントが無いので常にfalse（🟡）。
+	- **`sn.button.fontFamily`**：`sys:TextLayer.Back.Alpha`と同じく停止点ごとにストアへ写し、
+	  BtnLayerが`font-family`として当てる（全ボタン共通）。
+	- ユニット1285・E2E118 パス。
+
+- [ ]
+
+
+
+
+
+
+
+
+- tmp_bluesテンプレート操作時に気付いた点
+  - [toggle_full_screen]で最大化したさいにウインドウ内側いっぱいに拡大・センタリングしていない。タイトル画面で再現
+    - 【<div data-page="fore" ...>】などが最大化を阻止しているのか。キャンバス外の追加要素があるのか。扱いに問題。それらごと含有する別要素の導入・操作・管理など、検討を
+  - 文字レイヤ、メッセージウインドウ（b_color テキスト背後の矩形）の位置とサイズの実装を。周囲に点々修飾も見える
+  - 文字・クリック待ちアニメpngが縦書きになってない
+  - システムボタン（doc/prj/script/sub.sn:111 マクロ [sysmenu_draw_v] による）は回転により縦になっているが、幅広い。タイトル画面ボタンのようにwidth幅（省略でデフォルト値）に収まっていないように見える
+  - 右クリックメニューが開かない。イベントを処理しているか。Shiftキーで開く
+  - システムボタンの「タイトル」を押し、「タイトルに戻りますか？」が出るが、
+    - キャンセルすると本文が消えている
+    - 戻るを選択すると、システムボタンが横書きになり[trans]する
+  - アルバム画面で、本文で表示されたのに「語り手」 doc/prj/image/F_kuchimoto.jpg が表示されずリンク切れ
+  - [trans]終了時に一瞬真っ黒画面になってちらつく
+
+
+- ルール画像による[trans]
+  - ゲーム中での[trans]によるトランジション中の様子はテストしづらい？
+
+
+
+
+- 音系に着手。だがあなたはこちらのようなテスト可能か？
+  - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
+
+- GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
+
+- イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
+
+
+
+- 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
+
+
+
+
+
 ## 2026/07/25
 
 - skynovel_esm 版テンプレtmp_esm_uc( https://github.com/famibee/tmp_esm_uc/ ) のタイトル画面 snapshot20260724_tmp_esm_uc.jpg を渡す（pngもあるので必要なら伝えて）
@@ -493,148 +661,6 @@ ok.次は「設定」ボタンだが、その前に。
 	- テスト：エンジン4件（blendmodeの変換と例外）＋`[link url]`1件＋`[event url]`2件、
 	  E2E2件（blendmode 3タグぶん、`[link url=…]`が別タブを開いてシナリオは進まないこと）。
 	  ユニット1234・E2E102 パス、`tsc` クリーン。
-
-
-- hint・ツールチップと[button]残件など
-- [set_focus]残件。frameにもまたがるフォーカス移動
-
-- [x] **ツールチップ（`hint`）と、`[set_focus]`のフレーム跨ぎまわり**。
-	- **`hint`／`hint_style`／`hint_opt`**を`[button]`と`[link]`の両方に。吹き出しは**画面に1つ**を
-	  使い回す（本家 EventMng.ts:131 も`.sn_hint`を1つ作る）。マウスを乗せた時とフォーカスが
-	  入った時に出し、外れた時とクリック時に消す（本家 EventMng.ts:418〜424 と同じ出し入れ）。
-	  **本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置く**ので、`hint_opt`は
-	  `placement`（top／bottom／left／right。`bottom-start`のような修飾付きも本体だけ拾う）だけ見る。
-	  `src/ts/Hint.ts`。位置計算とhint_optの読み取りは純粋なのでユニット（6件）、
-	  実際の出し入れ・`hint_style`の反映・placementはE2E（2件）。
-	- **`[button]`はフォーカス時もホバーと同じ見た目**になった（本家 EventMng.ts:435 が
-	  FocusMngへ`hv()`/`nr()`を渡しているのに対応）。既定のフォーカスリングは画面に合わないので消す。
-	- **`[set_focus]`のフレーム跨ぎ**：フレーム内の要素とステージ上のボタンが同じ輪に並ぶのは
-	  元から動いていた（`focus.e2e.ts`が`frm:ok`→`frm:close`→`btn:ボタン1`→`btn:ボタン2`を確認済み）。
-	  **抜けていたのは「隠したフレームの中へフォーカスが落ちる」こと**——フレームの文書は自分が
-	  隠れていることを知らないので`getClientRects()`が普通に返ってしまう。`FocusMng.#canFocus()`が
-	  `frameElement`を辿って**親側まで遡って確かめる**ようにした（同一originのsrcdocなので辿れる）。
-	  E2E1件（`[frame visible=false]`の後は[button]だけを巡る）。
-	- ユニット1242・E2E105 パス、`tsc` クリーン。
-	- 残り：`[button]`の`style`/`style_hover`（**pixiのTextStyle JSON**なのでCSSへの読み替え設計から）・
-	  `pic`/`b_pic`・効果音、`[link]`の`global`/`onenter`/`onleave`、`[set_focus]`のゲームパッド操作。
-
-
-- [button]のフォーカス・ホバー状態などのcss指定
-- [toggle_full_screen]の残り
-- const.sn.platform について
-  - Public archive の platform.js https://github.com/bestiejs/platform.js 由来なので、インストールしない方針
-  - ただ src/sn/CmnLib.ts:175 で import('platform')し、isSafari, isFirefox, isMac, isMobile を設定したいのが本質。組み込み変数として公開しているが使う予定はない。UA文字列でもよい
-- todo.md、tag.html、dev.html などの資料の整合性と🔴更新
-  - たとえばtodo.mdの実績や「実装済み」記述の削除（他への移動）や軽量化。todoはカラになる運命
-
-- [x] **`[button]`の見た目CSS・全画面の中央寄せ・platform.js廃止・資料の整理**（まとめて4件）。
-	- **`[button style=/style_hover=/style_clicked=]`をCSSで書けるようにした**（通常・ホバー/フォーカス中・
-	  押下中の3状態）。本家はpixiのTextStyle JSONだが、こちらはDOMなのでCSSをそのまま当てるほうが素直。
-	  ただしギャラリーのサンプルは`{"fill": "plum"}`と書くので、**`{`で始まる値だけ主要キーをCSSへ読み替える**
-	  （`fill`→`color`、`fontSize`は数値ならpx付与、等。`dropShadow`など未対応キーは落とす）。
-	  既定はこれまでどおり本家寄り（ホバーは`fill:'white'`相当、押下中は影を消す）。
-	- **全画面時にステージを画面の中央へ寄せる**（本家 SysBase.cvsResize() 相当）。ステージは実寸固定＋
-	  `transform: scale()`で拡縮する作りなので、全画面要素になっても画面いっぱいには広がらず、
-	  放っておくと左上に寄っていた。E2Eは**実際に全画面へ入って**中心座標を見る（予約キーの押下＝
-	  本物のユーザー操作から`requestFullscreen()`を呼べるため、ヘッドレスでも通る）。
-	- **platform.js への依存をやめた**（bestiejs/platform.js は Public archive）。本当に要るのは
-	  `CmnLib`の`isSafari`/`isFirefox`/`isMac`/`isMobile`の4つだけなので、UA文字列から出すようにし、
-	  `CmnLib.init()`は同期になった（動的importが消えた）。組み込み変数`const.sn.platform`はUA文字列
-	  （本家はplatform.jsのJSONで`.os.family`のように引けるが、使う予定が無いので割り切り）。
-	  判別は`test/CmnLib.test.ts`が代表的なUA5種で押さえる（Chrome系もUAに"Safari"を含む、
-	  iOSのUAは"like Mac OS X"を含む、といった引っかかりどころ込み）。package.jsonからは外したので、
-	  次の`bun install`で`platform`と`@types/platform`が落ちる。
-	- **資料の整理**：`todo.md`を「これからやること」だけに絞った（120行→88行。実績・実装済みの記述は
-	  CHANGELOG.mdとdocsへ寄せ、章立ても タグ／挙動の詰め／アセット基盤／本家へ確認 に整理）。
-	  `docs/tag.html`は`[add_face]`を🟢へ、`[button]`・`[toggle_full_screen]`のメモを更新。
-	  `docs/dev.html`は`const.sn.platform`を🟢＋方針の理由を明記。
-	  現状のマーク集計は **🟢61／🟡20／🔴34**（🔴は音声・動画・画面揺らし・文字出現演出・履歴など、
-	  層ごと未着手のものだけで、実装済みなのに🔴のまま残っている取りこぼしは無い）。
-	- ユニット1251・E2E108 パス、`tsc` クリーン。
-
-
-- 🟡 [tsy]残件、[tsy path=…]など？　と[tsy_frame]
-- HTMLフレーム系タグの残り
-- [event key='dom=…']
-- もう実装できそうなタグ、組み込み変数を実装
-- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
-
-- [x] **`[tsy path=]`/`[tsy chain=]`・`[tsy_frame]`・`sn.event.domdata.*`**（トゥイーンとフレームの残り）。
-	- **`[tsy path=…]`（複数区間の経路）**。本家の正規表現（`CmnTween.#REG_TSY_PATH`）をそのまま移植し、
-	  `(x,y,alpha)` 並べ書きと `{…}` のJSON書式の両方を受ける。**相対値（先頭`=`）はどの区間も
-	  「トゥイーン開始時の値」が基準**——だからテンプレの`fg_squat`が書く`(,=50) (,=0)`が
-	  「50下げてから元へ戻す」になる（区間ごとの相対だと戻らない）。本家はtween.jsの`chain()`で
-	  区間を繋ぐが、こちらはGSAPのtimeline。JSONの誤りは本家がconsole.errorで流してその区間を
-	  捨てるのに対し、こちらはその場で例外にした（他の属性の扱いと揃えるため）。
-	- **`[tsy chain=…]`**（他トゥイーンの終了に繋ぐ）。止めた状態で作り、繋ぎ元の終了時に動かし始める。
-	  目標値・開始値は**タグ実行時**に解決する（本家も同じで、繋ぎ元が動かした後の値は見ない）。
-	- **`[tsy_frame]`**。`[tsy]`と同じ組み立てを共有し、動かす先だけストアのレイヤ→`FrameMng`が抱える
-	  iframeに差し替える形にした（`#tsyVals()`/`#runTsy()`を共通化）。フレームは`x`/`y`/`rotate`が実名
-	  なので属性表を分けてある。トゥイーン名は本家同様`frm\nID`なので`[wait_tsy id=…]`等で指せる。
-	  併せて**`FrameMng`が各フレームの現在の見た目を持つ**ようにした：`transform`は
-	  scale_x/scale_y/rotateの3つで1つの値なので、現在値を持たないと`[frame scale_x=…]`だけの指定が
-	  残り2つを既定値へ戻してしまう（`[tsy_frame]`の開始値も同じ場所から取る）。
-	- **`sn.event.domdata.*`**：`[event key='dom=…']`の発火時、その要素の`data-*`を組み込み変数へ
-	  （本家 EventMng.ts:591）。フレーム内の「どの項目が押されたか」をシナリオへ渡す口になる。
-	- ユニット1263・E2E111 パス。`docs/tag.html`は`[tsy_frame]`を🟢へ、`[tsy]`と`[event]`のメモを更新、
-	  `docs/dev.html`は`sn.event.domdata.*`を🟢へ。
-
-- [x] **画面揺らし `[quake]`/`[stop_quake]`/`[wq]`**。
-	- 本家（LayerMng.ts:754）はレイヤを板テクスチャへ描いてそのスプライトを揺らすが、こちらは
-	  **表裏のページ箱そのもの**を動かす（ステージ側の`overflow: hidden`が端を切るので絵は同じ）。
-	  **毎フレーム`[-hmax,+hmax]`／`[-vmax,+vmax]`のランダム位置へ跳ぶ**（補間しない）のも本家どおり。
-	- **揺れ幅はストアに入れない**：毎フレームのランダム値なのでストア更新には重すぎ、かつ最後は
-	  必ず0へ戻る一時的な見た目なので読み戻し（Memento）にも要らない。ストアが持つのは
-	  「揺れているか・幅はいくつか」だけで、`[trans]`と同じ役割分担にした——揺らすのはStage側、
-	  **終了を宣言するのはScriptMng**（時間切れ／`[wq]`中のクリック／`[stop_quake]`）。
-	- 本家は`[trans]`と同じトゥイーン枠（`TW_NM_TRANS`）を使い回すので`[stop_quake]`＝`[finish_trans]`・
-	  `[wq]`＝`[wt]`だが、**こちらの`[trans]`は表裏の交換を伴う別処理**なので、同じ形の別の待ち行列に
-	  した（揺らしながらの`[trans]`が破綻しないという副産物つき）。
-	- 未対応は`layer=`（揺らす対象の限定。常に画面全体）と`delay`/`repeat`/`ease`/`yoyo`
-	  （本家でも揺れ幅がランダムなのでイージングは効かず、実質「揺らす長さ」しか変わらない）。
-	- ユニット1275・E2E115 パス。E2Eは揺れ幅がストアに無いのでDOMの`transform`を直接読む。
-
-- [ ]
-
-
-
-
-
-
-
-
-- tmp_bluesテンプレート操作時に気付いた点
-  - [toggle_full_screen]で最大化したさいにウインドウ内側いっぱいに拡大・センタリングしていない。タイトル画面で再現
-    - 【<div data-page="fore" ...>】などが最大化を阻止しているのか。キャンバス外の追加要素があるのか。扱いに問題。それらごと含有する別要素の導入・操作・管理など、検討を
-  - 文字レイヤ、メッセージウインドウ（b_color テキスト背後の矩形）の位置とサイズの実装を。周囲に点々修飾も見える
-  - 文字・クリック待ちアニメpngが縦書きになってない
-  - システムボタン（doc/prj/script/sub.sn:111 マクロ [sysmenu_draw_v] による）は回転により縦になっているが、幅広い。タイトル画面ボタンのようにwidth幅（省略でデフォルト値）に収まっていないように見える
-  - 右クリックメニューが開かない。イベントを処理しているか。Shiftキーで開く
-  - システムボタンの「タイトル」を押し、「タイトルに戻りますか？」が出るが、
-    - キャンセルすると本文が消えている
-    - 戻るを選択すると、システムボタンが横書きになり[trans]する
-  - アルバム画面で、本文で表示されたのに「語り手」 doc/prj/image/F_kuchimoto.jpg が表示されずリンク切れ
-  - [trans]終了時に一瞬真っ黒画面になってちらつく
-
-
-- ルール画像による[trans]
-  - ゲーム中での[trans]によるトランジション中の様子はテストしづらい？
-
-
-
-
-- 音系に着手。だがあなたはこちらのようなテスト可能か？
-  - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
-
-- GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
-
-- イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
-
-
-
-- 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
-
-
 
 
 ## 2026/07/24

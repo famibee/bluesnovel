@@ -138,3 +138,21 @@ test('[button page=back]は裏ページに乗り、[trans]で表に出る', asyn
 	expect(s2.aLay.find(l=> l.nm === 'mes')?.aBtn?.[0]?.text).toBe('うらボタン');
 	await expect(page.locator(SEL_FORE).getByText('うらボタン')).toHaveCount(1);
 });
+
+test('[finish_trans]は長い演出を待たずに終わらせ、表裏の交換まで済ませる', async ({page})=> {
+	for (let i = 0; i < 3; ++i) {	// みっつめ（[trans time=0]の直後）まで進める
+		await page.keyboard.press('Space');
+		await waitTransDone(page);
+	}
+	expect(await mesStr(page)).toBe('みっつめ');
+
+	// [trans time=9000]の直後に[finish_trans]。9秒待たずに交換まで済む
+	const t0 = Date.now();
+	await page.keyboard.press('Space');
+	await waitTransDone(page);
+	expect(await mesStr(page)).toBe('うちきった');
+	expect(Date.now() - t0).toBeLessThan(5_000);
+
+	expect((await snap(page)).foreIdx).toBe(1);	// 交換された
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');	// 0.4 × 0.5
+});

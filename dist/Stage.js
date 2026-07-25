@@ -1,7 +1,8 @@
 import { n as e, t } from "./rolldown-runtime.js";
 import { t as n } from "./Memento.js";
 import { t as r } from "./react.js";
-import { _ as i, a, c as o, d as s, f as c, g as l, h as u, i as d, l as f, m as p, n as m, o as h, onLong as g, p as _, r as v, s as y, setDesignMode as b, t as x, u as S, v as C } from "./Main.js";
+import { a as i, i as a, n as o, o as s, r as c } from "./store.js";
+import { a as l, c as u, d, f, i as p, l as m, n as h, o as g, onLong as _, p as v, r as y, s as b, setDesignMode as x, t as S, u as C } from "./Main.js";
 import { a as w, t as T } from "./CmnLib.js";
 import { a as E, n as D, t as O } from "./gsap.js";
 //#region node_modules/react-use/esm/useToggle.js
@@ -9,7 +10,7 @@ var k = /* @__PURE__ */ e(r()), A = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
 }, j = function(e) {
 	return (0, k.useReducer)(A, e);
-}, M = S ? k.useLayoutEffect : k.useEffect, N = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
+}, M = C ? k.useLayoutEffect : k.useEffect, N = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
 	(function() {
 		var e = typeof window < "u" && window.document !== void 0 ? window.document : {}, n = t !== void 0 && t.exports, r = (function() {
 			for (var t, n = [
@@ -129,66 +130,66 @@ var k = /* @__PURE__ */ e(r()), A = function(e, t) {
 	})();
 })))()), P = function(e, t, n) {
 	n === void 0 && (n = {});
-	var r = n.video, i = n.onClose, a = i === void 0 ? s : i, o = (0, k.useState)(t), l = o[0], u = o[1];
+	var r = n.video, i = n.onClose, a = i === void 0 ? d : i, o = (0, k.useState)(t), s = o[0], c = o[1];
 	return M(function() {
 		if (t && e.current) {
 			var n = function() {
-				r?.current && c(r.current, "webkitendfullscreen", n), a();
+				r?.current && f(r.current, "webkitendfullscreen", n), a();
 			}, i = function() {
 				if (N.default.isEnabled) {
 					var e = N.default.isFullscreen;
-					u(e), e || a();
+					c(e), e || a();
 				}
 			};
 			if (N.default.isEnabled) {
 				try {
-					N.default.request(e.current), u(!0);
+					N.default.request(e.current), c(!0);
 				} catch (e) {
-					a(e), u(!1);
+					a(e), c(!1);
 				}
 				N.default.on("change", i);
-			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), _(r.current, "webkitendfullscreen", n), u(!0)) : (a(), u(!1));
+			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), v(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
 			return function() {
-				if (u(!1), N.default.isEnabled) try {
+				if (c(!1), N.default.isEnabled) try {
 					N.default.off("change", i), N.default.exit();
 				} catch {}
-				else r && r.current && r.current.webkitExitFullscreen && (c(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
+				else r && r.current && r.current.webkitExitFullscreen && (f(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
 			};
 		}
 	}, [
 		t,
 		r,
 		e
-	]), l;
+	]), s;
 }, F = function(e) {
 	return "touches" in e;
 }, I = function(e) {
 	F(e) && e.touches.length < 2 && e.preventDefault && e.preventDefault();
 }, L = function(e, t) {
-	var n = t === void 0 ? {} : t, r = n.isPreventDefault, i = r === void 0 || r, a = n.delay, o = a === void 0 ? 300 : a, s = (0, k.useRef)(), l = (0, k.useRef)(), u = (0, k.useCallback)(function(t) {
-		i && t.target && (_(t.target, "touchend", I, { passive: !1 }), l.current = t.target), s.current = setTimeout(function() {
+	var n = t === void 0 ? {} : t, r = n.isPreventDefault, i = r === void 0 || r, a = n.delay, o = a === void 0 ? 300 : a, s = (0, k.useRef)(), c = (0, k.useRef)(), l = (0, k.useCallback)(function(t) {
+		i && t.target && (v(t.target, "touchend", I, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
 			return e(t);
 		}, o);
 	}, [
 		e,
 		o,
 		i
-	]), d = (0, k.useCallback)(function() {
-		s.current && clearTimeout(s.current), i && l.current && c(l.current, "touchend", I);
+	]), u = (0, k.useCallback)(function() {
+		s.current && clearTimeout(s.current), i && c.current && f(c.current, "touchend", I);
 	}, [i]);
 	return {
 		onMouseDown: function(e) {
-			return u(e);
+			return l(e);
 		},
 		onTouchStart: function(e) {
-			return u(e);
+			return l(e);
 		},
-		onMouseUp: d,
-		onMouseLeave: d,
-		onTouchEnd: d
+		onMouseUp: u,
+		onMouseLeave: u,
+		onTouchEnd: u
 	};
 }, R = function(e) {
-	f(function() {
+	m(function() {
 		e();
 	});
 };
@@ -9899,19 +9900,19 @@ function iu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, src: a, aFac
 	let d = (0, k.useRef)(null), f = (e, t) => {
 		i(), e.transform = t;
 	};
-	return /* @__PURE__ */ v(x, { children: [/* @__PURE__ */ v("div", {
+	return /* @__PURE__ */ y(S, { children: [/* @__PURE__ */ y("div", {
 		css: e,
 		ref: d,
 		"data-lay": r,
 		style: n,
 		onMouseDown: (e) => s(e),
 		children: [
-			l && /* @__PURE__ */ m("div", { className: re(l) }),
-			a && !c && /* @__PURE__ */ m("img", {
+			l && /* @__PURE__ */ h("div", { className: re(l) }),
+			a && !c && /* @__PURE__ */ h("img", {
 				src: a,
 				style: { display: "block" }
 			}),
-			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ m("img", {
+			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ h("img", {
 				src: t,
 				style: {
 					position: "absolute",
@@ -9921,7 +9922,7 @@ function iu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, src: a, aFac
 				}
 			}, `${e}_${String(a)}`) : null)
 		]
-	}), t && /* @__PURE__ */ m(ru, {
+	}), t && /* @__PURE__ */ h(ru, {
 		target: d,
 		draggable: !0,
 		throttleDrag: 1,
@@ -9998,13 +9999,13 @@ var cu = "position: fixed; background-color: #3c3225; color: white; padding: 4px
 		this.#e && (this.#e.hidden = !0);
 	}
 }();
-o();
+u();
 var uu = function(e, t) {
 	var n = arguments;
-	if (t == null || !h.call(t, "css")) return k.createElement.apply(void 0, n);
+	if (t == null || !g.call(t, "css")) return k.createElement.apply(void 0, n);
 	var r = n.length, i = Array(r);
-	i[0] = d, i[1] = a(e, t);
-	for (var o = 2; o < r; o++) i[o] = n[o];
+	i[0] = p, i[1] = l(e, t);
+	for (var a = 2; a < r; a++) i[a] = n[a];
 	return k.createElement.apply(null, i);
 };
 (function(e) {
@@ -10012,7 +10013,7 @@ var uu = function(e, t) {
 	t ||= e.JSX ||= {};
 })(uu ||= {});
 function du() {
-	return y([...arguments]);
+	return b([...arguments]);
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
@@ -10023,7 +10024,7 @@ function fu(e, t) {
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || a) && (n.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(r)}, ${String(i)})`, n.transformOrigin = a ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
 function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
-	let o = du`
+	let s = du`
 		position: relative;
 		z-index: 2;
 
@@ -10031,7 +10032,7 @@ function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		box-sizing: border-box;
 		margin: 0.3em;
 		padding: 5px;
-		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
+		font-family: ${o((e) => e.btnFont)};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
 			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */
@@ -10057,23 +10058,23 @@ function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
 		&:active {${i?.style_clicked ?? "text-shadow: none;"}}
-	`, s = (e) => {
+	`, c = (e) => {
 		e.stopPropagation(), lu.hide(), a(t, n ?? !1, r);
-	}, c = () => {
-		i?.hint && lu.show(l.current, i.hint, i.hint_style, i.hint_opt);
-	}, l = (0, k.useRef)(null);
+	}, l = () => {
+		i?.hint && lu.show(u.current, i.hint, i.hint_style, i.hint_opt);
+	}, u = (0, k.useRef)(null);
 	(0, k.useEffect)(() => {
-		let e = l.current;
+		let e = u.current;
 		if (e) return D.add(e), () => D.remove(e);
 	}, []);
-	let [u, d] = (0, k.useState)({
+	let [d, f] = (0, k.useState)({
 		x: 1,
 		y: 1
 	});
 	return (0, k.useLayoutEffect)(() => {
-		let e = l.current;
+		let e = u.current;
 		if (!e || !i || i.width === void 0) {
-			d({
+			f({
 				x: 1,
 				y: 1
 			});
@@ -10082,7 +10083,7 @@ function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		let { width: t, height: n } = i, r = e.style.width, a = e.style.transform, o = e.style.whiteSpace;
 		e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
 		let s = e.offsetWidth, c = e.offsetHeight;
-		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, d({
+		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, f({
 			x: s > 0 ? t / s : 1,
 			y: n !== void 0 && c > 0 ? n / c : 1
 		});
@@ -10090,54 +10091,54 @@ function pu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		e,
 		i?.width,
 		i?.height
-	]), /* @__PURE__ */ m("span", {
-		css: o,
-		style: i ? fu(i, u) : void 0,
-		ref: l,
+	]), /* @__PURE__ */ h("span", {
+		css: s,
+		style: i ? fu(i, d) : void 0,
+		ref: u,
 		tabIndex: 0,
-		onClick: s,
+		onClick: c,
 		onKeyDown: (e) => {
 			e.key !== "Enter" && e.key !== " " || (e.stopPropagation(), e.preventDefault(), a(t, n ?? !1, r));
 		},
-		onMouseEnter: c,
+		onMouseEnter: l,
 		onMouseLeave: () => lu.hide(),
-		onFocus: c,
+		onFocus: l,
 		onBlur: () => lu.hide(),
 		children: e
 	});
 }
 //#endregion
 //#region src/components/TxtLayer.tsx
-function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: o, aCh: s, ffs: c, noffs: l, bura: u, b_color: d, b_alpha: f, b_alpha_isfixed: h, b_src: g, styTxt: _, enabled: y, aBtn: b, onActivate: S, onNavigate: C }) {
-	let w = p((e) => e.isReadBack), T = p((e) => e.isTyping), E = p((e) => e.setIsTyping), D = p((e) => e.skipReq), A = p((e) => e.skipping), j = p((e) => e.wait), M = (0, k.useRef)(null), N = (0, k.useRef)(null), P = (e) => {
+function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: s, aCh: c, ffs: l, noffs: u, bura: d, b_color: f, b_alpha: p, b_alpha_isfixed: m, b_src: g, styTxt: _, enabled: v, aBtn: b, onActivate: x, onNavigate: C }) {
+	let w = o((e) => e.isReadBack), T = o((e) => e.isTyping), E = o((e) => e.setIsTyping), D = o((e) => e.skipReq), A = o((e) => e.skipping), j = o((e) => e.wait), M = (0, k.useRef)(null), N = (0, k.useRef)(null), P = (e) => {
 		if (e.url) {
 			C(e.url);
 			return;
 		}
-		S(e.label, e.call, e.fn, e.arg);
-	}, F = (0, k.useRef)([]), I = (0, k.useRef)([]), L = (0, k.useRef)(null), R = (0, k.useCallback)((e) => c ? RegExp(`[　${l ?? ""}]`).test(e) ? "" : c : "", [c, l]);
+		x(e.label, e.call, e.fn, e.arg);
+	}, F = (0, k.useRef)([]), I = (0, k.useRef)([]), L = (0, k.useRef)(null), R = (0, k.useCallback)((e) => l ? RegExp(`[　${u ?? ""}]`).test(e) ? "" : l : "", [l, u]);
 	(0, k.useLayoutEffect)(() => {
 		let e = N.current;
 		if (!e) return;
 		L.current?.kill();
-		let t = I.current, n = Math.min(t.length, s.length), r = 0;
-		for (; r < n && t[r].c === s[r].c && t[r].r === s[r].r && t[r].s === s[r].s && t[r].rs === s[r].rs;) ++r;
+		let t = I.current, n = Math.min(t.length, c.length), r = 0;
+		for (; r < n && t[r].c === c[r].c && t[r].r === c[r].r && t[r].s === c[r].s && t[r].rs === c[r].rs;) ++r;
 		r < n && (F.current = [], I.current = [], e.textContent = "");
-		let i = F.current, a = Math.min(s.length, i.length);
+		let i = F.current, a = Math.min(c.length, i.length);
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < a;) e.appendChild(i[e.childNodes.length]);
 		if (a > 0 && O.set(i.slice(0, a), {
 			opacity: 1,
 			y: 0
-		}), s.length <= i.length) {
+		}), c.length <= i.length) {
 			E(!1);
 			return;
 		}
-		let o = s.slice(i.length), c = document.createDocumentFragment(), l = o.map((e) => {
+		let o = c.slice(i.length), s = document.createDocumentFragment(), l = o.map((e) => {
 			let t = document.createElement("span");
-			return t.appendChild(hu(e, P, R)), c.appendChild(t), t;
+			return t.appendChild(hu(e, P, R)), s.appendChild(t), t;
 		});
-		if (I.current = [...I.current, ...o], i.push(...l), e.appendChild(c), w || A) {
+		if (I.current = [...I.current, ...o], i.push(...l), e.appendChild(s), w || A) {
 			O.set(l, {
 				opacity: 1,
 				y: 0
@@ -10155,7 +10156,7 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			stagger: .035
 		});
 	}, [
-		s,
+		c,
 		w,
 		R
 	]), (0, k.useEffect)(() => {
@@ -10181,10 +10182,10 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-		${y ? "" : "pointer-events: none;"}
+		${v ? "" : "pointer-events: none;"}
 	`, ie = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, W = b.filter((e) => !ie(e)), ae = b.filter(ie), oe = du`
-		${y ? "" : "pointer-events: none;"}
-	`, { r: se, g: ce, b: le } = vu(d), ue = p((e) => e.backAlpha), de = f * (h ? 1 : ue), fe = o.length === 0 && d === void 0 && !g, pe = du`
+		${v ? "" : "pointer-events: none;"}
+	`, { r: se, g: ce, b: le } = vu(f), ue = o((e) => e.backAlpha), de = p * (m ? 1 : ue), fe = s.length === 0 && f === void 0 && !g, pe = du`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10212,7 +10213,7 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
 			本家Hyphenationのような自前計算ではなくCSSで頼む。
 			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
-		${u ? "hanging-punctuation: allow-end; line-break: strict;" : ""}
+		${d ? "hanging-punctuation: allow-end; line-break: strict;" : ""}
 
 		font-size: xxx-large;
 		top: 48%;
@@ -10274,7 +10275,7 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
 			本家Hyphenationのような自前計算ではなくCSSで頼む。
 			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
-		${u ? "hanging-punctuation: allow-end; line-break: strict;" : ""}
+		${d ? "hanging-punctuation: allow-end; line-break: strict;" : ""}
 
 		font-size: xxx-large;
 			line-height: 1.2;
@@ -10283,49 +10284,49 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			}
 		}
 	`, [he, ge] = (0, k.useState)("");
-	(0, k.useEffect)(() => ge(o), [o]);
+	(0, k.useEffect)(() => ge(s), [s]);
 	let _e = (0, k.useRef)(null), ve = (e, t) => {
 		i(), e.transform = t;
 	};
-	return /* @__PURE__ */ v(x, { children: [
-		/* @__PURE__ */ v("span", {
+	return /* @__PURE__ */ y(S, { children: [
+		/* @__PURE__ */ y("span", {
 			css: [e, pe],
 			ref: M,
 			"data-lay": r,
 			style: n,
-			children: [/* @__PURE__ */ m("span", { ref: N }), ne && /* @__PURE__ */ m("span", {
+			children: [/* @__PURE__ */ h("span", { ref: N }), ne && /* @__PURE__ */ h("span", {
 				css: H,
-				children: V ? /* @__PURE__ */ m("span", { className: re(V) }) : z && !B ? /* @__PURE__ */ m("img", {
+				children: V ? /* @__PURE__ */ h("span", { className: re(V) }) : z && !B ? /* @__PURE__ */ h("img", {
 					src: z,
 					style: { verticalAlign: "text-bottom" }
 				}) : j.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		W.length > 0 && /* @__PURE__ */ m("span", {
+		W.length > 0 && /* @__PURE__ */ h("span", {
 			css: [e, U],
 			"data-lay": r,
-			children: W.map((e) => /* @__PURE__ */ m(pu, {
+			children: W.map((e) => /* @__PURE__ */ h(pu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: S
+				onActivate: x
 			}, e.nm))
 		}),
-		ae.length > 0 && /* @__PURE__ */ m("span", {
+		ae.length > 0 && /* @__PURE__ */ h("span", {
 			css: [e, oe],
 			"data-lay": r,
-			children: ae.map((e) => /* @__PURE__ */ m(pu, {
+			children: ae.map((e) => /* @__PURE__ */ h(pu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: S
+				onActivate: x
 			}, e.nm))
 		}),
-		t && /* @__PURE__ */ m(ru, {
+		t && /* @__PURE__ */ h(ru, {
 			target: M,
 			draggable: !0,
 			throttleDrag: 1,
@@ -10346,15 +10347,15 @@ function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				ve(e, n), e.transformOrigin = t;
 			}
 		}),
-		t && /* @__PURE__ */ v(x, { children: [/* @__PURE__ */ v("label", {
+		t && /* @__PURE__ */ y(S, { children: [/* @__PURE__ */ y("label", {
 			css: me,
 			ref: _e,
-			children: ["テキスト入力", /* @__PURE__ */ m("textarea", {
+			children: ["テキスト入力", /* @__PURE__ */ h("textarea", {
 				rows: 3,
 				value: he,
 				onChange: (e) => ge(e.target.value)
 			})]
-		}), /* @__PURE__ */ m(ru, {
+		}), /* @__PURE__ */ h(ru, {
 			target: _e,
 			origin: !1,
 			draggable: !0,
@@ -10407,35 +10408,35 @@ function vu(e) {
 }
 //#endregion
 //#region src/components/Stage.tsx
-function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next: o }) {
-	let s = p((e) => e.aPage), c = p((e) => e.foreIdx), d = p((e) => e.trans), f = p((e) => e.replace);
-	class h extends n {
+function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next: u }) {
+	let d = o((e) => e.aPage), f = o((e) => e.foreIdx), p = o((e) => e.trans), m = o((e) => e.replace);
+	class g extends n {
 		nm = "Stage";
 		restore() {
-			f(this.stt);
+			m(this.stt);
 		}
 	}
-	t.caretaker.update(() => new h(JSON.stringify({
-		aPage: s,
-		foreIdx: c
+	t.caretaker.update(() => new g(JSON.stringify({
+		aPage: d,
+		foreIdx: f
 	})));
-	let _ = (0, k.useRef)(null), y = (0, k.useRef)(null), S = [_, y], w = (0, k.useRef)(null);
+	let v = (0, k.useRef)(null), b = (0, k.useRef)(null), C = [v, b], w = (0, k.useRef)(null);
 	(0, k.useEffect)(() => {
-		if (w.current?.kill(), w.current = null, !d) {
-			O.set([_.current, y.current].filter((e) => e !== null), { opacity: 1 });
+		if (w.current?.kill(), w.current = null, !p) {
+			O.set([v.current, b.current].filter((e) => e !== null), { opacity: 1 });
 			return;
 		}
-		let e = S[c].current;
+		let e = C[f].current;
 		e && (w.current = O.to(e, {
 			opacity: 0,
-			duration: d.time / 1e3,
+			duration: p.time / 1e3,
 			ease: "none"
 		}));
-	}, [d]);
-	let E = p((e) => e.quake), D = (0, k.useRef)(null);
+	}, [p]);
+	let E = o((e) => e.quake), D = (0, k.useRef)(null);
 	(0, k.useEffect)(() => {
 		D.current?.kill(), D.current = null;
-		let e = [_.current, y.current].filter((e) => e !== null);
+		let e = [v.current, b.current].filter((e) => e !== null);
 		if (!E) {
 			O.set(e, {
 				x: 0,
@@ -10471,7 +10472,7 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		F,
 		I
 	]);
-	let z = (0, k.useRef)(null), B = p((e) => e.fullScr), ee = p((e) => e.setFullScr), V = p((e) => e.toggleFullScr), te = P(z, B, { onClose: () => ee(!1) });
+	let z = (0, k.useRef)(null), B = o((e) => e.fullScr), ee = o((e) => e.setFullScr), V = o((e) => e.toggleFullScr), te = P(z, B, { onClose: () => ee(!1) });
 	(0, k.useEffect)(() => {
 		r.setFullScr(te);
 	}, [te]);
@@ -10530,14 +10531,14 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 		r.attachFrameBox(W.current), r.attachStageBox(z.current);
 	}), R(() => {
 		let e = z.current;
-		e.addEventListener("mousedown", () => u());
+		e.addEventListener("mousedown", () => c());
 		let t = (e) => {
-			e.preventDefault(), e.deltaY < 0 ? o() : a();
+			e.preventDefault(), e.deltaY < 0 ? u() : l();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
 	let [ae, oe] = j(!1), se = L((e) => {
-		e.stopPropagation(), g(), !l() && (oe(), b(!ae));
+		e.stopPropagation(), _(), !a() && (oe(), x(!ae));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
@@ -10553,56 +10554,56 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 			transform: "translate(0px, 0px) rotate(0deg)"
 		}
 	} };
-	return /* @__PURE__ */ v("div", {
+	return /* @__PURE__ */ y("div", {
 		css: ne,
 		onClick: i,
 		...se,
 		ref: z,
 		children: [
-			ae && /* @__PURE__ */ v(x, { children: [
-				/* @__PURE__ */ m("button", {
+			ae && /* @__PURE__ */ y(S, { children: [
+				/* @__PURE__ */ h("button", {
 					onClick: () => V(),
 					css: ie,
 					children: "FullScr"
 				}),
-				/* @__PURE__ */ m("button", {
+				/* @__PURE__ */ h("button", {
 					onClick: () => {},
 					css: ie,
 					children: "Back"
 				}),
-				/* @__PURE__ */ m("button", {
+				/* @__PURE__ */ h("button", {
 					onClick: () => {},
 					css: ie,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ m("span", { children: te }),
-			s.map((e, t) => /* @__PURE__ */ m("div", {
-				ref: S[t],
-				"data-page": t === c ? "fore" : "back",
+			/* @__PURE__ */ h("span", { children: te }),
+			d.map((e, t) => /* @__PURE__ */ h("div", {
+				ref: C[t],
+				"data-page": t === f ? "fore" : "back",
 				css: U,
 				style: {
-					zIndex: +(t === c),
-					visibility: t === c || d ? "visible" : "hidden",
-					pointerEvents: t === c ? "auto" : "none"
+					zIndex: +(t === f),
+					visibility: t === f || p ? "visible" : "hidden",
+					pointerEvents: t === f ? "auto" : "none"
 				},
 				children: e.map((e) => {
 					let n = {
 						...ce.cmn.sty4Moveable,
-						...C(e)
+						...s(e)
 					};
-					return e.cls === "grp" ? /* @__PURE__ */ m(iu, {
+					return e.cls === "grp" ? /* @__PURE__ */ h(iu, {
 						cmn: ce.cmn,
 						sty: n,
 						nm: e.nm,
 						fn: e.fn,
 						src: e.src,
 						aFace: e.aFace
-					}, e.nm) : /* @__PURE__ */ m(mu, {
+					}, e.nm) : /* @__PURE__ */ h(mu, {
 						cmn: ce.cmn,
 						sty: n,
 						nm: e.nm,
-						isFore: t === c,
+						isFore: t === f,
 						str: e.str,
 						aCh: e.aCh,
 						ffs: e.ffs,
@@ -10620,7 +10621,7 @@ function yu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: a, next:
 					}, e.nm);
 				})
 			}, t)),
-			/* @__PURE__ */ m("div", {
+			/* @__PURE__ */ h("div", {
 				ref: W,
 				css: H
 			})

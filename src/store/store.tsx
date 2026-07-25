@@ -86,6 +86,11 @@ type T_STATE = {
 	//	変数はエンジンが持つので、ScriptMngが停止点ごとにここへ写す
 	backAlpha	: number;
 	setBackAlpha: (v: number)=> void;
+
+	// tmp:sn.button.fontFamily（[button]の文字フォント。本家 LayerMng.ts:209）。
+	//	backAlphaと同じくエンジンが変数を持つので、ScriptMngが停止点ごとにここへ写す
+	btnFont		: string;
+	setBtnFont	: (v: string)=> void;
 }
 // [l]/[p]の待ちマーク。srcは`breakline`/`breakpage`という名の画像が
 //	プロジェクトにあれば、その解決済みURL（本家 LayerMng.ts:159。無ければ試作の絵文字）
@@ -192,7 +197,10 @@ export type T_ADDBTN = {
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
+// [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
+export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
+
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -485,6 +493,9 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	setIsTyping	: b=> set(()=> ({isTyping: b})),
 	backAlpha	: 1,
 	setBackAlpha: v=> set(()=> ({backAlpha: v})),
+
+	btnFont		: DEF_BTN_FONT,
+	setBtnFont	: v=> set(()=> ({btnFont: v})),
 	skipReq		: 0,
 	requestSkip	: ()=> set(s=> ({skipReq: s.skipReq + 1})),
 	skipping	: false,

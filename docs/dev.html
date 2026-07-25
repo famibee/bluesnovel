@@ -829,12 +829,12 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	bluesnovel：本家同様「sys:の保存データが空だったか」で決まる。テンプレの theme/setting.sn は
 	この変数の[<a href="tag.html#if">if</a>]の中で sys:TextLayer.Back.Alpha などの初期値を設定している</td></tr>
 <tr><td>🟢 const.sn.isKidoku</td><td>true</td><td>true、false</td><td>この変数を参照した位置は既読か。参照「後」必ず既読になる点に注意</td></tr>
-<tr><td>🔴 const.sn.key.alternate</td><td>false</td><td>true、false</td><td>ALTキー（MacならOptionキー）が押されているか</td></tr>
-<tr><td>🔴 const.sn.key.back</td><td>false</td><td>true、false</td><td>back 〃</td></tr>
-<tr><td>🔴 const.sn.key.command</td><td>false</td><td>true、false</td><td>command 〃</td></tr>
-<tr><td>🔴 const.sn.key.control</td><td>false</td><td>true、false</td><td>control 〃</td></tr>
-<tr><td>🔴 const.sn.key.end</td><td>false</td><td>true、false</td><td>end 〃</td></tr>
-<tr><td>🔴 const.sn.key.escape</td><td>false</td><td>true、false</td><td>escape 〃</td></tr>
+<tr><td>🟢 const.sn.key.alternate</td><td>false</td><td>true、false</td><td>ALTキー（MacならOptionキー）が押されているか</td></tr>
+<tr><td>🟡 const.sn.key.back</td><td>false</td><td>true、false</td><td>back 〃<br/><b>bluesnovel</b>：AndroidのBackキー（本家 EventMng の <code>GoBack</code>）で、ブラウザに相当するキーイベントが無いため<b>常にfalse</b>。変数自体は本家に揃えて用意してある</td></tr>
+<tr><td>🟢 const.sn.key.command</td><td>false</td><td>true、false</td><td>command 〃</td></tr>
+<tr><td>🟢 const.sn.key.control</td><td>false</td><td>true、false</td><td>control 〃</td></tr>
+<tr><td>🟢 const.sn.key.end</td><td>false</td><td>true、false</td><td>end 〃</td></tr>
+<tr><td>🟢 const.sn.key.escape</td><td>false</td><td>true、false</td><td>escape 〃</td></tr>
 <tr><td>🟢 const.sn.last_page_plain_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法とルビを含まない）<br/>bluesnovel：既定文字レイヤ（[<a href="tag.html#current">current</a>]）の蓄積文字列からルビ記法を除いた平文（本家 <code>RubySpliter</code> を移植して割っている）</td></tr>
 <tr><td>🟢 const.sn.last_page_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法もそのまま）<br/>bluesnovel：既定文字レイヤの蓄積文字列そのもの</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）</td><td>true</td><td>true、false</td><td>レイヤが[add_lay]され存在するか</td></tr>
@@ -879,13 +879,13 @@ const.sn.log.json
 <tr><td>🟢 const.sn.aIfStk.length</td><td>1</td><td>1〜</td><td>IFスタックの深さ（[if]するたびに増）</td></tr>
 <tr><td>🟢 const.sn.vctCallStk.length</td><td>0</td><td>0〜</td><td>コールスタックの深さ（[call]するたびに増）</td></tr>
 <tr><td>🟢 sn.auto.enabled</td><td>false</td><td>true、false</td><td>自動読みすすみモードかどうか</td></tr>
-<tr><td>🔴 sn.button.fontFamily</td><td>"'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif"</td><td>文字列</td><td>文字ボタンフォントを指定</td></tr>
+<tr><td>🟢 sn.button.fontFamily</td><td>"'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif"</td><td>文字列</td><td>文字ボタンフォントを指定<br/><b>bluesnovel</b>：値はCSSの<code>font-family</code>としてそのまま当たる（全ボタン共通）。停止点ごとにストアへ写す</td></tr>
 <tr><td>🟢 sn.event.domdata.（任意）</td><td>''</td><td>場合による</td><td>[<a href="tag.html#event" target="_blank" rel="noopener">event</a>]でフレーム内のHTML要素に登録したイベントで、そのイベント発生時、HTML要素のdata-（任意）属性で指定された値。使い道は開発者が自由に決めていい</td></tr>
 <tr><td>🟢 sn.eventArg</td><td>''</td><td>場合による</td><td>[<a href="tag.html#button" target="_blank" rel="noopener">button</a>]等のイベント発生時、そのボタンタグのarg属性で指定された値。使い道は開発者が自由に決めていい</td></tr>
 <tr><td>🟢 sn.eventLabel</td><td>''</td><td>場合による</td><td>[<a href="tag.html#button" target="_blank" rel="noopener">button</a>]等のイベント発生時、そのボタンタグのlabel属性で指定された値。使い道は開発者が自由に決めていい</td></tr>
 <tr><td>🟢 sn.skip.all</td><td>false</td><td>true、false</td><td>false（初期値）なら既読のみをスキップ</td></tr>
 <tr><td>🟢 sn.skip.enabled</td><td>false</td><td>true、false</td><td>次の選択肢(/未読)まで進む　が有効か</td></tr>
-<tr><td>🔴 sn.tagL.enabled</td><td>true</td><td>true、false</td><td>頁末まで一気に読み進むか(l無視)</td></tr>
+<tr><td>🟢 sn.tagL.enabled</td><td>true</td><td>true、false</td><td>頁末まで一気に読み進むか(l無視)<br/><b>bluesnovel</b>：falseの間は[<a href="tag.html#l" target="_blank" rel="noopener">l</a>]で止まらず頁末（[<a href="tag.html#p" target="_blank" rel="noopener">p</a>]/[<a href="tag.html#s" target="_blank" rel="noopener">s</a>]）まで進む。手動操作・[s]到達（オート・スキップの解除）でtrueへ戻るのも本家どおり</td></tr>
 </table>
 
 

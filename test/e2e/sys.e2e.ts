@@ -13,7 +13,7 @@
 //	・修飾キー付きのキー名（alt+enter）で[event]が引けること
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, waitIdle} from './snPage';
+import {gotoSn, mesStr, pressKey, traceText, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'sys')});
 
@@ -79,4 +79,15 @@ test('全画面のときステージは画面の中央へ寄る', async ({page})
 	expect(o.cy).toBeCloseTo(o.h / 2, 0);
 
 	await page.keyboard.press('w');
+});
+
+test('const.sn.key.*は修飾キーの「今の」押下状態を映す', async ({page})=> {
+	// 押下表を持てるのはDOM側だけなので、Main.tsxのkeydown/keyupがエンジンへ教える。
+	//	Ctrlを押したままSpaceで読み進め、その瞬間の値を[trace]で見る
+	await page.keyboard.down('Control');
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('はじめかえた');
+	// altは押していないのでfalse、ctrlはtrue
+	expect(await traceText(page)).toContain('key:false/true');
+	await page.keyboard.up('Control');
 });

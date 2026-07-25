@@ -51,10 +51,9 @@
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）・`smoothing=`・拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）・`[update_check]`はElectron専用。`dist_app`側の整備と一緒に
-  - [ ] `[dump_script]`（本家はVSCode拡張との連携）・`[rec_ch]`/`[rec_r]`/`[reset_rec]`・`[set_cancel_skip]`
+  - [ ] `[dump_script]`（本家はVSCode拡張との連携）・`[rec_ch]`/`[rec_r]`/`[reset_rec]`（履歴層と一緒に）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
-  - [ ] `const.sn.key.*`（修飾キーの押下状態）は未対応。`Main.tsx`でkeydown/keyupを見てエンジンへ書き戻す形になる
   - [ ] `const.sn.isPaging`（ページ遷移状態か）・`save:const.sn.layer.（文字レイヤ名）.enabled`
   - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`は接続済み、`sn.sound.*`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に

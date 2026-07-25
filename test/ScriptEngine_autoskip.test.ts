@@ -201,3 +201,69 @@ it('isNextKidoku_crossFile_usesCallerScriptLength', ()=> {
 	se.step();
 	expect(se.isNextKidoku).toBe(true);	// mainの戻り先は前周で既読化済み（別ファイルの長さも正しく参照）
 });
+
+
+// ============ sn.tagL.enabled（[l]を無視して頁末まで進む） ============
+//	本家 Reading.ts:261 l() の先頭。3フラグと違い**既定がtrue**（＝[l]で止まる）
+
+it('tagL_defaultsToTrue', ()=> {
+	const a = new ScriptEngine('t1', '[add_lay layer=mes class=txt]あ[l]い[p]').step();
+	expect(stopOf(a).kind).toBe('l');	// [l]で止まる
+});
+
+it('tagL_falseSkipsL', ()=> {
+	// falseの間は[l]を素通りして頁末（[p]）まで一気に進む。
+	//	ギャラリーの tag_quake が既読スキップの永久ループ対策に使う書き方
+	const a = new ScriptEngine('t1',
+		'&sn.tagL.enabled = false\n[add_lay layer=mes class=txt]あ[l]い[p]').step();
+	expect(stopOf(a).kind).toBe('p');
+	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toMatchObject({str: 'あい'});
+});
+
+it('tagL_pAndSStillStop', ()=> {
+	// 効くのは[l]だけ。[p]/[s]/[waitclick]は変わらず止まる
+	const se = new ScriptEngine('t1',
+		'&sn.tagL.enabled = false\n[add_lay layer=mes class=txt]あ[s]');
+	expect(stopOf(se.step()).kind).toBe('s');
+});
+
+it('tagL_restoredByCancelAutoSkip', ()=> {
+	// 手動操作・[s]到達でtrueへ戻す（本家 cancelAutoSkip() の先頭）
+	const se = new ScriptEngine('t1', '&sn.tagL.enabled = false\n[add_lay layer=mes class=txt]あ[s]');
+	se.step();	// [s]＝cancelAutoSkip()を通る
+	expect(se.tagLEnabled).toBe(true);
+	expect(se.getVal('tmp:sn.tagL.enabled')).toBe(true);
+});
+
+
+// ============ const.sn.key.*（修飾キー等の押下状態） ============
+//	本家 EventMng.ts:318 の defTmp 一式。押下表を持つのはDOM側なのでsetKeyDown()で教わる
+
+it('keyDown_reflectsState', ()=> {
+	const se = new ScriptEngine('t1', '[s]');
+	expect(se.getVal('const.sn.key.alternate')).toBe(false);
+
+	se.setKeyDown('Alt', true);
+	expect(se.getVal('const.sn.key.alternate')).toBe(true);
+	se.setKeyDown('Alt', false);
+	expect(se.getVal('const.sn.key.alternate')).toBe(false);
+});
+
+it('keyDown_allNames', ()=> {
+	// 変数名（本家の綴り）とKeyboardEvent.keyの対応
+	const se = new ScriptEngine('t1', '[s]');
+	for (const [key, nm] of [['Meta', 'command'], ['Control', 'control'],
+		['End', 'end'], ['Escape', 'escape']] as const) {
+		se.setKeyDown(key, true);
+		expect(se.getVal(`const.sn.key.${nm}`)).toBe(true);
+	}
+	// backはAndroidのBackキー。ブラウザに相当するキーイベントが無いので常にfalse
+	expect(se.getVal('const.sn.key.back')).toBe(false);
+});
+
+it('keyDown_clearedOnBlur', ()=> {
+	const se = new ScriptEngine('t1', '[s]');
+	se.setKeyDown('Control', true);
+	se.clearKeyDown();
+	expect(se.getVal('const.sn.key.control')).toBe(false);
+});

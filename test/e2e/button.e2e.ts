@@ -193,3 +193,14 @@ test('pixiのTextStyle JSON指定もCSSへ読み替える', async ({page})=> {
 	expect(await page.getByText('JSON指定').evaluate(el=> getComputedStyle(el).color))
 		.toBe('rgb(255, 0, 255)');
 });
+
+test('sn.button.fontFamilyで全ボタンの文字フォントを差し替えられる', async ({page})=> {
+	// 本家 LayerMng.ts:209 の val.defValTrg('tmp:sn.button.fontFamily', …)。
+	//	変数はエンジンが持つので、ScriptMngが停止点ごとにストアへ写す
+	const font = ()=> page.getByText('ジャンプする').evaluate(el=> getComputedStyle(el).fontFamily);
+	expect(await font()).toContain('Hiragino Sans');	// 既定（本家 CmnInterface.ts:349 と同じスタック）
+
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
+	expect(await font()).toBe('monospace');
+});
