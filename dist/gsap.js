@@ -129,6 +129,7 @@ function i(t) {
 					fn: d.fn ?? "",
 					call: d.call === "true",
 					arg: d.arg ?? "",
+					...d.url ? { url: d.url } : {},
 					...d.style_hover ? { sh: d.style_hover } : {}
 				};
 				break;

@@ -240,6 +240,11 @@ export class ScriptMng {
 	//	call=true指定時はjumpではなくcall（サブルーチンコール）する。
 	//	fn指定時は別スクリプトへ飛ぶ。ロードが要るのでここだけ非同期になる
 	//	（クリックハンドラ側は投げっぱなしで良いよう、例外はここで握る）
+	// ＵＲＬを開く（本家 SysWeb.ts:239 navigate_to）。[navigate_to]・[link url=…]・[event url=…]の共通口。
+	//	本家と同じく**別タブ**で開く：location.hrefだとゲームごと終わってしまい、
+	//	引数なしのopen()は近年のブラウザで効かない。'_blank'はポップアップブロックの対象になり得る
+	navigateTo(url: string) {globalThis.open(url, '_blank')}
+
 	//	argは[link arg=…]用。予約イベント（[event]）と同じく飛び先で&sn.eventArgとして受け取れる
 	jumpToLabelAndGo(label: string, call: boolean, fn = '', arg?: string) {
 		if (arg !== undefined) {	// 本家 Main.ts resumeByJumpOrCall() が予約イベントで行うのと同じ代入
@@ -281,6 +286,9 @@ export class ScriptMng {
 
 		const ev = engine.beginEvent(key);
 		if (! ev) return false;
+
+		// url指定の予約はラベルへ飛ばずURLを開く（本家も fn・label より優先）
+		if (ev.url) {this.navigateTo(ev.url); return true}
 
 		this.jumpToLabelAndGo(ev.label, ev.call, ev.fn);
 		return true;
@@ -800,9 +808,7 @@ export class ScriptMng {
 			this.$fncs.toggleFullScr();
 			break;
 		case 'navigateTo':
-			// 本家（SysWeb.ts:239）と同じく別タブで開く。location.hrefだとゲームごと終わってしまい、
-			//	引数なしのopen()は近年のブラウザで効かない。'_blank'はポップアップブロックの対象になり得る
-			globalThis.open(act.url, '_blank');
+			this.navigateTo(act.url);
 			break;
 		case 'loadPlugin':
 			// join=true（既定）なら#runStep()側で読み終わるまで待つ。ここへ来るのはjoin=falseのときだけ＝投げっぱなし

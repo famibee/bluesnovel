@@ -1821,14 +1821,14 @@ var ne = class e {
 			}
 			case "current": return this.#m = i.layer ?? i.nm ?? this.#m, this.#v.set("save:const.sn.mesLayer", this.#m), "skip";
 			case "add_face": {
-				let e = i.name ?? "";
-				if (!e) throw "[add_face] nameは必須です（試作仕様）";
-				if (this.#_[e]) throw `[add_face] 同一のname（${e}）に対して複数の画像を割り当てられません`;
-				return this.#_[e] = {
-					fn: i.fn || e,
+				let t = i.name ?? "";
+				if (!t) throw "[add_face] nameは必須です（試作仕様）";
+				if (this.#_[t]) throw `[add_face] 同一のname（${t}）に対して複数の画像を割り当てられません`;
+				return this.#_[t] = {
+					fn: i.fn || t,
 					dx: Number(i.dx || "0"),
 					dy: Number(i.dy || "0"),
-					blendmode: i.blendmode || "normal"
+					blendmode: e.#s(i.blendmode || "normal")
 				}, "skip";
 			}
 			case "lay": {
@@ -2037,7 +2037,7 @@ var ne = class e {
 			}), "skip";
 			case "span": return this.#G(a, e.#W("span", i)), "skip";
 			case "link":
-				if (!i.label && !i.fn) throw "[link] fnまたはlabelは必須です";
+				if (!i.url && !i.label && !i.fn) throw "[link] fn・label・urlのいずれかは必須です";
 				return this.#G(a, e.#W("link", i)), "skip";
 			case "endlink": return this.#G(a, e.#W("endlink", {})), "skip";
 			case "graph":
@@ -2289,13 +2289,14 @@ var ne = class e {
 						needErr: !1
 					}), "skip";
 				}
-				let o = i.label ?? "", s = i.fn ?? this.fn;
-				if (!o && !i.fn) throw "[event] fn,label いずれかは必須です";
+				let o = i.label ?? "", s = i.fn ?? this.fn, { url: c } = i;
+				if (!c && !o && !i.fn) throw "[event] fn,label いずれかは必須です";
 				return r[t] = {
 					fn: s,
 					label: o,
 					call: i.call === "true",
-					arg: i.arg ?? ""
+					arg: i.arg ?? "",
+					...c ? { url: c } : {}
 				}, n && a.push({
 					t: "resvDomEvent",
 					rawKey: e,
@@ -2956,6 +2957,9 @@ var J = class {
 		return e.setEscape(this.sys.cfg.oCfg.init.escape), l(this.sys.cfg.oCfg.init.escape), e;
 	}
 	go() {}
+	navigateTo(e) {
+		globalThis.open(e, "_blank");
+	}
 	jumpToLabelAndGo(e, t, n = "", r) {
 		r !== void 0 && (this.#r?.setValNochk("tmp:sn.eventArg", r), this.#r?.setValNochk("tmp:sn.eventLabel", e)), this.#b(e, t, n).catch(this.#i);
 	}
@@ -2978,7 +2982,7 @@ var J = class {
 		let t = this.#r;
 		if (!t) return !1;
 		let n = t.beginEvent(e);
-		return n ? (this.jumpToLabelAndGo(n.label, n.call, n.fn), !0) : !1;
+		return n ? n.url ? (this.navigateTo(n.url), !0) : (this.jumpToLabelAndGo(n.label, n.call, n.fn), !0) : !1;
 	}
 	async #b(e, t, n) {
 		let r = this.#r;
@@ -3395,7 +3399,7 @@ var J = class {
 				this.$fncs.toggleFullScr();
 				break;
 			case "navigateTo":
-				globalThis.open(e.url, "_blank");
+				this.navigateTo(e.url);
 				break;
 			case "loadPlugin":
 				e.join || this.#q(e.fn).catch(this.#i);

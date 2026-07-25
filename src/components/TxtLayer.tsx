@@ -61,6 +61,7 @@ type T_TXTARG = T_LAY_CMN & {
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
 	aBtn	: T_BTN[];
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
+	onNavigate: (url: string)=> void;	// [link url=…]
 };
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
@@ -69,7 +70,7 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; f
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate, onNavigate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -86,7 +87,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
 	// [link]のクリック。[button]と同じ経路（ScriptMng.jumpToLabelAndGo）へ流す
-	const onLink: T_ON_LINK = l=> {onActivate(l.label, l.call, l.fn, l.arg)};
+	//	url指定なら[navigate_to]と同じ経路でURLを開く（ラベルへは飛ばない）
+	const onLink: T_ON_LINK = l=> {
+		if (l.url) {onNavigate(l.url); return}
+		onActivate(l.label, l.call, l.fn, l.arg);
+	};
 	// 1表示単位＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
 	// DOM上の表示/非表示だけを切り替える。これにより読み戻りから戻った際に
 	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。

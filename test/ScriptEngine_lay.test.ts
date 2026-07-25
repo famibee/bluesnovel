@@ -275,3 +275,32 @@ it('lay_bPic_isSeparateFromBColor', ()=> {
 	expect(a.some(v=> v.t === 'chgBPic')).toBe(true);
 	expect(a.find(v=> v.t === 'chgLay')?.sty.b_color).toBe(0xffffff);
 });
+
+// ============ blendmode（[lay]／[add_face]／[button]で同じ扱い） ============
+
+it('blendmode_convertsToCss', ()=> {
+	// 本家（Layer.getBlendmodeNum()）が受けるのはpixiのBLEND_MODESへ引ける4種だけ。
+	//	addはCSSに同名が無いのでplus-lighter（加算合成）を当てる
+	expect(styOf('[lay layer=base blendmode=normal]')).toEqual({blendmode: 'normal'});
+	expect(styOf('[lay layer=base blendmode=add]')).toEqual({blendmode: 'plus-lighter'});
+	expect(styOf('[lay layer=base blendmode=multiply]')).toEqual({blendmode: 'multiply'});
+	expect(styOf('[lay layer=base blendmode=screen]')).toEqual({blendmode: 'screen'});
+});
+
+it('blendmode_unsupportedThrows', ()=> {
+	// CSSにはあるが本家が受けない値（overlay等）は弾く。文言も本家に合わせてある
+	expect(()=> styOf('[lay layer=base blendmode=overlay]'))
+		.toThrow('overlay はサポートされない blendmode です');
+});
+
+it('blendmode_addFaceUsesSameTable', ()=> {
+	// [add_face]も同じ変換を通す（以前はCSSの値を素通ししていた）
+	const a = acts(`${LAYS}[add_face name=f1 fn=f1 blendmode=add][lay layer=base fn=bg face=f1][s]`);
+	const chg = a.find(v=> v.t === 'chgPic');
+	expect(chg?.t === 'chgPic' ? chg.aFace[0]?.blendmode : '').toBe('plus-lighter');
+});
+
+it('blendmode_addFaceUnsupportedThrows', ()=> {
+	expect(()=> acts('[add_face name=f1 blendmode=overlay][s]'))
+		.toThrow('overlay はサポートされない blendmode です');
+});

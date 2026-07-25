@@ -12,7 +12,7 @@
 //	出来上がったURLを描くだけ。ここではその結果と、解決失敗時の振る舞いを見る。
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, snap, traceText} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, snap, traceText} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'pic')});
 
@@ -58,4 +58,17 @@ test('サーチパスに無い画像はエラーを出すが、画面は落ち�
 	expect(await traceText(page)).toContain('[lay] 画像が見つかりません fn:nai_gazou');
 	// 解決できなかったので<img>は出さない（src=""はページ全体の再取得を招くため）
 	expect(await imgs(page)).toHaveLength(0);
+});
+
+test('blendmodeは[lay]・[add_face]・[button]のどれもmix-blend-modeになる', async ({page})=> {
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('ごうせい');
+
+	const mbm = (sel: string)=> page.$eval(sel, el=> getComputedStyle(el).mixBlendMode);
+	// [lay blendmode=screen]は画像レイヤの箱へ
+	expect(await mbm(`${SEL_FORE} div[data-lay="base"]`)).toBe('screen');
+	// [add_face blendmode=multiply]は差分絵の<img>へ（本家の4種以外は弾くようになった）
+	expect(await mbm(`${SEL_FORE} div[data-lay="base"] img:nth-of-type(2)`)).toBe('multiply');
+	// [button blendmode=add]はCSSに同名が無いのでplus-lighter（加算合成）
+	expect(await mbm(`${SEL_FORE} span[data-lay="mes"] span[tabindex]`)).toBe('plus-lighter');
 });

@@ -25,6 +25,7 @@ export type T_LNK = {
 	fn		: string;
 	call	: boolean;
 	arg		: string;	// 飛び先で &sn.eventArg として受け取れる（本家と同じ）
+	url?	: string;	// [link url=…]。指定時はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
 	sh?		: string;	// style_hover。マウスが乗っている間だけ当てるCSS
 };
 // 表示単位1つ。ルビ付きなら c が親文字（複数文字のこともある）、r がルビ文字。
@@ -51,7 +52,7 @@ type T_CMD_ARG = {
 	style?: string; r_style?: string; style_hover?: string;
 	t?: string; r?: string;			// [tcy]
 	pic?: string; width?: string; height?: string;	// [graph]
-	label?: string; fn?: string; call?: string; arg?: string;	// [link]
+	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
 };
 function parseCmd(r: string): {cmd: string; o: T_CMD_ARG} | undefined {
 	const i = r.indexOf('｜');
@@ -114,6 +115,7 @@ export function splitCh(raw: string): T_CH[] {
 					fn		: o.fn ?? '',
 					call	: o.call === 'true',
 					arg		: o.arg ?? '',
+					...(o.url ? {url: o.url} : {}),
 					...(o.style_hover ? {sh: o.style_hover} : {}),
 				};
 				break;

@@ -18,4 +18,13 @@
 
 ; サーチパスに無い画像。エラーは出るが画面は落ちない
 [lay layer=base fn=nai_gazou]
-みつからない[s]
+みつからない[p]
+
+; 合成モード。[lay]・[add_face]・[button]の3つとも本家の4種だけを受けてCSSの値へ直す
+[add_face name=face_m fn=face_a dx=1 dy=2 blendmode=multiply]
+[lay layer=base fn=bg face=face_m blendmode=screen]
+[button layer=mes page=fore text=ぼたん label=*here blendmode=add]
+ごうせい[s]
+
+*here
+とんだ[s]

@@ -1355,8 +1355,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	<code>style</code>・<code>r_style</code>・<code>style_hover</code>に対応。クリックは[button]と同じ経路
 	（<code>ScriptMng.jumpToLabelAndGo</code>）へ流し、<code>arg</code>は飛び先で<code>&amp;sn.eventArg</code>として受け取れる。
 	本文DOMは文字送り演出のためReactの外で組み立てているので、リンクのリスナは<code>TxtLayer</code>が直接付けている。<br/>
-	本家は「リンク区間の入れ子は不可」だが、こちらはスタックで戻すので入れ子でも壊れない。
-	<code>url</code>・<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／
+	本家は「リンク区間の入れ子は不可」だが、こちらはスタックで戻すので入れ子でも壊れない。<br/>
+	<code>url</code>も対応（指定時はラベルへ飛ばず<a href="tag.html#navigate_to">[navigate_to]</a>と同じ経路で別タブに開く。本家同様 fn・label より優先）。<br/>
+	未対応：<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／
 	<code>r_style_hover</code>／<code>r_style_clicked</code>・効果音・<code>hint</code>・<code>layer</code>／<code>page</code>・<code>wait</code>は未対応。</p>
 
 </p>
@@ -1539,6 +1540,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>dy</td><td></td><td>0</td><td>実数；縦座標</td><td>基本画像左上を原点とする差分画像の表示縦位置</td></tr>
 <tr><td>blendmode</td><td></td><td>何もしない</td><td>ブレンドモード名</td><td>このレイヤと下のレイヤとの重なりにおいて、<br/>ドット単位で色のブレンド演算を行なう。<br/>詳細は<a href="tag.html#blendMode" target="_blank" rel="noopener">blendModeの解説</a>を参照</td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>name</code>／<code>fn</code>／<code>dx</code>／<code>dy</code>／<code>blendmode</code>に対応。
+	<b><code>blendmode</code>は[<a href="#lay">lay</a>]・[<a href="#button">button</a>]と同じ4種</b>（<code>normal</code>／<code>add</code>／
+	<code>multiply</code>／<code>screen</code>）だけを受けてCSSの<code>mix-blend-mode</code>へ直す
+	（<code>add</code>はCSSに同名が無いので<code>plus-lighter</code>＝加算合成）。以前はCSSの値を素通ししていた。</p>
 	例えば同じ画像で差分表示位置やブレンドモードが違う登録をしたい場合、<br/>
 	[add_face name="a_normal" fn="画像" dx=0 dy=0]<br/>
 	[add_face name="a_10_10" fn="画像" dx=10 dy=10]<br/>
@@ -1710,6 +1715,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	HTML内にセレクタ（key属性）に対応する要素が見つからない場合にエラーを出すか
 </td></tr>
 </table>
+<p class="mb2 px1"><b>bluesnovel</b>：<code>key</code>／<code>fn</code>／<code>label</code>／<code>call</code>／<code>arg</code>／
+	<code>global</code>／<code>del</code>／<code>url</code>（指定時はラベルへ飛ばず<a href="tag.html#navigate_to">[navigate_to]</a>と
+	同じ経路で別タブに開く）と<code>key='dom=フレームid:セレクタ'</code>／<code>need_err</code>に対応。<br/>
+	未対応：<code>sn.event.domdata.*</code>（発火した要素の<code>data-*</code>を変数へ）。</p>
 
 	※1 イベント名は以下の表を参考に。<br/>
 	<br/>

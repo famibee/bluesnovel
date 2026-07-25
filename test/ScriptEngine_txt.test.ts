@@ -121,8 +121,16 @@ it('link_callFnArg', ()=> {
 	]);
 });
 
-it('link_requiresLabelOrFn', ()=> {
-	expect(()=> units('[link]あ[endlink]')).toThrow('[link] fnまたはlabelは必須です');
+it('link_requiresLabelOrFnOrUrl', ()=> {
+	expect(()=> units('[link]あ[endlink]')).toThrow('[link] fn・label・urlのいずれかは必須です');
+});
+
+it('link_url', ()=> {
+	// [link url=…]はラベルへ飛ばずURLを開く（本家も「指定時は fn・label を無視する」）。
+	//	開くのはDOM側＝[navigate_to]と同じ経路（ScriptMng.navigateTo）
+	expect(units(`[link url='https://example.com/']あ[endlink]`)).toEqual([
+		{c: 'あ', lnk: {label: '', fn: '', call: false, arg: '', url: 'https://example.com/'}},
+	]);
 });
 
 // ===== [graph]（本文中のインライン画像。アニメpngも置ける） =====

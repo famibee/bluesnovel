@@ -233,3 +233,18 @@ it('event_fireThenCall_returnsToStopPoint', ()=> {
 	// [return]でコール元の予約表が書き戻される＝もう一度クリックできる
 	expect(se.getEvent('click')?.label).toBe('*a');
 });
+
+it('event_url', ()=> {
+	// [event url=…]はラベルへ飛ばずURLを開く（本家 [event]のurl属性）。
+	//	予約表にurlが載るだけで、開くのはDOM側＝[navigate_to]と同じ経路（ScriptMng）
+	const se = new ScriptEngine('t1', `[event key=x url='https://example.com/']あ[s]`);
+	se.step();
+	expect(se.getEvent('x')).toEqual(
+		{fn: 't1', label: '', call: false, arg: '', url: 'https://example.com/'});
+});
+
+it('event_urlWithoutFnLabelIsOk', ()=> {
+	// url指定ならfn/labelは要らない（無指定だと従来どおりthrow）
+	expect(()=> new ScriptEngine('t1', '[event key=x]あ[s]').step())
+		.toThrow('[event] fn,label いずれかは必須です');
+});

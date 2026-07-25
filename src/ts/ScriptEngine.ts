@@ -121,7 +121,9 @@ export type T_TAG_PARSED = {
 //	本家（ReadingState の T_HEvt2Fnc）はキー -> コールバック関数の表だが、
 //	試作のエンジンはDOMに触れない＝関数を作れないので、素のデータとして持つ。
 //	実際にキー入力・クリックと結びつけるのは呼び出し側（ScriptMng/Main.tsx）の責務
-export type T_EVENT_RSV = {fn: string; label: string; call: boolean; arg: string};
+// url指定なら「ラベルへ飛ぶ代わりにURLを開く」予約（本家 [event url=…]／[link url=…]。
+//	開くのはDOM側の仕事＝[navigate_to]と同じ経路（ScriptMng）へ渡す
+export type T_EVENT_RSV = {fn: string; label: string; call: boolean; arg: string; url?: string};
 
 // 停止点での自動進行の指示（本家 Reading.ts l()/p() のオート読み・既読スキップ相当）。
 //	mode='auto'：msec待ってから自動で読み進める（オート読み）。
@@ -243,8 +245,8 @@ export class ScriptEngine {
 
 	// blendmodeをCSSのmix-blend-mode値へ。本家（Layer.getBlendmodeNum()）が受け付けるのは
 	//	pixiのBLEND_MODESへ引ける4種だけなので、同じ名前だけを通す。
-	//	addはCSSに同名が無いので plus-lighter（加算合成）を当てる
-	//TODO: [add_face blendmode=…]はCSSの値をそのまま通しているので、こちらへ揃える
+	//	addはCSSに同名が無いので plus-lighter（加算合成）を当てる。
+	//	[lay]・[add_face]・[button]の3タグとも**ここを通す**（受ける名前と例外の文言を揃えるため）
 	static readonly #H_BLENDMODE: {[nm: string]: string} = {
 		normal: 'normal', add: 'plus-lighter', multiply: 'multiply', screen: 'screen',
 	};
@@ -779,7 +781,8 @@ export class ScriptEngine {
 				fn			: args.fn || faceName,		// fn省略時はnameをファイル名として使用（本家と同様）
 				dx			: Number(args.dx || '0'),
 				dy			: Number(args.dy || '0'),
-				blendmode	: args.blendmode || 'normal',
+				//	[lay]・[button]と同じ4種だけを受けてCSSの値へ直す（以前はCSSの値を素通ししていた）
+				blendmode	: ScriptEngine.#argBlendmode(args.blendmode || 'normal'),
 			};
 			return 'skip';
 		}
@@ -1115,7 +1118,8 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'link':	// ハイパーリンク開始（本家 LayerMng.ts:1024 #link()）
-			if (! args.label && ! args.fn) throw '[link] fnまたはlabelは必須です';
+			//	url指定時はラベルへ飛ばずURLを開く（本家も「指定時は fn・label を無視する」）
+			if (! args.url && ! args.label && ! args.fn) throw '[link] fn・label・urlのいずれかは必須です';
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('link', args));
 			return 'skip';
 
@@ -1497,8 +1501,10 @@ export class ScriptEngine {
 
 			const label = args.label ?? '';
 			const fn = args.fn ?? this.fn;	// 省略時は現在のスクリプト（本家 hArg.fn ??= scriptFn）
-			if (! label && ! args.fn) throw '[event] fn,label いずれかは必須です';
-			h[key] = {fn, label, call: args.call === 'true', arg: args.arg ?? ''};
+			// url指定時はラベルへ飛ばずURLを開く（本家も fn・label より優先）
+			const {url} = args;
+			if (! url && ! label && ! args.fn) throw '[event] fn,label いずれかは必須です';
+			h[key] = {fn, label, call: args.call === 'true', arg: args.arg ?? '', ...(url ? {url} : {})};
 			if (isDom) aAct.push({t: 'resvDomEvent', rawKey, key, del: false,
 				needErr: (args.need_err ?? 'true') !== 'false'});
 			return 'skip';

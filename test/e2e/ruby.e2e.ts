@@ -119,6 +119,25 @@ test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当て、[lay bura=]はぶ
 		el=> getComputedStyle(el).lineBreak)).toBe('strict');
 });
 
+test('[link url=…]はジャンプせずURLを開く', async ({page})=> {
+	// このページも[link]の飛び先（*goal）の続きにある
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	await page.getByText('リ', {exact: true}).click();
+	await waitIdle(page);
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('そと');
+
+	// 本家と同じく別タブで開く（location.hrefだとゲームごと終わってしまう）
+	const [popup] = await Promise.all([
+		page.waitForEvent('popup'),
+		page.getByText('そ', {exact: true}).click(),
+	]);
+	expect(popup.url()).toBe('https://example.com/');
+	await popup.close();
+	expect(await mesStr(page)).toBe('そと');	// シナリオは止まったまま（ジャンプしない）
+});
+
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
 	// path.jsonにあるフォントは全部、拡張子を除いたファイル名がそのままfont-family名になる
 	//	（本家 TxtLayer.ts:97。シナリオ側に読み込みタグは無い）。

@@ -475,18 +475,38 @@ ok.次は「設定」ボタンだが、その前に。
 	- 未対応：`[lay b_pic=…]`でのシート再生、`[graph]`の`width`/`height`（今は全角空白の枠に収める）、
 	  待ちマークの位置指定（`x`/`y`/`visible`等。今は本文の直後に流し込む位置）。
 
+
+- 🔴 [link][endlink]は[navigate_to]やジャンプ系なので実装できると思う
+- blendModeサポート。[lay][add_face][button]
+
+- [x] **`[link]`/`[event]`の`url`属性**と、**blendmodeの扱いを3タグで統一**。
+	- まず状況の訂正：**`[link]`/`[endlink]`は前々回に実装済み**（`label`/`fn`/`call`/`arg`＋`style`系。
+	  docs/tag.htmlでは[link]🟡・[endlink]🟢）。🔴で残っていたのは**`url`属性**で、
+	  ご指摘のとおり[navigate_to]と同じ話だったので今回入れた。
+	- `[link url=…]`：クリックでラベルへ飛ばず**別タブでURLを開く**（本家も「指定時は fn・label を無視する」）。
+	  ついでに`[event url=…]`（ラベルへ飛ぶ代わりにURLを開く予約）も同時に対応。
+	  開く口を`ScriptMng.navigateTo()`に一本化し、[navigate_to]・[link]・[event]の3つがそこを通る。
+	- **blendmode**：`[add_face]`だけCSSの値を素通ししていたのを、[lay]・[button]と同じ
+	  「本家の4種（normal／add／multiply／screen）だけを受けてCSSの値へ直す」へ揃えた
+	  （`add`はCSSに同名が無いので`plus-lighter`＝加算合成）。`ScriptEngine.ts`の`//TODO:`を消化。
+	  3タグとも`mix-blend-mode`へ落ちることをE2Eで確認（画像レイヤの箱・差分絵の`<img>`・ボタン）。
+	- テスト：エンジン4件（blendmodeの変換と例外）＋`[link url]`1件＋`[event url]`2件、
+	  E2E2件（blendmode 3タグぶん、`[link url=…]`が別タブを開いてシナリオは進まないこと）。
+	  ユニット1234・E2E102 パス、`tsc` クリーン。
+
 - [ ]
 
 
 
-- 🔴 [link][endlink]は[navigate_to]やジャンプ系なので実装できると思う
-- blendModeサポート。[lay][add_face][button]
-- 🟡 [tsy]残件？　と[tsy_frame]
-- [button]残件
+
+
+
+
+
+- hint・ツールチップと[button]残件など
 - [set_focus]残件。frameにもまたがるフォーカス移動
 
 
-- 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
 
 
 - 音系に着手。だがあなたはこちらのようなテスト可能か？
@@ -501,7 +521,9 @@ ok.次は「設定」ボタンだが、その前に。
 - イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
 
 
+- 🟡 [tsy]残件？　と[tsy_frame]
 
+- 文字レイヤの枠画像（<code>b_pic</code>）でのシート再生
 
 
 

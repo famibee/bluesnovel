@@ -26,4 +26,8 @@
 ; 文字組み（[lay ffs=/noffs=/bura=]）。noffsに挙げた文字だけ文字詰めを外す
 [er]
 [lay layer=mes ffs='"palt"' noffs='・' bura=true]
-あ・い[s]
+あ・い[l]
+
+; [link url=…]はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
+[er]
+[link url='https://example.com/']そと[endlink][s]

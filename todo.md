@@ -35,7 +35,6 @@
 - [ ] **レイヤ操作タグの残り**（`[lay]`の`visible`/`alpha`/`left`/`top`/`rotation`/`scale_x`/`scale_y`/`pivot_x`/`pivot_y`/`blendmode`/`b_color`/`style`/`index`/`float`/`dive`と`[clear_lay]`は実装済み）
   - [ ] `[lay bura=…]`（ぶら下げ禁則処理）。CSSプロパティ1つで済む話ではなく行分割の実装が要るので、文字組み（縦書き・`r_size`・`max_col`等）とまとめて
   - [ ] `[lay b_pic=…]`の残り：**枠画像に合わせた文字表示領域の自動サイズ調整**（本家は`setMySize(sp.width, sp.height)`）と`b_left`/`b_top`（枠画像のずらし）・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
-  - [ ] `[add_face blendmode=…]`はCSSの値をそのまま通しているので、`[lay blendmode=…]`（本家の4種だけを受けてCSS値へ変換）へ揃える（`ScriptEngine.ts`に`//TODO:`あり）
 - [ ] **`[set_focus]`の残り**（`to=null`/`next`/`prev`・`add=`/`del='dom=…'`は実装済み）
   - [ ] 本家 `FocusMng` のゲームパッド対応（`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）は未対応。ゲームパッド入力そのものが未着手なので同時に
   - [ ] `[button]`のフォーカス時の見た目（本家は`hv()`/`nr()`でホバー状態を切り替える）。`[button]`の見た目・レイアウト検討と一緒に
@@ -83,7 +82,6 @@
   - オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む。実機調整時に見直し
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）。本家側の意図を確認したい
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見えるため、本家側の意図を確認してから）
-- [ ] `[event]`の`url`属性（ラベルへ飛ぶ代わりにURLを開く予約）は未対応。タグ単体の`[navigate_to]`は実装済みなので、`[event]`側から呼べるようにするだけ
   - 修飾キー付きのキー名（`alt+enter`・`meta+0`等。本家 `SysBase.modKey()`）は対応済み（`Main.tsx` `keyName()`）
   - `key='dom=フレームid:セレクタ'`・`need_err`も対応済み（HTMLフレームと同時に実装）
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
@@ -107,7 +105,7 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（後々の対応・未着手）
 - [ ] skynovel_esm側もGSAP化を検討中（bluesnovelの`@tweenjs/tween.js`は現状未使用のまま残置。撤去はnpmリリース処理整備と合わせて後日）
 - [ ] **文字装飾・文字組み**（`[span]`・`[ch]`・`[ruby2]`・`[link]`/`[endlink]`・`[tcy]`は実装済み。2026-07-25。本家と同じ「本文ストリームへ命令を埋め込む」方式＝`Txt.ts`が解釈）
-  - [ ] `[link]`の残り：`url`・`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`
+  - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`・効果音・`hint`（`url`は対応済み）
   - [ ] 各タグ共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`r_align`・`ch_in_style`/`ch_out_style`、`[ch record=false]`
   - [x] **文字詰め`[lay ffs=/noffs=]`とぶら下げ禁則`[lay bura=]`は対応済み**（2026-07-25）。ffsは表示単位ごとに`font-feature-settings`を当て、noffsの文字だけ外す（本家 TxtLayer.ts:480）。buraはCSSの`hanging-punctuation`+`line-break: strict`へ読み替え
   - [ ] **行分割そのものはブラウザ任せ**にした（本家は`Hyphenation.ts`が自前計算）。帰結として未対応なのは以下。ギャラリーの`line_breaking_rules`と実機で見比べて、必要になったら自前計算へ寄せる
