@@ -127,3 +127,31 @@ test(`[event key='dom=…']はセレクタの大小文字を保つ（#close）`,
 	await page.frameLocator('#yesno').locator('#close').click();
 	await seeText(page, 'きゃんせる');
 });
+
+test('フレーム内の<img data-src=…>はプロジェクトのパス解決を通る', async ({page})=> {
+	// 本家 FrameMng.ts:154 →#loadPic2Img() は data-src を searchPath() へ通す。
+	//	テンプレのアルバムは解放済み項目に`F_kuchimoto`のような**拡張子なしのアセット名**を
+	//	書くので、枠のディレクトリを前置するだけでは`frames/F_kuchimoto`になって
+	//	リンク切れになる（実機のアルバムで露見）
+	await seeText(page, 'よみこんだ');
+	// 'ふぉーかす'は[l]（改ページしない）なので、次の文はその後ろに続く
+	for (const t of ['ひょうじ', 'とれた', 'うごかした', 'ふぉーかす', 'ふぉーかすえをだした']) {
+		await advance(page, t);
+	}
+
+	const pics = await page.evaluate(()=> {
+		const d = (document.getElementById('yesno') as HTMLIFrameElement).contentDocument!;
+		const get = (id: string)=> {
+			const i = d.getElementById(id) as HTMLImageElement;
+			return {src: i.getAttribute('src') ?? '', w: i.naturalWidth};
+		};
+		return {asset: get('pic_asset'), local: get('pic_local')};
+	});
+	// path.jsonに載る名前は解決されたURLになり、実際に絵が出る（naturalWidth>0）
+	expect(pics.asset.src).toContain('asset_pic.png');
+	expect(pics.asset.w).toBeGreaterThan(0);
+	// サーチパスに無い枠同梱ファイルは、従来どおり枠のディレクトリ前置で拾える
+	expect(pics.local.src).toContain('frame_local.png');
+	expect(pics.local.w).toBeGreaterThan(0);
+});
+

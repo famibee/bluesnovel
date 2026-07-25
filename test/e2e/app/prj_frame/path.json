@@ -1,4 +1,14 @@
 {
-	"main": {":cnt": 1, "sn": "main.sn"},
-	"yesno": {":cnt": 1, "html": "yesno.html"}
+	"main": {
+		":cnt": 1,
+		"sn": "main.sn"
+	},
+	"yesno": {
+		":cnt": 1,
+		"html": "yesno.html"
+	},
+	"asset_pic": {
+		":cnt": 1,
+		"png": "asset_pic.png"
+	}
 }

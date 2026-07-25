@@ -119,10 +119,7 @@ export class FrameMng {
 		//	絶対URL・data:・ルート絶対はそのまま通す
 		const dir = FrameMng.#dirOf(url);
 		(f.contentWindow as unknown as {sn_repRes?: (fnc: (i: HTMLImageElement)=> void)=> void})
-			.sn_repRes?.((i: HTMLImageElement)=> {
-				const ds = i.dataset.src ?? '';
-				i.src = /^(?:https?:|\/|data:)/.test(ds) ? ds : dir + ds.replace(/^\.\//, '');
-			});
+			.sn_repRes?.((i: HTMLImageElement)=> {i.src = this.#srcOf(dir, i.dataset.src ?? '')});
 
 		// フレーム内にフォーカスがある間、キー入力は**親のdocumentまで飛んでこない**。
 		//	そのままだと[set_focus to=next]で一度フレームへ入ったら最後、矢印キーが効かなくなる。
@@ -281,6 +278,22 @@ export class FrameMng {
 	//	srcdocの相対URLはドキュメント自身ではなく親ドキュメントのURL基準になるため、前置した相対パスが
 	//	結果的に親URL基準で正しい場所を指す。動的に付く画像src（#repImg）でも同じdirを使う
 	static #dirOf(url: string): string {return url.slice(0, url.lastIndexOf('/') + 1)}
+
+	// フレーム内の<img data-src=…>を実URLへ（本家 FrameMng.ts:154 → #loadPic2Img()）。
+	//	**まずプロジェクトのパス解決（path.json）に通す**のが本家。テンプレのアルバムは
+	//	解放済み項目のdata-srcに`F_kuchimoto`のような**拡張子なしのアセット名**を書くので、
+	//	フレームのディレクトリを前置するだけでは`frames/F_kuchimoto`になって404になる
+	//	（＝アルバムで絵がリンク切れになっていた）。
+	//	`./_album_miken.jpg`のような枠自身の相対ファイルもsearchPathが拾える
+	//	（ファイル名＋拡張子で引ける形なので）。
+	//	絶対URL・ルート絶対・data:はそのまま通し、サーチパスに無ければ
+	//	従来どおりディレクトリ前置へ落とす（枠に同梱しただけでpath.jsonに載らない画像のため）
+	#srcOf(dir: string, ds: string): string {
+		if (! ds) return '';
+		if (/^(?:https?:|\/|data:)/.test(ds)) return ds;
+		try {return this.searchPath(ds, SEARCH_PATH_ARG_EXT.SP_GSM)}
+		catch {return dir + ds.replace(/^\.\//, '')}
+	}
 
 	// srcdocへ入れる前に、HTML内の**静的な**相対パス（src/href）をHTMLの置き場所からの相対へ直す
 	//	（本家 FrameMng.ts:122）。【\s】が大事：data-src を巻き込まないため。

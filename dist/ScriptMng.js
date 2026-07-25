@@ -2667,7 +2667,7 @@ var F = class e {
 		if (this.#r[t]) throw `[add_frame] frame【${t}】はすでにあります`;
 		let i = this.#e ?? await this.#n, a = this.searchPath(n, m.HTML), o = await fetch(a);
 		if (!o.ok) throw `[add_frame] HTMLの読込に失敗しました src:${n} ${o.statusText}`;
-		let c = e.#p(await o.text(), a), l = document.createElement("iframe");
+		let c = e.#m(await o.text(), a), l = document.createElement("iframe");
 		l.id = t, l.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(l), this.#r[t] = l, this.#i[t] = !1, this.#l(l, this.#a[t] = {
 			visible: !0,
 			alpha: 1,
@@ -2684,8 +2684,7 @@ var F = class e {
 		});
 		let u = e.#d(a);
 		l.contentWindow.sn_repRes?.((e) => {
-			let t = e.dataset.src ?? "";
-			e.src = /^(?:https?:|\/|data:)/.test(t) ? t : u + t.replace(/^\.\//, "");
+			e.src = this.#f(u, e.dataset.src ?? "");
 		}), l.contentDocument?.addEventListener("keydown", (e) => {
 			document.dispatchEvent(new KeyboardEvent("keydown", {
 				key: e.key,
@@ -2786,10 +2785,19 @@ var F = class e {
 	static #d(e) {
 		return e.slice(0, e.lastIndexOf("/") + 1);
 	}
-	static #f = /\s(?:src|href)=(["'])(\S+?)\1/g;
-	static #p(t, n) {
+	#f(e, t) {
+		if (!t) return "";
+		if (/^(?:https?:|\/|data:)/.test(t)) return t;
+		try {
+			return this.searchPath(t, m.SP_GSM);
+		} catch {
+			return e + t.replace(/^\.\//, "");
+		}
+	}
+	static #p = /\s(?:src|href)=(["'])(\S+?)\1/g;
+	static #m(t, n) {
 		let r = e.#d(n);
-		return t.replaceAll(e.#f, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
+		return t.replaceAll(e.#p, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
 	}
 }, re = /* @__PURE__ */ new Set([
 	"IFRAME",

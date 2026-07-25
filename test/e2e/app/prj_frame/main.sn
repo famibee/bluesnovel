@@ -43,6 +43,13 @@
 [event global=true call=true key=escape label=*fcs arg=null]
 ふぉーかす[l]
 
+; フレーム内の<img data-src=…>の解決（本家 FrameMng.ts:154 → #loadPic2Img）。
+;	**まずプロジェクトのパス解決（path.json）へ通す**。テンプレのアルバムは解放済み項目の
+;	data-srcに`F_kuchimoto`のような拡張子なしのアセット名を書くので、枠のディレクトリを
+;	前置するだけでは404になる（＝アルバムで絵がリンク切れになっていた）
+[let_frame id=yesno var_name=draw_pics function=true]
+えをだした[p]
+
 ; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）
 [frame id=yesno visible=false]
 かくした[s]

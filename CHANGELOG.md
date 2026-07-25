@@ -280,6 +280,21 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  予約が無くてもブラウザのメニューを出さない
 
 
+- [x] アルバムの絵がリンク切れ（フレーム内の`<img data-src=…>`の解決先が違っていた）
+	- テンプレのアルバムは解放済み項目の`data-src`に`F_kuchimoto`のような
+	  **拡張子なしのアセット名**を書く。こちらは枠HTMLのディレクトリを前置していたので
+	  `frames/F_kuchimoto`になって404。未解放のサムネ（`./_album_miken.jpg`＝枠と同じ
+	  ディレクトリ）だけがたまたま当たっていた
+	- 本家は`sn_repRes`で渡す関数の中で`cfg.searchPath()`に通している
+	  （`FrameMng.ts:154`→`#loadPic2Img()`）。同じく**まずパス解決（path.json）へ通す**形に変更。
+	  `./_album_miken.jpg`のような枠自身の相対ファイルもsearchPathが拾える（ファイル名＋拡張子で
+	  引ける形なので）。絶対URL・ルート絶対・`data:`はそのまま通し、サーチパスに無ければ
+	  従来どおりディレクトリ前置へ落とす（枠に同梱しただけでpath.jsonに載らない画像のため）
+	- E2E追加（`frame.e2e.ts`）。フィクスチャの枠に画像2枚を置いた：
+	  path.jsonに載る拡張子なしの名前と、載らない枠同梱ファイル。どちらも`naturalWidth > 0`まで見る
+	  （`src`が入っただけでは絵が出たことにならないため）
+
+
 - [ ]
 
 
@@ -290,7 +305,7 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 
-
+- 長押しでデザインモードに入るが、本家機能大部分の完成まで無効化＆TODO記載
 - todo.md: 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定）
   - 立ち絵を震わせる [fg_shake][fg2_shake] で使用しているかと思ったが、[tsy path=]で実現していた
   - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2

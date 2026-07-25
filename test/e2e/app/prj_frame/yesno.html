@@ -15,12 +15,27 @@
 	<!-- data-*は[event key='dom=…']の発火時に sn.event.domdata.* へ入る（本家 EventMng.ts:591） -->
 	<button id="ok" data-sel="yes" data-num="7">OK</button>
 	<button id="close">CLOSE</button>
+	<!-- フレーム内の画像は data-src に書き、sn_repRes() が渡す関数で実URLへ直す（本家と同じ約束）。
+		asset_pic は path.json に載る**拡張子なしのアセット名**、
+		frame_local.png は path.json に載らない枠同梱ファイル -->
+	<img id="pic_asset" data-src="asset_pic">
+	<img id="pic_local" data-src="./frame_local.png">
 <script>
 	// var付きでないと [set_frame]/[let_frame] から見えない（window直下のプロパティになるため）
 	var val_dic = '';
 	var val_cnt = 0;
 
 	// [let_frame function=true] で呼ばれる。戻り値が組み込み変数へ入る
+	// 本家仕様のフック。親から画像ロード処理を差し替えられる（関数名は変更不可）。
+	//	差し替えはフレームのonload後なので、描画は[let_frame function=true]で
+	//	シナリオから呼ぶ（本家 _album.htm の init と同じ流儀）
+	var setImg = function(i) {i.src = i.dataset.src};
+	function sn_repRes(i) {setImg = i}
+	var draw_pics = function() {
+		Array.prototype.forEach.call(document.getElementsByTagName('img'), function(i) {setImg(i)});
+		return document.getElementById('pic_asset').getAttribute('src');
+	};
+
 	var val2ctrl = function() {
 		document.getElementById('mes').textContent = val_dic;
 		++val_cnt;

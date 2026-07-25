@@ -15,35 +15,40 @@
 //	3回目までに設定が復活する経路になっているのが理由。実機との差分は追跡中
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pressKey, txtBoxStyle} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, pressKeyToWaitMark, txtBoxStyle, waitWaitMark} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'grp')});
 
 test('場面転換（[trans]3連）をまたいでも文字レイヤの設定が生き残る', async ({page})=> {
 	// 場面転換その1を抜けた直後。styleを丸ごと書き直した方（font-family）が効いている
-	await expect.poll(()=> mesStr(page)).toContain('はじめ');
-	await expect.poll(()=> txtBoxStyle(page, 'writing-mode')).toBe('horizontal-tb');
+	// **[trans]を挟むので待ちマーカーで停止点を確かめてから進む**。waitIdle()だけだと
+	//	演出の途中に「落ち着いて見える」瞬間があり、そこで押したキーが進行に使われず失われる
+	await waitWaitMark(page);
+	expect(await mesStr(page)).toContain('はじめ');
+	expect(await txtBoxStyle(page, 'writing-mode')).toBe('horizontal-tb');
 
 	// 裏ページへ縦書き設定を書く。まだ表に出ていないので見た目は横書きのまま
-	await pressKey(page, 'Space');
+	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toContain('ふたつめ');
 	expect(await txtBoxStyle(page, 'writing-mode')).toBe('horizontal-tb');
 
 	// 場面転換その2を通す。ここで裏が「1つ前の表」のまま残っていると横書きへ巻き戻る
+	//	（この先は[s]なので待ちマーカーは立たない。表示が落ち着くのをpollで待つ）
 	await pressKey(page, 'Space');
-	await expect.poll(()=> mesStr(page)).toContain('てんかんご');
+	await expect.poll(()=> mesStr(page), {timeout: 10_000}).toContain('てんかんご');
 	// 場面転換の[trans]が全部終わってからでないと、途中の表ページを見てしまう
-	await expect.poll(()=> txtBoxStyle(page, 'writing-mode')).toBe('vertical-rl');
+	await expect.poll(()=> txtBoxStyle(page, 'writing-mode'), {timeout: 10_000}).toBe('vertical-rl');
 });
 
 test('場面転換の[er]で、前の場面のボタンが消える', async ({page})=> {
 	// テンプレでタイトル画面のボタンが本編に入っても残っていた。[grp]の場面転換は[er]しか
 	//	打たないので、[er]がボタンを捨てないと消える機会が無い
-	await expect.poll(()=> mesStr(page)).toContain('はじめ');
+	await waitWaitMark(page);
+	expect(await mesStr(page)).toContain('はじめ');
 	await expect(page.locator(SEL_FORE).getByText('まえのボタン')).toHaveCount(0);
 
+	await pressKeyToWaitMark(page, 'Space');
 	await pressKey(page, 'Space');
-	await pressKey(page, 'Space');
-	await expect.poll(()=> mesStr(page)).toContain('てんかんご');
+	await expect.poll(()=> mesStr(page), {timeout: 10_000}).toContain('てんかんご');
 	await expect(page.locator(SEL_FORE).getByText('まえのボタン')).toHaveCount(0);
 });

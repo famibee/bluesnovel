@@ -103,8 +103,10 @@ test('フォーカス中の[button]はEnterで押せる', async ({page})=> {
 
 test('隠したフレームの中の要素はフォーカスの輪から飛ばされる', async ({page})=> {
 	await toFocusScene(page);
+	await pressKey(page, 'Space');	// 画像の解決を確かめるページ（[let_frame draw_pics]）
+	await seeText(page, 'ふぉーかすえをだした');	// [l]なので本文は続けて出る
 	await pressKey(page, 'Space');	// [frame visible=false]のページへ
-	await seeText(page, 'ふぉーかすかくした');	// [l]なので本文は続けて出る
+	await seeText(page, 'かくした');
 
 	// フレーム内の#ok・#closeは飛ばされ、[button]だけを巡る。
 	//	**フレームの中の文書は自分が隠れていることを知らない**（getClientRectsは普通に返る）ので、
