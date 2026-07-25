@@ -300,7 +300,37 @@ ok.次は「設定」ボタンだが、その前に。
 	- `VarStore` に `dump()` を追加（組み込み変数＝遅延評価は本家同様含めない）。
 	  ユニット965・E2E84 パス、`tsc` クリーン。
 
+
+- オートリード機能で本編完走test。ギャラリーにも簡易テスト雛形あり
+- 同じくskip機能
+- 既読skipテストサンプル、参考まで https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/kidoku
+
+- [x] **オート読み・既読スキップで本編を完走**（実テンプレ `tmp_blues` の「最初から」→本編→タイトル）。
+	止まっていた原因は自動進行の側ではなく、その途中で出ていた**例外が握り潰されていた**こと。
+	- **`[button]` の `nm` を `label` 流用にしていたのをやめた**。テンプレの `[sys_menu]` は
+	  `fn` 違い・`label=*main` のボタンを3つ並べる（字を隠す／履歴／設定）ので、
+	  ストアの「ボタン名は同一レイヤ内で一意」に引っかかって本編開始直後に落ちていた。
+	  本家にボタン名の概念は無く、ここの `nm` はReactの `key` のためだけの物なので、
+	  **省略時はストア側で追加順の通し番号を振る**（`*main#0`…）。`[button nm=]` と明示した
+	  場合の重複だけは従来どおりthrow（シナリオ側の誤りなので）。
+	- **`[clear_lay]` がエンジン側の蓄積文字列を捨てていなかった**。`chgStr` は「そのレイヤの
+	  全文字列」を毎回送る作りなので、ストアの `str` を空にしても次の本文が古い蓄積へ追記され、
+	  消したはずの文が復活していた（本家 `TxtLayer.clearLay()` は中身も捨てる）。
+	  蓄積が指すのは表ページなので `page=back` のときは触らない。
+	- **投げっぱなし非同期の `.catch(()=> {})` をやめ、`#catchErr` で必ず表示する**ようにした。
+	  `myTrace(…, 'ET')` が投げた値だけを識別して捨てる（`#tracedErr` と同一性比較）。
+	  `#applyAction()` の例外は `step()` を包む try の外側なので、これが無いと
+	  **画面もログも無反応のままシナリオが止まる**（今回まさにこれで原因を見失った）。
+	- 回帰テスト：E2E `prj_autostory`（タイトル→`[button fn=]`で本編→`[p]`/`[l]`/`[waitclick]`→
+	  `[jump fn=]`でタイトル）をオートと `skip.all` の両方で完走させる2本。ボタンは
+	  **同じ飛び先を2つ**並べてあり、上記のボタン名衝突の回帰になっている。
+	  ユニットは `store_lay.test.ts` にボタン名3件、`ScriptEngine_lay.test.ts` に蓄積文字列2件。
+	- `[waitclick]` での手動クリック1回だけは仕様どおり（本家 `Reading.ts:313` と同じく
+	  `[s]`/`[waitclick]` は必ず `cancelAutoSkip()` する）。テンプレは `ss_000.sn:101` にこれがある。
+	  ユニット970・E2E87 パス、`tsc` クリーン。
+
 - [ ]
+
 
 
 
@@ -308,15 +338,23 @@ ok.次は「設定」ボタンだが、その前に。
   - 順番・後回しは任せる。ただしすべてを一気にやらず、タグ2・3個ぐらいずつでコミットしていきたい（AI使用制限対策）
   - ルビ記法
   - 関連タグ
-  - 本編、文字とルビ、改行、max_row、bura、追い出し、ぶら下がり仕様が意図通りか
-  - 本家にあるdumpHtm機能はhtmlテキスト出力によるプログラマルな比較目的。ドットレベルの比較というより文字配置と改行の確認用。使えそうなら使って
-
-
-- オートリード機能で本編完走test
+  - 本編
+  - 文字とルビ https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ruby
+  - 改行、max_row、bura、追い出し、ぶら下がり仕様が意図通りか https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/line_breaking_rules
+    - 本家にあるdumpHtm機能はhtmlテキスト出力によるプログラマルな比較目的。ドットレベルの比較というより文字配置と改行の確認用。使えそうなら使って
+  - フォント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/font
 
 
 
   + ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
+  + 音系 https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
+  + SKYNovel_gallery/public/prj/glsl_slide at master · famibee/SKYNovel_gallery https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
+  + https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
+  + イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
+  + https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+  + 
+
+
 
 
 

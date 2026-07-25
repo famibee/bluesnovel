@@ -70,9 +70,19 @@ export class ScriptMng {
 	readonly #hScript: {[fn: string]: Script} = Object.create(null);
 	#engine?: ScriptEngine;
 
+	// 非同期の投げっぱなし呼び出しを握る共通ハンドラ。
+	//	myTrace(…, 'ET')が投げた物だけは表示済みなので黙って捨て、それ以外は必ず表示する。
+	//	**握り潰すとシナリオが無言で止まる**（#applyAction()の例外はstep()を包むtryの外側にあり、
+	//	実際にストアのボタン名重複エラーをここで見失っていた）
+	readonly #catchErr = (e: unknown)=> {
+		if (e === this.#tracedErr) return;	// myTraceで表示済み
+		this.myTrace(`内部エラー ${e instanceof Error ? e.stack ?? e.message : String(e)}`, 'E');
+	}
+	#tracedErr: unknown;	// 直近にmyTrace(…, 'ET')が投げた値（上記の判別用）
+
 	// SysBase.loaded()から投げっぱなしで呼ばれるので、ここで握ってデバッグ表示へ出す
 	//	（握らないと未処理のPromise拒否になり、何が起きたか分からないまま画面が空になる）
-	load(fn: string) {void this.#load(fn).catch(()=> {/* myTraceで表示済み */})}
+	load(fn: string) {void this.#load(fn).catch(this.#catchErr)}
 	async #load(fn: string) {
 		const scr = await this.#getScript(fn);
 		if (this.#engine) this.#engine.switchScript(scr);
@@ -223,7 +233,7 @@ export class ScriptMng {
 	//	fn指定時は別スクリプトへ飛ぶ。ロードが要るのでここだけ非同期になる
 	//	（クリックハンドラ側は投げっぱなしで良いよう、例外はここで握る）
 	jumpToLabelAndGo(label: string, call: boolean, fn = '') {
-		void this.#jumpToLabelAndGo(label, call, fn).catch(()=> {/* myTraceで表示済み */});
+		void this.#jumpToLabelAndGo(label, call, fn).catch(this.#catchErr);
 	}
 
 	// HTMLフレーム（[add_frame]系）。レイヤと違いストアには載せず、ここが抱える（FrameMng.ts参照）。
@@ -314,9 +324,9 @@ export class ScriptMng {
 		//	処理の完了を待たずにシナリオが再開してしまう（フレーム読み込み中に画面をクリックすると
 		//	[add_frame]の次の[set_frame]が「まだ読み込まれていません」で落ちた）。
 		//	本家も Reading.beginProc()〜endProc() の間は進行を受け付けない
-		if (this.#procing) return;
+		if (this.#procing) {return}
 
-		this.#runStep().catch(()=> {/* myTraceで表示済み */});
+		this.#runStep().catch(this.#catchErr);
 	}
 	#stopped = false;	// [s]で停止中か
 	#procing = false;	// DOM絡みの非同期処理中か（上記）
@@ -514,19 +524,19 @@ export class ScriptMng {
 				//	どちらも「書き戻し→再開」の順を守りたいのでここで一旦返る
 				if (last?.t === 'addFrame' || last?.t === 'letFrame') {
 					this.#procing = true;
-					this.#procFrame(last).catch(()=> {/* myTraceで表示済み */});
+					this.#procFrame(last).catch(this.#catchErr);
 					return;
 				}
 				// [loadplugin join=true]（既定）・[snapshot]も同じ形：DOM絡みの非同期が終わってから続きを回す
 				if (last?.t === 'loadPlugin' || last?.t === 'snapshot') {
 					this.#procing = true;
-					this.#procDom(last).catch(()=> {/* myTraceで表示済み */});
+					this.#procDom(last).catch(this.#catchErr);
 					return;
 				}
 				// しおりからの復元。スクリプトの読み直し（fetch）が要るのでここで一旦返る
 				if (last?.t === 'load' || last?.t === 'reloadScript') {
 					this.#procing = true;
-					this.#procLoad(last).catch(()=> {/* myTraceで表示済み */});
+					this.#procLoad(last).catch(this.#catchErr);
 					return;
 				}
 				if (last?.t !== 'loadScript') {
@@ -713,7 +723,7 @@ export class ScriptMng {
 			break;
 		case 'addBtn':
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
-			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, nm: act.nm, text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.sty !== undefined ? {sty: act.sty} : {})});
+			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.sty !== undefined ? {sty: act.sty} : {})});
 			break;
 		case 'chgLay':
 			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: act.sty});
@@ -764,7 +774,7 @@ export class ScriptMng {
 			break;
 		case 'loadPlugin':
 			// join=true（既定）なら#runStep()側で読み終わるまで待つ。ここへ来るのはjoin=falseのときだけ＝投げっぱなし
-			if (! act.join) void this.#loadPlugin(act.fn).catch(()=> {/* myTraceで表示済み */});
+			if (! act.join) void this.#loadPlugin(act.fn).catch(this.#catchErr);
 			break;
 		case 'snapshot':
 			// 実処理は#runStep()側（撮り終わってから続きを回す）
@@ -927,7 +937,7 @@ export class ScriptMng {
 			case 'E':
 				this.#hTag.title!({text: txt});
 
-				if (lvl === 'ET') throw mes;
+				if (lvl === 'ET') throw this.#tracedErr = mes;
 				break;
 			default:	sty = '';
 		}

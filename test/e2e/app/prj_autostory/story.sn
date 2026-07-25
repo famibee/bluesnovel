@@ -1,0 +1,11 @@
+; 本編（main.sn のタイトルボタンから [button fn=story label=*start] で入る）
+*start
+	[clear_lay layer=mes page=both]
+　一行目[l]
+　二行目[p]
+　三行目[l]
+; ここは本家同様「必ずクリック待ち」。[waitclick]はオート・スキップを解除する
+;	（本家 Reading.ts:313 s()と同じ関数を通るため）ので、抜けたら入れ直す必要がある
+[waitclick]
+　四行目[l]
+[jump fn=main label=*title]

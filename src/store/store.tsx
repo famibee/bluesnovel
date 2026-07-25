@@ -160,7 +160,7 @@ export type T_CHGSTR = {
 export type T_ADDBTN = {
 	layerNm	: string;	// 乗せ先の文字レイヤnm
 	page	: T_PAGE;
-	nm		: string;	// ボタン自身の識別名（同一layer内で一意）
+	nm?		: string;	// [button nm=…]。省略時はここで通し番号を振る（下記 addBtn 参照）
 	text	: string;
 	label	: string;
 	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
@@ -218,7 +218,13 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	addBtn	: ({layerNm, page, nm, text, label, call, fn, sty}: T_ADDBTN)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, layerNm, 'txt');
-		if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
+		// nmはReactのkeyになるので同一レイヤ内で一意でなければならない。
+		//	**本家にボタン名の概念は無い**（Buttonはコンテナの子として積まれるだけ）ので、
+		//	省略時は追加順の通し番号で振る。labelを流用していた頃は、テンプレの[sys_menu]が
+		//	fn違い・label=*mainのボタンを3つ並べるところで衝突していた。
+		//	aBtnは「追加」と「[clear_lay]で全消し」しかされないので、添字は一意で足りる
+		if (nm === undefined) nm = `${label || fn || 'btn'}#${String(e.aBtn.length)}`;
+		else if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
 
 		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(sty !== undefined ? {sty} : {})}];
 		return putPage(s, idx, aLay);

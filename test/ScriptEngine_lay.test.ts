@@ -193,6 +193,20 @@ it('clearLay_invalidPageThrows', ()=> {
 	expect(()=> acts(`${LAYS}[clear_lay layer=mes page=all][s]`)).toThrow('属性 page【all】が不正です');
 });
 
+it('clearLay_alsoClearsAccumulatedText', ()=> {
+	// chgStrは「そのレイヤの全文字列」を毎回送るので、[clear_lay]はエンジン側の蓄積も
+	//	捨てなければならない（消し忘れると、消した後の本文に前の文がぶら下がって復活する）。
+	//	本家も TxtLayer.clearLay() が中身を捨てる
+	const a = acts(`${LAYS}[current layer=mes]あ[clear_lay layer=mes page=both]い[s]`);
+	expect(a.filter(v=> v.t === 'chgStr').map(v=> v.str)).toEqual(['あ', 'い']);
+});
+
+it('clearLay_backOnlyKeepsAccumulatedText', ()=> {
+	// 蓄積文字列が指すのは表ページ（本文の表示はfore固定）なので、裏だけ消すときは触らない
+	const a = acts(`${LAYS}[current layer=mes]あ[clear_lay layer=mes page=back]い[s]`);
+	expect(a.filter(v=> v.t === 'chgStr').map(v=> v.str)).toEqual(['あ', 'あい']);
+});
+
 
 // ============ 実シナリオでの並び ============
 

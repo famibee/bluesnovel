@@ -358,10 +358,11 @@ it('step_button_addsBtnAction', ()=> {
 
 it('step_button_layerDefaultsToCurrentTxtLayer', ()=> {
 	// layerを省略すると現在の文字レイヤ（#curTxtLayer、既定'mes'）が乗せ先になる。
-	// nmも省略した場合はlabelを流用する（試作の割り切り）。
+	// nmを省略したらアクションにnmを載せない（＝ストア側で通し番号を振る）。
+	// 以前はlabelを流用していたが、それだと同じ飛び先のボタンを並べられなかった
 	const se = new ScriptEngine('t1', '[button text=x label=*goal]あ[s]');
 	const a = se.step();
-	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', nm: '*goal', text: 'x', label: '*goal', call: false});
+	expect(a[0]).toEqual({t: 'addBtn', layerNm: 'mes', page: 'back', text: 'x', label: '*goal', call: false});
 });
 
 it('step_button_requiresLabelOrFn', ()=> {
@@ -374,13 +375,13 @@ it('step_button_fn_isPassedThrough', ()=> {
 	// 実際のロードと切替はクリック時にScriptMng側が行う
 	const se = new ScriptEngine('t1', '[button text=x fn=other label=*goal]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: '*goal', text: 'x', label: '*goal', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'back', text: 'x', label: '*goal', call: false, fn: 'other'});
 });
-it('step_button_fnOnly_nmFallsBackToFn', ()=> {
-	// label省略時はそのファイルの先頭へ。nm省略時はlabelが無いのでfnを流用する
+it('step_button_fnOnly_labelIsEmpty', ()=> {
+	// label省略時はそのファイルの先頭へ飛ぶ（label:''）
 	const se = new ScriptEngine('t1', '[button text=x fn=other]あ[s]');
 	expect(se.step()[0]).toEqual(
-		{t: 'addBtn', layerNm: 'mes', page: 'back', nm: 'other', text: 'x', label: '', call: false, fn: 'other'});
+		{t: 'addBtn', layerNm: 'mes', page: 'back', text: 'x', label: '', call: false, fn: 'other'});
 });
 
 it('step_button_callTrue_setsCallFlag', ()=> {

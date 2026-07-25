@@ -65,7 +65,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'trans'; aLayNm: string[] | null; time: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
-	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
+	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
 	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
@@ -886,10 +886,19 @@ export class ScriptEngine {
 			// layerはカンマ区切りで複数可。省略時は全レイヤ（＝null）。
 			//	エンジンはレイヤ一覧を持たないので、[trans]/[dump_lay]と同じくnullのまま渡して
 			//	「全部」の解決はストア側に任せる
-			if (args.layer !== undefined && ScriptEngine.#argLayNames(args.layer) === null) {
-				throw '[clear_lay] layer属性が空です';
+			const aLayNm = ScriptEngine.#argLayNames(args.layer);
+			if (args.layer !== undefined && aLayNm === null) throw '[clear_lay] layer属性が空です';
+
+			// エンジン側が持つ蓄積文字列も捨てる（本家 TxtLayer.clearLay() が中身を捨てるのと同じ）。
+			//	chgStrは「そのレイヤの全文字列」を毎回送る作りなので、ここを消し忘れると
+			//	ストアのstrを空にしても次の本文がその蓄積へ追記され、消したはずの文が復活する。
+			//	#hTxtが指すのは表ページ（#appendTxt()がfore固定）なので、裏だけ消すときは触らない
+			if (sPage !== 'back') {
+				if (aLayNm) for (const nm of aLayNm) this.#hTxt[nm] = '';
+				else for (const nm of Object.keys(this.#hTxt)) this.#hTxt[nm] = '';
 			}
-			aAct.push({t: 'clearLay', aLayNm: ScriptEngine.#argLayNames(args.layer), page: sPage});
+
+			aAct.push({t: 'clearLay', aLayNm, page: sPage});
 			return 'skip';
 		}
 
@@ -1191,8 +1200,10 @@ export class ScriptEngine {
 			const label = args.label ?? '';
 			const fn = args.fn ?? '';	// fn指定時は別スクリプトのラベルへ飛ぶ（label省略ならそのファイルの先頭）
 			if (! label && ! fn) throw '[button] fnまたはlabelは必須です';
-			// nm: ボタン自身の識別名（同一layer内で一意）。省略時はlabel（無ければfn）を流用（試作の割り切り）
-			const nm = args.nm ?? (label || fn);
+			// nm: ボタン自身の識別名（同一layer内で一意）。**省略時はストア側で通し番号を振る**。
+			//	本家にボタン名の概念は無く、ここのnmはReactのkeyのためだけの物なので、
+			//	labelを流用すると同じ飛び先のボタンを並べられない（テンプレの[sys_menu]がまさにそれ）
+			const nm = args.nm;
 			// call=true指定時：クリックでjumpではなくcall（サブルーチンコール）する
 			const call = args.call === 'true';
 			// 書き込み先のページ。**既定は本家（LayerMng.ts:1100 argChk_page(hArg,'back')）と同じ'back'**。
@@ -1213,7 +1224,8 @@ export class ScriptEngine {
 			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 
-			aAct.push({t: 'addBtn', layerNm, page, nm, text: args.text ?? '', label, call,
+			aAct.push({t: 'addBtn', layerNm, page, text: args.text ?? '', label, call,
+				...(nm === undefined ? {} : {nm}),
 				...(fn ? {fn} : {}), ...(Object.keys(sty).length > 0 ? {sty} : {})});
 			return 'skip';
 		}

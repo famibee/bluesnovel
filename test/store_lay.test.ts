@@ -210,3 +210,42 @@ it('clearLay_dropsBackPicAndFixedFlag', ()=> {
 	expect(lay.b_alpha_isfixed).toBeUndefined();
 	expect(lay.b_alpha).toBe(1);
 });
+
+// ===== [button]のnm（Reactのkey）＝ストア側で振る通し番号 =====
+//	本家にボタン名の概念は無い。ここのnmはStage.tsxのkeyのためだけの物なので、
+//	省略時に何を使うかはストアの都合＝ストア側でしか決められない
+const addMes = ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', b_alpha: 1, enabled: true, aBtn: []});
+};
+const aBtnNm = ()=> {
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	return lay.aBtn.map(b=> b.nm);
+};
+
+it('addBtn_autoNm_allowsSameLabelTwice', ()=> {
+	// 実テンプレ tmp_blues の[sys_menu]は fn 違い・label=*main のボタンを3つ並べる。
+	//	nm省略時にlabelを流用していた頃は、ここが「ボタン名の重複」で落ちていた
+	addMes();
+	S().addBtn({layerNm: 'mes', page: 'fore', text: '字を隠す', label: '*main', fn: '_hidetext'});
+	S().addBtn({layerNm: 'mes', page: 'fore', text: '履歴', label: '*main', fn: '_log'});
+	S().addBtn({layerNm: 'mes', page: 'fore', text: '設定', label: '*main', fn: '_config'});
+	expect(aBtnNm()).toEqual(['*main#0', '*main#1', '*main#2']);
+});
+
+it('addBtn_explicitNm_throwsOnDuplicate', ()=> {
+	// [button nm=…]と明示した名前の重複はシナリオ側の誤り（Reactのkeyが衝突する）
+	addMes();
+	S().addBtn({layerNm: 'mes', page: 'fore', nm: 'b1', text: 'x', label: '*a'});
+	expect(()=> S().addBtn({layerNm: 'mes', page: 'fore', nm: 'b1', text: 'y', label: '*b'})).toThrow();
+});
+
+it('addBtn_autoNm_restartsAfterClearLay', ()=> {
+	// [clear_lay]でaBtnが空になるので通し番号も振り直し（添字が一意であれば足りる）
+	addMes();
+	S().addBtn({layerNm: 'mes', page: 'fore', text: 'x', label: '*a'});
+	S().clearLay({aLayNm: null, page: 'fore'});
+	S().addBtn({layerNm: 'mes', page: 'fore', text: 'y', label: '*a'});
+	expect(aBtnNm()).toEqual(['*a#0']);
+});

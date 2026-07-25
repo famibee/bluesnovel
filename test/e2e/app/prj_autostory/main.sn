@@ -1,0 +1,43 @@
+; E2E用シナリオ（autoskip.e2e.ts が使用）
+;	オート読み・既読スキップで「タイトル→本編→タイトル」を人手を介さず完走できるかを見る。
+;	実テンプレ tmp_blues の骨格を最小化したもの：タイトルの[button]から別ファイルの本編へ入り、
+;	[p]/[l]/[waitclick]を挟んで、最後にタイトルへ戻る
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 待ち時間を詰めてテストを短くする（2周目は既読なので_Kidoku側が使われる）
+[let name=sys:sn.auto.msecLineWait text=30]
+[let name=sys:sn.auto.msecPageWait text=30]
+[let name=sys:sn.auto.msecLineWait_Kidoku text=30]
+[let name=sys:sn.auto.msecPageWait_Kidoku text=30]
+[let name=tmp:visits text=0]
+
+; キーでオート・スキップを入れる（実テンプレの sub.sn:82、ギャラリーの kidoku サンプルと同じ形）。
+;	global=trueなので本編スクリプトへ移っても効き続ける
+[event global=true call=true key=a label=*auto_on]
+[event global=true call=true key=f label=*skip_on]
+[event global=true call=true key=ctrl+f label=*skipall_on]
+
+*title
+	[clear_lay layer=mes page=both]
+	&tmp:visits = tmp:visits + 1
+	; **同じ飛び先のボタンを2つ**並べる。[button nm=]省略時の名前がlabel由来だった頃は、
+	;	ここが「ボタン名の重複」で落ちた（実テンプレのシステムメニューが組めなかった原因）
+	[button layer=mes page=fore text=はじめから fn=story label=*start]
+	[button layer=mes page=fore text=つづきから fn=story label=*start]
+; 何周目のタイトルかを表示する（`&式`のインライン表示はトークンの先頭が`&`のときだけ効くので、
+;	「タイトル」と回数を1つの式にまとめて書く）
+&'タイトル'+tmp:visits&[s]
+
+*auto_on
+	&sn.auto.enabled = true
+[return]
+
+*skip_on
+	&sn.skip.enabled = true
+[return]
+
+*skipall_on
+	&sn.skip.all = true
+	&sn.skip.enabled = true
+[return]

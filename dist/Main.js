@@ -82,7 +82,8 @@ var b = g()((e, t) => ({
 	}),
 	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, sty: c }) => e((e) => {
 		let { idx: l, aLay: u } = _(e, n), d = y(u, t, "txt");
-		if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
+		if (r === void 0) r = `${a || s || "btn"}#${String(d.aBtn.length)}`;
+		else if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
 		return d.aBtn = [...d.aBtn, {
 			nm: r,
 			text: i,
