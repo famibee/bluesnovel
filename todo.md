@@ -93,6 +93,11 @@
 - [ ] 実機（`tmp_blues`）で以下を確認
   - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない
   - [ ] `main.sn`へ`[lay layer=mes b_alpha=...]`を仕込んで、文字レイヤ背景の不透明度変更の見た目を確認（`main.sn`には`[lay layer=mes b_alpha=0.4]`が既にあることを今回確認済み。表示結果の目視確認は未実施）
+- [ ] **アニメpng（独自スプライトシート）の残り**（画像レイヤ`[lay fn=…]`での再生は実装済み。2026-07-25。`src/ts/Sprite.ts`＋`Lay.ts styAniSprite`。ギャラリーの`anime_png`が仕様）
+  - [ ] `[l]`/`[p]`の待ちマーク（`breakline`/`breakpage`という名の画像・アニメpngがあれば、それを🩷/✅の代わりに出す。本家 LayerMng.ts:159 と`ConfigBase.existsBreakline`）。**ユーザ要望の本題はここ**
+  - [ ] `[graph]`（本文中のインライン画像。アニメpngも置ける）。`Txt.ts`の命令解釈に足す形＋パス解決
+  - [ ] 文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
+  - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）・動画（mp4等）は未対応
 - [ ] アセット周りの残り（`SAMPLE_SN`フォールバックと`GrpLayer.tsx`の`try/catch`撤去は完了）
   - [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像（`sn_repRes()`）も同じ仕組み
   - [ ] 画像の**先読み**（本家 `SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので、切替時に一瞬空白になりうる。実機で要確認

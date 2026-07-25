@@ -19,7 +19,8 @@ import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
 import type {CSSProperties} from 'react';
-import type {SerializedStyles} from '@emotion/react';
+import {css, keyframes, type SerializedStyles} from '@emotion/react';
+import type {T_SHEET} from '../ts/Sprite';
 
 
 // レイヤ共通の見た目（本家 Layer.ts lay() が扱う分のうち、試作で対応したもの）。
@@ -97,3 +98,27 @@ let isDrag = false;
 export const noticeDrag = ()=> {isDrag = true};
 export const clearDrag = ()=> {isDrag = false};
 export const isDragging = ()=> isDrag;
+
+
+// アニメpng（スプライトシート。Sprite.ts）の再生CSS。
+//	**JSでコマを送らずCSSのstepsに任せる**：1枚の画像を背景に敷き、背景位置を
+//	速い軸／遅い軸の2本のアニメで動かす（本家はpixiのAnimatedSpriteでテクスチャを差し替える）。
+//	コマの並びが縦優先（isCol）なら速い軸は縦。GrpLayerと[graph]（TxtLayer）で共用する。
+//	※格子が埋まりきらない（コマ数 < 列×行）シートでは、余りの位置で一瞬空白が出る
+export function styAniSprite({img, fw, fh, cols, rows, sec, isCol}: T_SHEET): SerializedStyles {
+	const kfX = keyframes`to {background-position-x: ${-cols * fw}px}`;
+	const kfY = keyframes`to {background-position-y: ${-rows * fh}px}`;
+	// 一巡の時間。速い軸は「遅い軸1コマぶん」の間に一巡する
+	const secX = isCol ? sec : sec / rows;
+	const secY = isCol ? sec / cols : sec;
+	return css`
+		width: ${fw}px;
+		height: ${fh}px;
+		background-image: url(${JSON.stringify(img)});
+		background-repeat: no-repeat;
+		background-position: 0 0;
+		animation:
+			${kfX} ${secX}s steps(${cols}) infinite,
+			${kfY} ${secY}s steps(${rows}) infinite;
+	`;
+}

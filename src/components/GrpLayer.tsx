@@ -5,9 +5,10 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
+import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag, styAniSprite} from './Lay';
+import {loadSheet, type T_SHEET} from '../ts/Sprite';
 
-import {type CSSProperties, MouseEvent, useRef} from 'react';
+import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
 
 
@@ -49,6 +50,20 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	　（position:absoluteにするとサイズが親のサイズ計算に反映されなくなるため）
 	//	・差分絵（face）は div0 を基準に position:absolute で dx,dy に配置し、blendmodeをmix-blend-modeへそのまま渡す
 	//	・重なり順は aFace の配列順（[lay face=A,B,C]の記述順）＝DOM順で自然に実現される
+	// アニメpng（スプライトシート）。`[lay fn=…]`のパス解決結果が.jsonなら**シートの定義**で、
+	//	そこからコマの格子と再生速度を読んでCSSアニメで再生する（Sprite.ts / Lay.ts styAniSprite）。
+	//	読み込みが非同期なのでここで待つ：ストアはURLまでを持ち、
+	//	**アセットの中身（コマ割り）は画面側の関心事**という切り分け（画像の自然サイズと同じ扱い）
+	const isSheet = src.endsWith('.json');
+	const [sheet, setSheet] = useState<T_SHEET | undefined>(undefined);
+	useEffect(()=> {
+		if (! isSheet) {setSheet(undefined); return}
+
+		let alive = true;
+		void loadSheet(src).then(v=> {if (alive) setSheet(v)});
+		return ()=> {alive = false};
+	}, [src, isSheet]);
+
 	const div0 = useRef<HTMLDivElement>(null);
 	const evt = (style: CSSStyleDeclaration, transform: string)=> {
 		noticeDrag();
@@ -57,8 +72,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	return <>
 		<div css={styChild} ref={div0} data-lay={nm} style={sty} onMouseDown={e=> onMouseDown(e)}>
 			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
-				（Reactがページ全体再ダウンロードの可能性を警告するため） */}
-			{src && <img src={src} style={{display: 'block'}}/>}
+				（Reactがページ全体再ダウンロードの可能性を警告するため）。
+				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
+			{sheet && <div css={styAniSprite(sheet)}/>}
+			{src && ! isSheet && <img src={src} style={{display: 'block'}}/>}
 			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
 				if (! faceSrc) return null;
 				return <img

@@ -434,26 +434,44 @@ ok.次は「設定」ボタンだが、その前に。
 	- 残り：`max_row`（最大行数を超えたら自動改ページ）・`r_size`（ルビサイズ）・`break_fixed`系。
 	  ギャラリーの`line_breaking_rules`と実機で見比べて、ブラウザ任せで足りなければ自前計算へ寄せる。
 
-- [ ]
-
-
-
 
 - アニメpng（APNGではなく独自スプライトシート）をサポート
   - これは[l][p][graph]に関係ある機能
   - サンプル https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/anime_png
+
+- [x] **アニメpng（APNGではなく独自スプライトシート）の再生**。まず画像レイヤ`[lay fn=…]`から。
+	ギャラリーの`anime_png`（SKYNovel_gallery/public/prj/anime_png）が仕様。
+	- path.jsonでは**「論理名→.json」「論理名.列x行→.png」の2件に分かれて載る**（`clock`→`mat/clock.json`、
+	  `clock.5x8`→`mat/clock.5x8.png`）ので、`[lay fn=clock]`のパス解決結果は**.jsonのURL**になる。
+	  そこからjsonの`meta.image`を同じ場所で引いてpngへ辿る。ストアはURLまでを持ち、
+	  コマ割りの読み込み（fetch）は画面側＝画像の自然サイズと同じ「アセットの中身」の扱いにした。
+	- **本家はpixiの`AnimatedSprite`（テクスチャ差し替え）だが、こちらはCSSのstepsアニメ**で
+	  背景位置をコマ送りする＝JSは1コマも跨がない。速い軸・遅い軸の2本を重ねることで格子を走査し、
+	  コマの並びが縦優先か横優先かは**2コマ目の位置**から判定する（ギャラリーのclock/breaklineは縦優先）。
+	  `meta.animationSpeed`は本家（pixi）と同じ「1tick=1/60秒あたりに進むコマ数」として秒へ直す。
+	- テスト：`Sprite.test.ts`（定義jsonの読み取り6件。値はギャラリーのサンプルから取った）＋
+	  E2E3件（CSSアニメの組み立て・シート画像が404にならないこと・**実際にコマが進むこと**）。
+	  E2E用に20x20×4コマの小さなpngをその場で生成して置いた（113バイト）。
+	  ユニット1223・E2E98 パス、`tsc` クリーン。
+	- 次：**`[l]`/`[p]`の待ちマーク**（`breakline`/`breakpage`があれば🩷/✅の代わりに出す。
+	  本家 LayerMng.ts:159）と`[graph]`（本文中のインライン画像）。要望の本題はそちら。
+	  `[lay b_pic=…]`（文字レイヤの枠画像）でのシート再生も未対応。
+
+- [ ]
+
+
 
 
 - 音系に着手。だがあなたはこちらのようなテスト可能か？
   - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
 
 
+- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
+
 - ゲーム中での[trans]によるトランジション具合はテストしづらいかもしれない
 - GLSLトランジション（ルール画像[trans]） https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/glsl_slide
 
 - イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
-
-- [quake][stop_quake][wq] https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/tag_quake
 
 
 
