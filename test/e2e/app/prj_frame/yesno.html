@@ -12,7 +12,8 @@
 <body>
 	<!-- [set_frame]で入る変数。フレーム側のJSがそれを読んで描画する（本家 _yesno.html と同じ作り） -->
 	<p id="mes">（未設定）</p>
-	<button id="ok">OK</button>
+	<!-- data-*は[event key='dom=…']の発火時に sn.event.domdata.* へ入る（本家 EventMng.ts:591） -->
+	<button id="ok" data-sel="yes" data-num="7">OK</button>
 	<button id="close">CLOSE</button>
 <script>
 	// var付きでないと [set_frame]/[let_frame] から見えない（window直下のプロパティになるため）

@@ -14,7 +14,7 @@ import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
 import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
-import {FrameMng} from './FrameMng';
+import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {focusMng} from './FocusMng';
 import {savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
@@ -433,61 +433,106 @@ export class ScriptMng {
 	//	[trans]のレイヤ複製が演出前の古い値を拾ってしまうため、こちらはストア経由にした。
 	//	副作用として本家のarrive属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる。
 	//	トゥイーン名（tw_nm）はname省略時レイヤ名（本家 CmnTween.#tw_nm()）
-	readonly #hTw: {[tw_nm: string]: {tw: gsap.core.Tween; end: ()=> void}} = Object.create(null);
+	readonly #hTw: {[tw_nm: string]: {tw: gsap.core.Tween | gsap.core.Timeline; end: ()=> void; next?: ()=> void}} = Object.create(null);
 	#tsyWaiting	: {tw_nm: string; canskip: boolean} | undefined;	// [wait_tsy]で待っている最中か
 
 	#beginTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy'}>) {
+		const cur = this.$fncs.getLaySty(act.nm, act.page);
+		// GSAPに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
+		//	未指定属性の開始値は各レイヤのCSS既定（H_TSY_DEF）。
+		//	エンジン側は現在値を知らないので相対指定（left='=100'）のまま渡してくる
+		const {from, aTo, aPrp} = ScriptMng.#tsyVals(act, k=> cur[k as T_TSY_PRP] ?? H_TSY_DEF[k as T_TSY_PRP]);
+		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
+		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
+		//	structuredClone（addLayer/[trans]）もJSON化（Memento）も落ちる。
+		//	動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトにする
+		this.#runTsy(act, from, aTo, ()=> {
+			const sty: T_LAY_STY_ARG = {};
+			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
+			this.$fncs.chgLay({nm: act.nm, page: act.page, sty});
+		});
+	}
+
+	// [tsy_frame]：動かす先がストアのレイヤではなくFrameMngが持つiframeの見た目。
+	//	開始値はFrameMngが抱える現在の見た目（本家は組み込み変数を読み直す）、
+	//	反映も[frame]と同じ経路を通す＝組み込み変数への書き戻しも本家同様毎フレーム走る
+	#beginTsyFrame(act: Extract<T_ENGINE_ACTION, {t: 'tsyFrame'}>) {
+		const cur = this.#frmMng.getSty(act.id) as {[k: string]: number | undefined};
+		const {from, aTo, aPrp} = ScriptMng.#tsyVals(act, k=> cur[k] ?? 0);
+		this.#runTsy(act, from, aTo, ()=> {
+			const sty: T_FRM_STY = {};
+			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
+			this.#setVals(this.#frmMng.frame(act.id, sty));
+		});
+	}
+
+	// 開始値（from）と、区間ごとの目標値（aTo）の解決。**相対指定はどの区間も開始値が基準**で、
+	//	本家（CmnTween.tween()）のpathも同じ＝`(,=50) (,=0)`が「50下げて元へ戻す」になる
+	static #tsyVals(act: Extract<T_ENGINE_ACTION, {t: 'tsy' | 'tsyFrame'}>, now: (prp: string)=> number) {
+		const aHTo = [act.hTo, ...act.aPath ?? []];
+		const aPrp = [...new Set(aHTo.flatMap(h=> Object.keys(h)))];
+		const from: {[k: string]: number} = {};
+		for (const k of aPrp) from[k] = now(k);
+
+		const aTo = aHTo.map(hTo=> {
+			const to: {[k: string]: number} = {};
+			for (const [k, t] of Object.entries(hTo)) if (t) to[k] = t.rel ? from[k]! + t.v : t.v;
+			return to;
+		});
+		return {from, aTo, aPrp};
+	}
+
+	// トゥイーン本体の組み立て（[tsy]/[tsy_frame]共通）。fromを動かし、毎フレームapply()で反映する
+	#runTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy' | 'tsyFrame'}>, from: {[k: string]: number}, aTo: {[k: string]: number}[], apply: ()=> void) {
 		// 同名のトゥイーンが動いていたら畳んでから始める。本家は#hTwInfを上書きするだけで
 		//	古いトゥイーンはGroupに残ったまま動き続けてしまうので、そこだけ変えている
 		this.#hTw[act.tw_nm]?.tw.kill();
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hTw[act.tw_nm];
 
-		const cur = this.$fncs.getLaySty(act.nm, act.page);
-		// GSAPに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
-		//	相対指定（left='=100'）と、未指定属性の開始値（＝各レイヤのCSS既定＝H_TSY_DEF）を
-		//	ここで解決する。エンジン側は現在値を知らないので相対のまま渡してくる
-		const aPrp = Object.keys(act.hTo) as T_TSY_PRP[];
-		const from: {[k: string]: number} = {};
-		const to	: {[k: string]: number} = {};
-		for (const k of aPrp) {
-			const t = act.hTo[k]!;
-			const now = cur[k] ?? H_TSY_DEF[k];
-			from[k] = now;
-			to[k] = t.rel ? now + t.v : t.v;
-		}
-		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
-		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
-		//	structuredClone（addLayer/[trans]）もJSON化（Memento）も落ちる。
-		//	動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトにする
-		const apply = ()=> {
-			const sty: T_LAY_STY_ARG = {};
-			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
-			this.$fncs.chgLay({nm: act.nm, page: act.page, sty});
-		};
 		// 終了状態の確定。時間切れでも[stop_tsy]でも[wait_tsy]中のクリックでも必ずここを通すので、
-		//	中途半端な見た目のまま止まることはない（本家 stop().end() と同じ考え方）
-		const end = ()=> {Object.assign(from, to); apply()};
+		//	中途半端な見た目のまま止まることはない（本家 stop().end() と同じ考え方）。
+		//	path指定時の終着点は「各属性を最後に書いた区間の値」＝畳み込み
+		const fin: {[k: string]: number} = {};
+		for (const to of aTo) Object.assign(fin, to);
+		const end = ()=> {Object.assign(from, fin); apply()};
 
 		// time=0（既読スキップ中もここ）は演出せず即座に終了状態へ
 		if (act.msec <= 0 && act.delay <= 0) {end(); this.#onTsyEnd(act.tw_nm); return}
 
-		this.#hTw[act.tw_nm] = {end, tw: gsap.to(from, {
-			...to,
+		const hVars = {
 			duration	: act.msec / 1000,	// GSAPは秒、シナリオはミリ秒
 			delay		: act.delay / 1000,
 			ease		: act.ease,
 			repeat		: act.repeat,
 			yoyo		: act.yoyo,
 			onUpdate	: apply,
-			onComplete	: ()=> {end(); this.#onTsyEnd(act.tw_nm)},
-		})};
+		};
+		// chain指定時は止めた状態で作り、繋ぎ元の終了時に動かし始める（本家 CmnTween.ts:219）
+		const paused = Boolean(act.chain);
+		const onComplete = ()=> {end(); this.#onTsyEnd(act.tw_nm)};
+		let tw: gsap.core.Tween | gsap.core.Timeline;
+		if (aTo.length > 1) {	// [tsy path=…]。本家はtween.jsのchain()、GSAPならtimelineで繋ぐ
+			const tl = gsap.timeline({paused, onComplete});
+			for (const to of aTo) tl.to(from, {...to, ...hVars});
+			tw = tl;
+		}
+		else tw = gsap.to(from, {...aTo[0]!, ...hVars, paused, onComplete});
+
+		this.#hTw[act.tw_nm] = {end, tw};
+		if (! act.chain) return;
+
+		const src = this.#hTw[act.chain];
+		if (! src) throw `${act.chain}は存在しない・または終了したトゥイーンです`;	// 本家と同じ文言
+		src.next = ()=> tw.play();
 	}
 
 	// トゥイーン1件の後片付け。[wait_tsy]で待っていたなら続きを回す
 	#onTsyEnd(tw_nm: string) {
+		const {next} = this.#hTw[tw_nm] ?? {};
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hTw[tw_nm];
+		next?.();	// [tsy chain=…]で後ろに繋がれたトゥイーンを開始する
 		if (this.#tsyWaiting?.tw_nm !== tw_nm) return;
 
 		this.#tsyWaiting = undefined;
@@ -792,6 +837,9 @@ export class ScriptMng {
 		case 'tsy':
 			this.#beginTsy(act);
 			break;
+		case 'tsyFrame':
+			this.#beginTsyFrame(act);
+			break;
 		case 'waitTsy':
 			// 実処理は#runStep()側（#waitTsy()）。表示への影響は無い
 			break;
@@ -877,8 +925,13 @@ export class ScriptMng {
 			break;
 		case 'resvDomEvent': {
 			// DOM要素のクリック等を、[event]の予約と同じ経路（fireEvent）へ流し込む
-			const aEl = this.#frmMng.resvDom(act.rawKey, act.key, act.del, act.needErr, ()=> {
+			const aEl = this.#frmMng.resvDom(act.rawKey, act.key, act.del, act.needErr, el=> {
 				this.cancelAuto();
+				// 発火した要素の data-* を組み込み変数へ（本家 EventMng.ts:591）。
+				//	何に使うかはシナリオ側の自由で、フレーム内の「どの項目が押されたか」を渡す口になる
+				for (const [k, v] of Object.entries(el.dataset)) {
+					this.#engine?.setValNochk(`sn.event.domdata.${k}`, v ?? '');
+				}
 				this.fireEvent(act.key);
 			});
 			// 本家は**最初の1件だけ**をフォーカス対象にも登録する（EventMng.ts:596 の `if (i === 0)`）

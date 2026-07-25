@@ -93,7 +93,30 @@ test(`[event key='dom=…']でフレーム内のボタンがラベルへ飛ば�
 	await waitIdle(page);
 
 	await page.frameLocator('#yesno').locator('#ok').click();
-	await seeText(page, 'おっけー');
+	// 発火した要素の data-* が sn.event.domdata.* へ入る（本家 EventMng.ts:591）
+	await seeText(page, 'おっけー:yes7');
+});
+
+test('[tsy_frame]がフレームの見た目を時間をかけて動かす', async ({page})=> {
+	await seeText(page, 'よみこんだ');
+	await advance(page, 'ひょうじ');
+	await advance(page, 'とれた');
+	await waitIdle(page);
+
+	// フレームの現在値はストアではなくFrameMngが持つので、iframeのstyleを直接見る
+	const sty = ()=> page.locator('#yesno').evaluate(e=> {
+		const s = (e as HTMLIFrameElement).style;
+		return {left: parseFloat(s.left), opacity: parseFloat(s.opacity)};
+	});
+	expect(await sty()).toEqual({left: 0, opacity: 1});
+
+	// [tsy_frame time=400 x='=100' alpha=0.5] → [wait_tsy id=yesno]
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> (await sty()).opacity, {timeout: 5_000}).toBeLessThan(1);
+	expect(await mesStr(page)).toBe('');	// [wait_tsy]中なので次の文へ進んでいない
+
+	await seeText(page, 'うごかした');
+	expect(await sty()).toEqual({left: 100, opacity: 0.5});	// 相対指定は現在値(0)に+100
 });
 
 test(`[event key='dom=…']はセレクタの大小文字を保つ（#close）`, async ({page})=> {

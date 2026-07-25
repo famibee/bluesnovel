@@ -24,7 +24,7 @@
 - [ ] **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
 - [ ] **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **`[trans]`の残り**：`rule=`（ルール画像によるワイプ）・`glsl=`・`vague=`。ルール画像を読むのでアセット整備と合わせて。`[finish_trans]`も未対応
-- [ ] **トゥイーンの残り**：`[tsy path=…]`（複数区間の経路。本家`CmnTween.ts:167`はchain()。GSAPならtimelineで書ける）・`chain=`・`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`。`[tsy_frame]`（フレームのトゥイーン）は`FrameMng`側にGSAPを持つ形になる
+- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`
 - [ ] **フィルターの残り**：本家22種のうちCSSの`filter`で素で書ける9種だけ対応済み。残りは`noise`以外すべてpixiの`ColorMatrixFilter`のプリセットなので、**SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる**（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）。行列はpixiのソースから拾う必要があり、SVGフィルタ要素をDOMへ挿す仕組みも要る
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
   - [ ] `[add_filter blendmode=…]`・`[lay blur_x=/blur_y=]`（CSSの`blur()`は半径1つしか持てない）
@@ -52,7 +52,6 @@
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）・`smoothing=`・拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）・`[update_check]`はElectron専用。`dist_app`側の整備と一緒に
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）・`[rec_ch]`/`[rec_r]`/`[reset_rec]`・`[set_cancel_skip]`
-- [ ] **HTMLフレームの残り**：フレーム内画像の差し替え（本家`sn_repRes()`＋`data-src`）はアセット整備と一緒に。`[event key='dom=…']`の`sn.event.domdata.*`（発火した要素の`data-*`を変数へ）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
   - [ ] `const.sn.key.*`（修飾キーの押下状態）は未対応。`Main.tsx`でkeydown/keyupを見てエンジンへ書き戻す形になる

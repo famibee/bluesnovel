@@ -4,7 +4,9 @@
 ;	・相対指定（left='=100'）が現在値に足されること
 ;	・[stop_tsy]が即座に終了状態へ送ること
 ;	・[wait_tsy]中のクリックで打ち切れ、その場合も必ず終了状態になること
+;	・path=（経路）が区間を順に辿ること／chain=が他トゥイーンの終了に繋がること
 [add_lay layer=base class=grp]
+[add_lay layer=base2 class=grp]
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
@@ -30,4 +32,18 @@
 ; [wait_tsy]中のクリックで打ち切る。打ち切っても終了状態(alpha=0)になる
 [tsy layer=base time=9000 alpha=0]
 [wait_tsy layer=base]
-うちきり[s]
+うちきり[p]
+
+; path=（経路）。テンプレの fg_squat と同じ形で「100下げてから元へ戻す」。
+;	相対はどの区間も**開始値**が基準なので、(,=0) が元の位置(50)へ戻す指定になる
+[lay layer=base top=50]
+[tsy layer=base time=200 path='(,=100) (,=0)']
+[wait_tsy layer=base]
+けいろ[p]
+
+; chain=。tw_aの終了に繋げる（繋いだ側はそれまで動き出さない）
+[lay layer=base2 left=0]
+[tsy layer=base name=tw_a time=400 top=300]
+[tsy layer=base2 name=tw_b time=200 left=100 chain=tw_a]
+[wait_tsy name=tw_b]
+つなげた[s]

@@ -625,7 +625,7 @@ var x = { save: "game" }, S = class e {
 					to: e + n > r ? r : e + n
 				};
 			}
-			function L(e, t) {
+			function re(e, t) {
 				var n, r, i, a, c, l = t.index, u = l.offset, d = 1;
 				if (u === e.length) return "Got the end of the input";
 				if (b(e)) {
@@ -660,19 +660,19 @@ var x = { save: "game" }, S = class e {
 					return o = b(e) ? F((8 * (a.from + i)).toString(16), c, "0") : F((a.from + i + 1).toString(), c, " "), [].concat(t, [l + o + " | " + r], s ? [N + P(" ", c) + " | " + F("", n, " ") + P("^", d)] : []);
 				}, [], i).join("\n");
 			}
-			function R(e, t) {
+			function L(e, t) {
 				return [
 					"\n",
 					"-- PARSING FAILED " + P("-", 50),
 					"\n\n",
-					L(e, t),
+					re(e, t),
 					"\n\n",
 					(n = t.expected, n.length === 1 ? "Expected:\n\n" + n[0] : "Expected one of the following: \n\n" + n.join(", ")),
 					"\n"
 				].join("");
 				var n;
 			}
-			function z(e) {
+			function R(e) {
 				return e.flags === void 0 ? [
 					e.global ? "g" : "",
 					e.ignoreCase ? "i" : "",
@@ -681,7 +681,7 @@ var x = { save: "game" }, S = class e {
 					e.sticky ? "y" : ""
 				].join("") : e.flags;
 			}
-			function B() {
+			function z() {
 				for (var e = [].slice.call(arguments), t = e.length, n = 0; n < t; n += 1) E(e[n]);
 				return r(function(n, r) {
 					for (var i, a = Array(t), o = 0; o < t; o += 1) {
@@ -691,32 +691,32 @@ var x = { save: "game" }, S = class e {
 					return C(x(r, a), i);
 				});
 			}
-			function V() {
+			function B() {
 				var e = [].slice.call(arguments);
 				if (e.length === 0) throw Error("seqMap needs at least one argument");
 				var t = e.pop();
-				return k(t), B.apply(null, e).map(function(e) {
+				return k(t), z.apply(null, e).map(function(e) {
 					return t.apply(null, e);
 				});
 			}
-			function H() {
+			function V() {
 				var e = [].slice.call(arguments), t = e.length;
-				if (t === 0) return J("zero alternates");
+				if (t === 0) return q("zero alternates");
 				for (var n = 0; n < t; n += 1) E(e[n]);
 				return r(function(t, n) {
 					for (var r, i = 0; i < e.length; i += 1) if ((r = C(e[i]._(t, n), r)).status) return r;
 					return r;
 				});
 			}
-			function U(e, t) {
-				return W(e, t).or(q([]));
+			function H(e, t) {
+				return U(e, t).or(K([]));
 			}
-			function W(e, t) {
-				return E(e), E(t), V(e, t.then(e).many(), function(e, t) {
+			function U(e, t) {
+				return E(e), E(t), B(e, t.then(e).many(), function(e, t) {
 					return [e].concat(t);
 				});
 			}
-			function G(e) {
+			function W(e) {
 				A(e);
 				var t = "'" + e + "'";
 				return r(function(n, r) {
@@ -724,16 +724,16 @@ var x = { save: "game" }, S = class e {
 					return a === e ? x(i, a) : S(r, t);
 				});
 			}
-			function K(e, t) {
+			function G(e, t) {
 				(function(e) {
 					if (!(e instanceof RegExp)) throw Error("not a regexp: " + e);
-					for (var t = z(e), n = 0; n < t.length; n++) {
+					for (var t = R(e), n = 0; n < t.length; n++) {
 						var r = t.charAt(n);
 						if (r !== "i" && r !== "m" && r !== "u" && r !== "s") throw Error("unsupported regexp flag \"" + r + "\": " + e);
 					}
 				})(e), arguments.length >= 2 ? O(t) : t = 0;
 				var n = function(e) {
-					return RegExp("^(?:" + e.source + ")", z(e));
+					return RegExp("^(?:" + e.source + ")", R(e));
 				}(e), i = "" + e;
 				return r(function(e, r) {
 					var a = n.exec(e.slice(r));
@@ -747,26 +747,26 @@ var x = { save: "game" }, S = class e {
 					return S(r, i);
 				});
 			}
-			function q(e) {
+			function K(e) {
 				return r(function(t, n) {
 					return x(n, e);
 				});
 			}
-			function J(e) {
+			function q(e) {
 				return r(function(t, n) {
 					return S(n, e);
 				});
 			}
-			function Y(e) {
+			function J(e) {
 				if (v(e)) return r(function(t, n) {
 					var r = e._(t, n);
 					return r.index = n, r.value = "", r;
 				});
-				if (typeof e == "string") return Y(G(e));
-				if (e instanceof RegExp) return Y(K(e));
+				if (typeof e == "string") return J(W(e));
+				if (e instanceof RegExp) return J(G(e));
 				throw Error("not a string, regexp, or parser: " + e);
 			}
-			function re(e) {
+			function Y(e) {
 				return E(e), r(function(t, n) {
 					var r = e._(t, n), i = t.slice(n, r.index);
 					return r.status ? S(n, "not \"" + i + "\"") : x(n, null);
@@ -786,7 +786,7 @@ var x = { save: "game" }, S = class e {
 				return e ? n.desc(e) : n;
 			}
 			function Z() {
-				return J("fantasy-land/empty");
+				return q("fantasy-land/empty");
 			}
 			i.parse = function(e) {
 				if (typeof e != "string" && !b(e)) throw Error(".parse must be called with a string or Buffer as its argument");
@@ -802,24 +802,24 @@ var x = { save: "game" }, S = class e {
 			}, i.tryParse = function(e) {
 				var t = this.parse(e);
 				if (t.status) return t.value;
-				var n = R(e, t), r = Error(n);
+				var n = L(e, t), r = Error(n);
 				throw r.type = "ParsimmonError", r.result = t, r;
 			}, i.assert = function(e, t) {
 				return this.chain(function(n) {
-					return e(n) ? q(n) : J(t);
+					return e(n) ? K(n) : q(t);
 				});
 			}, i.or = function(e) {
-				return H(this, e);
+				return V(this, e);
 			}, i.trim = function(e) {
 				return this.wrap(e, e);
 			}, i.wrap = function(e, t) {
-				return V(e, this, t, function(e, t) {
+				return B(e, this, t, function(e, t) {
 					return t;
 				});
 			}, i.thru = function(e) {
 				return e(this);
 			}, i.then = function(e) {
-				return E(e), B(this, e).map(function(e) {
+				return E(e), z(this, e).map(function(e) {
 					return e[1];
 				});
 			}, i.many = function() {
@@ -861,7 +861,7 @@ var x = { save: "game" }, S = class e {
 			}, i.atMost = function(e) {
 				return this.times(0, e);
 			}, i.atLeast = function(e) {
-				return V(this.times(e), this.many(), function(e, t) {
+				return B(this.times(e), this.many(), function(e, t) {
 					return e.concat(t);
 				});
 			}, i.map = function(e) {
@@ -881,11 +881,11 @@ var x = { save: "game" }, S = class e {
 			}, i.promap = function(e, t) {
 				return k(e), k(t), this.contramap(e).map(t);
 			}, i.skip = function(e) {
-				return B(this, e).map(function(e) {
+				return z(this, e).map(function(e) {
 					return e[0];
 				});
 			}, i.mark = function() {
-				return V(Q, this, Q, function(e, t, n) {
+				return B(Q, this, Q, function(e, t, n) {
 					return {
 						start: e,
 						value: t,
@@ -893,7 +893,7 @@ var x = { save: "game" }, S = class e {
 					};
 				});
 			}, i.node = function(e) {
-				return V(Q, this, Q, function(t, n, r) {
+				return B(Q, this, Q, function(t, n, r) {
 					return {
 						name: e,
 						value: n,
@@ -902,13 +902,13 @@ var x = { save: "game" }, S = class e {
 					};
 				});
 			}, i.sepBy = function(e) {
-				return U(this, e);
+				return H(this, e);
 			}, i.sepBy1 = function(e) {
-				return W(this, e);
+				return U(this, e);
 			}, i.lookahead = function(e) {
-				return this.skip(Y(e));
+				return this.skip(J(e));
 			}, i.notFollowedBy = function(e) {
-				return this.skip(re(e));
+				return this.skip(Y(e));
 			}, i.desc = function(e) {
 				y(e) || (e = [e]);
 				var t = this;
@@ -917,9 +917,9 @@ var x = { save: "game" }, S = class e {
 					return i.status || (i.expected = e), i;
 				});
 			}, i.fallback = function(e) {
-				return this.or(q(e));
+				return this.or(K(e));
 			}, i.ap = function(e) {
-				return V(e, this, function(e, t) {
+				return B(e, this, function(e, t) {
 					return e(t);
 				});
 			}, i.chain = function(e) {
@@ -928,7 +928,7 @@ var x = { save: "game" }, S = class e {
 					var i = t._(n, r);
 					return i.status ? C(e(i.value)._(n, i.index), i) : i;
 				});
-			}, i.concat = i.or, i.empty = Z, i.of = q, i["fantasy-land/ap"] = i.ap, i["fantasy-land/chain"] = i.chain, i["fantasy-land/concat"] = i.concat, i["fantasy-land/empty"] = i.empty, i["fantasy-land/of"] = i.of, i["fantasy-land/map"] = i.map;
+			}, i.concat = i.or, i.empty = Z, i.of = K, i["fantasy-land/ap"] = i.ap, i["fantasy-land/chain"] = i.chain, i["fantasy-land/concat"] = i.concat, i["fantasy-land/empty"] = i.empty, i["fantasy-land/of"] = i.of, i["fantasy-land/map"] = i.map;
 			var Q = r(function(e, t) {
 				return x(t, T(e, t));
 			}), ae = r(function(e, t) {
@@ -937,8 +937,8 @@ var x = { save: "game" }, S = class e {
 				return x(e.length, e.slice(t));
 			}), $ = r(function(e, t) {
 				return t < e.length ? S(t, "EOF") : x(t, null);
-			}), se = K(/[0-9]/).desc("a digit"), ce = K(/[0-9]*/).desc("optional digits"), le = K(/[a-z]/i).desc("a letter"), ue = K(/[a-z]*/i).desc("optional letters"), de = K(/\s*/).desc("optional whitespace"), fe = K(/\s+/).desc("whitespace"), pe = G("\r"), me = G("\n"), he = G("\r\n"), ge = H(he, me, pe).desc("newline"), _e = H(ge, $);
-			r.all = oe, r.alt = H, r.any = ae, r.cr = pe, r.createLanguage = function(e) {
+			}), se = G(/[0-9]/).desc("a digit"), ce = G(/[0-9]*/).desc("optional digits"), le = G(/[a-z]/i).desc("a letter"), ue = G(/[a-z]*/i).desc("optional letters"), de = G(/\s*/).desc("optional whitespace"), fe = G(/\s+/).desc("whitespace"), pe = W("\r"), me = W("\n"), he = W("\r\n"), ge = V(he, me, pe).desc("newline"), _e = V(ge, $);
+			r.all = oe, r.alt = V, r.any = ae, r.cr = pe, r.createLanguage = function(e) {
 				var t = {};
 				for (var n in e) ({}).hasOwnProperty.call(e, n) && function(n) {
 					t[n] = ie(function() {
@@ -948,11 +948,11 @@ var x = { save: "game" }, S = class e {
 				return t;
 			}, r.crlf = he, r.custom = function(e) {
 				return r(e(x, S));
-			}, r.digit = se, r.digits = ce, r.empty = Z, r.end = _e, r.eof = $, r.fail = J, r.formatError = R, r.index = Q, r.isParser = v, r.lazy = ie, r.letter = le, r.letters = ue, r.lf = me, r.lookahead = Y, r.makeFailure = S, r.makeSuccess = x, r.newline = ge, r.noneOf = function(e) {
+			}, r.digit = se, r.digits = ce, r.empty = Z, r.end = _e, r.eof = $, r.fail = q, r.formatError = L, r.index = Q, r.isParser = v, r.lazy = ie, r.letter = le, r.letters = ue, r.lf = me, r.lookahead = J, r.makeFailure = S, r.makeSuccess = x, r.newline = ge, r.noneOf = function(e) {
 				return X(function(t) {
 					return e.indexOf(t) < 0;
 				}).desc("none of '" + e + "'");
-			}, r.notFollowedBy = re, r.of = q, r.oneOf = function(e) {
+			}, r.notFollowedBy = Y, r.of = K, r.oneOf = function(e) {
 				for (var t = e.split(""), n = 0; n < t.length; n++) t[n] = "'" + t[n] + "'";
 				return X(function(t) {
 					return e.indexOf(t) >= 0;
@@ -961,7 +961,7 @@ var x = { save: "game" }, S = class e {
 				return X(function(n) {
 					return e <= n && n <= t;
 				}).desc(e + "-" + t);
-			}, r.regex = K, r.regexp = K, r.sepBy = U, r.sepBy1 = W, r.seq = B, r.seqMap = V, r.seqObj = function() {
+			}, r.regex = G, r.regexp = G, r.sepBy = H, r.sepBy1 = U, r.seq = z, r.seqMap = B, r.seqObj = function() {
 				for (var e, t = {}, n = 0, i = (e = arguments, Array.prototype.slice.call(e)), a = i.length, o = 0; o < a; o += 1) {
 					var s = i[o];
 					if (!v(s)) {
@@ -983,12 +983,12 @@ var x = { save: "game" }, S = class e {
 					}
 					return C(x(t, r), n);
 				});
-			}, r.string = G, r.succeed = q, r.takeWhile = function(e) {
+			}, r.string = W, r.succeed = K, r.takeWhile = function(e) {
 				return k(e), r(function(t, n) {
 					for (var r = n; r < t.length && e(D(t, r));) r++;
 					return x(r, t.slice(n, r));
 				});
-			}, r.test = X, r.whitespace = fe, r["fantasy-land/empty"] = Z, r["fantasy-land/of"] = q, r.Binary = {
+			}, r.test = X, r.whitespace = fe, r["fantasy-land/empty"] = Z, r["fantasy-land/of"] = K, r.Binary = {
 				bitSeq: d,
 				bitSeqObj: function(e) {
 					u();
@@ -1385,7 +1385,16 @@ var x = { save: "game" }, S = class e {
 	"scale_y",
 	"pivot_x",
 	"pivot_y"
-], O = {
+], O = [
+	"alpha",
+	"x",
+	"y",
+	"width",
+	"height",
+	"scale_x",
+	"scale_y",
+	"rotate"
+], k = {
 	alpha: 1,
 	left: 0,
 	top: 0,
@@ -1395,27 +1404,52 @@ var x = { save: "game" }, S = class e {
 	pivot_x: 0,
 	pivot_y: 0
 };
-function k(e, t) {
-	let n = {}, r = (t, r) => {
-		if (!r) return;
-		let i = r.startsWith("="), a = i ? r.slice(1) : r;
+function A(e, t, n = D) {
+	let r = {}, i = (t, n) => {
+		if (!n) return;
+		let i = n.startsWith("="), a = i ? n.slice(1) : n;
 		if (!a) return;
 		let [o = "0", s] = a.split(","), c = parseFloat(o);
-		if (!Number.isFinite(c)) throw `[${e}] ${t}の値が不正です：${r}`;
+		if (!Number.isFinite(c)) throw `[${e}] ${t}の値が不正です：${n}`;
 		if (s) {
-			let n = parseFloat(s);
-			if (!Number.isFinite(n)) throw `[${e}] ${t}の値が不正です：${r}`;
-			c += Math.round(Math.random() * (n - c + 1));
+			let r = parseFloat(s);
+			if (!Number.isFinite(r)) throw `[${e}] ${t}の値が不正です：${n}`;
+			c += Math.round(Math.random() * (r - c + 1));
 		}
-		n[t] = {
+		r[t] = {
 			v: c,
 			rel: i
 		};
 	};
-	for (let e of D) r(e, t[e]);
-	return t.left === void 0 && r("left", t.x), t.top === void 0 && r("top", t.y), n;
+	for (let e of n) i(e, t[e]);
+	return n.includes("left") && (t.left === void 0 && i("left", t.x), t.top === void 0 && i("top", t.y)), r;
 }
-var A = {
+var ee = /\(\s*(?:(?<x>[-=\d.]+)|(['"])(?<x2>.*?)\2)?(?:\s*,\s*(?:(?<y>[-=\d.]+)|(['"])(?<y2>.*?)\5)?(?:\s*,\s*(?:(?<o>[-=\d.]+)|(['"])(?<o2>.*?)\8))?)?|(?<json>\{[^{}]*})/g;
+function te(e, t, n = D) {
+	let r = [];
+	for (let { groups: i } of t.matchAll(ee)) {
+		let { x: t, x2: a, y: o, y2: s, o: c, o2: l, json: u } = i, d = {};
+		if (u) {
+			let t;
+			try {
+				t = JSON.parse(u);
+			} catch (t) {
+				throw `[${e}] path内のJSONが不正です：${u} ${String(t)}`;
+			}
+			for (let [e, n] of Object.entries(t)) d[e] = String(n);
+		} else {
+			let e = t ?? a;
+			e && (d.x = e);
+			let n = o ?? s;
+			n && (d.y = n);
+			let r = c ?? l;
+			r && (d.alpha = r);
+		}
+		r.push(A(e, d, n));
+	}
+	return r;
+}
+var j = {
 	Quadratic: "power1",
 	Cubic: "power2",
 	Quartic: "power3",
@@ -1426,27 +1460,28 @@ var A = {
 	Elastic: "elastic",
 	Back: "back",
 	Bounce: "bounce"
-}, ee = {
+}, ne = {
 	In: "in",
 	Out: "out",
 	InOut: "inOut"
 };
-function te(e) {
+function M(e) {
 	if (!e) return "none";
 	let [t = "", n = ""] = e.split(".");
 	if (t === "Linear") return "none";
-	let r = A[t], i = ee[n];
+	let r = j[t], i = ne[n];
 	if (!r || !i) throw `異常なease指定です：${e}`;
 	return `${r}.${i}`;
 }
-function j(e, t) {
+function N(e, t) {
+	if (t.id) return `frm\n${t.id}`;
 	let n = t.name ?? t.layer ?? "";
 	if (!n) throw `[${e}] トゥイーンが指定されていません（name／layerのどちらも無し）`;
 	return n;
 }
 //#endregion
 //#region src/ts/ScriptEngine.ts
-var ne = class e {
+var P = class e {
 	static #e = new h();
 	static parseTag(t) {
 		let [n, r] = _(t);
@@ -1464,10 +1499,10 @@ var ne = class e {
 		let a = i.hPrm, o = a.cond?.val;
 		if (o !== void 0) {
 			if (!o || o.startsWith("&")) throw "属性condは「&」が不要です";
-			let e = this.#x.parse(o), t = String(e);
+			let e = this.#S.parse(o), t = String(e);
 			if (!e || t === "null" || t === "undefined" || t === "false") return;
 		}
-		let s = this.#C.at(-1), c = Object.create(null);
+		let s = this.#w.at(-1), c = Object.create(null);
 		if (i.isKomeParam) {
 			if (!s) throw "属性「*」はマクロのみ有効です";
 			Object.assign(c, s.hArgs);
@@ -1484,11 +1519,11 @@ var ne = class e {
 				if (n === void 0 || n === "null") continue;
 				r = n;
 			}
-			if (r = this.#x.getValAmpersand(r), r !== "undefined") {
+			if (r = this.#S.getValAmpersand(r), r !== "undefined") {
 				c[e] = r;
 				continue;
 			}
-			n !== void 0 && (r = this.#x.getValAmpersand(n), r !== "undefined" && (c[e] = r));
+			n !== void 0 && (r = this.#S.getValAmpersand(n), r !== "undefined" && (c[e] = r));
 		}
 		return {
 			name: n,
@@ -1577,277 +1612,284 @@ var ne = class e {
 		}
 		return n.b_color !== void 0 && (r.b_color = n.b_color), r;
 	}
+	static #p(e, t, n) {
+		let r = t.path ? te(e, t.path, n) : void 0;
+		return {
+			...r?.length ? { aPath: r } : {},
+			...t.chain ? { chain: t.chain } : {}
+		};
+	}
 	static argPage(e, t) {
 		let n = e.page ?? t;
 		if (n === "fore" || n === "back") return n;
 		throw `属性 page【${n}】が不正です`;
 	}
-	static #p(e, t, n) {
+	static #m(e, t, n) {
 		let r = t.page ?? n;
 		if (r === "fore" || r === "back" || r === "both") return r;
 		throw `[${e}] 属性 page【${r}】が不正です`;
 	}
-	#m;
-	#h = 0;
-	#g = "mes";
-	#_ = Object.create(null);
-	#v = !1;
-	#y = Object.create(null);
-	#b = new S();
-	#x = new w(this.#b);
-	#S = [];
+	#h;
+	#g = 0;
+	#_ = "mes";
+	#v = Object.create(null);
+	#y = !1;
+	#b = Object.create(null);
+	#x = new S();
+	#S = new w(this.#x);
 	#C = [];
-	#w = Object.create(null);
+	#w = [];
 	#T = Object.create(null);
 	#E = Object.create(null);
-	#D = !1;
-	#O = Object.create(null);
+	#D = Object.create(null);
+	#O = !1;
+	#k = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.wait_tsy.stop_tsy.pause_tsy.resume_tsy.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
-	#k() {
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
+	#A() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
-		for (let e in this.#O) t[e] = !0;
+		for (let e in this.#k) t[e] = !0;
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#m = e instanceof T ? e : new T(e, t), this.#b.defBuiltin("const.sn.scriptFn", () => this.fn), this.#b.defBuiltin("const.sn.isKidoku", () => this.#D), this.#b.defBuiltin("const.sn.displayState", () => this.#A), this.#b.defBuiltin("const.Date.getDateStr", () => i()), this.#b.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#b.defBuiltin("const.sn.last_page_plain_text", () => s(this.#_[this.#g] ?? "")), this.#b.defBuiltin("const.sn.last_page_text", () => this.#_[this.#g] ?? ""), this.#b.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#b.defBuiltin("const.sn.aIfStk.length", () => this.#S.length), this.#b.defBuiltin("const.sn.vctCallStk.length", () => this.#C.length);
+		this.#h = e instanceof T ? e : new T(e, t), this.#x.defBuiltin("const.sn.scriptFn", () => this.fn), this.#x.defBuiltin("const.sn.isKidoku", () => this.#O), this.#x.defBuiltin("const.sn.displayState", () => this.#j), this.#x.defBuiltin("const.Date.getDateStr", () => i()), this.#x.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#x.defBuiltin("const.sn.last_page_plain_text", () => s(this.#v[this.#_] ?? "")), this.#x.defBuiltin("const.sn.last_page_text", () => this.#v[this.#_] ?? ""), this.#x.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#x.defBuiltin("const.sn.aIfStk.length", () => this.#C.length), this.#x.defBuiltin("const.sn.vctCallStk.length", () => this.#w.length);
 	}
-	#A = !1;
+	#j = !1;
 	setFullScr(e) {
-		this.#A = e;
+		this.#j = e;
 	}
 	switchScript(e, t = "", n = 0) {
-		if (this.#m = e, !t) {
-			this.#h = n;
+		if (this.#h = e, !t) {
+			this.#g = n;
 			return;
 		}
 		let r = e.label2idx(t);
 		if (r === void 0) throw `ラベル【${t}】がスクリプト【${e.fn}】に見つかりません`;
-		this.#h = r;
+		this.#g = r;
 	}
 	getVal(e) {
-		return this.#b.get(e);
+		return this.#x.get(e);
 	}
 	setValNochk(e, t) {
-		this.#b.set(e, t);
+		this.#x.set(e, t);
 	}
 	defBuiltin(e, t) {
-		this.#b.defBuiltin(e, t);
+		this.#x.defBuiltin(e, t);
 	}
 	get fn() {
-		return this.#m.fn;
+		return this.#h.fn;
 	}
 	get idx() {
-		return this.#h;
+		return this.#g;
 	}
 	get atEnd() {
-		return this.#h >= this.#m.len;
+		return this.#g >= this.#h.len;
 	}
 	jumpToLabel(e) {
-		let t = this.#m.label2idx(e);
+		let t = this.#h.label2idx(e);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#h = t;
+		this.#g = t;
 	}
 	callToLabel(e) {
-		let t = this.#m.label2idx(e);
+		let t = this.#h.label2idx(e);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#R(--this.#h), this.#h = t;
+		this.#z(--this.#g), this.#g = t;
 	}
 	callToScript(e, t = "") {
-		this.#R(--this.#h), this.switchScript(e, t);
+		this.#z(--this.#g), this.switchScript(e, t);
 	}
 	nowScrIdx() {
-		let e = this.#C[0];
+		let e = this.#w[0];
 		return e ? {
 			fn: e.fn,
 			idx: e.returnIdx
 		} : {
 			fn: this.fn,
-			idx: this.#h
+			idx: this.#g
 		};
 	}
 	recordPlace() {
 		let { fn: e, idx: t } = this.nowScrIdx();
-		this.#b.set("save:const.sn.scriptFn", e), this.#b.set("save:const.sn.scriptIdx", t);
+		this.#x.set("save:const.sn.scriptFn", e), this.#x.set("save:const.sn.scriptIdx", t);
 	}
 	nowMarkPart() {
 		return {
-			hSave: this.#b.cloneNs("game"),
-			aIfStk: this.#S.slice(this.#C.length)
+			hSave: this.#x.cloneNs("game"),
+			aIfStk: this.#C.slice(this.#w.length)
 		};
 	}
 	restoreMarkPart(e) {
-		this.#b.setNs("game", e.hSave), this.#b.setMp({}), this.#S.length = 0, this.#S.push(...e.aIfStk), this.#C.length = 0, this.clearEvent();
+		this.#x.setNs("game", e.hSave), this.#x.setMp({}), this.#C.length = 0, this.#C.push(...e.aIfStk), this.#w.length = 0, this.clearEvent();
 	}
 	cloneSys() {
-		return this.#b.cloneNs("sys");
+		return this.#x.cloneNs("sys");
 	}
 	setSys(e) {
-		this.#b.setNs("sys", e);
+		this.#x.setNs("sys", e);
 	}
 	get isKidoku() {
-		return this.#D;
-	}
-	#j() {
-		let e = this.#E[this.fn] ??= new E();
-		if (this.#C.length > 0) {
-			e.record(this.#h);
-			return;
-		}
-		this.#D = e.search(this.#h), !this.#D && e.record(this.#h);
+		return this.#O;
 	}
 	#M() {
-		this.#E[this.fn]?.erase(this.#h), this.#D = !1;
+		let e = this.#D[this.fn] ??= new E();
+		if (this.#w.length > 0) {
+			e.record(this.#g);
+			return;
+		}
+		this.#O = e.search(this.#g), !this.#O && e.record(this.#g);
+	}
+	#N() {
+		this.#D[this.fn]?.erase(this.#g), this.#O = !1;
 	}
 	getKidoku() {
 		let e = {};
-		for (let [t, n] of Object.entries(this.#E)) e[t] = n.val();
+		for (let [t, n] of Object.entries(this.#D)) e[t] = n.val();
 		return e;
 	}
 	setKidoku(e) {
-		for (let e in this.#E) delete this.#E[e];
-		this.#D = !1;
-		for (let [t, n] of Object.entries(e)) this.#E[t] = E.from(n);
+		for (let e in this.#D) delete this.#D[e];
+		this.#O = !1;
+		for (let [t, n] of Object.entries(e)) this.#D[t] = E.from(n);
 	}
 	clearKidoku() {
-		for (let e of Object.values(this.#E)) e.clear();
-		this.#D = !1;
+		for (let e of Object.values(this.#D)) e.clear();
+		this.#O = !1;
 	}
 	get autoEnabled() {
-		return this.#N("sn.auto.enabled");
+		return this.#P("sn.auto.enabled");
 	}
 	get skipEnabled() {
-		return this.#N("sn.skip.enabled");
+		return this.#P("sn.skip.enabled");
 	}
 	get skipAll() {
-		return this.#N("sn.skip.all");
-	}
-	#N(e) {
-		return this.#b.get(`tmp:${e}`) === !0;
-	}
-	cancelAutoSkip() {
-		this.#b.set("tmp:sn.skip.enabled", !1), this.#b.set("tmp:sn.skip.all", !1), this.#b.set("tmp:sn.auto.enabled", !1);
-	}
-	get isNextKidoku() {
-		let e = this.fn, t = this.#h, n = this.#m.len, r = this.#C.at(-1);
-		return r && (e = r.fn, t = r.returnIdx, n = r.scr.len), t >= n ? !1 : this.#E[e]?.search(t) ?? !1;
+		return this.#P("sn.skip.all");
 	}
 	#P(e) {
+		return this.#x.get(`tmp:${e}`) === !0;
+	}
+	cancelAutoSkip() {
+		this.#x.set("tmp:sn.skip.enabled", !1), this.#x.set("tmp:sn.skip.all", !1), this.#x.set("tmp:sn.auto.enabled", !1);
+	}
+	get isNextKidoku() {
+		let e = this.fn, t = this.#g, n = this.#h.len, r = this.#w.at(-1);
+		return r && (e = r.fn, t = r.returnIdx, n = r.scr.len), t >= n ? !1 : this.#D[e]?.search(t) ?? !1;
+	}
+	#F(e) {
 		if (e === "s" || e === "waitclick") {
 			this.cancelAutoSkip();
 			return;
 		}
 		if (this.autoEnabled) return {
 			mode: "auto",
-			msec: this.#I(e === "p")
+			msec: this.#L(e === "p")
 		};
 		if (this.skipEnabled) {
 			if (!this.skipAll && !this.isNextKidoku) {
 				this.cancelAutoSkip();
 				return;
 			}
-			return e === "p" && this.#F() !== "s" ? void 0 : {
+			return e === "p" && this.#I() !== "s" ? void 0 : {
 				mode: "skip",
 				msec: 0
 			};
 		}
 	}
-	#F() {
-		let e = this.#b.get("sys:sn.skip.mode");
+	#I() {
+		let e = this.#x.get("sys:sn.skip.mode");
 		return e == null ? "s" : String(e);
 	}
-	#I(e) {
-		let t = e ? "sn.auto.msecPageWait" : "sn.auto.msecLineWait", n = Number(this.#b.get(`sys:${t}${this.isKidoku ? "_Kidoku" : ""}`));
+	#L(e) {
+		let t = e ? "sn.auto.msecPageWait" : "sn.auto.msecLineWait", n = Number(this.#x.get(`sys:${t}${this.isKidoku ? "_Kidoku" : ""}`));
 		return Number.isFinite(n) && n > 0 ? n : e ? 3500 : 500;
 	}
 	getEvent(e) {
 		let t = e.toLowerCase();
-		return this.#w[t] ?? this.#T[t];
+		return this.#T[t] ?? this.#E[t];
 	}
 	clearEvent(e = !1) {
 		if (!e) {
-			this.#w = Object.create(null);
+			this.#T = Object.create(null);
 			return;
 		}
-		for (let e in this.#T) delete this.#T[e];
+		for (let e in this.#E) delete this.#E[e];
 	}
-	#L() {
-		let e = this.#w;
-		return this.#w = Object.create(null), e;
+	#R() {
+		let e = this.#T;
+		return this.#T = Object.create(null), e;
 	}
 	beginEvent(e) {
 		let t = this.getEvent(e);
-		if (t) return this.#b.set("tmp:sn.eventArg", t.arg), this.#b.set("tmp:sn.eventLabel", t.label), t.call || this.clearEvent(), t;
+		if (t) return this.#x.set("tmp:sn.eventArg", t.arg), this.#x.set("tmp:sn.eventLabel", t.label), t.call || this.clearEvent(), t;
 	}
-	#R(e, t = !0, n = {}) {
-		this.#C.push({
+	#z(e, t = !0, n = {}) {
+		this.#w.push({
 			fn: this.fn,
 			returnIdx: e,
-			lenIfStk: this.#S.length,
-			hMp: this.#b.cloneMp(),
+			lenIfStk: this.#C.length,
+			hMp: this.#x.cloneMp(),
 			hArgs: n,
-			scr: this.#m,
-			...t ? { hEvt: this.#L() } : {}
-		}), this.#S.push(-1);
+			scr: this.#h,
+			...t ? { hEvt: this.#R() } : {}
+		}), this.#C.push(-1);
 	}
 	step() {
 		let e = [];
-		for (this.#v && (this.#v = !1, this.#_[this.#g] = "", e.push({
+		for (this.#y && (this.#y = !1, this.#v[this.#_] = "", e.push({
 			t: "chgStr",
-			nm: this.#g,
+			nm: this.#_,
 			page: "fore",
 			str: ""
-		})); this.#h < this.#m.len;) {
-			this.#j();
-			let t = this.#m.aToken[this.#h++], n = t.charCodeAt(0);
+		})); this.#g < this.#h.len;) {
+			this.#M();
+			let t = this.#h.aToken[this.#g++], n = t.charCodeAt(0);
 			if (n === 9 || n === 10) continue;
 			if (n === 91) {
 				let n = this.#t(t);
 				if (!n) continue;
 				let { name: r, args: i } = n;
-				if (this.#B(r, i, e) === "stop") return e;
+				if (this.#V(r, i, e) === "stop") return e;
 				continue;
 			}
-			let r = t, i = this.#m.grm.ce;
+			let r = t, i = this.#h.grm.ce;
 			if (i && t.length > 1 && t.startsWith(i)) r = t.slice(1);
 			else if (n === 38) {
 				if (!t.endsWith("&")) {
-					this.#z(t);
+					this.#B(t);
 					continue;
 				}
 				if (t.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
-				let e = this.#x.parse(t.slice(1, -1));
+				let e = this.#S.parse(t.slice(1, -1));
 				r = e == null ? "" : String(e);
 			} else if (n === 59) continue;
 			else if (n === 42 && t.length > 1) continue;
-			this.#q(e, r);
+			this.#J(e, r);
 		}
 		return e;
 	}
-	#z(e) {
+	#B(e) {
 		let { name: t, text: n, cast: r } = v(e.slice(1));
-		this.#b.set(this.#x.getValAmpersand(t.trim()), this.#x.parse(n), r ?? "");
+		this.#x.set(this.#S.getValAmpersand(t.trim()), this.#S.parse(n), r ?? "");
 	}
-	#B(n, i, a) {
-		let o = this.#m.len;
+	#V(n, i, a) {
+		let o = this.#h.len;
 		switch (n) {
 			case "add_lay": {
 				let e = i.layer ?? i.nm ?? "";
 				if (!e) throw "[add_lay] layerは必須です（試作仕様）";
 				let t = (i.class ?? "txt").toLowerCase() === "grp" ? "grp" : "txt";
-				return this.#_[e] = "", a.push({
+				return this.#v[e] = "", a.push({
 					t: "addLay",
 					cls: t,
 					nm: e
 				}), "skip";
 			}
-			case "current": return this.#g = i.layer ?? i.nm ?? this.#g, this.#b.set("save:const.sn.mesLayer", this.#g), "skip";
+			case "current": return this.#_ = i.layer ?? i.nm ?? this.#_, this.#x.set("save:const.sn.mesLayer", this.#_), "skip";
 			case "add_face": {
 				let t = i.name ?? "";
 				if (!t) throw "[add_face] nameは必須です（試作仕様）";
-				if (this.#y[t]) throw `[add_face] 同一のname（${t}）に対して複数の画像を割り当てられません`;
-				return this.#y[t] = {
+				if (this.#b[t]) throw `[add_face] 同一のname（${t}）に対して複数の画像を割り当てられません`;
+				return this.#b[t] = {
 					fn: i.fn || t,
 					dx: Number(i.dx || "0"),
 					dy: Number(i.dy || "0"),
@@ -1860,7 +1902,7 @@ var ne = class e {
 					let e = [];
 					if (i.face) for (let t of i.face.split(",")) {
 						if (!t) throw "[lay] face属性に空要素が含まれています";
-						let n = this.#y[t];
+						let n = this.#b[t];
 						if (!n) throw `[lay] face【${t}】は[add_face]で未定義です`;
 						e.push(n);
 					}
@@ -1929,19 +1971,19 @@ var ne = class e {
 			case "add_filter": return a.push({
 				t: "addFilter",
 				aLayNm: e.#a(i.layer),
-				page: e.#p("add_filter", i, "fore"),
+				page: e.#m("add_filter", i, "fore"),
 				flt: t(i),
 				replace: !1
 			}), "skip";
 			case "clear_filter": return a.push({
 				t: "clearFilter",
 				aLayNm: e.#a(i.layer),
-				page: e.#p("clear_filter", i, "fore")
+				page: e.#m("clear_filter", i, "fore")
 			}), "skip";
 			case "enable_filter": return a.push({
 				t: "enableFilter",
 				aLayNm: e.#a(i.layer),
-				page: e.#p("enable_filter", i, "fore"),
+				page: e.#m("enable_filter", i, "fore"),
 				index: e.#r("enable_filter", "index", i.index, 0),
 				enabled: (i.enabled ?? "true") !== "false"
 			}), "skip";
@@ -1950,8 +1992,8 @@ var ne = class e {
 				if (t !== "fore" && t !== "back" && t !== "both") throw `属性 page【${t}】が不正です`;
 				let n = e.#a(i.layer);
 				if (i.layer !== void 0 && n === null) throw "[clear_lay] layer属性が空です";
-				if (t !== "back") if (n) for (let e of n) this.#_[e] = "";
-				else for (let e of Object.keys(this.#_)) this.#_[e] = "";
+				if (t !== "back") if (n) for (let e of n) this.#v[e] = "";
+				else for (let e of Object.keys(this.#v)) this.#v[e] = "";
 				return a.push({
 					t: "clearLay",
 					aLayNm: n,
@@ -1979,96 +2021,115 @@ var ne = class e {
 				let n = this.skipEnabled, r = n ? 0 : e.#n("tsy", "time", i.time ?? ""), o = n ? 0 : e.#r("tsy", "delay", i.delay, 0), s = e.#r("tsy", "repeat", i.repeat, 1);
 				return a.push({
 					t: "tsy",
-					tw_nm: j("tsy", i),
+					tw_nm: N("tsy", i),
 					nm: t,
 					page: e.argPage(i, "fore"),
 					msec: r,
 					delay: o,
-					ease: te(i.ease),
+					ease: M(i.ease),
 					repeat: s > 0 ? s - 1 : -1,
 					yoyo: (i.yoyo ?? "false") !== "false",
-					hTo: k("tsy", i)
+					hTo: A("tsy", i),
+					...e.#p("tsy", i)
+				}), "skip";
+			}
+			case "tsy_frame": {
+				let { id: t } = i;
+				if (!t) throw "[tsy_frame] idは必須です";
+				this.#H("tsy_frame", t);
+				let n = this.skipEnabled, r = e.#r("tsy_frame", "repeat", i.repeat, 1);
+				return a.push({
+					t: "tsyFrame",
+					tw_nm: N("tsy_frame", i),
+					id: t,
+					msec: n ? 0 : e.#n("tsy_frame", "time", i.time ?? ""),
+					delay: n ? 0 : e.#r("tsy_frame", "delay", i.delay, 0),
+					ease: M(i.ease),
+					repeat: r > 0 ? r - 1 : -1,
+					yoyo: (i.yoyo ?? "false") !== "false",
+					hTo: A("tsy_frame", i, O),
+					...e.#p("tsy_frame", i, O)
 				}), "skip";
 			}
 			case "wait_tsy": return a.push({
 				t: "waitTsy",
-				tw_nm: j("wait_tsy", i),
+				tw_nm: N("wait_tsy", i),
 				canskip: (i.canskip ?? "true") !== "false"
 			}), "stop";
 			case "stop_tsy": return a.push({
 				t: "stopTsy",
-				tw_nm: j("stop_tsy", i)
+				tw_nm: N("stop_tsy", i)
 			}), "skip";
 			case "pause_tsy": return a.push({
 				t: "pauseTsy",
-				tw_nm: j("pause_tsy", i),
+				tw_nm: N("pause_tsy", i),
 				paused: !0
 			}), "skip";
 			case "resume_tsy": return a.push({
 				t: "pauseTsy",
-				tw_nm: j("resume_tsy", i),
+				tw_nm: N("resume_tsy", i),
 				paused: !1
 			}), "skip";
 			case "let":
 				if (i.text === void 0) throw `[let] textは必須です（name:${i.name ?? ""}）`;
-				return this.#H("let", i, i.text), "skip";
+				return this.#U("let", i, i.text), "skip";
 			case "let_abs": {
 				let t = e.#r("let_abs", "text", i.text, 0);
-				return this.#H("let_abs", i, String(t < 0 ? -t : t)), "skip";
+				return this.#U("let_abs", i, String(t < 0 ? -t : t)), "skip";
 			}
 			case "let_round": {
 				let t = e.#r("let_round", "text", i.text, 0);
-				return this.#H("let_round", i, String(Math.round(t))), "skip";
+				return this.#U("let_round", i, String(Math.round(t))), "skip";
 			}
-			case "let_length": return this.#H("let_length", i, String((i.text ?? "").length)), "skip";
+			case "let_length": return this.#U("let_length", i, String((i.text ?? "").length)), "skip";
 			case "let_char_at": {
 				let t = e.#r("let_char_at", "pos", i.pos, 0);
-				return this.#H("let_char_at", i, (i.text ?? "").charAt(t)), "skip";
+				return this.#U("let_char_at", i, (i.text ?? "").charAt(t)), "skip";
 			}
 			case "let_index_of": {
 				let { val: t } = i;
 				if (!t) throw "[let_index_of] valは必須です";
 				let n = e.#r("let_index_of", "start", i.start, 0);
-				return this.#H("let_index_of", i, String((i.text ?? "").indexOf(t, n))), "skip";
+				return this.#U("let_index_of", i, String((i.text ?? "").indexOf(t, n))), "skip";
 			}
 			case "let_substr": {
 				let t = e.#r("let_substr", "pos", i.pos, 0), n = i.text ?? "";
-				return this.#H("let_substr", i, i.len === "all" ? n.slice(t) : n.slice(t, t + r(e.#r("let_substr", "len", i.len, 1)))), "skip";
+				return this.#U("let_substr", i, i.len === "all" ? n.slice(t) : n.slice(t, t + r(e.#r("let_substr", "len", i.len, 1)))), "skip";
 			}
-			case "let_replace": return this.#H("let_replace", i, (i.text ?? "").replace(e.#i("let_replace", i), String(i.val))), "skip";
-			case "let_search": return this.#H("let_search", i, String((i.text ?? "").search(e.#i("let_search", i)))), "skip";
+			case "let_replace": return this.#U("let_replace", i, (i.text ?? "").replace(e.#i("let_replace", i), String(i.val))), "skip";
+			case "let_search": return this.#U("let_search", i, String((i.text ?? "").search(e.#i("let_search", i)))), "skip";
 			case "let_ml": {
 				let e = i.name ?? "";
 				if (!e) throw "[let_ml] nameは必須です";
 				let t = "";
-				for (; this.#h < o && (t = this.#m.aToken[this.#h], t === ""); ++this.#h);
-				if (this.#m.grm.testTagEndLetml(t)) return this.#b.set(e, "", "str"), ++this.#h, "skip";
-				if (!this.#m.grm.testTagEndLetml(this.#m.aToken[this.#h + 1] ?? "")) throw `[let_ml] 変数【${e}】の終端・[endlet_ml]がありません`;
-				return this.#b.set(e, t, "str"), this.#h += 2, "skip";
+				for (; this.#g < o && (t = this.#h.aToken[this.#g], t === ""); ++this.#g);
+				if (this.#h.grm.testTagEndLetml(t)) return this.#x.set(e, "", "str"), ++this.#g, "skip";
+				if (!this.#h.grm.testTagEndLetml(this.#h.aToken[this.#g + 1] ?? "")) throw `[let_ml] 変数【${e}】の終端・[endlet_ml]がありません`;
+				return this.#x.set(e, t, "str"), this.#g += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
-			case "if": return this.#U(i), "skip";
+			case "if": return this.#W(i), "skip";
 			case "elsif":
 			case "else":
-			case "endif": return this.#W(), "skip";
-			case "r": return this.#q(a, "\n"), "skip";
-			case "er": return this.#_[this.#g] = "", a.push({
+			case "endif": return this.#G(), "skip";
+			case "r": return this.#J(a, "\n"), "skip";
+			case "er": return this.#v[this.#_] = "", a.push({
 				t: "chgStr",
-				nm: this.#g,
+				nm: this.#_,
 				page: "both",
 				str: ""
 			}), "skip";
-			case "span": return this.#q(a, e.#K("span", i)), "skip";
+			case "span": return this.#J(a, e.#q("span", i)), "skip";
 			case "link":
 				if (!i.url && !i.label && !i.fn) throw "[link] fn・label・urlのいずれかは必須です";
-				return this.#q(a, e.#K("link", i)), "skip";
-			case "endlink": return this.#q(a, e.#K("endlink", {})), "skip";
+				return this.#J(a, e.#q("link", i)), "skip";
+			case "endlink": return this.#J(a, e.#q("endlink", {})), "skip";
 			case "graph":
 				if (!i.pic) throw "[graph] picは必須です";
-				return this.#q(a, e.#K("grp", i)), "skip";
+				return this.#J(a, e.#q("grp", i)), "skip";
 			case "tcy":
 				if (!i.t) throw "[tcy] tは必須です";
-				return this.#q(a, e.#K("tcy", i)), "skip";
+				return this.#J(a, e.#q("tcy", i)), "skip";
 			case "ruby2":
 			case "ch": {
 				if (n === "ruby2") {
@@ -2078,17 +2139,17 @@ var ne = class e {
 				}
 				let { text: t } = i;
 				if (!t) throw `[${n}] textは必須です`;
-				return this.#q(a, e.#K("add", {
+				return this.#J(a, e.#q("add", {
 					...i,
 					text: void 0
-				}) + t.replaceAll("[r]", "\n") + e.#K("add_close", {})), "skip";
+				}) + t.replaceAll("[r]", "\n") + e.#q("add_close", {})), "skip";
 			}
 			case "trace": return a.push({
 				t: "trace",
 				text: i.text ?? ""
 			}), "skip";
 			case "jump": {
-				i.count === "false" && this.#M();
+				i.count === "false" && this.#N();
 				let e = i.label ?? "", t = i.fn ?? "";
 				if (!e && !t) throw "[jump] fnまたはlabelは必須です";
 				if (t && t !== this.fn) return a.push({
@@ -2097,44 +2158,44 @@ var ne = class e {
 					label: e,
 					idx: 0
 				}), "stop";
-				let n = this.#m.label2idx(e);
+				let n = this.#h.label2idx(e);
 				if (n === void 0) throw `[jump] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
-				return this.#h = n, "skip";
+				return this.#g = n, "skip";
 			}
 			case "call": {
-				i.count !== "true" && this.#M();
+				i.count !== "true" && this.#N();
 				let e = i.label ?? "", t = i.fn ?? "";
 				if (!e && !t) throw "[call] fnまたはlabelは必須です";
-				if (t && t !== this.fn) return this.#R(this.#h, !0, i), a.push({
+				if (t && t !== this.fn) return this.#z(this.#g, !0, i), a.push({
 					t: "loadScript",
 					fn: t,
 					label: e,
 					idx: 0
 				}), "stop";
-				let n = this.#m.label2idx(e);
+				let n = this.#h.label2idx(e);
 				if (n === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
-				return this.#R(this.#h, !0, i), this.#h = n, "skip";
+				return this.#z(this.#g, !0, i), this.#g = n, "skip";
 			}
-			case "return": return this.#G(a, i);
+			case "return": return this.#K(a, i);
 			case "macro": {
 				let t = i.name ?? "";
 				if (!t) throw "[macro] nameは必須です（試作仕様）";
 				if (e.RESERVED_TAGS.has(t)) throw `[${t}]はタグ名のため、マクロ名として使用できません`;
 				if (e.REG_NG4MAC_NM.test(t)) throw `[${t}]はマクロ名として異常です`;
-				if (t in this.#O) throw `[macro] マクロ【${t}】は既に定義済みです`;
-				this.#O[t] = {
+				if (t in this.#k) throw `[macro] マクロ【${t}】は既に定義済みです`;
+				this.#k[t] = {
 					fn: this.fn,
-					idx: this.#h
+					idx: this.#g
 				};
 				let n = !1, r = 0, a = !1;
-				for (; this.#h < o; ++this.#h) {
-					let t = this.#m.aToken[this.#h];
+				for (; this.#g < o; ++this.#g) {
+					let t = this.#h.aToken[this.#g];
 					if (a) {
-						this.#m.grm.testTagEndLetml(t) && (a = !1);
+						this.#h.grm.testTagEndLetml(t) && (a = !1);
 						continue;
 					}
 					if (t.charCodeAt(0) !== 91) continue;
-					if (this.#m.grm.testTagLetml(t)) {
+					if (this.#h.grm.testTagLetml(t)) {
 						a = !0;
 						continue;
 					}
@@ -2148,7 +2209,7 @@ var ne = class e {
 							--r;
 							continue;
 						}
-						++this.#h, n = !0;
+						++this.#g, n = !0;
 						break;
 					}
 				}
@@ -2156,10 +2217,10 @@ var ne = class e {
 				return "skip";
 			}
 			case "char2macro":
-			case "bracket2macro": return this.#m.defC2M(n, i, this.#k(), this.#h), "skip";
-			case "endmacro": return this.#G(a);
+			case "bracket2macro": return this.#h.defC2M(n, i, this.#A(), this.#g), "skip";
+			case "endmacro": return this.#K(a);
 			case "button": {
-				let t = i.layer || this.#g;
+				let t = i.layer || this.#_;
 				if (!t) throw "[button] layerは必須です（試作仕様）";
 				let n = i.label ?? "", r = i.fn ?? "";
 				if (!n && !r) throw "[button] fnまたはlabelは必須です";
@@ -2224,8 +2285,8 @@ var ne = class e {
 				...i.b_color === void 0 ? {} : { b_color: e.#n("snapshot", "b_color", i.b_color) }
 			}), "stop";
 			case "clear_text": {
-				let t = i.layer || this.#g, n = e.argPage(i, "fore");
-				return this.#_[t] = "", a.push({
+				let t = i.layer || this.#_, n = e.argPage(i, "fore");
+				return this.#v[t] = "", a.push({
 					t: "chgStr",
 					nm: t,
 					page: n,
@@ -2234,20 +2295,20 @@ var ne = class e {
 			}
 			case "dump_val": return a.push({
 				t: "trace",
-				text: `[dump_val] ${JSON.stringify(this.#b.dump())}`
+				text: `[dump_val] ${JSON.stringify(this.#x.dump())}`
 			}), "skip";
 			case "dump_stack": return a.push({
 				t: "trace",
 				text: `[dump_stack] ${JSON.stringify({
 					now: {
 						fn: this.fn,
-						idx: this.#h
+						idx: this.#g
 					},
-					aCallStk: this.#C.map((e) => ({
+					aCallStk: this.#w.map((e) => ({
 						fn: e.fn,
 						returnIdx: e.returnIdx
 					})),
-					aIfStk: [...this.#S]
+					aIfStk: [...this.#C]
 				})}`
 			}), "skip";
 			case "dump_lay": return a.push({
@@ -2255,11 +2316,11 @@ var ne = class e {
 				aLayNm: e.#a(i.layer)
 			}), "skip";
 			case "pop_stack":
-				if ((i.clear ?? "false") !== "false") this.#C.length = 0;
-				else if (!this.#C.pop()) throw "[pop_stack] スタックが空です";
-				return this.#S.length = 0, this.#S.push(-1), this.#b.setMp({}), "skip";
-			case "clearvar": return this.#b.clearGame(), "skip";
-			case "clearsysvar": return this.#b.clearSys(), this.clearKidoku(), "skip";
+				if ((i.clear ?? "false") !== "false") this.#w.length = 0;
+				else if (!this.#w.pop()) throw "[pop_stack] スタックが空です";
+				return this.#C.length = 0, this.#C.push(-1), this.#x.setMp({}), "skip";
+			case "clearvar": return this.#x.clearGame(), "skip";
+			case "clearsysvar": return this.#x.clearSys(), this.clearKidoku(), "skip";
 			case "record_place": return this.recordPlace(), a.push({ t: "recordPlace" }), "skip";
 			case "save": {
 				if (i.place === void 0) throw "[save] placeは必須です";
@@ -2272,8 +2333,8 @@ var ne = class e {
 					place: t,
 					json: n
 				});
-				let r = Number(this.#b.get("sys:const.sn.save.place"));
-				return t === r && this.#b.set("sys:const.sn.save.place", r + 1), "skip";
+				let r = Number(this.#x.get("sys:const.sn.save.place"));
+				return t === r && this.#x.set("sys:const.sn.save.place", r + 1), "skip";
 			}
 			case "load":
 				if ("fn" in i != "label" in i) throw "[load] fnとlabelはセットで指定して下さい";
@@ -2301,7 +2362,7 @@ var ne = class e {
 			case "event": {
 				let e = i.key ?? "", t = e.toLowerCase();
 				if (!t) throw "[event] keyは必須です";
-				let n = t.startsWith("dom="), r = i.global === "true" ? this.#T : this.#w;
+				let n = t.startsWith("dom="), r = i.global === "true" ? this.#E : this.#T;
 				if (i.del === "true") {
 					if (i.fn || i.label || i.call) throw "[event] fn/label/callとdelは同時指定できません";
 					return delete r[t], n && a.push({
@@ -2351,7 +2412,7 @@ var ne = class e {
 				let { id: t, src: n } = i;
 				if (!t) throw "[add_frame] idは必須です";
 				if (!n) throw "[add_frame] srcは必須です";
-				if (this.#b.get(`const.sn.frm.${t}`)) throw `[add_frame] frame【${t}】はすでにあります`;
+				if (this.#x.get(`const.sn.frm.${t}`)) throw `[add_frame] frame【${t}】はすでにあります`;
 				return a.push({
 					t: "addFrame",
 					id: t,
@@ -2362,7 +2423,7 @@ var ne = class e {
 			case "frame": {
 				let { id: t } = i;
 				if (!t) throw "[frame] idは必須です";
-				this.#V("frame", t);
+				this.#H("frame", t);
 				let n = (i.float ?? "false") === "false" ? i.index === void 0 ? i.dive ? { mode: "dive" } : void 0 : {
 					mode: "index",
 					index: e.#n("frame", "index", i.index)
@@ -2380,7 +2441,7 @@ var ne = class e {
 				if (!e) throw "[set_frame] idは必須です";
 				if (!t) throw "[set_frame] var_nameは必須です";
 				if (!n) throw "[set_frame] textは必須です";
-				return this.#V("set_frame", e), this.#b.set(`const.sn.frm.${e}.${t}`, n), a.push({
+				return this.#H("set_frame", e), this.#x.set(`const.sn.frm.${e}.${t}`, n), a.push({
 					t: "setFrame",
 					id: e,
 					var_name: t,
@@ -2391,7 +2452,7 @@ var ne = class e {
 				let { id: e, var_name: t } = i;
 				if (!e) throw "[let_frame] idは必須です";
 				if (!t) throw "[let_frame] var_nameは必須です";
-				return this.#V("let_frame", e), a.push({
+				return this.#H("let_frame", e), a.push({
 					t: "letFrame",
 					id: e,
 					var_name: t,
@@ -2400,8 +2461,8 @@ var ne = class e {
 			}
 			case "clear_event": return this.clearEvent(i.global === "true"), "skip";
 			case "enable_event": {
-				let e = i.layer || this.#g, t = (i.enabled ?? "true") !== "false";
-				return this.#b.set(`game:const.sn.layer.${e}.enabled`, t), a.push({
+				let e = i.layer || this.#_, t = (i.enabled ?? "true") !== "false";
+				return this.#x.set(`game:const.sn.layer.${e}.enabled`, t), a.push({
 					t: "enableEvent",
 					nm: e,
 					enabled: t
@@ -2419,23 +2480,23 @@ var ne = class e {
 			case "p":
 			case "s":
 			case "waitclick": {
-				n === "p" && (this.#v = !0);
-				let e = this.#P(n);
+				n === "p" && (this.#y = !0);
+				let e = this.#F(n);
 				return a.push({
 					t: "stop",
 					kind: n,
-					key: `${this.fn}:${String(this.#h)}`,
-					nm: this.#g,
+					key: `${this.fn}:${String(this.#g)}`,
+					nm: this.#_,
 					...e ? { resume: e } : {}
 				}), "stop";
 			}
 			default: {
-				let e = this.#O[n];
-				return e === void 0 ? "skip" : (this.#R(this.#h, !1, i), this.#b.setMp({
+				let e = this.#k[n];
+				return e === void 0 ? "skip" : (this.#z(this.#g, !1, i), this.#x.setMp({
 					...i,
 					"const.sn.me_call_scriptFn": this.fn,
 					"const.sn.macro": JSON.stringify({ name: n })
-				}), e.fn === this.fn ? (this.#h = e.idx, "skip") : (a.push({
+				}), e.fn === this.fn ? (this.#g = e.idx, "skip") : (a.push({
 					t: "loadScript",
 					fn: e.fn,
 					label: "",
@@ -2444,26 +2505,26 @@ var ne = class e {
 			}
 		}
 	}
-	#V(e, t) {
-		if (!this.#b.get(`const.sn.frm.${t}`)) throw `[${e}] frame【${t}】が読み込まれていません`;
+	#H(e, t) {
+		if (!this.#x.get(`const.sn.frm.${t}`)) throw `[${e}] frame【${t}】が読み込まれていません`;
 	}
-	#H(e, t, n) {
+	#U(e, t, n) {
 		let r = t.name ?? "";
 		if (!r) throw `[${e}] nameは必須です`;
-		this.#b.set(r, n, t.cast ?? "");
+		this.#x.set(r, n, t.cast ?? "");
 	}
-	#U(t) {
+	#W(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
-		let r = this.#x.evalBool(n) ? this.#h : -1, i = 0, a = !1, o = this.#m.len;
-		for (; this.#h < o; ++this.#h) {
-			let t = this.#m.aToken[this.#h];
+		let r = this.#S.evalBool(n) ? this.#g : -1, i = 0, a = !1, o = this.#h.len;
+		for (; this.#g < o; ++this.#g) {
+			let t = this.#h.aToken[this.#g];
 			if (a) {
-				this.#m.grm.testTagEndLetml(t) && (a = !1);
+				this.#h.grm.testTagEndLetml(t) && (a = !1);
 				continue;
 			}
 			if (t.charCodeAt(0) !== 91) continue;
-			if (this.#m.grm.testTagLetml(t)) {
+			if (this.#h.grm.testTagLetml(t)) {
 				a = !0;
 				continue;
 			}
@@ -2476,34 +2537,34 @@ var ne = class e {
 					if (i > 0 || r > -1) continue;
 					let e = o.exp ?? "";
 					if (!e) throw "[elsif] expは必須です（試作仕様）";
-					this.#x.evalBool(e) && (r = this.#h + 1);
+					this.#S.evalBool(e) && (r = this.#g + 1);
 					continue;
 				}
 				case "else":
 					if (i > 0) continue;
-					r === -1 && (r = this.#h + 1);
+					r === -1 && (r = this.#g + 1);
 					continue;
 				case "endif":
 					if (i > 0) {
 						--i;
 						continue;
 					}
-					r === -1 ? ++this.#h : (this.#S.push(this.#h + 1), this.#h = r);
+					r === -1 ? ++this.#g : (this.#C.push(this.#g + 1), this.#g = r);
 					return;
 				default: continue;
 			}
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#W() {
-		let e = this.#S.pop();
+	#G() {
+		let e = this.#C.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
-		this.#h = e;
+		this.#g = e;
 	}
-	#G(e, t = {}) {
-		let n = this.#C.pop();
+	#K(e, t = {}) {
+		let n = this.#w.pop();
 		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
-		this.#S.length = n.lenIfStk, this.#b.setMp(n.hMp), n.hEvt && (this.#w = n.hEvt);
+		this.#C.length = n.lenIfStk, this.#x.setMp(n.hMp), n.hEvt && (this.#T = n.hEvt);
 		let r = t.label ?? "", i = t.fn ?? "";
 		if (i || r) {
 			if (i && i !== this.fn) return e.push({
@@ -2512,30 +2573,30 @@ var ne = class e {
 				label: r,
 				idx: 0
 			}), "stop";
-			let t = this.#m.label2idx(r);
+			let t = this.#h.label2idx(r);
 			if (t === void 0) throw `[return] ラベル【${r}】がスクリプト【${this.fn}】に見つかりません`;
-			return this.#h = t, "skip";
+			return this.#g = t, "skip";
 		}
-		return n.fn === this.fn ? (this.#h = n.returnIdx, "skip") : (e.push({
+		return n.fn === this.fn ? (this.#g = n.returnIdx, "skip") : (e.push({
 			t: "loadScript",
 			fn: n.fn,
 			label: "",
 			idx: n.returnIdx
 		}), "stop");
 	}
-	static #K(e, t) {
+	static #q(e, t) {
 		return `｜&emsp;《${e}｜${encodeURIComponent(JSON.stringify(t))}》`;
 	}
-	#q(e, t) {
-		let n = this.#g, r = (this.#_[n] ?? "") + t;
-		this.#_[n] = r, e.push({
+	#J(e, t) {
+		let n = this.#_, r = (this.#v[n] ?? "") + t;
+		this.#v[n] = r, e.push({
 			t: "chgStr",
 			nm: n,
 			page: "fore",
 			str: r
 		});
 	}
-}, M = class e {
+}, F = class e {
 	searchPath;
 	constructor(e) {
 		this.searchPath = e;
@@ -2550,17 +2611,21 @@ var ne = class e {
 	}
 	#r = Object.create(null);
 	#i = Object.create(null);
-	#a = 1;
+	#a = Object.create(null);
+	#o = 1;
 	getDisabled(e) {
 		return this.#i[e] ?? !1;
 	}
-	#o(e, t) {
+	getSty(e) {
+		return this.#s("tsy_frame", e), this.#a[e] ?? {};
+	}
+	#s(e, t) {
 		let n = this.#r[t];
 		if (!n) throw `[${e}] frame【${t}】が読み込まれていません`;
 		return n;
 	}
-	#s(e, t) {
-		let n = this.#o(e, t).contentWindow;
+	#c(e, t) {
+		let n = this.#s(e, t).contentWindow;
 		if (!n) throw `[${e}] frame【${t}】の中身がありません`;
 		return n;
 	}
@@ -2568,8 +2633,8 @@ var ne = class e {
 		if (this.#r[t]) throw `[add_frame] frame【${t}】はすでにあります`;
 		let i = this.#e ?? await this.#n, a = this.searchPath(n, p.HTML), s = await fetch(a);
 		if (!s.ok) throw `[add_frame] HTMLの読込に失敗しました src:${n} ${s.statusText}`;
-		let c = e.#f(await s.text(), a), l = document.createElement("iframe");
-		l.id = t, l.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(l), this.#r[t] = l, this.#i[t] = !1, this.#c(l, {
+		let c = e.#p(await s.text(), a), l = document.createElement("iframe");
+		l.id = t, l.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(l), this.#r[t] = l, this.#i[t] = !1, this.#l(l, this.#a[t] = {
 			visible: !0,
 			alpha: 1,
 			x: 0,
@@ -2583,7 +2648,7 @@ var ne = class e {
 		}), await new Promise((e, n) => {
 			l.onload = () => e(), l.onerror = () => n(/* @__PURE__ */ Error(`[add_frame] frame【${t}】の表示に失敗しました`)), l.srcdoc = c;
 		});
-		let u = e.#u(a);
+		let u = e.#d(a);
 		l.contentWindow.sn_repRes?.((e) => {
 			let t = e.dataset.src ?? "";
 			e.src = /^(?:https?:|\/|data:)/.test(t) ? t : u + t.replace(/^\.\//, "");
@@ -2613,10 +2678,10 @@ var ne = class e {
 		};
 	}
 	frame(e, t, n, r) {
-		let i = this.#o("frame", e);
-		if (this.#c(i, t), n) {
+		let i = this.#s("frame", e);
+		if (this.#l(i, Object.assign(this.#a[e] ??= {}, t)), n) {
 			let { style: e } = i;
-			n.mode === "float" ? e.zIndex = String(++this.#a) : n.mode === "index" ? e.zIndex = String(n.index ?? 0) : e.zIndex = String(-++this.#a);
+			n.mode === "float" ? e.zIndex = String(++this.#o) : n.mode === "index" ? e.zIndex = String(n.index ?? 0) : e.zIndex = String(-++this.#o);
 		}
 		if (r !== void 0) {
 			this.#i[e] = r;
@@ -2627,15 +2692,15 @@ var ne = class e {
 		for (let [e, n] of Object.entries(t)) o[`${a}.${e}`] = n;
 		return o;
 	}
-	#c(e, t) {
+	#l(e, t) {
 		let n = e.style;
 		t.alpha !== void 0 && (n.opacity = String(t.alpha)), t.x !== void 0 && (n.left = `${String(t.x)}px`), t.y !== void 0 && (n.top = `${String(t.y)}px`), t.width !== void 0 && (n.width = `${String(t.width)}px`), t.height !== void 0 && (n.height = `${String(t.height)}px`), (t.scale_x !== void 0 || t.scale_y !== void 0 || t.rotate !== void 0) && (n.transform = `scale(${String(t.scale_x ?? 1)}, ${String(t.scale_y ?? 1)}) rotate(${String(t.rotate ?? 0)}deg)`), t.b_color !== void 0 && (n.backgroundColor = t.b_color), t.visible !== void 0 && (n.display = t.visible ? "inline" : "none");
 	}
 	set(e, t, n) {
-		this.#s("set_frame", e)[t] = n;
+		this.#c("set_frame", e)[t] = n;
 	}
 	get(e, t, n) {
-		let r = this.#s("let_frame", e);
+		let r = this.#c("let_frame", e);
 		if (!(t in r)) throw `[let_frame] frame【${e}】に変数/関数【${t}】がありません。変数は var付きにして下さい`;
 		let i = r[t];
 		return n ? i() : i;
@@ -2649,10 +2714,10 @@ var ne = class e {
 			aEl: i ? [...a.querySelectorAll(i)] : [a.body]
 		};
 	}
-	#l = Object.create(null);
+	#u = Object.create(null);
 	resvDom(e, t, n, r, i) {
-		for (let { el: e, ev: n, fnc: r } of this.#l[t] ?? []) e.removeEventListener(n, r);
-		if (delete this.#l[t], n) return [];
+		for (let { el: e, ev: n, fnc: r } of this.#u[t] ?? []) e.removeEventListener(n, r);
+		if (delete this.#u[t], n) return [];
 		let { id: a, sel: o, aEl: s } = this.elms(e);
 		if (s.length === 0) {
 			if (r) throw `[event] HTML内にセレクタ（${o}）に対応する要素が見つかりません。存在しない場合を許容するなら、need_err=false と指定してください`;
@@ -2660,8 +2725,8 @@ var ne = class e {
 		}
 		let c = s[0].type || "", l = c === "checkbox" || c === "range" ? ["input"] : c === "text" || c === "textarea" ? ["input", "change"] : ["click", "keydown"], u = [];
 		for (let e of s) for (let t of l) {
-			let n = (e) => {
-				this.getDisabled(a) || t === "keydown" && e.key !== "Enter" || i();
+			let n = (n) => {
+				this.getDisabled(a) || t === "keydown" && n.key !== "Enter" || i(e);
 			};
 			e.addEventListener(t, n), u.push({
 				el: e,
@@ -2669,39 +2734,39 @@ var ne = class e {
 				fnc: n
 			});
 		}
-		return this.#l[t] = u, s;
+		return this.#u[t] = u, s;
 	}
 	resolveDom(e, t) {
 		let { sel: n, aEl: r } = this.elms(e);
 		if (r.length === 0 && t) throw `[set_focus] HTML内にセレクタ（${n}）に対応する要素が見つかりません。存在しない場合を許容するなら、need_err=false と指定してください`;
 		return r;
 	}
-	static #u(e) {
+	static #d(e) {
 		return e.slice(0, e.lastIndexOf("/") + 1);
 	}
-	static #d = /\s(?:src|href)=(["'])(\S+?)\1/g;
-	static #f(t, n) {
-		let r = e.#u(n);
-		return t.replaceAll(e.#d, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
+	static #f = /\s(?:src|href)=(["'])(\S+?)\1/g;
+	static #p(t, n) {
+		let r = e.#d(n);
+		return t.replaceAll(e.#f, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
 	}
-}, N = /* @__PURE__ */ new Set([
+}, I = /* @__PURE__ */ new Set([
 	"IFRAME",
 	"SCRIPT",
 	"CANVAS",
 	"VIDEO"
 ]);
-async function P(e) {
+async function re(e) {
 	let t = e.el.cloneNode(!0);
-	t.style.transform = "none", t.style.width = `${String(e.sw)}px`, t.style.height = `${String(e.sh)}px`, F(t, e.page, e.aLayNm), await I(t);
-	let n = new XMLSerializer().serializeToString(t), r = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${R()}</style>${n}</div></foreignObject></svg>`, i = await z(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(r)}`), a = document.createElement("canvas");
+	t.style.transform = "none", t.style.width = `${String(e.sw)}px`, t.style.height = `${String(e.sh)}px`, L(t, e.page, e.aLayNm), await R(t);
+	let n = new XMLSerializer().serializeToString(t), r = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${B()}</style>${n}</div></foreignObject></svg>`, i = await V(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(r)}`), a = document.createElement("canvas");
 	a.width = e.width, a.height = e.height;
 	let o = a.getContext("2d");
 	if (!o) throw "canvasの2Dコンテキストが取れません";
 	return o.fillStyle = e.bgColor, o.fillRect(0, 0, e.width, e.height), o.drawImage(i, 0, 0, e.width, e.height), a.toDataURL("image/png");
 }
-function F(e, t, n) {
+function L(e, t, n) {
 	for (let r of [...e.querySelectorAll("*")]) {
-		if (N.has(r.tagName)) {
+		if (I.has(r.tagName)) {
 			r.remove();
 			continue;
 		}
@@ -2715,18 +2780,18 @@ function F(e, t, n) {
 		i !== void 0 && n && !n.includes(i) && r.remove();
 	}
 }
-async function I(e) {
+async function R(e) {
 	let t = [...e.querySelectorAll("img")];
 	await Promise.all(t.map(async (e) => {
 		let { src: t } = e;
 		if (!(!t || t.startsWith("data:"))) try {
-			e.setAttribute("src", await L(t));
+			e.setAttribute("src", await z(t));
 		} catch {
 			e.remove();
 		}
 	}));
 }
-async function L(e) {
+async function z(e) {
 	let t = await fetch(e);
 	if (!t.ok) throw `画像が取得できません url:${e}`;
 	let n = await t.blob();
@@ -2735,26 +2800,26 @@ async function L(e) {
 		i.onload = () => t(String(i.result)), i.onerror = () => r(/* @__PURE__ */ Error(`画像が読めません url:${e}`)), i.readAsDataURL(n);
 	});
 }
-function R() {
+function B() {
 	let e = [];
 	for (let t of [...document.styleSheets]) try {
 		for (let n of [...t.cssRules]) e.push(n.cssText);
 	} catch {}
 	return e.join("\n");
 }
-function z(e) {
+function V(e) {
 	return new Promise((t, n) => {
 		let r = new Image();
 		r.onload = () => t(r), r.onerror = () => n(/* @__PURE__ */ Error("スナップショットの画像化に失敗しました")), r.src = e;
 	});
 }
-function B(e, t) {
+function H(e, t) {
 	let n = document.createElement("a");
 	n.href = t, n.download = e, n.click();
 }
 //#endregion
 //#region src/sn/localStore.ts
-var V = {
+var U = {
 	get(e) {
 		let t = localStorage.getItem(e);
 		if (t != null) try {
@@ -2772,16 +2837,16 @@ var V = {
 };
 //#endregion
 //#region src/ts/SaveMng.ts
-function H() {
+function W() {
 	return {
 		sys: {},
 		mark: {},
 		kidoku: {}
 	};
 }
-var U = ".swpd", W = class {
+var G = ".swpd", K = class {
 	ns;
-	#e = H();
+	#e = W();
 	get data() {
 		return this.#e;
 	}
@@ -2792,11 +2857,11 @@ var U = ".swpd", W = class {
 		return `skynovel.${this.ns} - ${e}`;
 	}
 	load() {
-		let e = V.get(this.#t("sys"));
-		return e === void 0 ? (this.#e = H(), !0) : (this.#e = {
+		let e = U.get(this.#t("sys"));
+		return e === void 0 ? (this.#e = W(), !0) : (this.#e = {
 			sys: e,
-			mark: V.get(this.#t("mark")) ?? {},
-			kidoku: V.get(this.#t("kidoku")) ?? {}
+			mark: U.get(this.#t("mark")) ?? {},
+			kidoku: U.get(this.#t("kidoku")) ?? {}
 		}, !1);
 	}
 	flush() {
@@ -2811,7 +2876,7 @@ var U = ".swpd", W = class {
 	#n;
 	#r = !1;
 	#i() {
-		V.set(this.#t("sys"), this.#e.sys), V.set(this.#t("mark"), this.#e.mark), V.set(this.#t("kidoku"), this.#e.kidoku);
+		U.set(this.#t("sys"), this.#e.sys), U.set(this.#t("mark"), this.#e.mark), U.set(this.#t("kidoku"), this.#e.kidoku);
 	}
 	getMark(e) {
 		return this.#e.mark[String(e)];
@@ -2835,12 +2900,12 @@ var U = ".swpd", W = class {
 	}
 	export() {
 		let e = new Blob([JSON.stringify(this.#e)], { type: "text/json" }), t = URL.createObjectURL(e), n = document.createElement("a");
-		n.href = t, n.download = `no_crypto_${this.ns}${G()}${U}`, n.click(), URL.revokeObjectURL(t);
+		n.href = t, n.download = `no_crypto_${this.ns}${q()}${G}`, n.click(), URL.revokeObjectURL(t);
 	}
 	async import() {
 		let e = await new Promise((e, t) => {
 			let n = document.createElement("input");
-			n.type = "file", n.accept = `${U}, text/plain`, n.onchange = () => {
+			n.type = "file", n.accept = `${G}, text/plain`, n.onchange = () => {
 				let r = n.files?.[0];
 				r ? e(r) : t(/* @__PURE__ */ Error("ファイル選択に失敗しました"));
 			}, n.click();
@@ -2849,34 +2914,34 @@ var U = ".swpd", W = class {
 		return this.#e = t, this.flush(), t;
 	}
 };
-function G() {
+function q() {
 	let e = /* @__PURE__ */ new Date(), t = (e) => String(e).padStart(2, "0");
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
 //#region src/ts/Font.ts
-function K(e) {
+function J(e) {
 	return e.matchPath(".+", p.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
 	font-family: ${JSON.stringify(t)};
 	src: url(${JSON.stringify(e.searchPath(t, p.FONT))});
 }`).join("\n");
 }
-function q(e, t = document) {
-	let n = K(e);
+function Y(e, t = document) {
+	let n = J(e);
 	if (!n) return;
 	let r = t.createElement("style");
 	r.dataset.sn = "font", r.textContent = n, t.head.appendChild(r);
 }
 //#endregion
 //#region src/ts/ScriptMng.ts
-var J = class {
+var X = class e {
 	sys;
 	#e;
 	constructor(e) {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#te(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#ie(e);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -2900,8 +2965,8 @@ var J = class {
 		let t = await this.#m(e);
 		if (this.#r) this.#r.switchScript(t);
 		else {
-			let e = this.#r = new ne(t);
-			this.#s(e), this.#u(e), q(this.sys.cfg);
+			let e = this.#r = new P(t);
+			this.#s(e), this.#u(e), Y(this.sys.cfg);
 		}
 		this.go = () => this.#x(), this.$trgNext();
 	}
@@ -2947,10 +3012,10 @@ var J = class {
 			return JSON.stringify(r);
 		});
 	}
-	#c = new W("");
+	#c = new K("");
 	#l = !0;
 	#u(e) {
-		this.#c = new W(this.sys.cfg.oCfg.save_ns);
+		this.#c = new K(this.sys.cfg.oCfg.save_ns);
 		try {
 			this.#l = this.#c.load();
 		} catch (e) {
@@ -2971,7 +3036,7 @@ var J = class {
 	}
 	#p;
 	async #m(e) {
-		return this.#n[e] ??= new T(e, await this.#ee(e), this.#g());
+		return this.#n[e] ??= new T(e, await this.#re(e), this.#g());
 	}
 	#h;
 	#g() {
@@ -2986,7 +3051,7 @@ var J = class {
 	jumpToLabelAndGo(e, t, n = "", r) {
 		r !== void 0 && (this.#r?.setValNochk("tmp:sn.eventArg", r), this.#r?.setValNochk("tmp:sn.eventLabel", e)), this.#b(e, t, n).catch(this.#i);
 	}
-	#_ = new M((e, t) => this.sys.cfg.searchPath(e, t));
+	#_ = new F((e, t) => this.sys.cfg.searchPath(e, t));
 	attachFrameBox(e) {
 		this.#_.attachBox(e);
 	}
@@ -3034,10 +3099,10 @@ var J = class {
 				return;
 			}
 			if (this.#I) {
-				this.#I.canskip && this.#z(this.#I.tw_nm);
+				this.#I.canskip && this.#H(this.#I.tw_nm);
 				return;
 			}
-			this.#C || this.#U().catch(this.#i);
+			this.#C || this.#K().catch(this.#i);
 		}
 	}
 	#S = !1;
@@ -3079,52 +3144,93 @@ var J = class {
 	}
 	#F = Object.create(null);
 	#I;
-	#L(e) {
-		this.#F[e.tw_nm]?.tw.kill(), delete this.#F[e.tw_nm];
-		let t = this.$fncs.getLaySty(e.nm, e.page), n = Object.keys(e.hTo), r = {}, i = {};
-		for (let a of n) {
-			let n = e.hTo[a], o = t[a] ?? O[a];
-			r[a] = o, i[a] = n.rel ? o + n.v : n.v;
-		}
-		let a = () => {
-			let t = {};
-			for (let e of n) Object.assign(t, { [e]: r[e] });
+	#L(t) {
+		let n = this.$fncs.getLaySty(t.nm, t.page), { from: r, aTo: i, aPrp: a } = e.#z(t, (e) => n[e] ?? k[e]);
+		this.#B(t, r, i, () => {
+			let e = {};
+			for (let t of a) Object.assign(e, { [t]: r[t] });
 			this.$fncs.chgLay({
-				nm: e.nm,
-				page: e.page,
-				sty: t
+				nm: t.nm,
+				page: t.page,
+				sty: e
 			});
-		}, o = () => {
-			Object.assign(r, i), a();
+		});
+	}
+	#R(t) {
+		let n = this.#_.getSty(t.id), { from: r, aTo: i, aPrp: a } = e.#z(t, (e) => n[e] ?? 0);
+		this.#B(t, r, i, () => {
+			let e = {};
+			for (let t of a) Object.assign(e, { [t]: r[t] });
+			this.#Q(this.#_.frame(t.id, e));
+		});
+	}
+	static #z(e, t) {
+		let n = [e.hTo, ...e.aPath ?? []], r = [...new Set(n.flatMap((e) => Object.keys(e)))], i = {};
+		for (let e of r) i[e] = t(e);
+		return {
+			from: i,
+			aTo: n.map((e) => {
+				let t = {};
+				for (let [n, r] of Object.entries(e)) r && (t[n] = r.rel ? i[n] + r.v : r.v);
+				return t;
+			}),
+			aPrp: r
+		};
+	}
+	#B(e, t, n, r) {
+		this.#F[e.tw_nm]?.tw.kill(), delete this.#F[e.tw_nm];
+		let i = {};
+		for (let e of n) Object.assign(i, e);
+		let a = () => {
+			Object.assign(t, i), r();
 		};
 		if (e.msec <= 0 && e.delay <= 0) {
-			o(), this.#R(e.tw_nm);
+			a(), this.#V(e.tw_nm);
 			return;
 		}
-		this.#F[e.tw_nm] = {
-			end: o,
-			tw: f.to(r, {
-				...i,
-				duration: e.msec / 1e3,
-				delay: e.delay / 1e3,
-				ease: e.ease,
-				repeat: e.repeat,
-				yoyo: e.yoyo,
-				onUpdate: a,
-				onComplete: () => {
-					o(), this.#R(e.tw_nm);
-				}
-			})
-		};
+		let o = {
+			duration: e.msec / 1e3,
+			delay: e.delay / 1e3,
+			ease: e.ease,
+			repeat: e.repeat,
+			yoyo: e.yoyo,
+			onUpdate: r
+		}, s = !!e.chain, c = () => {
+			a(), this.#V(e.tw_nm);
+		}, l;
+		if (n.length > 1) {
+			let e = f.timeline({
+				paused: s,
+				onComplete: c
+			});
+			for (let r of n) e.to(t, {
+				...r,
+				...o
+			});
+			l = e;
+		} else l = f.to(t, {
+			...n[0],
+			...o,
+			paused: s,
+			onComplete: c
+		});
+		if (this.#F[e.tw_nm] = {
+			end: a,
+			tw: l
+		}, !e.chain) return;
+		let u = this.#F[e.chain];
+		if (!u) throw `${e.chain}は存在しない・または終了したトゥイーンです`;
+		u.next = () => l.play();
 	}
-	#R(e) {
-		delete this.#F[e], this.#I?.tw_nm === e && (this.#I = void 0, setTimeout(() => this.#x(), 0));
+	#V(e) {
+		let { next: t } = this.#F[e] ?? {};
+		delete this.#F[e], t?.(), this.#I?.tw_nm === e && (this.#I = void 0, setTimeout(() => this.#x(), 0));
 	}
-	#z(e) {
+	#H(e) {
 		let t = this.#F[e];
-		t && (t.tw.kill(), t.end()), this.#R(e);
+		t && (t.tw.kill(), t.end()), this.#V(e);
 	}
-	#B(e, t) {
+	#U(e, t) {
 		if (!this.#F[e]) {
 			setTimeout(() => this.#x(), 0);
 			return;
@@ -3134,16 +3240,16 @@ var J = class {
 			canskip: t
 		};
 	}
-	#V = !1;
-	#H = 0;
-	async #U() {
+	#W = !1;
+	#G = 0;
+	async #K() {
 		let e = this.#r;
 		if (e) {
-			if (this.#V) {
-				++this.#H;
+			if (this.#W) {
+				++this.#G;
 				return;
 			}
-			this.#V = !0;
+			this.#W = !0;
 			try {
 				for (;;) {
 					this.$fncs.setWait(null);
@@ -3154,7 +3260,7 @@ var J = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#$(e);
+					for (let e of t) this.#ne(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#j(n.canskip);
@@ -3165,19 +3271,19 @@ var J = class {
 						return;
 					}
 					if (n?.t === "waitTsy") {
-						this.#B(n.tw_nm, n.canskip);
+						this.#U(n.tw_nm, n.canskip);
 						return;
 					}
 					if (n?.t === "addFrame" || n?.t === "letFrame") {
-						this.#C = !0, this.#W(n).catch(this.#i);
+						this.#C = !0, this.#q(n).catch(this.#i);
 						return;
 					}
 					if (n?.t === "loadPlugin" || n?.t === "snapshot") {
-						this.#C = !0, this.#K(n).catch(this.#i);
+						this.#C = !0, this.#Y(n).catch(this.#i);
 						return;
 					}
 					if (n?.t === "load" || n?.t === "reloadScript") {
-						this.#C = !0, this.#G(n).catch(this.#i);
+						this.#C = !0, this.#J(n).catch(this.#i);
 						return;
 					}
 					if (n?.t !== "loadScript") {
@@ -3192,20 +3298,20 @@ var J = class {
 					}
 				}
 			} finally {
-				this.#V = !1, this.#H > 0 && (--this.#H, this.#x());
+				this.#W = !1, this.#G > 0 && (--this.#G, this.#x());
 			}
 		}
 	}
-	async #W(e) {
+	async #q(e) {
 		try {
-			e.t === "addFrame" ? this.#Y(await this.#_.add(e.id, e.src, e.sty)) : this.#Y({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#_.get(e.id, e.var_name, e.fnc) });
+			e.t === "addFrame" ? this.#Q(await this.#_.add(e.id, e.src, e.sty)) : this.#Q({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#_.get(e.id, e.var_name, e.fnc) });
 		} catch (t) {
 			this.#C = !1, this.myTrace(`[${e.t === "addFrame" ? "add_frame" : "let_frame"}] エラー id:${e.id} ${String(t)}`, "ET");
 			return;
 		}
 		this.#C = !1, this.#x();
 	}
-	async #G(e) {
+	async #J(e) {
 		let t = this.#r;
 		if (!t) {
 			this.#C = !1;
@@ -3230,24 +3336,24 @@ var J = class {
 		}
 		this.#C = !1, this.#x();
 	}
-	async #K(e) {
+	async #Y(e) {
 		try {
-			e.t === "loadPlugin" ? await this.#q(e.fn) : await this.#J(e);
+			e.t === "loadPlugin" ? await this.#X(e.fn) : await this.#Z(e);
 		} catch (t) {
 			this.myTrace(`[${e.t === "loadPlugin" ? "loadplugin" : "snapshot"}] ${String(t)}`, "E");
 		}
 		this.#C = !1, this.#x();
 	}
-	async #q(e) {
+	async #X(e) {
 		let t = await fetch(e);
 		if (!t.ok) throw `cssが取得できません fn:${e}`;
 		let n = document.createElement("style");
 		n.textContent = await t.text(), document.head.appendChild(n);
 	}
-	async #J(e) {
+	async #Z(e) {
 		let t = this.#v;
 		if (!t) throw "ステージがまだ表示されていません";
-		let { stageW: n, stageH: r } = o, i = await P({
+		let { stageW: n, stageH: r } = o, i = await re({
 			el: t,
 			sw: n,
 			sh: r,
@@ -3257,17 +3363,17 @@ var J = class {
 			page: e.page,
 			aLayNm: e.aLayNm
 		}), a = (/* @__PURE__ */ new Date()).toISOString().replace(/[:T]/g, "-").slice(0, 19);
-		B(e.fn ? `${e.fn}${a}.png` : `snapshot${a}.png`, i);
+		H(e.fn ? `${e.fn}${a}.png` : `snapshot${a}.png`, i);
 	}
-	#Y(e) {
+	#Q(e) {
 		for (let [t, n] of Object.entries(e)) this.#r?.setValNochk(t, n);
 	}
-	#X = Object.create(null);
-	#Z(e) {
+	#$ = Object.create(null);
+	#ee(e) {
 		let t = e === "l" ? "breakline" : "breakpage";
-		return this.#X[e] ??= this.sys.cfg.matchPath(`^${t}$`, p.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, p.SP_GSM) : "";
+		return this.#$[e] ??= this.sys.cfg.matchPath(`^${t}$`, p.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, p.SP_GSM) : "";
 	}
-	#Q(e, t) {
+	#te(e, t) {
 		if (!t) return "";
 		try {
 			return this.sys.cfg.searchPath(t, p.SP_GSM);
@@ -3275,7 +3381,7 @@ var J = class {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#$(e) {
+	#ne(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -3299,10 +3405,10 @@ var J = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: this.#Q("lay", e.fn),
+					src: this.#te("lay", e.fn),
 					aFace: e.aFace.map((e) => ({
 						...e,
-						src: this.#Q("add_face", e.fn)
+						src: this.#te("add_face", e.fn)
 					}))
 				});
 				break;
@@ -3319,7 +3425,7 @@ var J = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: e.fn ? this.#Q("lay b_pic", e.fn) : ""
+					src: e.fn ? this.#te("lay b_pic", e.fn) : ""
 				});
 				break;
 			case "trans":
@@ -3332,7 +3438,7 @@ var J = class {
 			case "chgStr":
 				{
 					let t = d(e.str);
-					for (let e of t) e.pic && (e.src = this.#Q("graph", e.pic));
+					for (let e of t) e.pic && (e.src = this.#te("graph", e.pic));
 					this.$fncs.chgStr({
 						nm: e.nm,
 						page: e.page,
@@ -3408,9 +3514,12 @@ var J = class {
 			case "tsy":
 				this.#L(e);
 				break;
+			case "tsyFrame":
+				this.#R(e);
+				break;
 			case "waitTsy": break;
 			case "stopTsy":
-				this.#z(e.tw_nm);
+				this.#H(e.tw_nm);
 				break;
 			case "pauseTsy":
 				this.#F[e.tw_nm]?.tw.paused(e.paused);
@@ -3425,7 +3534,7 @@ var J = class {
 				this.navigateTo(e.url);
 				break;
 			case "loadPlugin":
-				e.join || this.#q(e.fn).catch(this.#i);
+				e.join || this.#X(e.fn).catch(this.#i);
 				break;
 			case "snapshot": break;
 			case "recordPlace":
@@ -3466,14 +3575,16 @@ var J = class {
 				break;
 			}
 			case "frame":
-				this.#Y(this.#_.frame(e.id, e.sty, e.order, e.disabled));
+				this.#Q(this.#_.frame(e.id, e.sty, e.order, e.disabled));
 				break;
 			case "setFrame":
 				this.#_.set(e.id, e.var_name, e.text);
 				break;
 			case "resvDomEvent": {
-				let t = this.#_.resvDom(e.rawKey, e.key, e.del, e.needErr, () => {
-					this.cancelAuto(), this.fireEvent(e.key);
+				let t = this.#_.resvDom(e.rawKey, e.key, e.del, e.needErr, (t) => {
+					this.cancelAuto();
+					for (let [e, n] of Object.entries(t.dataset)) this.#r?.setValNochk(`sn.event.domdata.${e}`, n ?? "");
+					this.fireEvent(e.key);
 				});
 				!e.del && t[0] && c.add(t[0]);
 				break;
@@ -3503,12 +3614,12 @@ var J = class {
 				this.sys.caretaker.clear();
 				break;
 			case "trace":
-				this.#te({ text: e.text });
+				this.#ie({ text: e.text });
 				break;
 			case "loadScript": break;
 			case "stop":
 				if (this.sys.caretaker.push(e.key), e.kind === "l" || e.kind === "p") {
-					let t = this.#Z(e.kind);
+					let t = this.#ee(e.kind);
 					this.$fncs.setWait({
 						nm: e.nm,
 						kind: e.kind,
@@ -3519,7 +3630,7 @@ var J = class {
 				break;
 		}
 	}
-	async #ee(e) {
+	async #re(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, p.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -3528,7 +3639,7 @@ var J = class {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#te(e) {
+	#ie(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
 	myTrace = (e, t = "E") => {
@@ -3566,6 +3677,6 @@ var J = class {
 	};
 };
 //#endregion
-export { J as ScriptMng };
+export { X as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

@@ -54,9 +54,15 @@ export class FrameMng {
 
 	readonly #hIfrm		: {[id: string]: HTMLIFrameElement} = Object.create(null);
 	readonly #hDisabled	: {[id: string]: boolean} = Object.create(null);
+	// 各フレームの**今の**見た目。[add_frame]で既定値ごと埋め、[frame]/[tsy_frame]で更新する。
+	//	個別に持たないと、scale_xだけ指定した[frame]がscale_y・rotateを既定値へ戻してしまう
+	//	（transformは3つで1つの値なので、書き換えには残り2つの現在値が要る）。
+	//	[tsy_frame]の開始値もここから取る（本家は組み込み変数 const.sn.frm.<id>.* を読み直している）
+	readonly #hSty		: {[id: string]: T_FRM_STY} = Object.create(null);
 	#zIdx = 1;
 
 	getDisabled(id: string): boolean {return this.#hDisabled[id] ?? false}
+	getSty(id: string): T_FRM_STY {this.#get('tsy_frame', id); return this.#hSty[id] ?? {}}
 
 	#get(tag: string, id: string): HTMLIFrameElement {
 		const f = this.#hIfrm[id];
@@ -90,7 +96,7 @@ export class FrameMng {
 		this.#hDisabled[id] = false;
 
 		// 既定値は本家と同じ（位置0,0・ステージ全面・不透明・等倍・無回転・表示）
-		this.#apply(f, {
+		this.#apply(f, this.#hSty[id] = {
 			visible: true, alpha: 1, x: 0, y: 0,
 			width: CmnLib.stageW, height: CmnLib.stageH,
 			scale_x: 1, scale_y: 1, rotate: 0,
@@ -148,7 +154,8 @@ export class FrameMng {
 	// フレームに設定（本家 FrameMng.ts:307 #frame()）。書かれた属性だけを変える
 	frame(id: string, sty: T_FRM_STY, order?: T_FRM_ORDER, disabled?: boolean): T_FRM_VALS {
 		const f = this.#get('frame', id);
-		this.#apply(f, sty);
+		// 書かれた分だけを現在の見た目へ重ね、まとめて反映する（transformの取りこぼし対策。#hSty参照）
+		this.#apply(f, Object.assign(this.#hSty[id] ??= {}, sty));
 
 		if (order) {
 			// 本家は前面へ出すたびz-indexを増やしていく方式。diveは負にして最背面へ
@@ -218,7 +225,7 @@ export class FrameMng {
 
 	// dom=予約の付け外し。本家はinput種別でイベント名を変える（EventMng.ts:571）ので合わせる
 	readonly #hDomLsn: {[key: string]: {el: HTMLElement; ev: string; fnc: EventListener}[]} = Object.create(null);
-	resvDom(rawKey: string, key: string, del: boolean, needErr: boolean, fire: ()=> void): HTMLElement[] {
+	resvDom(rawKey: string, key: string, del: boolean, needErr: boolean, fire: (el: HTMLElement)=> void): HTMLElement[] {
 		for (const {el, ev, fnc} of this.#hDomLsn[key] ?? []) el.removeEventListener(ev, fnc);
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hDomLsn[key];
@@ -241,7 +248,7 @@ export class FrameMng {
 			const fnc: EventListener = e=> {
 				if (this.getDisabled(id)) return;	// [frame disabled=true]の間は反応しない
 				if (ev === 'keydown' && (e as KeyboardEvent).key !== 'Enter') return;
-				fire();
+				fire(el);	// 発火した要素を渡す（本家 EventMng.ts:591 の data-* 取り出しのため）
 			};
 			el.addEventListener(ev, fnc);
 			a.push({el, ev, fnc});

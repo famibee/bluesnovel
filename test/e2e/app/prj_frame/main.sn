@@ -4,7 +4,8 @@
 ;	・[add_frame]がHTMLを読み込み終えてからシナリオが進むこと（＋組み込み変数）
 ;	・[set_frame]がフレーム内のvar変数へ入り、[let_frame function=true]が関数を呼べること
 ;	・[frame visible=…]で出し入れできること
-;	・[event key='dom=id:セレクタ']でフレーム内のボタンがラベルへ飛ばせること
+;	・[event key='dom=id:セレクタ']でフレーム内のボタンがラベルへ飛ばせること（＋発火した要素のdata-*）
+;	・[tsy_frame]がフレームの見た目を時間をかけて動かすこと
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
@@ -24,6 +25,12 @@
 ; [let_frame]で取った値は同じ停止点までの間に読める
 [trace text="&'ret:'+ const.sn.frm.yesno.val2ctrl"]
 とれた[p]
+
+; [tsy_frame]：フレームの見た目を時間をかけて動かす。[tsy]と同じ仕組みだが、
+;	動かす先はストアのレイヤではなくFrameMngが抱えるiframe。x/yはレイヤのleft/topに当たる
+[tsy_frame id=yesno time=400 x='=100' alpha=0.5]
+[wait_tsy id=yesno]
+うごかした[p]
 
 ; [set_focus]。[button]は表示中ずっと輪に居る。フレーム内の要素は
 ;	[event key='dom=…']の最初の1件が自動で入り、[set_focus add=…]でも足せる
@@ -45,7 +52,8 @@
 [return]
 
 *y
-[er]おっけー[s]
+; 発火した要素の data-* が sn.event.domdata.* に入っている
+[er]&'おっけー:'+ sn.event.domdata.sel + sn.event.domdata.num&[s]
 
 *cancel
 [er]きゃんせる[s]

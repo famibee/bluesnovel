@@ -41,6 +41,7 @@ const toFocusScene = async (page: Page)=> {
 	await seeText(page, 'よみこんだ');
 	await advance(page, 'ひょうじ');
 	await advance(page, 'とれた');
+	await advance(page, 'うごかした');	// [tsy_frame]。終わるまで[wait_tsy]で止まる
 	await advance(page, 'ふぉーかす');
 	await waitIdle(page);
 };

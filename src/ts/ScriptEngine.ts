@@ -19,7 +19,7 @@ import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {Areas, type T_H_Areas} from '../sn/Areas';
 import {getDateStr, int} from '../sn/CmnLib';
-import {cnvTweenArg, easeToGsap, tsyName, type T_TSY_TO} from './Tsy';
+import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
 import {plainTxt} from './Txt';
@@ -105,7 +105,8 @@ export type T_ENGINE_ACTION =
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
-	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）
+	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）。aPathは[tsy path=…]の後続区間、chainは他トゥイーンの終了に繋ぐ指定
+	| {t: 'tsyFrame'; tw_nm: string; id: string; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string}	// [tsy_frame]。HTMLフレームのトゥイーン。[tsy]と同形だが、動かす先がストアのレイヤではなくFrameMngが持つiframeの見た目
 	| {t: 'waitTsy'; tw_nm: string; canskip: boolean}	// [wait_tsy]。トゥイーン終了待ち。[wt]と同じくstep()はここで一旦返る
 	| {t: 'stopTsy'; tw_nm: string}		// [stop_tsy]。トゥイーンを終了状態へ送って中断（本家 stop().end()）
 	| {t: 'pauseTsy'; tw_nm: string; paused: boolean}	// [pause_tsy]/[resume_tsy]
@@ -300,6 +301,16 @@ export class ScriptEngine {
 		return sty;
 	}
 
+	// [tsy]/[tsy_frame]共通の path=（経路）と chain=（他トゥイーンの後ろに繋ぐ）。
+	//	どちらも省略されうるのでオブジェクトごと返す（exactOptionalPropertyTypesのため）
+	static #argTsyPath(tag: string, args: {[k: string]: string}, aPrp?: readonly string[]): {aPath?: T_TSY_TO[]; chain?: string} {
+		const aPath = args.path ? parseTsyPath(tag, args.path, aPrp) : undefined;
+		return {
+			...(aPath?.length ? {aPath} : {}),
+			...(args.chain ? {chain: args.chain} : {}),
+		};
+	}
+
 	static argPage(args: {[k: string]: string}, def: T_PAGE): T_PAGE {
 		const v = args.page ?? def;
 		if (v === 'fore' || v === 'back') return v;
@@ -386,7 +397,7 @@ export class ScriptEngine {
 		'add_lay', 'current', 'add_face', 'lay', 'clear_lay', 'trans', 'wt', 'let', 'let_ml', 'endlet_ml',
 		'let_abs', 'let_char_at', 'let_index_of', 'let_length',
 		'let_replace', 'let_round', 'let_search', 'let_substr',
-		'tsy', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
+		'tsy', 'tsy_frame', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
 		'clear_text',
 		'navigate_to', 'loadplugin', 'snapshot',
@@ -991,8 +1002,29 @@ export class ScriptEngine {
 				msec, delay, ease: easeToGsap(args.ease),
 				repeat: rep > 0 ? rep - 1 : -1, yoyo: (args.yoyo ?? 'false') !== 'false',
 				hTo: cnvTweenArg('tsy', args),
+				...ScriptEngine.#argTsyPath('tsy', args),
 			});
 			return 'skip';	// [tsy]自体は待たない（本家も false を返す）。待ちたければ[wait_tsy]
+		}
+
+		case 'tsy_frame': {	// HTMLフレームのトゥイーン（本家 FrameMng.ts:373 #tsy_frame()）
+			const {id} = args;
+			if (! id) throw '[tsy_frame] idは必須です';
+			this.#chkFrm('tsy_frame', id);
+
+			const skip = this.skipEnabled;
+			const rep = ScriptEngine.#argNumDef('tsy_frame', 'repeat', args.repeat, 1);
+			aAct.push({
+				t: 'tsyFrame', tw_nm: tsyName('tsy_frame', args), id,
+				msec: skip ? 0 : ScriptEngine.#argNum('tsy_frame', 'time', args.time ?? ''),
+				delay: skip ? 0 : ScriptEngine.#argNumDef('tsy_frame', 'delay', args.delay, 0),
+				ease: easeToGsap(args.ease),
+				repeat: rep > 0 ? rep - 1 : -1, yoyo: (args.yoyo ?? 'false') !== 'false',
+				// フレームはx/y/rotateが実名（レイヤのleft/top/rotationに当たる）ので属性表を分ける
+				hTo: cnvTweenArg('tsy_frame', args, A_TSY_FRM_PRP),
+				...ScriptEngine.#argTsyPath('tsy_frame', args, A_TSY_FRM_PRP),
+			});
+			return 'skip';	// [tsy]同様それ自体は待たない。待つなら[wait_tsy id=…]
 		}
 
 		case 'wait_tsy':	// トゥイーン終了待ち（本家 CmnTween.ts:265 wait_tsy()）

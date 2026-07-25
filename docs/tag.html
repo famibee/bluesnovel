@@ -196,7 +196,7 @@
 		<li class="mb1"><a href="#frame">🟢 [frame] フレームに設定</a></li>
 		<li class="mb1"><a href="#let_frame">🟢 [let_frame] フレーム変数を取得</a></li>
 		<li class="mb1"><a href="#set_frame">🟢 [set_frame] フレーム変数に設定</a></li>
-		<li class="mb1"><a href="#tsy_frame">🔴 [tsy_frame] フレームをトゥイーン開始</a></li>
+		<li class="mb1"><a href="#tsy_frame">🟢 [tsy_frame] フレームをトゥイーン開始</a></li>
 	</ul>
 	<p>イベント</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -987,6 +987,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="tsy" class="w-heading">[tsy]トゥイーン開始</h2>
 <h4>レイヤーにトゥイーンアニメ（変形・移動・回転アニメーション）を加える。</h4>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家はtween.jsでpixiの表示物を直接動かすが、こちらは<b>GSAPでストアのレイヤ属性を動かす</b>（＝画面の現在値は常にストアが持つ）。そのため本家の <code>arrive</code> は<b>常時ONと同じ挙動</b>で、属性としては受け付けない。イージング名は本家（tween.js）の書式のまま書ける（内部でGSAPの書式へ機械変換する）。<br/>目標値に指定できるのは <code>alpha</code>／<code>left</code>（<code>x</code>）／<code>top</code>（<code>y</code>）／<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>／<code>pivot_x</code>／<code>pivot_y</code>。<b><code>x</code>／<code>y</code> は <code>left</code>／<code>top</code> の別名</b>として受ける（本家は <code>x</code>／<code>y</code> だけを見るので <code>[tsy left=…]</code> は黙って無視されるが、上流シナリオが両方の書き方で揺れているため）。<br/><code>path</code>（複数区間の経路）と <code>chain</code>（他トゥイーンの終了に繋ぐ）に対応。<b>相対値（先頭 <code>=</code>）はどの区間もトゥイーン開始時の値が基準</b>なので、<code>(,=50) (,=0)</code> が「50下げてから元へ戻す」になる（本家も同じ）。区間の連結は本家のtween.js <code>chain()</code> に代えてGSAPのtimelineで行う。<br/><b>未対応</b>：<code>width</code>／<code>height</code>（レイヤ属性側に無い）・<code>render</code>（pixi前提）・<code>filter</code>／<code>enable_filter</code>・<code>backlay</code>。</p>
 <p class="mb2 px1">
 
 	「目標値」を設定する時、相対値あるいは絶対値を指定できる。
@@ -1606,6 +1607,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="frame" class="w-heading">[frame]フレームに設定</h2>
 <h4>フレームそのものの属性を設定する</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：位置・寸法は<b>ステージ座標のまま</b>書けばよい（本家はステージの拡縮ぶんを毎回自分で掛けてiframeへ書くが、こちらは拡縮済みのステージ箱の中へiframeを挿すので、ウインドウリサイズ追従も勝手に効く）。<br/><code>scale_x</code>／<code>scale_y</code>／<code>rotate</code>は<b>CSSの<code>transform</code>ひとつに合成される</b>ので、書かれなかった分は<code>FrameMng</code>が持つ現在値で埋める（＝<code>scale_x</code>だけ指定しても残り2つは変わらない）。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -1652,6 +1654,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="tsy_frame" class="w-heading">[tsy_frame]フレームをトゥイーン開始</h2>
 <h4>フレームのトゥイーンアニメを行なう</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#tsy">[tsy]</a>と同じ仕組み（GSAP）で、動かす先がストアのレイヤではなく <code>FrameMng</code> が抱えるiframeの見た目。<code>path</code>／<code>chain</code>も同様に使える。<br/>目標値は <code>alpha</code>／<code>x</code>／<code>y</code>／<code>width</code>／<code>height</code>／<code>scale_x</code>／<code>scale_y</code>／<b><code>rotate</code></b>（上の表は <code>rotation</code> と書いているが、本家の実装・<a href="#frame">[frame]</a>と揃えて <code>rotate</code>）。フレームは <code>x</code>／<code>y</code> が実名なので、レイヤ側のような <code>left</code>／<code>top</code> への読み替えは無い。<br/>途中経過は毎フレーム組み込み変数 <code>const.sn.frm.&lt;id&gt;.*</code> へも書き戻す（本家と同じ）。トゥイーン名は <code>frm\nID</code> なので、<a href="#wait_tsy">[wait_tsy]</a>等は <code>id=</code> で指せる。</p>
 <p class="mb2 px1">
 
 	フレームのトゥイーンアニメを開始したあと、id属性指定により以下のタグを使用できる。<br/>
@@ -1727,7 +1730,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>key</code>／<code>fn</code>／<code>label</code>／<code>call</code>／<code>arg</code>／
 	<code>global</code>／<code>del</code>／<code>url</code>（指定時はラベルへ飛ばず<a href="tag.html#navigate_to">[navigate_to]</a>と
 	同じ経路で別タブに開く）と<code>key='dom=フレームid:セレクタ'</code>／<code>need_err</code>に対応。<br/>
-	未対応：<code>sn.event.domdata.*</code>（発火した要素の<code>data-*</code>を変数へ）。</p>
+	<code>dom=</code>予約の発火時は、その要素の<code>data-*</code>が組み込み変数
+	<code>sn.event.domdata.（任意）</code>に入る（本家と同じ）。</p>
 
 	※1 イベント名は以下の表を参考に。<br/>
 	<br/>

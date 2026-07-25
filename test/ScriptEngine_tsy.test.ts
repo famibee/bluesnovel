@@ -11,7 +11,7 @@
 //	相対指定（'=100'）はレイヤの現在値が要るためScriptMng側で解決する＝ここではrelフラグまで
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
-import {cnvTweenArg, easeToGsap, tsyName} from '../src/ts/Tsy';
+import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName} from '../src/ts/Tsy';
 
 import {expect, it} from 'bun:test';
 
@@ -86,6 +86,59 @@ it('tsyName_defaultsToLayer', ()=> {
 	expect(tsyName('tsy', {layer: 'base'})).toBe('base');
 	expect(tsyName('tsy', {layer: 'base', name: 'tw1'})).toBe('tw1');
 	expect(()=> tsyName('wait_tsy', {})).toThrow('[wait_tsy] トゥイーンが指定されていません');
+});
+
+it('tsyName_frame', ()=> {
+	// フレームは id から `frm\nID`（改行入りでレイヤ名と絶対にぶつからない。本家 #tw_nm()）
+	expect(tsyName('tsy_frame', {id: 'yesno'})).toBe('frm\nyesno');
+	expect(tsyName('wait_tsy', {id: 'yesno', layer: 'base'})).toBe('frm\nyesno');	// idが優先
+});
+
+
+// ============ [tsy path=…]（経路。Tsy.ts parseTsyPath()） ============
+
+it('parseTsyPath_xyAlpha', ()=> {
+	// `(x,y,alpha)` を並べる書式。x/yはレイヤではleft/topの別名
+	expect(parseTsyPath('tsy', '(100,200,0.5) (0,0)')).toEqual([
+		{left: {v: 100, rel: false}, top: {v: 200, rel: false}, alpha: {v: 0.5, rel: false}},
+		{left: {v: 0, rel: false}, top: {v: 0, rel: false}},
+	]);
+});
+
+it('parseTsyPath_omittedAndRelative', ()=> {
+	// テンプレの fg_squat が書く形：`(,=50) (,=0)`＝xを省いてyだけ動かす。
+	//	相対はどの区間も**開始値**が基準なので、`(,=0)`が「元の位置へ戻る」になる
+	expect(parseTsyPath('tsy', '(,=50) (,=0)')).toEqual([
+		{top: {v: 50, rel: true}},
+		{top: {v: 0, rel: true}},
+	]);
+});
+
+it('parseTsyPath_quotedValue', ()=> {
+	// テンプレの fg_shake が書く形：`("=-5,5")`＝引用符で括った相対＋ランダム
+	const [seg] = parseTsyPath('tsy', `("=-5,5")`);
+	expect(seg!.left!.rel).toBe(true);
+	expect(seg!.left!.v).toBeGreaterThanOrEqual(-5);
+	expect(seg!.left!.v).toBeLessThanOrEqual(6);	// 本家の式（Math.round(rnd*(v1-v0+1))）そのまま
+});
+
+it('parseTsyPath_json', ()=> {
+	// `{…}`のJSON書式なら、x/y/alpha以外の属性も動かせる
+	expect(parseTsyPath('tsy', '{"rotation": 90, "scale_x": "=1"}')).toEqual([
+		{rotation: {v: 90, rel: false}, scale_x: {v: 1, rel: true}},
+	]);
+});
+
+it('parseTsyPath_brokenJsonThrows', ()=> {
+	// 本家はconsole.errorへ流してその区間を捨てるが、こちらは書き間違いをその場で知らせる
+	expect(()=> parseTsyPath('tsy', '{"x": }')).toThrow('[tsy] path内のJSONが不正です');
+});
+
+it('parseTsyPath_framePrp', ()=> {
+	// フレーム側はx/yが実名（left/topへの読み替えをしない）
+	expect(parseTsyPath('tsy_frame', '(10,20)', A_TSY_FRM_PRP)).toEqual([
+		{x: {v: 10, rel: false}, y: {v: 20, rel: false}},
+	]);
 });
 
 
@@ -181,6 +234,57 @@ it('pauseAndResumeTsy', ()=> {
 		{t: 'pauseTsy', tw_nm: 'tw1', paused: true},
 		{t: 'pauseTsy', tw_nm: 'tw1', paused: false},
 	]);
+});
+
+it('tsy_pathAndChain', ()=> {
+	const a = tsy(`[tsy layer=base time=500 left=100 path='(,=50) (,=0)' chain=other]`);
+	expect(a.hTo).toEqual({left: {v: 100, rel: false}});	// 第1区間はタグ属性そのもの
+	expect(a.aPath).toEqual([{top: {v: 50, rel: true}}, {top: {v: 0, rel: true}}]);
+	expect(a.chain).toBe('other');
+});
+
+it('tsy_noPathNoChainKeysAbsent', ()=> {
+	// 未指定なら**属性ごと**積まない（exactOptionalPropertyTypes。他タグの流儀と揃える）
+	const a = tsy('[tsy layer=base time=500 left=100]');
+	expect('aPath' in a).toBe(false);
+	expect('chain' in a).toBe(false);
+});
+
+
+// ============ [tsy_frame] ============
+
+// [tsy_frame]は読み込み済みのフレームにしか掛けられない。FrameMngがやること（組み込み変数の
+//	書き戻し）をエンジンの外から与えて「読み込み済み」に見せる（ScriptEngine_frame.test.ts と同じ流儀）
+function tsyFrm(src: string) {
+	const se = new ScriptEngine('t1', `${src}[s]`);
+	se.setValNochk('const.sn.frm.yesno', true);
+	return se.step().find(v=> v.t === 'tsyFrame') as Extract<T_ENGINE_ACTION, {t: 'tsyFrame'}>;
+}
+
+it('tsyFrame_pushesAction', ()=> {
+	expect(tsyFrm('[tsy_frame id=yesno time=500 x=100 alpha=0]')).toEqual({
+		t: 'tsyFrame', tw_nm: 'frm\nyesno', id: 'yesno',
+		msec: 500, delay: 0, ease: 'none', repeat: 0, yoyo: false,
+		hTo: {x: {v: 100, rel: false}, alpha: {v: 0, rel: false}},
+	});
+});
+
+it('tsyFrame_ownPrpNames', ()=> {
+	// フレームはleft/topではなくx/y、rotationではなくrotate（本家 #tsy_frame()）
+	expect(tsyFrm('[tsy_frame id=yesno time=500 y=20 rotate=90 scale_x=2 width=100 height=50]').hTo)
+		.toEqual({
+			y: {v: 20, rel: false}, rotate: {v: 90, rel: false},
+			scale_x: {v: 2, rel: false}, width: {v: 100, rel: false}, height: {v: 50, rel: false},
+		});
+	// レイヤ側の名前は拾わない
+	expect(tsyFrm('[tsy_frame id=yesno time=500 left=10 rotation=90]').hTo).toEqual({});
+});
+
+it('tsyFrame_requiresLoadedFrame', ()=> {
+	expect(()=> new ScriptEngine('t1', '[tsy_frame id=nai time=500 x=1][s]').step())
+		.toThrow('[tsy_frame] frame【nai】が読み込まれていません');
+	expect(()=> new ScriptEngine('t1', '[tsy_frame time=500][s]').step())
+		.toThrow('[tsy_frame] idは必須です');
 });
 
 it('tsy_reservedAsMacroName', ()=> {

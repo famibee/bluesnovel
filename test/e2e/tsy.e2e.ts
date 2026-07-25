@@ -12,7 +12,7 @@
 //	・相対指定が現在値に足されること
 //	・[stop_tsy]／[wait_tsy]中のクリックが、必ず終了状態へ送ること
 
-import {expect, test} from '@playwright/test';
+import {expect, test, type Page} from '@playwright/test';
 import {gotoSn, layNum, mesStr, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'tsy')});
@@ -78,4 +78,51 @@ test('[wait_tsy]中のクリックで打ち切れ、その場合も終了状態�
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('うちきり');
 	expect(await layNum(page, 'base', 'alpha')).toBe(0);	// 中途半端な値では止まらない
 	expect(Date.now() - t0).toBeLessThan(9_000);
+});
+
+// 'うちきり'までシナリオを進める（前半4段はどれもトゥイーンの終了かクリック打ち切りで進む）
+async function toPathScene(page: Page) {
+	for (const s of ['うごいた', 'そうたい', 'とめた']) {
+		await page.keyboard.press('Space');
+		await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe(s);
+		await waitIdle(page);
+	}
+	await page.keyboard.press('Space');	// [tsy time=9000 alpha=0]の[wait_tsy]へ
+	await expect.poll(async ()=> layNum(page, 'base', 'alpha'), {timeout: 5_000}).toBeLessThan(1);
+	await page.keyboard.press('Space');	// 打ち切り
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('うちきり');
+	await waitIdle(page);
+}
+
+test('[tsy path=…]は区間を順に辿り、相対値はどの区間も開始値が基準', async ({page})=> {
+	await toPathScene(page);
+	expect(await layNum(page, 'base', 'top')).toBe(400);	// 前段の[stop_tsy]の終了状態のまま
+
+	// 進めると[lay top=50]で開始値を置いてから path='(,=100) (,=0)'。
+	//	50から150まで下がって、また50へ戻る。区間ごとの相対（＝前の区間からの相対）なら
+	//	終着点が150になるので、最後の値で見分けられる
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> {
+		const v = await layNum(page, 'base', 'top');
+		return v > 50 && v < 200;	// 1区間目で50から150へ向かっている途中
+	}, {timeout: 5_000}).toBe(true);
+
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('けいろ');
+	expect(await layNum(page, 'base', 'top')).toBe(50);
+});
+
+test('[tsy chain=…]は繋いだ元の終了まで動き出さない', async ({page})=> {
+	await toPathScene(page);
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('けいろ');
+	await waitIdle(page);
+
+	// tw_a（base.top → 300、400ms）の終了に tw_b（base2.left → 100）を繋いである
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> layNum(page, 'base', 'top'), {timeout: 5_000}).toBeGreaterThan(50);
+	expect(await layNum(page, 'base2', 'left')).toBe(0);	// 繋いだ側はまだ動かない
+
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('つなげた');
+	expect(await layNum(page, 'base', 'top')).toBe(300);
+	expect(await layNum(page, 'base2', 'left')).toBe(100);
 });
