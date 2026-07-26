@@ -226,24 +226,28 @@ function putPage(s: T_STATE, idx: 0 | 1, aLay: T_LAY[]): {aPage: [T_LAY[], T_LAY
 	aPage[idx] = aLay;
 	return {aPage};
 }
-// [trans]の交換が済んだ直後、**新しい裏へ新しい表を写す**（本家 Pages.ts:74 transPage() の
-//	`this.#pg.back.copy(this.#pg.fore)`）。写すのは交換したレイヤだけで、それ以外は
-//	startTrans()が交換前に写し済み。
-//	これが無いと、新しい裏＝交換前の表（＝1つ前の画面）のまま残り、次に
-//	[lay page=back]で一部だけ書き換えて[trans]したときに、書き換えなかった部分が
-//	**1つ前の画面へ巻き戻る**。テンプレの[grp]は「文字レイヤを消す→画像を替える→文字レイヤを戻す」と
-//	[trans]を3回打つので、ここが抜けていると2回目の文字レイヤ[trans]で
-//	場面転換前の文字レイヤ設定（縦書き指定など）が復活してしまう
-function cpFore2Back(s: T_STATE, foreIdx: 0 | 1, aLayNm: string[] | null): {aPage: [T_LAY[], T_LAY[]]} {
-	const bi = (1 - foreIdx) as 0 | 1;
-	const fore = s.aPage[foreIdx];
-	const back = s.aPage[bi].map(e=> aLayNm && ! aLayNm.includes(e.nm)
+// [trans]の完了処理（本家 LayerMng.ts:612 comp()）。呼ぶのは finishTrans と、
+//	演出なし（time<=0）の startTrans。foreIdxの反転とレイヤの入れ替え・複製をまとめてやる
+function finTrans(s: T_STATE, aLayNm: string[] | null): Partial<T_STATE> {
+	const fi = s.foreIdx;
+	const bi = (1 - fi) as 0 | 1;
+	const fore = s.aPage[fi], back = s.aPage[bi];
+	const skip = (nm: string)=> aLayNm !== null && ! aLayNm.includes(nm);
+	const pick = (a: T_LAY[], b: T_LAY[])=> a.map(e=> skip(e.nm) ? b.find(f=> f.nm === e.nm) ?? e : e);
+
+	// 交換対象外は表裏を入れ替え（foreIdx反転後も元のまま）、交換対象はそのまま反転に任せる
+	const aPage: [T_LAY[], T_LAY[]] = [[], []];
+	aPage[bi] = pick(back, fore);
+	aPage[fi] = pick(fore, back);
+	// 反転後、交換対象のレイヤについて新しい裏へ新しい表を写す（本家 Pages.transPage の back.copy(fore)）。
+	//	これが無いと新しい裏が1つ前の画面のまま残り、次の[trans]で巻き戻る
+	aPage[fi] = aPage[fi].map(e=> skip(e.nm)
 		? e
-		: structuredClone(fore.find(f=> f.nm === e.nm) ?? e)
-	);
-	return putPage(s, bi, back);
+		: structuredClone(aPage[bi].find(f=> f.nm === e.nm) ?? e));
+	return {aPage, foreIdx: bi, trans: null};
 }
-// レイヤ1件を探す（見つからない・種別違いは例外）
+
+// レイヤ1件を探す（見つからない・種別違いは例外）// レイヤ1件を探す（見つからない・種別違いは例外）
 function findLay<C extends 'grp' | 'txt'>(aLay: T_LAY[], nm: string, cls: C) {
 	const e = aLay.find(e=> e.nm === nm);
 	if (! e) throw `存在しないレイヤ ${nm} です`;
@@ -491,39 +495,30 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 	trans		: null,
 	// [trans]開始。演出の主役は「表ページを次第に透明にし、下から裏ページを出す」こと（Stage.tsx）。
-	//	ここでやるのは下ごしらえだけ：**交換対象外のレイヤは、表と裏の中身を入れ替えておく**
-	//	（本家 LayerMng.ts:617「transしないために交換する」）。表裏の別はストア全体で1つの
-	//	foreIdxが決めるので、最後にそれを反転しても交換対象外のレイヤは元のまま——という形にする。
-	//	**写す（コピー）のではない**：裏には次の場面の組み立て途中が載っていることがあり、
-	//	コピーだとそれを表の内容で上書きして捨ててしまう。テンプレは
-	//	「文字レイヤの裏に次の設定を組む → [sysmenu_draw_v]が[trans layer=mes_sysmenu]を打つ」
-	//	という順で書くので、そこで組み立て中の設定（縦書き指定）が丸ごと消えていた
+	//	**ここでは中身を一切いじらない**。交換対象外レイヤの入れ替えは finishTrans（＝完了時）の担当で、
+	//	開始時にやると演出の最中に表の見た目が先に変わってしまう
+	//	（実機テンプレで「場面転換のたびに一瞬真っ黒がちらつく」の正体）。
+	//	演出中の「交換対象レイヤは裏・それ以外は表」という合成は Stage.tsx が描画時に行う
+	//	（本家 LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore` と同じ）
 	startTrans	: ({aLayNm, time, ruleSrc, vague}: T_STARTTRANS)=> set(s=> {
-		const bi = (1 - s.foreIdx) as 0 | 1;
-		const fore = s.aPage[s.foreIdx];
-		const skip = (nm: string)=> aLayNm !== null && ! aLayNm.includes(nm);
-		const back = s.aPage[bi].map(e=> skip(e.nm) ? fore.find(f=> f.nm === e.nm) ?? e : e);
-		const st0 = putPage(s, bi, back);
-		const st = putPage({...s, ...st0}, s.foreIdx,
-			fore.map(e=> skip(e.nm) ? s.aPage[bi].find(f=> f.nm === e.nm) ?? e : e));
+		// time=0（または既読スキップ中）は演出せず即完了。transはnullのままなのでStageは何もしない
+		if (time <= 0) return finTrans(s, aLayNm);
 
-		// time=0（または既読スキップ中）は演出せず即交換。transはnullのままなのでStageは何もしない
-		if (time <= 0) return {...st, foreIdx: bi, ...cpFore2Back({...s, ...st}, bi, aLayNm)};
-
-		return {...st, trans: {seq: (s.trans?.seq ?? 0) + 1, aLayNm, time,
+		return {trans: {seq: (s.trans?.seq ?? 0) + 1, aLayNm, time,
 			...ruleSrc !== undefined ? {ruleSrc} : {},
 			...vague !== undefined ? {vague} : {},
 		}};
 	}),
-	// 演出終了。表裏を入れ替える（配列の中身ではなく、どちらを表とみなすかを反転するだけ）＋
-	//	交換したレイヤを新しい裏へ写し直す（cpFore2Back）。
+	// 演出終了。**本家 LayerMng.ts:612 comp() と Pages.ts:74 transPage() の移植**。
+	//	・交換対象のレイヤ：表裏を入れ替え、そのうえで新しい裏へ新しい表を写す（back.copy(fore)）
+	//	・交換対象外のレイヤ：表と裏の中身を入れ替えておく（本家「transしないために交換する」）。
+	//	  ストア全体で1つの foreIdx を反転しても、そのレイヤの表裏は元のままになる。
+	//	  **写す（コピー）のではない**：裏には次の場面の組み立て途中が載っていることがあり、
+	//	  コピーだとそれを捨ててしまう（テンプレは文字レイヤの裏を組んでから
+	//	  [sysmenu_draw_v]が別レイヤの[trans]を打つ、という順で書く）
 	//	zustandのsetは同期なので、これを呼んだ時点で以降の書き込み先は新しい表ページになる。
 	//	演出が途中でも呼んでよい（Stage側が見た目を終了状態へ確定させる）
-	finishTrans	: ()=> set(s=> {
-		if (! s.trans) return {};	// 演出していない（time=0で交換済み等）なら何もしない
-		const fi = (1 - s.foreIdx) as 0 | 1;
-		return {foreIdx: fi, trans: null, ...cpFore2Back({...s, foreIdx: fi}, fi, s.trans.aLayNm)};
-	}),
+	finishTrans	: ()=> set(s=> s.trans ? finTrans(s, s.trans.aLayNm) : {}),
 
 	quake		: null,
 	startQuake	: ({hmax, vmax}: T_STARTQUAKE)=> set(s=> ({

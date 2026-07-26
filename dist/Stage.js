@@ -10659,50 +10659,53 @@ function Cu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 				})
 			] }),
 			/* @__PURE__ */ h("span", { children: ne }),
-			d.map((e, t) => /* @__PURE__ */ h("div", {
-				ref: C[t],
-				"data-page": t === f ? "fore" : "back",
-				css: ie,
-				style: {
-					zIndex: +(t === f),
-					visibility: t === f || p ? "visible" : "hidden",
-					pointerEvents: t === f ? "auto" : "none",
-					...p?.ruleSrc && t === f ? { mask: "url(#sn_rule_msk)" } : {}
-				},
-				children: e.map((e) => {
-					let n = {
-						...le.cmn.sty4Moveable,
-						...s(e)
-					};
-					return e.cls === "grp" ? /* @__PURE__ */ h(iu, {
-						cmn: le.cmn,
-						sty: n,
-						nm: e.nm,
-						fn: e.fn,
-						src: e.src,
-						aFace: e.aFace
-					}, e.nm) : /* @__PURE__ */ h(hu, {
-						cmn: le.cmn,
-						sty: n,
-						nm: e.nm,
-						isFore: t === f,
-						str: e.str,
-						aCh: e.aCh,
-						ffs: e.ffs,
-						noffs: e.noffs,
-						bura: e.bura,
-						b_color: e.b_color,
-						b_alpha: e.b_alpha,
-						b_alpha_isfixed: e.b_alpha_isfixed,
-						b_src: e.b_src,
-						styTxt: e.style,
-						enabled: e.enabled,
-						aBtn: e.aBtn,
-						onActivate: (e, t, n, i) => r.jumpToLabelAndGo(e, t, n, i),
-						onNavigate: (e) => r.navigateTo(e)
-					}, e.nm);
-				})
-			}, t)),
+			d.map((e, t) => {
+				let n = p?.aLayNm && t !== f ? e.map((e) => p.aLayNm.includes(e.nm) ? e : d[f].find((t) => t.nm === e.nm) ?? e) : e;
+				return /* @__PURE__ */ h("div", {
+					ref: C[t],
+					"data-page": t === f ? "fore" : "back",
+					css: ie,
+					style: {
+						zIndex: +(t === f),
+						visibility: t === f || p ? "visible" : "hidden",
+						pointerEvents: t === f ? "auto" : "none",
+						...p?.ruleSrc && t === f ? { mask: "url(#sn_rule_msk)" } : {}
+					},
+					children: n.map((e) => {
+						let n = {
+							...le.cmn.sty4Moveable,
+							...s(e)
+						};
+						return e.cls === "grp" ? /* @__PURE__ */ h(iu, {
+							cmn: le.cmn,
+							sty: n,
+							nm: e.nm,
+							fn: e.fn,
+							src: e.src,
+							aFace: e.aFace
+						}, e.nm) : /* @__PURE__ */ h(hu, {
+							cmn: le.cmn,
+							sty: n,
+							nm: e.nm,
+							isFore: t === f,
+							str: e.str,
+							aCh: e.aCh,
+							ffs: e.ffs,
+							noffs: e.noffs,
+							bura: e.bura,
+							b_color: e.b_color,
+							b_alpha: e.b_alpha,
+							b_alpha_isfixed: e.b_alpha_isfixed,
+							b_src: e.b_src,
+							styTxt: e.style,
+							enabled: e.enabled,
+							aBtn: e.aBtn,
+							onActivate: (e, t, n, i) => r.jumpToLabelAndGo(e, t, n, i),
+							onNavigate: (e) => r.navigateTo(e)
+						}, e.nm);
+					})
+				}, t);
+			}),
 			/* @__PURE__ */ h("div", {
 				ref: ae,
 				css: U

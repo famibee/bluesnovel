@@ -110,9 +110,13 @@ function S(e, t, n) {
 	let r = [e.aPage[0], e.aPage[1]];
 	return r[t] = n, { aPage: r };
 }
-function C(e, t, n) {
-	let r = 1 - t, i = e.aPage[t];
-	return S(e, r, e.aPage[r].map((e) => n && !n.includes(e.nm) ? e : structuredClone(i.find((t) => t.nm === e.nm) ?? e)));
+function C(e, t) {
+	let n = e.foreIdx, r = 1 - n, i = e.aPage[n], a = e.aPage[r], o = (e) => t !== null && !t.includes(e), s = (e, t) => e.map((e) => o(e.nm) ? t.find((t) => t.nm === e.nm) ?? e : e), c = [[], []];
+	return c[r] = s(a, i), c[n] = s(i, a), c[n] = c[n].map((e) => o(e.nm) ? e : structuredClone(c[r].find((t) => t.nm === e.nm) ?? e)), {
+		aPage: c,
+		foreIdx: r,
+		trans: null
+	};
 }
 function w(e, t, n) {
 	let r = e.find((e) => e.nm === t);
@@ -299,41 +303,14 @@ var T = y()((e, t) => ({
 		return a(s), S(e, o, s);
 	}),
 	trans: null,
-	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => {
-		let a = 1 - e.foreIdx, o = e.aPage[e.foreIdx], s = (e) => t !== null && !t.includes(e), c = S(e, a, e.aPage[a].map((e) => s(e.nm) ? o.find((t) => t.nm === e.nm) ?? e : e)), l = S({
-			...e,
-			...c
-		}, e.foreIdx, o.map((t) => s(t.nm) ? e.aPage[a].find((e) => e.nm === t.nm) ?? t : t));
-		return n <= 0 ? {
-			...l,
-			foreIdx: a,
-			...C({
-				...e,
-				...l
-			}, a, t)
-		} : {
-			...l,
-			trans: {
-				seq: (e.trans?.seq ?? 0) + 1,
-				aLayNm: t,
-				time: n,
-				...r === void 0 ? {} : { ruleSrc: r },
-				...i === void 0 ? {} : { vague: i }
-			}
-		};
-	}),
-	finishTrans: () => e((e) => {
-		if (!e.trans) return {};
-		let t = 1 - e.foreIdx;
-		return {
-			foreIdx: t,
-			trans: null,
-			...C({
-				...e,
-				foreIdx: t
-			}, t, e.trans.aLayNm)
-		};
-	}),
+	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? C(e, t) : { trans: {
+		seq: (e.trans?.seq ?? 0) + 1,
+		aLayNm: t,
+		time: n,
+		...r === void 0 ? {} : { ruleSrc: r },
+		...i === void 0 ? {} : { vague: i }
+	} }),
+	finishTrans: () => e((e) => e.trans ? C(e, e.trans.aLayNm) : {}),
 	quake: null,
 	startQuake: ({ hmax: t, vmax: n }) => e((e) => ({ quake: {
 		seq: (e.quake?.seq ?? 0) + 1,

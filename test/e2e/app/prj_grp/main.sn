@@ -47,7 +47,18 @@
 [lay layer=mes page=back visible=true]
 [trans layer=mes time=100]
 [wt]
-てんかんご[s]
+てんかんご[l]
+
+; --- 演出中に「交換対象外のレイヤ」が先に入れ替わらないこと。
+;	本家は交換対象外レイヤについて、演出中は**表の内容を見せ続ける**
+;	（LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore`）。
+;	裏に組みかけの状態（ここでは base の visible=false）が先に見えると、
+;	場面転換のたびに一瞬背景が消える＝実機で「真っ黒がちらつく」
+[lay layer=base page=back visible=false]
+[lay layer=mes page=back style="writing-mode: horizontal-tb;"]
+[trans layer=mes time=3000]
+[wt]
+ちらつき[s]
 
 *dummy
 おされた[s]

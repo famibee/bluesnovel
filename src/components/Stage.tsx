@@ -288,7 +288,16 @@ export default function Stage({
 			「どちらを表とみなすか」（foreIdx）だけを切り替える。中身を入れ替えるとTxtLayerが
 			文字送り演出をやり直してしまうため（store.tsx aPage のコメント参照）。
 			裏ページはトランジション中だけ見せる。クリックは常に表ページだけが受ける */}
-		{aPage.map((aLay, i)=> <div key={i} ref={aPgRef[i]} data-page={i === foreIdx ? 'fore' : 'back'} css={styPage} style={{
+		{aPage.map((aLay0, i)=> {
+			// 演出中の裏ページは「**交換対象のレイヤは裏・それ以外は表**」の合成で描く
+			//	（本家 LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore`）。
+			//	ストアの中身は触らない：交換対象外レイヤの裏には次の場面の組み立て途中が
+			//	載っていることがあり、先に見せると場面転換のたびに一瞬前の状態がちらつく
+			const aLay = trans?.aLayNm && i !== foreIdx
+				? aLay0.map(e=> trans.aLayNm!.includes(e.nm)
+					? e : aPage[foreIdx].find(f=> f.nm === e.nm) ?? e)
+				: aLay0;
+			return <div key={i} ref={aPgRef[i]} data-page={i === foreIdx ? 'fore' : 'back'} css={styPage} style={{
 			zIndex			: i === foreIdx ? 1 : 0,
 			visibility		: i === foreIdx || trans ? 'visible' : 'hidden',
 			pointerEvents	: i === foreIdx ? 'auto' : 'none',
@@ -304,7 +313,8 @@ export default function Stage({
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
 				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)}/>;
 			})}
-		</div>)}
+		</div>;
+		})}
 		<div ref={frmRef} css={styFrames}/>
 	</div>;
 };

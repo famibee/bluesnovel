@@ -15,7 +15,7 @@
 //	3回目までに設定が復活する経路になっているのが理由。実機との差分は追跡中
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pressKey, pressKeyToWaitMark, txtBoxStyle, waitWaitMark} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, pressKeyToWaitMark, txtBoxStyle, waitTransRunning, waitWaitMark} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'grp')});
 
@@ -52,3 +52,29 @@ test('場面転換の[er]で、前の場面のボタンが消える', async ({pa
 	await expect.poll(()=> mesStr(page), {timeout: 10_000}).toContain('てんかんご');
 	await expect(page.locator(SEL_FORE).getByText('まえのボタン')).toHaveCount(0);
 });
+
+test('[trans layer=…]の演出中、交換対象外のレイヤは表の内容を見せ続ける', async ({page})=> {
+	// 本家 LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore`。
+	//	裏に組みかけの状態が先に見えると、場面転換のたびに背景が一瞬消える
+	//	（実機テンプレの「二度の[trans]終了時に一瞬真っ黒画面になってちらつく」）
+	await waitWaitMark(page);
+	await pressKeyToWaitMark(page, 'Space');
+	await pressKey(page, 'Space');	// 場面転換その2を抜けて てんかんご へ
+	await expect.poll(()=> mesStr(page), {timeout: 10_000}).toContain('てんかんご');
+
+	// [trans layer=mes time=3000] を開始させ、演出の**最中**を見る。
+	//	押す前に本物の停止点（[l]の待ちマーカー）へ着かせないと、文字送りの瞬時完了に食われる
+	await waitWaitMark(page);
+	await page.keyboard.press('Space');
+	await waitTransRunning(page);
+	const shown = await page.evaluate(()=> {
+		const q = (sel: string)=> document.querySelector(sel) as HTMLElement | null;
+		const fore = q('#skynovel [data-page="fore"] [data-lay="base"]');
+		const back = q('#skynovel [data-page="back"] [data-lay="base"]');
+		const vis = (e: HTMLElement | null)=> e ? getComputedStyle(e).display !== 'none' : null;
+		return {fore: vis(fore), back: vis(back)};
+	});
+	// 交換対象は mes だけ。base は表・裏とも「今の表の内容」＝表示のまま見えていなければならない
+	expect(shown).toEqual({fore: true, back: true});
+});
+
