@@ -304,3 +304,43 @@ it('blendmode_addFaceUnsupportedThrows', ()=> {
 	expect(()=> acts('[add_face name=f1 blendmode=overlay][s]'))
 		.toThrow('overlay はサポートされない blendmode です');
 });
+
+
+// ============ 位置属性の割合解釈（本家 Layer.ts:513） ============
+
+// ステージ寸法はScriptMngが組み込み変数で入れる。単体テストでは自前で入れる
+function seWin(src: string, w = 1024, h = 768): T_ENGINE_ACTION[] {
+	const se = new ScriptEngine('t1', `${LAYS}${src}[s]`);
+	se.defBuiltin('const.sn.config.window.width', ()=> w);
+	se.defBuiltin('const.sn.config.window.height', ()=> h);
+	return se.step();
+}
+function styOfWin(src: string, nm = 'base') {
+	const a = seWin(src).find(v=> v.t === 'chgLay' && v.nm === nm);
+	return a?.t === 'chgLay' ? a.sty : undefined;
+}
+
+it('layPos_ratioIsStageSize', ()=> {
+	// **-1〜1 はステージ幅・高さに対する割合**（本家 `if (x > -1 && x < 1) x *= CmnLib.stageW`）。
+	//	テンプレやギャラリーは[lay left=0.5]で画面中央を指すので、pxとして扱うと0.5pxになる
+	expect(styOfWin('[lay layer=base left=0.5 top=0.25]')).toMatchObject({left: 512, top: 192});
+	// 負の割合も同じ
+	expect(styOfWin('[lay layer=base left=-0.5]')).toMatchObject({left: -512});
+});
+
+it('layPos_outOfRatioRangeIsPx', ()=> {
+	// 境界は本家と同じ**開区間**。1・-1 ちょうどはpxのまま
+	expect(styOfWin('[lay layer=base left=1 top=-1]')).toMatchObject({left: 1, top: -1});
+	expect(styOfWin('[lay layer=base left=250 top=360]')).toMatchObject({left: 250, top: 360});
+	// 0は割合として掛けても0なので、どちらの解釈でも同じ
+	expect(styOfWin('[lay layer=base left=0]')).toMatchObject({left: 0});
+});
+
+it('btnPos_ratioIsStageSizeToo', ()=> {
+	// ボタンも同じ #argChkPos を通る（本家 Layer.ts:513 の isButton 分岐は幅の引き算だけ）
+	const a = seWin('[button text=x label=*a left=0.5 top=0.25]').find(v=> v.t === 'addBtn');
+	expect(a?.t === 'addBtn' ? a.sty : undefined).toMatchObject({left: 512, top: 192});
+	// width/heightは割合解釈しない（寸法であって位置ではない）
+	const b = seWin('[button text=x label=*a width=0.5]').find(v=> v.t === 'addBtn');
+	expect(b?.t === 'addBtn' ? b.sty : undefined).toMatchObject({width: 0.5});
+});

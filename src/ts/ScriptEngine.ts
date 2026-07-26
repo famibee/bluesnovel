@@ -229,6 +229,20 @@ export class ScriptEngine {
 		return n;
 	}
 
+	// 位置属性（left/top）。**-1〜1 はステージ幅・高さに対する割合**として解釈する
+	//	（本家 Layer.ts:513 `if (x > -1 && x < 1) x *= CmnLib.stageW`）。
+	//	テンプレやギャラリーは `[lay left=0.5]` で画面中央を指す書き方をするので、
+	//	そのままpxとして扱うと0.5pxになって静かに違う絵になる。
+	//	境界は本家と同じ**開区間**（left=1 は1px、left=-1 は-1px）。
+	//	ステージ寸法はScriptMngが組み込み変数として入れる（DOMを見に行かない）
+	#argPos(tag: string, nm: 'left' | 'top', v: string): number {
+		const n = ScriptEngine.#argNum(tag, nm, v);
+		if (n <= -1 || n >= 1) return n;
+		const sz = Number(this.#val.get(
+			nm === 'left' ? 'tmp:const.sn.config.window.width' : 'tmp:const.sn.config.window.height'));
+		return Number.isFinite(sz) ? n * sz : n;	// 組み込み変数が無い環境（単体テスト等）はそのまま
+	}
+
 	// 省略可の数値属性（本家 argChk_Num() の「省略値あり」呼び出しに対応）。
 	//	未指定なら既定値、指定ありなら#argNum()と同じ検査を通す
 	static #argNumDef(tag: string, nm: string, v: string | undefined, def: number): number {
@@ -907,8 +921,8 @@ export class ScriptEngine {
 			const sty: T_LAY_STY_ARG = {};
 			if (args.visible !== undefined) sty.visible = args.visible !== 'false';
 			if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
-			if (args.left !== undefined) sty.left = ScriptEngine.#argNum('lay', 'left', args.left);
-			if (args.top !== undefined) sty.top = ScriptEngine.#argNum('lay', 'top', args.top);
+			if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
+			if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
 			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
 			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
 			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
@@ -1433,7 +1447,11 @@ export class ScriptEngine {
 			const sty: T_BTN_STY = {};
 			for (const k of ScriptEngine.#A_BTN_NUM) {
 				const v = args[k];
-				if (v !== undefined) Object.assign(sty, {[k]: ScriptEngine.#argNum('button', k, v)});
+				if (v === undefined) continue;
+				// left/topは**-1〜1がステージ幅・高さに対する割合**（本家 Layer.ts:513。
+				//	ボタンも同じ #argChkPos を通る）。それ以外は素の数値
+				Object.assign(sty, {[k]: k === 'left' || k === 'top'
+					? this.#argPos('button', k, v) : ScriptEngine.#argNum('button', k, v)});
 			}
 			// **寸法だけは省略時も既定値を入れる**（本家 Button.ts:123 height=30 / :152 width=100）。
 			//	本家のpixi Textは width/height の代入で文字スプライトそのものを拡縮するので、
