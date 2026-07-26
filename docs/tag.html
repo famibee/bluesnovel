@@ -269,7 +269,7 @@
 	</ul>
 	<p>システム</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#close">🔴 [close] アプリの終了</a></li>
+		<li class="mb1"><a href="#close">🟢 [close] アプリの終了</a></li>
 		<li class="mb1"><a href="#export">🟡 [export] プレイデータをエクスポート</a></li>
 		<li class="mb1"><a href="#import">🟡 [import] プレイデータをインポート</a></li>
 		<li class="mb1"><a href="#loadplugin">🟢 [loadplugin] プラグインの読み込み</a></li>
@@ -277,8 +277,8 @@
 		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
 		<li class="mb1"><a href="#title">🟢 [title] タイトル指定</a></li>
 		<li class="mb1"><a href="#toggle_full_screen">🟢 [toggle_full_screen] 全画面状態切替</a></li>
-		<li class="mb1"><a href="#update_check">🔴 [update_check] 更新チェック機能</a></li>
-		<li class="mb1"><a href="#window">🔴 [window] アプリウインドウ設定</a></li>
+		<li class="mb1"><a href="#update_check">🟡 [update_check] 更新チェック機能</a></li>
+		<li class="mb1"><a href="#window">🟢 [window] アプリウインドウ設定</a></li>
 	</ul>
 	<p>デバッグ・その他</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -1761,6 +1761,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="enable_event" class="w-heading">[enable_event] イベント有無の切替</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：その文字レイヤの<b>ボタンと本文中の [link] をまとめて</b>クリックを受けなくする（CSSの <code>pointer-events: none</code>。本家がレイヤのコンテナごと <code>ctn.interactiveChildren = false</code> にするのと同じ範囲）。クリックはステージへ抜けるので読み進めは止まらない。<br/>
+	今の状態は <code>save:const.sn.layer.（文字レイヤ名）.enabled</code> で読める（[add_lay]でtrue）。</p>
 <h4>文字レイヤごとのイベント発生有効無効を設定する。</h4>
 <p class="mb2 px1">
 
@@ -2724,6 +2726,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <h1><a id="システム"></a>システム</h1>
 <h2 id="close" class="w-heading">[close]アプリの終了</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：対応済み。<b>効くのはアプリ（Electron）版だけ</b>で、ブラウザ版では何もしない（本家も <code>SysBase</code> 側の既定が no-op で、<code>SysApp</code> だけが上書きする）。</p>
 <h4>アプリケーションを終了する</h4>
 <p class="mb2 px1">
 
@@ -2833,6 +2836,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="update_check" class="w-heading">[update_check] 更新チェック機能</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：属性の検査までは対応（シナリオを止めずに素通りする）が、<b>更新チェックの実処理はこれから</b>（本家 <code>SysApp.ts:306</code>）。ブラウザ版では何もしない。</p>
 <h4>ネットにアプリの更新を確認し、ダウンロードもサポートする</h4>
 <p class="mb2 px1">
 
@@ -2953,6 +2957,7 @@ Linuxは 100MB 越えなので上げられていません。</p></blockquote>
 
 </p>
 <h2 id="window" class="w-heading">[window]アプリウインドウ設定</h2>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：対応済み。<b>効くのはアプリ（Electron）版だけ</b>で、ブラウザ版では何もしない（本家も <code>SysBase</code> 側の既定が no-op で、<code>SysApp</code> だけが上書きする）。<code>x</code>／<code>y</code>／<code>centering</code>と寸法は <code>sys:const.sn.nativeWindow.*</code> へ焼き付ける（設定として残る）。<b>寸法は <code>width</code>/<code>height</code> でも <code>w</code>/<code>h</code> でも受ける</b>：本家はタグリファレンスが前者、実装（<code>SysApp.ts:443</code>）が読むのは後者という食い違いがあり、テンプレは前者で書いているため</p>
 <h4>ゲームアプリのウインドウサイズや位置などを変更する</h4>
 <p class="mb2 px1">
 

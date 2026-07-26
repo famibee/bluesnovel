@@ -11,7 +11,12 @@ import type {T_CFG} from './sn/ConfigBase';
 import type {BrowserWindow, MessageBoxOptions, OpenDialogOptions, Size} from 'electron/main';
 import {app, dialog, screen, shell} from 'electron';
 
-import {appendFile, copy, ensureFile, existsSync, outputFile, remove, WriteFileOptions, writeFile, readFile, ensureDir} from 'fs-extra';
+// **fs-extraはCommonJS**。バンドルしていた頃は名前付きimportでも通ったが、
+//	dist_appで外部化した（＝実行時にnodeのESMローダが読む）ので**デフォルトimportから展開する**。
+//	名前付きimportだと `SyntaxError: Named export 'appendFile' not found` で主処理ごと落ちる
+import fse from 'fs-extra';
+import type {WriteFileOptions} from 'fs-extra';
+const {appendFile, copy, ensureFile, existsSync, outputFile, remove, writeFile, readFile, ensureDir} = fse;
 import Store from 'electron-store';
 import AdmZip from 'adm-zip';
 

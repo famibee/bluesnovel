@@ -74,6 +74,10 @@
 		"typescript-eslint": "^8.65.0",
 		"vite": "^8.1.5"
 	},
+	"//trustedDependencies": "bunはセキュリティのため既定でpostinstallを走らせない。electronはpostinstallで本体バイナリを落とす（node_modules/electron/dist）作りなので、ここへ挙げないと`Error: Electron uninstall`で起動できない",
+	"trustedDependencies": [
+		"electron"
+	],
 	"scripts": {
 		"build": "bun src/build.ts",
 		"watch": "bun --watch src/build.ts --watch",

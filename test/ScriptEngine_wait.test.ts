@@ -39,11 +39,21 @@ it('enableEvent_layer', ()=> {
 });
 
 it('enableEvent_readableAsVar', ()=> {
-	// 本家は save:const.sn.layer.<レイヤ名>.enabled へ入れる（bluesnovelは game: 名前空間）。
-	//	シナリオ側から[if]で分岐できる
+	// 本家 LayerMng.ts:1092 と同じ save:const.sn.layer.<レイヤ名>.enabled。
+	//	シナリオ側から[if]で分岐できる（**読む専用**で、代入しても有効・無効は変わらない）
 	const se = new ScriptEngine('t1', `${LAYS}[enable_event layer=sysmenu enabled=false][s]`);
 	se.step();
-	expect(se.getVal('game:const.sn.layer.sysmenu.enabled')).toBe(false);
+	expect(se.getVal('save:const.sn.layer.sysmenu.enabled')).toBe(false);
+});
+
+it('enableEvent_文字レイヤは作った時点でtrue', ()=> {
+	// 本家 LayerMng.ts:465。[enable_event]を一度も書かなくても引ける
+	const se = new ScriptEngine('t1', `[add_lay layer=base class=grp]${LAYS}[s]`);
+	se.step();
+	expect(se.getVal('save:const.sn.layer.mes.enabled')).toBe(true);
+	expect(se.getVal('save:const.sn.layer.sysmenu.enabled')).toBe(true);
+	// 画像レイヤは文字レイヤではないので持たない
+	expect(se.getVal('save:const.sn.layer.base.enabled')).toBeUndefined();
 });
 
 

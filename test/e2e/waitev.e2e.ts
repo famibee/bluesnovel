@@ -8,7 +8,7 @@
 // イベント系タグ（シナリオ：test/e2e/app/prj_wait/main.sn）。
 //	どのアクションを積むかは test/ScriptEngine_wait.test.ts が持っているので、
 //	ここで見るのは「ユーザー操作にどう反応するか」だけ：
-//	・[enable_event enabled=false]でボタンがクリックを受けなくなる
+//	・[enable_event enabled=false]でボタンと[link]がクリックを受けなくなる
 //	・[wait]がその間シナリオを止め、クリックで打ち切れる
 //	・[waitclick]はクリックで進み、[s]はクリックでは進まない
 
@@ -18,7 +18,7 @@ import {gotoSn, mesStr, snap, waitIdle} from './snPage';
 test.beforeEach(async ({page})=> {await gotoSn(page, 'wait')});
 
 test('[enable_event enabled=false]の間はボタンがクリックを受けない', async ({page})=> {
-	expect(await mesStr(page)).toBe('むこう');
+	expect(await mesStr(page)).toBe('むこうりんく');
 	expect((await snap(page)).aLay.find(l=> l.nm === 'mes')?.enabled).toBe(false);
 
 	// ボタン自体は見えているが、pointer-events: noneなのでクリックを受けない。
@@ -27,6 +27,16 @@ test('[enable_event enabled=false]の間はボタンがクリックを受けな�
 	await page.getByText('ボタン').click({force: true});
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('ゆうこう');	// *btnの「おされた」ではない
+});
+
+test('[enable_event enabled=false]の間は本文中の[link]も効かない', async ({page})=> {
+	// 本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にする（TxtLayer.ts:838）ので、
+	//	ボタンだけでなくリンクもまとめて効かなくなる。「まとめてイベントを操作する」ためのタグ
+	expect(await mesStr(page)).toBe('むこうりんく');
+
+	await page.getByText('りんく').click({force: true});
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('ゆうこう');	// リンク先（*btn）の「おされた」ではない
 });
 
 test('[enable_event enabled=true]に戻すとボタンが効く', async ({page})=> {

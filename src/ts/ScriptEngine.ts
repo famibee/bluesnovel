@@ -101,6 +101,9 @@ export type T_ENGINE_ACTION =
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
 	| {t: 'clearFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_filter]
 	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
+	| {t: 'close'}	// [close]。アプリの終了（アプリ版のみ）
+	| {t: 'updateCheck'; url: string}	// [update_check]。更新チェック（アプリ版のみ）
+	| {t: 'window'; centering: boolean; x: number; y: number; w: number; h: number}	// [window]。アプリウインドウ設定（アプリ版のみ）
 	| {t: 'clearPageLog'}	// [page clear=true]。ページログ（読み戻り履歴）の消去。実処理はScriptMng
 	| {t: 'pageStyle'; style: string}	// [page style=…]。読み戻り中の本文の見た目
 	| {t: 'pageKeys'; aKey: string[]}	// [page key=…]。読み戻り中に効くイベントキーの限定
@@ -482,6 +485,7 @@ export class ScriptEngine {
 		'clear_text', 'rec_ch', 'rec_r', 'reset_rec',
 		'ch_in_style', 'ch_out_style', 'autowc',
 		'navigate_to', 'loadplugin', 'snapshot',
+		'close', 'update_check', 'window',	// アプリ（Electron）版のタグ。ブラウザ版では何もしない
 		'record_place', 'save', 'load', 'reload_script',
 		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
@@ -933,6 +937,10 @@ export class ScriptEngine {
 			if (! nm) throw '[add_lay] layerは必須です（試作仕様）';
 			const cls = (args.class ?? 'txt').toLowerCase() === 'grp' ? 'grp' : 'txt';
 			this.#hTxt[nm] = '';
+			// 文字レイヤは作った時点で「イベントを受ける」（本家 LayerMng.ts:465）。
+			//	[enable_event]がこれを書き換える。**シナリオから読むための値**なので、
+			//	これを書き換えても効かない（有効・無効を変えるのは[enable_event]）
+			if (cls === 'txt') this.#val.set(`save:const.sn.layer.${nm}.enabled`, true);
 			aAct.push({t: 'addLay', cls, nm});
 			return 'skip';
 		}
@@ -1719,6 +1727,54 @@ export class ScriptEngine {
 			return 'skip';
 		}
 
+		// ---- アプリ（Electron）版のタグ ----
+		//	ブラウザ版では**何もしない**（本家も SysBase 側の既定が no-op で、SysApp だけが上書きする。
+		//	SysBase.ts:446/:495/:496）。エンジンは属性の検査までを受け持ち、
+		//	実際にウインドウを触るのはScriptMng経由の`sys`（アプリ版で上書きされる）
+
+		case 'close':	// アプリの終了（本家 SysApp.ts:234）
+			aAct.push({t: 'close'});
+			return 'skip';
+
+		case 'update_check': {	// 更新チェック（本家 SysApp.ts:306）
+			const {url} = args;
+			if (! url) throw '[update_check] urlは必須です';
+			if (! url.endsWith('/')) throw '[update_check] urlの末尾は/にして下さい';
+
+			aAct.push({t: 'updateCheck', url});
+			return 'skip';
+		}
+
+		case 'window': {	// アプリウインドウ設定（本家 SysApp.ts:440）
+			// 省略時は現在値（sys:const.sn.nativeWindow.*）。初回はステージ実寸に落とす。
+			//	**寸法は width/height でも w/h でも受ける**：本家のタグリファレンスは width/height、
+			//	実装（SysApp.ts:443）が読むのは w/h という食い違いがあり、テンプレ（tmp_blues
+			//	main.sn:86）は width/height で書いているため
+			const now = (nm: string, def: number)=> {
+				const v = this.#val.get(`sys:const.sn.nativeWindow.${nm}`);
+				return v === undefined || v === null ? def : Number(v);
+			};
+			const cfg = (nm: string)=> Number(this.#val.get(`tmp:const.sn.config.window.${nm}`) ?? 0);
+			const num = (nm: string, alt: string, def: number)=>
+				args[nm] !== undefined ? ScriptEngine.#argNum('window', nm, args[nm])
+				: args[alt] !== undefined ? ScriptEngine.#argNum('window', alt, args[alt])
+				: def;
+			const o = {
+				centering	: args.centering === 'true',
+				x	: num('x', 'x', now('x', 0)),
+				y	: num('y', 'y', now('y', 0)),
+				w	: num('width', 'w', now('w', cfg('width'))),
+				h	: num('height', 'h', now('h', cfg('height'))),
+			};
+			// 本家同様sys:へ焼き付ける（設定として残る＝次の起動でも同じ位置・大きさ）
+			this.#val.set('sys:const.sn.nativeWindow.x', o.x);
+			this.#val.set('sys:const.sn.nativeWindow.y', o.y);
+			this.#val.set('sys:const.sn.nativeWindow.w', o.w);
+			this.#val.set('sys:const.sn.nativeWindow.h', o.h);
+			aAct.push({t: 'window', ...o});
+			return 'skip';
+		}
+
 		case 'loadplugin': {	// プラグインの読み込み（本家 LayerMng.ts:416 #loadplugin()）
 			// 本家も**cssだけ**（JSのプラグインはビルド時に取り込まれるので、実行時に読むのはcss）
 			const {fn} = args;
@@ -1981,8 +2037,9 @@ export class ScriptEngine {
 			// 対象は文字レイヤ。省略時は現在の文字レイヤ（本家 #argChk_layer(hArg, #curTxtlay)）
 			const nm = args.layer || this.#curTxtLayer;
 			const enabled = (args.enabled ?? 'true') !== 'false';
-			// 本家同様、変数からも参照できるようにする（本家は save: 名前空間。bluesnovelでは game:）
-			this.#val.set(`game:const.sn.layer.${nm}.enabled`, enabled);
+			// シナリオから今の状態を読めるようにする（本家 LayerMng.ts:1092 と同じ save: 名前空間）。
+			//	**読む専用**：ここへ代入しても有効・無効は変わらない（変えるのはこのタグ）
+			this.#val.set(`save:const.sn.layer.${nm}.enabled`, enabled);
 			aAct.push({t: 'enableEvent', nm, enabled});
 			return 'skip';
 		}

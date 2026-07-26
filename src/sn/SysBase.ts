@@ -76,4 +76,13 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	readonly dec = (_ext: string, tx: string)=> Promise.resolve(tx);
 	readonly hash = (_str: string)=> '';
 
+
+	// ===== アプリ（Electron）版だけが持つ振る舞い =====
+	//	**ブラウザ版では何もしない**のが既定（本家 SysBase.ts:446/:495/:496 も同じ形で、
+	//	SysApp が上書きする）。ここを口にしておくことで、[close]/[window]/[update_check]は
+	//	どちらの版でもシナリオを止めずに素通りする
+	close() { /* アプリ版のみ。ブラウザにウインドウを閉じる手段は無い */ }
+	window(_o: {centering: boolean; x: number; y: number; w: number; h: number}) { /* アプリ版のみ */ }
+	updateCheck(_url: string) { /* アプリ版のみ */ }
+
 }

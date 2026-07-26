@@ -63,7 +63,25 @@ aP.push(build({
 	},
 }));
 
+// electronの主処理（appMain）とpreloadは**node側で動く**ので、依存はバンドルせず
+//	実行時にnode_modulesから読ませる（electron-viteの externalizeDepsPlugin と同じ考え）。
+//	・取り込むと、browser条件で解決された版が混じる。実際 electron-store が使う`atomically`は
+//	  ブラウザ版が`window.addEventListener('beforeunload', …)`を**モジュール読み込み時に**呼ぶので、
+//	  主処理で読むと `ReferenceError: window is not defined` で落ちた
+//	・利用側（テンプレ）のバンドラも同じものを二重に取り込まずに済む
+const A_APP_EXTERNAL = [
+	'electron', /^electron\/.+/,
+	'electron-devtools-installer',
+	// package.json の dependencies のうち、node側で使うもの
+	'@electron-toolkit/typed-ipc', /^@electron-toolkit\/typed-ipc\/.+/,
+	'electron-store', 'fs-extra', 'adm-zip',
+	...builtinModules.flatMap(p=> [p, `node:${p}`]),
+];
+
 aP.push(build({
+	// **node向けに解決する**（本家も electron-vite のプリセットが同じ指定を持つ）。
+	//	externalに挙げ切れなかった依存があってもブラウザ版を掴まないための保険
+	resolve	: {mainFields: ['module', 'jsnext:main', 'jsnext'], conditions: ['node']},
 	build: {
 		...oBuild,
 		lib: {
@@ -73,17 +91,14 @@ aP.push(build({
 		},
 		outDir	: 'dist_app',
 		rolldownOptions: {
-			external: [
-				'electron',
-				'electron-devtools-installer',
-				...builtinModules.flatMap(p=> [p, `node:${p}`]),
-			],
+			external: A_APP_EXTERNAL,
 			output,
 		},
 	},
 }));
 
 aP.push(build({
+	resolve	: {mainFields: ['module', 'jsnext:main', 'jsnext'], conditions: ['node']},
 	build: {
 		...oBuild,
 		lib: {
@@ -93,10 +108,7 @@ aP.push(build({
 		},
 		outDir	: 'dist_app',
 		rolldownOptions: {
-			external: [
-				'electron',
-				...builtinModules.flatMap(p=> [p, `node:${p}`]),
-			],
+			external: A_APP_EXTERNAL,
 			output,
 		},
 	},

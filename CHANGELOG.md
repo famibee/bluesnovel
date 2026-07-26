@@ -738,12 +738,6 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	- 同じく、改ページ（`[p]`の次の進行で本文を消す）は**トークンではなくエンジンのフラグ**で
 	  起きるので、ページログがそれも覚えて戻す
 
-- [ ]
-
-
-
-
-
 
 - 🔴 save:const.sn.layer.（文字レイヤ名）.enabled は実装できるように思う
     falseのとき、文字レイヤ上にボタンがあっても押せなくする。まとめてイベントを操作する用途の機能
@@ -751,6 +745,67 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
   > error during start dev server and electron app:
   > Error: Electron uninstall
 - アプリ向けタグの実装 [snapshot][close][update_check][window]、しおり関係
+
+- [x] **`save:const.sn.layer.（文字レイヤ名）.enabled`**。`[add_lay]`でtrue、`[enable_event]`で
+	書き換わる（本家 `LayerMng.ts:465`/`:1092`）。**読む専用**で、ここへ代入しても有効・無効は
+	変わらない（変えるのは`[enable_event]`）
+	- 併せて`[enable_event enabled=false]`が**本文中の`[link]`も効かなくする**ようにした。本家は
+	  文字レイヤのコンテナごと`ctn.interactiveChildren = false`にする（`TxtLayer.ts:838`）ので
+	  ボタンとリンクがまとめて止まるが、こちらはボタンの箱にしか当てておらず漏れていた。
+	  クリックはステージへ抜けるので読み進めは止まらない
+
+- [x] **`bun run app`（テンプレのアプリ版）が起動しない**。原因が3つ重なっていた。
+	最後まで通して**起動を確認済み**
+	1. **electron本体のバイナリが無い**。bunはセキュリティのため既定でpostinstallを走らせないが、
+	   electronはpostinstallで本体を落とす作り。`package.json`へ`trustedDependencies`を足した。
+	   **ただし既に展開済みのnode_modulesでは`bun install`しても走り直さない**ので、一度だけ
+	   `node node_modules/electron/install.js`が要る（両プロジェクトで実行済み）
+	2. **テンプレ側のバンドルにelectron本体が取り込まれていた**（`tmp_blues/electron.vite.config.ts`）。
+	   electron-viteのプリセットは`external: ['electron', …]`を持つのに、vite 8では効いておらず、
+	   `node_modules/electron/index.js`（バイナリの場所を返すCJSシム）ごと`out/main`へ入る。
+	   すると**シムが`out/main/`を基準に`path.txt`を探して見つからず**、
+	   「Electron failed to install correctly」になる。同ファイルへ`external`を明示して解決
+	3. **`dist_app/appMain.js`にブラウザ版の依存が混じっていた**（下記）
+
+- [x] **`dist_app`（electronの主処理・preload）は依存をバンドルしない**ようにした
+	（electron-viteの`externalizeDepsPlugin`と同じ考え）。
+	- 取り込むと**browser条件で解決された版が混じる**。実際`electron-store`が使う`atomically`は
+	  ブラウザ版が`window.addEventListener('beforeunload', …)`を**モジュール読み込み時に**呼ぶので、
+	  主処理で読むと`ReferenceError: window is not defined`で落ちていた
+	- 併せて`resolve.conditions: ['node']`も指定（挙げ漏れた依存への保険）
+	- `dist_app/appMain.js`は456kB→6.2kB。利用側のバンドラも同じものを二重に取り込まずに済む
+	- 外部化の副作用で`fs-extra`（CommonJS）の名前付きimportが**実行時に**通らなくなったので
+	  （`SyntaxError: Named export 'appendFile' not found`）、デフォルトimportから展開する形へ。
+	  バンドルしていた頃はバンドラがinteropしていたので気づけなかった
+
+- [x] **アプリ版のレンダラ（`SysApp`）を最低限動くところまで**。`src/app.ts`は
+	「コンストラクタでログを出すだけ」のスタブで、**ウインドウが永久に出てこなかった**。
+	`BrowserWindow`は`show: false`で作られ、`appMain_cmn`が`inited`を受け取って初めて
+	`bw.show()`する作りなのに、それを送る相手（レンダラ）が無かったため
+	- `SysBase`を継承して`loaded()`を回し、主処理から`getInfo`（`userdata:/`・`downloads:/`の
+	  解決先）を貰ってから Config を作り、最後に`inited`を送る
+	- 主処理側の`console`出力の中継と、テンプレのメニューからの`fire`（キー操作の代行）も繋いだ
+	- `[close]`／`[window]`をアプリ版の実処理へ接続。`[update_check]`・アプリ版の`[snapshot]`
+	  （`capturePage`）・しおりのファイル保存はこれから（todo.md）
+
+- [x] **アプリ（Electron）版のタグ**：`[close]`・`[update_check]`・`[window]`
+	- エンジンは属性の検査と`sys:`への焼き付けまでを受け持ち、実処理は`SysBase`のメソッド
+	  （既定はno-op）へ渡す。**ブラウザ版では何もしない**のは本家も同じ（`SysBase.ts:446`ほかが
+	  no-opで、`SysApp`だけが上書きする）。これでテンプレの`[close]`/`[window]`を含む
+	  シナリオがブラウザ版でも素通りする
+	- `[window]`の寸法は**`width`/`height`でも`w`/`h`でも受ける**。本家はタグリファレンスが
+	  前者、実装（`SysApp.ts:443`）が読むのは後者という食い違いがあり、テンプレ
+	  （tmp_blues `main.sn:86`）は前者で書いているため
+	- **残りはレンダラ側の`SysApp`**（`src/app.ts`は今のところ空のスタブ）。主処理側
+	  （`src/appMain_cmn.ts`）はIPCハンドラまで移植済みなので、そこを繋ぐ作業になる。
+	  アプリ版の`[snapshot]`（`capturePage`＝フレームの中身も写る）としおりのファイル保存も
+	  そこで版が分かれる
+
+- [ ]
+
+
+
+
 
 
 

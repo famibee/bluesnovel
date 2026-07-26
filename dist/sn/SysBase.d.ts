@@ -19,5 +19,14 @@ export declare class SysBase implements T_SysRoots, T_SysBase {
     get path_userdata(): string;
     readonly dec: (_ext: string, tx: string) => Promise<string>;
     readonly hash: (_str: string) => string;
+    close(): void;
+    window(_o: {
+        centering: boolean;
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    }): void;
+    updateCheck(_url: string): void;
 }
 export {};

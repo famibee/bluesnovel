@@ -75,7 +75,7 @@ type T_TXTARG = T_LAY_CMN & {
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
 	b_src?	: string | undefined;	// [lay b_pic=…]の解決済みURL。**あればb_colorより優先**（本家 TxtLayer.ts:393）
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
-	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
+	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンと[link]がクリックを受けない
 	aBtn	: T_BTN[];
 	in_style?: string | undefined;	// [lay in_style=…]。[ch_in_style]で定義した文字出現演出名
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
@@ -360,6 +360,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		width: 70%;
 		white-space: pre-wrap;
 		color: inherit;
+		/* [enable_event enabled=false]：**本文中の[link]もクリックを受けなくする**
+			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
+			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
+			クリックはステージへ抜けるので、読み進め自体は止まらない */
+		${enabled ? '' : 'pointer-events: none;'}
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${sCss ?? ''}

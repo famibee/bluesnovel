@@ -44,6 +44,9 @@ var t = "skynovel", n = class {
 	}
 	dec = (e, t) => Promise.resolve(t);
 	hash = (e) => "";
+	close() {}
+	window(e) {}
+	updateCheck(e) {}
 }, r = class extends n {
 	constructor(...[e = {}, t = {
 		cur: "prj/",

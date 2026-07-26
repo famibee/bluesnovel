@@ -149,6 +149,18 @@ export type T_ENGINE_ACTION = {
     index: number;
     enabled: boolean;
 } | {
+    t: 'close';
+} | {
+    t: 'updateCheck';
+    url: string;
+} | {
+    t: 'window';
+    centering: boolean;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+} | {
     t: 'clearPageLog';
 } | {
     t: 'pageStyle';

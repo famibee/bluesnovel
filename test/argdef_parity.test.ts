@@ -88,7 +88,7 @@ const A_NOT_YET: {[attr: string]: string} = {
 	clear_filter: '[lay clear_filter=]/[add_face clear_filter=]。未対応',
 	dx			: 'SpritesMng（アニメpngのコマ位置）。未対応',
 	dy			: '同上',
-	er			: 'Reading.ts（読み戻り時の消去）。読み戻りは別の作り（Caretaker）',
+	er			: 'Reading.ts（読み戻り時の消去。[p er=true]）。読み戻りは演じ直す作り（PageLog）なので出番が無い',
 	stop		: 'SndBuf/SpritesMng。音声・アニメpngの停止。未対応',
 	wait		: 'LayerMng/TxtStage（文字表示ウェイト・文字出現演出）。[ch_in_style]系と一緒に',
 };

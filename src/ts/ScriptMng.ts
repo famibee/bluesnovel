@@ -1128,6 +1128,16 @@ export class ScriptMng {
 		case 'letFrame':
 			// 実処理は#runStep()側（DOMを触った結果を組み込み変数へ書き戻してから続ける）
 			break;
+		// アプリ（Electron）版のタグ。**ブラウザ版では何もしない**（SysBaseの既定がno-op）
+		case 'close':
+			this.sys.close();
+			break;
+		case 'window':
+			this.sys.window(act);
+			break;
+		case 'updateCheck':
+			this.sys.updateCheck(act.url);
+			break;
 		case 'clearPageLog':
 			// [page clear=true]：ページログの消去。以降の停止点から積み直しになる。
 			//	本家同様、読み戻り中の見た目（styPaging）も既定へ戻す

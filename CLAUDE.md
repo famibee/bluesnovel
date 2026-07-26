@@ -109,6 +109,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 `ch_in_style`/`ch_out_style`/`autowc`（文字出現演出と文字ごとのウェイト。`src/ts/ChStyle.ts`。
 **消去演出はまだ適用していない**），
 `toggle_full_screen`, `dump_lay`, `add_frame`/`frame`/`set_frame`/`let_frame`, `set_focus`,
+`close`/`window`（アプリ版のタグ。**ブラウザ版では何もしない**＝エンジンは属性の検査までで、
+実処理は `SysBase` の no-op メソッドを `SysApp` が上書きする形。本家も同じ。`update_check` は
+属性の検査だけで実処理は未実装），
 停止点 `l`/`p`/`s`/`waitclick`。
 
 **属性ごとの詳細と実装状況は `docs/tag.html`**（変数は `docs/dev.html`）。名前に

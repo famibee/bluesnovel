@@ -53,7 +53,12 @@
   - [ ] `[save pic=…]`のサムネイル保存（テンプレの`_archive.sn`が枠に出す想定）。置き場は`[snapshot fn='userdata:/…']`と同じセーブ層（`SaveMng.putFile()`）でよい
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）
-  - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）・`[update_check]`はElectron専用。`dist_app`側の整備と一緒に
+  - [ ] **アプリ（Electron）版の残り**。`src/app.ts`（`SysApp`）は**ウインドウが出て本編が動くところまで**実装済み（`getInfo`→Config→`inited`）。`[close]`／`[window]`も接続済み。残りは下記
+    - [ ] `[update_check]`の実処理（本家`SysApp.ts:306`。`_index.json`／`.yml`の取得・版比較・ダイアログ・ダウンロード・sha512検証）
+    - [ ] しおり・`sys:`の保存先を`electron-store`（`userdata/storage/`）へ。今はブラウザ版と同じlocalStorage（`SaveMng`）のままで、アプリを消すと消える。`[export]`/`[import]`も本家は`.spd`（zip）
+    - [ ] ウインドウ位置・大きさの復元。今は毎回「ステージ実寸で中央」。本家は`sys:const.sn.nativeWindow.*`から復元し、`save_win_inf`で動かすたび保存する（受け口は`appMain_cmn`に有る）
+    - [ ] パッケージ版のアセット読み込み（`file://`になるので`fetch`が使えず、主処理の`fetch`/`readFile` IPC経由が要る）。今のところ`electron-vite dev`のみ確認
+    - [ ] アプリ版の`[snapshot]`は`capturePage`（Electronがネイティブに撮る＝**HTMLフレームの中身も写る**）。web版のDOM→SVG方式はブラウザ制約でフレームが写らないので、ここは版ごとに実装が分かれる
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に

@@ -7,7 +7,7 @@
 
 // しおり・システム系タグのうち、エンジンが担当する部分。
 //	[title]・[toggle_full_screen]・[dump_lay]・[pop_stack]・
-//	[navigate_to]・[loadplugin]・[snapshot]。
+//	[navigate_to]・[loadplugin]・[snapshot]と、アプリ版のタグ（[close]/[update_check]/[window]）。
 //	本家：SysBase.ts:448 title / :462 #tglFlscr()、LayerMng.ts:1068 #dump_lay()、
 //	ScriptIterator.ts:984 #pop_stack()、SysWeb.ts:239 navigate_to、
 //	LayerMng.ts:416 #loadplugin() / :338 #snapshot()
@@ -300,4 +300,45 @@ it('builtin_lastPageText', ()=> {
 	const se = new ScriptEngine('t1', 'あいう[s]');
 	se.step();
 	expect(se.getVal('const.sn.last_page_text')).toBe('あいう');
+});
+
+
+// ============ アプリ（Electron）版のタグ ============
+//	本家 SysApp.ts:234 close / :306 update_check / :440 window。
+//	**ブラウザ版では何もしない**（本家も SysBase 側の既定が no-op）ので、
+//	エンジンが受け持つのは属性の検査と sys: への焼き付けまで
+
+it('close_pushesAction', ()=> {
+	expect(acts('[close][s]').find(v=> v.t === 'close')).toEqual({t: 'close'});
+});
+
+it('updateCheck_urlは必須で末尾は/', ()=> {
+	expect(acts(`[update_check url='https://example.com/x/'][s]`).find(v=> v.t === 'updateCheck'))
+		.toEqual({t: 'updateCheck', url: 'https://example.com/x/'});
+	expect(()=> acts('[update_check][s]')).toThrow('[update_check] urlは必須です');
+	expect(()=> acts(`[update_check url='https://example.com/x'][s]`))
+		.toThrow('[update_check] urlの末尾は/にして下さい');
+});
+
+it('window_属性をsys:へ焼き付ける', ()=> {
+	const se = new ScriptEngine('t1', '[window x=10 y=20 width=640 height=480 centering=true][s]');
+	const a = se.step();
+	expect(a.find(v=> v.t === 'window'))
+		.toEqual({t: 'window', centering: true, x: 10, y: 20, w: 640, h: 480});
+	// 設定として残る（次の起動でも同じ位置・大きさ）
+	expect(se.getVal('sys:const.sn.nativeWindow.x')).toBe(10);
+	expect(se.getVal('sys:const.sn.nativeWindow.w')).toBe(640);
+});
+
+it('window_寸法はwidth/heightでもw/hでも受ける', ()=> {
+	// **本家はタグリファレンスがwidth/height、実装（SysApp.ts:443）が読むのはw/h**という
+	//	食い違いがあり、テンプレ（tmp_blues main.sn:86）はwidth/heightで書いている
+	expect(acts('[window w=800 h=600][s]').find(v=> v.t === 'window'))
+		.toMatchObject({w: 800, h: 600});
+});
+
+it('window_省略時は現在値', ()=> {
+	const se = new ScriptEngine('t1', '[window x=10 y=20 width=640 height=480][window x=99][s]');
+	const a = se.step().filter(v=> v.t === 'window');
+	expect(a.at(-1)).toEqual({t: 'window', centering: false, x: 99, y: 20, w: 640, h: 480});
 });
