@@ -10,4 +10,15 @@
 
 ; 画像レイヤ：fnだけ。visible/alpha/left/top/rotation/scale_*は書かない
 [lay layer=base fn=bg]
-もじ[s]
+もじ[l]
+
+; 配置属性（本家 Layer.ts:513-552）。**-1〜1はステージ幅・高さの割合**で、
+;	center/right/middle/bottomは「指定値から表示物の幅・高さを引く」寄せ。
+;	実寸はエンジンが知らないのでCSSの独立translateプロパティで表す
+[add_lay layer=c class=grp]
+[add_lay layer=r class=grp]
+[add_lay layer=s class=grp]
+[lay layer=c fn=bg center=0.5 middle=0.5]
+[lay layer=r fn=bg right=0.5 bottom=0.5]
+[lay layer=s fn=bg s_right=20 s_bottom=30]
+よせた[s]

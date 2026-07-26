@@ -49,6 +49,12 @@ export type T_LAY_STY_ARG = {
 	alpha?		: number;	// レイヤ全体の不透明度。文字レイヤ背景だけを透かすb_alphaとは別物
 	left?		: number;
 	top?		: number;
+	// 中央寄せ・右端合わせ（本家の center/right/middle/bottom）。エンジンは表示物の実寸を
+	//	知らないので「寄せの種類」だけを渡し、実際のずらしはCSSのtranslateが受け持つ（Lay.ts styLay）
+	align_x?	: 'center' | 'right';
+	align_y?	: 'middle' | 'bottom';
+	s_right?	: number;	// ステージ右端からの距離（本家 s_right）。leftとは排他
+	s_bottom?	: number;
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
@@ -921,8 +927,30 @@ export class ScriptEngine {
 			const sty: T_LAY_STY_ARG = {};
 			if (args.visible !== undefined) sty.visible = args.visible !== 'false';
 			if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
+			// 横位置は left / center / right / s_right の**排他**（本家 Layer.ts:513-532 の else if）。
+			//	center・rightは「指定値から表示物の幅を引く」＝寄せ。実寸はエンジンが知らないので
+			//	寄せの種類だけを渡し、CSSの独立translateプロパティで表現する（Lay.ts styLay）
 			if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
+			else if (args.center !== undefined) {
+				sty.left = this.#argPos('lay', 'left', args.center);
+				sty.align_x = 'center';
+			}
+			else if (args.right !== undefined) {
+				sty.left = this.#argPos('lay', 'left', args.right);
+				sty.align_x = 'right';
+			}
+			else if (args.s_right !== undefined) sty.s_right = this.#argPos('lay', 'left', args.s_right);
+			// 縦位置も同じ並び（top / middle / bottom / s_bottom）
 			if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
+			else if (args.middle !== undefined) {
+				sty.top = this.#argPos('lay', 'top', args.middle);
+				sty.align_y = 'middle';
+			}
+			else if (args.bottom !== undefined) {
+				sty.top = this.#argPos('lay', 'top', args.bottom);
+				sty.align_y = 'bottom';
+			}
+			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
 			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
 			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
 			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);

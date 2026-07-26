@@ -42,7 +42,7 @@
   - [ ] `[graph]`の`width`/`height`（今は全角空白の枠に`background-size: contain`で収める）・`x`/`y`・`id`
   - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
 - [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
-- [ ] **`[lay]`/`[button]`の配置属性の残り**：`center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`（本家 `Layer.ts:513-552`）。`left`/`top`の代わりに指定し、**表示物の幅・高さを引いて**中央寄せ・右端合わせにする。エンジンは表示物の実寸を知らないので、CSSの独立`translate`プロパティで表現するのが筋（`center`→`left`＋`translate: -50%`、`right`→`-100%`、`s_right`→CSSの`right`）。`transform`とは別プロパティなので`rotation`/`scale`と衝突しない。本家の`isButton`分岐（幅の1/3で計算する）は再現しない見込みなので相違として記録すること
+- [ ] **`[button]`の配置属性**：`center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`。`[lay]`側は対応済み（CSSの独立`translate`で表現）。本家は`isButton`のとき幅の**1/3**で計算する（pixiの文字寸法まわりの都合に見える）ので、同じ絵にするかは要判断
 - [ ] **`[button]`の残り**：`pic=`（画像ボタン）・`b_pic=`（背景画像）はアセット整備と一緒に。既定の見た目（色・余白）も仮のまま
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない

@@ -33,6 +33,18 @@ export type T_LAY_STY = {
 	alpha?		: number;	// レイヤ全体の不透明度。文字レイヤ背景だけを透かすb_alphaとは別物
 	left?		: number;
 	top?		: number;
+	// 中央寄せ・右端合わせ（本家 Layer.ts:513-552 の center/right/middle/bottom）。
+	//	本家は「指定値から**表示物の幅・高さを引く**」で実現するが、エンジンは表示物の実寸を
+	//	知らない（知るにはDOMを見るしかない）。そこでCSSの独立`translate`プロパティで表す：
+	//	center→-50%・right→-100%。**transformとは別プロパティ**なので、
+	//	rotation/scale_*（transformで組む）と衝突せず、適用もtransformより前＝
+	//	「位置を決めてから回す」という本家の順序と同じになる
+	align_x?	: 'center' | 'right';
+	align_y?	: 'middle' | 'bottom';
+	// ステージの右端・下端からの距離（本家 s_right/s_bottom）。CSSのright/bottomがそのまま同義。
+	//	left/topとは排他（本家も else if で分岐する）
+	s_right?	: number;
+	s_bottom?	: number;
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
@@ -53,7 +65,7 @@ export type T_LAY_STY = {
 export const BTN_DEF_W = 100;
 export const BTN_DEF_H = 30;
 
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
 
 export type T_LAY_IDX = T_LAY_STY & {
 	cls		: 'grp'|'txt';
@@ -65,8 +77,17 @@ export type T_LAY_IDX = T_LAY_STY & {
 //	（原点は左上＝本家pixiのpivot既定と揃える）
 export function styLay(l: T_LAY_STY): CSSProperties {
 	const sty: CSSProperties = {};
-	if (l.left !== undefined) sty.left = `${String(l.left)}px`;
-	if (l.top !== undefined) sty.top = `${String(l.top)}px`;
+	// 横位置：left（＋center/rightの寄せ）か、ステージ右端からのs_rightか（本家も else if で排他）
+	if (l.s_right !== undefined) sty.right = `${String(l.s_right)}px`;
+	else if (l.left !== undefined) sty.left = `${String(l.left)}px`;
+	if (l.s_bottom !== undefined) sty.bottom = `${String(l.s_bottom)}px`;
+	else if (l.top !== undefined) sty.top = `${String(l.top)}px`;
+	// 寄せは独立translateプロパティで。transformと別なので回転・拡縮と混ざらない
+	if (l.align_x !== undefined || l.align_y !== undefined) {
+		const tx = l.align_x === 'center' ? '-50%' : l.align_x === 'right' ? '-100%' : '0';
+		const ty = l.align_y === 'middle' ? '-50%' : l.align_y === 'bottom' ? '-100%' : '0';
+		sty.translate = `${tx} ${ty}`;
+	}
 	if (l.alpha !== undefined) sty.opacity = l.alpha;
 	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined
 	 || l.pivot_x !== undefined || l.pivot_y !== undefined) {

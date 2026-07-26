@@ -18,13 +18,31 @@
 //	見つけられない**。ここが対になる検査。
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn} from './snPage';
+import {SEL_FORE, gotoSn, pressKey} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'argdef')});
 
 // 「変形なし」の算出値。デザインモードのMoveable用の下地（Stage.tsx sty4Moveable）が
 //	恒等変換を書くので、未指定でも 'none' にはならない
 const IDENTITY = ['none', 'matrix(1, 0, 0, 1, 0, 0)'];
+
+// レイヤ1枚分の実寸とステージ枠。ステージは窓に合わせて transform: scale されるので、
+//	距離を比べるときはその倍率で割る
+async function layBox(page: import('@playwright/test').Page, nm: string) {
+	return page.evaluate(nm=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] [data-lay="${nm}"]`)!;
+		const b = el.getBoundingClientRect();
+		const st = document.querySelector('#skynovel [data-page="fore"]')!.getBoundingClientRect();
+		const inner = document.getElementById('skynovel')!.firstElementChild!;
+		const scale = st.width / (inner as HTMLElement).offsetWidth;
+		return {
+			stage: {left: st.left, top: st.top, right: st.right, bottom: st.bottom,
+				width: st.width, height: st.height},
+			box	: {right: b.right, bottom: b.bottom, cx: b.left + b.width / 2, cy: b.top + b.height / 2},
+			scale,
+		};
+	}, nm);
+}
 
 // レイヤ1枚分の算出値。left/topはステージ内箱からの相対で見る
 //	（ステージは窓に合わせて transform: scale されるので、絶対座標では比べられない）
@@ -105,4 +123,28 @@ test('ステージ内に収まっている（原点がステージ左上）', as
 		return Math.round(p.left - s.left) === 0 && Math.round(p.top - s.top) === 0;
 	});
 	expect(ok).toBe(true);
+});
+
+test('center/middle は指定値に表示物の中心が来る', async ({page})=> {
+	// 本家は「指定値から表示物の幅・高さの半分を引く」。こちらはCSSの独立translateで
+	//	-50%ずらす（実寸を知らなくてよい）。**同じ絵になることを実測で確かめる**
+	await pressKey(page, 'Space');
+	const {stage, box} = await layBox(page, 'c');
+	expect(Math.round(box.cx - stage.left)).toBe(Math.round(stage.width * 0.5));
+	expect(Math.round(box.cy - stage.top)).toBe(Math.round(stage.height * 0.5));
+});
+
+test('right/bottom は指定値に表示物の右下端が来る', async ({page})=> {
+	await pressKey(page, 'Space');
+	const {stage, box} = await layBox(page, 'r');
+	expect(Math.round(box.right - stage.left)).toBe(Math.round(stage.width * 0.5));
+	expect(Math.round(box.bottom - stage.top)).toBe(Math.round(stage.height * 0.5));
+});
+
+test('s_right/s_bottom はステージの右端・下端からの距離', async ({page})=> {
+	// CSSのright/bottomがそのまま同義。left/topは持たせない
+	await pressKey(page, 'Space');
+	const {stage, box, scale} = await layBox(page, 's');
+	expect(Math.round((stage.right - box.right) / scale)).toBe(20);
+	expect(Math.round((stage.bottom - box.bottom) / scale)).toBe(30);
 });

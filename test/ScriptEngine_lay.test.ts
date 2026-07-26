@@ -344,3 +344,41 @@ it('btnPos_ratioIsStageSizeToo', ()=> {
 	const b = seWin('[button text=x label=*a width=0.5]').find(v=> v.t === 'addBtn');
 	expect(b?.t === 'addBtn' ? b.sty : undefined).toMatchObject({width: 0.5});
 });
+
+
+// ============ 中央寄せ・右端合わせ（本家 Layer.ts:513-552） ============
+
+it('layAlign_centerAndMiddle', ()=> {
+	// 本家は「指定値から表示物の幅・高さを引く」。エンジンは実寸を知らないので
+	//	**寄せの種類だけ**を渡し、実際のずらしはCSSのtranslateがやる（Lay.ts styLay）
+	expect(styOfWin('[lay layer=base center=0.5 middle=0.5]'))
+		.toMatchObject({left: 512, align_x: 'center', top: 384, align_y: 'middle'});
+});
+
+it('layAlign_rightAndBottom', ()=> {
+	// right/bottomは「指定値に表示物の右端・下端を合わせる」＝-100%
+	expect(styOfWin('[lay layer=base right=800 bottom=600]'))
+		.toMatchObject({left: 800, align_x: 'right', top: 600, align_y: 'bottom'});
+});
+
+it('layAlign_stageEdge', ()=> {
+	// s_right/s_bottomはステージの右端・下端からの距離。CSSのright/bottomがそのまま同義なので
+	//	left/topは持たせない（本家も else if で排他）
+	const sty = styOfWin('[lay layer=base s_right=20 s_bottom=30]');
+	expect(sty).toMatchObject({s_right: 20, s_bottom: 30});
+	expect(sty?.left).toBeUndefined();
+	expect(sty?.top).toBeUndefined();
+});
+
+it('layAlign_leftWins', ()=> {
+	// 本家は else if の並び順で left > center > right > s_right。左が書かれていればそれが勝つ
+	const sty = styOfWin('[lay layer=base left=10 center=500 right=900 s_right=20]');
+	expect(sty).toMatchObject({left: 10});
+	expect(sty?.align_x).toBeUndefined();
+	expect(sty?.s_right).toBeUndefined();
+});
+
+it('layAlign_ratioWorksToo', ()=> {
+	// 寄せの指定値も-1〜1は割合（本家も同じ #argChkPos を通す）
+	expect(styOfWin('[lay layer=base center=0.5]')).toMatchObject({left: 512, align_x: 'center'});
+});

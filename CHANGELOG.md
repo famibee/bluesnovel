@@ -343,7 +343,6 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  `args.visible !== 'false'`という**パース**であって既定ではない。CSSの`visibility: visible`が
 	  既定を供給しているので`A_CSS_DEF`へ移した
 
-
 - [x] `[lay left=]`/`[top=]`（と`[button]`の同属性）の**-1〜1をステージ幅・高さの割合として解釈**
 	- 本家 `Layer.ts:513` `if (x > -1 && x < 1) x *= CmnLib.stageW`。テンプレやギャラリーは
 	  `[lay left=0.5]`で画面中央を指す書き方をするが、こちらはpxとして扱っていたので
@@ -355,6 +354,26 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  （寸法であって位置ではない）
 	- 見つかった経緯は「タグ属性の既定値」の棚卸し（`argChk_*`の抽出）。既定値そのものではなく、
 	  **値の解釈**の相違だが、同じ抽出作業で目に入った
+
+
+- [x] `[lay]`の配置属性 `center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`（本家 `Layer.ts:513-552`）
+	- 本家は「指定値から**表示物の幅・高さを引く**」で寄せを実現するが、エンジンは表示物の実寸を
+	  知らない（知るにはDOMを見るしかなく、`const.sn.lay[N].width/height`も今は有無の1/0で代用中）。
+	  そこで**CSSの独立`translate`プロパティ**で表した：`center`→`-50%`・`right`→`-100%`。
+	  実寸を知らなくても同じ絵になる
+	- `translate`は`transform`とは**別プロパティ**なので、`rotation`/`scale_*`（`transform`で組む）と
+	  衝突しない。しかも適用は`transform`より前＝「位置を決めてから回す」という本家の順序と同じ
+	- `s_right`/`s_bottom`はステージ右端・下端からの距離で、CSSの`right`/`bottom`がそのまま同義。
+	  `left`/`top`とは排他にする（本家も else if で分岐）
+	- 優先順位も本家どおり `left > center > right > s_right`（縦も同様）
+	- `T_LAY_STY`に`align_x`/`align_y`/`s_right`/`s_bottom`を追加し、`A_LAY_STY_KEY`にも入れた
+	  （`[clear_lay]`で消える・`getLaySty()`から見える）
+	- E2Eは**実測**で見る（`argdef.e2e.ts`）。中心・右下端がステージのどこに来るかを
+	  `getBoundingClientRect()`で確かめる。ステージは窓に合わせて`transform: scale`されるので、
+	  距離の比較はその倍率で割る
+	- **未対応**：`[button]`側の同属性。本家は`isButton`のとき幅の**1/3**で計算する（pixiの文字寸法
+	  まわりの都合に見える）ので、そのまま持ってくると別の絵になる。テンプレのボタンは
+	  `left`/`top`だけなので実害は出ていない
 
 
 - [ ]
