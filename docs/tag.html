@@ -177,9 +177,9 @@
 		<li class="mb1"><a href="#graph">🟡 [graph] インライン画像表示</a></li>
 		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
-		<li class="mb1"><a href="#rec_ch">🔴 [rec_ch] 履歴書き込み</a></li>
-		<li class="mb1"><a href="#rec_r">🔴 [rec_r] 履歴改行</a></li>
-		<li class="mb1"><a href="#reset_rec">🔴 [reset_rec] 履歴リセット</a></li>
+		<li class="mb1"><a href="#rec_ch">🟡 [rec_ch] 履歴書き込み</a></li>
+		<li class="mb1"><a href="#rec_r">🟢 [rec_r] 履歴改行</a></li>
+		<li class="mb1"><a href="#reset_rec">🟢 [reset_rec] 履歴リセット</a></li>
 		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
 		<li class="mb1"><a href="#set_focus">🟡 [set_focus] フォーカス移動</a></li>
 		<li class="mb1"><a href="#span">🟡 [span] インラインスタイル設定</a></li>
@@ -1402,6 +1402,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 </table>
 
+<p class="mb2 px1">
+	<b>bluesnovel：<code>text</code>のみ対応</b>（ルビ文法と<code>[r]</code>は効く）。<br/>
+	<code>style</code>／<code>r_style</code>／任意属性は未対応。<br/>
+	本家は<code>display: none;</code>を付けた[<a href="#ch">ch</a>]として本文へ流し、履歴側でだけ見せる作りだが、
+	bluesnovelは履歴の蓄積が表示と別物なので履歴にだけ積む。
+	そのため<b><code>save:sn.doRecLog</code>がfalseでも記録される</b>（明示的な書き込みなので）
+</p>
 </p>
 <h2 id="rec_r" class="w-heading">[rec_r]履歴改行</h2>
 <h4>履歴に改行を出力する。</h4>

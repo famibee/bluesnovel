@@ -687,11 +687,19 @@
 	[volume]での volume属性や、「sys:const.sn.sound.【buf】.volume」は基準音量であり、別物である点に注意
 </td></tr>
 <tr><td>🔴 save:const.sn.styPaging</td><td>'color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;'</td><td>CSS Style</td><td>ページ遷移中 CSS スタイル</td></tr>
-<tr><td>🔴 save:sn.doRecLog</td><td>false</td><td>true、false</td><td>テキストを履歴に記録するか</td></tr>
-<tr><td>🔴 save:const.sn.sLog</td><td>'[]'</td><td>文字列</td><td>
+<tr><td>🟢 save:sn.doRecLog</td><td>false</td><td>true、false</td><td>テキストを履歴に記録するか<br/>
+	<b>bluesnovel：falseの間は履歴に積まない</b>。
+	本家は記録を止めるのでなく<code>&lt;span class='offrec'&gt;</code>で包んで履歴側で隠す（TxtLayer.ts:494）が、
+	こちらは履歴の蓄積が表示と別物なので単に積まない。<br/>
+	なお[<a href="tag.html#rec_ch" target="_blank" rel="noopener">rec_ch</a>]／
+	[<a href="tag.html#rec_r" target="_blank" rel="noopener">rec_r</a>]はこの値に関わらず記録する
+</td></tr>
+<tr><td>🟢 save:const.sn.sLog</td><td>'[]'</td><td>文字列</td><td>
 	履歴 JSON テキスト<br/>
 	【2019/12/18】内容が const.sn.log.json と同様に。<br/>
-	→以前は、'\f'区切りの妙なフォーマットだった。
+	→以前は、'\f'区切りの妙なフォーマットだった。<br/>
+	<b>bluesnovel：しおりを保存する直前に1回だけ書く</b>。
+	本家は本文を1トークン追記するたびに書き直すが、この値を読むのはしおりの保存と復元だけなので
 </td></tr>
 <tr><td>🔴 save:const.sn.loopPlaying</td><td>'{}'</td><td>json</td><td>ループ中のサウンドバッファ</td></tr>
 <tr><td>🟢 save:const.sn.scriptFn</td><td>''</td><td>スクリプト名</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプト名</td></tr>
@@ -861,8 +869,20 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	それはUA文字列から出せるため（判別は <code>test/CmnLib.test.ts</code> が代表的なUAで押さえている）
 </td></tr>
 <tr><td> <span style="text-decoration: line-through">const.sn.sLog</span>【2019/07/28変名】<br/>
-const.sn.log.json
-</td><td>"[{'txt':''}]"</td><td>json</td><td>_log.snが_log.htmに渡す用、１ページずつ{}に分割してjson化して返す</td></tr>
+🟢 const.sn.log.json
+</td><td>"[{'txt':''}]"</td><td>json</td><td>_log.snが_log.htmに渡す用、１ページずつ{}に分割してjson化して返す<br/>
+	<b>bluesnovel：<code>[{"text":"…HTML…"}, …]</code>で、末尾が書きかけの現ページ</b>（本家と同じ）。<br/>
+	本家は表示済みHTMLから正規表現でアニメ用のstyleやdata-*属性を削り落として作るが、
+	こちらは<b>シナリオが書いた生の本文からHTMLを組み立てる</b>（エンジンはDOMを持たないため）。
+	帰結として、[<a href="tag.html#link" target="_blank" rel="noopener">link</a>]のリンクは落ち、
+	[<a href="tag.html#graph" target="_blank" rel="noopener">graph</a>]のインライン画像は本文と同じ全角空白1つになる。<br/>
+	1ページの区切りは[<a href="tag.html#p" target="_blank" rel="noopener">p</a>]・
+	[<a href="tag.html#er" target="_blank" rel="noopener">er</a>]・
+	[<a href="tag.html#clear_text" target="_blank" rel="noopener">clear_text</a>]・
+	[<a href="tag.html#clear_lay" target="_blank" rel="noopener">clear_lay</a>]（表ページ）・
+	[<a href="tag.html#current" target="_blank" rel="noopener">current</a>]の切替。
+	上限ページ数はprj.jsonの<code>log.max_len</code>（既定64）
+</td></tr>
 <tr><td>🟢 const.sn.screenResolutionX</td><td>起動時ディスプレイの表示領域横幅</td><td>1〜</td><td>
 	画面の最大水平解像度。アプリ版でのみ有効な値が設定される。<br/>
 	アプリウインドウ移動で表示されるディスプレイが変わった際にも、そのディスプレイの解像度が反映される

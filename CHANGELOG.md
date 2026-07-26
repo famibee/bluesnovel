@@ -453,6 +453,11 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  importする疑似利用者で型解決も通した
 
 
+- 長押しでデザインモードに入るが、本家機能大部分の完成まで無効化＆TODO記載
+- todo.md: 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定）
+  - 立ち絵を震わせる [fg_shake][fg2_shake] で使用しているかと思ったが、[tsy path=]で実現していた
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2
+
 - [x] デザインモード（長押しで入る）を無効化＋todo.mdの棚卸し
 	- `Stage.tsx`に`ENA_DESIGN_MODE = false`を置き、長押しハンドラを要素へ**渡さない**形に。
 	  フック（`useLongPress`）の呼び出し自体は残す——条件付きにするとReactのフック規則に触れるため。
@@ -469,11 +474,57 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	- 文字出現・消去演出（`[ch_in_style]`系）と`[page]`の残りは、既にtodo.mdにある記述のままで
 	  追記なし（次の着手候補としての読み上げ）
 
+
+- todo.md: **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play
+
+- [x] **本文履歴（ログ）**：`const.sn.log.json`・`save:sn.doRecLog`・`save:const.sn.sLog`・
+	`[rec_ch]`/`[rec_r]`/`[reset_rec]`（本家 `Log.ts`）
+	- **溜めるものが本家と違う**。本家はTxtLayerが組み立てた表示用HTMLそのものを記録し、
+	  正規表現でアニメ用のstyleやdata-*属性を削り落として履歴テキストにする（`TxtLayer.ts:604`）。
+	  こちらは表示単位（`T_CH`）へ割る**前の生の本文文字列**を溜め、読み出し時にHTMLへ起こす
+	  （`src/ts/Log.ts` の `htmlOf()`）。理由は2つ——エンジンはDOMを持たないので
+	  「表示されたHTML」が存在しない／`splitCh()`が既にルビ記法と埋め込み命令を解釈できるので、
+	  **削り落とすのではなく組み立てられる**
+	- 帰結の相違2つ（履歴表示の用途では困らないと判断）：`[link]`のリンクは落とす、
+	  `[graph]`のインライン画像は本文と同じ全角空白1つになる（画像のパス解決はScriptMngの仕事で、
+	  エンジンが持つ生文字列にはURLが入っていないため）
+	- ログはエンジン側に置いた（本家は`LayerMng`が持つ）。記録するのが「シナリオが書いた本文」で
+	  あって見た目ではないため。おかげで**履歴の検査がブラウザ抜きで全部書ける**（`test/Log.test.ts`）
+	- 1ページの区切りは`#hTxt`（既定文字レイヤの表ページ）が捨てられる地点すべて＝`[p]`の再開時・
+	  `[er]`・`[clear_text]`・`[clear_lay page=fore]`・`[current]`の切替。本家が
+	  `LayerMng.ts:956/995/1006` と `TxtLayer.clearText()` で `pagebreak()` を呼ぶのと同じ位置。
+	  **空ページは積まない**（本家 `Log.ts:105`）のでUI画面を出入りしただけでは履歴が増えない
+	- `save:const.sn.sLog`は**しおりを保存する直前に1回だけ書く**。本家は本文を1トークン
+	  追記するたびに書き直すが、この値を読むのはしおりの保存と復元だけ。`nowMarkPart()`／
+	  `restoreMarkPart()`という口がエンジンにあるので、そこに寄せれば足りる
+	  （本家がそうしているのは、あちらのLogがしおり処理から見えない場所に居るため）
+	- `save:sn.doRecLog`がfalseの間は**積まない**。本家は記録を止めるのでなく
+	  `<span class='offrec'>`で包んで履歴側で隠す（`TxtLayer.ts:494`）が、こちらは履歴の蓄積が
+	  表示と別物なので単に積まない。既定はfalse（本家 `CmnInterface.ts:149`）
+	- `[rec_ch]`は`text`のみ対応（`style`/`r_style`/任意属性は未対応→todo.md）。本家は
+	  `display: none;`を付けた`[ch]`として本文へ流すが、こちらは履歴にだけ積む。そのため
+	  **`doRecLog`がfalseでも記録する**（明示的な書き込みなので）。`[ch record=false]`も対応
+	- 上限ページ数は`prj.json`の`log.max_len`（既定64）。`const.sn.config.log.max_len`として
+	  ScriptMngから渡す（本家の`const.sn.config.（略）`はprj.jsonの中身をそのまま返す仕様）
+	- 検査27件（`test/Log.test.ts`）。docs/tag.htmlは`[rec_ch]`🟡・`[rec_r]`🟢・`[reset_rec]`🟢、
+	  docs/dev.htmlは`save:sn.doRecLog`🟢・`save:const.sn.sLog`🟢・`const.sn.log.json`🟢へ
+
 - [ ]
 
 
 
-
+- todo.md: **文字出現・消去演出**
+- todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
+- todo.md: **フィルターの残り**
+  - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter
+- todo.md: **アニメpng（スプライトシート）の残り**
+  - 【現状不使用・優先順位低】文字レイヤの枠画像でのシート再生
+  - `[graph]`の`width`/`height`
+  - `[l]`/`[p]`の待ちマークの位置指定
+- todo.md: **`[button]`の残り**：画像ボタン
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
 
 
 

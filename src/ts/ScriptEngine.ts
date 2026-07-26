@@ -23,6 +23,7 @@ import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName, type T_TS
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
 import {plainTxt} from './Txt';
+import {Log} from './Log';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
 
@@ -366,6 +367,20 @@ export class ScriptEngine {
 	readonly #val = new VarStore;
 	readonly #expr = new ExprEval(this.#val);
 
+	// 本文履歴（本家 LayerMng.ts:84 が持つ Log）。**エンジン側に置く**のは、
+	//	記録するのが「シナリオが書いた本文」であってDOMの見た目ではないため。
+	//	上限ページ数はprj.jsonの`log.max_len`（ScriptMngが組み込み変数として渡す）
+	readonly #log = new Log(()=> {
+		const n = Number(this.#val.get('tmp:const.sn.config.log.max_len'));
+		return Number.isFinite(n) && n > 0 ?n :64;
+	});
+	// 履歴に記録するか（本家 Variable.doRecLog()）。既定はfalseで、シナリオが
+	//	`&save:sn.doRecLog = true`で開ける。テンプレは設定・履歴などのUI画面へ出入りする間だけ
+	//	falseへ倒し、その文が履歴に混ざらないようにしている。
+	//	**本家は記録を止めるのでなく`<span class='offrec'>`で包んで履歴側で隠す**
+	//	（TxtLayer.ts:494 chgDoRec）が、こちらは履歴の蓄積が表示と別物なので単に積まない
+	get #doRecLog(): boolean {return this.#val.get('game:sn.doRecLog') === true}
+
 	// if/elsif/else/endifの再開位置スタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:873 #aIfStk 相当）
 	//	call/return実装に伴い、本家同様「壁」(-1)を積む方式を導入した（#call()参照）。
 	//	壁を挟むことで、サブルーチン内の[elsif]/[else]/[endif]がコール元の（まだ閉じていない）
@@ -427,7 +442,7 @@ export class ScriptEngine {
 		'tsy', 'tsy_frame', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'quake', 'stop_quake', 'wq',
 		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
-		'clear_text',
+		'clear_text', 'rec_ch', 'rec_r', 'reset_rec',
 		'navigate_to', 'loadplugin', 'snapshot',
 		'record_place', 'save', 'load', 'reload_script',
 		'copybookmark', 'erasebookmark', 'export', 'import',
@@ -486,6 +501,12 @@ export class ScriptEngine {
 		// 本家（LayerMng.ts:212）は《》やルビ記法を含む生のページ本文＝蓄積文字列そのもの
 		this.#val.defBuiltin('const.sn.last_page_text',
 			()=> this.#hTxt[this.#curTxtLayer] ?? '');
+
+		// 組み込み変数：本文履歴のJSON（本家 Log.ts:39 defTmp）。
+		//	`[{"text":"…HTML…"}, …]`の配列で、末尾が書きかけの現ページ。
+		//	テンプレの frames/_log.sn が [set_frame … text=&const.sn.log.json] で履歴画面へ渡し、
+		//	frames/_log.htm が各 text を innerHTML に入れる＝**値はHTML**
+		this.#val.defBuiltin('const.sn.log.json', ()=> this.#log.json());
 
 		// 組み込み変数：修飾キー等の**今の押下状態**（本家 EventMng.ts:318 の defTmp 一式）。
 		//	押下表を持てるのはDOM側だけなので、Main.tsxのkeydown/keyupがsetKeyDown()で教えてくる。
@@ -588,6 +609,11 @@ export class ScriptEngine {
 	// しおりのエンジン側の中身。ifスタックはコールスタックぶんを切り落とす
 	//	（本家 #aIfStk.slice(#aCallStk.length)。復元時はコールスタックが空になるため）
 	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]} {
+		// 履歴をsave:へ焼き付ける（本家 Log.ts:59 の`save:const.sn.sLog`）。
+		//	**本家は本文を1トークン追記するたびにこれを書き直す**が、この値を読むのは
+		//	しおりの保存と復元だけなので、ここ＝スナップショットを取る直前の1回で足りる。
+		//	（本家がそうしているのは、あちらのLogがしおり処理から見えない場所に居るため）
+		this.#val.set('save:const.sn.sLog', this.#log.json());
 		return {
 			hSave	: this.#val.cloneNs('game'),
 			aIfStk	: this.#aIfStk.slice(this.#aCallStk.length),
@@ -597,6 +623,9 @@ export class ScriptEngine {
 	//	コールスタックとマクロ引数は捨てる＝しおりは常に最上位の位置を指しているため
 	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]}) {
 		this.#val.setNs('game', o.hSave);
+		// 履歴の復帰（本家 Log.ts:113 playback()）。保存時点の全ページを確定ページとして読み直し、
+		//	書きかけページは捨てる（本家も同じ。ロード直後は「まだ何も読んでいない」状態から始まる）
+		this.#log.playback(String(this.#val.get('save:const.sn.sLog') ?? '[]'));
 		this.#val.setMp({});
 		this.#aIfStk.length = 0;
 		this.#aIfStk.push(...o.aIfStk);
@@ -785,6 +814,7 @@ export class ScriptEngine {
 		const aAct: T_ENGINE_ACTION[] = [];
 		if (this.#clearOnResume) {	// 前回[p]で停止した後の再開なので、現在レイヤを先にクリア
 			this.#clearOnResume = false;
+			this.#recPagebreak();	// 履歴の1ページ＝[p]区切り（本家も改ページ前に積む）
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'fore', str: ''});
 		}
@@ -861,11 +891,16 @@ export class ScriptEngine {
 			aAct.push({t: 'addLay', cls, nm});
 			return 'skip';
 		}
-		case 'current':	// デフォルト文字レイヤ切替（試作簡略：layer属性のみ）
-			this.#curTxtLayer = args.layer ?? args.nm ?? this.#curTxtLayer;
+		case 'current': {	// デフォルト文字レイヤ切替（試作簡略：layer属性のみ）
+			// 切替**前**に履歴を確定させる（本家 LayerMng.ts:956「カレント変更前に現在の履歴を保存」）。
+			//	でないと前のレイヤの書きかけが次のレイヤの本文と地続きになる
+			const nmCur = args.layer ?? args.nm ?? this.#curTxtLayer;
+			if (nmCur !== this.#curTxtLayer) this.#recPagebreak();
+			this.#curTxtLayer = nmCur;
 			// 本家（LayerMng.ts:958）と同じくsave:へも書く。しおりに含まれるので[load]で戻る
 			this.#val.set('save:const.sn.mesLayer', this.#curTxtLayer);
 			return 'skip';
+		}
 
 		case 'add_face': {	// 差分名称の定義（本家 SpritesMng.add_face() 相当。dx/dyは親画像基準の相対座標）
 			const faceName = args.name ?? '';
@@ -1024,6 +1059,8 @@ export class ScriptEngine {
 			//	ストアのstrを空にしても次の本文がその蓄積へ追記され、消したはずの文が復活する。
 			//	#hTxtが指すのは表ページ（#appendTxt()がfore固定）なので、裏だけ消すときは触らない
 			if (sPage !== 'back') {
+				// 履歴は既定文字レイヤの分だけ確定させる（消す対象に入っていれば）
+				if (! aLayNm || aLayNm.includes(this.#curTxtLayer)) this.#recPagebreak();
 				if (aLayNm) for (const nm of aLayNm) this.#hTxt[nm] = '';
 				else for (const nm of Object.keys(this.#hTxt)) this.#hTxt[nm] = '';
 			}
@@ -1284,6 +1321,7 @@ export class ScriptEngine {
 		case 'er':		// ページ両面の文字消去（試作簡略：現在レイヤのみ）
 			//	タグ名のとおり表裏どちらの文字も消す（本家 LayerMng.ts hTag.er「ページ両面の文字消去」）。
 			//	これが片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
+			this.#recPagebreak();	// 履歴は消さずに1ページとして確定させる
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
 			// **ボタンも消す**。本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を表裏に呼び、
@@ -1344,9 +1382,24 @@ export class ScriptEngine {
 			//	[r]を改行にするのは本家 LayerMng.ts:922（[ch text=…]に改行を含める書き方）
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('add', {...args, text: undefined})
 				+ text.replaceAll('[r]', '\n')
-				+ ScriptEngine.#cmdTxt('add_close', {}));
+				+ ScriptEngine.#cmdTxt('add_close', {}),
+				args.record !== 'false');	// record=falseなら履歴に残さない（本家 LayerMng.ts:920）
 			return 'skip';
 		}
+
+		// ---- 本文履歴（本家 Log.ts）----
+		case 'rec_ch':		// 履歴書き込み（画面には出さない）
+			// 本家は`display: none;`を付けた[ch]として流し、履歴側でだけ見せる。
+			//	こちらは履歴の蓄積が表示と別物なので、履歴にだけ積めば済む。
+			//	textが無ければ何もしない（本家 Log.ts:68 も同じ）
+			if (args.text) this.#log.add(args.text.replaceAll('[r]', '\n'));
+			return 'skip';
+		case 'rec_r':		// 履歴改行（本家 Log.ts:83 は [rec_ch text='[r]'] と同義）
+			this.#log.add('\n');
+			return 'skip';
+		case 'reset_rec':	// 履歴リセット。textで置き換え値を設定できる（本家 Log.ts:90）
+			this.#log.reset(args.text ?? '');
+			return 'skip';
 
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
 			// 「text=&式」の評価は#resolveTag()が全タグ共通で済ませているので、ここでは受け取るだけ
@@ -1580,6 +1633,8 @@ export class ScriptEngine {
 			//	対象レイヤ省略時は既定文字レイヤ（[current]）
 			const nm = args.layer || this.#curTxtLayer;
 			const pg = ScriptEngine.argPage(args, 'fore');
+			// 履歴は既定文字レイヤの表ページだけが対象（本家 LayerMng.ts:995 も同じ条件）
+			if (nm === this.#curTxtLayer && pg === 'fore') this.#recPagebreak();
 			this.#hTxt[nm] = '';
 			aAct.push({t: 'chgStr', nm, page: pg, str: ''});
 			return 'skip';
@@ -1997,11 +2052,18 @@ export class ScriptEngine {
 
 	// 文字表示（地の文・[r]）は表ページ固定。本家は[ch]にpage属性があるが、
 	//	地の文には属性を書けない＝実質常に既定（fore）なので、試作では表のみとする
-	#appendTxt(aAct: T_ENGINE_ACTION[], add: string) {
+	#appendTxt(aAct: T_ENGINE_ACTION[], add: string, rec = true) {
 		const nm = this.#curTxtLayer;
 		const str = (this.#hTxt[nm] ?? '') + add;
 		this.#hTxt[nm] = str;
+		if (rec && this.#doRecLog) this.#log.add(add);	// 履歴（本家 TxtLayer.ts:604 recText）
 		aAct.push({t: 'chgStr', nm, page: 'fore', str});
 	}
+
+	// 履歴の改ページ（本家 Log.pagebreak()）。**既定文字レイヤの表ページの本文が
+	//	捨てられる箇所すべて**で呼ぶ＝本家が TxtLayer.clearText()／LayerMng の
+	//	`#clear_text`・`[page]`・[current]切替 で呼ぶのと同じ地点。
+	//	`#hTxt`を空にするのと対で書くこと（片方だけだと履歴が繋がったまま／消えたままになる）
+	#recPagebreak() {this.#log.pagebreak()}
 
 }

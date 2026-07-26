@@ -113,6 +113,10 @@ export class ScriptMng {
 			'const.sn.config.window.height'	: ()=> CmnLib.stageH,
 			'const.sn.config.book.title'	: ()=> oCfg.book.title,
 			'const.sn.config.book.version'	: ()=> oCfg.book.version,
+			// 本文履歴の上限ページ数。エンジン側のLogが遅延で読む
+			//	（本家の`const.sn.config.（略）`はprj.jsonの中身をそのまま返す仕様なので、
+			//	この名前で引けるのは本家と同じ）
+			'const.sn.config.log.max_len'	: ()=> oCfg.log.max_len,
 			'const.sn.navigator.language'	: ()=> globalThis.navigator.language,
 			'const.sn.screenResolutionX'	: ()=> globalThis.screen.width,
 			'const.sn.screenResolutionY'	: ()=> globalThis.screen.height,
