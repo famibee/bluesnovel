@@ -53,6 +53,8 @@ type T_STATE = {
     toggleFullScr: () => void;
     isReadBack: boolean;
     setReadBack: (b: boolean) => void;
+    styPaging: string;
+    setStyPaging: (s: string) => void;
     isTyping: boolean;
     setIsTyping: (b: boolean) => void;
     skipReq: number;
@@ -187,6 +189,6 @@ export type T_ADDBTN = {
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake' | 'setReadBack' | 'setStyPaging'>>;
 export declare const useStore: import("zustand").UseBoundStore<import("zustand").StoreApi<T_STATE>>;
 export {};

@@ -7,7 +7,6 @@
 
 import type {T_HPlugin, T_SysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import { T_Config, T_SysRoots } from './ConfigBase';
-import {Caretaker} from '../ts/Memento';
 
 
 // React Developer Toolsのインストールを推されるコンソールメッセージを消す
@@ -60,9 +59,6 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
 		});
 	}
-
-	readonly	#ct	= new Caretaker;
-	get caretaker() {return this.#ct}
 
 
 	cfg: T_Config;

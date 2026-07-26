@@ -1,0 +1,25 @@
+; E2E用シナリオ（page.e2e.ts が使用）
+;	[page to=…]による読み戻り。テンプレ（tmp_blues frames/_submenu.sn:108 の *page）と
+;	同じ形で、キーを[event]で予約して *page ラベルから[page to=&sn.eventArg]を呼ぶ。
+;	**[page]で戻ると[return]は実行されない**（しおりの復元でコールスタックごと入れ替わるため。
+;	本家 loadFromMark() も同じ）ので、[return]は「動かなかった」ときのための後始末
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 読み戻り中の本文の見た目。既定（黄色＋黒フチ）から変えられることを見る
+[page style="color: rgb(0, 128, 0);"]
+
+[event key=pageup   label=*page arg=prev   global=true]
+[event key=pagedown label=*page arg=next   global=true]
+[event key=home     label=*page arg=oldest global=true]
+[event key=end      label=*page arg=exit   global=true]
+[event key=enter    label=*page arg=load   global=true]
+
+いち[p]
+に[p]
+さん[p]
+よん[s]
+
+*page
+	[page to=&sn.eventArg]
+[return]

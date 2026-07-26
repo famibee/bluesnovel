@@ -241,7 +241,7 @@
 		<li class="mb1"><a href="#button">🟡 [button] ボタンを表示</a></li>
 		<li class="mb1"><a href="#call">🟢 [call] サブルーチンコール</a></li>
 		<li class="mb1"><a href="#jump">🟢 [jump] シナリオジャンプ</a></li>
-		<li class="mb1"><a href="#page">🟡 [page] ページ移動</a></li>
+		<li class="mb1"><a href="#page">🟢 [page] ページ移動</a></li>
 		<li class="mb1"><a href="#pop_stack">🟢 [pop_stack] コールスタック破棄</a></li>
 		<li class="mb1"><a href="#return">🟢 [return] サブルーチンから戻る</a></li>
 	</ul>
@@ -2414,7 +2414,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="page" class="w-heading">[page]ページ移動</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>clear=true</code>（読み戻りページログの全消去）のみ対応。<code>to</code>／<code>style</code>／<code>key</code> は未対応（読み戻りは PageUp/PageDown＋Caretaker で本家と別実装のため）。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：全属性に対応。<br/>
+	<b>読み戻りは本家と同じ「演じ直す」方式</b>（<code>src/ts/PageLog.ts</code>）。停止点ごとに「そのページの本文が出る前の位置＋しおり」を積んでおき、戻るときはそのしおりを復元してその位置からシナリオを動かし直す。画面のスナップショットを貼り直す方式では <code>to=load</code>（見ているページから再開）でエンジンの位置が繋がらないため。<br/>
+	組み込みの <b>PageUp／PageDown も同じ経路</b>（<code>to=prev</code>／<code>to=next</code>）なので、キー操作とシナリオからの指定が同じ動きになる。<br/>
+	<b>相違</b>：端まで来ていて位置が動かない場合も<b>今のページを演じ直す</b>（本家は何もしない）。[page]へ来た時点で（[p]の直後なら）本文がすでに消えているので、演じ直さないと画面が空のまま残るため。</p>
 <h4>ページ移動状態に入り、[p]停止位置を一つ移動する</h4>
 <p class="mb2 px1">
 	[p]などの停止位置を「ページ」とみなし、既読ページを戻ったり進んだりできる。<br/>

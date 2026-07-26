@@ -11,7 +11,6 @@ import TxtLayer from './TxtLayer';
 import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
-import {BaseMemento} from '../ts/Memento';
 import {ruleMaskFunc} from '../ts/Trans';
 import {fltId, fltValues, matsOf} from '../ts/Filter';
 
@@ -32,14 +31,6 @@ export default function Stage({
 	const aPage = useStore(s=> s.aPage);
 	const foreIdx = useStore(s=> s.foreIdx);
 	const trans = useStore(s=> s.trans);
-
-	const replace = useStore(s=> s.replace);
-	class Memento extends BaseMemento {
-		readonly	nm = 'Stage';
-		restore() {replace(this.stt)}	// this.stt から
-	}
-	// 読み戻しでは表裏どちらのページも、どちらが表かも含めて丸ごと復元する
-	sys.caretaker.update(()=> new Memento(JSON.stringify({aPage, foreIdx})));
 
 	// [trans]のクロスフェード。**ここは見た目を動かすだけ**で、表裏の交換そのものは
 	//	ScriptMngがstore.finishTrans()で宣言する（store.tsxのtransのコメント参照）。

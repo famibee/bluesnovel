@@ -25,7 +25,6 @@
   - [ ] `[rec_ch]`の`style`/`r_style`と**任意属性**（本家は`const.sn.log.json`の各ページへそのまま載せ、フレーム側のJSが読む）。今は`text`のみ
   - [ ] `[log]`（本家`DebugMng.ts:57`）は**履歴とは別物**で、`downloads/log.txt`へ追記するデバッグ用。ファイル書き出しの置き場所が要るのでアプリ版の整備と一緒に
   - [ ] テンプレの`frames/_log.sn`＋`_log.htm`を実際に通すE2E（フレームへ`&const.sn.log.json`を流し込む経路）
-- [ ] **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **`[trans]`の残り**：`delay=`・`ease=`（進度は常に等速）。`glsl=`（自前シェーダ）はWebGLを使わないため実現しようがないので対象外
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
@@ -50,7 +49,7 @@
   - [ ] `[button b_pic=…]`は箱の大きさを変えない（本家は絵の実寸ぶんに広げる）。テンプレで実害が出たら合わせる
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
-  - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
+  - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**ロード時はページログを捨てている**（ロード後の位置は履歴と繋がらないため）。本家は`index=`でしおりの中の何ページ目かを選べるので、そこを繋ぐならページログ（`src/ts/PageLog.ts`）をしおりへ含める設計が要る
   - [ ] `[save pic=…]`のサムネイル保存（テンプレの`_archive.sn`が枠に出す想定）。置き場は`[snapshot fn='userdata:/…']`と同じセーブ層（`SaveMng.putFile()`）でよい
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）
@@ -58,8 +57,8 @@
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
-  - [ ] `const.sn.isPaging`（ページ遷移状態か）・`save:const.sn.layer.（文字レイヤ名）.enabled`
-  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`sn.sound.*`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`。`sn.tagCh.*`と`TextLayer.Back.Alpha`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
+  - [ ] `save:const.sn.layer.（文字レイヤ名）.enabled`
+  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`sn.sound.*`＝音声、`const.sn.nativeWindow.*`。`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
 
 ## 挙動の詰め・実機確認

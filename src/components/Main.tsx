@@ -58,6 +58,8 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const enableEvent = useStore(s=> s.enableEvent);
 	const addBtn = useStore(s=> s.addBtn);
 	const setReadBack = useStore(s=> s.setReadBack);
+	const setStyPaging = useStore(s=> s.setStyPaging);	// [page style=…]（読み戻り中の本文の見た目）
+	const isReadBack = useStore(s=> s.isReadBack);		// 読み戻り中か（PageLog.isPaging）
 	const isTyping = useStore(s=> s.isTyping);
 	const requestSkip = useStore(s=> s.requestSkip);
 	const setWait = useStore(s=> s.setWait);
@@ -70,7 +72,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging}, hTag);
 
 		inited();
 
@@ -116,16 +118,16 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	// イベント
 	// space/クリック = 既存の読み戻り範囲内なら読み進め、最新なら未読を進める
 	// PageDown = 読み進め（next()と同じ扱い）／PageUp = 読み戻り
-	//	読み戻り中（Caretaker.isLast()===false）はTxtLayerで文字を黄色く表示する
+	//	読み戻り中（PageLog.isPaging）はTxtLayerで文字を[page style=…]の見た目にする。
+	//	**戻る・進むはどちらも[page to=…]と同じ経路**（ScriptMng.page）＝しおりを戻して
+	//	そのページを演じ直す。テンプレが[event key=pageup label=*page]で同じことをするので、
+	//	組み込みのキーとシナリオからの指定が同じ動きになる
 	function next() {
 		if (isTyping) {requestSkip(); return}	// 文字送り演出中の1クリック目は瞬時完了のみ行い、進行はしない
-		if (sys.caretaker.nextKey()) {setReadBack(! sys.caretaker.isLast()); return}
-		setReadBack(false);
+		if (isReadBack) {scrMng.page('next'); return}
 		procNext();
 	}
-	function prev() {
-		if (sys.caretaker.prevKey()) setReadBack(! sys.caretaker.isLast());
-	}
+	function prev() {scrMng.page('prev')}
 	// [event]で予約したキー名は「KeyboardEvent.keyの小文字」、クリックは'click'という取り決め
 	//	（本家 EventMng が 'enter'/'arrowdown'/'click' 等の小文字キーで引くのに合わせた）。
 	//	予約があればそちらを発火し、読み進め・読み戻りは行わない

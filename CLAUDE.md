@@ -81,8 +81,11 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   モジュールトップで `lazy()`。**`Stage.tsx` を静的 import してはいけない**（value import 1 つで
   分割が効かなくなる／rolldown が `INEFFECTIVE_DYNAMIC_IMPORT` を言う）。共有部品は
   **`src/components/Lay.ts`**（`T_LAY` 等、`styLay`、ドラッグフラグ）に置く。
-- **`src/ts/Memento.ts`** — `Caretaker` が停止点ごとに `${fn}:${idx}` キーでスナップショット。
-  PageUp/Down の既読読み返し用。ボタンジャンプはこの履歴を**触らない**。
+- **`src/ts/PageLog.ts`** — 読み戻り（`[page to=…]`・PageUp/Down）。停止点ごとに**そのページを
+  演じ直すのに要るもの**（本文が出る前の位置 `fn`/`idx` ＋ しおり）を積む。戻るときは
+  `ScriptMng` がしおりを復元してその位置から動かし直す＝本家 `loadFromMark()` と同じ方式で、
+  画面のスナップショットを貼り直す方式では `[page to=load]`（見ているページから再開）で
+  エンジンの位置が繋がらない。ボタンジャンプはこの履歴を**触らない**。
 - **`src/sn/`** — 本家から持ってきた土台（`SysBase`, `Config`, `Grammar`, `CmnLib`,
   `AnalyzeTagArg`, `Areas`, `CallStack`）。
 
@@ -97,7 +100,7 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 
 `add_lay`, `current`, `add_face`, `lay`, `clear_lay`, `trans`/`wt`,
 `add_filter`/`clear_filter`/`enable_filter`,
-`tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`（`clear=true` のみ）,
+`tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`,
 `let`, `let_ml`/`endlet_ml`, `let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/
 `let_substr`/`let_replace`/`let_search`, `if`/`elsif`/`else`/`endif`, `r`, `er`, `trace`,
 `jump`, `call`/`return`, `macro`/`endmacro`, `char2macro`/`bracket2macro`, `button`,
@@ -146,8 +149,8 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 
 - **レイヤページ (fore/back)** — 全レイヤが持つ 2 枚の描画面。`[lay page=…]`, `[trans]`, `[er]`。
   コード上は `aPage`/`foreIdx`/`T_PAGE`。
-- **テキストページ (`[p]` 区切りの本文)** — 読み返しログの単位。`[p]`, `[page clear=true]`。
-  コード上は `Caretaker` の履歴。
+- **テキストページ (`[p]` 区切りの本文)** — 読み返しログの単位。`[p]`, `[page]`。
+  コード上は `PageLog`。
 
 両者は無関係。`[page]` は名前に反して**後者**を操作する。
 
@@ -168,7 +171,7 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   途中クリックは「今すぐ終われ」と読み替える（`#goSafe()`）ので必ず最終状態に着地する。
 
 **`[tsy]` は `[trans]` と逆で、DOM でなく store を通す。** GSAP はプレーンオブジェクトを動かし、
-`onUpdate` が `chgLay` で毎フレーム store に書き戻す。DOM だけ塗る方が安いが、それだと Memento と
+`onUpdate` が `chgLay` で毎フレーム store に書き戻す。DOM だけ塗る方が安いが、それだと しおり と
 `[trans]` のレイヤ複製がアニメ前の値を読む。帰結が 2 つ: 本家の `arrive` 属性は実質常時 on、
 そして **GSAP のターゲットをそのまま store に渡してはいけない**（`_gsap` キャッシュが循環参照を
 作り `structuredClone` と `JSON` を壊す。`ScriptMng` はアニメ対象プロパティだけコピーする）。
@@ -245,7 +248,7 @@ spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json
 ため）。単体テストと完全分離。
 
 - **ブラウザが必要なものだけここに書く**: DOM／computed CSS／`document.title`、入力イベント、
-  React 描画に依るもの（Caretaker/Memento）、fetch とスクリプト切替の非同期経路、`prj.json` 配線。
+  React 描画に依るもの、fetch とスクリプト切替の非同期経路（読み戻りもこれ）、`prj.json` 配線。
   エンジンの論理は `test/*.test.ts`。`mesStr()`/`snap()` は zustand を読むだけなので、それしか
   assert しない spec はブラウザの衣を着た単体テスト。
 - spec 名は `*.spec.ts` でなく **`*.e2e.ts`**（`bun test` が `*.spec.*` を拾って単体実行を壊すため）。
@@ -264,8 +267,7 @@ spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json
   `store.wait` は `#runStep()` 毎にリセットされ `[l]`/`[p]` でのみ立つので停止点の信号として使える。
   `[s]` はマーカを立てないので最後の 1 歩だけ `pressKey()` ＋ `expect.poll`。
 - `waitIdle()` はクリック/キー入力の**前に必ず await** する。`Stage` は `lazy()` なので、Suspense が
-  `Loading` を出している間にテストが先走ると `Caretaker.update()` が Memento を記録せず、読み返しが
-  黙って壊れる。
+  `Loading` を出している間にテストが先走ると停止点を 1 つ取りこぼす。
 - ルート `tsconfig.json` は `test/e2e` を**除外**している（さもないと `vite-plugin-dts` がテストの
   `.d.ts` を `dist/` に吐く）。型チェックは `test/e2e/tsconfig.json` 側。
 
@@ -299,7 +301,7 @@ spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json
 - **属性の既定値は 1 箇所**。エンジンの入口（タグの `case`）か CSS か、どちらかに決めて**両方には
   書かない**。CSS も「宣言された 1 箇所」なので外側にあること自体は悪くない。悪いのは枝葉の
   コンポーネントが場当たりに `??` で発明することで、そうなると同じ問いの答えが N 箇所に散る。
-  - **判定**: その値をストアが知らなくても、セーブ・読み戻し（Memento）・`[dump_lay]` が正しいまま
+  - **判定**: その値をストアが知らなくても、セーブ・読み戻し（`PageLog`）・`[dump_lay]` が正しいまま
     か。いいえなら入口、はいなら CSS に任せて格納しない。`[button]` の `width`/`height` は
     「いいえ」（本家 `Button.ts` も `#o` へ確定値を記録する）、`[lay left]` の 0 は「はい」。
   - **入口は書き込み時に焼き付き、CSS は描画時に毎回評価される**。既定を後で変えたとき、入口方式は

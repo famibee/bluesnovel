@@ -19,6 +19,7 @@ import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {focusMng} from './FocusMng';
 import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
+import {INI_STYPAGE, PageLog, type T_PAGE_TO} from './PageLog';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
 import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
@@ -66,7 +67,7 @@ export class ScriptMng {
 
 	// シナリオ解析ループ・開始
 	//	試作版：ScriptEngine（超簡略パーサ・実行器）に処理を委譲する。
-	//	[l][p][s] での状態は Caretaker（Memento.ts）が Stage.tsx 経由で自動記録する。
+	//	[l][p][s] での状態は PageLog（PageLog.ts）が記録する（読み戻り用）。
 	//	エンジンは**1つだけ**持つ。変数・スタック等の実行状態はエンジンが一手に握っており、
 	//	ファイル切替はパース結果（Script）の差し替えで行う（複数ファイル対応の要）。
 	//	ここ（ScriptMng）はfetchとキャッシュだけを受け持つ
@@ -140,6 +141,11 @@ export class ScriptMng {
 			'const.sn.isDarkMode'	: ()=> globalThis.matchMedia('(prefers-color-scheme: dark)').matches,
 			// 実行環境（本家は platform パッケージの説明文字列。こちらはUA文字列で代用）
 			'const.sn.platform'		: ()=> globalThis.navigator.userAgent,
+			// 読み戻り中か（本家 ReadingState_page が tmp:へ立てる）。テンプレの*escapeが
+			//	[if exp=const.sn.isPaging]で「移動中なら[page to=…]、そうでなければメニュー」を分ける
+			'const.sn.isPaging'		: ()=> this.#pageLog.isPaging,
+			// ページログ（本家 sys:const.sn.aPageLog）
+			'const.sn.aPageLog'		: ()=> this.#pageLog.json(),
 		};
 		for (const [nm, fnc] of Object.entries(h)) engine.defBuiltin(nm, fnc);
 
@@ -170,6 +176,60 @@ export class ScriptMng {
 			for (const l of fore) hLay[l.nm] = {fore: attrs(l), back: attrs(back.find(b=> b.nm === l.nm))};
 			return JSON.stringify(hLay);
 		});
+	}
+
+	// ===== ページログ（読み戻り。PageLog.ts） =====
+	//	停止点ごとに「そのページを演じ直すのに要るもの」を積み、[page to=…]で戻る。
+	//	**画面のスナップショットではなくシナリオを演じ直す**（本家 loadFromMark()）ので、
+	//	戻ったページからそのまま読み進められる（[page to=load]）
+	readonly #pageLog = new PageLog(()=> this.sys.cfg.oCfg.log.max_len);
+	// 今演じている「ページの先頭」。停止点で積むときに使う。**ページの本文が出る前**の
+	//	位置としおりでなければならないので、停止点から次の停止点までの間は取り直さない
+	#pageStart: {fn: string; idx: number; mark: T_MARK; clearOnResume: boolean} | undefined;
+	// [page key=…]（[page style=…]は save:const.sn.styPaging に置く＝しおりに乗る。本家も同じ）
+	#aKeysAtPaging: string[] = [];
+
+	// 読み戻り状態を画面へ反映（本文の色。本家 setAllStyle2TxtLay(styPaging)）
+	#applyPaging() {
+		this.$fncs.setReadBack(this.#pageLog.isPaging);
+		this.$fncs.setStyPaging(
+			String(this.#engine?.getVal('save:const.sn.styPaging') ?? '') || INI_STYPAGE);
+	}
+
+	// [page to=…]。Main.tsx（PageUp/PageDown）からも呼ぶ
+	page(to: T_PAGE_TO) {
+		if (this.#procing) return;
+
+		this.#procing = true;
+		this.#procPage(to).catch(this.#catchErr);
+	}
+	// 移動先のページを演じ直す。しおりの復元は[load]と同じ手順（#procLoad参照）
+	async #procPage(to: T_PAGE_TO) {
+		const engine = this.#engine;
+		if (! engine) {this.#procing = false; return}
+
+		try {
+			const ent = this.#pageLog.move(to);
+			this.#applyPaging();
+			if (! ent) {
+				// 動かなかった（端まで来ている／to=load）。to=loadはここから読み進めるだけ
+				this.#procing = false;
+				return;
+			}
+
+			engine.restoreMarkPart(ent.mark);
+			engine.clearOnResume = ent.clearOnResume;
+			this.$fncs.replace(ent.mark.sPages);
+			this.#stopped = false;
+			this.#pageStart = undefined;	// 演じ直しの先頭は積んだときの位置のまま
+			engine.switchScript(await this.#getScript(ent.fn), '', ent.idx);
+		} catch (e) {
+			this.#procing = false;
+			this.myTrace(`[page] ${String(e)}`, 'ET');
+			return;
+		}
+		this.#procing = false;
+		this.#goSafe();
 	}
 
 	// ===== セーブ層（しおり・sys:・既読の永続化。SaveMng.ts） =====
@@ -292,6 +352,11 @@ export class ScriptMng {
 	fireEvent(key: string): boolean {
 		const engine = this.#engine;
 		if (! engine) return false;
+
+		// 読み戻り中は[page key=…]で挙げたキーだけを通す（本家 waitRsvEvent4Paging()）。
+		//	テンプレはこれで「移動中はページ移動と決定・取消だけ効く」状態を作る
+		if (this.#pageLog.isPaging && this.#aKeysAtPaging.length > 0
+			&& ! this.#aKeysAtPaging.includes(key)) return false;
 
 		const ev = engine.beginEvent(key);
 		if (! ev) return false;
@@ -485,7 +550,7 @@ export class ScriptMng {
 		const {from, aTo, aPrp} = ScriptMng.#tsyVals(act, k=> cur[k as T_TSY_PRP] ?? H_TSY_DEF[k as T_TSY_PRP]);
 		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
 		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
-		//	structuredClone（addLayer/[trans]）もJSON化（Memento）も落ちる。
+		//	structuredClone（addLayer/[trans]）もJSON化（しおり）も落ちる。
 		//	動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトにする
 		this.#runTsy(act, from, aTo, ()=> {
 			const sty: T_LAY_STY_ARG = {};
@@ -608,6 +673,10 @@ export class ScriptMng {
 		if (this.#busy) {++this.#cntResv; return}
 
 		this.#busy = true;
+		// **ページの先頭**（本文がまだ出ていない状態）を控える。停止点でページログへ積む。
+		//	??= なのは、1ページの途中で一旦返る経路（[add_frame]・[snapshot]・スクリプト切替）から
+		//	戻ってきたときに取り直さないため
+		this.#pageStart ??= {...engine.nowScrIdx(), mark: this.#mkMark(), clearOnResume: engine.clearOnResume};
 		try {
 			for (;;) {
 				this.$fncs.setWait(null);	// 前回の[l]/[p]待ちマーカーをまずクリア（クリックで削除して次の文字表示へ）
@@ -645,6 +714,12 @@ export class ScriptMng {
 				if (last?.t === 'load' || last?.t === 'reloadScript') {
 					this.#procing = true;
 					this.#procLoad(last).catch(this.#catchErr);
+					return;
+				}
+				// [page to=…]も同じ形（移動先のページをしおりから演じ直す）
+				if (last?.t === 'pageTo') {
+					this.#procing = true;
+					this.#procPage(last.to).catch(this.#catchErr);
 					return;
 				}
 				if (last?.t !== 'loadScript') {
@@ -696,7 +771,8 @@ export class ScriptMng {
 
 			engine.restoreMarkPart(mark);
 			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
-			this.sys.caretaker.clear();			// 読み戻し履歴は繋がらないので捨てる
+			this.#pageLog.clear();				// 読み戻し履歴は繋がらないので捨てる
+			this.#pageStart = undefined;
 			this.#stopped = false;
 
 			// 再開位置。**スクリプトは必ず読み直す**（本家も「吉里吉里に動作を合わせる」ため
@@ -1053,8 +1129,25 @@ export class ScriptMng {
 			// 実処理は#runStep()側（DOMを触った結果を組み込み変数へ書き戻してから続ける）
 			break;
 		case 'clearPageLog':
-			// [page clear=true]：読み戻り履歴の消去。以降の停止点から積み直しになる
-			this.sys.caretaker.clear();
+			// [page clear=true]：ページログの消去。以降の停止点から積み直しになる。
+			//	本家同様、読み戻り中の見た目（styPaging）も既定へ戻す
+			this.#pageLog.clear();
+			this.#pageStart = undefined;
+			this.#engine?.setValNochk('save:const.sn.styPaging', INI_STYPAGE);
+			this.#applyPaging();
+			break;
+		case 'pageStyle':
+			// [page style=…]：読み戻り中の本文の見た目（本家 setAllStyle2TxtLay で全文字レイヤへ当てる分）。
+			//	**save:へ置く**ので、しおりの保存・復元にそのまま乗る（本家 Reading.ts:352 も同じ）
+			this.#engine?.setValNochk('save:const.sn.styPaging', act.style);
+			this.#applyPaging();
+			break;
+		case 'pageKeys':
+			// [page key=…]：読み戻り中に効くイベントキーの限定（空なら制限なし）
+			this.#aKeysAtPaging = act.aKey;
+			break;
+		case 'pageTo':
+			// 実処理は#runStep()側（しおりを戻して演じ直す。#procPage）
 			break;
 		case 'trace':
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲
@@ -1063,10 +1156,14 @@ export class ScriptMng {
 		case 'loadScript':
 			// 実処理は#runStep()側（fetch→switchScript）。表示への影響は無い
 			break;
-		case 'stop':
-			// このタイミングでの表示状態を Caretaker に記録する
-			//	（Stage.tsx の再描画で自動的に Memento が生成される）
-			this.sys.caretaker.push(act.key);
+		case 'stop': {
+			// ページログへ積む（本家 Reading.ts:207 recodePage()）。積むのは**このページの先頭**＝
+			//	前の停止点を抜けた位置としおりで、ここから演じ直せば同じページが再現される。
+			//	同じ位置は積み直さないので、[page]で戻って演じ直しても増えない
+			const ps = this.#pageStart;
+			this.#pageStart = undefined;
+			if (ps) this.#pageLog.push(ps.fn, ps.idx, ps.mark, ps.clearOnResume);
+			this.#applyPaging();
 			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
 			if (act.kind === 'l' || act.kind === 'p') {
 				const src = this.#srcBreak(act.kind);
@@ -1093,6 +1190,7 @@ export class ScriptMng {
 			if (this.#engine) this.$fncs.setChWait(this.#engine.chWait);
 			break;
 		}
+		}	// switch
 	}
 
 	async #fetchScript(fn: string): Promise<string> {

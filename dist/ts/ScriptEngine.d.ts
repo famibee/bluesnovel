@@ -5,6 +5,7 @@ import { type T_TSY_TO } from './Tsy';
 import type { T_FRM_ORDER, T_FRM_STY } from './FrameMng';
 import { type T_FLT } from './Filter';
 import { type T_CH_STYLE } from './ChStyle';
+import { type T_PAGE_TO } from './PageLog';
 import type { T_BTN_STY } from '../components/TxtLayer';
 export type T_FACE = {
     fn: string;
@@ -150,6 +151,15 @@ export type T_ENGINE_ACTION = {
 } | {
     t: 'clearPageLog';
 } | {
+    t: 'pageStyle';
+    style: string;
+} | {
+    t: 'pageKeys';
+    aKey: string[];
+} | {
+    t: 'pageTo';
+    to: T_PAGE_TO;
+} | {
     t: 'title';
     text: string;
 } | {
@@ -168,6 +178,7 @@ export type T_ENGINE_ACTION = {
     page: T_PAGE;
     width: number;
     height: number;
+    smoothing: boolean;
     b_color?: number;
 } | {
     t: 'recordPlace';
@@ -317,6 +328,8 @@ export declare class ScriptEngine {
     static argPage(args: {
         [k: string]: string;
     }, def: T_PAGE): T_PAGE;
+    get clearOnResume(): boolean;
+    set clearOnResume(b: boolean);
     get chWait(): number;
     static readonly REG_NG4MAC_NM: RegExp;
     static readonly RESERVED_TAGS: Set<string>;
@@ -344,12 +357,18 @@ export declare class ScriptEngine {
             [k: string]: T_VAL_D;
         };
         aIfStk: number[];
+        hTxt: {
+            [nm: string]: string;
+        };
     };
     restoreMarkPart(o: {
         hSave: {
             [k: string]: T_VAL_D;
         };
         aIfStk: number[];
+        hTxt?: {
+            [nm: string]: string;
+        };
     }): void;
     cloneSys(): {
         [k: string]: T_VAL_D;

@@ -94,8 +94,9 @@ export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
 export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate}: T_TXTARG) {
-	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
+	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
+	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
 	const isTyping = useStore(s=> s.isTyping);
 	const setIsTyping = useStore(s=> s.setIsTyping);
 	const skipReq = useStore(s=> s.skipReq);
@@ -108,7 +109,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// 1文字ずつの文字送り演出（GSAP stagger）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
 	//	  前回からの差分（新規追加分）だけをspan化してアニメする
-	//	・isReadBack中（履歴を辿っている間）はstaggerを使わず瞬時に確定表示（要件：パフォーマンス優先、一度アニメ済みの部分は読み戻りから戻っても瞬時表示）
+	//	・isReadBack中（読み戻りで前のページを演じ直している間）は文字送り演出をせず瞬時に確定表示
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
@@ -118,7 +119,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		if (l.url) {onNavigate(l.url); return}
 		onActivate(l.label, l.call, l.fn, l.arg);
 	};
-	// 1表示単位＝1spanのキャッシュ。読み戻り（PageUp）で短くなってもここからは消さず、
+	// 1表示単位＝1spanのキャッシュ。読み戻りで短くなってもここからは消さず、
 	// DOM上の表示/非表示だけを切り替える。これにより読み戻りから戻った際に
 	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。
 	const spansRef = useRef<HTMLSpanElement[]>([]);
@@ -243,12 +244,25 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
 	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
 	const showWait = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
+	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。[lay style=…]でしか変わらないので
+	//	そのCSS文字列とインラインstyleが変わったときだけ測り直す
+	const [isTate, setIsTate] = useState(false);
+	useLayoutEffect(()=> {
+		const el = boxRef.current;
+		setIsTate(!! el && globalThis.getComputedStyle(el).writingMode.startsWith('vertical'));
+	}, [sCss, sty]);
 	const styWaitMark = css`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
+		/* **縦書きでは書字方向に合わせてマークも回す**（-90°）。背景画像も<img>も
+			writing-modeでは回らないので、横書き用に描かれた▼（次の行の方向を指す絵）が
+			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
+			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
+			置いているため、向きが本文と食い違うと目立つ */
+		${isTate ? 'rotate: -90deg;' : ''}
 	`;
 	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。**書かれた時だけ**当てる。
 	//	省略時は本文の流れの中の位置・文字サイズなり（本家の既定もフォントサイズなので同じ絵）。
@@ -345,10 +359,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		top: 48%;
 		width: 70%;
 		white-space: pre-wrap;
-		color: ${isReadBack ? 'yellow' : 'inherit'};
+		color: inherit;
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${sCss ?? ''}
+
+		/* 読み戻り中の見た目（[page style=…]。既定は本家 INI_STYPAGE と同じ黄色＋黒フチ）。
+			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
+			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
+		${isReadBack ? styPaging : ''}
 	`;
 
 	const styInp = css`

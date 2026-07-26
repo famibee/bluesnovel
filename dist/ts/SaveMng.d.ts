@@ -6,6 +6,9 @@ export type T_MARK = {
     };
     sPages: string;
     aIfStk: number[];
+    hTxt?: {
+        [nm: string]: string;
+    };
     json: {
         [k: string]: string;
     };
@@ -20,6 +23,9 @@ export type T_DATA4VARI = {
     kidoku: {
         [fn: string]: T_H_Areas;
     };
+    storage: {
+        [path: string]: string;
+    };
 };
 export declare class SaveMng {
     #private;
@@ -28,6 +34,8 @@ export declare class SaveMng {
     constructor(ns: string);
     load(): boolean;
     flush(): void;
+    getFile(path: string): string | undefined;
+    putFile(path: string, dataUrl: string): void;
     getMark(place: number): T_MARK | undefined;
     setMark(place: number, mark: T_MARK): void;
     eraseMark(place: number): void;

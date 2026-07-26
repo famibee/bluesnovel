@@ -128,3 +128,19 @@ test('[l]の待ちマークの位置・寸法が効く', async ({page})=> {
 	expect(sty.h).toBe('16px');
 	expect(sty.t).toBe('4px -2px');
 });
+
+test('縦書きでは待ちマークを-90°回す', async ({page})=> {
+	// 背景画像も<img>も writing-mode では回らないので、横書き用に描かれた絵（▼＝次の行の方向を
+	//	指す）が縦書きでも下を向いたままになる。本家は待ちマークを本文とは別のpixiコンテナへ
+	//	固定位置で置くのでこの問題が出ない
+	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	expect(await mark.evaluate(e=> getComputedStyle(e).rotate)).toBe('none');	// 横書きでは回さない
+
+	for (let i = 0; i < 4; ++i) await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('たて');
+
+	expect(await mark.evaluate(e=> getComputedStyle(e).rotate)).toBe('-90deg');
+	// 本文自体が縦書きになっていることも確かめる（レイヤのstyleが効いていなければ意味がない）
+	expect(await page.locator(`${SEL_FORE} span[data-lay="mes"]`)
+		.evaluate(e=> getComputedStyle(e).writingMode)).toBe('vertical-rl');
+});

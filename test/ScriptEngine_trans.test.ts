@@ -167,6 +167,38 @@ it('page_noAttrThrows', ()=> {
 	expect(()=> acts(`${LAYS}[page][s]`)).toThrow('[page] clear,style,to いずれかは必須です');
 });
 
+it('page_keyは移動中に効くキーの限定', ()=> {
+	// 本家も style/clear/to より前に見る（＝同時指定できる）
+	expect(acts(`${LAYS}[page clear=true key="pageup,pagedown"][s]`).find(v=> v.t === 'pageKeys'))
+		.toEqual({t: 'pageKeys', aKey: ['pageup', 'pagedown']});
+	// 空指定は制限なしへ戻す
+	expect(acts(`${LAYS}[page clear=true key=""][s]`).find(v=> v.t === 'pageKeys'))
+		.toEqual({t: 'pageKeys', aKey: []});
+});
+
+it('page_styleは読み戻り中の本文の見た目', ()=> {
+	expect(acts(`${LAYS}[page style="color: lime;"][s]`).find(v=> v.t === 'pageStyle'))
+		.toEqual({t: 'pageStyle', style: 'color: lime;'});
+	// styleを書いたらそれだけ（本家も指定時はそこで戻る）
+	expect(acts(`${LAYS}[page style="color: lime;" to=prev][s]`).some(v=> v.t === 'pageTo')).toBe(false);
+});
+
+it('page_toでページ移動を頼み、そこで停止する', ()=> {
+	// 移動先は「しおりを戻してそのページを演じ直す」＝スクリプトのfetchが要るのでScriptMng待ち。
+	//	演じ直しはコールスタックごと入れ替わるので、テンプレの`*page [page to=…][return]`の
+	//	[return]は実行されない（本家 loadFromMark() も同じ）
+	const a = acts(`${LAYS}[page to=prev][s]`);
+	expect(a.find(v=> v.t === 'pageTo')).toEqual({t: 'pageTo', to: 'prev'});
+	expect(a.some(v=> v.t === 'stop')).toBe(false);	// [s]まで進んでいない
+});
+
+it('page_toの値域', ()=> {
+	for (const to of ['oldest', 'prev', 'next', 'newest', 'exit', 'load'] as const) {
+		expect(acts(`${LAYS}[page to=${to}][s]`).find(v=> v.t === 'pageTo')).toEqual({t: 'pageTo', to});
+	}
+	expect(()=> acts(`${LAYS}[page to=よそ][s]`)).toThrow('[page] 属性to「よそ」は異常です');
+});
+
 
 // ============ 実シナリオでの並び ============
 

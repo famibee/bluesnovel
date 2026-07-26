@@ -11,6 +11,7 @@ import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import type {T_CH} from '../ts/Txt';
 import {CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
+import {INI_STYPAGE} from '../ts/PageLog';
 
 import {create} from 'zustand';
 
@@ -86,8 +87,10 @@ type T_STATE = {
 	setFullScr	: (b: boolean)=> void;
 	toggleFullScr	: ()=> void;
 
-	isReadBack	: boolean;		// 読み戻り中か（PageUp等でCaretaker.isLast()===falseの間）
+	isReadBack	: boolean;		// 読み戻り中か（PageLog.isPaging。本家 const.sn.isPaging）
 	setReadBack	: (b: boolean)=> void;
+	styPaging	: string;		// 読み戻り中の本文の見た目（[page style=…]。本家 styPaging）
+	setStyPaging: (s: string)=> void;
 
 	isTyping	: boolean;		// 文字送り演出（GSAP）実行中か。trueの間はクリックで進行せずスキップ要求のみ行う
 	setIsTyping	: (b: boolean)=> void;
@@ -246,7 +249,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -589,6 +592,8 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 	isReadBack	: false,
 	setReadBack	: b=> set(()=> ({isReadBack: b})),
+	styPaging	: INI_STYPAGE,
+	setStyPaging: s=> set(()=> ({styPaging: s})),
 
 	isTyping	: false,
 	setIsTyping	: b=> set(()=> ({isTyping: b})),

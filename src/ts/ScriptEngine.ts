@@ -25,6 +25,7 @@ import {bldFilter, type T_FLT} from './Filter';
 import {plainTxt} from './Txt';
 import {Log} from './Log';
 import {parseChStyle, type T_CH_STYLE} from './ChStyle';
+import {A_PAGE_TO, type T_PAGE_TO} from './PageLog';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
 
@@ -100,7 +101,10 @@ export type T_ENGINE_ACTION =
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
 	| {t: 'clearFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_filter]
 	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
-	| {t: 'clearPageLog'}	// [page clear=true]。読み戻り履歴（Caretaker）の消去。実処理はScriptMng
+	| {t: 'clearPageLog'}	// [page clear=true]。ページログ（読み戻り履歴）の消去。実処理はScriptMng
+	| {t: 'pageStyle'; style: string}	// [page style=…]。読み戻り中の本文の見た目
+	| {t: 'pageKeys'; aKey: string[]}	// [page key=…]。読み戻り中に効くイベントキーの限定
+	| {t: 'pageTo'; to: T_PAGE_TO}	// [page to=…]。ページ移動。演じ直しは非同期なのでstep()は一旦返る
 	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
 	| {t: 'navigateTo'; url: string}	// [navigate_to url=…]。別タブでURLを開く
@@ -369,8 +373,13 @@ export class ScriptEngine {
 	//	Object.prototype のキーが `in` や参照でヒットしてしまい、
 	//	その名前のレイヤ・差分名・マクロを定義できなくなる
 	#curTxtLayer = 'mes';
-	readonly #hTxt: {[nm: string]: string} = Object.create(null);	// レイヤ名 -> そのページの蓄積文字列
-	#clearOnResume = false;	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか
+	#hTxt: {[nm: string]: string} = Object.create(null);	// レイヤ名 -> そのページの蓄積文字列（しおりに含む。nowMarkPart参照）
+	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか。
+	//	**ページログ（読み戻り）が覚えて戻す**：改ページはトークンではなくこのフラグで起きるので、
+	//	これが無いと[p]の直後から演じ直したページに前ページの本文が残る（PageLog.ts参照）
+	#clearOnResume = false;
+	get clearOnResume() {return this.#clearOnResume}
+	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
 
 	// 変数ストア・式評価器（本家 Variable.ts/PropParser.ts の簡略版。VarStore.ts/ExprEval.ts参照）
@@ -637,7 +646,7 @@ export class ScriptEngine {
 	}
 	// しおりのエンジン側の中身。ifスタックはコールスタックぶんを切り落とす
 	//	（本家 #aIfStk.slice(#aCallStk.length)。復元時はコールスタックが空になるため）
-	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]} {
+	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt: {[nm: string]: string}} {
 		// 履歴をsave:へ焼き付ける（本家 Log.ts:59 の`save:const.sn.sLog`）。
 		//	**本家は本文を1トークン追記するたびにこれを書き直す**が、この値を読むのは
 		//	しおりの保存と復元だけなので、ここ＝スナップショットを取る直前の1回で足りる。
@@ -646,12 +655,19 @@ export class ScriptEngine {
 		return {
 			hSave	: this.#val.cloneNs('game'),
 			aIfStk	: this.#aIfStk.slice(this.#aCallStk.length),
+			// **本文はエンジン側にも積んである**（chgStrはこの累積を丸ごと送る形なので）。
+			//	ストアのページを戻すだけではここが古いままで、復元後に1文字足しただけで
+			//	前の本文が丸ごと戻ってくる。読み戻り（PageLog）で露見した
+			hTxt	: {...this.#hTxt},
 		};
 	}
 	// [load]／[reload_script]での復元（本家 loadFromMark()）。
 	//	コールスタックとマクロ引数は捨てる＝しおりは常に最上位の位置を指しているため
-	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]}) {
+	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt?: {[nm: string]: string}}) {
 		this.#val.setNs('game', o.hSave);
+		this.#hTxt = {...o.hTxt};	// 古いしおり（hTxt導入前）は空＝次の本文から積み直しになる
+		// 既定文字レイヤも戻す（[current]はsave:へ書いてあるので、そこから引く）
+		this.#curTxtLayer = String(this.#val.get('save:const.sn.mesLayer') ?? this.#curTxtLayer);
 		// 履歴の復帰（本家 Log.ts:113 playback()）。保存時点の全ページを確定ページとして読み直し、
 		//	書きかけページは捨てる（本家も同じ。ロード直後は「まだ何も読んでいない」状態から始まる）
 		this.#log.playback(String(this.#val.get('save:const.sn.sLog') ?? '[]'));
@@ -1653,13 +1669,26 @@ export class ScriptEngine {
 		}
 
 		case 'page': {	// ページ移動（本家 Reading.ts:343 page()）
-			// 本家の[page]は「裏表」ではなく**読み戻り用のページログ**を操作するタグ。
-			//	試作で対応するのはclear（ログの全消去）のみ。
-			//	to=（指定ページへ移動）・style=（ページ移動中の見た目）・key=（移動中に有効なキーの限定）は、
-			//	bluesnovelの読み戻りがPageUp/PageDownとCaretakerで別の作りになっているため未対応
+			// 本家の[page]は「裏表（レイヤページ）」ではなく**読み戻り用のページログ**を操作するタグ。
+			//	CLAUDE.md「『ページ』が2つの別物を指す」の後者
 			if (! ('clear' in args || 'to' in args || 'style' in args)) throw '[page] clear,style,to いずれかは必須です';
-			if (args.clear === 'true') aAct.push({t: 'clearPageLog'});
-			return 'skip';
+
+			// key=は移動中に効くイベントキーの限定。単独では何もしないので他と同時指定できる
+			//	（本家も style/clear/to の判定より前に見る）
+			if (args.key !== undefined) aAct.push({t: 'pageKeys', aKey: args.key ? args.key.split(',') : []});
+			// style=・clear=は本家も「指定されていたらそれだけやって戻る」（to=とは同時に効かない）
+			if (args.style !== undefined) {aAct.push({t: 'pageStyle', style: args.style}); return 'skip'}
+			if (args.clear === 'true') {aAct.push({t: 'clearPageLog'}); return 'skip'}
+			if (args.to === undefined) return 'skip';
+
+			const to = args.to as T_PAGE_TO;
+			if (! A_PAGE_TO.includes(to)) throw `[page] 属性to「${args.to}」は異常です`;
+
+			aAct.push({t: 'pageTo', to});
+			// **ここで停止する**。移動先のページは「しおりを戻してその位置から演じ直す」ので、
+			//	スクリプトのfetchが要る＝ScriptMng待ち（本家 loadFromMark() も同じ）。
+			//	演じ直しはコールスタックごと入れ替わるので、[page]の後ろ（テンプレの[return]）は実行されない
+			return 'stop';
 		}
 
 		// ---- しおり・システム系 ----

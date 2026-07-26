@@ -46,7 +46,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'lay' | 'multi' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'lay' | 'multi' | 'page' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -122,7 +122,7 @@ export async function mesStr(page: Page, nm = 'mes'): Promise<string> {
 }
 
 // 押下するキー。Enter/Escapeは[event]の予約キー（event.e2e.ts）用
-export type T_KEY = 'Space' | 'PageDown' | 'PageUp' | 'Enter' | 'Escape';
+export type T_KEY = 'Space' | 'PageDown' | 'PageUp' | 'Home' | 'End' | 'Enter' | 'Escape';
 
 // キー操作（読み進め／読み戻り）。操作後は停止点で落ち着くまで待つ
 export async function pressKey(page: Page, code: T_KEY) {

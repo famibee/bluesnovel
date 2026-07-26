@@ -32,7 +32,7 @@ type T_BTNARG = {
 //	文字スプライトを拡縮して箱に合わせる（短い文字は広げ、長い文字は縮めて1行に収める）が、
 //	CSSに相当機能が無いのでBtnLayer側で実測した倍率を transform:scale として合成する。
 // 箱の大きさ。**エンジンの[button]入口で必ず埋まっている**（本家 Button.ts と同じ既定）ので、
-//	ここでの ?? は古いセーブ・Mementoから復元した取りこぼし用の保険
+//	ここでの ?? は古いセーブから復元した取りこぼし用の保険
 function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
 	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
 }

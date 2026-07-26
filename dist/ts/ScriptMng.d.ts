@@ -1,6 +1,7 @@
 import type { SysBase } from '../sn/SysBase';
 import type { T_HTag } from '../sn/Grammar';
 import type { T_INIT_FNCS } from '../store/store';
+import { type T_PAGE_TO } from './PageLog';
 type T_TRACE = (txt: string, lvl?: 'D' | 'W' | 'F' | 'E' | 'I' | 'ET') => void;
 export declare class ScriptMng {
     #private;
@@ -10,6 +11,7 @@ export declare class ScriptMng {
     $trgNext: () => void;
     $fncs: T_INIT_FNCS;
     load(fn: string): void;
+    page(to: T_PAGE_TO): void;
     go(): void;
     navigateTo(url: string): void;
     jumpToLabelAndGo(label: string, call: boolean, fn?: string, arg?: string): void;
