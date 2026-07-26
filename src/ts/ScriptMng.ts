@@ -1049,7 +1049,7 @@ export class ScriptMng {
 			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
 			if (act.kind === 'l' || act.kind === 'p') {
 				const src = this.#srcBreak(act.kind);
-				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {})});
+				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {}), ...act.mark});
 			}
 			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる
 			//	（[waitclick]は同じ「マーカー無しの停止」だがクリックで進む）

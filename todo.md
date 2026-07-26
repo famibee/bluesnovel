@@ -43,10 +43,9 @@
 - [ ] **アニメpng（スプライトシート）の残り**
   - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
-  - [ ] `[graph]`の`width`/`height`（今は全角空白の枠に`background-size: contain`で収める）・`x`/`y`・`id`
-  - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
+  - [ ] `[graph]`の`id`（本家は`id='break'`を待ちマークに使う内部用で、シナリオが書く場面が見当たらない）
+  - [ ] `[l]`/`[p]`の待ちマークの`visible`（本家は`breakLine`/`breakPage`の入口で**属性ごと消している**＝常に表示。効かせる意味があるのか要確認）
 - [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
-- [ ] **`[button]`の配置属性**：`center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`。`[lay]`側は対応済み（CSSの独立`translate`で表現）。本家は`isButton`のとき幅の**1/3**で計算する（pixiの文字寸法まわりの都合に見える）ので、同じ絵にするかは要判断
 - [ ] **`[button]`の残り**：効果音（`enterse`等。音声層と一緒に）。既定の見た目（色・余白）も仮のまま。`pic=`（画像ボタン）・`b_pic=`（背景画像）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
   - [ ] `[button b_pic=…]`は箱の大きさを変えない（本家は絵の実寸ぶんに広げる）。テンプレで実害が出たら合わせる
@@ -90,3 +89,4 @@
 
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見える）
+- [ ] `[button]`に配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）は**本家にも無い**と判断した。`Button.ts:79-80`が読むのは`left`/`top`だけで`Layer.setXY()`を通らず、本家のタグリファレンスも`[button]`には`left`/`top`しか載せていない。`Layer.setXY()`の`isButton`分岐（幅の1/3で計算）は**呼び出し元が無い死んだコード**（`isGrp=true`の2箇所と`TxtLayer`からしか呼ばれない）。AIRNovel時代の名残に見えるが、意図的に残しているのかどうか

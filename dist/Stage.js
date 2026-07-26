@@ -10234,19 +10234,23 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
-	`, le = _u`
+	`, le = {
+		...M?.width === void 0 ? {} : { width: `${String(M.width)}px` },
+		...M?.height === void 0 ? {} : { height: `${String(M.height)}px` },
+		...M?.x !== void 0 || M?.y !== void 0 ? { translate: `${String(M?.x ?? 0)}px ${String(M?.y ?? 0)}px` } : {}
+	}, ue = _u`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
 		${y ? "" : "pointer-events: none;"}
-	`, { display: ue, opacity: de, mixBlendMode: fe, filter: pe } = n, me = {
-		...ue === void 0 ? {} : { display: ue },
-		...de === void 0 ? {} : { opacity: de },
-		...fe === void 0 ? {} : { mixBlendMode: fe },
-		...pe === void 0 ? {} : { filter: pe }
-	}, he = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, ge = x.filter((e) => !he(e)), _e = x.filter(he), ve = _u`
+	`, { display: de, opacity: fe, mixBlendMode: pe, filter: me } = n, he = {
+		...de === void 0 ? {} : { display: de },
+		...fe === void 0 ? {} : { opacity: fe },
+		...pe === void 0 ? {} : { mixBlendMode: pe },
+		...me === void 0 ? {} : { filter: me }
+	}, ge = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, _e = x.filter((e) => !ge(e)), ve = x.filter(ge), ye = _u`
 		${y ? "" : "pointer-events: none;"}
-	`, { r: ye, g: be, b: xe } = Eu(m), Se = l((e) => e.backAlpha), Ce = h * (g ? 1 : Se), we = o.length === 0 && m === void 0 && !_, Te = _u`
+	`, { r: be, g: xe, b: Se } = Eu(m), Ce = l((e) => e.backAlpha), we = h * (g ? 1 : Ce), Te = o.length === 0 && m === void 0 && !_, Ee = _u`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10256,8 +10260,8 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${we || _ ? "transparent" : `rgba(${ye}, ${be}, ${xe}, ${Ce})`};
-		border: ${we || _ ? "none" : "dotted 6px #ffa500"};
+		background-color: ${Te || _ ? "transparent" : `rgba(${be}, ${xe}, ${Se}, ${we})`};
+		border: ${Te || _ ? "none" : "dotted 6px #ffa500"};
 		${_ ? `
 		&::before {
 			content: '';
@@ -10266,7 +10270,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			background-image: url(${JSON.stringify(_)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${Ce};
+			opacity: ${we};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10284,7 +10288,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${v ?? ""}
-	`, Ee = _u`
+	`, De = _u`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10344,30 +10348,37 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [De, Oe] = (0, F.useState)("");
-	(0, F.useEffect)(() => Oe(o), [o]);
-	let ke = (0, F.useRef)(null), Ae = (e, t) => {
+	`, [Oe, ke] = (0, F.useState)("");
+	(0, F.useEffect)(() => ke(o), [o]);
+	let Ae = (0, F.useRef)(null), je = (e, t) => {
 		i(), e.transform = t;
 	};
 	return /* @__PURE__ */ w(D, { children: [
 		/* @__PURE__ */ w("span", {
-			css: [e, Te],
+			css: [e, Ee],
 			ref: R,
 			"data-lay": r,
 			style: n,
 			children: [/* @__PURE__ */ b("span", { ref: z }), oe && /* @__PURE__ */ b("span", {
 				css: ce,
+				style: le,
 				children: ie ? /* @__PURE__ */ b("span", { className: se(ie) }) : re && !H ? /* @__PURE__ */ b("img", {
 					src: re,
-					style: { verticalAlign: "text-bottom" }
+					style: {
+						verticalAlign: "text-bottom",
+						...M.width !== void 0 || M.height !== void 0 ? {
+							width: "100%",
+							height: "100%"
+						} : {}
+					}
 				}) : M.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		ge.length > 0 && /* @__PURE__ */ b("span", {
-			css: [e, le],
+		_e.length > 0 && /* @__PURE__ */ b("span", {
+			css: [e, ue],
 			"data-lay": r,
-			style: me,
-			children: ge.map((e) => /* @__PURE__ */ b(bu, {
+			style: he,
+			children: _e.map((e) => /* @__PURE__ */ b(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10376,11 +10387,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				onActivate: C
 			}, e.nm))
 		}),
-		_e.length > 0 && /* @__PURE__ */ b("span", {
-			css: [e, ve],
+		ve.length > 0 && /* @__PURE__ */ b("span", {
+			css: [e, ye],
 			"data-lay": r,
-			style: me,
-			children: _e.map((e) => /* @__PURE__ */ b(bu, {
+			style: he,
+			children: ve.map((e) => /* @__PURE__ */ b(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10393,55 +10404,60 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: R,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => Ae(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => je(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				Ae(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				je(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => Ae(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => je(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				Ae(e, n), e.transformOrigin = t;
+				je(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("label", {
-			css: Ee,
-			ref: ke,
+			css: De,
+			ref: Ae,
 			children: ["テキスト入力", /* @__PURE__ */ b("textarea", {
 				rows: 3,
-				value: De,
-				onChange: (e) => Oe(e.target.value)
+				value: Oe,
+				onChange: (e) => ke(e.target.value)
 			})]
 		}), /* @__PURE__ */ b(lu, {
-			target: ke,
+			target: Ae,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => Ae(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => je(e, t),
 			preventDefault: !1
 		})] })
 	] });
 }
-function Cu({ c: e, r: t, s: n, rs: r, tcy: i, lnk: a, src: o }, s, c) {
-	let l = (e) => document.createTextNode(e === " " ? "\xA0" : e), u = c(e);
-	if (t === void 0 && !n && !i && !a && !u && !o) return l(e);
-	let d = document.createElement(t === void 0 ? "span" : "ruby");
-	n && (d.style.cssText = n), u && (d.style.fontFeatureSettings = u);
-	let f = i ? document.createElement("span") : d;
-	if (i && (f.style.textCombineUpright = "all", d.appendChild(f)), f.appendChild(l(e)), o && (wu(f, o), f !== d && d.appendChild(f)), t !== void 0) {
+function Cu({ c: e, r: t, s: n, rs: r, tcy: i, lnk: a, src: o, gw: s, gh: c, gx: l, gy: u }, d, f) {
+	let p = (e) => document.createTextNode(e === " " ? "\xA0" : e), m = f(e);
+	if (t === void 0 && !n && !i && !a && !m && !o) return p(e);
+	let h = document.createElement(t === void 0 ? "span" : "ruby");
+	n && (h.style.cssText = n), m && (h.style.fontFeatureSettings = m);
+	let g = i ? document.createElement("span") : h;
+	if (i && (g.style.textCombineUpright = "all", h.appendChild(g)), g.appendChild(p(e)), o && (wu(g, o, {
+		...s === void 0 ? {} : { gw: s },
+		...c === void 0 ? {} : { gh: c },
+		...l === void 0 ? {} : { gx: l },
+		...u === void 0 ? {} : { gy: u }
+	}), g !== h && h.appendChild(g)), t !== void 0) {
 		let e = document.createElement("rt");
-		r && (e.style.cssText = r), e.textContent = M(t), d.appendChild(e);
+		r && (e.style.cssText = r), e.textContent = M(t), h.appendChild(e);
 	}
-	return a && Tu(d, a, n ?? "", s), d;
+	return a && Tu(h, a, n ?? "", d), h;
 }
-function wu(e, t) {
-	if (!t.endsWith(".json")) {
+function wu(e, t, n) {
+	if ((n.gw !== void 0 || n.gh !== void 0) && (e.style.display = "inline-block", e.style.verticalAlign = "text-bottom", n.gw !== void 0 && (e.style.width = `${String(n.gw)}px`), n.gh !== void 0 && (e.style.height = `${String(n.gh)}px`)), (n.gx !== void 0 || n.gy !== void 0) && (e.style.translate = `${String(n.gx ?? 0)}px ${String(n.gy ?? 0)}px`), !t.endsWith(".json")) {
 		e.style.backgroundImage = `url(${JSON.stringify(t)})`, e.style.backgroundRepeat = "no-repeat", e.style.backgroundSize = "contain";
 		return;
 	}

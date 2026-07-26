@@ -44,6 +44,12 @@ export type T_CH = {
 	//	splitCh()は純粋なままにしたいので、パス解決は割った後に上から流し込む）
 	pic?: string;
 	src?: string;
+	// [graph]の寸法・ずらし（本家 TxtStage.ts:685-688 が sp.x/y/width/height に入れる分）。
+	//	省略時は本文と同じ全角空白1つぶんの枠に収める
+	gw?	: number;
+	gh?	: number;
+	gx?	: number;
+	gy?	: number;
 	// 文字出現・消去演出（[span]/[ch]の ch_in_style / ch_out_style）。レイヤ単位の指定
 	//	（[lay in_style=]）より優先される。定義そのものはストアの hChIn/hChOut
 	cis?: string;
@@ -61,7 +67,7 @@ const A_CMD = ['span', 'add', 'add_close', 'grp', 'tcy', 'link', 'endlink', 'del
 type T_CMD_ARG = {
 	style?: string; r_style?: string; style_hover?: string;
 	t?: string; r?: string;			// [tcy]
-	pic?: string; width?: string; height?: string;	// [graph]
+	pic?: string; width?: string; height?: string; x?: string; y?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
 	hint?: string; hint_style?: string; hint_opt?: string;	// ツールチップ
 	ch_in_style?: string; ch_out_style?: string;	// 文字出現・消去演出（ChStyle.ts）
@@ -169,7 +175,15 @@ export function splitCh(raw: string): T_CH[] {
 
 			// インライン画像。これも表示単位を作る。**本文としては全角空白1つ**の扱いで
 			//	（本家も`&emsp;`を置いてそこへ画像を重ねる）、平文にもその1文字が残る
-			case 'grp':	if (o.pic) {put('　', o.r, o); Object.assign(aCh.at(-1)!, {pic: o.pic})}	break;
+			case 'grp':	if (o.pic) {
+				put('　', o.r, o);
+				Object.assign(aCh.at(-1)!, {pic: o.pic,
+					...(num(o.width) !== undefined ? {gw: num(o.width)} : {}),
+					...(num(o.height) !== undefined ? {gh: num(o.height)} : {}),
+					...(num(o.x) !== undefined ? {gx: num(o.x)} : {}),
+					...(num(o.y) !== undefined ? {gy: num(o.y)} : {}),
+				});
+			}	break;
 
 			default:	break;	// 未対応の命令は落とす
 		}

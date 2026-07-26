@@ -1334,8 +1334,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>pic</code>（アニメpng＝スプライトシートも可）・<code>r</code>（ルビ）・
 	<code>style</code>／<code>r_style</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く
 	（本家も<code>&amp;emsp;</code>を置いてそこへ重ねる）。<br/>
-	未対応：<code>width</code>／<code>height</code>（今は全角空白の枠に<code>background-size: contain</code>で収める）・
-	<code>x</code>／<code>y</code>・<code>id</code>・<code>wait</code>・<code>layer</code>／<code>page</code>。</p>
+	<code>width</code>／<code>height</code>／<code>x</code>／<code>y</code>に対応（本家 TxtStage.ts:685-688）。
+	<b>書いた時だけ当てる</b>——省略すれば全角空白1つぶんの枠に<code>background-size: contain</code>で収まる
+	（本家の既定もフォントサイズなので同じ絵）。<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、
+	CSSの独立<code>translate</code>で表す（行の高さや隣の文字の位置を動かさないため）。<br/>
+	未対応：<code>id</code>・<code>wait</code>・<code>layer</code>／<code>page</code>。</p>
 <p>※省略時は画像サイズになるが、ロード完了直後に文字配置を決めるのでちらつく。それを嫌う際に指定する<br/>
 	※特にモバイルなどでゲーム画面が自動で拡大縮小される場合、省略したらその時の本文文字サイズとして扱われる。なるべくサイズ指定を推奨。</p>
 
@@ -1895,8 +1898,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>breakline</code>という名の画像・アニメpngがプロジェクトにあれば
 	待ちマークとして表示する（本家 LayerMng.ts:159 と同じ規約）。無ければ試作の絵文字🩷。<br/>
-	未対応：<code>visible</code>・<code>x</code>／<code>y</code>・<code>width</code>／<code>height</code>・<code>global</code>
-	（マークは本文の直後に流し込む位置に出る）。</p>
+	<code>x</code>／<code>y</code>／<code>width</code>／<code>height</code>に対応（本家 TxtStage.ts:685-688）。
+	<b>書いた時だけ当てる</b>——省略すればマークは本文の直後に流し込む位置・文字サイズなりで出る
+	（本家の既定もフォントサイズなので同じ絵）。<code>x</code>／<code>y</code>は<b>その位置からのずらし</b>で、
+	CSSの独立<code>translate</code>で表す（行の高さや隣の文字の位置を動かさないため。
+	本家も待ちマーク用コンテナの中の相対座標として扱う）。<br/>
+	未対応：<code>visible</code>（本家は<code>breakLine</code>／<code>breakPage</code>の入口で
+	<b>属性ごと消している</b>＝常に表示）・<code>global</code>。</p>
 
 </p>
 <h2 id="p" class="w-heading">[p]改ページクリック待ち</h2>

@@ -14,4 +14,10 @@
 本文中に[graph pic=anime]置く[p]
 
 [er]
-おわり[s]
+; [graph]の寸法・ずらし（本家 TxtStage.ts:685-688）。書いた時だけ効き、省略時は
+;	本文と同じ全角空白1つぶんの枠に収まる
+すんぽう[graph pic=anime width=48 height=24 x=3 y=-5]あり[l]
+
+[er]
+; 待ちマークの位置・寸法。x/yは本文の流れの中の位置からの**ずらし**
+おわり[l x=4 y=-2 width=32 height=16]

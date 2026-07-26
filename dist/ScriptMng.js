@@ -2625,13 +2625,23 @@ var B = class {
 			case "waitclick": {
 				if (n === "l" && !this.tagLEnabled) return "skip";
 				n === "p" && (this.#b = !0);
-				let e = this.#B(n);
+				let t = this.#B(n), r = {};
+				for (let t of [
+					"x",
+					"y",
+					"width",
+					"height"
+				]) {
+					let i = a[t];
+					i !== void 0 && (r[t] = e.#n(n, t, i));
+				}
 				return s.push({
 					t: "stop",
 					kind: n,
 					key: `${this.fn}:${String(this.#_)}`,
 					nm: this.#v,
-					...e ? { resume: e } : {}
+					...t ? { resume: t } : {},
+					...Object.keys(r).length > 0 ? { mark: r } : {}
 				}), "stop";
 			}
 			default: {
@@ -3857,7 +3867,8 @@ var le = class e {
 					this.$fncs.setWait({
 						nm: e.nm,
 						kind: e.kind,
-						...t ? { src: t } : {}
+						...t ? { src: t } : {},
+						...e.mark
 					});
 				}
 				this.#S = e.kind === "s", e.resume ? this.#T(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#d(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || n), this.#r && this.$fncs.setChWait(this.#r.chWait);

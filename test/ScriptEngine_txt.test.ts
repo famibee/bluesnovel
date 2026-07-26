@@ -159,3 +159,48 @@ it('link_hint', ()=> {
 		.toEqual([{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '',
 			hint: 'ヒント', hs: 'color: red;', ho: `{"placement": "bottom"}`}}]);
 });
+
+
+// ============ [graph]の寸法・ずらし ============
+//	本家 TxtStage.ts:685-688 が sp.x/y/width/height に入れる分。**書かれた属性だけ**を持たせ、
+//	省略時は本文と同じ全角空白1つぶんの枠に収まる（本家の既定もフォントサイズなので同じ絵）
+
+it('graph_寸法とずらしが表示単位へ乗る', ()=> {
+	const a = units('[graph pic=e width=48 height=24 x=3 y=-5]');
+	expect(a.at(-1)).toMatchObject({pic: 'e', gw: 48, gh: 24, gx: 3, gy: -5});
+});
+
+it('graph_書かなければ持たない', ()=> {
+	const v = units('[graph pic=e]').at(-1)!;
+	expect(v.gw).toBeUndefined();
+	expect(v.gh).toBeUndefined();
+	expect(v.gx).toBeUndefined();
+	expect(v.gy).toBeUndefined();
+});
+
+it('graph_本文としては全角空白1つ', ()=> {
+	// 本家も`&emsp;`を置いてそこへ画像を重ねる。平文とも食い違わない
+	expect(units('[graph pic=e width=48]').at(-1)?.c).toBe('　');
+});
+
+
+// ============ [l]/[p]の待ちマークの位置・寸法 ============
+
+const markOf = (src: string)=> {
+	const a = new ScriptEngine('t1', `[add_lay layer=mes class=txt][current layer=mes]${src}`)
+		.step().find(v=> v.t === 'stop');
+	return a?.t === 'stop' ? a.mark : undefined;
+};
+
+it('waitMark_位置と寸法がstopアクションへ乗る', ()=> {
+	expect(markOf('[l x=4 y=-2 width=20 height=20]')).toEqual({x: 4, y: -2, width: 20, height: 20});
+});
+
+it('waitMark_書かなければ持たない', ()=> {
+	expect(markOf('[l]')).toBeUndefined();
+	expect(markOf('[p]')).toBeUndefined();
+});
+
+it('waitMark_数値でなければthrow', ()=> {
+	expect(()=> markOf('[l x=もじ]')).toThrow();
+});

@@ -74,6 +74,10 @@ export type T_LAY_STY_ARG = {
 	out_style?	: string;
 };
 
+// [l]/[p]の待ちマークの位置・寸法（本家 TxtStage.ts:685-688 が sp.x/y/width/height に入れる分）。
+//	**書かれた属性だけ**を持つ（省略時は本文の流れの中の位置・文字サイズなり）
+export type T_MARK_STY = {x?: number; y?: number; width?: number; height?: number};
+
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
@@ -121,7 +125,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'resvDomEvent'; rawKey: string; key: string; del: boolean; needErr: boolean}	// [event key='dom=…']のDOM側予約
 	| {t: 'setFocus'; mode: 'add' | 'del' | 'null' | 'next' | 'prev'; rawKey?: string; needErr?: boolean}	// [set_focus]。キーボードフォーカスの順番管理
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
-	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）
+	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME; mark?: T_MARK_STY}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）。markは[l]/[p]の待ちマークの位置・寸法
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
 	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）。aPathは[tsy path=…]の後続区間、chainは他トゥイーンの終了に繋ぐ指定
@@ -1967,7 +1971,15 @@ export class ScriptEngine {
 
 			if (name === 'p') this.#clearOnResume = true;	// [p]の次の進行時に現在レイヤをクリア（試作の改ページ挙動）
 			const resume = this.#calcResume(name);	// オート読み／既読スキップの自動進行指示（該当しなければundefined）
-			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer, ...resume ? {resume} : {}});
+			// 待ちマークの位置・寸法（本家 LayerMng.ts:159 の breakLine/breakPage が
+			//	そのままタグ属性を画像へ渡す）。**書かれた属性だけ**を拾う
+			const mark: T_MARK_STY = {};
+			for (const k of ['x', 'y', 'width', 'height'] as const) {
+				const v = args[k];
+				if (v !== undefined) mark[k] = ScriptEngine.#argNum(name, k, v);
+			}
+			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer,
+				...resume ? {resume} : {}, ...Object.keys(mark).length > 0 ? {mark} : {}});
 			return 'stop';
 		}
 

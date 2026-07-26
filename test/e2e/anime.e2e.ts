@@ -94,3 +94,37 @@ test('[l]/[p]の待ちマークはbreakline/breakpageの画像になる', async 
 	await expect(mark.locator('img')).toHaveCount(1);
 	expect(await mark.locator('img').getAttribute('src')).toMatch(/anime\.4x1\.png$/);
 });
+
+test('[graph]の寸法・ずらしが効く', async ({page})=> {
+	// 本家 TxtStage.ts:685-688。**書いた時だけ**当てる（省略時は本文と同じ全角空白1つぶんの枠）。
+	//	ずらしは translate ——行の高さや隣の文字の位置を動かさないため
+	for (let i = 0; i < 2; ++i) await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('すんぽう　あり');
+
+	// **本文の中だけ**を見る（待ちマークのbreaklineも同じsn_aniクラスを持つため、
+	//	レイヤ全体で拾うと2つになる）。本文は data-lay の1つめの子（charsRef）
+	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(1) span[class^="sn_ani"]`);
+	await expect(el).toHaveCount(1);
+	const sty = await el.evaluate(e=> {
+		const cs = getComputedStyle(e);
+		return {w: cs.width, h: cs.height, t: cs.translate, d: cs.display};
+	});
+	expect(sty.w).toBe('48px');
+	expect(sty.h).toBe('24px');
+	expect(sty.t).toBe('3px -5px');
+	expect(sty.d).toBe('inline-block');
+});
+
+test('[l]の待ちマークの位置・寸法が効く', async ({page})=> {
+	for (let i = 0; i < 3; ++i) await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('おわり');
+
+	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	const sty = await mark.evaluate(e=> {
+		const cs = getComputedStyle(e);
+		return {w: cs.width, h: cs.height, t: cs.translate};
+	});
+	expect(sty.w).toBe('32px');
+	expect(sty.h).toBe('16px');
+	expect(sty.t).toBe('4px -2px');
+});

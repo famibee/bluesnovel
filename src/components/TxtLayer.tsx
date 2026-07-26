@@ -250,6 +250,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
 	`;
+	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。**書かれた時だけ**当てる。
+	//	省略時は本文の流れの中の位置・文字サイズなり（本家の既定もフォントサイズなので同じ絵）。
+	//	x/yは**ずらし**なので translate で表す——行の高さや隣の文字の位置を動かさないため
+	const styWaitPos: CSSProperties = {
+		...wait?.width !== undefined ? {width: `${String(wait.width)}px`} : {},
+		...wait?.height !== undefined ? {height: `${String(wait.height)}px`} : {},
+		...wait?.x !== undefined || wait?.y !== undefined
+			? {translate: `${String(wait?.x ?? 0)}px ${String(wait?.y ?? 0)}px`} : {},
+	};
 	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
 	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。
 	//	[enable_event enabled=false]の間はクリックを受けない（本家 TxtLayer.enabled 相当）
@@ -412,10 +421,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	return <>
 		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={sty}>
 			<span ref={charsRef}></span>
-			{showWait && <span css={styWaitMark}>{
+			{showWait && <span css={styWaitMark} style={styWaitPos}>{
 				// プロジェクトに`breakline`/`breakpage`があればそれを、無ければ試作の絵文字を出す
 				waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
-				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom'}}/>
+				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom',
+					...wait!.width !== undefined || wait!.height !== undefined
+						? {width: '100%', height: '100%'} : {}}}/>
 				: wait!.kind === 'l' ? '🩷' : '✅'
 			}</span>}
 		</span>
@@ -472,7 +483,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs, tcy, lnk, src}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
+function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
 	const ffs = fncFfs(c);
 	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs && ! src) return txt(c);
@@ -490,7 +501,11 @@ function elCh({c, r, s, rs, tcy, lnk, src}: T_CH, onLink: T_ON_LINK, fncFfs: (c:
 	base.appendChild(txt(c));
 	// [graph]のインライン画像。**全角空白1つぶんの場所を占め、そこへ画像を敷く**
 	//	（本家も`&emsp;`を置いてそこへ画像を重ねる）。文字を残すので平文とも食い違わない
-	if (src) {elGraph(base, src); if (base !== el) el.appendChild(base)}
+	if (src) {
+		elGraph(base, src, {...gw !== undefined ? {gw} : {}, ...gh !== undefined ? {gh} : {},
+			...gx !== undefined ? {gx} : {}, ...gy !== undefined ? {gy} : {}});
+		if (base !== el) el.appendChild(base);
+	}
 
 	if (r !== undefined) {
 		const rt = document.createElement('rt');
@@ -505,7 +520,21 @@ function elCh({c, r, s, rs, tcy, lnk, src}: T_CH, onLink: T_ON_LINK, fncFfs: (c:
 // [graph]の画像1つ。スプライトシート（.json）なら**読み終わってから**中身を差し替える。
 //	ここはReactの外（文字送り演出のためTxtLayerが直接DOMを組む）なので、
 //	Suspenseではなくその場の書き換えで待つ。読めなければ何も置かない（本文は進む）
-function elGraph(box: HTMLElement, src: string) {
+function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx' | 'gy'>) {
+	// 寸法・ずらし（本家 TxtStage.ts:685-688）。**書かれた時だけ**当てる：
+	//	省略時は本文と同じ全角空白1つぶんの枠に収まる（本家の既定はフォントサイズなので同じ絵）。
+	//	x/yは「本文の流れの中での位置からのずらし」（本家も待ちマーク用コンテナの中の相対座標）。
+	//	ずらしにtranslateを使うのは、行の高さや隣の文字の位置を動かさないため
+	if (o.gw !== undefined || o.gh !== undefined) {
+		box.style.display = 'inline-block';
+		box.style.verticalAlign = 'text-bottom';
+		if (o.gw !== undefined) box.style.width = `${String(o.gw)}px`;
+		if (o.gh !== undefined) box.style.height = `${String(o.gh)}px`;
+	}
+	if (o.gx !== undefined || o.gy !== undefined) {
+		box.style.translate = `${String(o.gx ?? 0)}px ${String(o.gy ?? 0)}px`;
+	}
+
 	if (! src.endsWith('.json')) {
 		box.style.backgroundImage = `url(${JSON.stringify(src)})`;
 		box.style.backgroundRepeat = 'no-repeat';

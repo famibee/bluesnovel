@@ -153,7 +153,13 @@ function a(t) {
 				p(h.t ?? "", h.r, h, !0);
 				break;
 			case "grp":
-				h.pic && (p("　", h.r, h), Object.assign(n.at(-1), { pic: h.pic }));
+				h.pic && (p("　", h.r, h), Object.assign(n.at(-1), {
+					pic: h.pic,
+					...r(h.width) === void 0 ? {} : { gw: r(h.width) },
+					...r(h.height) === void 0 ? {} : { gh: r(h.height) },
+					...r(h.x) === void 0 ? {} : { gx: r(h.x) },
+					...r(h.y) === void 0 ? {} : { gy: r(h.y) }
+				}));
 				break;
 			default: break;
 		}

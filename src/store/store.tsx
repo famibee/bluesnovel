@@ -112,7 +112,10 @@ type T_STATE = {
 }
 // [l]/[p]の待ちマーク。srcは`breakline`/`breakpage`という名の画像が
 //	プロジェクトにあれば、その解決済みURL（本家 LayerMng.ts:159。無ければ試作の絵文字）
-export type T_WAIT = {nm: string; kind: 'l' | 'p'; src?: string} | null;
+export type T_WAIT = {nm: string; kind: 'l' | 'p'; src?: string;
+	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。
+	//	x/yは「本文の流れの中での位置からのずらし」（本家も待ちマーク用コンテナ内の相対座標）
+	x?: number; y?: number; width?: number; height?: number} | null;
 export type T_PAGE = 'fore' | 'back';
 export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号
