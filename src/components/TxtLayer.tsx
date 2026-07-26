@@ -46,6 +46,12 @@ export type T_BTN_STY = {
 	hint?		: string;
 	hint_style?	: string;	// 吹き出しのCSS
 	hint_opt?	: string;	// 本家popperのオプションJSON（placementだけ見る）
+	// 画像ボタン（[button pic=…]）と背景画像（[button b_pic=…]）。
+	//	picは論理名で、srcは解決済みURL（埋めるのはScriptMng。[lay fn=]と同じ関係）
+	pic?		: string;
+	src?		: string;
+	b_pic?		: string;
+	b_src?		: string;
 };
 export type T_BTN = {
 	nm		: string;

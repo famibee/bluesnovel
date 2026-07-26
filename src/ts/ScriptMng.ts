@@ -862,10 +862,16 @@ export class ScriptMng {
 				this.$fncs.chgStr({nm: act.nm, page: act.page, str: plainOf(aCh), aCh});
 			}
 			break;
-		case 'addBtn':
-			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）
-			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.sty !== undefined ? {sty: act.sty} : {})});
+		case 'addBtn': {
+			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）。
+			//	画像（pic/b_pic）は論理名で来るので、ここで解決済みURLを足す（[lay fn=]と同じ）
+			const sty = act.sty && {...act.sty,
+				...(act.sty.pic ? {src: this.#searchPic('button pic', act.sty.pic)} : {}),
+				...(act.sty.b_pic ? {b_src: this.#searchPic('button b_pic', act.sty.b_pic)} : {}),
+			};
+			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(sty !== undefined ? {sty} : {})});
 			break;
+		}
 		case 'chgLay':
 			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: act.sty});
 			break;

@@ -1,0 +1,14 @@
+{
+	"main": {
+		":cnt": 1,
+		"sn": "main.sn"
+	},
+	"btn3": {
+		":cnt": 1,
+		"png": "btn3.png"
+	},
+	"waku": {
+		":cnt": 1,
+		"png": "waku.png"
+	}
+}

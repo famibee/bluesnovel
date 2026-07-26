@@ -10023,16 +10023,19 @@ function vu(e) {
 		h: e?.height ?? 30
 	};
 }
-function yu(e, t) {
-	let n = {};
-	(e.left !== void 0 || e.top !== void 0) && (n.position = "absolute", n.left = `${String(e.left ?? 0)}px`, n.top = `${String(e.top ?? 0)}px`, n.margin = 0);
+function yu(e, t, n) {
+	let r = {};
+	(e.left !== void 0 || e.top !== void 0) && (r.position = "absolute", r.left = `${String(e.left ?? 0)}px`, r.top = `${String(e.top ?? 0)}px`, r.margin = 0);
 	{
-		let { w: t, h: r } = vu(e);
-		n.width = `${String(t)}px`, n.height = `${String(r)}px`, n.fontSize = `${String(r)}px`, n.lineHeight = 1, n.padding = 0, n.boxSizing = "border-box";
+		let { w: t, h: i } = e.pic ? {
+			w: e.width ?? n?.w ?? 0,
+			h: e.height ?? n?.h ?? 0
+		} : vu(e);
+		t > 0 && (r.width = `${String(t)}px`), i > 0 && (r.height = `${String(i)}px`), e.pic || (r.fontSize = `${String(i)}px`, r.lineHeight = 1, r.padding = 0), r.boxSizing = "border-box";
 	}
-	e.alpha !== void 0 && (n.opacity = e.alpha);
-	let r = (e.scale_x ?? 1) * t.x, i = (e.scale_y ?? 1) * t.y, a = t.x !== 1 || t.y !== 1;
-	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || a) && (n.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(r)}, ${String(i)})`, n.transformOrigin = a ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
+	e.pic && e.src ? (r.backgroundImage = `url("${e.src}")`, r.backgroundSize = "300% 100%", r.backgroundRepeat = "no-repeat") : e.b_pic && e.b_src && (r.backgroundImage = `url("${e.b_src}")`, r.backgroundPosition = "center", r.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (r.opacity = e.alpha);
+	let i = (e.scale_x ?? 1) * t.x, a = (e.scale_y ?? 1) * t.y, o = t.x !== 1 || t.y !== 1;
+	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || o) && (r.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(i)}, ${String(a)})`, r.transformOrigin = o ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (r.mixBlendMode = e.blendmode), e.enabled === !1 && (r.color = "gray", r.pointerEvents = "none"), r;
 }
 function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 	let o = _u`
@@ -10069,6 +10072,11 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
 		&:active {${i?.style_clicked ?? "text-shadow: none;"}}
+		/* 画像ボタンのコマ送り。絵は「通常｜押下｜ホバー」を横に3コマ並べた1枚で
+			（本家 Button.ts:269 が幅を3等分して張り替える）、背景を3倍幅に敷いてあるので
+			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
+			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
+		${i?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
 	`, s = (e) => {
 		e.stopPropagation(), hu.hide(), a(t, n ?? !1, r);
 	}, c = () => {
@@ -10082,9 +10090,16 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		x: 1,
 		y: 1
 	});
-	return (0, F.useLayoutEffect)(() => {
+	(0, F.useLayoutEffect)(() => {
 		let e = u.current;
 		if (!e) {
+			f({
+				x: 1,
+				y: 1
+			});
+			return;
+		}
+		if (i?.pic) {
 			f({
 				x: 1,
 				y: 1
@@ -10101,10 +10116,27 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 	}, [
 		e,
 		i?.width,
-		i?.height
-	]), /* @__PURE__ */ b("span", {
+		i?.height,
+		i?.pic
+	]);
+	let p = i?.pic ? i.src ?? "" : "", [m, h] = (0, F.useState)(null);
+	return (0, F.useEffect)(() => {
+		if (!p) {
+			h(null);
+			return;
+		}
+		let e = !0, t = new Image();
+		return t.onload = () => {
+			e && h({
+				w: t.naturalWidth / 3,
+				h: t.naturalHeight
+			});
+		}, t.src = p, () => {
+			e = !1;
+		};
+	}, [p]), /* @__PURE__ */ b("span", {
 		css: o,
-		style: i ? yu(i, d) : void 0,
+		style: i ? yu(i, d, m) : void 0,
 		ref: u,
 		tabIndex: 0,
 		onClick: s,

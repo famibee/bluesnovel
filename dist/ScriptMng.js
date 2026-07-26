@@ -2365,21 +2365,23 @@ var B = class {
 				if (!t) throw "[button] layerは必須です（試作仕様）";
 				let n = a.label ?? "", r = a.fn ?? "";
 				if (!n && !r) throw "[button] fnまたはlabelは必須です";
-				let i = a.nm, o = a.call === "true", c = e.argPage(a, "back"), l = {};
+				let { pic: i } = a;
+				if (!i && !a.text) throw "[button] textまたはpic属性は必須です";
+				let o = a.nm, c = a.call === "true", l = e.argPage(a, "back"), u = {};
 				for (let t of e.#f) {
 					let n = a[t];
-					n !== void 0 && Object.assign(l, { [t]: t === "left" || t === "top" ? this.#r("button", t, n) : e.#n("button", t, n) });
+					n !== void 0 && Object.assign(u, { [t]: t === "left" || t === "top" ? this.#r("button", t, n) : e.#n("button", t, n) });
 				}
-				return l.width ??= 100, l.height ??= 30, a.enabled !== void 0 && (l.enabled = a.enabled !== "false"), a.blendmode !== void 0 && (l.blendmode = e.#u(a.blendmode)), a.style !== void 0 && (l.style = e.#l(a.style)), a.style_hover !== void 0 && (l.style_hover = e.#l(a.style_hover)), a.style_clicked !== void 0 && (l.style_clicked = e.#l(a.style_clicked)), a.hint !== void 0 && (l.hint = a.hint), a.hint_style !== void 0 && (l.hint_style = a.hint_style), a.hint_opt !== void 0 && (l.hint_opt = a.hint_opt), s.push({
+				return i || (u.width ??= 100, u.height ??= 30), a.enabled !== void 0 && (u.enabled = a.enabled !== "false"), a.blendmode !== void 0 && (u.blendmode = e.#u(a.blendmode)), a.style !== void 0 && (u.style = e.#l(a.style)), a.style_hover !== void 0 && (u.style_hover = e.#l(a.style_hover)), a.style_clicked !== void 0 && (u.style_clicked = e.#l(a.style_clicked)), a.hint !== void 0 && (u.hint = a.hint), a.hint_style !== void 0 && (u.hint_style = a.hint_style), a.hint_opt !== void 0 && (u.hint_opt = a.hint_opt), i !== void 0 && (u.pic = i), a.b_pic !== void 0 && (u.b_pic = a.b_pic), s.push({
 					t: "addBtn",
 					layerNm: t,
-					page: c,
-					text: a.text ?? "",
+					page: l,
+					text: i ? "" : a.text ?? "",
 					label: n,
-					call: o,
-					...i === void 0 ? {} : { nm: i },
+					call: c,
+					...o === void 0 ? {} : { nm: o },
 					...r ? { fn: r } : {},
-					...Object.keys(l).length > 0 ? { sty: l } : {}
+					...Object.keys(u).length > 0 ? { sty: u } : {}
 				}), "skip";
 			}
 			case "page":
@@ -3647,7 +3649,12 @@ var le = class e {
 					});
 				}
 				break;
-			case "addBtn":
+			case "addBtn": {
+				let t = e.sty && {
+					...e.sty,
+					...e.sty.pic ? { src: this.#se("button pic", e.sty.pic) } : {},
+					...e.sty.b_pic ? { b_src: this.#se("button b_pic", e.sty.b_pic) } : {}
+				};
 				this.$fncs.addBtn({
 					layerNm: e.layerNm,
 					page: e.page,
@@ -3656,9 +3663,10 @@ var le = class e {
 					label: e.label,
 					...e.call === void 0 ? {} : { call: e.call },
 					...e.fn === void 0 ? {} : { fn: e.fn },
-					...e.sty === void 0 ? {} : { sty: e.sty }
+					...t === void 0 ? {} : { sty: t }
 				});
 				break;
+			}
 			case "chgLay":
 				this.$fncs.chgLay({
 					nm: e.nm,

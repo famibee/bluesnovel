@@ -602,6 +602,32 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  効いたかどうかは色の分かっている矩形を撮って数えるしかない
 
 
+- todo.md: **`[button]`の残り**：画像ボタン
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
+
+- [x] **画像ボタン**：`[button pic=…]`（3コマの絵）と`[button b_pic=…]`（背景画像）
+	- `pic`は**「通常｜押下｜ホバー」を横に3コマ並べた1枚**（本家 `Button.ts:269` が幅を3等分して
+	  テクスチャを張り替える）。こちらは背景を3倍幅に敷き、`background-position-x`を
+	  0%／50%／100%と動かして同じ3コマにする（背景が要素の3倍幅のとき、この3つがちょうど
+	  各コマの左端に当たる）
+	- **どのコマを見せるかはインラインstyleに書けない**。インラインstyleは`:hover`／`:active`の
+	  ルールより強く、状態で切り替えられなくなるため。絵と3倍幅の指定だけをインラインに置き、
+	  位置は状態別ルール（emotionのcss）が持つ形にした
+	- 箱の大きさは**絵の実寸**（横は3コマ分の1/3。本家 `Button.ts:280`）。実寸を知れるのは
+	  DOM側だけなので、BtnLayerが`Image`で読み込んで測る。`width`/`height`を書けばそちらが勝つ
+	  （本家も`'width' in hArg`を優先）。**エンジンの入口で寸法の既定（100×30）を埋めるのは
+	  文字ボタンだけ**にした——画像ボタンで埋めると絵の実寸が使われなくなる
+	- `pic`を書くと**文字は出ない**（本家もpic側の分岐で早期returnし、文字の組み立てへ進まない）。
+	  `text`は`pic`が無いときだけ必須で、文言も本家に合わせた
+	- `b_pic`は文字を残して背後へ絵を中央合わせで敷く（本家 `Button.ts:249`）。
+	  **本家は絵の実寸ぶんに箱を広げるが、こちらは箱の大きさを変えない**（todo.mdへ）
+	- 画像は論理名で積み、解決済みURLを入れるのはScriptMng（`[lay fn=]`と同じ関係）
+	- 検査：`test/ScriptEngine_btn.test.ts`に5件＋`test/e2e/btnpic.e2e.ts`5件。
+	  E2Eのフィクスチャは**コマごとに色を変えた3コマPNG**（通常=赤／押下=緑／ホバー=青）を
+	  置き、今どのコマが出ているかを画素で数える。箱の大きさは`offsetWidth`で測る
+	  ——`boundingBox()`はステージの`transform: scale`が掛かった画面上の実寸を返すので、
+	  シナリオに書いた数値と直接は比べられない
+
 - [ ]
 
 
@@ -616,8 +642,6 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
   - 【現状不使用・優先順位低】文字レイヤの枠画像でのシート再生
   - `[graph]`の`width`/`height`
   - `[l]`/`[p]`の待ちマークの位置指定
-- todo.md: **`[button]`の残り**：画像ボタン
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
 
 
 

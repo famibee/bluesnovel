@@ -1579,6 +1579,10 @@ export class ScriptEngine {
 			const label = args.label ?? '';
 			const fn = args.fn ?? '';	// fn指定時は別スクリプトのラベルへ飛ぶ（label省略ならそのファイルの先頭）
 			if (! label && ! fn) throw '[button] fnまたはlabelは必須です';
+			// 画像ボタン（本家 Button.ts:104）。**picがあれば文字は出さない**（本家も
+			//	pic側の分岐で早期returnし、文字の組み立てへ進まない）
+			const {pic} = args;
+			if (! pic && ! args.text) throw '[button] textまたはpic属性は必須です';	// 本家と同じ文言
 			// nm: ボタン自身の識別名（同一layer内で一意）。**省略時はストア側で通し番号を振る**。
 			//	本家にボタン名の概念は無く、ここのnmはReactのkeyのためだけの物なので、
 			//	labelを流用すると同じ飛び先のボタンを並べられない（テンプレの[sys_menu]がまさにそれ）
@@ -1611,8 +1615,13 @@ export class ScriptEngine {
 			//	他の配置・変形属性を埋めないのは、下流のCSSが本家と同じ既定を持っているから
 			//	（left/top=0・rotation=0・scale=1・alpha=1）。ボタンにはその受け皿が無い。
 			//	本家も #o へ確定値を記録する（dump・セーブに乗る）ので、ストアにも実寸で載せる
-			sty.width ??= BTN_DEF_W;
-			sty.height ??= BTN_DEF_H;
+			//	**画像ボタンは別**：本家も pic 側の分岐では埋めず、絵の実寸（横は3コマ分の1/3）を
+			//	そのまま箱の大きさにする（Button.ts:280）。実寸を知れるのはDOM側だけなので
+			//	BtnLayerが読み込み後に測る
+			if (! pic) {
+				sty.width ??= BTN_DEF_W;
+				sty.height ??= BTN_DEF_H;
+			}
 			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
 			// ツールチップ（本家 EventMng.ts:418 #dispHint()）。hint_styleは吹き出しのCSS、
@@ -1625,8 +1634,11 @@ export class ScriptEngine {
 			if (args.hint !== undefined) sty.hint = args.hint;
 			if (args.hint_style !== undefined) sty.hint_style = args.hint_style;
 			if (args.hint_opt !== undefined) sty.hint_opt = args.hint_opt;
+			// 画像は論理名のまま積む。解決済みURLを入れるのはScriptMng（[lay fn=]と同じ）
+			if (pic !== undefined) sty.pic = pic;
+			if (args.b_pic !== undefined) sty.b_pic = args.b_pic;
 
-			aAct.push({t: 'addBtn', layerNm, page, text: args.text ?? '', label, call,
+			aAct.push({t: 'addBtn', layerNm, page, text: pic ?'' :args.text ?? '', label, call,
 				...(nm === undefined ? {} : {nm}),
 				...(fn ? {fn} : {}), ...(Object.keys(sty).length > 0 ? {sty} : {})});
 			return 'skip';

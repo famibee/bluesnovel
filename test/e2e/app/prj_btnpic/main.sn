@@ -1,0 +1,21 @@
+; E2E用シナリオ（btnpic.e2e.ts が使用）
+;	画像ボタン。btn3.pngは**「通常｜押下｜ホバー」を横に3コマ並べた1枚**（本家 Button.ts:269）で、
+;	1コマ60x40・全体180x40。コマごとに色を変えてあるので、どのコマが出ているかを画素で数えられる
+;	（通常=赤／押下=緑／ホバー=青）
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 画像ボタン。箱の大きさは絵の実寸＝60x40（横は3コマ分の1/3）になるはず
+[button page=fore pic=btn3 label=*a left=20 top=20]
+がぞう[l]
+
+; 寸法の明示指定は絵の実寸より優先される（本家も `'width' in hArg` を優先）
+[button page=fore pic=btn3 label=*a width=120 height=80 left=20 top=120]
+おおきく[l]
+
+; 背景画像。文字は消えず、その背後に絵が敷かれる
+[button page=fore b_pic=waku text=もじ label=*a left=20 top=240]
+はいけい[s]
+
+*a
+[s]

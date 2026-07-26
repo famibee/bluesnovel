@@ -27,6 +27,11 @@ function styOf(src: string): T_BTN_STY | undefined {
 	return a?.t === 'addBtn' ? a.sty : undefined;
 }
 const DEF = {width: BTN_DEF_W, height: BTN_DEF_H};
+// addBtnアクションそのもの（text も見たいとき用）
+function btn(src: string) {
+	const a = acts(src).find(v=> v.t === 'addBtn');
+	return a?.t === 'addBtn' ? a : undefined;
+}
 
 
 it('btnSty_sizeDefaults', ()=> {
@@ -122,4 +127,42 @@ it('erDoesNotClearLayStyle', ()=> {
 	//	本家も TxtLayer.clearLay() でCSSまでは戻さない（戻すのは変形系だけ）
 	expect(acts(`[lay layer=mes style="writing-mode: vertical-rl;"][er]`)
 		.some(v=> v.t === 'clearLay')).toBe(false);
+});
+
+
+// ============ 画像ボタン（[button pic=] / [button b_pic=]）============
+//	本家 Button.ts:104（pic）と :168（b_pic）。picは「通常｜押下｜ホバー」を横に3コマ並べた1枚で、
+//	実際の見え方（コマ送り・箱の大きさ）はDOM側なのでE2E（button.e2e.ts）
+
+it('btn_picIsPassedAsLogicalName', ()=> {
+	// 画像は論理名のまま積む（解決済みURLを入れるのはScriptMng。[lay fn=]と同じ関係）
+	expect(btn('[button pic=btn_ok label=*a]')?.sty).toMatchObject({pic: 'btn_ok'});
+});
+
+it('btn_picHasNoText', ()=> {
+	// 本家もpic側の分岐で早期returnし、文字の組み立てへ進まない
+	expect(btn('[button pic=btn_ok text=むし label=*a]')?.text).toBe('');
+});
+
+it('btn_picDoesNotGetDefaultSize', ()=> {
+	// 箱の大きさは絵の実寸（横は3コマ分の1/3）。実寸を知れるのはDOM側だけなので埋めない
+	const sty = btn('[button pic=btn_ok label=*a]')?.sty as {width?: number; height?: number};
+	expect(sty.width).toBeUndefined();
+	expect(sty.height).toBeUndefined();
+	// 明示指定があればそちらが勝つ（本家も `'width' in hArg` を優先）
+	expect((btn('[button pic=btn_ok width=60 label=*a]')?.sty as {width?: number}).width).toBe(60);
+});
+
+it('btn_textOrPicIsRequired', ()=> {
+	expect(()=> acts('[button label=*a]')).toThrow('textまたはpic属性は必須です');	// 本家と同じ文言
+	expect(()=> acts('[button pic=btn_ok label=*a]')).not.toThrow();
+});
+
+it('btn_bPicKeepsText', ()=> {
+	// b_picは文字の背後に敷く絵（本家 Button.ts:249）。文字は消えない
+	const a = btn('[button b_pic=waku text=おす label=*a]');
+	expect(a?.text).toBe('おす');
+	expect(a?.sty).toMatchObject({b_pic: 'waku'});
+	// 文字ボタンなので寸法の既定は入る
+	expect(a?.sty).toMatchObject({width: 100, height: 30});
 });

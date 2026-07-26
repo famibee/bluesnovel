@@ -47,8 +47,9 @@
   - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
 - [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
 - [ ] **`[button]`の配置属性**：`center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`。`[lay]`側は対応済み（CSSの独立`translate`で表現）。本家は`isButton`のとき幅の**1/3**で計算する（pixiの文字寸法まわりの都合に見える）ので、同じ絵にするかは要判断
-- [ ] **`[button]`の残り**：`pic=`（画像ボタン）・`b_pic=`（背景画像）はアセット整備と一緒に。既定の見た目（色・余白）も仮のまま。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
+- [ ] **`[button]`の残り**：効果音（`enterse`等。音声層と一緒に）。既定の見た目（色・余白）も仮のまま。`pic=`（画像ボタン）・`b_pic=`（背景画像）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
+  - [ ] `[button b_pic=…]`は箱の大きさを変えない（本家は絵の実寸ぶんに広げる）。テンプレで実害が出たら合わせる
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
   - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す

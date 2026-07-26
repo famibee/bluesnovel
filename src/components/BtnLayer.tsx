@@ -36,7 +36,7 @@ type T_BTNARG = {
 function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
 	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
 }
-function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {
+function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number; h: number} | null): CSSProperties {
 	const sty: CSSProperties = {};
 	if (o.left !== undefined || o.top !== undefined) {
 		sty.position = 'absolute';
@@ -45,13 +45,37 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}): CSSProperties {
 		sty.margin = 0;
 	}
 	{
-		const {w, h} = btnSize(o);
-		sty.width = `${String(w)}px`;
-		sty.height = `${String(h)}px`;
-		sty.fontSize = `${String(h)}px`;	// 本家も fontSize:height（Button.ts:133）
-		sty.lineHeight = 1;
-		sty.padding = 0;	// 箱に文字をぴったり収めたいので padding 無し（fit実測の基準を素の文字寸法にする）
+		// 画像ボタンは絵の実寸が箱の大きさ（本家 Button.ts:280）。読み込むまでは値を書かない
+		//	——0pxで置くと一瞬潰れて見えるため
+		const {w, h} = o.pic ?{w: o.width ?? natPic?.w ?? 0, h: o.height ?? natPic?.h ?? 0} :btnSize(o);
+		if (w > 0) sty.width = `${String(w)}px`;
+		if (h > 0) sty.height = `${String(h)}px`;
+		if (! o.pic) {
+			sty.fontSize = `${String(h)}px`;	// 本家も fontSize:height（Button.ts:133）
+			sty.lineHeight = 1;
+			sty.padding = 0;	// 箱に文字をぴったり収めたいので padding 無し（fit実測の基準を素の文字寸法にする）
+		}
 		sty.boxSizing = 'border-box';
+	}
+	// 画像ボタン（[button pic=…]）。**絵は「通常｜押下｜ホバー」を横に3コマ並べた1枚**
+	//	（本家 Button.ts:269 が幅を3等分して張り替える）。CSSでは背景を3倍幅に敷き、
+	//	background-position-x を 0%／50%／100% と動かせば同じ3コマになる
+	//	（背景が要素の3倍幅のとき、この3つがちょうど各コマの左端に当たる）。
+	//	状態ごとの切り替えは styBtn 側の &:hover / &:active が持つ
+	if (o.pic && o.src) {
+		sty.backgroundImage = `url("${o.src}")`;
+		sty.backgroundSize = '300% 100%';
+		sty.backgroundRepeat = 'no-repeat';
+		// **どのコマを見せるかはインラインで書かない**。インラインstyleは`:hover`/`:active`の
+		//	ルールより強く、状態で切り替えられなくなるため（切り替えはstyBtn側が持つ）
+	}
+	// 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
+	//	（Button.ts:249）。こちらは箱の背景として中央に敷く
+	//	（本家は絵の実寸ぶんに箱を広げるが、こちらは箱の大きさを変えない）
+	else if (o.b_pic && o.b_src) {
+		sty.backgroundImage = `url("${o.b_src}")`;
+		sty.backgroundPosition = 'center';
+		sty.backgroundRepeat = 'no-repeat';
 	}
 	if (o.alpha !== undefined) sty.opacity = o.alpha;
 
@@ -125,6 +149,15 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
 		&:active {${sty?.style_clicked ?? 'text-shadow: none;'}}
+		/* 画像ボタンのコマ送り。絵は「通常｜押下｜ホバー」を横に3コマ並べた1枚で
+			（本家 Button.ts:269 が幅を3等分して張り替える）、背景を3倍幅に敷いてあるので
+			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
+			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
+		${sty?.pic ? `
+			background-position-x: 0%;
+			&:hover, &:focus {background-position-x: 100%;}
+			&:active {background-position-x: 50%;}
+		` : ''}
 	`;
 
 	const onClick = (e: MouseEvent)=> {
@@ -159,6 +192,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 	useLayoutEffect(()=> {
 		const el = ref.current;
 		if (! el) {setFit({x: 1, y: 1}); return}
+		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
 
 		const {w: bw, h: bh} = btnSize(sty);
 		const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
@@ -170,7 +204,24 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 			x: natW > 0 ? bw / natW : 1,
 			y: natH > 0 ? bh / natH : 1,
 		});
-	}, [text, sty?.width, sty?.height]);
+	}, [text, sty?.width, sty?.height, sty?.pic]);
+	// 画像ボタンの箱の大きさ＝**絵の実寸**（横は3コマ並びなので1/3）。本家 Button.ts:280 に対応。
+	//	実寸を知れるのはDOM側だけなので、ここで読み込んで測る。
+	//	width/heightが書かれていればそちらが勝つ（本家も `'width' in hArg` を優先する）
+	const picSrc = sty?.pic ? sty.src ?? '' : '';
+	const [natPic, setNatPic] = useState<{w: number; h: number} | null>(null);
+	useEffect(()=> {
+		if (! picSrc) {setNatPic(null); return}
+
+		let alive = true;
+		const img = new Image;
+		img.onload = ()=> {
+			if (alive) setNatPic({w: img.naturalWidth / 3, h: img.naturalHeight});
+		};
+		img.src = picSrc;
+		return ()=> {alive = false};
+	}, [picSrc]);
+
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）
 	const onKeyDown = (e: KeyboardEvent)=> {
 		if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -181,7 +232,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
-	return <span css={styBtn} style={sty ? styBtnArg(sty, fit) : undefined} ref={ref}
+	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic) : undefined} ref={ref}
 		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
 		onMouseEnter={showHint} onMouseLeave={()=> hintMng.hide()}
 		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;
