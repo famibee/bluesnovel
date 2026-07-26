@@ -20,7 +20,9 @@ const PRJ_W = 800;
 const PRJ_H = 600;
 
 test.beforeEach(async ({page})=> {
-	await page.setViewportSize({width: 1280, height: 900});	// ステージより広く＝等倍
+	// **ステージちょうどの窓＝等倍**。本家は`expanding`の既定がtrueで窓いっぱいまで拡大するので、
+	//	広い窓だと倍率が掛かって実寸の比較ができない（拡大そのものは下の専用テストで見る）
+	await page.setViewportSize({width: PRJ_W, height: PRJ_H});
 	await gotoSn(page, 'basic');
 });
 
@@ -55,3 +57,20 @@ test('ウインドウがステージより狭ければ、縦横比を保って�
 	const {stage} = await stageBox(page);
 	expect(stage.h).toBe(PRJ_H / 2);
 });
+
+test('ウインドウがステージより広ければ、縦横比を保って拡大される', async ({page})=> {
+	// 本家 SysBase.cvsResize() は `expanding` の既定がtrueで、ステージが窓より小さいときも
+	//	窓いっぱいまで引き伸ばす。ここを落としていたため、窓が広いと右に黒帯が残り、
+	//	[toggle_full_screen]でも等倍のままだった
+	await page.setViewportSize({width: PRJ_W * 2, height: PRJ_H * 2});
+	await expect.poll(async ()=> (await stageBox(page)).stage.w, {timeout: 5_000}).toBe(PRJ_W * 2);
+
+	const {stage} = await stageBox(page);
+	expect(stage.h).toBe(PRJ_H * 2);	// 縦横比は保つ
+
+	// 縦に余裕がない窓では、高さ側が上限になる（＝はみ出さない）
+	await page.setViewportSize({width: PRJ_W * 4, height: PRJ_H * 2});
+	await expect.poll(async ()=> (await stageBox(page)).stage.h, {timeout: 5_000}).toBe(PRJ_H * 2);
+	expect((await stageBox(page)).stage.w).toBe(PRJ_W * 2);
+});
+

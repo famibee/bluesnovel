@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {CmnLib, uint} from '../sn/CmnLib';
+import {CmnLib, argChk_Boolean, uint} from '../sn/CmnLib';
 import GrpLayer from './GrpLayer';
 import TxtLayer from './TxtLayer';
 import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
@@ -126,16 +126,6 @@ export default function Stage({
 	//	Config.generate() が CmnLib.stageW/stageH へ入れている
 	const {stageW, stageH} = CmnLib;
 
-	// 外側の <div id="skynovel"> にも、拡縮後の実寸を持たせる。
-	//	transform: scale() はレイアウト上のサイズを変えないので、これをやらないと
-	//	ページ側は等倍ぶんの領域を確保したまま（＝余白や不要なスクロールバーが出る）。
-	//	overflow:hidden は内側にも掛けるが、拡縮の丸め誤差でのはみ出しを止めるため両方に置く
-	useLayoutEffect(()=> {
-		heStage.style.width		= `${String(stageW * cvsScale)}px`;
-		heStage.style.height	= `${String(stageH * cvsScale)}px`;
-		heStage.style.overflow	= 'hidden';
-	}, [cvsScale, stageW, stageH]);
-
 	// ステージの内箱（等倍の座標系そのもの）。全画面要素・[snapshot]の撮影対象を兼ねる
 	const stageRef = useRef<HTMLDivElement>(null) as RefObject<HTMLDivElement>;
 
@@ -146,8 +136,41 @@ export default function Stage({
 	const fullScr = useStore(s=> s.fullScr);
 	const setFullScr = useStore(s=> s.setFullScr);
 	const tglFlScr = useStore(s=> s.toggleFullScr);
-	const isFullscreen = useFullscreen(stageRef, fullScr, {onClose: ()=> setFullScr(false)});
+	// **全画面にするのは外側（#skynovel）**で、内箱ではない。ブラウザのUAスタイルは全画面要素へ
+	//	`width/height: 100%` と **`transform: none`** を強制するので、拡縮している内箱を
+	//	全画面にすると倍率が丸ごと消えて等倍のまま画面いっぱいに引き伸ばされる（実測で確認）。
+	//	外側を全画面にすれば、その中で内箱は普通にtransform:scaleできる
+	const outerRef = useRef<HTMLElement>(heStage);
+	const isFullscreen = useFullscreen(outerRef, fullScr, {onClose: ()=> setFullScr(false)});
 	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
+
+	// 外側の <div id="skynovel"> にも、拡縮後の実寸を持たせる。
+	//	transform: scale() はレイアウト上のサイズを変えないので、これをやらないと
+	//	ページ側は等倍ぶんの領域を確保したまま（＝余白や不要なスクロールバーが出る）。
+	//	overflow:hidden は内側にも掛けるが、拡縮の丸め誤差でのはみ出しを止めるため両方に置く
+	useLayoutEffect(()=> {
+		if (isFullscreen) {
+			// 全画面中は**ブラウザのUAスタイルが全画面要素を画面いっぱい（100%）にする**ので、
+			//	こちらで実寸を書かない。内箱をflexで中央へ寄せるだけにする
+			//	（本家 SysBase.cvsResize() の「中央へ寄せる」と同じ絵）
+			heStage.style.width		= '';
+			heStage.style.height	= '';
+			heStage.style.display	= 'flex';
+			heStage.style.alignItems	= 'center';
+			heStage.style.justifyContent= 'center';
+			heStage.style.backgroundColor= 'black';	// 余白（レターボックス）を黒に
+		}
+		else {
+			heStage.style.width		= `${String(stageW * cvsScale)}px`;
+			heStage.style.height	= `${String(stageH * cvsScale)}px`;
+			heStage.style.display	= '';
+			heStage.style.alignItems	= '';
+			heStage.style.justifyContent= '';
+			heStage.style.backgroundColor= '';
+		}
+		heStage.style.overflow	= 'hidden';
+	}, [cvsScale, stageW, stageH, isFullscreen]);
+
 
 	// css
 	//	ステージ本体。ここが座標系の原点かつ表示範囲で、はみ出したレイヤは切り取られる。
@@ -164,15 +187,11 @@ export default function Stage({
 			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
-		transform-origin: left top;
 		/* 全画面（[toggle_full_screen]）のときは**画面の中央へ寄せる**（本家 SysBase.cvsResize()）。
-			ステージは実寸固定＋transform:scaleで拡縮する作りなので、全画面要素になっても
-			ブラウザ既定のように画面いっぱいには広がらず、放っておくと左上に寄ってしまう。
-			中心へ移してから拡大すれば、縦横比を保ったまま中央に出る */
-		${isFullscreen
-			? `position: fixed; left: 50%; top: 50%;
-				transform: translate(-50%, -50%) scale(${String(cvsScale)});`
-			: `transform: scale(${String(cvsScale)});`}
+			中央寄せは外側（#skynovel）のflexに任せ、ここは拡縮だけを持つ。
+			原点を中心にするのは、flexが**拡縮前の実寸**で中央に置くため（左上原点だと右下へ伸びる） */
+		transform-origin: ${isFullscreen ? 'center' : 'left top'};
+		transform: scale(${String(cvsScale)});
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;
 	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、
@@ -327,9 +346,12 @@ export default function Stage({
 		let cvsHeight = 0;
 		let cvsScale = 1;
 
-		// const cr = heStage.getBoundingClientRect();
-		// if (argChk_Boolean(CmnLib.hDip, 'expanding', true) || isGallery
-		if (CmnLib.stageW > w
+		// **拡大もする**（本家 SysBase.cvsResize()）。本家は `expanding` の既定が true で、
+		//	ステージが窓より小さいときも窓いっぱいまで引き伸ばす。ここを落としていたため、
+		//	窓が広いと右に黒帯が残り、[toggle_full_screen]でも等倍のままだった。
+		//	expanding=false（拡大しない）はprj.jsonの`dip`次第だが、こちらは未対応なので常に拡大する
+		if (argChk_Boolean(CmnLib.hDip, 'expanding', true)
+			|| CmnLib.stageW > w
 			|| CmnLib.stageH > h) {
 			if (CmnLib.stageW / CmnLib.stageH <= w / h) {
 				cvsHeight = h;
