@@ -1,0 +1,108 @@
+/* ***** BEGIN LICENSE BLOCK *****
+	Copyright (c) 2026-2026 Famibee (famibee.blog38.fc2.com)
+
+	This software is released under the MIT License.
+	http://opensource.org/licenses/mit-license.php
+** ***** END LICENSE BLOCK ***** */
+
+// **「CSSに既定を任せる」と決めた属性が、本家と同じ値になっているかを算出値で見張る**
+//	（シナリオ：test/e2e/app/prj_argdef/main.sn）。
+//
+//	bluesnovelは「シナリオが書いた属性だけを格納する」方針（CLAUDE.md）なので、書かなかった分の
+//	既定は下流のCSSが供給する。埋めないのが正解——ただし**CSSの既定が本家の既定と一致している
+//	ことが前提**で、その一致は誰も検査していなかった。実際 [button] の width/height は
+//	CSSの既定（文字なりの幅）が本家の既定（100×30）と食い違っており、テンプレのシステムメニューが
+//	隣と重なっていた（あちらはエンジンの入口で埋める側へ倒した）。
+//
+//	台帳は test/argdef_parity.test.ts の A_CSS_DEF。あちらはソースの照合なので**CSS側のズレは
+//	見つけられない**。ここが対になる検査。
+
+import {expect, test} from '@playwright/test';
+import {SEL_FORE, gotoSn} from './snPage';
+
+test.beforeEach(async ({page})=> {await gotoSn(page, 'argdef')});
+
+// 「変形なし」の算出値。デザインモードのMoveable用の下地（Stage.tsx sty4Moveable）が
+//	恒等変換を書くので、未指定でも 'none' にはならない
+const IDENTITY = ['none', 'matrix(1, 0, 0, 1, 0, 0)'];
+
+// レイヤ1枚分の算出値。left/topはステージ内箱からの相対で見る
+//	（ステージは窓に合わせて transform: scale されるので、絶対座標では比べられない）
+const layStyle = (nm: string)=> async (page: import('@playwright/test').Page)=> page.evaluate(nm=> {
+	const el = document.querySelector(`${'#skynovel [data-page="fore"]'} [data-lay="${nm}"]`);
+	if (! el) return null;
+	const cs = getComputedStyle(el);
+	const box = el.getBoundingClientRect();
+	const par = ((el as HTMLElement).offsetParent ?? el.parentElement)!.getBoundingClientRect();
+	return {
+		display		: cs.display,
+		visibility	: cs.visibility,
+		opacity		: cs.opacity,
+		transform	: cs.transform,
+		mixBlendMode: cs.mixBlendMode,
+		filter		: cs.filter,
+		dx			: Math.round(box.left - par.left),
+		dy			: Math.round(box.top - par.top),
+	};
+}, nm);
+
+
+test('画像レイヤ：書かなかった表示属性の既定が本家と同じ', async ({page})=> {
+	const s = await layStyle('base')(page);
+	expect(s).not.toBeNull();
+
+	// visible=true（本家 Layer.ts の既定）。styLay()はvisible=falseの時だけdisplay:noneを出す
+	expect(s!.display).not.toBe('none');
+	expect(s!.visibility).toBe('visible');
+	// alpha=1（本家 argChk_Num(hArg,'alpha',1)）
+	expect(s!.opacity).toBe('1');
+	// rotation=0・scale_x/y=1（本家とも）。styLay()はこれらが未指定ならtransformを出さないが、
+	//	デザインモードのMoveable用の下地（Stage.tsx sty4Moveable）が恒等変換を書くので
+	//	算出値は 'none' ではなく単位行列になる。**見た目は等倍・無回転**で本家と同じ
+	expect(IDENTITY).toContain(s!.transform);
+	// left=0・top=0（本家 Layer.ts:513 の x/y 初期値）
+	expect(s!.dx).toBe(0);
+	expect(s!.dy).toBe(0);
+	// blendmode=normal・フィルタ無し（[add_filter]未使用）
+	expect(s!.mixBlendMode).toBe('normal');
+	expect(s!.filter).toBe('none');
+});
+
+test('文字レイヤ：書かなかった表示属性の既定が本家と同じ', async ({page})=> {
+	// 文字レイヤは本文の箱（padding/marginを持つ試作の既定スタイル）が別にあるが、
+	//	レイヤとしての表示属性はここで見る値が全て
+	const s = await layStyle('mes')(page);
+	expect(s).not.toBeNull();
+
+	expect(s!.display).not.toBe('none');
+	expect(s!.visibility).toBe('visible');
+	expect(s!.opacity).toBe('1');
+	expect(IDENTITY).toContain(s!.transform);
+	expect(s!.mixBlendMode).toBe('normal');
+});
+
+test('表示属性を書かなければストアにも入らない（埋めていないことの確認）', async ({page})=> {
+	// 上の算出値が「CSSの既定」であって「エンジンが埋めた値」ではないことを裏取りする。
+	//	ここに値が入り始めたら、それはCSSに任せる方針から外れた合図
+	const sty = await page.evaluate(()=> {
+		const s = (globalThis as any).__sn.store.getState();
+		const e = s.aPage[s.foreIdx].find((l: any)=> l.nm === 'base');
+		const h: Record<string, unknown> = {};
+		for (const k of ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'blendmode']) {
+			if (e[k] !== undefined) h[k] = e[k];
+		}
+		return h;
+	});
+	expect(sty).toEqual({});
+});
+
+test('ステージ内に収まっている（原点がステージ左上）', async ({page})=> {
+	// left/top=0 が「ステージの左上」を指していることまで見る。
+	//	親がずれていると dx/dy=0 でも本家と違う位置に出る
+	const ok = await page.locator(SEL_FORE).evaluate(el=> {
+		const p = el.getBoundingClientRect();
+		const s = document.getElementById('skynovel')!.getBoundingClientRect();
+		return Math.round(p.left - s.left) === 0 && Math.round(p.top - s.top) === 0;
+	});
+	expect(ok).toBe(true);
+});

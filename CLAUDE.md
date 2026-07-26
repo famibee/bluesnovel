@@ -286,6 +286,18 @@ spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json
   時に読む。**終わった項目は `todo.md` に残さず `CHANGELOG.md` へ移す**。`CHANGELOG.md` 末尾付近の
   単独の `- [ ]` マーカの位置に `- [x] …` ブロックを書き、後ろに空行 1 つ、**マーカはそのまま残す**
   （次回も同じ手順で追記できるように）。同じ作業で `todo.md` からは消す。
+- **属性の既定値は 1 箇所**。エンジンの入口（タグの `case`）か CSS か、どちらかに決めて**両方には
+  書かない**。CSS も「宣言された 1 箇所」なので外側にあること自体は悪くない。悪いのは枝葉の
+  コンポーネントが場当たりに `??` で発明することで、そうなると同じ問いの答えが N 箇所に散る。
+  - **判定**: その値をストアが知らなくても、セーブ・読み戻し（Memento）・`[dump_lay]` が正しいまま
+    か。いいえなら入口、はいなら CSS に任せて格納しない。`[button]` の `width`/`height` は
+    「いいえ」（本家 `Button.ts` も `#o` へ確定値を記録する）、`[lay left]` の 0 は「はい」。
+  - **入口は書き込み時に焼き付き、CSS は描画時に毎回評価される**。既定を後で変えたとき、入口方式は
+    古いセーブが元の値のまま・CSS 方式は古いセーブも新しい既定で描き直される。どちらが欲しいかは
+    属性ごとに違うので、これも選択の材料にする。
+  - どちらに決めたかの台帳は **`test/argdef_parity.test.ts`** の 3 つの表（`A_CSS_DEF` /
+    `A_ELSEWHERE` / `A_NOT_YET`）。本家の `argChk_*` の既定を抜き出して突き合わせ、属性を 1 つも
+    書かないタグを**実際に走らせて**既定が出ることまで見る。新しいタグを足したらここも足す。
 - **strict TypeScript**: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
   `noUnusedLocals`/`Parameters`（未使用引数は `_` 前置で許可）, `noImplicitOverride`。
   `strictPropertyInitialization` は off。

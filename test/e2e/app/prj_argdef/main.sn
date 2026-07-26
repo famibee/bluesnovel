@@ -1,0 +1,13 @@
+; E2E用シナリオ（argdef.e2e.ts が使用）
+;	**表示属性を1つも書かない**レイヤを置くだけ。
+;	bluesnovelは「シナリオが書いた属性だけを格納する」方針なので、書かなかった分の既定は
+;	下流のCSSが供給する。その値が本家の既定（Layer.ts の argChk_* が与える値）と
+;	一致しているかは、ここで**算出値**を見るしかない
+;	（test/argdef_parity.test.ts はソースの照合なのでCSS側のズレを見つけられない）
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 画像レイヤ：fnだけ。visible/alpha/left/top/rotation/scale_*は書かない
+[lay layer=base fn=bg]
+もじ[s]

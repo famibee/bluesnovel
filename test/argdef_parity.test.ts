@@ -56,10 +56,12 @@ function upstreamDefaults(): {[attr: string]: Set<string>} {
 
 // **CSSに既定を任せると決めた属性**。ここに並ぶものは「エンジンで埋めない」のが正解で、
 //	下流（各コンポーネントのCSS）の既定が本家と一致していることが前提になる。
-//	その一致は test/e2e/argdef.e2e.ts が算出値で確かめる。
+//	**その一致を実際の算出値で確かめるのが test/e2e/argdef.e2e.ts**（この表と対になる検査）。
+//	ここへ足したら、あちらにも算出値の確認を足すこと。
 //	埋めてしまうと毎renderで全属性のインラインスタイルが出て、コンポーネント自身のCSSを
 //	黙って上書きしてしまう（CLAUDE.md「表示属性はシナリオが書いたときだけ格納する」）
 const A_CSS_DEF: {[attr: string]: string} = {
+	visible	: 'CSSのvisibility既定=visible。styLay()はvisible=falseの時だけdisplay:noneを出す',
 	alpha	: 'CSSのopacity既定=1（本家 Layer/Button/TxtStageとも1）',
 	left	: 'CSSのleft=0（絶対配置の静的位置）',
 	top		: 'CSSのtop=0',
