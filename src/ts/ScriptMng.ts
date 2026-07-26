@@ -869,6 +869,9 @@ export class ScriptMng {
 		case 'chgLay':
 			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: act.sty});
 			break;
+		case 'defChStyle':
+			this.$fncs.defChStyle({kind: act.kind, nm: act.nm, sty: act.sty});
+			break;
 		case 'clearLay':
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			break;

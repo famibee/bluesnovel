@@ -40,6 +40,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const chgBAlpha = useStore(s=> s.chgBAlpha);
 	const chgStr = useStore(s=> s.chgStr);
 	const chgLay = useStore(s=> s.chgLay);
+	const defChStyle = useStore(s=> s.defChStyle);	// [ch_in_style]/[ch_out_style]の定義
 	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
 	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
 	const chgBPic = useStore(s=> s.chgBPic);	// [lay b_pic=…]（文字レイヤ背後の枠画像）
@@ -67,7 +68,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, getLaySty, getPages, getPagesJson, replace, clearLay, clearBtn, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, getLaySty, getPages, getPagesJson, replace, clearLay, clearBtn, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
 
 		inited();
 

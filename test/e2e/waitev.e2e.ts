@@ -72,6 +72,7 @@ test('[waitclick]はクリックで進み、[s]はクリックでは進まない
 	await waitIdle(page);
 	await page.keyboard.press('Space');	// [wait]
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('まった');
+	await waitIdle(page);	// **本文が出揃っても文字送りは続いている**。ここで待たないと次のキーが瞬時完了に食われる
 
 	// [waitclick]：待ちマーカーは出ないが、クリックで進む
 	expect((await snap(page)).wait).toBeNull();
@@ -92,6 +93,7 @@ test('[s]で止まっていても[button]の予約は動かせる', async ({page
 	await waitIdle(page);
 	await page.keyboard.press('Space');
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('まった');
+	await waitIdle(page);	// 同上。文字送りの完了まで待ってから次のキー
 	await page.keyboard.press('Space');	// [waitclick]を越えて[s]まで
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('まったとまった');

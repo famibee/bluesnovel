@@ -7,6 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
+import {CH_IN_DEF, chInTween} from '../ts/ChStyle';
 import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 import {hintMng} from '../ts/Hint';
@@ -70,17 +71,27 @@ type T_TXTARG = T_LAY_CMN & {
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンがクリックを受けない
 	aBtn	: T_BTN[];
+	in_style?: string | undefined;	// [lay in_style=…]。[ch_in_style]で定義した文字出現演出名
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onNavigate: (url: string)=> void;	// [link url=…]
 };
+// 文字出現演出のアニメ終端＝**素の表示状態**。[ch_in_style]がどんな値から始めても必ずここへ落とす。
+//	キル時の中途半端な状態を確定させるのにも使う（本家のkeyframesの`to`が`transform: none`なのと同じ）
+const CH_END = {opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0};
+// 文字を順番に出すときの1文字あたりの遅れ（秒）。**本家はこれを[autowc]と
+//	`sys:sn.tagCh.msecWait`で変えられる**が、そちらは未対応なので今は固定（todo.md）
+const STAGGER = 0.035;
+
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[]};
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
+	// 文字出現・消去演出の名前（[lay in_style=/out_style=]）。定義そのものはストアの hChIn/hChOut
+	in_style?: string; out_style?: string};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate, onNavigate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate}: T_TXTARG) {
 	// 読み戻り中（PageUp等でCaretakerが最新位置にいない間）は文字を黄色くする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const isTyping = useStore(s=> s.isTyping);
@@ -88,6 +99,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const skipReq = useStore(s=> s.skipReq);
 	const skipping = useStore(s=> s.skipping);	// 既読スキップ中は文字送り演出を省いて瞬時表示する
 	const wait = useStore(s=> s.wait);
+	const hChIn = useStore(s=> s.hChIn);	// [ch_in_style]の定義表（画面ぜんぶで1つ）
 
 	// 1文字ずつの文字送り演出（GSAP stagger）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
@@ -142,7 +154,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		//	・読み戻りから戻る（aChがキャッシュ済み長へ復帰）：非表示にしていた分を瞬時に復帰
 		while (el.childNodes.length > target) el.removeChild(el.lastChild!);
 		while (el.childNodes.length < target) el.appendChild(cache[el.childNodes.length]!);
-		if (target > 0) gsap.set(cache.slice(0, target), {opacity: 1, y: 0});	// キル時の中途半端な状態を確定させる
+		if (target > 0) gsap.set(cache.slice(0, target), CH_END);	// キル時の中途半端な状態を確定させる
 
 		if (aCh.length <= cache.length) {
 			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要
@@ -165,16 +177,27 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		if (isReadBack || skipping) {
 			// 読み戻り中／既読スキップ中：staggerを使わず瞬時にアニメ終端状態へ
-			gsap.set(newSpans, {opacity: 1, y: 0});
+			gsap.set(newSpans, CH_END);
 			setIsTyping(false);
 			return;
 		}
 
+		// 文字出現演出（[ch_in_style]で定義し、[lay in_style=…]で選ぶ）。
+		//	名前が未定義なら組み込みの`default`（本家も`default`を先に定義しておく作り）。
+		//	wait=0は「瞬時」＝アニメせず終端状態にする
+		const chSty = hChIn[in_style ?? 'default'] ?? CH_IN_DEF;
+		if (chSty.wait <= 0) {
+			gsap.set(newSpans, CH_END);
+			setIsTyping(false);
+			return;
+		}
+
+		// join=falseなら全文字を同時に出す（本家は animation-delay を 0ms に潰す）
+		const {from, to} = chInTween(chSty);
 		setIsTyping(true);
-		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)}).fromTo(newSpans, {opacity: 0, y: '0.3em'}, {
-			opacity: 1, y: 0, duration: 0.25, ease: 'power1.out', stagger: 0.035,
-		});
-	}, [aCh, isReadBack, fncFfs]);
+		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)})
+			.fromTo(newSpans, from, {...to, stagger: chSty.join ? STAGGER : 0});
+	}, [aCh, isReadBack, fncFfs, in_style, hChIn]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）

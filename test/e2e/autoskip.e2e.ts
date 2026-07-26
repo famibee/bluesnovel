@@ -65,11 +65,14 @@ test('オート読みで タイトル→本編→タイトル を完走する', 
 
 	// [waitclick]はオートを解除する（本家 Reading s() と同じ関数を通るため）ので、
 	//	放っておいても先へ進まない
+	await waitIdle(page);	// **本文が出揃っても文字送りは続いている**。次のキーが瞬時完了に食われないように
 	await page.waitForTimeout(300);
 	expect(await mesStr(page)).toBe('　三行目');
 
 	await pressKey(page, 'Space');	// [waitclick]を越える
-	expect(await mesStr(page)).toBe('　三行目　四行目');
+	// pressKey()はwaitIdle()を挟むが、[waitclick]は待ちマーカーを立てないので
+	//	「越えた直後・文字送りの始まる前」で抜けうる。本文が出揃うのを待つ
+	await expect.poll(async ()=> mesStr(page), {timeout: 10_000}).toBe('　三行目　四行目');
 
 	await page.keyboard.press('a');	// オートを入れ直す
 	// [jump fn=main label=*title]でタイトルへ戻る（2周目なので表示は「タイトル2」）

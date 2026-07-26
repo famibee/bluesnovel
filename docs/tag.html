@@ -168,8 +168,8 @@
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#autowc">🔴 [autowc] 文字ごとのウェイト</a></li>
 		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
-		<li class="mb1"><a href="#ch_in_style">🔴 [ch_in_style] 文字出現演出定義</a></li>
-		<li class="mb1"><a href="#ch_out_style">🔴 [ch_out_style] 文字消去演出定義</a></li>
+		<li class="mb1"><a href="#ch_in_style">🟢 [ch_in_style] 文字出現演出定義</a></li>
+		<li class="mb1"><a href="#ch_out_style">🟡 [ch_out_style] 文字消去演出定義</a></li>
 		<li class="mb1"><a href="#clear_text">🟡 [clear_text] 文字消去</a></li>
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
@@ -1192,6 +1192,21 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 </table>
 
+<p class="mb2 px1">
+	<b>bluesnovel：本家はCSSの<code>@keyframes</code>を組み立ててスタイルシートへ挿すが、こちらはGSAPのtweenへ翻訳する</b>
+	（<code>src/ts/ChStyle.ts</code>）。文字送りを既にGSAPで回しているため——2つの仕組みを併走させると
+	クリックでの瞬時完了（<code>progress(1)</code>）が効かなくなる。相違が2つ：<br/>
+	・<code>x</code>／<code>y</code>の相対指定（<code>'=0.3'</code>）は本家が<code>30%</code>、
+	こちらは<code>0.3em</code>。パーセントは要素自身の箱を基準にするので、本家は文字spanへ
+	<code>display: inline-block</code>を敷いて箱を作っている。bluesnovelの文字spanはinlineのまま
+	（行分割をブラウザに任せている前提を崩さないため）で幅が0＝パーセントが効かない。
+	<b>全角文字では同じ値</b>（全角の箱＝フォントサイズなので 30% == 0.3em）で、半角文字だけずれる<br/>
+	・<code>ease</code>はCSSの名前をGSAPのeaseへ読み替える（<code>ease-out</code>→<code>power1.out</code>等）。
+	<b>厳密には曲線が一致しない</b>が数百ミリ秒では見分けが付かない。
+	<code>cubic-bezier()</code>／<code>steps()</code>はGSAPの追加プラグインが要るので既定へ倒す<br/>
+	なお1文字あたりの遅れ（本家の<code>animation-delay</code>＝文字表示ウェイト）は今は固定値。
+	<a href="#autowc">[autowc]</a>と<code>sys:sn.tagCh.msecWait</code>が未対応のため
+</p>
 </p>
 <h2 id="ch_out_style" class="w-heading">[ch_out_style]文字消去演出定義</h2>
 <h4>文字消去演出アニメを定義する</h4>
@@ -1221,6 +1236,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 </table>
 
+<p class="mb2 px1">
+	<b>bluesnovel：定義は受け付けるが、まだ消去のアニメを行なっていない</b>（文字は即座に消える＝
+	本家の既定<code>wait=0</code>と同じ結果）。文字を消すのはページ切替や
+	<a href="#er">[er]</a>で、Reactが要素を捨てる場面。消えていく間だけ古い文字を
+	生かしておく仕組みが要るため、出現演出とは別の作りになる
+</p>
 </p>
 <h2 id="clear_text" class="w-heading">[clear_text]文字消去</h2>
 <p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：対象レイヤ（省略時は[<a href="#current">current</a>]の既定文字レイヤ）の<b>片面だけ</b>の文字を消す（[<a href="#er">er</a>]は表裏どちらも消す）。未対応：本家がここで行う改ページ（履歴ログのページ区切り）——履歴層がまだ無いため。</p>

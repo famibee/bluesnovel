@@ -1,0 +1,26 @@
+; E2E用シナリオ（chstyle.e2e.ts が使用）
+;	文字出現演出（[ch_in_style]）を[lay in_style=…]で切り替える。
+;	**定義そのものは値としてストアに載る**（本家はCSSの@keyframesを挿す）ので、
+;	ここで見たいのは「選んだ定義どおりにGSAPが動くか」＝実際の見た目の側
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 既定（組み込みのdefault：wait=500・alpha=0・x='=0.3'）
+きほん[l]
+
+; wait=0＝瞬時。アニメせず終端状態で出る
+[ch_in_style name=instant wait=0]
+[er]
+[lay layer=mes in_style=instant]
+すぐ[l]
+
+; 同時出し（join=false）。1文字目と最後の文字が同時に動き終わる
+[ch_in_style name=samewait wait=400 join=false]
+[er]
+[lay layer=mes in_style=samewait]
+どうじ[l]
+
+; 定義していない名前は組み込みのdefaultへ落ちる（本家も既定を先に定義しておく作り）
+[er]
+[lay layer=mes in_style=nothing]
+おち[s]

@@ -103,6 +103,7 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 `jump`, `call`/`return`, `macro`/`endmacro`, `char2macro`/`bracket2macro`, `button`,
 `event`/`clear_event`, `enable_event`, `wait`, `clearvar`/`clearsysvar`, `pop_stack`, `title`,
 `rec_ch`/`rec_r`/`reset_rec`（本文履歴。`src/ts/Log.ts`），
+`ch_in_style`/`ch_out_style`（文字出現・消去演出。`src/ts/ChStyle.ts`。**消去はまだ適用していない**），
 `toggle_full_screen`, `dump_lay`, `add_frame`/`frame`/`set_frame`/`let_frame`, `set_focus`,
 停止点 `l`/`p`/`s`/`waitclick`。
 

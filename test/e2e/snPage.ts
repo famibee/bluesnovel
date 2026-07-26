@@ -43,7 +43,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'button' | 'event' | 'expr' | 'frame' | 'grp' | 'lay' | 'multi' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'button' | 'chstyle' | 'event' | 'expr' | 'frame' | 'grp' | 'lay' | 'multi' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -180,14 +180,20 @@ export async function waitTransRunning(page: Page) {
 		undefined, {timeout: 15_000},
 	);
 }
-// [trans]の演出が終わり、続きが停止点で落ち着くまで待つ。
-//	waitIdle()だけでは足りない：演出中は文字が変わらないので「ストアとDOMが一致していて
-//	文字送りも終わっている」状態に見えてしまい、その場で通過してしまう
-export async function waitTransDone(page: Page) {
+// [trans]の**演出の終わりだけ**を待つ（その後の本文の文字送りは待たない）。
+//	演出に掛かった時間を測るときはこちら。waitTransDone()で測ると、続く本文の
+//	文字送り（[ch_in_style]の既定で500ms）まで込みの時間になってしまう
+export async function waitTransCleared(page: Page) {
 	await page.waitForFunction(
 		()=> (globalThis as any).__sn.store.getState().trans === null,
 		undefined, {timeout: 15_000},
 	);
+}
+// [trans]の演出が終わり、続きが停止点で落ち着くまで待つ。
+//	waitIdle()だけでは足りない：演出中は文字が変わらないので「ストアとDOMが一致していて
+//	文字送りも終わっている」状態に見えてしまい、その場で通過してしまう
+export async function waitTransDone(page: Page) {
+	await waitTransCleared(page);
 	await waitIdle(page);
 }
 

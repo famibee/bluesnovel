@@ -24,6 +24,7 @@ import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
 import {plainTxt} from './Txt';
 import {Log} from './Log';
+import {parseChStyle, type T_CH_STYLE} from './ChStyle';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
 
@@ -68,6 +69,9 @@ export type T_LAY_STY_ARG = {
 	ffs?		: string;	// 文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?		: string;	// ffsを効かせない文字の並び
 	bura?		: boolean;	// ぶら下げ禁則
+	// 文字出現・消去演出（本家 TxtLayer.ts:67 の in_style/out_style）。[ch_in_style]で定義した名前
+	in_style?	: string;
+	out_style?	: string;
 };
 
 export type T_ENGINE_ACTION =
@@ -85,6 +89,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'clearBtn'; nm: string; page: T_PAGE_BOTH}				// [er]でのボタン消去。本文はchgStrが消すので、こちらはボタンだけ
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
+	| {t: 'defChStyle'; kind: 'in' | 'out'; nm: string; sty: T_CH_STYLE}	// [ch_in_style]/[ch_out_style]。文字出現・消去演出の定義。名前で引けるようストアが表に持つ
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
 	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
@@ -381,6 +386,11 @@ export class ScriptEngine {
 	//	（TxtLayer.ts:494 chgDoRec）が、こちらは履歴の蓄積が表示と別物なので単に積まない
 	get #doRecLog(): boolean {return this.#val.get('game:sn.doRecLog') === true}
 
+	// 定義済みの文字出現・消去演出名（本家 TxtStage.ts:600/640 の #hChInStyle/#hChOutStyle）。
+	//	**同じ名前の二度定義は本家がthrowする**ので、その検査のために名前だけ覚えておく。
+	//	定義の中身を持つのはストア（描くのはReact側なので）。`default`は組み込み済み
+	readonly #hChStyleNm = {in: new Set(['default']), out: new Set(['default'])};
+
 	// if/elsif/else/endifの再開位置スタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:873 #aIfStk 相当）
 	//	call/return実装に伴い、本家同様「壁」(-1)を積む方式を導入した（#call()参照）。
 	//	壁を挟むことで、サブルーチン内の[elsif]/[else]/[endif]がコール元の（まだ閉じていない）
@@ -443,6 +453,7 @@ export class ScriptEngine {
 		'quake', 'stop_quake', 'wq',
 		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
 		'clear_text', 'rec_ch', 'rec_r', 'reset_rec',
+		'ch_in_style', 'ch_out_style',
 		'navigate_to', 'loadplugin', 'snapshot',
 		'record_place', 'save', 'load', 'reload_script',
 		'copybookmark', 'erasebookmark', 'export', 'import',
@@ -1001,6 +1012,9 @@ export class ScriptEngine {
 			if (args.ffs !== undefined) sty.ffs = args.ffs;
 			if (args.noffs !== undefined) sty.noffs = args.noffs;
 			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
+			// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
+			if (args.in_style !== undefined) sty.in_style = args.in_style;
+			if (args.out_style !== undefined) sty.out_style = args.out_style;
 			if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
 
 			// レイヤの重なり順（本家 LayerMng.ts:489 #lay() の float/index/dive）。
@@ -1384,6 +1398,19 @@ export class ScriptEngine {
 				+ text.replaceAll('[r]', '\n')
 				+ ScriptEngine.#cmdTxt('add_close', {}),
 				args.record !== 'false');	// record=falseなら履歴に残さない（本家 LayerMng.ts:920）
+			return 'skip';
+		}
+
+		// ---- 文字出現・消去演出（本家 TxtStage.ts:610/643）----
+		case 'ch_in_style':
+		case 'ch_out_style': {
+			const kind = name === 'ch_in_style' ?'in' :'out';
+			// joinの既定は出現true／消去false（本家 TxtStage.ts:632/665）
+			const {name: nmSty, sty} = parseChStyle(name, args, kind === 'in');
+			if (this.#hChStyleNm[kind].has(nmSty)) throw `[${name}] name【${nmSty}】はすでにあります`;
+			this.#hChStyleNm[kind].add(nmSty);
+
+			aAct.push({t: 'defChStyle', kind, nm: nmSty, sty});
 			return 'skip';
 		}
 

@@ -20,7 +20,10 @@
 - [ ] **音声・動画**（一括で未着手）：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wv]`（動画待ち）。`ext_voice.sn`の`voice`系マクロも同じ
   - [ ] 音声が入ると繋がるもの：`[button]`/`[link]`の効果音（`enterse`/`clickse`等）・`[load]`の音声復元（本家`playLoopFromSaveObj()`）・組み込み変数`const.sn.sound.*`・sys:の音量設定
 - [ ] 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が使っているかと思ったが、あれは**`[tsy path=]`で実現**していた（実装済み）ので、`layer=`の実需が見当たらない。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2>。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
-- [ ] **文字出現・消去演出** `[ch_in_style]`/`[ch_out_style]`（＋各タグの`ch_in_style`/`ch_out_style`属性）。`[autowc]`（自動ウェイト）も同じ枠
+- [ ] **文字出現・消去演出の残り**。`[ch_in_style]`と`[lay in_style=]`は`src/ts/ChStyle.ts`で対応済み
+  - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る
+  - [ ] `[span]`/`[ch]`など**文字単位の`ch_in_style`/`ch_out_style`属性**。今はレイヤ単位（`[lay in_style=]`）のみ。`T_CH`へ演出名を持たせ、`add|`の埋め込み命令で流す形になる
+  - [ ] `[autowc]`（文字ごとのウェイト）と`save:const.sn.autowc.*`。1文字あたりの遅れは今は固定（`TxtLayer.tsx`の`STAGGER`）で、`sys:sn.tagCh.msecWait`も未接続
 - [ ] **履歴（ログ）の残り**。本体（`const.sn.log.json`・`save:sn.doRecLog`・`save:const.sn.sLog`・`[rec_ch]`/`[rec_r]`/`[reset_rec]`）は`src/ts/Log.ts`で対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play>
   - [ ] `[rec_ch]`の`style`/`r_style`と**任意属性**（本家は`const.sn.log.json`の各ページへそのまま載せ、フレーム側のJSが読む）。今は`text`のみ
   - [ ] `[log]`（本家`DebugMng.ts:57`）は**履歴とは別物**で、`downloads/log.txt`へ追記するデバッグ用。ファイル書き出しの置き場所が要るのでアプリ版の整備と一緒に
@@ -55,7 +58,7 @@
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）・`smoothing=`・拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）・`[update_check]`はElectron専用。`dist_app`側の整備と一緒に
-  - [ ] `[dump_script]`（本家はVSCode拡張との連携）・`[rec_ch]`/`[rec_r]`/`[reset_rec]`（履歴層と一緒に）
+  - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
   - [ ] `const.sn.isPaging`（ページ遷移状態か）・`save:const.sn.layer.（文字レイヤ名）.enabled`
@@ -68,7 +71,7 @@
   - [ ] スキップモード`'p'`（改ページで止まる）は`#calcResume()`まで実装したが、`Main.tsx`が手動操作のたびに`cancelAuto()`を呼ぶため、ユーザーがその改ページをクリックで越えるとスキップも解除される（本家は継続）。「モード'p'の改ページ停止」を手動停止と区別する必要がある。既定`'s'`は正しく動く
   - [ ] 文字送りウェイト設定（`sys:sn.tagCh.*`）は、bluesnovelの文字送りがGSAP（duration/stagger）で秒単位のため未接続
   - [ ] オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む
-- [ ] 文字送り演出のパラメータ（`duration: 0.25`, `stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整
+- [ ] 文字送りの1文字あたりの遅れ（`stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整。演出そのもの（時間・動き）は`[ch_in_style]`の`default`＝本家の既定値になった
 - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない（実機確認）
 - [ ] 全画面時の見た目（中央寄せは実装済み）を実機で確認
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討

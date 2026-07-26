@@ -14,7 +14,7 @@
 //	test/ScriptEngine_trans.test.ts が持っているので、ここでは重ねて確かめない
 
 import {expect, test, type Page} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pageStyle, pressKeyToWaitMark, snap, txtBoxStyle, waitTransDone, waitTransRunning} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pageStyle, pressKeyToWaitMark, snap, txtBoxStyle, waitIdle, waitTransCleared, waitTransDone, waitTransRunning} from './snPage';
 import {ruleMaskFunc} from '../../src/ts/Trans';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'trans')});
@@ -81,8 +81,11 @@ test('[wt]中のクリックで演出を飛ばせる（中途半端な状態で�
 	// 演出（600ms）の途中で表ページをクリック。終了状態へ飛んで即座に続きが流れる
 	const t0 = Date.now();
 	await page.locator(`${SEL_FORE} span`).first().click();
-	await waitTransDone(page);
+	// **測るのは演出の終わりまで**。waitTransDone()だと続く本文の文字送り
+	//	（[ch_in_style]の既定で500ms）まで込みになり、演出を飛ばせたかが見えなくなる
+	await waitTransCleared(page);
 	expect(Date.now() - t0).toBeLessThan(600);
+	await waitIdle(page);
 
 	// 「終了状態」なので、途中のopacityのまま止まったりはしない
 	const st = await pageStyle(page);

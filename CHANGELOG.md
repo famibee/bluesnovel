@@ -510,11 +510,51 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	- 検査27件（`test/Log.test.ts`）。docs/tag.htmlは`[rec_ch]`🟡・`[rec_r]`🟢・`[reset_rec]`🟢、
 	  docs/dev.htmlは`save:sn.doRecLog`🟢・`save:const.sn.sLog`🟢・`const.sn.log.json`🟢へ
 
+
+- todo.md: **文字出現・消去演出**
+
+- [x] **文字出現演出**：`[ch_in_style]`／`[ch_out_style]`（定義）と`[lay in_style=/out_style=]`
+	- **本家はCSSの`@keyframes`を文字列で組み立ててスタイルシートへ挿す**（`TxtLayer.ts:148`）が、
+	  こちらは同じ値を**GSAPのtweenへ翻訳**する（`src/ts/ChStyle.ts`）。文字送りを既にGSAPで
+	  回しているため——2つの仕組みを併走させると、クリックでの瞬時完了（`progress(1)`で終端へ
+	  飛ばす）が効かなくなる。`Tsy.ts`が`[tsy]`に対してやっているのと同じ立ち位置
+	- **既定の見た目が変わった**。これまでの文字送りは仮値（`duration: 0.25`・`y: '0.3em'`）だったが、
+	  組み込みの`default`を本家の既定（`wait=500`・`alpha=0`・`x='=0.3'`・`join=true`・`ease-out`。
+	  本家 `TxtLayer.ts:120`）に合わせたので、**1文字あたりの時間が倍**になり、ずれる向きも
+	  縦から横になった。todo.mdの「仮値」項目はこれで解消
+	- **相対位置は`%`でなく`em`にした**。本家は`${nx * 100}%`だが、パーセントは要素自身の箱を
+	  基準にするので、本家は文字spanへ`display: inline-block`を敷いて箱を作っている。
+	  bluesnovelの文字spanはinlineのまま（行分割をブラウザに任せている前提を崩さないため）で
+	  **幅が0＝パーセントが効かない**（実際に算出値が単位行列になるのを確認）。
+	  `em`ならフォントサイズ基準なので箱に依らず、**全角文字では本家と同じ値**になる
+	- `ease`はCSSの`animation-timing-function`名をGSAPのeaseへ読み替える。厳密には曲線が
+	  一致しない（`ease-out`は cubic-bezier(0,0,.58,1) と二次イージングの差）が、数百ミリ秒では
+	  見分けが付かない。`cubic-bezier()`／`steps()`はプラグインが要るので既定へ倒す
+	- `join=false`はstaggerを0にする（本家は`animation-delay`を0msに潰す）。`wait=0`は
+	  tweenを積まず`gsap.set`で終端を確定させる
+	- **`[ch_out_style]`は定義だけ**（消去のアニメは未適用＝本家の既定`wait=0`と同じ結果）。
+	  文字が消えるのはReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが
+	  別途要る。docs/tag.htmlで🟡、todo.mdに条件つきで記載
+	- 検査：`test/ChStyle.test.ts`13件（属性の読み取りと値の翻訳）＋`test/e2e/chstyle.e2e.ts`4件。
+	  E2Eは**「その場面の直前まで進めてGSAPを止め、1手だけ進めてから時間を手で送る」**形。
+	  止めた直後はtweenがまだ1度も描いていないことがある（初回描画は親タイムラインのtickで
+	  起きる）ので、`globalTimeline.time()`を進めてから撮る
+	- 既存E2E3件の**競合を直した**（本件で顕在化）。いずれも「本文が出揃ったこと」だけを見て
+	  次のキーを押しており、文字送りが続いている間に押すと瞬時完了へ食われる（`Main.tsx next()`）。
+	  既定時間が倍になって表面化した。`expect.poll(mesStr)`の後に`waitIdle()`を足して解消
+	  （`waitev`×2・`autoskip`）。`trans`の1件は演出時間の計測に`waitTransDone()`を使っており、
+	  そちらが続く本文の文字送りまで待つため、**演出の終わりだけを待つ`waitTransCleared()`**を
+	  分けた。全体を3回連続で通して安定を確認
+
 - [ ]
 
 
 
-- todo.md: **文字出現・消去演出**
+
+
+
+
+
 - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - todo.md: **フィルターの残り**
   - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
@@ -531,9 +571,9 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 
-- [ ] **しおり・システム系の残り**
-  - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
-  - [ ] `[save pic=…]`のサムネイル保存（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`が枠に出す想定）。まず`[snapshot]`の結果をどこへ置くかから
+- **しおり・システム系の残り**
+  - `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
+  - `[save pic=…]`のサムネイル保存（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`が枠に出す想定）。まず`[snapshot]`の結果をどこへ置くかから
 
 
 

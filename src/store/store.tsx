@@ -10,6 +10,7 @@ import type {T_FLT} from '../ts/Filter';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import type {T_CH} from '../ts/Txt';
+import {CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
 
 import {create} from 'zustand';
 
@@ -42,6 +43,13 @@ type T_STATE = {
 	chgFilter: (arg: T_CHGFILTER)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
 	addBtn	: (arg: T_ADDBTN)=> void,
+
+	// 文字出現・消去演出の定義表（[ch_in_style]/[ch_out_style]）。本家は TxtStage の
+	//	staticな連想配列で、CSSの`@keyframes`をスタイルシートへ挿す。こちらはGSAPで動かすので
+	//	定義を値のまま持ち、TxtLayerが名前で引く。**レイヤごとではなく画面ぜんぶで1つ**（本家も同じ）
+	hChIn	: {[nm: string]: T_CH_STYLE},
+	hChOut	: {[nm: string]: T_CH_STYLE},
+	defChStyle: (arg: T_DEFCHSTYLE)=> void,
 
 	// [trans]の進行状態。startTrans()で開始し、finishTrans()で表裏を入れ替えて終了する。
 	//	**終了を宣言するのは必ずScriptMng**（時間切れ／[wt]中のクリック）で、
@@ -145,11 +153,20 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	ffs?	: string;	// [lay ffs=…]。文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?	: string;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean;	// [lay bura=…]。ぶら下げ禁則
+	// [lay in_style=/out_style=]。[ch_in_style]/[ch_out_style]で定義した演出名
+	in_style?	: string;
+	out_style?	: string;
 };
 export type T_CHGLAY = {
 	nm	: string;
 	page: T_PAGE;
 	sty	: T_LAY_STY_ARG;
+}
+// [ch_in_style]/[ch_out_style]：文字出現・消去演出の定義
+export type T_DEFCHSTYLE = {
+	kind: 'in' | 'out';
+	nm	: string;
+	sty	: T_CH_STYLE;
 }
 // [enable_event]：文字レイヤのボタン等を有効／無効にする。無効の間はクリックを受けない
 export type T_ENABLEEVENT = {
@@ -212,7 +229,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearBtn'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearBtn'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -263,6 +280,13 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 	aPage	: [[], []],
 	foreIdx	: 0,
+
+	// 組み込みの`default`だけ入った状態から始める（本家 TxtLayer.ts:120/133 が起動時に定義する）
+	hChIn	: {default: CH_IN_DEF},
+	hChOut	: {default: CH_OUT_DEF},
+	defChStyle: ({kind, nm, sty}: T_DEFCHSTYLE)=> set(s=> kind === 'in'
+		? {hChIn : {...s.hChIn,  [nm]: sty}}
+		: {hChOut: {...s.hChOut, [nm]: sty}}),
 	replace	: (arg: string)=> set(()=> JSON.parse(arg) as {aPage: [T_LAY[], T_LAY[]]; foreIdx: 0 | 1}),
 	addLayer: (arg: T_LAY)=> set(s=> {
 		// レイヤ名（nm）はcls（grp/txt）をまたいで全体で一意である前提
