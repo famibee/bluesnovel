@@ -10188,7 +10188,10 @@ function gu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 	}, [z, B]);
 	let ne = a && !w && !T && j !== null && j.nm === r, re = fu`
 		display: inline-block;
-		margin-left: 0.15em;
+		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
+			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
+			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
+		margin-inline-start: 0.15em;
 	`, U = fu`
 		display: flex;
 		flex-wrap: wrap;

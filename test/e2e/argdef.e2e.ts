@@ -148,3 +148,24 @@ test('s_right/s_bottom はステージの右端・下端からの距離', async 
 	expect(Math.round((stage.right - box.right) / scale)).toBe(20);
 	expect(Math.round((stage.bottom - box.bottom) / scale)).toBe(30);
 });
+
+test('縦書きでもクリック待ちマークは直前の文字の次（下）に出る', async ({page})=> {
+	// 縦書きの「次」は下。マークが本文の流れから外れて隣の列へ行っていないことを見る。
+	//	なお余白は論理プロパティ（margin-inline-start）で書いてある——物理方向の margin-left は
+	//	縦書きだと「次の行の方向」を指してしまうため。ただし実測では両者の差は出ていない
+	//	（マークの箱の幅が文字と違うぶんのズレの方が大きい）
+	await pressKey(page, 'Space');	// よせた
+	await pressKey(page, 'Space');	// たてがき（縦書き＋待ちマーク）
+
+	const pos = await page.evaluate(()=> {
+		const mes = document.querySelector('#skynovel [data-page="fore"] span[data-lay="mes"]')!;
+		const mark = mes.lastElementChild!.getBoundingClientRect();
+		// 本文の最後の文字＝マークの1つ前
+		const ch = mes.lastElementChild!.previousElementSibling!.getBoundingClientRect();
+		return {markX: mark.left, markY: mark.top, chX: ch.left, chY: ch.top};
+	});
+	// 縦書きなので「次」は**下**。列をまたいでいない（横方向のズレが1文字幅に収まる）ことも見る
+	expect(pos.markY).toBeGreaterThan(pos.chY);
+	expect(Math.abs(pos.markX - pos.chX)).toBeLessThan(24);
+});
+

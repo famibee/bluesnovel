@@ -201,7 +201,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const showWait = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
 	const styWaitMark = css`
 		display: inline-block;
-		margin-left: 0.15em;
+		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
+			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
+			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
+		margin-inline-start: 0.15em;
 	`;
 	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
 	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。

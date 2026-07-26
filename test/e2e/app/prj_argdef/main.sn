@@ -21,4 +21,11 @@
 [lay layer=c fn=bg center=0.5 middle=0.5]
 [lay layer=r fn=bg right=0.5 bottom=0.5]
 [lay layer=s fn=bg s_right=20 s_bottom=30]
-よせた[s]
+よせた[l]
+
+; 縦書きでのクリック待ちマークの位置。マークは**直前の文字の次**に出る（本家も本文の流れの中）。
+;	物理方向の margin-left で余白を付けると、縦書きでは「次の行の方向」＝横へずれてしまう
+[lay layer=mes page=fore style="writing-mode: vertical-rl; width: 300px; height: 400px;"]
+[er]
+たてがき[l]
+よこ[s]
