@@ -36,6 +36,14 @@
 [enable_filter layer=mes index=1 enabled=false]
 きった[p]
 
+; [er]は変形まわり（alpha/blendmode/pivot/角度/拡縮）を既定へ戻すが、
+;	**位置とvisibleと見た目（style/b_color）には触らない**（本家 Layer.ts:420）
+[lay layer=mes alpha=0.4 rotation=30 scale_x=2 scale_y=2 pivot_x=5 pivot_y=6 blendmode=screen]
+[lay layer=mes left=40 top=50 style="letter-spacing: 3px;"]
+まわす[p]
+[er]
+もどった[p]
+
 ; [clear_lay]で見た目は初期値へ、中身（文字・ボタン）も捨てる。visibleだけは触らない
 [lay layer=mes visible=false]
 [clear_lay layer=mes page=fore]

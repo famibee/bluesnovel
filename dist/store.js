@@ -471,19 +471,27 @@ function k(e, t = O) {
 var A = (e) => {
 	let t = D(e), n = (e) => k(t, e);
 	return Object.assign(n, t), n;
-}, j = ((e) => e ? A(e) : A), M = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif";
-function N(e, t) {
+}, j = ((e) => e ? A(e) : A), M = [
+	"alpha",
+	"blendmode",
+	"pivot_x",
+	"pivot_y",
+	"rotation",
+	"scale_x",
+	"scale_y"
+], N = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif";
+function P(e, t) {
 	let n = t === "fore" ? e.foreIdx : 1 - e.foreIdx;
 	return {
 		idx: n,
 		aLay: [...e.aPage[n]]
 	};
 }
-function P(e, t, n) {
+function F(e, t, n) {
 	let r = [e.aPage[0], e.aPage[1]];
 	return r[t] = n, { aPage: r };
 }
-function F(e, t) {
+function I(e, t) {
 	let n = e.foreIdx, r = 1 - n, i = e.aPage[n], a = e.aPage[r], o = (e) => t !== null && !t.includes(e), s = (e, t) => e.map((e) => o(e.nm) ? t.find((t) => t.nm === e.nm) ?? e : e), c = [[], []];
 	return c[r] = s(a, i), c[n] = s(i, a), c[n] = c[n].map((e) => o(e.nm) ? e : structuredClone(c[r].find((t) => t.nm === e.nm) ?? e)), {
 		aPage: c,
@@ -491,13 +499,13 @@ function F(e, t) {
 		trans: null
 	};
 }
-function I(e, t, n) {
+function L(e, t, n) {
 	let r = e.find((e) => e.nm === t);
 	if (!r) throw `存在しないレイヤ ${t} です`;
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var L = j()((e, t) => ({
+var R = j()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
@@ -525,7 +533,7 @@ var L = j()((e, t) => ({
 		return { aPage: [[...e.aPage[0], structuredClone(t)], [...e.aPage[1], structuredClone(t)]] };
 	}),
 	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, sty: c }) => e((e) => {
-		let { idx: l, aLay: u } = N(e, n), d = I(u, t, "txt");
+		let { idx: l, aLay: u } = P(e, n), d = L(u, t, "txt");
 		if (r === void 0) r = `${a || s || "btn"}#${String(d.aBtn.length)}`;
 		else if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
 		return d.aBtn = [...d.aBtn, {
@@ -535,25 +543,25 @@ var L = j()((e, t) => ({
 			...o === void 0 ? {} : { call: o },
 			...s === void 0 ? {} : { fn: s },
 			...c === void 0 ? {} : { sty: c }
-		}], P(e, l, u);
+		}], F(e, l, u);
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, src: i, aFace: a }) => e((e) => {
-		let { idx: o, aLay: s } = N(e, n), c = I(s, t, "grp");
-		return c.fn = r, c.src = i, c.aFace = a, P(e, o, s);
+		let { idx: o, aLay: s } = P(e, n), c = L(s, t, "grp");
+		return c.fn = r, c.src = i, c.aFace = a, F(e, o, s);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r, isFixed: i }) => e((e) => {
-		let { idx: a, aLay: o } = N(e, n), s = I(o, t, "txt");
-		return r !== void 0 && (s.b_alpha = r), i !== void 0 && (s.b_alpha_isfixed = i), P(e, a, o);
+		let { idx: a, aLay: o } = P(e, n), s = L(o, t, "txt");
+		return r !== void 0 && (s.b_alpha = r), i !== void 0 && (s.b_alpha_isfixed = i), F(e, a, o);
 	}),
 	chgBPic: ({ nm: t, page: n, fn: r, src: i }) => e((e) => {
-		let { idx: a, aLay: o } = N(e, n), s = I(o, t, "txt");
-		return s.b_pic = r, s.b_src = i, P(e, a, o);
+		let { idx: a, aLay: o } = P(e, n), s = L(o, t, "txt");
+		return s.b_pic = r, s.b_src = i, F(e, a, o);
 	}),
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
-		let { idx: i, aLay: a } = N(e, n), o = a.find((e) => e.nm === t);
+		let { idx: i, aLay: a } = P(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
 		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/buraは文字レイヤ専用）`;
-		return Object.assign(o, r), P(e, i, a);
+		return Object.assign(o, r), F(e, i, a);
 	}),
 	getLaySty: (e, n) => {
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
@@ -578,19 +586,21 @@ var L = j()((e, t) => ({
 	},
 	enableEvent: ({ nm: t, enabled: n }) => e((e) => ({ aPage: e.aPage.map((e) => {
 		let r = [...e];
-		return I(r, t, "txt").enabled = n, r;
+		return L(r, t, "txt").enabled = n, r;
 	}) })),
-	clearBtn: ({ nm: t, page: n }) => e((e) => {
-		let r = (e) => {
-			let n = I(e, t, "txt");
+	clearTxtLay: ({ nm: t, page: n, clearFilter: r }) => e((e) => {
+		let i = (e) => {
+			let n = L(e, t, "txt");
 			n.aBtn.length > 0 && (n.aBtn = []);
+			for (let e of M) delete n[e];
+			r && delete n.aFlt;
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
-			return r(t), t;
+			return i(t), t;
 		}) };
-		let { idx: i, aLay: a } = N(e, n);
-		return r(a), P(e, i, a);
+		let { idx: a, aLay: o } = P(e, n);
+		return i(o), F(e, a, o);
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
@@ -611,8 +621,8 @@ var L = j()((e, t) => ({
 			let t = [...e];
 			return i(t), t;
 		}) };
-		let { idx: a, aLay: o } = N(e, n);
-		return i(o), P(e, a, o);
+		let { idx: a, aLay: o } = P(e, n);
+		return i(o), F(e, a, o);
 	}),
 	moveLay: ({ nm: t, mode: n, index: r, dive: i }) => e((e) => {
 		let a = e.aPage[0], o = a.findIndex((e) => e.nm === t);
@@ -676,30 +686,30 @@ var L = j()((e, t) => ({
 			let t = [...e];
 			return c(t), t;
 		}) };
-		let { idx: l, aLay: u } = N(e, n);
-		return c(u), P(e, l, u);
+		let { idx: l, aLay: u } = P(e, n);
+		return c(u), F(e, l, u);
 	}),
 	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
 		let a = (e) => {
-			let n = I(e, t, "txt");
+			let n = L(e, t, "txt");
 			n.str = r, n.aCh = i;
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
 			return a(t), t;
 		}) };
-		let { idx: o, aLay: s } = N(e, n);
-		return a(s), P(e, o, s);
+		let { idx: o, aLay: s } = P(e, n);
+		return a(s), F(e, o, s);
 	}),
 	trans: null,
-	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? F(e, t) : { trans: {
+	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? I(e, t) : { trans: {
 		seq: (e.trans?.seq ?? 0) + 1,
 		aLayNm: t,
 		time: n,
 		...r === void 0 ? {} : { ruleSrc: r },
 		...i === void 0 ? {} : { vague: i }
 	} }),
-	finishTrans: () => e((e) => e.trans ? F(e, e.trans.aLayNm) : {}),
+	finishTrans: () => e((e) => e.trans ? I(e, e.trans.aLayNm) : {}),
 	quake: null,
 	startQuake: ({ hmax: t, vmax: n }) => e((e) => ({ quake: {
 		seq: (e.quake?.seq ?? 0) + 1,
@@ -718,7 +728,7 @@ var L = j()((e, t) => ({
 	setIsTyping: (t) => e(() => ({ isTyping: t })),
 	backAlpha: 1,
 	setBackAlpha: (t) => e(() => ({ backAlpha: t })),
-	btnFont: M,
+	btnFont: N,
 	setBtnFont: (t) => e(() => ({ btnFont: t })),
 	skipReq: 0,
 	requestSkip: () => e((e) => ({ skipReq: e.skipReq + 1 })),
@@ -728,6 +738,6 @@ var L = j()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { S as a, h as c, s as d, c as f, T as i, p as l, L as n, g as o, u as p, v as r, _ as s, M as t, l as u };
+export { S as a, h as c, s as d, c as f, T as i, p as l, R as n, g as o, u as p, v as r, _ as s, N as t, l as u };
 
 //# sourceMappingURL=store.js.map

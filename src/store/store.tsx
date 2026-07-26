@@ -38,7 +38,7 @@ type T_STATE = {
 	getPagesJson: ()=> string,
 	enableEvent: (arg: T_ENABLEEVENT)=> void,
 	clearLay: (arg: T_CLEARLAY)=> void,
-	clearBtn: (arg: T_CLEARBTN)=> void,
+	clearTxtLay: (arg: T_CLEARTXTLAY)=> void,
 	moveLay	: (arg: T_MOVELAY)=> void,
 	chgFilter: (arg: T_CHGFILTER)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
@@ -193,13 +193,16 @@ export type T_CLEARLAY = {
 	aLayNm	: string[] | null;
 	page	: T_PAGE_BOTH;
 }
-// [er]（文字消去）でのボタン消去。本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を
-//	表裏に呼び、その中で本文と**ボタンを両方**捨てる。[clear_lay]と違って
-//	レイヤの見た目（style/left/top/b_pic…）は残すので、専用の口を用意する
-export type T_CLEARBTN = {
+// [er]（文字消去）。本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:857）を表裏に呼び、
+//	その中で本文と**ボタンを両方**捨てたうえで Layer.clearLay()（:420）が変形まわりを既定へ戻す。
+//	[clear_lay]と違って位置や見た目（style/left/top/b_pic…）は残すので、専用の口を用意する
+export type T_CLEARTXTLAY = {
 	nm		: string;
 	page	: T_PAGE_BOTH;
+	clearFilter	: boolean;	// [er clear_filter=true]。本家の既定はfalse
 }
+// [er]が既定へ戻す属性（本家 Layer.ts:420）。**visibleと位置は含まない**
+const A_ER_RESET_KEY = ['alpha', 'blendmode', 'pivot_x', 'pivot_y', 'rotation', 'scale_x', 'scale_y'] as const;
 // [add_filter]/[clear_filter]/[enable_filter]と[lay filter=…]。
 //	3タグを1つのアクションにまとめてあるのは、対象レイヤの選び方（aLayNm=nullは全レイヤ）と
 //	ページの扱い（both可）が全く同じで、違うのは配列をどういじるかだけのため
@@ -243,7 +246,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearBtn'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -408,12 +411,18 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	}) as [T_LAY[], T_LAY[]]})),
 	// [clear_lay]：見た目を初期値へ戻し、中身も捨てる（本家 Layer.clearLay()＋各レイヤのoverride）。
 	//	**visibleだけは触らない**（本家のコメント「visibleは触らない」そのまま）
-	// [er]用。**本文（str/aCh）はchgStrが別に消す**ので、ここで消すのはボタンだけ。
-	//	見た目（style/left/top/b_pic…）には触らない（触るのは[clear_lay]）
-	clearBtn: ({nm, page}: T_CLEARBTN)=> set(s=> {
+	// [er]用（本家 TxtLayer.clearLay()＋Layer.clearLay()）。**本文（str/aCh）はchgStrが別に消す**ので、
+	//	ここでやるのはボタンの消去と**変形まわりの属性を既定へ戻す**こと。
+	//	戻すのは本家 Layer.ts:420 と同じ範囲＝alpha・blendmode・pivot・角度・拡縮で、
+	//	**visibleと位置（left/top/寄せ）・b_color/style等の見た目には触らない**
+	//	（位置まで戻すのは[clear_lay]の仕事。本家も #er() は clearLay(hArg) しか呼ばない）。
+	//	フィルターは clear_filter=true のときだけ落とす（本家の既定はfalse）
+	clearTxtLay: ({nm, page, clearFilter}: T_CLEARTXTLAY)=> set(s=> {
 		const clr1 = (aLay: T_LAY[])=> {
 			const e = findLay(aLay, nm, 'txt');
 			if (e.aBtn.length > 0) e.aBtn = [];
+			for (const k of A_ER_RESET_KEY) delete e[k];
+			if (clearFilter) delete e.aFlt;
 		};
 		if (page === 'both') return {aPage: s.aPage.map(a=> {
 			const aLay = [...a]; clr1(aLay); return aLay;

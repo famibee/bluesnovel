@@ -45,7 +45,6 @@
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
   - [ ] `[graph]`の`id`（本家は`id='break'`を待ちマークに使う内部用で、シナリオが書く場面が見当たらない）
   - [ ] `[l]`/`[p]`の待ちマークの`visible`（本家は`breakLine`/`breakPage`の入口で**属性ごと消している**＝常に表示。効かせる意味があるのか要確認）
-- [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
 - [ ] **`[button]`の残り**：効果音（`enterse`等。音声層と一緒に）。既定の見た目（色・余白）も仮のまま。`pic=`（画像ボタン）・`b_pic=`（背景画像）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
   - [ ] `[button b_pic=…]`は箱の大きさを変えない（本家は絵の実寸ぶんに広げる）。テンプレで実害が出たら合わせる

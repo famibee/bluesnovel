@@ -44,31 +44,32 @@ function near(a: [number, number, number], b: [number, number, number]) {
 // 表ページのボタン（span）をn番目で拾う
 const btn = (page: Page, i: number)=> page.locator(`${SEL_FORE} span[tabindex="0"]`).nth(i);
 // 箱の大きさは**ステージ座標で**測る。boundingBox()はステージのtransform:scaleが掛かった
-//	画面上の実寸を返すので、シナリオに書いた数値と直接は比べられない
+//	画面上の実寸を返すので、シナリオに書いた数値と直接は比べられない。
+//	**絵の実寸が入るのは画像を読み終えてから**（BtnLayerがImageで測る）なので、
+//	一度きりの計測ではなく落ち着くまで待つ
 const boxSize = (loc: Locator)=> loc.evaluate(el=> ({
 	w: (el as HTMLElement).offsetWidth, h: (el as HTMLElement).offsetHeight}));
+const expectBoxSize = (loc: Locator, w: number, h: number)=>
+	expect.poll(()=> boxSize(loc)).toEqual({w, h});
 
 
 test('箱の大きさは絵の実寸（横は3コマ分の1/3）', async ({page})=> {
 	// 本家 Button.ts:280。絵は180x40の3コマ並びなので、1コマ＝60x40が箱になる
-	const box = await boxSize(btn(page, 0));
-	expect(box.w).toBe(60);
-	expect(box.h).toBe(40);
+	await expectBoxSize(btn(page, 0), 60, 40);
 });
 
 test('寸法の明示指定は絵の実寸より優先される', async ({page})=> {
 	// 本家も `'width' in hArg` を優先する
 	await pressKey(page, 'Space');
 	await waitIdle(page);
-	const box = await boxSize(btn(page, 1));
-	expect(box.w).toBe(120);
-	expect(box.h).toBe(80);
+	await expectBoxSize(btn(page, 1), 120, 80);
 });
 
 test('通常は1コマ目・ホバーで3コマ目・押下で2コマ目', async ({page})=> {
 	// **どのコマを見せるかはインラインstyleに書けない**（インラインは:hover/:activeより強い）。
 	//	背景を3倍幅に敷き、background-position-x を 0%／50%／100% と動かして切り替えている
 	const b = btn(page, 0);
+	await expectBoxSize(b, 60, 40);	// 絵を読み終える（＝箱に実寸が入る）まで待ってから撮る
 	near(await centerColor(page, b), [255, 0, 0]);	// 通常＝1コマ目（赤）
 
 	await b.hover();
@@ -84,6 +85,7 @@ test('通常は1コマ目・ホバーで3コマ目・押下で2コマ目', async
 
 test('[button pic=…]に文字は出ない', async ({page})=> {
 	// 本家もpic側の分岐で早期returnし、文字の組み立てへ進まない
+	await expectBoxSize(btn(page, 0), 60, 40);
 	expect(await btn(page, 0).textContent()).toBe('');
 });
 

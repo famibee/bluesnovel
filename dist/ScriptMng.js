@@ -2215,15 +2215,16 @@ var B = class {
 			case "else":
 			case "endif": return this.#X(), "skip";
 			case "r": return this.#$(s, "\n"), "skip";
-			case "er": return this.#ee(), this.#y[this.#v] = "", s.push({
+			case "er": return (a.rec_page_break ?? "true") !== "false" && this.#ee(), this.#y[this.#v] = "", s.push({
 				t: "chgStr",
 				nm: this.#v,
 				page: "both",
 				str: ""
 			}), s.push({
-				t: "clearBtn",
+				t: "clearTxtLay",
 				nm: this.#v,
-				page: "both"
+				page: "both",
+				clearFilter: a.clear_filter === "true"
 			}), "skip";
 			case "span": return this.#$(s, e.#Q("span", a)), "skip";
 			case "link":
@@ -3703,10 +3704,11 @@ var le = class e {
 					page: e.page
 				});
 				break;
-			case "clearBtn":
-				this.$fncs.clearBtn({
+			case "clearTxtLay":
+				this.$fncs.clearTxtLay({
 					nm: e.nm,
-					page: e.page
+					page: e.page,
+					clearFilter: e.clearFilter
 				});
 				break;
 			case "addFilter":

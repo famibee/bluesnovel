@@ -269,3 +269,54 @@ it('clearLay_dropsFfsAndBura', ()=> {
 	expect(lay.noffs).toBeUndefined();
 	expect(lay.bura).toBeUndefined();
 });
+
+
+// ============ [er]（clearTxtLay）============
+//	本家 TxtLayer.clearLay()（TxtLayer.ts:857）＋ Layer.clearLay()（:420）。
+//	**戻すのは変形まわりだけ**で、visibleと位置・見た目には触らない
+
+it('clearTxtLay_変形まわりを既定へ戻す', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
+	S().chgLay({nm: 'mes', page: 'fore', sty: {
+		alpha: 0.5, blendmode: 'screen', pivot_x: 3, pivot_y: 4,
+		rotation: 30, scale_x: 2, scale_y: 2,
+		// 触ってほしくない分
+		visible: false, left: 10, top: 20, b_color: 0xFF0000, style: 'color: red;',
+	}});
+	S().clearTxtLay({nm: 'mes', page: 'both', clearFilter: false});
+
+	const e = useStore.getState().aPage[0].find(v=> v.nm === 'mes')!;
+	for (const k of ['alpha', 'blendmode', 'pivot_x', 'pivot_y', 'rotation', 'scale_x', 'scale_y'] as const) {
+		expect(e[k]).toBeUndefined();
+	}
+	// **visibleと位置・見た目は残る**（位置まで戻すのは[clear_lay]の仕事）
+	expect(e.visible).toBe(false);
+	expect(e.left).toBe(10);
+	expect(e.top).toBe(20);
+	expect(e.cls === 'txt' && e.b_color).toBe(0xFF0000);
+	expect(e.cls === 'txt' && e.style).toBe('color: red;');
+});
+
+it('clearTxtLay_フィルターはclear_filter=trueのときだけ落とす', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
+	const flt = {css: 'sepia(1)', enabled: true};
+
+	S().chgFilter({aLayNm: ['mes'], page: 'fore', mode: 'add', flt});
+	S().clearTxtLay({nm: 'mes', page: 'both', clearFilter: false});
+	expect(useStore.getState().aPage[0].find(v=> v.nm === 'mes')!.aFlt).toEqual([flt]);
+
+	S().clearTxtLay({nm: 'mes', page: 'both', clearFilter: true});
+	expect(useStore.getState().aPage[0].find(v=> v.nm === 'mes')!.aFlt).toBeUndefined();
+});
+
+it('clearTxtLay_ボタンも消す', ()=> {
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
+	S().addBtn({layerNm: 'mes', page: 'fore', text: 'x', label: '*a'});
+	S().clearTxtLay({nm: 'mes', page: 'both', clearFilter: false});
+
+	const e = useStore.getState().aPage[0].find(v=> v.nm === 'mes')!;
+	expect(e.cls === 'txt' && e.aBtn).toEqual([]);
+});

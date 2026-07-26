@@ -112,14 +112,20 @@ it('btnSty_brokenJsonPassesThrough', ()=> {
 // ============ [er]でのボタン消去 ============
 
 it('erClearsButtons', ()=> {
-	// 本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を表裏に呼び、本文とボタンを両方捨てる。
+	// 本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:857）を表裏に呼び、本文とボタンを両方捨てる。
 	//	これが無いと、テンプレでタイトル画面のボタンが本編に入っても残り続ける
 	//	（[grp]の場面転換は[er]しか打たないため）
 	const a = acts(`[button text=x label=*a][er]`);
-	expect(a.filter(v=> v.t === 'clearBtn'))
-		.toEqual([{t: 'clearBtn', nm: 'mes', page: 'both'}]);
+	expect(a.filter(v=> v.t === 'clearTxtLay'))
+		.toEqual([{t: 'clearTxtLay', nm: 'mes', page: 'both', clearFilter: false}]);
 	// 本文の消去（chgStr）と両輪。[er]は表裏どちらも消す
 	expect(a.find(v=> v.t === 'chgStr' && v.page === 'both')).toBeDefined();
+});
+
+it('erClearFilterAttr', ()=> {
+	// フィルターは clear_filter=true のときだけ落とす（本家 Layer.ts:427。既定はfalse）
+	const a = acts(`[er clear_filter=true]`).find(v=> v.t === 'clearTxtLay');
+	expect(a).toMatchObject({clearFilter: true});
 });
 
 it('erDoesNotClearLayStyle', ()=> {

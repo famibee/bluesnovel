@@ -110,7 +110,7 @@ test('[add_filter]が重なってCSSのfilterになり、[enable_filter]で個�
 });
 
 test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibleは触らない', async ({page})=> {
-	for (let i = 0; i < 8; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
+	for (let i = 0; i < 10; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
 
 	// 見た目の指定が全て「未指定」へ戻る（＝TxtLayerのCSS既定に従う状態）
 	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');
@@ -133,4 +133,23 @@ test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibl
 
 	// visibleだけは触らない（本家 Layer.clearLay() のコメントそのまま）。直前のvisible=falseが残る
 	expect(await txtBoxStyle(page, 'display')).toBe('none');
+});
+
+test('[er]は変形まわりだけを既定へ戻し、位置と見た目には触らない', async ({page})=> {
+	// 本家 Layer.ts:420。[clear_lay]と違って位置（left/top）や style は残る
+	//	——本家の #er() も clearLay(hArg) しか呼ばないため
+	for (let i = 0; i < 9; ++i) await pressKey(page, 'Space');	// [er]の後まで
+	expect(await mesStr(page)).toBe('もどった');
+
+	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');
+	for (const k of ['alpha', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode'] as const) {
+		expect(lay?.[k]).toBeUndefined();
+	}
+	// 位置と見た目は残る
+	expect(lay?.left).toBe(40);
+	expect(lay?.top).toBe(50);
+	expect(await txtBoxStyle(page, 'letter-spacing')).toBe('3px');
+	// 算出値でも変形が落ちている（[lay]が書いた分のインラインstyleごと消える）
+	expect(await txtBoxStyle(page, 'opacity')).toBe('1');
+	expect(await txtBoxStyle(page, 'mix-blend-mode')).toBe('normal');
 });

@@ -170,7 +170,7 @@
 		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🟢 [ch_in_style] 文字出現演出定義</a></li>
 		<li class="mb1"><a href="#ch_out_style">🟡 [ch_out_style] 文字消去演出定義</a></li>
-		<li class="mb1"><a href="#clear_text">🟡 [clear_text] 文字消去</a></li>
+		<li class="mb1"><a href="#clear_text">🟢 [clear_text] 文字消去</a></li>
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
@@ -1266,7 +1266,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 </p>
 <h2 id="clear_text" class="w-heading">[clear_text]文字消去</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：対象レイヤ（省略時は[<a href="#current">current</a>]の既定文字レイヤ）の<b>片面だけ</b>の文字を消す（[<a href="#er">er</a>]は表裏どちらも消す）。未対応：本家がここで行う改ページ（履歴ログのページ区切り）——履歴層がまだ無いため。</p>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：対象レイヤ（省略時は[<a href="#current">current</a>]の既定文字レイヤ）の<b>片面だけ</b>の文字を消す（[<a href="#er">er</a>]は表裏どちらも消す）。本家同様、既定文字レイヤの表ページなら履歴も改ページする。</p>
 <h4>文字のみをクリアする</h4>
 <p class="mb2 px1">
 
@@ -1305,6 +1305,16 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>rec_page_break</td><td></td><td>true</td><td>true、false</td><td>履歴を改ページするか</td></tr>
 <tr><td>clear_filter</td><td></td><td>false</td><td>true、false</td><td>true：フィルタもクリア</td></tr>
 </table>
+
+<p class="mb2 px1"><b>bluesnovel</b>：<code>rec_page_break</code>・<code>clear_filter</code>とも対応。
+	消すのは<b>既定文字レイヤの表裏の本文とボタン</b>で、あわせて変形まわりの属性
+	（<code>alpha</code>／<code>blendmode</code>／<code>pivot_x</code>／<code>pivot_y</code>／
+	<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>）を既定へ戻す（本家 Layer.ts:420）。<br/>
+	<b>位置（<code>left</code>／<code>top</code>）と<code>visible</code>・見た目
+	（<code>style</code>／<code>b_color</code>／<code>b_pic</code>）には触らない</b>——
+	見出しは「[clear_lay]を行う」だが、本家の<code>#er()</code>が呼ぶのは
+	<code>clearLay(hArg)</code>＝<a href="#clear_lay">[clear_lay]</a>タグの処理ではなく
+	レイヤの同名メソッドで、そちらは位置を戻さないため。</p>
 
 </p>
 <h2 id="graph" class="w-heading">[graph]インライン画像表示</h2>

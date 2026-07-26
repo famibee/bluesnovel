@@ -52,7 +52,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const replace = useStore(s=> s.replace);			// しおりからの復元（[load]/[reload_script]）用
 	const toggleFullScr = useStore(s=> s.toggleFullScr);
 	const clearLay = useStore(s=> s.clearLay);
-	const clearBtn = useStore(s=> s.clearBtn);
+	const clearTxtLay = useStore(s=> s.clearTxtLay);
 	const moveLay = useStore(s=> s.moveLay);
 	const chgFilter = useStore(s=> s.chgFilter);	// [lay float=/index=/dive=]のレイヤ重なり順
 	const enableEvent = useStore(s=> s.enableEvent);
@@ -70,7 +70,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearBtn, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake}, hTag);
 
 		inited();
 

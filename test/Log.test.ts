@@ -205,3 +205,8 @@ it('log_しおりの保存でsave:const.sn.sLogへ焼き付き、復元で戻る
 	expect(JSON.parse(String(se.getVal('tmp:const.sn.log.json'))))
 		.toEqual([{text: 'いち'}, {text: 'に'}, {text: ''}]);
 });
+
+it('log_[er rec_page_break=false]は履歴を確定させない', ()=> {
+	// 本家 LayerMng.ts:1006。既定はtrueで、falseにすると前後の文が1ページに繋がる
+	expect(logOf('いち[er rec_page_break=false]に')).toEqual([{text: 'いちに'}]);
+});

@@ -33,6 +33,9 @@ export type T_LAY_SNAP = {
 	rotation?: number;
 	scale_x?: number;
 	scale_y?: number;
+	pivot_x?: number;
+	pivot_y?: number;
+	blendmode?: string;
 };
 export type T_SNAP = {
 	aLay		: T_LAY_SNAP[];	// 表ページのレイヤ群（store.aPage[foreIdx]）

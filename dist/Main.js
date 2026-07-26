@@ -1137,7 +1137,7 @@ function _t(e, t, n) {
 function vt({ arg: e, inited: t }) {
 	let { heStage: n, sys: i, scrMng: a } = e, o = r((e) => e.title), s = r((e) => e.addTitle);
 	v(o);
-	let u = r((e) => e.addLayer), d = r((e) => e.chgPic), f = r((e) => e.chgBAlpha), p = r((e) => e.chgStr), m = r((e) => e.chgLay), g = r((e) => e.defChStyle), _ = r((e) => e.setChWait), y = r((e) => e.setAutowc), b = r((e) => e.getLaySty), x = r((e) => e.getPages), S = r((e) => e.chgBPic), C = r((e) => e.setBackAlpha), ee = r((e) => e.setBtnFont), w = r((e) => e.getPagesJson), T = r((e) => e.replace), E = r((e) => e.toggleFullScr), D = r((e) => e.clearLay), O = r((e) => e.clearBtn), k = r((e) => e.moveLay), te = r((e) => e.chgFilter), A = r((e) => e.enableEvent), j = r((e) => e.addBtn), M = r((e) => e.setReadBack), N = r((e) => e.isTyping), P = r((e) => e.requestSkip), F = r((e) => e.setWait), I = r((e) => e.setSkipping), ne = r((e) => e.startTrans), L = r((e) => e.finishTrans), R = r((e) => e.startQuake), z = r((e) => e.finishQuake);
+	let u = r((e) => e.addLayer), d = r((e) => e.chgPic), f = r((e) => e.chgBAlpha), p = r((e) => e.chgStr), m = r((e) => e.chgLay), g = r((e) => e.defChStyle), _ = r((e) => e.setChWait), y = r((e) => e.setAutowc), b = r((e) => e.getLaySty), x = r((e) => e.getPages), S = r((e) => e.chgBPic), C = r((e) => e.setBackAlpha), ee = r((e) => e.setBtnFont), w = r((e) => e.getPagesJson), T = r((e) => e.replace), E = r((e) => e.toggleFullScr), D = r((e) => e.clearLay), O = r((e) => e.clearTxtLay), k = r((e) => e.moveLay), te = r((e) => e.chgFilter), A = r((e) => e.enableEvent), j = r((e) => e.addBtn), M = r((e) => e.setReadBack), N = r((e) => e.isTyping), P = r((e) => e.requestSkip), F = r((e) => e.setWait), I = r((e) => e.setSkipping), ne = r((e) => e.startTrans), L = r((e) => e.finishTrans), R = r((e) => e.startQuake), z = r((e) => e.finishQuake);
 	function B() {
 		a.go();
 	}
@@ -1161,7 +1161,7 @@ function vt({ arg: e, inited: t }) {
 			getPagesJson: w,
 			replace: T,
 			clearLay: D,
-			clearBtn: O,
+			clearTxtLay: O,
 			moveLay: k,
 			chgFilter: te,
 			enableEvent: A,

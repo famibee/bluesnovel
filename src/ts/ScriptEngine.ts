@@ -90,7 +90,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'stopQuake'}					// [stop_quake]。揺れを即座に終わらせる（本家は[finish_trans]と同じ処理）
 	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
-	| {t: 'clearBtn'; nm: string; page: T_PAGE_BOTH}				// [er]でのボタン消去。本文はchgStrが消すので、こちらはボタンだけ
+	| {t: 'clearTxtLay'; nm: string; page: T_PAGE_BOTH; clearFilter: boolean}	// [er]。本文はchgStrが消すので、こちらはボタンの消去と変形まわりの属性の初期化（本家 Layer.ts:420）
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'defChStyle'; kind: 'in' | 'out'; nm: string; sty: T_CH_STYLE}	// [ch_in_style]/[ch_out_style]。文字出現・消去演出の定義。名前で引けるようストアが表に持つ
@@ -1353,15 +1353,19 @@ export class ScriptEngine {
 		case 'er':		// ページ両面の文字消去（試作簡略：現在レイヤのみ）
 			//	タグ名のとおり表裏どちらの文字も消す（本家 LayerMng.ts hTag.er「ページ両面の文字消去」）。
 			//	これが片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
-			this.#recPagebreak();	// 履歴は消さずに1ページとして確定させる
+			// 履歴は消さずに1ページとして確定させる。rec_page_break=falseで抑えられる
+			//	（本家 LayerMng.ts:1006。既定true）
+			if ((args.rec_page_break ?? 'true') !== 'false') this.#recPagebreak();
 			this.#hTxt[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
-			// **ボタンも消す**。本家の[er]は TxtLayer.clearLay()（TxtLayer.ts:855）を表裏に呼び、
-			//	本文とボタンを両方捨てる。これが無いと、テンプレでタイトル画面のボタンが
-			//	本編に入っても残り続ける（[grp]の場面転換は[er]しか打たないため）。
-			//	なお本家はここでalpha/blendmode/pivot/angle/scaleも既定へ戻す（Layer.ts clearLay）。
-			//	そちらは未対応（todo.md）
-			aAct.push({t: 'clearBtn', nm: this.#curTxtLayer, page: 'both'});
+			// **ボタンを消し、変形まわりの属性を既定へ戻す**。本家の[er]は
+			//	TxtLayer.clearLay()（TxtLayer.ts:857）を表裏に呼び、本文とボタンを捨てたうえで
+			//	Layer.clearLay()（:420）が alpha/blendmode/pivot/角度/拡縮 を初期値へ戻す。
+			//	ボタンを消さないと、テンプレでタイトル画面のボタンが本編に入っても残り続ける
+			//	（[grp]の場面転換は[er]しか打たないため）。
+			//	フィルターは clear_filter=true のときだけ落とす（本家の既定はfalse）
+			aAct.push({t: 'clearTxtLay', nm: this.#curTxtLayer, page: 'both',
+				clearFilter: args.clear_filter === 'true'});
 			return 'skip';
 
 		// ===== 文字装飾（本家 LayerMng.ts:124-141 hTag.ch/span/ruby2） =====

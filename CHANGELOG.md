@@ -656,6 +656,28 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  スプライトの幅が見た目の3倍ある。bluesnovelの箱は最初から見た目の幅なので、
 	  仮に対応させても1/3は要らない。「本家へ確認したいこと」へ移した
 
+
+- [x] **`[er]`が変形まわりの属性を既定へ戻す**＋`rec_page_break`／`clear_filter`
+	- 本家の`[er]`は`TxtLayer.clearLay()`（`TxtLayer.ts:857`）を表裏に呼び、本文とボタンを
+	  捨てたうえで`Layer.clearLay()`（`:420`）が`alpha`／`blendmode`／`pivot`／角度／拡縮を
+	  初期値へ戻す。こちらは本文とボタンの消去だけで、後半が抜けていた
+	- **位置（`left`/`top`）と`visible`・見た目（`style`/`b_color`/`b_pic`）には触らない**。
+	  タグリファレンスの見出しは「[clear_lay]を行う」だが、本家の`#er()`が呼ぶのは
+	  `clearLay(hArg)`＝**タグの処理ではなくレイヤの同名メソッド**で、そちらは位置を戻さない。
+	  紛らわしいのでdocs/tag.htmlにその旨を書いた
+	- 併せて`[er rec_page_break=false]`（履歴を改ページしない。本家 `LayerMng.ts:1006`）と
+	  `[er clear_filter=true]`（フィルターも落とす。本家の既定はfalse）に対応
+	- ストアの`clearBtn`は**やることが増えたので`clearTxtLay`へ改名**（本家 `TxtLayer.clearLay()`に対応）。
+	  `[er]`専用の口なので呼び出し側は1箇所
+	- 検査：`test/store_lay.test.ts`に3件（戻す範囲・フィルターの条件・ボタン）、
+	  `test/ScriptEngine_btn.test.ts`に1件、`test/Log.test.ts`に1件、
+	  `test/e2e/lay.e2e.ts`に1件（位置と`style`が残ることまで算出値で）
+	- ついでに`[clear_text]`を🟢へ。履歴の改ページは先の作業で入っており、docs側が古かった
+	- **画像ボタンのE2E2件がゆらいでいたのを直した**。絵の実寸が箱に入るのは画像を読み終えて
+	  からなので、一度きりの計測では早すぎることがある（フルスイートだと負荷で顕在化）。
+	  `expect.poll`で落ち着くまで待つ形にし、色を撮るテストも読み終えてから撮るようにした。
+	  全体を3回連続で通して安定を確認
+
 - [ ]
 
 
@@ -663,7 +685,7 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 
-
+todo.md で残っている大物は音声・動画、[page to=]（読み戻しの設計から）、文字組みの残り、しおり・システム系です。
 
 - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 
