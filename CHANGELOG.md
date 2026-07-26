@@ -424,12 +424,35 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  `[trans]`と`[er]`の修正の副産物
 
 
+- [x] `.d.ts`が出ていない（npmライブラリとして必要）
+	- **壊れてはいなかった**。`aa8643e`（React製シナリオ解析ループの試作実装）で`dist/*.d.ts`が
+	  まとめて削除され、以後は`watch`しか走っていなかっただけ。`src/build.ts`は元から
+	  `plugins: watch ? [] : [dts(oDts)]`＝**watch中は`.d.ts`を出さない**ので、
+	  再生成される機会が無かった。`bun run build`を一度回せば出る状態だった
+	  （TypeScript 7で`vite-plugin-dts`が動かなくなった、という当初の見立ては誤り。
+	  本家`skynovel_esm`は同じ構成のまま今日のビルドで`.d.ts`を出している）
+	- そのうえで**方式はtscへ変えた**（`tsconfig.dts.json`を新設し、`src/build.ts`が
+	  ビルド完了後に`tsc -p`を起動して終了コードを反映）。プラグインはviteのbuild単位で走るため:
+		- 4本すべてに付くので**`dist_app/`にも同じ木が出る**。共有モジュール（`src/ts/…`,
+		  `src/sn/…`）の型が2組でき、`bluesnovel`と`bluesnovel/app`の両方をimportした利用者から
+		  見て**別の型**になる
+		- 出力範囲がtsconfigの`include`なりなので、**`test/**.d.ts`と`build.d.ts`まで公開物に
+		  混じる**（実測79ファイル。tsc側は`src`だけの40ファイル）
+		- ビルド1本につき8秒以上かかる（`[PLUGIN_TIMINGS]`の警告も出る）
+	- `dist_app/*.js`の型はpackage.jsonの`exports`に`types`条件を書いて`dist/`側を指す。
+	  ついでにサブパスの型が引けるようになった（従来は`.`しか型が付かなかった）
+	- 宣言マップ（`declarationMap`）は出さない。参照先の`src/*.ts`は公開物に含まれない
+	  （`files`は`dist`と`dist_app`だけ）ので必ず切れたリンクになるため
+	- `vite-plugin-dts`を依存から削除。これで`tsc --noEmit`から`unplugin-dts`由来のエラー
+	  （`typescript`のルートexportに`ts.CompilerHost`が無いという内容。**型解決の話で、
+	  実行時には動いている**）8件も消えた
+	- `skipLibCheck: true`を追加。`react-moveable`（JSX名前空間）・`react-use`（React 19で消えた型を
+	  参照）が素で9件エラーを出し、こちらでは直せない。**`.d.ts`出力の成否が終了コードで
+	  分からなくなる**ため落とした
+	- 40ファイル出力を確認。別プロジェクトから`@famibee/bluesnovel`と`@famibee/bluesnovel/app`を
+	  importする疑似利用者で型解決も通した
+
 - [ ]
-
-
-
-
-
 
 
 - 長押しでデザインモードに入るが、本家機能大部分の完成まで無効化＆TODO記載
@@ -449,6 +472,13 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
   - `[l]`/`[p]`の待ちマークの位置指定
 - todo.md: **`[button]`の残り**：画像ボタン
   - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
+
+
+
+
+
+
+
 
 
 

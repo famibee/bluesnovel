@@ -1,0 +1,29 @@
+{
+	// **npm 公開用の型定義（.d.ts）を出すためだけの設定**。`src/build.ts` が
+	// `tsc -p tsconfig.dts.json` として呼ぶ。js の方は Vite/rolldown が束ねるので、
+	// ここは宣言だけ出す（emitDeclarationOnly）。
+	//
+	// 本家と違い vite-plugin-dts を使わない理由は `src/build.ts` のコメント参照。
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"emitDeclarationOnly": true,
+		"rootDir": "./src",
+		"outDir": "./dist",
+
+		// 宣言だけなので js のソースマップは出ない。
+		//	emitDeclarationOnly と同時指定はエラーになるので明示的に切る
+		"sourceMap": false,
+		// **宣言マップは出さない**。参照先の `src/*.ts` は公開物に含まれない
+		//	（package.json の files は dist と dist_app だけ）ため、出すと必ず切れたリンクになる。
+		//	欲しくなったら files に "src" を足すのとセットで
+		"declarationMap": false,
+
+		// 型チェックは別コマンド（`tsc --noEmit`）の仕事。ここで .tsbuildinfo を
+		//	作らせても噛み合わないので毎回全部出す
+		"incremental": false
+	},
+	// ライブラリ本体だけ。build.ts はビルドドライバで、公開物ではない
+	//	（devDependencies の vite を import しているので型定義に混ぜてはいけない）
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "src/build.ts"]
+}

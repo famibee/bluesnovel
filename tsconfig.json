@@ -50,6 +50,11 @@
 								// ただし引数名の先頭にアンダースコアを付けると回避できる
 		"exactOptionalPropertyTypes": true,	// オプションプロパティにundefined 禁止
 
+		"skipLibCheck": true,	// node_modules の .d.ts は型チェックしない
+			// react-moveable（JSX 名前空間）・react-use（React 19 で消えた型を参照）が
+			// 素で 9 件エラーを出し、こちらでは直せない。**.d.ts 出力の成否が終了コードで
+			// 分からなくなる**ので落とす（tsconfig.dts.json もこれを継承する）
+
 		"forceConsistentCasingInFileNames": true,	// import時にファイルパスの文字列で大文字小文字を区別するか
 		//"isolatedDeclarations": true,	// 変数や関数をエクスポート時、ユーザーに明示的な型注釈を求める（トランスパイラ向け）
 			// 時々 true でチェックできたら
