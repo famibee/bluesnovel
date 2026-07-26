@@ -13,6 +13,7 @@ import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {BaseMemento} from '../ts/Memento';
 import {ruleMaskFunc} from '../ts/Trans';
+import {fltId, fltValues, matsOf} from '../ts/Filter';
 
 import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
@@ -278,6 +279,15 @@ export default function Stage({
 	}, {isPreventDefault: true, delay: 300,});
 
 
+	// 今どちらかのページで使われている色成分行列（重複はidで畳む）
+	const aMat = (()=> {
+		const h = new Map<string, number[]>();
+		for (const aLay of aPage) for (const l of aLay) {
+			if (l.aFlt) for (const m of matsOf(l.aFlt)) h.set(fltId(m), m);
+		}
+		return [...h.values()];
+	})();
+
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
@@ -303,6 +313,21 @@ export default function Stage({
 					<image href={trans.ruleSrc} x="0" y="0" width={stageW} height={stageH}
 						preserveAspectRatio="none" filter="url(#sn_rule_flt)"/>
 				</mask>
+			</defs>
+		</svg>}
+		{/* 色成分フィルター（[add_filter filter=browni]など）。CSSのfilter関数に相当が無いので、
+			pixiのColorMatrixFilterと同じ5x4行列をSVGのfeColorMatrixへ流す（src/ts/Filter.ts）。
+			**要素は同一文書内に無いとCSSの`filter: url(#…)`から指せない**（data:URLは不可）ので、
+			今どちらかのページで使われている行列を集めてここへ出す。idは行列の中身から決まるため
+			同じ効果は1つの要素を共有する。
+			色空間はsRGB固定：既定のlinearRGBだと変換が入り、テクスチャの値をそのまま扱う
+			pixiのシェーダと合わなくなる（ルール画像ワイプのフィルタと同じ理由） */}
+		{aMat.length > 0 && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+			<defs>
+				{aMat.map(m=> <filter key={fltId(m)} id={fltId(m)} colorInterpolationFilters="sRGB"
+					x="0" y="0" width="100%" height="100%">
+					<feColorMatrix type="matrix" values={fltValues(m)}/>
+				</filter>)}
 			</defs>
 		</svg>}
 		{isDesignMode && <>

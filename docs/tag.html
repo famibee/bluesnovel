@@ -921,6 +921,27 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>multiply</td><td></td><td>false</td><td>true、false</td><td>true の場合、現在の行列と行列を乗算</td></tr>
 </table>
 
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：
+	<code>noise</code>以外の21種に対応。**表示がpixi→DOMに変わった影響が最も出ている場所**で、
+	2通りの実装に分かれる。<br/>
+	・CSSの<code>filter</code>プロパティに同じ関数があるもの（<code>blur</code>／<code>brightness</code>／
+	<code>contrast</code>／<code>grayscale</code>／<code>black_and_white</code>／<code>negative</code>／
+	<code>saturate</code>／<code>hue</code>／<code>sepia</code>）はそのまま書く<br/>
+	・残りはすべて本家のColorMatrixFilterのプリセットなので、<b>pixiと同じ5x4行列をSVGの
+	<code>feColorMatrix</code>へ流す</b>（pixiの<code>m[0..19]</code>とSVGの<code>values</code>は並びが同じ）。
+	<code>&lt;filter&gt;</code>要素は今使われている行列のぶんだけステージが出し、
+	CSSからは<code>filter: url(#…)</code>で指す（<b>同一文書内の要素しか指せない</b>ため。
+	<code>data:</code>URLは不可）。色空間はsRGB固定<br/>
+	<b>相違が2つ</b>：<code>multiply</code>属性は無視する（pixiでは「今の行列に掛ける」意味だが、
+	こちらはフィルターをCSSの<code>filter</code>に並べる＝前の結果に順に掛かるので、
+	掛け合わせは並べた時点で起きている）。またpixiは<code>multiply=true</code>のときだけ
+	オフセット列を255で割る（同じプリセットでも指定で明るさが変わる）が、こちらは行列を
+	最初からSVGの流儀（オフセットは0〜1）で書き、その揺れを持ち込まない<br/>
+	<b>未対応</b>：<code>noise</code>（CSSにもSVGの単純な組合せにも相当が無い）・
+	<code>blendmode</code>（フィルター単位のブレンド）・<code>blur</code>の
+	<code>blur_x</code>／<code>blur_y</code>（CSSの<code>blur()</code>は半径1つしか持てない）・
+	<code>quality</code>／<code>kernel_size</code>／<code>resolution</code>／<code>repeat_edge_pixels</code>（pixi前提）
+</p>
 
 </p>
 <h2 id="clear_filter" class="w-heading">[clear_filter]フィルター全削除</h2>

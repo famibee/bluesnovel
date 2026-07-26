@@ -191,11 +191,15 @@ React ツリー (`BtnLayer`) と DOM 側 (`ScriptMng`) の両方から触る画�
 ドラッグフラグと同じ形）。要素が入るのは本家同様 3 経路: マウント中の `[button]`、
 `[event key='dom=…']` の**最初の**一致、`[set_focus add='dom=…']`。
 
-**フィルタは pixi→DOM 相違が最も出る箇所。** 本家は pixi フィルタ 22 種、CSS `filter` でそのまま
-書けるのは 9 種、それが `src/ts/Filter.ts` の実装範囲。残り 13 種は `noise` 以外すべて
-`ColorMatrixFilter` プリセットなので、同じ 5×4 行列を SVG `feColorMatrix` に食わせれば後から到達
-できる（エラーメッセージがそう言っており、「そんなフィルタは無い」と「本家にはあるが CSS で無理」
-を区別している）。`[lay filter=]` はリストを**置換**、`[add_filter]` は追加。この非対称は本家由来。
+**フィルタは pixi→DOM 相違が最も出る箇所。** 本家は pixi フィルタ 22 種。`src/ts/Filter.ts` が
+2 通りに振り分ける: CSS `filter` に同じ関数がある 9 種はそのまま、残りは `ColorMatrixFilter` の
+プリセットなので**同じ 5×4 行列を SVG `feColorMatrix` へ流す**（pixi の `m[0..19]` と `values` は
+並びが同じ）。`<filter>` 要素を出すのは `Stage.tsx`——CSS の `filter: url(#…)` は**同一文書内の
+要素しか指せない**（`data:` URL 不可）ので、使われている行列を集めて出し、**id は行列の中身から
+決める**（同じ効果は 1 要素を共有）。未対応は `noise` だけ。**`multiply` 属性は無視する**（CSS の
+`filter` に並べる時点で前の結果に順に掛かる）。pixi は `multiply=true` のときだけオフセット列を
+255 で割る＝同じプリセットでも明るさが変わるが、こちらは最初から SVG の流儀（0〜1）で書く。
+`[lay filter=]` はリストを**置換**、`[add_filter]` は追加。この非対称は本家由来。
 
 **重ね順は `aPage[i]` の配列順**（後ろ＝手前）。pixi の child 順と同じ。`[lay float=/index=/dive=]`
 が並べ替えるが、**必ず両ページ同一に**（`pickPage`/`putPage` と `[trans]` のレイヤ複製が、2 配列に

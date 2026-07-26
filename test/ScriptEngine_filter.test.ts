@@ -11,7 +11,7 @@
 //	bluesnovelはCSSのfilterプロパティなので素で書ける9種のみ（src/ts/Filter.ts参照）
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
-import {bldFilter, styFilter} from '../src/ts/Filter';
+import {bldFilter, fltId, matsOf, styFilter} from '../src/ts/Filter';
 
 import {expect, it} from 'bun:test';
 
@@ -49,9 +49,8 @@ it('bldFilter_enableFilterAttr', ()=> {
 });
 
 it('bldFilter_notYetSupported', ()=> {
-	// 本家にはあるがCSSでは素で書けないもの。名前を知らないのか未対応なのかを区別して知らせる
-	expect(()=> bldFilter({filter: 'kodachrome'})).toThrow('未対応です');
-	expect(()=> bldFilter({filter: 'color_matrix'})).toThrow('未対応です');
+	// 残る未対応は noise だけ（CSSのfilterにもSVGのfeColorMatrixにも相当が無い）。
+	//	名前を知らないのか未対応なのかを区別して知らせる
 	expect(()=> bldFilter({filter: 'noise'})).toThrow('未対応です');
 });
 
@@ -129,4 +128,78 @@ it('enableFilter', ()=> {
 it('filterTags_reservedAsMacroName', ()=> {
 	expect(()=> acts('[macro name=add_filter]'))
 		.toThrow('[add_filter]はタグ名のため、マクロ名として使用できません');
+});
+
+
+// ============ 色成分フィルター（SVGのfeColorMatrix行き）============
+//	pixiのColorMatrixFilterのプリセットと同じ5x4行列を出す。**pixiの m[0..19] と
+//	SVGの values は並びが同じ**なのでそのまま写せる。実際に絵が変わることはE2E側で見る
+
+it('bldFilter_行列のものはurl(#…)を返す', ()=> {
+	const f = bldFilter({filter: 'to_bgr'});
+	expect(f.css).toBe(`url(#${fltId(f.mat!)})`);
+	// 赤→青・青→赤（pixi toBGR）
+	expect(f.mat).toEqual([
+		0, 0, 1, 0, 0,
+		0, 1, 0, 0, 0,
+		1, 0, 0, 0, 0,
+		0, 0, 0, 1, 0]);
+});
+
+it('bldFilter_オフセットは0〜1に揃える', ()=> {
+	// **pixiはmultiply=trueのときだけ255で割る**（_colorMatrix()）＝同じプリセットでも
+	//	multiplyの指定で明るさが変わる。こちらは最初からSVGの流儀で書き、その揺れを持ち込まない
+	const m = bldFilter({filter: 'kodachrome'}).mat!;
+	expect(m[4]).toBeCloseTo(63.72958762196502 / 255, 10);
+	expect(m[9]).toBeCloseTo(24.732407896706203 / 255, 10);
+	expect(m[14]).toBeCloseTo(35.62982807460946 / 255, 10);
+});
+
+it('bldFilter_tintは色を対角に置く', ()=> {
+	// 本家の既定は 0x888888
+	expect(bldFilter({filter: 'tint'}).mat).toEqual([
+		0x88 / 255, 0, 0, 0, 0,
+		0, 0x88 / 255, 0, 0, 0,
+		0, 0, 0x88 / 255, 0, 0,
+		0, 0, 0, 1, 0]);
+	expect(bldFilter({filter: 'tint', f_color: '0xFF0000'}).mat?.[0]).toBe(1);
+});
+
+it('bldFilter_nightはintensityで強さが変わる', ()=> {
+	expect(bldFilter({filter: 'night', intensity: '0.25'}).mat).toEqual([
+		-0.5, -0.25, 0, 0, 0,
+		-0.25, 0, 0.25, 0, 0,
+		0, 0.25, 0.5, 0, 0,
+		0, 0, 0, 1, 0]);
+});
+
+it('bldFilter_color_matrixはmatrixを20個そのまま受ける', ()=> {
+	const a = Array.from({length: 20}, (_, i)=> i);
+	expect(bldFilter({filter: 'color_matrix', matrix: a.join(',')}).mat).toEqual(a);
+});
+
+it('bldFilter_color_matrixの個数が20でなければthrow（本家と同じ文言）', ()=> {
+	expect(()=> bldFilter({filter: 'color_matrix', matrix: '1,2,3'})).toThrow('が 20 ではありません');
+});
+
+it('bldFilter_color_matrixは成分ごとの属性でも書ける（既定は恒等行列）', ()=> {
+	expect(bldFilter({filter: 'color_matrix'}).mat).toEqual([
+		1, 0, 0, 0, 0,
+		0, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0]);
+	expect(bldFilter({filter: 'color_matrix', gtor: '0.5'}).mat?.[1]).toBe(0.5);
+});
+
+it('fltId_同じ行列は同じid・違えば違うid', ()=> {
+	// idは中身から決まるので、同じ効果は1つの<filter>要素を共有できる
+	expect(fltId([1, 2, 3])).toBe(fltId([1, 2, 3]));
+	expect(fltId([1, 2, 3])).not.toBe(fltId([1, 2, 4]));
+});
+
+it('matsOf_有効な行列だけを集める', ()=> {
+	// Stage.tsxが<filter>要素を出すのに使う。無効化中（[enable_filter]）の分は要らない
+	const a = bldFilter({filter: 'lsd'});
+	const b = bldFilter({filter: 'browni', enable_filter: 'false'});
+	expect(matsOf([a, b, {css: 'sepia(1)', enabled: true}])).toEqual([a.mat!]);
 });

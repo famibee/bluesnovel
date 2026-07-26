@@ -1,0 +1,28 @@
+; E2E用シナリオ（filter.e2e.ts が使用）
+;	色成分フィルター（本家のColorMatrixFilterのプリセット）は、CSSのfilter関数に相当が無いので
+;	SVGのfeColorMatrixへ同じ5x4行列を流して同じ絵を出す。
+;	**効いたかどうかは実際の画素でしか分からない**（算出CSSはurl(#…)としか言わない）ので、
+;	色の分かっている矩形＝文字レイヤの背景（b_color）を置いて撮る
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 純粋な赤の背景。b_alpha=1で下地（黒）が透けないようにする
+[lay layer=mes b_color=0xFF0000 b_alpha=1 b_alpha_isfixed=true style="left: 0px; top: 0px; width: 400px; height: 300px;"]
+あか[l]
+
+; 赤→青・青→赤（本家 to_bgr）。赤い背景が青くなる
+[add_filter layer=mes filter=to_bgr]
+[er]
+あお[l]
+
+; 無効化すると元の色へ戻る（[enable_filter]）
+[enable_filter layer=mes index=0 enabled=false]
+[er]
+もどる[l]
+
+; 汎用のカラーマトリックス。緑成分だけを残す
+[clear_filter layer=mes]
+[add_filter layer=mes filter=color_matrix matrix="0,0,0,0,0, 0,1,0,0,0, 0,0,0,0,0, 0,0,0,1,0"]
+[lay layer=mes b_color=0x00FF00]
+[er]
+みどり[s]

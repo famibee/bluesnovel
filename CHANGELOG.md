@@ -573,6 +573,35 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  `[span ch_out_style=]`は受け付けるが、消去のアニメはまだ行なっていない
 
 
+- todo.md: **フィルターの残り**
+  - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
+  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter
+
+- [x] **フィルターの残り12種**：`ColorMatrixFilter`のプリセットをSVGの`feColorMatrix`へ
+	（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・
+	`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）
+	- **pixiの`m[0..19]`とSVGの`feColorMatrix`の`values`は並びが同じ**なので、行列をそのまま
+	  写すだけで同じ絵になる。行列はpixi 6.5.10の`@pixi/filter-color-matrix`から取った
+	- `<filter>`要素はStage.tsxが出す。**CSSの`filter: url(#…)`は同一文書内の要素しか指せない**
+	  （`data:`URLは不可）ため、今どちらかのページで使われている行列を集めて出す形にした。
+	  **idは行列の中身から決める**ので、同じ効果は1つの要素を共有する。
+	  色空間はsRGB固定（既定のlinearRGBだと変換が入り、テクスチャの値をそのまま扱う
+	  pixiのシェーダと合わなくなる。ルール画像ワイプのフィルタと同じ理由）
+	- **`multiply`属性は無視する**ことにした。pixiでは「今の行列に掛ける」意味だが、こちらは
+	  フィルターをCSSの`filter`プロパティに並べる＝前の結果に順に掛かるので、掛け合わせは
+	  並べた時点で起きている
+	- 併せて**オフセット列の揺れを持ち込まない**ことにした。pixiは`multiply=true`のときだけ
+	  オフセットを255で割る（`_colorMatrix()`）ので、**同じプリセットでも`multiply`の指定で
+	  明るさが変わる**。こちらは行列を最初からSVGの流儀（オフセットは0〜1）で書く。
+	  影響するのは`technicolor`／`kodachrome`／`browni`／`vintage`の4つ
+	- 残る未対応は`noise`だけ（CSSにもSVGの単純な組合せにも相当が無い）。
+	  エラー文言も「CSSのfilterで表現できない」から実態に合わせて直した
+	- 検査：`test/ScriptEngine_filter.test.ts`に8件追加（行列の値・オフセットの正規化・
+	  `color_matrix`の2通りの書き方・idの一意性）＋`test/e2e/filter.e2e.ts`4件。
+	  **E2Eは画素で見る**——CSSの算出値は`url(#sn_cm_…)`としか言わないので、
+	  効いたかどうかは色の分かっている矩形を撮って数えるしかない
+
+
 - [ ]
 
 
@@ -583,9 +612,6 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- todo.md: **フィルターの残り**
-  - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter
 - todo.md: **アニメpng（スプライトシート）の残り**
   - 【現状不使用・優先順位低】文字レイヤの枠画像でのシート再生
   - `[graph]`の`width`/`height`
