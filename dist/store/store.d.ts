@@ -3,6 +3,7 @@ import type { T_FLT } from '../ts/Filter';
 import type { T_FACE_SRC } from '../components/GrpLayer';
 import type { T_BTN_STY } from '../components/TxtLayer';
 import type { T_CH } from '../ts/Txt';
+import { type T_CH_STYLE } from '../ts/ChStyle';
 type T_STATE = {
     txt: string;
     addTxt: (t: string) => void;
@@ -23,11 +24,22 @@ type T_STATE = {
     getPagesJson: () => string;
     enableEvent: (arg: T_ENABLEEVENT) => void;
     clearLay: (arg: T_CLEARLAY) => void;
-    clearBtn: (arg: T_CLEARBTN) => void;
+    clearTxtLay: (arg: T_CLEARTXTLAY) => void;
     moveLay: (arg: T_MOVELAY) => void;
     chgFilter: (arg: T_CHGFILTER) => void;
     chgStr: (arg: T_CHGSTR) => void;
     addBtn: (arg: T_ADDBTN) => void;
+    hChIn: {
+        [nm: string]: T_CH_STYLE;
+    };
+    hChOut: {
+        [nm: string]: T_CH_STYLE;
+    };
+    defChStyle: (arg: T_DEFCHSTYLE) => void;
+    chWait: number;
+    setChWait: (v: number) => void;
+    autowc: T_AUTOWC;
+    setAutowc: (a: T_AUTOWC) => void;
     trans: T_TRANS;
     startTrans: (arg: T_STARTTRANS) => void;
     finishTrans: () => void;
@@ -58,6 +70,10 @@ export type T_WAIT = {
     nm: string;
     kind: 'l' | 'p';
     src?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
 } | null;
 export type T_PAGE = 'fore' | 'back';
 export type T_PAGE_BOTH = T_PAGE | 'both';
@@ -108,11 +124,24 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
     ffs?: string;
     noffs?: string;
     bura?: boolean;
+    in_style?: string;
+    out_style?: string;
 };
 export type T_CHGLAY = {
     nm: string;
     page: T_PAGE;
     sty: T_LAY_STY_ARG;
+};
+export type T_AUTOWC = {
+    enabled: boolean;
+    h: {
+        [ch: string]: number;
+    };
+};
+export type T_DEFCHSTYLE = {
+    kind: 'in' | 'out';
+    nm: string;
+    sty: T_CH_STYLE;
 };
 export type T_ENABLEEVENT = {
     nm: string;
@@ -122,9 +151,10 @@ export type T_CLEARLAY = {
     aLayNm: string[] | null;
     page: T_PAGE_BOTH;
 };
-export type T_CLEARBTN = {
+export type T_CLEARTXTLAY = {
     nm: string;
     page: T_PAGE_BOTH;
+    clearFilter: boolean;
 };
 export type T_CHGFILTER = {
     aLayNm: string[] | null;
@@ -157,6 +187,6 @@ export type T_ADDBTN = {
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'getLaySty' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearBtn' | 'moveLay' | 'chgFilter' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake'>>;
 export declare const useStore: import("zustand").UseBoundStore<import("zustand").StoreApi<T_STATE>>;
 export {};

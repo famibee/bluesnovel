@@ -19,6 +19,13 @@ export type T_CH = {
     lnk?: T_LNK;
     pic?: string;
     src?: string;
+    gw?: number;
+    gh?: number;
+    gx?: number;
+    gy?: number;
+    cis?: string;
+    cos?: string;
+    w?: number;
 };
 export declare function splitCh(raw: string): T_CH[];
 export declare function plainOf(aCh: readonly T_CH[]): string;

@@ -197,18 +197,27 @@ it('loadplugin_joinFalseContinues', ()=> {
 it('snapshot_defaults', ()=> {
 	const a = acts('[snapshot][s]');
 	expect(a.at(-1)).toEqual({
-		t: 'snapshot', fn: '', aLayNm: null, page: 'fore', width: 0, height: 0,
+		t: 'snapshot', fn: '', aLayNm: null, page: 'fore', width: 0, height: 0, smoothing: false,
 	});	// width/heightの0は「ステージ実寸」の意
 	expect(a.some(v=> v.t === 'stop')).toBe(false);	// 撮り終わるまで待つ＝停止する
 });
 
 it('snapshot_args', ()=> {
-	expect(acts(`${LAYS}[snapshot fn=shot layer=base,mes page=back width=640 height=480 b_color=0xFF0000][s]`)
+	expect(acts(`${LAYS}[snapshot fn=shot layer=base,mes page=back width=640 height=480 smoothing=true b_color=0xFF000000][s]`)
 		.find(v=> v.t === 'snapshot'))
 		.toEqual({
 			t: 'snapshot', fn: 'shot', aLayNm: ['base', 'mes'], page: 'back',
-			width: 640, height: 480, b_color: 0xFF0000,
+			width: 640, height: 480, smoothing: true, b_color: 0xFF000000,
 		});
+});
+
+it('snapshot_b_colorは0xAARRGGBB', ()=> {
+	// **[lay b_color=]の0xRRGGBBとは違う**（tag.html#snapshot「透過2桁＋赤2桁＋緑2桁＋青2桁」）。
+	//	エンジンは数値のまま運び、CSSの色文字列にするのはScriptMng（rgbaOf）
+	const b = (src: string)=> acts(`[snapshot ${src}][s]`).find(v=> v.t === 'snapshot')?.b_color;
+	expect(b('b_color=0x0')).toBe(0);				// 完全透過
+	expect(b('b_color=0xFF000000')).toBe(0xFF000000);	// 不透明な黒
+	expect(b('')).toBeUndefined();					// 未指定はステージと同じ背景色
 });
 
 

@@ -14,5 +14,15 @@
 [snapshot fn=e2e_shot]
 とった[p]
 
+; fnを`userdata:/`で始めるとダウンロードでなく**セーブ層**へ入る（本家はセーブデータと同じ
+;	フォルダへ実ファイル）。日時が付かないので、しおり画面が同じ名前で読み返せる
+[snapshot fn='userdata:/thumb.png' width=80 height=60]
+[lay layer=base fn='userdata:/thumb.png']
+しまった[p]
+
+; 出力フォーマットは拡張子で決まる（ダウンロード側も。本家は常にpngだった）
+[snapshot fn=e2e_shot.jpg]
+じぇいぺぐ[p]
+
 [navigate_to url=https://example.com/]
 ひらいた[s]

@@ -678,6 +678,35 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  `expect.poll`で落ち着くまで待つ形にし、色を撮るテストも読み終えてから撮るようにした。
 	  全体を3回連続で通して安定を確認
 
+
+- tmp_blues: doc/prj/script/sub.sn:70 に[s]を置いた。オレンジ色の点々矩形が出る。恐らく文字レイヤ、これが表示されるのは不具合
+- todo.md: しおり・システム系の残り
+  - `[snapshot]`の結果は本家 src/sn/LayerMng.ts:338 での流れが参考に。
+    - `userdata:/`なら参考資料-> https://famibee.github.io/skynovel_esm/tag.html#snapshot
+    - `downloads:/`はいわゆるダウンロードフォルダ。ブラウザからでもDLという形でユーザーに渡せる
+
+- [x] **`b_alpha=0`の文字レイヤに点線枠が残る不具合**（tmp_blues の全画面に出ていたオレンジの
+	点々矩形）。点線枠は「本来見えない文字層の位置と大きさ」を示す試作の目印だが、**CSSの
+	`border`なので`b_alpha`が効かない**。テンプレの`[txt_lay_fullscreen b_alpha=0]`は
+	`b_color`を書く（＝箱を描く条件を満たす）ため、背景だけ透明になって枠が残っていた。
+	背景の不透明度が0なら箱そのものを描かないようにした
+
+- [x] **`[snapshot]`の残り**：`smoothing=`・拡張子によるフォーマット指定・`userdata:/`保存・
+	`b_color`の透過2桁
+	- **行き先が`fn`の書き方で2つに**（本家 `LayerMng.ts:340-344`）。`userdata:/…`なら
+	  ダウンロードせず**セーブ層**（`SaveMng`）へ入り、日時も付かないので
+	  `[lay fn='userdata:/…']`で読み返せる（しおりのサムネイル用途）。それ以外は従来どおり
+	  ダウンロード。本家アプリ版はセーブデータと同じフォルダへ実ファイルを書くが、ブラウザに
+	  フォルダの概念は無いので**localStorageへdata URLのまま**置き、`[export]`/`[import]`にも
+	  一緒に乗せた（本家も「関連するデータファイルも含む」と書いている）
+	- 画像パスの解決（`ScriptMng#searchPic()`）に`userdata:/`の分岐を足したので、
+	  `[lay]`/`[graph]`/`[button pic=]`のどれからでも引ける
+	- **ダウンロード名は日時を拡張子の前**に入れる。本家は`fn＋日時＋'.png'`固定で、
+	  拡張子でフォーマットを選べるのが`userdata:/`側だけになっていたため
+	- `b_color`は**0xAARRGGBB**として扱う（`[lay b_color=]`の0xRRGGBBとは別物）。
+	  `0x0`で透過png・`0xFF000000`が不透明な黒＝tag.htmlの記述どおり。
+	  **本家web版の実装はここが逆**（`LayerMng.ts:383`）
+
 - [ ]
 
 
@@ -685,18 +714,36 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 
 
 
-todo.md で残っている大物は音声・動画、[page to=]（読み戻しの設計から）、文字組みの残り、しおり・システム系です。
-
-- todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 
 
 
 
 
 
-- **しおり・システム系の残り**
-  - `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
-  - `[save pic=…]`のサムネイル保存（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`が枠に出す想定）。まず`[snapshot]`の結果をどこへ置くかから
+
+
+
+
+
+
+
+
+
+
+
+- 画像やスクリプト・htmlフレームなどの復号化対応（暗号化は拡張機能が担当）
+
+
+todo.md で残っている大物は
+- 音声・動画
+- [page to=]（読み戻しの設計から）
+  - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
+- 文字組みの残り
+
+
+
+
+
 
 
 

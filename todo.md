@@ -51,9 +51,9 @@
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
   - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**読み戻し履歴は捨てている**（ロード後の位置は履歴と繋がらないため）。ページログ（`[page to=…]`）を作るときに設計し直す
-  - [ ] `[save pic=…]`のサムネイル保存（`userdata:/`へのファイル保存が要る。テンプレの`_archive.sn`が枠に出す想定）。まず`[snapshot]`の結果をどこへ置くかから
+  - [ ] `[save pic=…]`のサムネイル保存（テンプレの`_archive.sn`が枠に出す想定）。置き場は`[snapshot fn='userdata:/…']`と同じセーブ層（`SaveMng.putFile()`）でよい
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
-  - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）・`smoothing=`・拡張子によるフォーマット指定（常にpng）・`userdata:/`保存・`b_color`の透過2桁
+  - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）
   - [ ] `[window]`（アプリウインドウ設定）・`[close]`（アプリ終了）・`[update_check]`はElectron専用。`dist_app`側の整備と一緒に
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **組み込み変数の残り**

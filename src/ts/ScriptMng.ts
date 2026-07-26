@@ -10,13 +10,14 @@ import type {TArg, T_HTag} from '../sn/Grammar';
 import {Grammar} from '../sn/Grammar';
 import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib} from '../sn/CmnLib';
+import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
 import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {focusMng} from './FocusMng';
-import {savePic, snapshotToPng} from './Snapshot';
+import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
@@ -749,11 +750,20 @@ export class ScriptMng {
 		document.head.appendChild(st);
 	}
 
-	// [snapshot]：ステージをpngにしてダウンロードさせる（本家 LayerMng.ts:338 #snapshot()）。
-	//	画像化の中身は Snapshot.ts（DOM→SVG→canvas）
+	// [snapshot]：ステージを画像にして保存する（本家 LayerMng.ts:338 #snapshot()）。
+	//	画像化の中身は Snapshot.ts（DOM→SVG→canvas）。
+	//
+	//	**行き先はfnの書き方で2つ**（本家 LayerMng.ts:340-344 の組み立てそのまま）：
+	//	・`userdata:/…`	→ セーブデータと同じ置き場（SaveMng）。**日時も拡張子も足さない**ので、
+	//					  シナリオが決めた名前で後から読み返せる（しおりのサムネイル用途）
+	//	・それ以外		→ ダウンロード（本家の`downloads:/`＝ダウンロードフォルダ。
+	//					  ブラウザではDLという形でユーザーに渡る）。名前の後ろに日時が付く
 	async #snapshot(act: Extract<T_ENGINE_ACTION, {t: 'snapshot'}>) {
 		const el = this.#heStageBox;
 		if (! el) throw 'ステージがまだ表示されていません';
+
+		const toUD = act.fn.startsWith(PROTOCOL_USERDATA);
+		const fn = toUD ? act.fn : dlFn(act.fn || 'snapshot');
 
 		const {stageW, stageH} = CmnLib;
 		const dataUrl = await snapshotToPng({
@@ -762,16 +772,17 @@ export class ScriptMng {
 			sh		: stageH,
 			width	: act.width || stageW,
 			height	: act.height || stageH,
-			// 未指定はステージと同じ黒（本家も背景色の既定はステージの背景色）
-			bgColor	: act.b_color === undefined
-				? 'black'
-				: `#${act.b_color.toString(16).padStart(6, '0')}`,
+			// 未指定はステージと同じ黒（本家も背景色の既定はステージの背景色）。
+			//	指定時は0xAARRGGBB＝高2桁がアルファ（0x0で完全透過）。**本家web版はここが逆**
+			//	（LayerMng.ts:383 が透過2桁アリのときbackgroundAlphaを0にする）だが、
+			//	tag.htmlの記述（0x0で透過・0xFF000000が不透明な黒）に合わせた
+			bgColor	: act.b_color === undefined ? 'black' : rgbaOf(act.b_color),
 			page	: act.page,
 			aLayNm	: act.aLayNm,
+			mime	: mimeOfFn(fn),
+			smoothing: act.smoothing,
 		});
-		// ファイル名。本家は日時を後ろに付ける（LayerMng.ts:339 getDateStr()）
-		const dt = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
-		savePic(act.fn ? `${act.fn}${dt}.png` : `snapshot${dt}.png`, dataUrl);
+		if (toUD) this.#saveMng.putFile(fn, dataUrl); else savePic(fn, dataUrl);
 	}
 
 	#setVals(h: {[name: string]: unknown}) {
@@ -794,6 +805,16 @@ export class ScriptMng {
 	//	1枚の画像が無いだけでゲームごと止めるのはやり過ぎなので、'ET'ではなく'E'（表示のみ）
 	#searchPic(tag: string, fn: string): string {
 		if (! fn) return '';
+		// `userdata:/…`は path.json ではなくセーブ層から引く（[snapshot fn='userdata:/…']が
+		//	置いた絵。しおり画面が[lay fn='userdata:/…']でサムネイルを出す形）。
+		//	**中身はdata URLなのでそのまま<img src=>にできる**
+		if (fn.startsWith(PROTOCOL_USERDATA)) {
+			const src = this.#saveMng.getFile(fn);
+			if (src) return src;
+
+			this.myTrace(`[${tag}] 保存された画像がありません fn:${fn}`, 'E');
+			return '';
+		}
 		try {return this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)}
 		catch (e) {
 			this.myTrace(`[${tag}] 画像が見つかりません fn:${fn} ${String(e)}`, 'E');
@@ -1125,3 +1146,4 @@ export class ScriptMng {
 	}
 
 }
+

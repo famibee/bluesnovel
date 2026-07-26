@@ -57,12 +57,30 @@ it('load_isPerProject', ()=> {
 });
 
 it('flush_writesUpstreamCompatibleKeys', ()=> {
-	// 本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式（同じプロジェクトなら本家のデータを読める）
+	// 本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式（同じプロジェクトなら本家のデータを読める）。
+	//	storageだけは本家に無い（本家はアプリのstorageフォルダへ実ファイルを置くため）。
+	//	**増える方向なので互換は壊れない**：本家が書いたデータには無いだけで、読めば空になる
 	const sm = new SaveMng('prj');
 	sm.load();
 	sm.flush();
 	expect(Object.keys(hStore).sort())
-		.toEqual(['skynovel.prj - kidoku', 'skynovel.prj - mark', 'skynovel.prj - sys']);
+		.toEqual(['skynovel.prj - kidoku', 'skynovel.prj - mark',
+			'skynovel.prj - storage', 'skynovel.prj - sys']);
+});
+
+it('file_userdataへ置いて読み返せる', ()=> {
+	// [snapshot fn='userdata:/…']の置き場。値はdata URLのまま持つ
+	const sm = new SaveMng('prj');
+	sm.load();
+	expect(sm.getFile('userdata:/777.png')).toBeUndefined();
+
+	sm.putFile('userdata:/777.png', 'data:image/png;base64,AAAA');
+	expect(sm.getFile('userdata:/777.png')).toBe('data:image/png;base64,AAAA');
+
+	// 保存され、次の起動でも読める
+	const sm2 = new SaveMng('prj');
+	sm2.load();
+	expect(sm2.getFile('userdata:/777.png')).toBe('data:image/png;base64,AAAA');
 });
 
 it('mark_setGetErase', ()=> {

@@ -18,6 +18,9 @@
 //	・iframe（[add_frame]のHTMLフレーム）の中身は描かれない。本家もweb版はpixiのステージだけを
 //	  撮る＝フレームは写らないので、結果としては同じ絵になる。
 
+import {getDateStr} from '../sn/CmnLib';
+
+
 // 撮影対象からiframeを外すためのタグ名（中身が描かれず白い矩形になるだけなので落とす）
 const A_DROP_TAG = new Set(['IFRAME', 'SCRIPT', 'CANVAS', 'VIDEO']);
 
@@ -27,10 +30,35 @@ export type T_SNAP_ARG = {
 	sh		: number;
 	width	: number;		// 出力サイズ。元と違えば拡縮される
 	height	: number;
-	bgColor	: string;		// 背景色。CSSの色文字列
+	bgColor	: string;		// 背景色。CSSの色文字列（rgba()なら透過）
 	page	: 'fore' | 'back';	// どちらのページを撮るか
 	aLayNm	: string[] | null;	// 撮るレイヤ名。nullは全レイヤ
+	mime	: string;		// 出力フォーマット。'image/png' か 'image/jpeg'
+	smoothing: boolean;		// 拡大・縮小時に補間するか
 };
+
+// 拡張子から出力フォーマットを決める（本家 tag.html#snapshot「保存する画像フォーマットは拡張子で指定」）。
+//	知らない拡張子はpng扱い＝ファイル名だけ違う同じ絵になる（撮影ごと失敗させない）
+export function mimeOfFn(fn: string): string {
+	return /\.jpe?g$/i.test(fn) ? 'image/jpeg' : 'image/png';
+}
+
+// ダウンロードするときのファイル名。本家は `fn + 日時 + '.png'`（LayerMng.ts:343）で**常にpng**、
+//	拡張子でフォーマットを選べるのは userdata:/ 側だけになっていた。こちらは**日時を拡張子の前**へ
+//	入れて、どちらの行き先でも tag.html どおり拡張子でフォーマットが決まるようにする
+export function dlFn(fn: string): string {
+	const dt = getDateStr('-', '_', '');	// 本家 LayerMng.ts:339 と同じ並び（2026-07-26_1830）
+	const m = /\.\w+$/.exec(fn);
+	return m ? fn.slice(0, m.index) + dt + m[0] : `${fn}${dt}.png`;
+}
+
+// [snapshot b_color=]の 0xAARRGGBB をCSSの色文字列へ。**高2桁がアルファ**で、
+//	[lay b_color=]の0xRRGGBBとは別物（tag.html#snapshot「透過2桁＋赤2桁＋緑2桁＋青2桁」）。
+//	0x0で完全透過、不透明な黒は0xFF000000
+export function rgbaOf(c: number): string {
+	const a = (c >>> 24) / 255;
+	return `rgba(${String(c >> 16 & 0xFF)}, ${String(c >> 8 & 0xFF)}, ${String(c & 0xFF)}, ${String(a)})`;
+}
 
 // 撮影して data URL（image/png）を返す
 export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
@@ -61,11 +89,16 @@ export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
 	cvs.height	= o.height;
 	const ctx = cvs.getContext('2d');
 	if (! ctx) throw 'canvasの2Dコンテキストが取れません';
+	// 拡大・縮小の補間（本家の smoothing 属性＝pixiの antialias）。**既定はfalse**なので
+	//	canvasの既定（true）から明示的に倒す
+	ctx.imageSmoothingEnabled = o.smoothing;
+	// 背景。**アルファ0なら塗っても透明のまま**（canvasは元から透明）なので、
+	//	[snapshot b_color=0x0]の透過pngはこれだけで出る。jpgに透過は無いので黒く潰れる（本家も同じ）
 	ctx.fillStyle = o.bgColor;
 	ctx.fillRect(0, 0, o.width, o.height);
 	ctx.drawImage(img, 0, 0, o.width, o.height);
 
-	return cvs.toDataURL('image/png');
+	return cvs.toDataURL(o.mime);
 }
 
 // 撮らない要素を落とす。ページ（data-page）とレイヤ（data-lay）はStage.tsx/各Layerが出している

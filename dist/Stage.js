@@ -10250,7 +10250,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		...me === void 0 ? {} : { filter: me }
 	}, ge = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, _e = x.filter((e) => !ge(e)), ve = x.filter(ge), ye = _u`
 		${y ? "" : "pointer-events: none;"}
-	`, { r: be, g: xe, b: Se } = Eu(m), Ce = l((e) => e.backAlpha), we = h * (g ? 1 : Ce), Te = o.length === 0 && m === void 0 && !_, Ee = _u`
+	`, { r: be, g: xe, b: Se } = Eu(m), Ce = l((e) => e.backAlpha), we = h * (g ? 1 : Ce), Te = we === 0 || o.length === 0 && m === void 0 && !_, Ee = _u`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。

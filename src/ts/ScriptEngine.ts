@@ -105,7 +105,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
 	| {t: 'navigateTo'; url: string}	// [navigate_to url=…]。別タブでURLを開く
 	| {t: 'loadPlugin'; fn: string; join: boolean}	// [loadplugin fn=….css]。cssの読み込み。join=true（既定）は読み終わるまで待つのでstep()は一旦返る
-	| {t: 'snapshot'; fn: string; aLayNm: string[] | null; page: T_PAGE; width: number; height: number; b_color?: number}	// [snapshot]。画面をpngで保存（0xRRGGBB）。width/heightの0はステージ実寸、aLayNm=nullは全レイヤ。画像化は非同期なのでstep()は一旦返る
+	| {t: 'snapshot'; fn: string; aLayNm: string[] | null; page: T_PAGE; width: number; height: number; smoothing: boolean; b_color?: number}	// [snapshot]。画面を画像で保存（b_colorは0xAARRGGBB）。width/heightの0はステージ実寸、aLayNm=nullは全レイヤ。画像化は非同期なのでstep()は一旦返る
 	| {t: 'recordPlace'}	// [record_place]。今の状態をしおり1件ぶんに組み立てて覚えておく（保存はしない）
 	| {t: 'save'; place: number; json: {[k: string]: string}}	// [save]。覚えてあるしおりをplaceへ保存。jsonは見出し（[save]の属性そのまま）
 	| {t: 'load'; place: number; fn: string; label: string}	// [load]。しおりから復元。スクリプトの読み直しが要るのでstep()は一旦返る
@@ -1713,6 +1713,9 @@ export class ScriptEngine {
 				page: ScriptEngine.argPage(args, 'fore'),
 				width: ScriptEngine.#argNumDef('snapshot', 'width', args.width, 0),
 				height: ScriptEngine.#argNumDef('snapshot', 'height', args.height, 0),
+				smoothing: args.smoothing === 'true',	// 既定false（本家 LayerMng.ts:386 の antialias）
+				// **b_colorだけは 0xAARRGGBB**（[lay b_color=]の0xRRGGBBと違う。tag.html#snapshot
+				//	「透過2桁＋赤2桁＋緑2桁＋青2桁」）。0x0で完全透過、不透明な黒は0xFF000000
 				...(args.b_color === undefined ? {} : {b_color: ScriptEngine.#argNum('snapshot', 'b_color', args.b_color)}),
 			});
 			return 'stop';	// 画像化は非同期＝ScriptMng待ち（本家も撮り終わるまで進めない）

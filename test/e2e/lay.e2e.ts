@@ -135,6 +135,19 @@ test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibl
 	expect(await txtBoxStyle(page, 'display')).toBe('none');
 });
 
+test('b_alpha=0の層は文字があっても箱（背景＋点線枠）を描かない', async ({page})=> {
+	// 点線枠は「本来見えない文字層の位置と大きさ」を示す試作の目印だが、**CSSのborderなので
+	//	b_alphaが効かない**。透過度0の指定だけでは点線矩形が残ってしまっていた
+	//	（テンプレの[txt_lay_fullscreen b_alpha=0]は全画面なので画面いっぱいの点線として見えた）
+	for (let i = 0; i < 11; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('とうめい');
+
+	expect(await txtBoxStyle(page, 'border-style')).toBe('none');
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(0, 0, 0, 0)');
+	// 文字そのものは見える（消えるのは箱だけ）
+	expect(await txtBoxStyle(page, 'display')).toBe('block');
+});
+
 test('[er]は変形まわりだけを既定へ戻し、位置と見た目には触らない', async ({page})=> {
 	// 本家 Layer.ts:420。[clear_lay]と違って位置（left/top）や style は残る
 	//	——本家の #er() も clearLay(hArg) しか呼ばないため

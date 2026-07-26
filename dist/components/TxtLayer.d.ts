@@ -20,6 +20,10 @@ export type T_BTN_STY = {
     hint?: string;
     hint_style?: string;
     hint_opt?: string;
+    pic?: string;
+    src?: string;
+    b_pic?: string;
+    b_src?: string;
 };
 export type T_BTN = {
     nm: string;
@@ -45,6 +49,7 @@ type T_TXTARG = T_LAY_CMN & {
     styTxt?: string | undefined;
     enabled: boolean;
     aBtn: T_BTN[];
+    in_style?: string | undefined;
     onActivate: (label: string, call: boolean, fn: string, arg?: string) => void;
     onNavigate: (url: string) => void;
 };
@@ -64,7 +69,9 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {
     style?: string;
     enabled: boolean;
     aBtn: T_BTN[];
+    in_style?: string;
+    out_style?: string;
 };
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
-export default function TxtLayer({ cmn: { styChild, isDesignMode }, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, onActivate, onNavigate }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function TxtLayer({ cmn: { styChild, isDesignMode }, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};

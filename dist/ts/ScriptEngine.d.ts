@@ -4,6 +4,7 @@ import { type T_H_Areas } from '../sn/Areas';
 import { type T_TSY_TO } from './Tsy';
 import type { T_FRM_ORDER, T_FRM_STY } from './FrameMng';
 import { type T_FLT } from './Filter';
+import { type T_CH_STYLE } from './ChStyle';
 import type { T_BTN_STY } from '../components/TxtLayer';
 export type T_FACE = {
     fn: string;
@@ -33,6 +34,14 @@ export type T_LAY_STY_ARG = {
     ffs?: string;
     noffs?: string;
     bura?: boolean;
+    in_style?: string;
+    out_style?: string;
+};
+export type T_MARK_STY = {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
 };
 export type T_ENGINE_ACTION = {
     t: 'addLay';
@@ -82,9 +91,10 @@ export type T_ENGINE_ACTION = {
     page: T_PAGE_BOTH;
     str: string;
 } | {
-    t: 'clearBtn';
+    t: 'clearTxtLay';
     nm: string;
     page: T_PAGE_BOTH;
+    clearFilter: boolean;
 } | {
     t: 'addBtn';
     layerNm: string;
@@ -100,6 +110,17 @@ export type T_ENGINE_ACTION = {
     nm: string;
     page: T_PAGE;
     sty: T_LAY_STY_ARG;
+} | {
+    t: 'defChStyle';
+    kind: 'in' | 'out';
+    nm: string;
+    sty: T_CH_STYLE;
+} | {
+    t: 'autowc';
+    enabled: boolean;
+    hWait: {
+        [ch: string]: number;
+    };
 } | {
     t: 'clearLay';
     aLayNm: string[] | null;
@@ -221,6 +242,7 @@ export type T_ENGINE_ACTION = {
     key: string;
     nm: string;
     resume?: T_RESUME;
+    mark?: T_MARK_STY;
 } | {
     t: 'enableEvent';
     nm: string;
@@ -295,6 +317,7 @@ export declare class ScriptEngine {
     static argPage(args: {
         [k: string]: string;
     }, def: T_PAGE): T_PAGE;
+    get chWait(): number;
     static readonly REG_NG4MAC_NM: RegExp;
     static readonly RESERVED_TAGS: Set<string>;
     constructor(fn: string | Script, src?: string);

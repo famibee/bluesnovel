@@ -54,7 +54,7 @@ test('[snapshot]がPNGをダウンロードさせる', async ({page})=> {
 
 	const d = await dl;
 	// ファイル名は fn属性＋日時＋.png（本家 LayerMng.ts:339 と同じ組み立て）
-	expect(d.suggestedFilename()).toMatch(/^e2e_shot[\d-]+\.png$/);
+	expect(d.suggestedFilename()).toMatch(/^e2e_shot[\d_-]+\.png$/);
 
 	// 中身がPNGか。先頭8バイトがPNGのシグネチャ
 	const buf = readFileSync(await d.path());
@@ -68,8 +68,42 @@ test('[snapshot]がPNGをダウンロードさせる', async ({page})=> {
 	expect(await mesStr(page)).toBe('とった');
 });
 
+test(`[snapshot fn='userdata:/…']はDLせずセーブ層へ入り、[lay fn=]で読み返せる`, async ({page})=> {
+	// 本家はセーブデータと同じフォルダへ実ファイルを書くが、ブラウザにフォルダは無いので
+	//	localStorageへdata URLのまま置く（SaveMng.putFile）。しおりのサムネイル用途
+	await pressKeyToWaitMark(page, 'Space');	// [snapshot fn=e2e_shot] → とった[p]
+
+	let dl = false;
+	page.on('download', ()=> {dl = true});
+	await pressKeyToWaitMark(page, 'Space');	// userdata:/へ撮る → しまった[p]
+	expect(await mesStr(page)).toBe('しまった');
+	expect(dl).toBe(false);	// ダウンロードは起きない
+
+	// [lay fn='userdata:/thumb.png']が同じ絵を引ける。撮影サイズ（80x60）で入っている
+	const im = await page.evaluate(()=> {
+		const e = document.querySelector<HTMLImageElement>(`#skynovel [data-page="fore"] img`);
+		return e ? {src: e.getAttribute('src') ?? '', w: e.naturalWidth, h: e.naturalHeight} : undefined;
+	});
+	expect(im?.src).toMatch(/^data:image\/png;base64,/);
+	expect(im).toMatchObject({w: 80, h: 60});
+});
+
+test('出力フォーマットは拡張子で決まる', async ({page})=> {
+	// 本家のダウンロード側は常にpng（LayerMng.ts:343 が日時の後ろへ.pngを足す）。
+	//	こちらは日時を拡張子の前へ入れるので、どちらの行き先でも拡張子どおりになる
+	for (let i = 0; i < 2; ++i) await pressKeyToWaitMark(page, 'Space');
+
+	const dl = page.waitForEvent('download');
+	await pressKeyToWaitMark(page, 'Space');	// [snapshot fn=e2e_shot.jpg] → じぇいぺぐ[p]
+
+	const d = await dl;
+	expect(d.suggestedFilename()).toMatch(/^e2e_shot[\d_-]+\.jpg$/);
+	// 中身がJPEGか（先頭3バイト＝SOIマーカ）
+	expect([...readFileSync(await d.path()).subarray(0, 3)]).toEqual([0xFF, 0xD8, 0xFF]);
+});
+
 test('[navigate_to]が別タブでURLを開く', async ({page})=> {
-	await pressKeyToWaitMark(page, 'Space');	// [snapshot]を通って とった[p] へ
+	for (let i = 0; i < 3; ++i) await pressKeyToWaitMark(page, 'Space');	// [snapshot]3つを通る
 
 	const pop = page.waitForEvent('popup');
 	await pressKey(page, 'Space');	// [navigate_to] → ひらいた[s]（[s]は待ちマーカーを立てない）

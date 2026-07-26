@@ -2773,7 +2773,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="snapshot" class="w-heading">[snapshot]スナップショット</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家は pixi のレンダラで描き直すが、こちらの表示は DOM なので<b>「DOM を複製 → SVG の <code>&lt;foreignObject&gt;</code> → canvas → PNG」</b>で撮る（外部ライブラリ無し）。<code>fn</code>／<code>layer</code>／<code>page</code>／<code>width</code>／<code>height</code>／<code>b_color</code> に対応し、常に PNG でダウンロードする。<br/>未対応・相違：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。<code>smoothing=</code>、<code>fn</code> の拡張子によるフォーマット指定（常に png）、<code>userdata:/</code> 保存、<code>b_color</code> の透過2桁（アルファ）は未対応。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家は pixi のレンダラで描き直すが、こちらの表示は DOM なので<b>「DOM を複製 → SVG の <code>&lt;foreignObject&gt;</code> → canvas → 画像」</b>で撮る（外部ライブラリ無し）。全属性に対応。<br/>
+	<b>行き先は <code>fn</code> の書き方で決まる</b>。<code>userdata:/…</code> なら<b>セーブ層</b>（本家はセーブデータと同じフォルダの実ファイル。ブラウザにフォルダは無いので localStorage へ data URL のまま置く）で、日時は付かないので <code>[lay fn='userdata:/…']</code> で読み返せる（しおりのサムネイル用途）。それ以外は<b>ダウンロード</b>（本家の <code>downloads:/</code>）で、名前の後ろに日時が付く。<code>[export]</code>／<code>[import]</code> にも一緒に乗る。<br/>
+	<b>相違</b>：ダウンロード名は<b>日時を拡張子の前</b>に入れる（本家は <code>fn＋日時＋'.png'</code> 固定で、拡張子でフォーマットを選べるのは <code>userdata:/</code> 側だけだった）。<code>b_color</code> は表のとおり <b>0xAARRGGBB</b> として扱う（<code>0x0</code> で透過 png・<code>0xFF000000</code> が不透明な黒。本家 web 版の実装はここが逆になっている）。<br/>
+	<b>未対応</b>：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。</p>
 <h4>アプリ表示部分全体を画像として保存する</h4>
 <p class="mb2 px1">
 

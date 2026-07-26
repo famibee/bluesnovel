@@ -306,8 +306,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	・まだ何も書いていない／[er]・[clear_lay]で空にした層
 	//	のどちらかで、どちらも本家では何も見えない。とくに後者は[trans]の最中に裏ページが
 	//	見えるので、空のメッセージ窓が水色の帯として一瞬現れてしまっていた。
-	//	ただし[lay b_color=…]で色を明示した層は「意図して置いた板」なので描く
-	const noBox = str.length === 0 && b_color === undefined && ! b_src;
+	//	ただし[lay b_color=…]で色を明示した層は「意図して置いた板」なので描く。
+	//	**背景が完全に透明なら箱も描かない**：枠はCSSのborderでb_alphaが効かないため、
+	//	これが無いと「透明な板」に点線だけが残る。テンプレの[txt_lay_fullscreen b_alpha=0]が
+	//	まさにその形（b_colorは書くが透過度0）で、全画面の文字レイヤが点線矩形として見えていた
+	const noBox = bAlpha === 0 || (str.length === 0 && b_color === undefined && ! b_src);
 	const styTxt = css`
 		padding: 1em 1.5em;
 		margin: 2em 0;

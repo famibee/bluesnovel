@@ -29,13 +29,16 @@ export type T_MARK = {
 	json	: {[k: string]: string};	// [save]タグの属性（タイトル・サムネイル等）。const.sn.bookmark.jsonが返す中身
 };
 
-// 保存されるデータ全体（本家 T_Data4Vari）
+// 保存されるデータ全体（本家 T_Data4Vari）。
+//	storageだけは本家に無い（本家は実ファイルをアプリのstorageフォルダへ置くため）。
+//	**旧データ・本家データを読んでも欠けているだけ**なので、この追加で互換は壊れない
 export type T_DATA4VARI = {
 	sys		: {[k: string]: T_VAL_D};
 	mark	: {[place: string]: T_MARK};
 	kidoku	: {[fn: string]: T_H_Areas};
+	storage	: {[path: string]: string};	// userdata:/ の中身。値はdata URL
 };
-function creData(): T_DATA4VARI {return {sys: {}, mark: {}, kidoku: {}}}
+function creData(): T_DATA4VARI {return {sys: {}, mark: {}, kidoku: {}, storage: {}}}
 
 const EXT = '.swpd';	// 本家と同じ拡張子（SKYNovel Web Play Data）
 
@@ -47,7 +50,7 @@ export class SaveMng {
 	// ns は prj.json の save_ns。本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式にしてあるので、
 	//	同じプロジェクトなら本家が書いたデータをそのまま読める
 	constructor(private readonly ns: string) {}
-	#key(kind: 'sys' | 'mark' | 'kidoku') {return `skynovel.${this.ns} - ${kind}`}
+	#key(kind: 'sys' | 'mark' | 'kidoku' | 'storage') {return `skynovel.${this.ns} - ${kind}`}
 
 	// 起動時の読み込み。**戻り値は「初回起動か」**（本家 SysWeb.initVal() の const.sn.isFirstBoot）。
 	//	壊れていたら初期状態から始める（読めないデータのせいでゲームが起動しないのが一番困る）
@@ -59,6 +62,7 @@ export class SaveMng {
 			sys		: sys as T_DATA4VARI['sys'],
 			mark	: (store.get(this.#key('mark')) ?? {}) as T_DATA4VARI['mark'],
 			kidoku	: (store.get(this.#key('kidoku')) ?? {}) as T_DATA4VARI['kidoku'],
+			storage	: (store.get(this.#key('storage')) ?? {}) as T_DATA4VARI['storage'],
 		};
 		return false;
 	}
@@ -84,6 +88,19 @@ export class SaveMng {
 		store.set(this.#key('sys'), this.#data.sys);
 		store.set(this.#key('mark'), this.#data.mark);
 		store.set(this.#key('kidoku'), this.#data.kidoku);
+		store.set(this.#key('storage'), this.#data.storage);
+	}
+
+	// ===== userdata:/ の中身（[snapshot fn='userdata:/…']が置くサムネイル等） =====
+	//	本家アプリ版はセーブデータと同じフォルダへ実ファイルを書く（tag.html#snapshot の
+	//	「セーブデータと同じフォルダに保存します」）が、ブラウザにフォルダの概念は無いので
+	//	**localStorageへdata URLのまま置く**。しおり画面が[lay fn='userdata:/…']で読み返せて、
+	//	[export]/[import]にも一緒に乗る（本家も「関連するデータファイルも含む」と書いている）のは、
+	//	この#dataの一部にしてあるから。fnはPROTOCOL_USERDATA込みのままキーにする
+	getFile(path: string): string | undefined {return this.#data.storage[path]}
+	putFile(path: string, dataUrl: string) {
+		this.#data.storage[path] = dataUrl;
+		this.flush();
 	}
 
 	// ===== しおり =====
@@ -140,6 +157,7 @@ export class SaveMng {
 		const ns = o.sys['const.sn.cfg.ns'];
 		if (ns !== this.ns) throw `別のゲーム【プロジェクト名=${String(ns)}】のプレイデータです`;
 
+		o.storage ??= {};	// 本家が書いた／storage導入前のデータには無い
 		this.#data = o;
 		this.flush();
 		return o;
