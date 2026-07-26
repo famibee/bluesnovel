@@ -44,6 +44,13 @@ export type T_CH = {
 	//	splitCh()は純粋なままにしたいので、パス解決は割った後に上から流し込む）
 	pic?: string;
 	src?: string;
+	// 文字出現・消去演出（[span]/[ch]の ch_in_style / ch_out_style）。レイヤ単位の指定
+	//	（[lay in_style=]）より優先される。定義そのものはストアの hChIn/hChOut
+	cis?: string;
+	cos?: string;
+	// この文字ぶんの待ち時間（ミリ秒。[span]/[ch]の wait）。**次の文字までの遅れ**で、
+	//	省略時は[autowc]の表→sys:sn.tagCh.msecWait の順に落ちる（決めるのはTxtLayer）
+	w?	: number;
 };
 
 // 本文ストリームに埋め込まれた命令（本家 LayerMng.ts:315 #cmdTxt）。
@@ -57,7 +64,16 @@ type T_CMD_ARG = {
 	pic?: string; width?: string; height?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
 	hint?: string; hint_style?: string; hint_opt?: string;	// ツールチップ
+	ch_in_style?: string; ch_out_style?: string;	// 文字出現・消去演出（ChStyle.ts）
+	wait?: string;	// この文字ぶんの待ち時間（ミリ秒）
 };
+// 属性の数値化。**壊れた値は「指定なし」として捨てる**（本文の表示を止めないため。
+//	タグ側の検査を抜けてくる値ではないので、ここは寛容でよい）
+function num(v: string | undefined): number | undefined {
+	if (v === undefined) return undefined;
+	const n = Number(v);
+	return Number.isFinite(n) ? n : undefined;
+}
 function parseCmd(r: string): {cmd: string; o: T_CMD_ARG} | undefined {
 	const i = r.indexOf('｜');
 	if (i < 1) return undefined;
@@ -77,6 +93,10 @@ export function splitCh(raw: string): T_CH[] {
 	const aCh: T_CH[] = [];
 	let sty = '';	// [span style=…]。次の[span]まで効く
 	let rSty = '';	// [span r_style=…]
+	// [span]で指定した文字出現・消去演出と待ち時間。styleと同じく次の[span]まで効く
+	let cis: string | undefined;
+	let cos: string | undefined;
+	let wait: number | undefined;
 	let add: T_CMD_ARG | undefined;	// [ch]／[ruby2]のstyle・r_style。add_closeまでの間だけ効く
 
 	let lnk: T_LNK | undefined;	// [link]〜[endlink]の区間
@@ -86,12 +106,20 @@ export function splitCh(raw: string): T_CH[] {
 	const put = (c: string, r?: string, o?: T_CMD_ARG, tcy?: true)=> {
 		const s = sty + (add?.style ?? '') + (o?.style ?? '');
 		const rst = rSty + (add?.r_style ?? '') + (o?.r_style ?? '');
+		// **スタイルは重ねるが、演出名と待ち時間は「後の指定が勝つ」**（本家も
+		//	#o2domArg() が [ch]の値 → 親[span]の値 → 既定 の順に `??` で落とす）
+		const ci = o?.ch_in_style ?? add?.ch_in_style ?? cis;
+		const co = o?.ch_out_style ?? add?.ch_out_style ?? cos;
+		const w = num(o?.wait) ?? num(add?.wait) ?? wait;
 		aCh.push({c,
 			...(r ? {r} : {}),
 			...(s ? {s} : {}),
 			...(rst ? {rs: rst} : {}),
 			...(tcy ? {tcy} : {}),
 			...(lnk ? {lnk} : {}),
+			...(ci !== undefined ? {cis: ci} : {}),
+			...(co !== undefined ? {cos: co} : {}),
+			...(w !== undefined ? {w} : {}),
 		});
 	};
 
@@ -104,7 +132,10 @@ export function splitCh(raw: string): T_CH[] {
 		switch (cmd.cmd) {
 			// 属性なしの[span]は指定の解除（本家 TxtLayer.ts:804 #mergePushSpan の
 			//	「どちらも指定されてなければクリア」）
-			case 'span':	sty = o.style ?? ''; rSty = o.r_style ?? '';	break;
+			case 'span':
+				sty = o.style ?? ''; rSty = o.r_style ?? '';
+				cis = o.ch_in_style; cos = o.ch_out_style; wait = num(o.wait);
+				break;
 			case 'add':		add = o;	break;
 			case 'add_close':	add = undefined;	break;
 

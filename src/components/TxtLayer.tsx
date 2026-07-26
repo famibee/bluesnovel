@@ -78,10 +78,6 @@ type T_TXTARG = T_LAY_CMN & {
 // 文字出現演出のアニメ終端＝**素の表示状態**。[ch_in_style]がどんな値から始めても必ずここへ落とす。
 //	キル時の中途半端な状態を確定させるのにも使う（本家のkeyframesの`to`が`transform: none`なのと同じ）
 const CH_END = {opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0};
-// 文字を順番に出すときの1文字あたりの遅れ（秒）。**本家はこれを[autowc]と
-//	`sys:sn.tagCh.msecWait`で変えられる**が、そちらは未対応なので今は固定（todo.md）
-const STAGGER = 0.035;
-
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
@@ -100,6 +96,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const skipping = useStore(s=> s.skipping);	// 既読スキップ中は文字送り演出を省いて瞬時表示する
 	const wait = useStore(s=> s.wait);
 	const hChIn = useStore(s=> s.hChIn);	// [ch_in_style]の定義表（画面ぜんぶで1つ）
+	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
+	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
 
 	// 1文字ずつの文字送り演出（GSAP stagger）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
@@ -182,22 +180,39 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			return;
 		}
 
-		// 文字出現演出（[ch_in_style]で定義し、[lay in_style=…]で選ぶ）。
-		//	名前が未定義なら組み込みの`default`（本家も`default`を先に定義しておく作り）。
-		//	wait=0は「瞬時」＝アニメせず終端状態にする
-		const chSty = hChIn[in_style ?? 'default'] ?? CH_IN_DEF;
-		if (chSty.wait <= 0) {
-			gsap.set(newSpans, CH_END);
+		// 文字出現演出。**1文字ずつ別のtweenを積む**（本家が文字ごとに`animation-delay`を
+		//	書くのと同じ形）。1本のtweenへstaggerを掛ける書き方では、
+		//	・文字ごとに演出が違う（[span ch_in_style=…]）
+		//	・文字ごとに待ちが違う（[autowc]、[ch wait=…]）
+		//	のどちらも表せない。timelineの位置（秒）でその2つを表現する
+		const tl = gsap.timeline({onComplete: ()=> setIsTyping(false)});
+		let pos = 0;	// 本家の #cumDelay（TxtLayer.ts:775）。ここまでに積んだ待ちの合計
+		let n = 0;		// 実際に積んだtweenの数
+		newSpans.forEach((el, i)=> {
+			const ch = added[i]!;
+			// 演出は [span]/[ch] の指定 → レイヤの指定 → 組み込みの`default` の順に落ちる
+			const chSty = hChIn[ch.cis ?? in_style ?? 'default'] ?? CH_IN_DEF;
+			// この文字ぶんの待ちも同じ順（本家 TxtLayer.ts:756 #o2domArg）。
+			//	[autowc]の表に無い文字は0（本家も `?? 0`＝表に載せた文字だけが待つ）
+			const w = ch.w ?? (autowc.enabled ? autowc.h[ch.c.at(0) ?? ''] ?? 0 : chWait);
+			if (chSty.join) pos += w / 1000;	// 本家も使う前に足す
+
+			if (chSty.wait <= 0) {gsap.set(el, CH_END); return}	// wait=0は瞬時
+
+			const {from, to} = chInTween(chSty);
+			// join=falseの文字は待たずに動き出す（本家は animation-delay を 0ms に潰す）
+			tl.fromTo(el, from, to, chSty.join ? pos : 0);
+			++n;
+		});
+		if (n === 0) {	// 全部が瞬時＝待つものが無い（空のtimelineはonCompleteの時期が読めない）
+			tl.kill();
 			setIsTyping(false);
 			return;
 		}
 
-		// join=falseなら全文字を同時に出す（本家は animation-delay を 0ms に潰す）
-		const {from, to} = chInTween(chSty);
 		setIsTyping(true);
-		tlRef.current = gsap.timeline({onComplete: ()=> setIsTyping(false)})
-			.fromTo(newSpans, from, {...to, stagger: chSty.join ? STAGGER : 0});
-	}, [aCh, isReadBack, fncFfs, in_style, hChIn]);
+		tlRef.current = tl;
+	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）

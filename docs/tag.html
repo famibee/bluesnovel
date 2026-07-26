@@ -166,7 +166,7 @@
 	</ul>
 	<p>文字・文字レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#autowc">🔴 [autowc] 文字ごとのウェイト</a></li>
+		<li class="mb1"><a href="#autowc">🟢 [autowc] 文字ごとのウェイト</a></li>
 		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🟢 [ch_in_style] 文字出現演出定義</a></li>
 		<li class="mb1"><a href="#ch_out_style">🟡 [ch_out_style] 文字消去演出定義</a></li>
@@ -1205,7 +1205,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	<b>厳密には曲線が一致しない</b>が数百ミリ秒では見分けが付かない。
 	<code>cubic-bezier()</code>／<code>steps()</code>はGSAPの追加プラグインが要るので既定へ倒す<br/>
 	なお1文字あたりの遅れ（本家の<code>animation-delay</code>＝文字表示ウェイト）は今は固定値。
-	<a href="#autowc">[autowc]</a>と<code>sys:sn.tagCh.msecWait</code>が未対応のため
+	<a href="#autowc">[autowc]</a>の表 → <code>sys:sn.tagCh.msecWait</code>（既読なら<code>_Kidoku</code>側）
+	の順に落ちる。**待ちはその文字が出る前に入る**ので、[autowc]に載せた文字自身とそれ以降が後ろへずれる
 </p>
 </p>
 <h2 id="ch_out_style" class="w-heading">[ch_out_style]文字消去演出定義</h2>

@@ -872,6 +872,9 @@ export class ScriptMng {
 		case 'defChStyle':
 			this.$fncs.defChStyle({kind: act.kind, nm: act.nm, sty: act.sty});
 			break;
+		case 'autowc':
+			this.$fncs.setAutowc({enabled: act.enabled, h: act.hWait});
+			break;
 		case 'clearLay':
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			break;
@@ -1057,6 +1060,10 @@ export class ScriptMng {
 			this.$fncs.setBackAlpha(Number(this.#engine?.getVal('sys:TextLayer.Back.Alpha') ?? 1));
 			// [button]の文字フォント（本家 LayerMng.ts:209 の val.defValTrg('tmp:sn.button.fontFamily', …)）も同様に
 			this.$fncs.setBtnFont(String(this.#engine?.getVal('tmp:sn.button.fontFamily') ?? '') || DEF_BTN_FONT);
+			// 1文字あたりの待ち（本家 ScriptIterator.normalWait）。設定画面のsys:sn.tagCh.*と
+			//	既読状態から決まる。**本家はトークンごとに読むが、こちらは停止点ごとに1回**
+			//	——Reactが描くのは停止点の後なので、1停止点の間で値が変わっても絵には出ない
+			if (this.#engine) this.$fncs.setChWait(this.#engine.chWait);
 			break;
 		}
 	}

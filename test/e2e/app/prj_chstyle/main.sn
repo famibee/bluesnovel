@@ -23,4 +23,15 @@
 ; 定義していない名前は組み込みのdefaultへ落ちる（本家も既定を先に定義しておく作り）
 [er]
 [lay layer=mes in_style=nothing]
-おち[s]
+おち[l]
+
+; 文字ごとの演出指定（[span ch_in_style=…]）。レイヤ単位の指定より優先される
+[er]
+[lay layer=mes in_style=default]
+[span ch_in_style=instant]ま[span]ざり[l]
+
+; 文字ごとのウェイト（[autowc]）。**待ちはその文字が出る前に入る**ので、
+;	「、」自身とそれ以降が後ろへずれる。表に無い文字の待ちは0なので「あ」は即出る
+[autowc enabled=true text="、" time=500]
+[er]
+あ、い[s]

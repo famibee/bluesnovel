@@ -14,6 +14,7 @@
 
 import {CH_IN_DEF, CH_OUT_DEF, chInTween, chStyleEase, chStylePos, parseChStyle} from '../src/ts/ChStyle';
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
+import {splitCh} from '../src/ts/Txt';
 
 import {expect, it} from 'bun:test';
 
@@ -114,4 +115,110 @@ it('lay_in_style/out_styleがレイヤ属性として渡る', ()=> {
 	expect(acts('[ch_in_style name=fast][lay layer=mes in_style=fast out_style=default]')
 		.find(v=> v.t === 'chgLay'))
 		.toMatchObject({sty: {in_style: 'fast', out_style: 'default'}});
+});
+
+
+// ============ 文字ごとの指定（[span]/[ch]の ch_in_style / wait）============
+
+// 本文の生文字列を割った結果（ScriptMngがやるのと同じ）
+const chs = (src: string)=> splitCh(
+	(acts(src).findLast(v=> v.t === 'chgStr') as {str: string} | undefined)?.str ?? '');
+
+it('span_ch_in_styleは次の[span]まで効く', ()=> {
+	const a = chs('[span ch_in_style=fast]あ[span]い');
+	expect(a[0]?.cis).toBe('fast');
+	expect(a[1]?.cis).toBeUndefined();	// 属性なしの[span]は指定の解除（本家 #mergePushSpan）
+});
+
+it('ch_ch_in_styleはそのtextの間だけ効く', ()=> {
+	const a = chs('[ch text=あ ch_in_style=fast]い');
+	expect(a[0]?.cis).toBe('fast');
+	expect(a[1]?.cis).toBeUndefined();
+});
+
+it('ch_の指定が[span]の指定に勝つ', ()=> {
+	// 本家 #o2domArg() も [ch]の値 → 親[span]の値 → 既定 の順に `??` で落とす
+	expect(chs('[span ch_in_style=s]|[ch text=あ ch_in_style=c]')[1]?.cis).toBe('c');
+});
+
+it('ch_out_styleとwaitも同じ経路で文字へ乗る', ()=> {
+	const a = chs('[span ch_out_style=fade wait=120]あ');
+	expect(a[0]?.cos).toBe('fade');
+	expect(a[0]?.w).toBe(120);
+});
+
+it('waitが数値でなければ「指定なし」として捨てる', ()=> {
+	// 本文の表示を止めないため。タグ側の検査を抜けてくる値ではないので寛容でよい
+	expect(chs('[span wait=いち]あ')[0]?.w).toBeUndefined();
+});
+
+
+// ============ [autowc]（文字ごとのウェイト）============
+
+const autowc = (src: string)=> acts(src).find(v=> v.t === 'autowc');
+
+it('autowc_文字と時間の対応表を積む', ()=> {
+	expect(autowc('[autowc enabled=true text="、。" time=100,200]'))
+		.toEqual({t: 'autowc', enabled: true, hWait: {'、': 100, '。': 200}});
+});
+
+it('autowc_textとtimeは同時指定必須（本家 TxtLayer.ts:216）', ()=> {
+	expect(()=> acts('[autowc text="、"]')).toThrow();
+	expect(()=> acts('[autowc time=100]')).toThrow();
+});
+
+it('autowc_文字数と時間の数が合わなければthrow', ()=> {
+	expect(()=> acts('[autowc text="、。" time=100]')).toThrow();
+});
+
+it('autowc_enabled省略時は現在値を保つ（本家と同じ）', ()=> {
+	// 表だけ差し替える書き方ができるように
+	expect(autowc('[autowc enabled=true text="、" time=100][autowc text="。" time=200]')
+		?.enabled).toBe(true);
+});
+
+it('autowc_textが空なら表を空にする', ()=> {
+	expect(autowc('[autowc enabled=false text="" time=""]'))
+		.toEqual({t: 'autowc', enabled: false, hWait: {}});
+});
+
+it('autowc_save:const.sn.autowc.*へ書く（本家 TxtLayer.ts:212）', ()=> {
+	const se = new ScriptEngine('t1', `${LAYS}[autowc enabled=true text="、。" time=100,200][s]`);
+	se.step();
+	expect(se.getVal('save:const.sn.autowc.enabled')).toBe(true);
+	expect(se.getVal('save:const.sn.autowc.text')).toBe('、。');
+	expect(String(se.getVal('save:const.sn.autowc.time'))).toBe('100,200');
+});
+
+
+// ============ 1文字あたりの基本の待ち（本家 ScriptIterator.normalWait）============
+
+function chWaitOf(src: string): number {
+	const se = new ScriptEngine('t1', `${LAYS}${src}[s]`);
+	se.step();
+	return se.chWait;
+}
+
+it('chWait_sys:未設定なら本家の初期値10ms', ()=> {
+	// 本家 CmnInterface.ts:223 の 'sn.tagCh.msecWait': 10
+	expect(chWaitOf('あ')).toBe(10);
+});
+
+it('chWait_sys:sn.tagCh.msecWaitを見る', ()=> {
+	expect(chWaitOf('[let name=sys:sn.tagCh.msecWait text=40]あ')).toBe(40);
+});
+
+it('chWait_doWait=falseなら0（ウェイトを掛けない設定）', ()=> {
+	expect(chWaitOf('[let name=sys:sn.tagCh.doWait text=false]あ')).toBe(0);
+});
+
+it('chWait_既読なら_Kidoku側の設定を見る', ()=> {
+	// 本家 ScriptIterator.ts:1332 normalWait。設定画面が既読・未読で別の値を持てる。
+	//	同じ位置を2周させて 1周目=未読／2周目=既読 を作る（test/ScriptEngine_kidoku.test.ts と同じ形）
+	const se = new ScriptEngine('t1', `${LAYS}[let name=sys:sn.tagCh.msecWait text=40]`
+		+ `[let name=sys:sn.tagCh.msecWait_Kidoku text=5]*top\nあ[l][jump label=*top]`);
+	se.step();
+	expect(se.chWait).toBe(40);	// 1周目は未読
+	se.step();
+	expect(se.chWait).toBe(5);	// 2周目は既読
 });

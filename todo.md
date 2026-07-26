@@ -20,10 +20,7 @@
 - [ ] **音声・動画**（一括で未着手）：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wv]`（動画待ち）。`ext_voice.sn`の`voice`系マクロも同じ
   - [ ] 音声が入ると繋がるもの：`[button]`/`[link]`の効果音（`enterse`/`clickse`等）・`[load]`の音声復元（本家`playLoopFromSaveObj()`）・組み込み変数`const.sn.sound.*`・sys:の音量設定
 - [ ] 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が使っているかと思ったが、あれは**`[tsy path=]`で実現**していた（実装済み）ので、`layer=`の実需が見当たらない。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2>。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
-- [ ] **文字出現・消去演出の残り**。`[ch_in_style]`と`[lay in_style=]`は`src/ts/ChStyle.ts`で対応済み
-  - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る
-  - [ ] `[span]`/`[ch]`など**文字単位の`ch_in_style`/`ch_out_style`属性**。今はレイヤ単位（`[lay in_style=]`）のみ。`T_CH`へ演出名を持たせ、`add|`の埋め込み命令で流す形になる
-  - [ ] `[autowc]`（文字ごとのウェイト）と`save:const.sn.autowc.*`。1文字あたりの遅れは今は固定（`TxtLayer.tsx`の`STAGGER`）で、`sys:sn.tagCh.msecWait`も未接続
+- [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **履歴（ログ）の残り**。本体（`const.sn.log.json`・`save:sn.doRecLog`・`save:const.sn.sLog`・`[rec_ch]`/`[rec_r]`/`[reset_rec]`）は`src/ts/Log.ts`で対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play>
   - [ ] `[rec_ch]`の`style`/`r_style`と**任意属性**（本家は`const.sn.log.json`の各ページへそのまま載せ、フレーム側のJSが読む）。今は`text`のみ
   - [ ] `[log]`（本家`DebugMng.ts:57`）は**履歴とは別物**で、`downloads/log.txt`へ追記するデバッグ用。ファイル書き出しの置き場所が要るのでアプリ版の整備と一緒に
@@ -40,7 +37,7 @@
   - [ ] ルビの位置指定（`《center｜るび》`等の`r_align`。今は指定を落としてルビ文字だけ出す）と`[lay sesame=…]`（傍点文字の変更）
   - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
   - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
-  - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`ch_in_style`/`ch_out_style`、`[ch record=false]`
+  - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）
   - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`
 - [ ] **アニメpng（スプライトシート）の残り**
   - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
@@ -62,16 +59,15 @@
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
   - [ ] `const.sn.isPaging`（ページ遷移状態か）・`save:const.sn.layer.（文字レイヤ名）.enabled`
-  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`sn.tagCh.*`＝文字表示ウェイト、`TextLayer.Back.Alpha`は接続済み、`sn.sound.*`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
+  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`sn.sound.*`＝音声、`const.sn.nativeWindow.*`、`const.sn.aPageLog`。`sn.tagCh.*`と`TextLayer.Back.Alpha`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
 
 ## 挙動の詰め・実機確認
 
 - [ ] オート読み・既読スキップの残課題
   - [ ] スキップモード`'p'`（改ページで止まる）は`#calcResume()`まで実装したが、`Main.tsx`が手動操作のたびに`cancelAuto()`を呼ぶため、ユーザーがその改ページをクリックで越えるとスキップも解除される（本家は継続）。「モード'p'の改ページ停止」を手動停止と区別する必要がある。既定`'s'`は正しく動く
-  - [ ] 文字送りウェイト設定（`sys:sn.tagCh.*`）は、bluesnovelの文字送りがGSAP（duration/stagger）で秒単位のため未接続
   - [ ] オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む
-- [ ] 文字送りの1文字あたりの遅れ（`stagger: 0.035`）は仮値。実機（`tmp_blues`）で調整。演出そのもの（時間・動き）は`[ch_in_style]`の`default`＝本家の既定値になった
+- [ ] 文字送りの速さを実機（`tmp_blues`）で確認。1文字あたりの遅れは`sys:sn.tagCh.msecWait`（既定10ms）、1文字のアニメ時間は`[ch_in_style]`の`default`（既定500ms）で、どちらも本家の既定値にした
 - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない（実機確認）
 - [ ] 全画面時の見た目（中央寄せは実装済み）を実機で確認
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討

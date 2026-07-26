@@ -112,3 +112,33 @@ test('既定（join=true）は文字ごとに進度がずれる', async ({page})
 	expect(a.length).toBeGreaterThan(1);
 	expect(a[0]!.opacity).toBeGreaterThan(a.at(-1)!.opacity);
 });
+
+test('[span ch_in_style=…]は文字ごとに演出を変える', async ({page})=> {
+	// レイヤ単位の指定（[lay in_style=default]）より、文字ごとの指定が勝つ。
+	//	1文字目だけ instant（wait=0）なので、そこだけ最初から終端の姿
+	await toSceneFrozen(page, 3, 'まざり');
+	await advance(page, 0.06);
+
+	const a = await chStyles(page);
+	expect(a.length).toBe(3);
+	expect(a[0]!.opacity).toBe(1);			// ま：instant＝アニメしない
+	expect(IDENTITY).toContain(a[0]!.transform);
+	expect(a[1]!.opacity).toBeLessThan(1);	// ざり：default＝まだ動いている途中
+	expect(a[2]!.opacity).toBeLessThan(1);
+});
+
+test('[autowc]は表に載せた文字の手前で長く待つ', async ({page})=> {
+	// **待ちはその文字が出る前に入る**（本家 TxtLayer.ts:762 が cumDelay に足してから
+	//	その文字の animation-delay に書くのと同じ）。「、」に500msなので、
+	//	「、」自身とそれ以降が丸ごと後ろへずれる。
+	//	また**表に無い文字の待ちは0**（本家も `hAutoWc[ch] ?? 0`）なので、
+	//	[autowc]が効いている間は表に載せた文字までが一気に出る
+	await toSceneFrozen(page, 4, 'あ、い');
+	await advance(page, 0.06);
+
+	const a = await chStyles(page);
+	expect(a.length).toBe(3);
+	expect(a[0]!.opacity).toBeGreaterThan(0);	// あ：待ち0なので即動き出す
+	expect(a[1]!.opacity).toBe(0);				// 、：500msの待ちを挟むのでまだ開始値のまま
+	expect(a[2]!.opacity).toBe(0);				// い：その後ろなので同じく
+});

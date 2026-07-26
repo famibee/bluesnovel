@@ -222,6 +222,13 @@ var N = D()((e, t) => ({
 		...e.hChOut,
 		[n]: r
 	} }),
+	chWait: 10,
+	setChWait: (t) => e(() => ({ chWait: t })),
+	autowc: {
+		enabled: !1,
+		h: {}
+	},
+	setAutowc: (t) => e(() => ({ autowc: t })),
 	replace: (t) => e(() => JSON.parse(t)),
 	addLayer: (t) => e((e) => {
 		if (e.aPage[0].some((e) => e.nm === t.nm)) throw `レイヤ名 ${t.nm} は既に使用されています（既存の${e.aPage[0].find((e) => e.nm === t.nm).cls}レイヤと重複）`;

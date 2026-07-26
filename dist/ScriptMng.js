@@ -1697,6 +1697,12 @@ var B = class {
 	get #T() {
 		return this.#S.get("game:sn.doRecLog") === !0;
 	}
+	get chWait() {
+		let e = this.#S.get("tmp:const.sn.isKidoku") === !0;
+		if (this.#S.get(e ? "sys:sn.tagCh.doWait_Kidoku" : "sys:sn.tagCh.doWait") === !1) return 0;
+		let t = Number(this.#S.get(e ? "sys:sn.tagCh.msecWait_Kidoku" : "sys:sn.tagCh.msecWait"));
+		return Number.isFinite(t) && t >= 0 ? t : 10;
+	}
 	#E = {
 		in: /* @__PURE__ */ new Set(["default"]),
 		out: /* @__PURE__ */ new Set(["default"])
@@ -1709,7 +1715,7 @@ var B = class {
 	#M = !1;
 	#N = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s".split("."));
 	#P() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
@@ -2243,6 +2249,27 @@ var B = class {
 					...a,
 					text: void 0
 				}) + t.replaceAll("[r]", "\n") + e.#Q("add_close", {}), a.record !== "false"), "skip";
+			}
+			case "autowc": {
+				let t = a.enabled === void 0 ? this.#S.get("game:const.sn.autowc.enabled") === !0 : a.enabled !== "false";
+				this.#S.set("save:const.sn.autowc.enabled", t);
+				let { text: n } = a;
+				if ("text" in a != "time" in a) throw "[autowc] textとtimeは同時指定必須です";
+				if (this.#S.set("save:const.sn.autowc.text", n ?? ""), !n) return this.#S.set("save:const.sn.autowc.time", ""), s.push({
+					t: "autowc",
+					enabled: t,
+					hWait: {}
+				}), "skip";
+				let r = Array.from(n), i = String(a.time ?? "").split(",");
+				if (i.length !== r.length) throw "[autowc] text文字数とtimeに記述された待ち時間（コンマ区切り）は同数にして下さい";
+				let c = {};
+				return r.forEach((t, n) => {
+					c[t] = o(e.#n("autowc", "time", i[n] ?? ""));
+				}), this.#S.set("save:const.sn.autowc.time", a.time ?? ""), s.push({
+					t: "autowc",
+					enabled: t,
+					hWait: c
+				}), "skip";
 			}
 			case "ch_in_style":
 			case "ch_out_style": {
@@ -3646,6 +3673,12 @@ var le = class e {
 					sty: e.sty
 				});
 				break;
+			case "autowc":
+				this.$fncs.setAutowc({
+					enabled: e.enabled,
+					h: e.hWait
+				});
+				break;
 			case "clearLay":
 				this.$fncs.clearLay({
 					aLayNm: e.aLayNm,
@@ -3819,7 +3852,7 @@ var le = class e {
 						...t ? { src: t } : {}
 					});
 				}
-				this.#S = e.kind === "s", e.resume ? this.#T(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#d(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || n);
+				this.#S = e.kind === "s", e.resume ? this.#T(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#d(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || n), this.#r && this.$fncs.setChWait(this.#r.chWait);
 				break;
 		}
 	}

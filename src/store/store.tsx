@@ -51,6 +51,15 @@ type T_STATE = {
 	hChOut	: {[nm: string]: T_CH_STYLE},
 	defChStyle: (arg: T_DEFCHSTYLE)=> void,
 
+	// 1文字あたりの待ち時間（ミリ秒）。**次の文字が動き出すまでの遅れ**で、文字送りの速さそのもの。
+	//	・chWait：既定値。エンジンがsys:sn.tagCh.*と既読状態から決め、ScriptMngが停止点ごとに写す
+	//	・autowc：[autowc]で入れた「この文字の後だけ長く待つ」表（本家 TxtLayer.ts:210）
+	//	どちらも[span]/[ch]のwait属性（T_CH.w）が指定されていればそちらが勝つ
+	chWait		: number,
+	setChWait	: (v: number)=> void,
+	autowc		: T_AUTOWC,
+	setAutowc	: (a: T_AUTOWC)=> void,
+
 	// [trans]の進行状態。startTrans()で開始し、finishTrans()で表裏を入れ替えて終了する。
 	//	**終了を宣言するのは必ずScriptMng**（時間切れ／[wt]中のクリック）で、
 	//	Stage側のGSAPは見た目を動かすだけ。完了コールバックに交換をやらせると、
@@ -162,6 +171,8 @@ export type T_CHGLAY = {
 	page: T_PAGE;
 	sty	: T_LAY_STY_ARG;
 }
+// [autowc]：文字ごとのウェイト表（ミリ秒）。enabled=falseなら表を使わずchWaitへ落ちる
+export type T_AUTOWC = {enabled: boolean; h: {[ch: string]: number}};
 // [ch_in_style]/[ch_out_style]：文字出現・消去演出の定義
 export type T_DEFCHSTYLE = {
 	kind: 'in' | 'out';
@@ -229,7 +240,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearBtn'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearBtn'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -287,6 +298,12 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	defChStyle: ({kind, nm, sty}: T_DEFCHSTYLE)=> set(s=> kind === 'in'
 		? {hChIn : {...s.hChIn,  [nm]: sty}}
 		: {hChOut: {...s.hChOut, [nm]: sty}}),
+
+	// 本家 CmnInterface.ts:223 の初期値（sys:が未設定のときの10ms）と揃える
+	chWait	: 10,
+	setChWait: (v: number)=> set(()=> ({chWait: v})),
+	autowc	: {enabled: false, h: {}},
+	setAutowc: (a: T_AUTOWC)=> set(()=> ({autowc: a})),
 	replace	: (arg: string)=> set(()=> JSON.parse(arg) as {aPage: [T_LAY[], T_LAY[]]; foreIdx: 0 | 1}),
 	addLayer: (arg: T_LAY)=> set(s=> {
 		// レイヤ名（nm）はcls（grp/txt）をまたいで全体で一意である前提

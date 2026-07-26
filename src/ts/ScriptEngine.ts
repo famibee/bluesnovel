@@ -90,6 +90,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'defChStyle'; kind: 'in' | 'out'; nm: string; sty: T_CH_STYLE}	// [ch_in_style]/[ch_out_style]。文字出現・消去演出の定義。名前で引けるようストアが表に持つ
+	| {t: 'autowc'; enabled: boolean; hWait: {[ch: string]: number}}	// [autowc]。文字ごとのウェイト表（ミリ秒）。enabled=falseなら表を使わずsys:sn.tagCh.msecWaitへ落ちる
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
 	| {t: 'moveLay'; nm: string; mode: 'float' | 'index' | 'dive'; index?: number; dive?: string}	// [lay float=/index=/dive=]。レイヤの重なり順。現在の並びが要るので解決はストア側
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
@@ -386,6 +387,19 @@ export class ScriptEngine {
 	//	（TxtLayer.ts:494 chgDoRec）が、こちらは履歴の蓄積が表示と別物なので単に積まない
 	get #doRecLog(): boolean {return this.#val.get('game:sn.doRecLog') === true}
 
+	// 1文字あたりの基本の待ち時間（ミリ秒。本家 ScriptIterator.ts:1332 normalWait）。
+	//	**既読と未読で別の設定**を見るのが本家の作りで、設定画面（テンプレの frames/_config.sn）が
+	//	sys:sn.tagCh.* を書き換える。sys:が未設定のときは本家の初期値
+	//	（CmnInterface.ts:220 doWait=true / msecWait=10）へ落とす
+	get chWait(): number {
+		const kidoku = this.#val.get('tmp:const.sn.isKidoku') === true;
+		const doWait = this.#val.get(kidoku ?'sys:sn.tagCh.doWait_Kidoku' :'sys:sn.tagCh.doWait');
+		if (doWait === false) return 0;
+
+		const n = Number(this.#val.get(kidoku ?'sys:sn.tagCh.msecWait_Kidoku' :'sys:sn.tagCh.msecWait'));
+		return Number.isFinite(n) && n >= 0 ?n :10;
+	}
+
 	// 定義済みの文字出現・消去演出名（本家 TxtStage.ts:600/640 の #hChInStyle/#hChOutStyle）。
 	//	**同じ名前の二度定義は本家がthrowする**ので、その検査のために名前だけ覚えておく。
 	//	定義の中身を持つのはストア（描くのはReact側なので）。`default`は組み込み済み
@@ -453,7 +467,7 @@ export class ScriptEngine {
 		'quake', 'stop_quake', 'wq',
 		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
 		'clear_text', 'rec_ch', 'rec_r', 'reset_rec',
-		'ch_in_style', 'ch_out_style',
+		'ch_in_style', 'ch_out_style', 'autowc',
 		'navigate_to', 'loadplugin', 'snapshot',
 		'record_place', 'save', 'load', 'reload_script',
 		'copybookmark', 'erasebookmark', 'export', 'import',
@@ -1398,6 +1412,35 @@ export class ScriptEngine {
 				+ text.replaceAll('[r]', '\n')
 				+ ScriptEngine.#cmdTxt('add_close', {}),
 				args.record !== 'false');	// record=falseなら履歴に残さない（本家 LayerMng.ts:920）
+			return 'skip';
+		}
+
+		// ---- 文字ごとのウェイト（本家 TxtLayer.ts:210 #autowc()）----
+		case 'autowc': {
+			// 「この文字の後だけ長く待つ」表。`text`の1文字目に`time`の1つ目…と対応させる。
+			//	本家と同じく**enabledは省略時に現在値を保つ**（表だけ差し替える書き方ができる）
+			const ena = args.enabled === undefined
+				? this.#val.get('game:const.sn.autowc.enabled') === true
+				: args.enabled !== 'false';
+			this.#val.set('save:const.sn.autowc.enabled', ena);
+
+			const {text} = args;
+			if (('text' in args) !== ('time' in args)) throw '[autowc] textとtimeは同時指定必須です';
+			this.#val.set('save:const.sn.autowc.text', text ?? '');
+			if (! text) {	// 表を空にするだけ（enabledは上で反映済み）
+				this.#val.set('save:const.sn.autowc.time', '');
+				aAct.push({t: 'autowc', enabled: ena, hWait: {}});
+				return 'skip';
+			}
+
+			const aCh = Array.from(text);	// サロゲートペアを1文字として数える
+			const aTm = String(args.time ?? '').split(',');
+			if (aTm.length !== aCh.length) throw '[autowc] text文字数とtimeに記述された待ち時間（コンマ区切り）は同数にして下さい';
+
+			const hWait: {[ch: string]: number} = {};
+			aCh.forEach((c, i)=> {hWait[c] = uint(ScriptEngine.#argNum('autowc', 'time', aTm[i] ?? ''))});
+			this.#val.set('save:const.sn.autowc.time', args.time ?? '');
+			aAct.push({t: 'autowc', enabled: ena, hWait});
 			return 'skip';
 		}
 

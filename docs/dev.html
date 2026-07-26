@@ -668,12 +668,12 @@
 	例えば「&sn.auto.enabled=true」は自動読みすすみモードを有効にします。
 
 <table><tr><th>変数名</th><th>初期値</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>🔴 save:const.sn.autowc.enabled</td><td>false</td><td>true、false</td><td>[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）enabled属性で指定した値。</td></tr>
-<tr><td>🔴 save:const.sn.autowc.text</td><td rowspan="2">''</td><td rowspan="2">文字列</td><td rowspan="2">[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）同名属性で指定した値。<br/>
+<tr><td>🟢 save:const.sn.autowc.enabled</td><td>false</td><td>true、false</td><td>[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）enabled属性で指定した値。</td></tr>
+<tr><td>🟢 save:const.sn.autowc.text</td><td rowspan="2">''</td><td rowspan="2">文字列</td><td rowspan="2">[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）同名属性で指定した値。<br/>
 カンマ区切りで複数文字設定可能。ただしtextとtimeは常に同数にすること。設定は常にリセット＆上書き<br/>
 [autowc enabled=true text="二六八" time="500,1000,1500"]
 </td></tr>
-<tr><td>🔴 save:const.sn.autowc.time</td></tr>
+<tr><td>🟢 save:const.sn.autowc.time</td></tr>
 </td></tr>
 <tr><td>🟢 save:const.sn.mesLayer</td><td>''</td><td>文字列</td><td>デフォルト文字レイヤ。レイヤ指定を省略した時はこの値が使われる。[<a href="tag.html#current" target="_blank" rel="noopener">current</a>]で変更できる</td></tr>
 <tr><td>🔴 save:const.sn.sound.【buf】.fn</td><td>''</td><td>ファイル名</td><td>
@@ -784,10 +784,10 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🟡 sys:sn.sound.global_volume</td><td>1</td><td>0.0〜1.0</td><td>全体的な音量を設定する。バッファの実際の音量は「sys:const.sn.sound.【buf】.volume」x「save:const.sn.sound.【buf】.volume」x「全体的な音量」の値となる</td></tr>
 <tr><td>🟡 sys:sn.sound.movie_volume</td><td>1</td><td>0.0〜1.0</td><td>ムービー音量を設定する。バッファの実際の音量はこの「ムービー音量」x「全体的な音量」の値となる</td></tr>
 <tr><td>🟡 sys:sn.tagCh.canskip</td><td>true</td><td>true、false</td><td>テキストをクリックなどでスキップ可能か</td></tr>
-<tr><td>🟡 sys:sn.tagCh.doWait</td><td>true</td><td>true、false</td><td>未読テキストにウェイトを掛けるか</td></tr>
-<tr><td>🟡 sys:sn.tagCh.doWait_Kidoku</td><td>true</td><td>true、false</td><td>既読テキストにウェイトを掛けるか</td></tr>
-<tr><td>🟡 sys:sn.tagCh.msecWait</td><td>10</td><td>0〜；ミリ秒</td><td>未読テキスト待ち時間（ミリ秒）</td></tr>
-<tr><td>🟡 sys:sn.tagCh.msecWait_Kidoku</td><td>10</td><td>0〜；ミリ秒</td><td>既読テキスト待ち時間（ミリ秒）</td></tr>
+<tr><td>🟢 sys:sn.tagCh.doWait</td><td>true</td><td>true、false</td><td>未読テキストにウェイトを掛けるか</td></tr>
+<tr><td>🟢 sys:sn.tagCh.doWait_Kidoku</td><td>true</td><td>true、false</td><td>既読テキストにウェイトを掛けるか</td></tr>
+<tr><td>🟢 sys:sn.tagCh.msecWait</td><td>10</td><td>0〜；ミリ秒</td><td>未読テキスト待ち時間（ミリ秒）<br/><b>bluesnovel：1文字が動き出してから次の文字が動き出すまでの遅れ</b>（GSAPのtweenの位置）。文字1つのアニメ時間そのものは[<a href="tag.html#ch_in_style" target="_blank" rel="noopener">ch_in_style</a>]の<code>wait</code>。エンジンが既読状態と合わせて決め、ScriptMngが停止点ごとにストアへ写す</td></tr>
+<tr><td>🟢 sys:sn.tagCh.msecWait_Kidoku</td><td>10</td><td>0〜；ミリ秒</td><td>既読テキスト待ち時間（ミリ秒）</td></tr>
 <tr><td>🟢 sys:TextLayer.Back.Alpha</td><td>0.5</td><td>0.0〜1.0；透過度</td><td>バック不透明度。テキストウインドウの背景の濃度。0.0で透明、1.0で不透明。<br/>bluesnovel：全文字レイヤの背景に掛かる（各レイヤの<code>b_alpha</code>との積）。<code>b_alpha_isfixed=true</code>のレイヤだけ掛からない</td></tr>
 </table>
 
