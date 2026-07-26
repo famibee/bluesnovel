@@ -10583,12 +10583,14 @@ function wu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [oe, se] = M(!1), ce = R((e) => {
+	let [oe, se] = M(!1);
+	R((e) => {
 		e.stopPropagation(), _(), !a() && (se(), x(!oe));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
-	}), le = { cmn: {
+	});
+	let ce = { cmn: {
 		sys: t,
 		styChild: H,
 		isDesignMode: oe,
@@ -10603,7 +10605,6 @@ function wu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 	return /* @__PURE__ */ y("div", {
 		css: re,
 		onClick: i,
-		...ce,
 		ref: B,
 		children: [
 			p?.ruleSrc && /* @__PURE__ */ h("svg", {
@@ -10673,18 +10674,18 @@ function wu({ arg: { heStage: e, sys: t, scrMng: r }, onClick: i, prev: l, next:
 					},
 					children: n.map((e) => {
 						let n = {
-							...le.cmn.sty4Moveable,
+							...ce.cmn.sty4Moveable,
 							...s(e)
 						};
 						return e.cls === "grp" ? /* @__PURE__ */ h(au, {
-							cmn: le.cmn,
+							cmn: ce.cmn,
 							sty: n,
 							nm: e.nm,
 							fn: e.fn,
 							src: e.src,
 							aFace: e.aFace
 						}, e.nm) : /* @__PURE__ */ h(gu, {
-							cmn: le.cmn,
+							cmn: ce.cmn,
 							sty: n,
 							nm: e.nm,
 							isFore: t === f,

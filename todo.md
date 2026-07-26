@@ -19,14 +19,14 @@
 
 - [ ] **音声・動画**（一括で未着手）：`[playbgm]` `[stopbgm]` `[fadebgm]` `[fadeoutbgm]` `[playse]` `[stopse]` `[fadese]` `[fadeoutse]` `[volume]` `[xchgbuf]` `[ws]` `[wb]` `[wf]` `[wl]`、`[wv]`（動画待ち）。`ext_voice.sn`の`voice`系マクロも同じ
   - [ ] 音声が入ると繋がるもの：`[button]`/`[link]`の効果音（`enterse`/`clickse`等）・`[load]`の音声復元（本家`playLoopFromSaveObj()`）・組み込み変数`const.sn.sound.*`・sys:の音量設定
-- [ ] **`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
+- [ ] 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が使っているかと思ったが、あれは**`[tsy path=]`で実現**していた（実装済み）ので、`layer=`の実需が見当たらない。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2>。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
 - [ ] **文字出現・消去演出** `[ch_in_style]`/`[ch_out_style]`（＋各タグの`ch_in_style`/`ch_out_style`属性）。`[autowc]`（自動ウェイト）も同じ枠
-- [ ] **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
+- [ ] **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play>
 - [ ] **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
 - [ ] **`[trans]`の残り**：`delay=`・`ease=`（進度は常に等速）。`glsl=`（自前シェーダ）はWebGLを使わないため実現しようがないので対象外
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`
-- [ ] **フィルターの残り**：本家22種のうちCSSの`filter`で素で書ける9種だけ対応済み。残りは`noise`以外すべてpixiの`ColorMatrixFilter`のプリセットなので、**SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる**（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）。行列はpixiのソースから拾う必要があり、SVGフィルタ要素をDOMへ挿す仕組みも要る
-  - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途
+- [ ] **フィルターの残り**：本家22種のうちCSSの`filter`で素で書ける9種だけ対応済み。残りは`noise`以外すべてpixiの`ColorMatrixFilter`のプリセットなので、**SVGの`feColorMatrix`へpixiと同じ5x4行列を流し込めば同じ絵が出せる**（`color_matrix`・`browni`・`color_tone`・`kodachrome`・`lsd`・`night`・`polaroid`・`predator`・`technicolor`・`tint`・`to_bgr`・`vintage`）。行列はpixiのソースから拾う必要があり、SVGフィルタ要素をDOMへ挿す仕組みも要る。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
+  - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
   - [ ] `[add_filter blendmode=…]`・`[lay blur_x=/blur_y=]`（CSSの`blur()`は半径1つしか持てない）
 - [ ] **文字組みの残り**
   - [ ] `max_row`（最大行数を超えたら自動改ページ）・`r_size`（ルビサイズ）・`break_fixed`系。**行分割そのものはブラウザ任せ**にした帰結で、禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）も渡す手段が無い。ギャラリーの`line_breaking_rules`と実機で見比べ、必要なら本家`Hyphenation.ts`のような自前計算へ寄せる
@@ -37,13 +37,13 @@
   - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）・`wait`（一時的な文字表示速度）・`ch_in_style`/`ch_out_style`、`[ch record=false]`
   - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`
 - [ ] **アニメpng（スプライトシート）の残り**
-  - [ ] 文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
+  - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
   - [ ] `[graph]`の`width`/`height`（今は全角空白の枠に`background-size: contain`で収める）・`x`/`y`・`id`
   - [ ] `[l]`/`[p]`の待ちマークの位置指定（`x`/`y`/`width`/`height`/`visible`）。今は本文の直後に流し込む位置に出る
 - [ ] `[er]`が本家どおりに戻していない属性：alpha・blendmode・pivot・angle・scale（本家`Layer.ts clearLay()`。`[er]`→`TxtLayer.clearLay()`→`super.clearLay()`の経路）。本文とボタンの消去は対応済み
 - [ ] **`[button]`の配置属性**：`center=`/`middle=`/`right=`/`bottom=`/`s_right=`/`s_bottom=`。`[lay]`側は対応済み（CSSの独立`translate`で表現）。本家は`isButton`のとき幅の**1/3**で計算する（pixiの文字寸法まわりの都合に見える）ので、同じ絵にするかは要判断
-- [ ] **`[button]`の残り**：`pic=`（画像ボタン）・`b_pic=`（背景画像）はアセット整備と一緒に。既定の見た目（色・余白）も仮のまま
+- [ ] **`[button]`の残り**：`pic=`（画像ボタン）・`b_pic=`（背景画像）はアセット整備と一緒に。既定の見た目（色・余白）も仮のまま。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
   - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
@@ -69,6 +69,7 @@
 - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない（実機確認）
 - [ ] 全画面時の見た目（中央寄せは実装済み）を実機で確認
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
+- [ ] **デザインモードは無効化中**（`Stage.tsx`の`ENA_DESIGN_MODE = false`）。長押しで入れてしまうが、中で触れるのはレイヤの位置・サイズだけで、触った結果をシナリオへ書き戻す先が無い。本家機能の大部分（音声・履歴・文字演出）が揃い、「調整→保存」の行き先を決めてから戻す
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - [ ] デザインモードでのMoveableリサイズ時、差分画像（face）は`dx`/`dy`が絶対px指定のため拡大縮小に追随しない（`GrpLayer.tsx`）
   - [ ] 本家のように「`face`のみ指定して直前の`fn`を維持する」独立更新には未対応

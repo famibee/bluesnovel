@@ -19,6 +19,9 @@ import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css} from '@emotion/react';
 import gsap from 'gsap';
 
+// **デザインモード（長押しで入る）の有効・無効**。詳細は下の useLongPress のTODO参照
+const ENA_DESIGN_MODE = false;
+
 export default function Stage({
 	arg: {heStage, sys, scrMng}, onClick, prev, next,
 }: {
@@ -260,6 +263,11 @@ export default function Stage({
 
 	const [isDesignMode, tglDesignMode] = useToggle(false);
 
+	//TODO: デザインモードは本家機能の大部分が揃うまで**無効**（ENA_DESIGN_MODE=falseで長押しを
+	//	受け付けない）。今のままだと通常プレイ中の長押しで入れてしまうが、中で触れるのは
+	//	レイヤの位置・サイズだけで、しかも触った結果をシナリオへ書き戻す先が無い。
+	//	音声・履歴・文字演出などが揃い、「デザインモードで調整→保存」の行き先を決めてから戻す。
+	//	フック自体は残す（呼び出し順を変えるとReactのフック規則に触れるため）
 	const longPressEvent = useLongPress(e=> {
 		e.stopPropagation();	// でも止まらない
 		onLong();			// これで止める
@@ -277,7 +285,7 @@ export default function Stage({
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	}}};
-	return <div css={styStage} onClick={onClick} {...longPressEvent} ref={stageRef}>
+	return <div css={styStage} onClick={onClick} {...ENA_DESIGN_MODE ?longPressEvent :{}} ref={stageRef}>
 		{/* ルール画像ワイプ（[trans rule=…]）のマスク。本家のフラグメントシェーダの置き換えで、
 			・feColorMatrix：ルール画像の**赤チャンネル**をアルファへ移し、RGBは白に固定する
 			　（本家シェーダも ru.r を読む。RGB白＋輝度マスクなので mask-type の指定に頼らない）

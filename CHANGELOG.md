@@ -452,26 +452,24 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	- 40ファイル出力を確認。別プロジェクトから`@famibee/bluesnovel`と`@famibee/bluesnovel/app`を
 	  importする疑似利用者で型解決も通した
 
+
+- [x] デザインモード（長押しで入る）を無効化＋todo.mdの棚卸し
+	- `Stage.tsx`に`ENA_DESIGN_MODE = false`を置き、長押しハンドラを要素へ**渡さない**形に。
+	  フック（`useLongPress`）の呼び出し自体は残す——条件付きにするとReactのフック規則に触れるため。
+	  `sty4Moveable`（恒等変換の下地）はそのままなので算出値まわりのE2Eに影響なし
+	- 理由：通常プレイ中の長押しで入れてしまうのに、中で触れるのはレイヤの位置・サイズだけで、
+	  **触った結果をシナリオへ書き戻す先が無い**。本家機能の大部分（音声・履歴・文字演出）が
+	  揃い、「調整→保存」の行き先を決めてから戻す。todo.mdに戻す条件つきで記載
+	- `[quake]`の`layer=`を【不使用かも・凍結】へ。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が
+	  使っていると思っていたが、**`[tsy path=]`で実現**していた（実装済み）ので実需が無い
+	- サンプルの在り処をtodo.mdへ追記：`[quake]`関連（`ext_fg2`）・履歴（`log_and_play`）・
+	  フィルター（`filter`）・画像ボタン（`ch_button`）。`noise`の参考として
+	  <https://ics.media/entry/241122/> も
+	- アニメpngの「文字レイヤ枠画像でのシート再生」に【現状不使用・優先順位低】を付記
+	- 文字出現・消去演出（`[ch_in_style]`系）と`[page]`の残りは、既にtodo.mdにある記述のままで
+	  追記なし（次の着手候補としての読み上げ）
+
 - [ ]
-
-
-- 長押しでデザインモードに入るが、本家機能大部分の完成まで無効化＆TODO記載
-- todo.md: 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定）
-  - 立ち絵を震わせる [fg_shake][fg2_shake] で使用しているかと思ったが、[tsy path=]で実現していた
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2
-- todo.md: **文字出現・消去演出**
-- todo.md: **履歴（ログ）** `[log]`・`const.sn.log.json`・`save:sn.doRecLog`。テンプレの`frames/_log.sn`が使う
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play
-- todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- todo.md: **フィルターの残り**
-  - ノイズはひょっとしてこちらが参考になるか https://ics.media/entry/241122/
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter
-- todo.md: **アニメpng（スプライトシート）の残り**
-  - 【現状不使用・優先順位低】文字レイヤの枠画像でのシート再生
-  - `[graph]`の`width`/`height`
-  - `[l]`/`[p]`の待ちマークの位置指定
-- todo.md: **`[button]`の残り**：画像ボタン
-  - sample https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button
 
 
 
