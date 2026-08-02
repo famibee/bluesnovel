@@ -6,7 +6,8 @@
       "Bash(git mv *)",
       "Bash(mv ARCHITECTURE.md .claude/docs/ARCHITECTURE.md)",
       "Bash(mv PITFALLS.md .claude/docs/PITFALLS.md)",
-      "Bash(mv TESTING.md .claude/docs/TESTING.md)"
+      "Bash(mv TESTING.md .claude/docs/TESTING.md)",
+      "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)"
     ]
   }
 }

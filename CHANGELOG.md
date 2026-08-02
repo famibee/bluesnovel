@@ -19,6 +19,15 @@
 
 ## 2026/08/02
 
+- [x] **`skynovel_esm`（本家）から引き継いだリソースリーク調査への対応**（2026-07-30）
+  - `src/ts/FocusMng.ts`：`add`/`remove`の非対称を修正。重複チェックが`#aEl`しか見ないため`remove()`→`add()`が素通りし、`'focus'`リスナが積み上がっていた。`BtnLayer`経由はReactが要素ごと作り直すので無害だが、`[set_focus add/del='dom=…']`が相手にするフレーム内要素は生き続けるため、往復した回数だけ増えていた。本家の同じ問題からの移植
+  - `src/sn/gamepad.js.d.ts`にゲームパッド移植時の注意（`stop()`必須・`window`の`'error'`リスナを自分で外す）を追記。本家はどちらも漏れていて、画面を作り直すたびrAFループが増えていた
+  - 本家へ確認していた3件、すべて「移植不要」の結論で決着：
+    - `[jump count=false]`が実質効かない件 — `#nextToken_Proc()`は①`#recordKidoku()`（**今から返すトークンの位置**に既読記録）→②トークン取得→③`++#idxToken`の順で進むため、タグ実行中の`#idxToken`は常にそのタグの次を指す。`#eraseKidoku()`が消すのはこの`#idxToken`＝「`[jump]`の次のトークン」で、ジャンプ後には読まれない位置。**`[call]`では意味がある**（`count`の既定が`[jump]`は`true`・`[call]`は`false`という非対称で、`[call]`の「次のトークン」は戻り先そのものなので、2回目以降の`[call]`で戻り先を未読に戻す動きになる）。`#eraseKidoku()`は`[call]`を想定した作りを`[jump]`が使い回しているだけと判明
+    - `[call clear_local_event]`が no-op な件 — `#call()`が`popLocalEvts()`でローカルイベントを先に空にしてから`clear_event({})`を呼ぶため、後者が見る`#hLocalEvt2Fnc`は既に空。属性の意図（`[return]`時に復元させない、が本来）に実装が追いついていない状態と判明
+    - `[button]`の配置属性（`center`/`middle`/`right`/`bottom`等）と`Layer.setXY()`の`isButton`分岐 — `setXY()`の呼び出し3箇所（`GrpLayer.ts`/`TxtLayer.ts`）はどれも`isButton`を渡しておらず常に`false`、`Button.ts`も`setXY()`を通らず`left`/`top`を直読みするだけ。AIRNovel時代の名残の消し忘れで、意図的な保持ではないと判明
+  - E2Eテスト基盤（`test/e2e/`）の構成が本家へ逆輸入された。本家は状態がクラスの私有フィールドに散っていてzustandのような単一ストアが無いため、fixture側でブラウザAPI（`addEventListener`/`requestAnimationFrame`/`URL.createObjectURL`）を計装し「同じ操作をN回繰り返しても生存数が増えないこと」を見る方式に変えて輸入（`test/e2e/app/probe.ts`）。`src/ts/FrameMng.ts`の`#hDomLsn`（キー単位の`removeEventListener`）も本家の`EventMng`に無かった仕組みとして輸入された
+
 - [ ]
 
 
