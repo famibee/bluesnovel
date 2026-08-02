@@ -190,16 +190,25 @@ var l = new class e {
 		} catch {}
 		return !0;
 	}
+	#r = /* @__PURE__ */ new Map();
+	#i(e) {
+		this.#r.get(e)?.(), this.#r.delete(e);
+	}
 	add(e) {
-		this.#e.includes(e) || (e.addEventListener("focus", () => {
+		if (this.#e.includes(e)) return;
+		let t = () => {
 			this.#t = this.#e.indexOf(e);
-		}), this.#e.push(e));
+		};
+		e.addEventListener("focus", t), this.#r.set(e, () => {
+			e.removeEventListener("focus", t);
+		}), this.#e.push(e);
 	}
 	remove(e) {
 		let t = this.#e.indexOf(e);
-		t < 0 || (this.#e.splice(t, 1), this.#e.length === 0 ? this.#t = -1 : t <= this.#t && --this.#t);
+		t < 0 || (this.#i(e), this.#e.splice(t, 1), this.#e.length === 0 ? this.#t = -1 : t <= this.#t && --this.#t);
 	}
 	clear() {
+		for (let e of this.#e) this.#i(e);
 		this.#e = [], this.#t = -1;
 	}
 	isFocus(e) {
@@ -212,12 +221,12 @@ var l = new class e {
 		return this.#t;
 	}
 	next() {
-		this.#r(1);
+		this.#a(1);
 	}
 	prev() {
-		this.#r(-1);
+		this.#a(-1);
 	}
-	#r(t) {
+	#a(t) {
 		let n = this.#e.length;
 		if (n === 0) return;
 		let r = this.#t + t;

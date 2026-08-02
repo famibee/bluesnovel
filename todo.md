@@ -88,8 +88,93 @@
 - [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
 
+## 本家からの引き継ぎ（リソースリーク調査 2026-07-30）
+
+本家 `skynovel_esm` でリソースリークを洗い出し、8ファイルを修正した。**こちらに関係するのは下記だけ**
+（音声・PixiJS・`EventListenerCtn`・`CmnTween` は移植対象外か未実装のため、大半は該当しない）。
+
+- [x] `src/ts/FocusMng.ts` の `add`/`remove` 非対称を修正済（本家と同じ問題）。重複チェックが `#aEl`
+  しか見ないので `remove()`→`add()` が素通りし、`'focus'` リスナが積み上がっていた。`BtnLayer` 経由は
+  Reactが要素ごと作り直すので無害だが、`[set_focus add/del='dom=…']` が相手にするフレーム内の要素は
+  生き続けるため往復した回数だけ増える。**`dist/` は未ビルド**なので `bun run build` が要る
+- [x] `src/sn/gamepad.js.d.ts` に、ゲームパッド移植時の注意（`stop()` 必須・`window` の `'error'`
+  リスナを自分で外す）を追記済。本家はどちらも漏れていて、画面を作り直すたび rAF ループが増えていた
+- [ ] **ビルドとコミットが未了**。ソース修正だけ入れた状態で `dist/` は古いまま。
+  `bun run build` してから下記でコミットする（文面は本家側で用意した）：
+
+  ```
+  fix(focus): [set_focus]の往復で'focus'リスナが積み上がる
+
+  重複チェックが #aEl しか見ないので remove()の後の add()が素通りし、
+  add()で張った 'focus' リスナが外れないまま増える。BtnLayer 経由は React が
+  要素ごと作り直すので無害だが、[set_focus add/del='dom=…']が相手にする
+  フレーム内の要素は生き続けるため、往復した回数だけ溜まる。
+  解除関数を #hOff に持ち、remove()と clear()で外す。
+
+  本家 skynovel_esm の同じ非対称から見つけたもの（あちらは EventListenerCtn が
+  解除関数を保持し続けるので、要素ごと掴んだままになる違いがある）。
+
+  あわせて gamepad.js.d.ts に移植時の注意（stop()必須・window の 'error' リスナを
+  自分で外す）と、todo.md に本家からの引き継ぎ・確認事項への回答を追記。
+  ```
+- [ ] **音声を実装するとき**（このtodoの筆頭項目）は本家 `SndBuf.ts` の下記に注意。今の本家は修正済み
+  - 停止経路は必ず `Howl.unload()` を通す。howler は `Howler._howls` にインスタンスを持ち続け、
+    `unload()` でしか除去しない。本家は「ロード完了前に停止」した時だけ解放漏れになっていた
+  - **`unload()`後は `loaderror` が来る**。howler は `_sounds` が空だとデコード成功でも
+    `loaderror` を出す（`howler.js:2468`）。捨てた音のエラーを画面に出さないよう握り潰すこと
+  - 恒久的に残るのは**ループ再生**だけ。非ループは再生終了の `onend` で結局解放される
+  - ロード完了通知（`join` の待ち解除）は**成否・停止済みを問わず必ず一度出す**。出さないと
+    `[load]`（本家 `playLoopFromSaveObj()` の `Promise.allSettled`）が永久に待ってスクリプトが止まる
+
+### E2Eの作り方について（こちらの資産を本家へ輸入した）
+
+本家に `test/e2e/` を新設した。`playwright.config.ts` と fixture の構成はこちらを丸写ししている
+（ポートは 5198 にして bluesnovel の 5199 と分離）。ただし検証方法は変えざるを得なかった：
+
+- こちらは zustand ストアが唯一の真実なので `window.__sn.store.getState()` を読めば済むが、
+  本家は状態が各クラスの私有フィールドに散っていて同等物が無い
+- そこで **fixture 側でブラウザAPIを計装**する方式にした（`test/e2e/app/probe.ts`）。
+  `addEventListener`/`requestAnimationFrame`/`URL.createObjectURL` を包んで生存数を数え、
+  「同じ操作をN回繰り返しても増えないこと」だけを見る。`src/` には一切手を入れない
+- **`once: true` のリスナは数えない**。ブラウザが内部で外し `removeEventListener` を経由しないため、
+  数えると際限なく増えて偽陽性になる（本家 `TxtStage` が1文字ごとに使う）
+- 逆に、ブラウザが要らないものはE2Eにしない。rAFループの多重化と `FocusMng` の add/remove は
+  `bun test`（happy-dom＋rAF差し替え）で完結する。こちらの `FocusMng` にも同じ単体テストが書ける
+
+なお、こちらの `src/ts/FrameMng.ts:236` の `#hDomLsn`（キー単位で `removeEventListener`）は
+**本家より先行していた**。本家の `EventMng` には同等の仕組みが無く、`[event key='dom=…' del=true]` で
+リスナが外れていなかったので、同じ設計を輸入した。
+
+**「本家へ確認したいこと」の3件には回答済み**（この下の節の末尾「本家からの回答」を参照）。
+3件とも当方の判断で正しく、いずれも移植不要という結論。
+
 ## 本家へ確認したいこと
 
 - [ ] `[jump count=false]`が消すのは「`[jump]`タグの次のトークン位置」で、そこは通常そのまま読み進める先ではないため実質効かない（本家の実装をそのまま移植した状態）
 - [ ] `[call]`の`clear_local_event`属性（本家でも`popLocalEvts()`の直後に`clear_event({})`を呼ぶ形で実質no-opに見える）
 - [ ] `[button]`に配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）は**本家にも無い**と判断した。`Button.ts:79-80`が読むのは`left`/`top`だけで`Layer.setXY()`を通らず、本家のタグリファレンスも`[button]`には`left`/`top`しか載せていない。`Layer.setXY()`の`isButton`分岐（幅の1/3で計算）は**呼び出し元が無い死んだコード**（`isGrp=true`の2箇所と`TxtLayer`からしか呼ばれない）。AIRNovel時代の名残に見えるが、意図的に残しているのかどうか
+
+### 本家からの回答（2026-07-30）
+
+- [x] **`[jump count=false]`** — 指摘のとおり `[jump]` では実質効かない。`#nextToken_Proc()` は
+  ①`#recordKidoku()`（**今から返すトークンの位置**に既読を記録）→②トークン取得→③`++#idxToken`
+  の順なので、タグ実行中の `#idxToken` は**そのタグの次**を指す。`#eraseKidoku()` はその
+  `#idxToken` を消すため、`[jump]` 自身の既読は残り、消えるのは「[jump]の次のトークン」＝
+  ジャンプ後に読まれない位置。
+  ただし **`[call]` では意味がある**。`count` の既定が `[jump]` は `true`、`[call]` は `false`
+  （＝callは既定で消す）と非対称で、`[call]` の「次のトークン」は `#callSub()` が
+  `new CallStack(fn, #idxToken, …)` で積む**戻り先**そのもの。2回目以降の `[call]` で戻り先を
+  未読に戻す動きになる。`#eraseKidoku()` は `[call]` の戻り先を想定した作りで、`[jump]` は
+  同じ処理を使い回しているだけ、と読むのが妥当。移植時は `[call]` 側だけ再現すれば足りる
+- [x] **`[call clear_local_event]`** — 指摘のとおり no-op。`#call()` は
+  `#callSub({...hArg}, ReadingState.popLocalEvts())` で**ローカルイベントを取り出して空にし**、
+  コールスタックの `':hEvt1Time'` へ退避する。その後に呼ぶ `clear_event({})` が見る
+  `#hLocalEvt2Fnc` は既に `{}` なので何も起きない。退避したぶんは `[return]` 時
+  （`ScriptIterator.ts:1014` の `pushLocalEvts`）に復元されるが、この属性はそちらにも触らない。
+  属性の意図（復元させない、が本来か）に対して実装が追いついていない状態。移植不要
+- [x] **`[button]` の配置属性と `Layer.setXY()` の `isButton`** — 判断は正しい。`setXY()` の
+  呼び出しは3箇所（`GrpLayer.ts:94`／`:164`、`TxtLayer.ts:300`）だけで、**どれも `isButton` を
+  渡していない**＝常に `false`。`b_width/3` の分岐は到達しない死んだコード。`Button.ts` も
+  `hArg.left`/`hArg.top` を `uint()` で読むだけで `setXY()` を通らない。AIRNovel時代の名残で、
+  意図的に残しているというより消し忘れ。移植不要（本家側で別途整理する）
+

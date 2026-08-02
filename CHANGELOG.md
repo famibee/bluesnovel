@@ -17,6 +17,46 @@
 	- Claude Code には Explore・Plan・general-purpose といった組み込みのサブエージェントが用意されています。自分でカスタムサブエージェントを作ることも可能
 
 
+## 2026/08/02
+
+- [ ]
+
+
+
+
+
+
+
+- 画像やスクリプト・htmlフレームなどの復号化対応（暗号化は拡張機能が担当）
+
+
+todo.md で残っている大物は
+- 音声・動画
+- [page to=]（読み戻しの設計から）
+  - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
+- 文字組みの残り
+
+
+
+
+
+
+
+
+
+- 音系に着手。だがあなたはこちらのようなテスト可能か？
+  - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
+
+- イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
+
+
+
+
+
+
+
+
+
 ## 2026/07/26
 
 - hint・ツールチップと[button]残件など
@@ -800,42 +840,6 @@ skynovel_esm方針、GSAP化は辞めtween.jsのまま触らないものとす�
 	  （`src/appMain_cmn.ts`）はIPCハンドラまで移植済みなので、そこを繋ぐ作業になる。
 	  アプリ版の`[snapshot]`（`capturePage`＝フレームの中身も写る）としおりのファイル保存も
 	  そこで版が分かれる
-
-- [ ]
-
-
-
-
-
-
-
-- 画像やスクリプト・htmlフレームなどの復号化対応（暗号化は拡張機能が担当）
-
-
-todo.md で残っている大物は
-- 音声・動画
-- [page to=]（読み戻しの設計から）
-  - todo.md: **`[page]`の残り**：`to=`（指定ページへ移動）・`style=`・`key=`。bluesnovelの読み戻りはPageUp/PageDown＋`Caretaker`で本家と別の作りなので、対応させるなら設計から
-- 文字組みの残り
-
-
-
-
-
-
-
-
-
-- 音系に着手。だがあなたはこちらのようなテスト可能か？
-  - https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/sound
-
-- イベント中に別のイベント https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/mul_ev
-
-
-
-
-
-
 
 
 ## 2026/07/25

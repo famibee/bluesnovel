@@ -45,22 +45,41 @@ export class FocusMng {
 		return true;
 	}
 
+	// add()で張った'focus'リスナの解除関数。
+	//	外さないと、輪を出入りするたびに同じ要素へリスナが積み上がる：
+	//	重複チェックは #aEl しか見ないので、remove()の後の add()は素通りする。
+	//	BtnLayerはReactが要素ごと作り直すので無害だが、[set_focus add/del='dom=…']が
+	//	相手にするフレーム内の要素は生き続けるため、往復した回数だけ増える
+	//	（本家 skynovel_esm/src/sn/FocusMng.ts の add/remove 非対称と同じ問題。
+	//	 ただし本家は EventListenerCtn が解除関数を保持し続けるので要素ごと掴んだままになる）
+	readonly #hOff = new Map<HTMLElement, ()=> void>();
+	#off(el: HTMLElement) {
+		this.#hOff.get(el)?.();
+		this.#hOff.delete(el);
+	}
+
 	add(el: HTMLElement) {
 		if (this.#aEl.includes(el)) return;	// 重複チェック（本家と同じ）
 
 		// 輪の外から（クリックやTabで）フォーカスが移った時も現在位置を合わせておく
-		el.addEventListener('focus', ()=> {this.#idx = this.#aEl.indexOf(el)});
+		const fnc = ()=> {this.#idx = this.#aEl.indexOf(el)};
+		el.addEventListener('focus', fnc);
+		this.#hOff.set(el, ()=> {el.removeEventListener('focus', fnc)});
 		this.#aEl.push(el);
 	}
 	remove(el: HTMLElement) {
 		const i = this.#aEl.indexOf(el);
 		if (i < 0) return;
 
+		this.#off(el);
 		this.#aEl.splice(i, 1);
 		if (this.#aEl.length === 0) this.#idx = -1;
 		else if (i <= this.#idx) --this.#idx;	// -1 でもOK（本家のコメントそのまま）
 	}
-	clear() {this.#aEl = []; this.#idx = -1}
+	clear() {
+		for (const el of this.#aEl) this.#off(el);
+		this.#aEl = []; this.#idx = -1;
+	}
 
 	isFocus(el: HTMLElement) {return this.#idx >= 0 && this.#aEl[this.#idx] === el}
 	get length() {return this.#aEl.length}

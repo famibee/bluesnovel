@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo *)",
+      "Bash(mkdir -p .claude/docs)",
+      "Bash(git mv *)",
+      "Bash(mv ARCHITECTURE.md .claude/docs/ARCHITECTURE.md)",
+      "Bash(mv PITFALLS.md .claude/docs/PITFALLS.md)",
+      "Bash(mv TESTING.md .claude/docs/TESTING.md)"
+    ]
+  }
+}
