@@ -177,7 +177,7 @@
 		<li class="mb1"><a href="#graph">🟡 [graph] インライン画像表示</a></li>
 		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
-		<li class="mb1"><a href="#rec_ch">🟡 [rec_ch] 履歴書き込み</a></li>
+		<li class="mb1"><a href="#rec_ch">🟢 [rec_ch] 履歴書き込み</a></li>
 		<li class="mb1"><a href="#rec_r">🟢 [rec_r] 履歴改行</a></li>
 		<li class="mb1"><a href="#reset_rec">🟢 [reset_rec] 履歴リセット</a></li>
 		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
@@ -1460,10 +1460,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </table>
 
 <p class="mb2 px1">
-	<b>bluesnovel：<code>text</code>のみ対応</b>（ルビ文法と<code>[r]</code>は効く）。<br/>
-	<code>style</code>／<code>r_style</code>／任意属性は未対応。<br/>
+	<b>bluesnovel</b>：<code>text</code>／<code>style</code>／<code>r_style</code>／任意属性すべて対応
+	（ルビ文法と<code>[r]</code>も効く）。<br/>
 	本家は<code>display: none;</code>を付けた[<a href="#ch">ch</a>]として本文へ流し、履歴側でだけ見せる作りだが、
-	bluesnovelは履歴の蓄積が表示と別物なので履歴にだけ積む。
+	bluesnovelは履歴の蓄積が表示と別物なので、<code>style</code>／<code>r_style</code>は[<a href="#ch">ch</a>]と同じ
+	「本文ストリームへ埋め込む命令」の形で履歴にだけ積む。<br/>
+	<code>text</code>以外の属性（<code>style</code>／<code>r_style</code>含む）は、本家同様「現在のページ」の
+	メタデータとして<code>const.sn.log.json</code>の各要素へそのまま乗る。
+	同一ページ内で複数回<code>[rec_ch]</code>を呼んだ場合は<b>直近の指定が丸ごと勝つ</b>（本家と同じ）。<br/>
 	そのため<b><code>save:sn.doRecLog</code>がfalseでも記録される</b>（明示的な書き込みなので）
 </p>
 </p>

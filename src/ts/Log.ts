@@ -22,7 +22,7 @@
 import {rubyTxt, splitCh, type T_CH} from './Txt';
 
 
-export type T_LOG_ENTRY = {text: string};
+export type T_LOG_ENTRY = {text: string; [k: string]: string};
 
 // prj.jsonの`log.max_len`（ConfigBase.tsの既定と同じ値）。
 //	設定を読む前でも動くよう、この場でも既定値を持つ
@@ -59,6 +59,9 @@ export function htmlOfCh(aCh: readonly T_CH[]): string {
 export class Log {
 	#aLog	: T_LOG_ENTRY[]	= [];	// 確定した過去ページ（本家 #aLog）
 	#last	= '';					// 書きかけの現ページ（本家 #LastLog）
+	// `[rec_ch]`のtext以外の属性（本家 #LastLog がhArgを丸ごと持つのと同じ、ページ単位の
+	//	任意メタデータ）。**そのページ内の直近の指定が丸ごと勝つ**（本家 Log.ts:67）
+	#attr	: Record<string, string> = {};
 
 	// max_lenは遅延で読む。prj.jsonを読み込む前にエンジンが立つため
 	constructor(private readonly maxLen: ()=> number = ()=> MAX_LEN_DEF) {}
@@ -66,23 +69,28 @@ export class Log {
 	// 本文の追記（地の文・`[r]`・`[rec_ch]`・`[rec_r]`）
 	add(txt: string) {this.#last += txt}
 
+	// `[rec_ch]`のtext以外の属性を差し替える（本家 Log.ts:67）
+	setAttr(attr: Record<string, string>) {this.#attr = attr}
+
 	// 改ページ。**空ページは積まない**（本家 Log.ts:105）ので、
 	//	`[er]`が続いたりUI画面を出入りしただけでは履歴が増えない
 	pagebreak() {
 		const text = htmlOf(this.#last);
 		this.#last = '';
+		const attr = this.#attr;
+		this.#attr = {};
 		if (! text) return;
 
 		const max = this.maxLen();
-		if (this.#aLog.push({text}) > max) this.#aLog = this.#aLog.slice(-max);
+		if (this.#aLog.push({...attr, text}) > max) this.#aLog = this.#aLog.slice(-max);
 	}
 
 	// `[reset_rec]`。textで置き換え値を設定できる（本家 Log.ts:90）
-	reset(text = '') {this.#aLog = []; this.#last = text}
+	reset(text = '') {this.#aLog = []; this.#last = text; this.#attr = {}}
 
 	// 組み込み変数 `const.sn.log.json`（本家 Log.ts:39 defTmp）。
 	//	本家と同じく**書きかけの現ページも末尾に含める**（履歴画面は「今読んでいる文」まで見せる）
-	json(): string {return JSON.stringify([...this.#aLog, {text: htmlOf(this.#last)}])}
+	json(): string {return JSON.stringify([...this.#aLog, {...this.#attr, text: htmlOf(this.#last)}])}
 
 	// `save:const.sn.sLog`からの復帰（本家 Log.ts:113 playback()）。
 	//	本家と同じく書きかけページは捨て、保存時点の全ページを確定ページとして読み直す
@@ -93,5 +101,6 @@ export class Log {
 		}
 		catch {this.#aLog = []}	// 壊れていても履歴が消えるだけ。進行は止めない
 		this.#last = '';
+		this.#attr = {};
 	}
 }

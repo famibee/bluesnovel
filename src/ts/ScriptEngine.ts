@@ -1574,12 +1574,23 @@ export class ScriptEngine {
 		}
 
 		// ---- 本文履歴（本家 Log.ts）----
-		case 'rec_ch':		// 履歴書き込み（画面には出さない）
+		case 'rec_ch': {	// 履歴書き込み（画面には出さない）
 			// 本家は`display: none;`を付けた[ch]として流し、履歴側でだけ見せる。
 			//	こちらは履歴の蓄積が表示と別物なので、履歴にだけ積めば済む。
 			//	textが無ければ何もしない（本家 Log.ts:68 も同じ）
-			if (args.text) this.#log.add(args.text.replaceAll('[r]', '\n'));
+			const {text, ...rest} = args;
+			if (! text) return 'skip';
+
+			// style/r_styleは[ch]と同じ「本文ストリームに埋め込む命令」（#cmdTxt）経由で流し、
+			//	htmlOf()のsplitCh解釈にそのまま乗せる。text以外の属性は、本家同様ページ単位の
+			//	任意メタデータとしてconst.sn.log.jsonへそのまま載る（本家 Log.ts:67
+			//	`#LastLog = {...hArg, text}`。フレーム側JSが読む想定）
+			if (Object.keys(rest).length) this.#log.setAttr(rest);
+			this.#log.add(ScriptEngine.#cmdTxt('add', {...args, text: undefined})
+				+ text.replaceAll('[r]', '\n')
+				+ ScriptEngine.#cmdTxt('add_close', {}));
 			return 'skip';
+		}
 		case 'rec_r':		// 履歴改行（本家 Log.ts:83 は [rec_ch text='[r]'] と同義）
 			this.#log.add('\n');
 			return 'skip';

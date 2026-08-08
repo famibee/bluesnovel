@@ -1516,23 +1516,35 @@ var U = class {
 	maxLen;
 	#e = [];
 	#t = "";
+	#n = {};
 	constructor(e = () => R) {
 		this.maxLen = e;
 	}
 	add(e) {
 		this.#t += e;
 	}
+	setAttr(e) {
+		this.#n = e;
+	}
 	pagebreak() {
 		let e = V(this.#t);
-		if (this.#t = "", !e) return;
-		let t = this.maxLen();
-		this.#e.push({ text: e }) > t && (this.#e = this.#e.slice(-t));
+		this.#t = "";
+		let t = this.#n;
+		if (this.#n = {}, !e) return;
+		let n = this.maxLen();
+		this.#e.push({
+			...t,
+			text: e
+		}) > n && (this.#e = this.#e.slice(-n));
 	}
 	reset(e = "") {
-		this.#e = [], this.#t = e;
+		this.#e = [], this.#t = e, this.#n = {};
 	}
 	json() {
-		return JSON.stringify([...this.#e, { text: V(this.#t) }]);
+		return JSON.stringify([...this.#e, {
+			...this.#n,
+			text: V(this.#t)
+		}]);
 	}
 	playback(e) {
 		try {
@@ -1541,7 +1553,7 @@ var U = class {
 		} catch {
 			this.#e = [];
 		}
-		this.#t = "";
+		this.#t = "", this.#n = {};
 	}
 }, W = class e {
 	static #e = new S();
@@ -2338,7 +2350,13 @@ var U = class {
 					sty: a
 				}), "skip";
 			}
-			case "rec_ch": return r.text && this.#A.add(r.text.replaceAll("[r]", "\n")), "skip";
+			case "rec_ch": {
+				let { text: t, ...n } = r;
+				return t ? (Object.keys(n).length && this.#A.setAttr(n), this.#A.add(e.#ie("add", {
+					...r,
+					text: void 0
+				}) + t.replaceAll("[r]", "\n") + e.#ie("add_close", {})), "skip") : "skip";
+			}
 			case "rec_r": return this.#A.add("\n"), "skip";
 			case "reset_rec": return this.#A.reset(r.text ?? ""), "skip";
 			case "trace": return o.push({

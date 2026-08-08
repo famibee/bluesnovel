@@ -22,13 +22,13 @@ const LAYS = '[add_lay layer=mes class=txt][add_lay layer=sub class=txt][current
 const REC = '[let name=save:sn.doRecLog text=true]';
 
 // シナリオを走らせて const.sn.log.json を読む
-function logOf(src: string): {text: string}[] {
+function logOf(src: string): Record<string, string>[] {
 	const se = new ScriptEngine('t1', `${LAYS}${REC}${src}[s]`);
 	se.step();
-	return JSON.parse(String(se.getVal('tmp:const.sn.log.json'))) as {text: string}[];
+	return JSON.parse(String(se.getVal('tmp:const.sn.log.json'))) as Record<string, string>[];
 }
 // 書きかけの現ページを落とした、確定ページだけの本文
-const fixed = (a: {text: string}[])=> a.slice(0, -1).map(v=> v.text);
+const fixed = (a: Record<string, string>[])=> a.slice(0, -1).map(v=> v.text);
 
 
 // ============ htmlOf（生の本文 → 履歴用HTML）============
@@ -185,6 +185,37 @@ it('log_[rec_ch]はdoRecLogがfalseでも積む（明示的な書き込みなの
 it('log_[rec_r]は履歴改行', ()=> {
 	expect(logOf('[rec_ch text=あ][rec_r][rec_ch text=い]'))
 		.toEqual([{text: 'あ<br/>い'}]);
+});
+
+it(`log_[rec_ch]のstyleは[ch]と同じくtextへ<span>で乗る`, ()=> {
+	// [ch]と同じ「本文ストリームへの埋め込み命令」経由なので、htmlOf()のsplitCh解釈がそのまま効く。
+	//	styleそのものも、本家同様ページのメタデータとしてJSONに残る（下のテスト参照）
+	expect(logOf(`[rec_ch text=あ style='color:red;']`))
+		.toEqual([{text: `<span style='color:red;'>あ</span>`, style: 'color:red;'}]);
+});
+
+it(`log_[rec_ch]のr_styleはルビ側の<rt>へ乗る`, ()=> {
+	expect(logOf(`[rec_ch text=蜊《あさり》 r_style='color:blue;']`))
+		.toEqual([{text: `<ruby>蜊<rt style='color:blue;'>あさり</rt></ruby>`, r_style: 'color:blue;'}]);
+});
+
+it('log_[rec_ch]の任意属性はページのメタデータとしてJSONへそのまま乗る', ()=> {
+	// 本家 Log.ts:67 #LastLog = {...hArg, text}。フレーム側JSが読む想定
+	expect(logOf('[rec_ch text=あ speaker=太郎]'))
+		.toEqual([{text: 'あ', speaker: '太郎'}]);
+});
+
+it('log_[rec_ch]の任意属性は同一ページ内の直近の指定が丸ごと勝つ', ()=> {
+	expect(logOf('[rec_ch text=あ speaker=太郎 mood=笑][rec_ch text=い speaker=花子]'))
+		.toEqual([{text: 'あい', speaker: '花子'}]);
+});
+
+it('log_[rec_ch]の任意属性は改ページを跨いで持ち越さない', ()=> {
+	const se = new ScriptEngine('t1', `${LAYS}${REC}[rec_ch text=あ speaker=太郎][p][rec_ch text=い][s]`);
+	se.step();	// [p]まで
+	se.step();	// 再開＝ここで改ページ
+	expect(JSON.parse(String(se.getVal('tmp:const.sn.log.json'))))
+		.toEqual([{text: 'あ', speaker: '太郎'}, {text: 'い'}]);
 });
 
 it('log_[reset_rec]は全消去、textで置き換えられる', ()=> {

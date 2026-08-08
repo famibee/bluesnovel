@@ -171,6 +171,14 @@
   - `test/ScriptEngine_tsy.test.ts`に`tsy_backlay`・`tsy_filter`を追加（既存`tsy_pushesAction`は`backlay: false`込みに更新）。`test/Hint.test.ts`に`hintFlip`3件・`clampPos`3件を追加。ユニット1487件→1490件、全件成功。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
   - `docs/tag.html`の`[tsy]`・`[button]`エントリを実装済みへ更新、`todo.md`から該当項目を削除
 
+- [x] **`[rec_ch]`の`style`/`r_style`・任意属性への対応**（2026-08-08）
+  - これまで`text`しか見ておらず、`style`/`r_style`と`text`以外の属性はすべて無視していた。属性自体は`args`（タグの汎用連想配列）にランタイムでは既に届いていたので、パーサー側の変更は不要だった
+  - `style`/`r_style`は[ch]と全く同じ「本文ストリームへ埋め込む命令」（`#cmdTxt('add', …)`）の形で`Log.add()`に渡すようにした。`Log.ts`の`splitCh`/`htmlOf`解釈がそのまま効き、`<span style=…>`／ルビの`<rt style=…>`として履歴HTMLに乗る
+  - `text`以外の属性（`style`/`r_style`含む）は、本家 `Log.ts:67` の`#LastLog = {...hArg, text}`と同じく「現在のページ」のメタデータとして`const.sn.log.json`の各要素へそのまま乗せた。フレーム側JSが読める想定（同一ページ内で複数回`[rec_ch]`を呼んだ場合は直近の指定が丸ごと勝つ）。`Log`クラスに`#attr`とその差し替え口`setAttr()`を追加し、`pagebreak()`／`json()`／`reset()`／`playback()`のそれぞれでページ境界と揃えて持ち回した
+  - `T_LOG_ENTRY`型を`{text: string}`から`{text: string; [k: string]: string}`へ拡張
+  - `test/Log.test.ts`に5件追加（style／r_style／任意属性のJSON反映／同一ページ内での上書き／改ページを跨がないこと）。ユニット1490件→1495件、全件成功。型チェック（`bunx tsc --noEmit --incremental false`）も通過
+  - `docs/tag.html`の`[rec_ch]`エントリを🟢実装済みへ更新、`todo.md`から該当項目を削除
+
 - [ ]
 
 
