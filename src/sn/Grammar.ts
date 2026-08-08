@@ -516,7 +516,16 @@ export class Grammar {
 			return [a!, b!];
 		}) ?? [];
 
-		const scr = {aToken: a, len: a.length, aLNum: []};
+		const scr: Script = {aToken: a, len: a.length, aLNum: []};
+		// 本家はScriptIterator側で実行時に遅延計算・キャッシュする（ScriptIterator.ts:769〜、
+		//	IF分岐やコールスタックの戻り先まで絡む作り）が、試作版は[log]の表示用途だけなので、
+		//	トークン化の時点で全トークン分を一括計算する（各トークン内の改行数を積み上げるだけ）
+		let ln = 1;
+		for (let i = 0; i < a.length; ++i) {
+			scr.aLNum[i] = ln;
+			ln += a[i]!.match(/\n/g)?.length ?? 0;
+		}
+
 		this.#replaceScr_C2M(scr);
 
 		this.#replaceScript_Wildcard(scr);

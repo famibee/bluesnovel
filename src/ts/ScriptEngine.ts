@@ -132,6 +132,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'resvDomEvent'; rawKey: string; key: string; del: boolean; needErr: boolean}	// [event key='dom=…']のDOM側予約
 	| {t: 'setFocus'; mode: 'add' | 'del' | 'null' | 'next' | 'prev'; rawKey?: string; needErr?: boolean}	// [set_focus]。キーボードフォーカスの順番管理
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
+	| {t: 'log'; text: string; fn: string; lineNum: number}	// [log text=...]。履歴（Log.ts）とは別物。実処理はScriptMng.ts #log()（downloads/log.txtへ追記）。fn/lineNumはpush時点のもの（同じstep()内で後続タグが進んだ後にActionを処理してもズレないよう、ここで確定させておく）
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME; mark?: T_MARK_STY}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）。markは[l]/[p]の待ちマークの位置・寸法
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
@@ -542,7 +543,7 @@ export class ScriptEngine {
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
 		'if', 'elsif', 'else', 'endif',
-		'r', 'er', 'trace',
+		'r', 'er', 'trace', 'log',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
 		'button', 'event', 'clear_event', 'enable_event', 'clearvar', 'clearsysvar', 'page',
 		'wait', 'waitclick', 'l', 'p', 's',
@@ -664,6 +665,9 @@ export class ScriptEngine {
 
 	get fn() {return this.#script.fn}
 	get idx() {return this.#idx}
+	// [log]の表示用（本家 ScriptIterator.lineNum 相当）。#idxが末尾ちょうど（atEnd）の時は
+	// 1つ前のトークンの行番号を返す（末尾に対応する行番号そのものが無いため）
+	get lineNum() {return this.#script.aLNum[Math.min(this.#idx, this.#script.len -1)] ?? NaN}
 	get atEnd() {return this.#idx >= this.#script.len}
 
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
@@ -1601,6 +1605,10 @@ export class ScriptEngine {
 		case 'trace':	// デバッグ表示へ出力（実処理はScriptMng.ts #trace()。textが未指定でも空文字で積む）
 			// 「text=&式」の評価は#resolveTag()が全タグ共通で済ませているので、ここでは受け取るだけ
 			aAct.push({t: 'trace', text: args.text ?? ''});
+			return 'skip';
+
+		case 'log':	// downloads/log.txtへの追記（実処理はScriptMng.ts #log()。履歴＝Log.ts/[rec_ch]とは別物）
+			aAct.push({t: 'log', text: args.text ?? '', fn: this.fn, lineNum: this.lineNum});
 			return 'skip';
 
 		case 'jump': {	// シナリオジャンプ（本家 ScriptIterator.ts:1039 #jumpWork() 相当）

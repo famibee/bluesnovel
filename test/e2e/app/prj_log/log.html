@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>E2E log</title>
+</head>
+<body>
+	<!-- 本家 frames/_log.htm の#logに当たる。bootstrap/smart-table-scrollは使わず、
+		[set_frame]で入ったJSONをそのまま並べるだけにする（自己完結フィクスチャの方針） -->
+	<div id="log"></div>
+<script>
+	// var付きでないと [set_frame]/[let_frame] から見えない（window直下のプロパティになるため）
+	var val_dic = null;
+
+	// [let_frame function=true] で呼ばれる。戻り値（記録件数）が組み込み変数へ入る
+	function val2ctrl() {
+		var a = val_dic ? JSON.parse(val_dic) : [];
+		document.getElementById('log').innerHTML =
+			a.map(function(v) {return '<p>'+ v.text +'</p>'}).join('');
+		return a.length;
+	}
+</script>
+</body>
+</html>

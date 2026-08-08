@@ -44,6 +44,7 @@ var t = "skynovel", n = class {
 	}
 	dec = (e, t) => Promise.resolve(t);
 	hash = (e) => "";
+	async appendFile(e, t) {}
 	close() {}
 	window(e) {}
 	updateCheck(e) {}
@@ -86,6 +87,7 @@ var t = "skynovel", n = class {
 			h: i
 		});
 	}
+	appendFile = (e, t) => this.#e.invoke("appendFile", e, t);
 	close() {
 		this.#e.invoke("win_close");
 	}

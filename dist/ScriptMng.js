@@ -139,7 +139,8 @@ var T = class {
 			aToken: t,
 			len: t.length,
 			aLNum: []
-		};
+		}, r = 1;
+		for (let e = 0; e < t.length; ++e) n.aLNum[e] = r, r += t[e].match(/\n/g)?.length ?? 0;
 		return this.#f(n), this.#c(n), n;
 	}
 	#o = /^\[(call|loadplugin)\s/;
@@ -1312,6 +1313,9 @@ var D = { save: "game" }, O = class e {
 	get aToken() {
 		return this.#e.aToken;
 	}
+	get aLNum() {
+		return this.#e.aLNum;
+	}
 	#t = Object.create(null);
 	constructor(e, t, n = new T()) {
 		this.fn = e, this.grm = n, this.#e = n.resolveScript(t), this.#n();
@@ -1763,7 +1767,7 @@ var U = class {
 	#R = !1;
 	#z = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.log.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
 	#B() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
@@ -1813,6 +1817,9 @@ var U = class {
 	}
 	get idx() {
 		return this.#y;
+	}
+	get lineNum() {
+		return this.#v.aLNum[Math.min(this.#y, this.#v.len - 1)] ?? NaN;
 	}
 	get atEnd() {
 		return this.#y >= this.#v.len;
@@ -2362,6 +2369,12 @@ var U = class {
 			case "trace": return o.push({
 				t: "trace",
 				text: r.text ?? ""
+			}), "skip";
+			case "log": return o.push({
+				t: "log",
+				text: r.text ?? "",
+				fn: this.fn,
+				lineNum: this.lineNum
 			}), "skip";
 			case "jump": {
 				r.count === "false" && this.#W();
@@ -3549,7 +3562,7 @@ var $ = 999e3, _e = class {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Le(e);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Le(e), this.#t.log = (e) => this.#ze(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -4608,6 +4621,9 @@ var $ = 999e3, _e = class {
 			case "trace":
 				this.#Le({ text: e.text });
 				break;
+			case "log":
+				this.#ze({ text: e.text }, e.fn, e.lineNum);
+				break;
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
@@ -4636,6 +4652,11 @@ var $ = 999e3, _e = class {
 	}
 	#Le(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
+	}
+	#Re = !0;
+	#ze(e, t, n) {
+		let r = "";
+		return this.#Re && (this.#Re = !1, r = `== ${d.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${r}--- ${u("-", "_", "")} [fn:${t} line:${String(n)}] prj:${this.sys.arg.cur}\n${e.text || `(text is ${String(e.text)})`}\n`), !1;
 	}
 	myTrace = (e, t = "E") => {
 		let n = "";

@@ -1,0 +1,25 @@
+; E2E用シナリオ（log.e2e.ts が使用）
+;	テンプレの frames/_log.sn ＋ _log.htm（本文履歴フレーム）が実際にやること——
+;	記録した本文を[add_frame]で読み込んだフレームへ &const.sn.log.json で渡し、
+;	フレーム側のJSがJSON.parseして描画する経路——をブラウザでしか確かめられない部分だけ見る。
+;	外部ライブラリ（bootstrap/smart-table-scroll）は自己完結フィクスチャの方針上使わず（TESTING.md）、
+;	log.html側は最小限のJSで代用する
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 既定では地の文は記録されない（本家 Variable.doRecLog()）。テンプレは設定・履歴などの
+;	UI画面へ出入りする間だけ開ける想定だが、ここは検証用に最初から開けておく
+&save:sn.doRecLog = true
+
+いちぎょうめ[p]
+にぎょうめ[p]
+
+[add_frame id=log src=log visible=false]
+よみこんだ[p]
+
+; 最新値で更新（本家 frames/_log.sn の*mainと同じ並び）
+[set_frame id=log var_name=val_dic text=&const.sn.log.json]
+[let_frame id=log var_name=val2ctrl function=true]
+[trace text="&'ret:'+ const.sn.frm.log.val2ctrl"]
+[frame id=log visible=true]
+ひょうじした[s]

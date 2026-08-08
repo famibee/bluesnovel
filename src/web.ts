@@ -33,6 +33,23 @@ export class SysWeb extends SysBase {
 		}
 	}
 
+	// [log]用（本家 SysWeb.ts:264 appendFile/outputFile）。ブラウザにファイル追記の手段は無いので、
+	//	呼ばれるたびパス単位で全文をメモリに溜め直し、都度ダウンロードで置き換える形で代用する
+	//	（本家はoutputFile()を別メソッドに分けて[save pic=]等とも共有するが、こちらは[log]専用なので
+	//	1メソッドにまとめる）
+	readonly #hAppendFile: {[path: string]: string} = {};
+	override async appendFile(path: string, data: string) {
+		const txt = (this.#hAppendFile[path] ?? '') + data;
+		this.#hAppendFile[path] = txt;
+
+		const blob = new Blob([txt], {type: 'text/plain'});
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+		a.download = path;
+		a.click();
+		URL.revokeObjectURL(a.href);
+	}
+
 }
 
 // import {CmnLib, argChk_Num, argChk_Boolean} from './ts/CmnLib';

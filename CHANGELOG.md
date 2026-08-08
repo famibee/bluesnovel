@@ -179,6 +179,16 @@
   - `test/Log.test.ts`に5件追加（style／r_style／任意属性のJSON反映／同一ページ内での上書き／改ページを跨がないこと）。ユニット1490件→1495件、全件成功。型チェック（`bunx tsc --noEmit --incremental false`）も通過
   - `docs/tag.html`の`[rec_ch]`エントリを🟢実装済みへ更新、`todo.md`から該当項目を削除
 
+- [x] **`[log]`タグ（downloads/log.txtへの追記）と、その`_log.sn`E2E**（2026-08-09）
+  - 本家 `DebugMng.ts:57`。`[rec_ch]`系の履歴（`const.sn.log.json`）とは別物で、作者がシナリオデバッグ中に手元へ書き出すためのタグ。`sys.appendFile()`が両版とも未配線だったのがブロッカーで、そこから実装した
+  - `SysBase.ts`に`appendFile()`の既定（no-op）を追加。`SysApp`（`app.ts`）は主処理側に既にあったIPC（`appMain_cmn.ts`の`appendFile`ハンドラ）を呼ぶだけ。`SysWeb`（`web.ts`）は本家同様、パスごとに全文をメモリで持ち直し、都度Blobダウンロードへ置き換える形で代用
+  - 本家ログ書式の`[fn:… line:…]`のうち`line:`（行番号）は、試作エンジンのトークン列に行番号情報が無かったため`Grammar.ts`の`resolveScript()`へ追加した。本家`ScriptIterator`は実行時に遅延計算・キャッシュする作り（IF分岐やコールスタックの戻り先まで絡む）だが、こちらは`[log]`表示用途だけなので、トークン化の時点で各トークン内の改行数を積み上げて一括計算する簡略版にした（`Script.ts`に`aLNum`アクセサ、`ScriptEngine.ts`に`lineNum`ゲッターを追加）
+  - タグの配線自体は`RESERVED_TAGS`と`#execTag()`のswitch文にケースが無かった（`hTag.log`はコンストラクタで登録されるだけで実行経路には乗らない、本家から踏襲した死んだ配線だった）。`trace`と同じ形で`T_ENGINE_ACTION`に`log`を追加し、`fn`/`lineNum`は**Action発行時点のスナップショット**として持たせた（`step()`は1呼び出しで複数タグを処理しうるため、`ScriptMng`側で処理する時点の`engine.idx`を見ると別タグ分だけ進んでしまってズレる）
+  - `test/ScriptEngine.test.ts`の`step_unknownTagIgnored`が「宣言はあるが未実装なタグ」の実例として`[log]`を使っていたため、実装済みになった今は本当に未実装な`[dump_script]`（本家はVSCode拡張との連携で、対応する拡張が無い）へ差し替えた
+  - E2Eは実テンプレの`frames/_log.sn`＋`_log.htm`をそのまま持ち込まず（bootstrap/smart-table-scroll依存で自己完結フィクスチャの方針に反する）、`test/e2e/app/prj_log/`に最小限のJSだけの`log.html`を新設。検証したのは「記録した本文が`const.sn.log.json`経由でフレームへ渡り、フレーム側のJSが描画する」経路（`test/e2e/log.e2e.ts`、新規2件）
+  - `test/ScriptEngine.test.ts`に`[log]`のAction発行を検証する3件を追加。ユニット1495件→1498件、E2E新規2件。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
+  - `docs/tag.html`の`[log]`エントリを🟢実装済みへ更新、`todo.md`から該当項目を削除
+
 - [ ]
 
 

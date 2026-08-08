@@ -76,6 +76,8 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	readonly dec = (_ext: string, tx: string)=> Promise.resolve(tx);
 	readonly hash = (_str: string)=> '';
 
+	async appendFile(_path: string, _data: string) { /* SysApp/SysWebが上書き（本家 SysBase.ts:583） */ }
+
 
 	// ===== アプリ（Electron）版だけが持つ振る舞い =====
 	//	**ブラウザ版では何もしない**のが既定（本家 SysBase.ts:446/:495/:496 も同じ形で、

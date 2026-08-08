@@ -17,6 +17,7 @@ export class Script {
 	//	書き換える（＝トークンが増減する）ので、配列だけでなくGrammarのScript構造ごと保持する
 	readonly #scr	: T_TOKENS;
 	get aToken(): readonly string[] {return this.#scr.aToken}
+	get aLNum(): readonly number[] {return this.#scr.aLNum}
 
 	#hLabel: {[label: string]: number} = Object.create(null);	// *label -> トークン索引
 

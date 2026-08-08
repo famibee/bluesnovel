@@ -58,6 +58,8 @@ export class SysApp extends SysBase {
 
 	// ===== アプリ版だけが持つ振る舞い（SysBaseの既定＝no-opを上書き）=====
 
+	override readonly appendFile = (path: string, data: string)=> this.#em.invoke('appendFile', path, data);
+
 	override close() {void this.#em.invoke('win_close')}
 
 	override window(o: {centering: boolean; x: number; y: number; w: number; h: number}) {

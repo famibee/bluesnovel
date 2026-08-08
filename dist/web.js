@@ -44,6 +44,7 @@ var t = "skynovel", n = class {
 	}
 	dec = (e, t) => Promise.resolve(t);
 	hash = (e) => "";
+	async appendFile(e, t) {}
 	close() {}
 	window(e) {}
 	updateCheck(e) {}
@@ -60,6 +61,13 @@ var t = "skynovel", n = class {
 			let { initDevToolsGuard: e } = await import("./DevToolsGuard.js");
 			e();
 		}
+	}
+	#e = {};
+	async appendFile(e, t) {
+		let n = (this.#e[e] ?? "") + t;
+		this.#e[e] = n;
+		let r = new Blob([n], { type: "text/plain" }), i = document.createElement("a");
+		i.href = URL.createObjectURL(r), i.download = e, i.click(), URL.revokeObjectURL(i.href);
 	}
 };
 //#endregion

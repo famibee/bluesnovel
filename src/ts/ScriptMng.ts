@@ -9,7 +9,7 @@ import type {SysBase} from '../sn/SysBase';
 import type {TArg, T_HTag} from '../sn/Grammar';
 import {Grammar} from '../sn/Grammar';
 import type {T_INIT_FNCS} from '../store/store';
-import {CmnLib} from '../sn/CmnLib';
+import {CmnLib, getDateStr} from '../sn/CmnLib';
 import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
@@ -46,6 +46,7 @@ export class ScriptMng {
 		document.body.appendChild(this.#spnDbg);
 
 		this.#hTag.trace	= o=> this.#trace(o);	// デバッグ表示へ出力
+		this.#hTag.log		= o=> this.#log(o, this.#engine?.fn ?? '', this.#engine?.lineNum ?? NaN);	// ログ出力
 	}
 
 	// Main.tsx からの初期化
@@ -1515,6 +1516,10 @@ export class ScriptMng {
 			// 実処理は既存の#trace()（myTrace経由）へそのまま委譲
 			this.#trace({text: act.text});
 			break;
+		case 'log':
+			// 実処理は既存の#log()へそのまま委譲
+			this.#log({text: act.text}, act.fn, act.lineNum);
+			break;
 		case 'loadScript':
 			// 実処理は#runStep()側（fetch→switchScript）。表示への影響は無い
 			break;
@@ -1572,6 +1577,26 @@ export class ScriptMng {
 
 	#trace(hArg: TArg) {
 		this.myTrace(hArg.text || `(text is ${hArg.text})`, 'I');
+
+		return false;
+	}
+
+	// [log]：downloads/log.txtへの追記（本家 DebugMng.ts:57）。履歴（Log.ts）とは別物で、
+	//	作者がシナリオデバッグ中に手元へ書き出すためのタグ
+	#firstLog = true;
+	#log(hArg: TArg, fn: string, lineNum: number) {
+		let dat = '';
+		if (this.#firstLog) {
+			this.#firstLog = false;
+			dat = `== ${CmnLib.plat_desc} ==\n`;
+		}
+		void this.sys.appendFile(
+			this.sys.path_downloads +'log.txt',
+			`${dat}--- ${getDateStr('-', '_', '')
+			} [fn:${fn} line:${String(lineNum)
+			}] prj:${this.sys.arg.cur
+			}\n${hArg.text || `(text is ${String(hArg.text)})`}\n`,
+		);
 
 		return false;
 	}

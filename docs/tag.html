@@ -288,7 +288,7 @@
 -->
 		<li class="mb1"><a href="#dump_stack">🟡 [dump_stack] スタックのダンプ</a></li>
 		<li class="mb1"><a href="#dump_val">🟢 [dump_val] 変数のダンプ</a></li>
-		<li class="mb1"><a href="#log">🔴 [log] ログ出力</a></li>
+		<li class="mb1"><a href="#log">🟢 [log] ログ出力</a></li>
 		<li class="mb1"><a href="#trace">🟢 [trace] デバッグ表示へ出力</a></li>
 	</ul>
 </aside>
@@ -3040,7 +3040,7 @@ Linuxは 100MB 越えなので上げられていません。</p></blockquote>
 </p>
 <h2 id="log" class="w-heading">[log] ログ出力</h2>
 <h4>ダウンロードフォルダにテキスト出力する（追記ではなく上書き。追記する。出力日時・分・スクリプト名や行番号やプロジェクト名も出力</h4>
-<p class="mb2 px1" style="border-left:3px solid #999;padding-left:.6em"><b>bluesnovel</b>🔴：未実装。<a href="#rec_ch">[rec_ch]</a>系の履歴（<code>const.sn.log.json</code>）とは別物で、<code>downloads/log.txt</code>への追記が要るデバッグ専用タグ（本家 <code>DebugMng.ts:57</code>）。ブラウザ版はダウンロードという形でしか書き出せず、[snapshot]のような単発DLと違い「同じファイルへ追記し続ける」先が無いため、<b>アプリ（Electron）版の整備と同時に対応する</b>予定（todo.md参照）。</p>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#rec_ch">[rec_ch]</a>系の履歴（<code>const.sn.log.json</code>）とは別物で、<code>downloads/log.txt</code>への追記が要るデバッグ専用タグ（本家 <code>DebugMng.ts:57</code>）。アプリ（Electron）版は主処理へのIPC（<code>appendFile</code>）で追記、ブラウザ版はパスごとに全文をメモリで持ち直し、都度ダウンロードで置き換える形で代用する。書式は本家同様<code>[fn:… line:…]</code>付き（行番号はトークン化時に一括計算する簡略版。本家のような実行時の遅延計算はしない）。</p>
 <p class="mb2 px1">
 
 	Web版でもログファイルをダウンロードします。ただし連続だと間隔が開いてないと失敗します。

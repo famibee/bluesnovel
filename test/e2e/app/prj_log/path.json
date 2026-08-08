@@ -1,0 +1,10 @@
+{
+	"main": {
+		":cnt": 1,
+		"sn": "main.sn"
+	},
+	"log": {
+		":cnt": 1,
+		"html": "log.html"
+	}
+}

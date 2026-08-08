@@ -208,9 +208,9 @@ it('step_jumpLabel', ()=> {
 });
 
 it('step_unknownTagIgnored', ()=> {
-	// [log]はGrammar.tsのT_HTagには居るが未実装（todo.md参照。downloads/log.txtへの追記が
-	//	要るためアプリ版と同時に対応する予定）＝「宣言はあるが#execTag()にcaseが無いタグ」の実例として使う
-	const se = new ScriptEngine('t1', '[log text=hello]あ[s]');
+	// [dump_script]はGrammar.tsのT_HTagには居るが未実装（todo.md参照。本家はVSCode拡張との連携で、
+	//	こちらは対応する拡張が無い）＝「宣言はあるが#execTag()にcaseが無いタグ」の実例として使う
+	const se = new ScriptEngine('t1', '[dump_script text=hello]あ[s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
@@ -260,6 +260,27 @@ it('step_trace_withoutAmp_isLiteral', ()=> {
 	// '&'がなければ今まで通りリテラル文字列のまま（式評価しない）
 	const se = new ScriptEngine('t1', '[trace text=mp:t][s]');
 	expect(se.step()[0]).toEqual({t: 'trace', text: 'mp:t'});
+});
+
+it('step_log_emitsLogAction', ()=> {
+	// [log text=@]はdownloads/log.txtへの追記用（実処理はScriptMng.ts #log()側）。
+	//	traceと違い、呼ばれた時点のfn/lineNumもActionへ積む（本家ログの[fn:… line:…]用）
+	const se = new ScriptEngine('t1', '[log text=@]あ[s]');
+	const a = se.step();
+	expect(a).toEqual([
+		{t: 'log', text: '@', fn: 't1', lineNum: 1},
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},
+		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
+	]);
+});
+it('step_log_missingText_emitsEmptyString', ()=> {
+	const se = new ScriptEngine('t1', '[log]あ[s]');
+	expect(se.step()[0]).toEqual({t: 'log', text: '', fn: 't1', lineNum: 1});
+});
+it('step_log_capturesLineNumAtPushTime', ()=> {
+	// 複数行に渡るスクリプトの2行目に置いた[log]は、lineNum:2を積む
+	const se = new ScriptEngine('t1', '\n[log text=@]あ[s]');
+	expect(se.step()[0]).toEqual({t: 'log', text: '@', fn: 't1', lineNum: 2});
 });
 
 // ============ 「&」書式（Grammarが独立トークンとして切り出すようになったので対応した） ============
