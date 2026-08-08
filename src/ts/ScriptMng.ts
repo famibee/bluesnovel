@@ -629,7 +629,12 @@ export class ScriptMng {
 			const sty: T_LAY_STY_ARG = {};
 			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
 			this.$fncs.chgLay({nm: act.nm, page: act.page, sty});
-		});
+		}, act.backlay ? ()=> {
+			// [tsy backlay=true]：終了時の最終値を反対側のページにも反映する（本家 CmnTween.ts backlay）
+			const sty: T_LAY_STY_ARG = {};
+			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
+			this.$fncs.chgLay({nm: act.nm, page: act.page === 'fore' ? 'back' : 'fore', sty});
+		} : undefined);
 	}
 
 	// [tsy_frame]：動かす先がストアのレイヤではなくFrameMngが持つiframeの見た目。
@@ -662,7 +667,7 @@ export class ScriptMng {
 	}
 
 	// トゥイーン本体の組み立て（[tsy]/[tsy_frame]共通）。fromを動かし、毎フレームapply()で反映する
-	#runTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy' | 'tsyFrame'}>, from: {[k: string]: number}, aTo: {[k: string]: number}[], apply: ()=> void) {
+	#runTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy' | 'tsyFrame'}>, from: {[k: string]: number}, aTo: {[k: string]: number}[], apply: ()=> void, onEnd?: ()=> void) {
 		// 同名のトゥイーンが動いていたら畳んでから始める。本家は#hTwInfを上書きするだけで
 		//	古いトゥイーンはGroupに残ったまま動き続けてしまうので、そこだけ変えている
 		this.#hTw[act.tw_nm]?.tw.kill();
@@ -674,7 +679,7 @@ export class ScriptMng {
 		//	path指定時の終着点は「各属性を最後に書いた区間の値」＝畳み込み
 		const fin: {[k: string]: number} = {};
 		for (const to of aTo) Object.assign(fin, to);
-		const end = ()=> {Object.assign(from, fin); apply()};
+		const end = ()=> {Object.assign(from, fin); apply(); onEnd?.()};
 
 		// time=0（既読スキップ中もここ）は演出せず即座に終了状態へ
 		if (act.msec <= 0 && act.delay <= 0) {end(); this.#onTsyEnd(act.tw_nm); return}

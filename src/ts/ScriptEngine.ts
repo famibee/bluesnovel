@@ -135,7 +135,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME; mark?: T_MARK_STY}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）。markは[l]/[p]の待ちマークの位置・寸法
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
-	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）。aPathは[tsy path=…]の後続区間、chainは他トゥイーンの終了に繋ぐ指定
+	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string; backlay: boolean}	// [tsy]。トゥイーン開始。回すのはScriptMng（GSAP）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはGSAP規約（0=1回だけ、-1=無限）。aPathは[tsy path=…]の後続区間、chainは他トゥイーンの終了に繋ぐ指定。backlayはトゥイーン終了時に最終値を裏ページへも反映するか（本家 CmnTween.ts backlay）
 	| {t: 'tsyFrame'; tw_nm: string; id: string; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string}	// [tsy_frame]。HTMLフレームのトゥイーン。[tsy]と同形だが、動かす先がストアのレイヤではなくFrameMngが持つiframeの見た目
 	| {t: 'waitTsy'; tw_nm: string; canskip: boolean}	// [wait_tsy]。トゥイーン終了待ち。[wt]と同じくstep()はここで一旦返る
 	| {t: 'stopTsy'; tw_nm: string}		// [stop_tsy]。トゥイーンを終了状態へ送って中断（本家 stop().end()）
@@ -1281,12 +1281,18 @@ export class ScriptEngine {
 			// 本家は「repeat=1で計1回」なのでtween.jsへは repeat-1 を渡す。GSAPも同じ規約
 			//	（0で1回だけ、-1で無限）なので、0以下は無限＝-1とする
 			const rep = ScriptEngine.#argNumDef('tsy', 'repeat', args.repeat, 1);
+			const page = ScriptEngine.argPage(args, 'fore');	// 本家は表ページ固定（pg.fore）だが、page指定も受ける
+			// [tsy filter=…]は本家同様、トゥイーン開始と同時に一度だけフィルターを差し替える副作用
+			//	（値自体をアニメーションさせるわけではない。[lay filter=]と同じ処理を流用する）
+			if (args.filter !== undefined) {
+				aAct.push({t: 'addFilter', aLayNm: [layer], page, flt: bldFilter(args), replace: true});
+			}
 			aAct.push({
-				t: 'tsy', tw_nm: tsyName('tsy', args), nm: layer,
-				page: ScriptEngine.argPage(args, 'fore'),	// 本家は表ページ固定（pg.fore）だが、page指定も受ける
+				t: 'tsy', tw_nm: tsyName('tsy', args), nm: layer, page,
 				msec, delay, ease: easeToGsap(args.ease),
 				repeat: rep > 0 ? rep - 1 : -1, yoyo: (args.yoyo ?? 'false') !== 'false',
 				hTo: cnvTweenArg('tsy', args),
+				backlay: (args.backlay ?? 'false') !== 'false',
 				...ScriptEngine.#argTsyPath('tsy', args),
 			});
 			return 'skip';	// [tsy]自体は待たない（本家も false を返す）。待ちたければ[wait_tsy]

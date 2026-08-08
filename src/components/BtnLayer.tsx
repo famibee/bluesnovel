@@ -37,7 +37,17 @@ type T_BTNARG = {
 function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
 	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
 }
-function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number; h: number} | null): CSSProperties {
+// 箱の実際の大きさ。画像ボタン（pic）・背景画像ボタン（b_pic）は絵の実寸が箱の大きさになる
+//	（本家 Button.ts:280／249）。width/heightが書かれていればそちらが勝つ（本家も同様）。
+//	どちらの絵も未読込のうちは0（呼び出し側が0pxで置かないようガードする）
+function btnBoxSize(o: T_BTN_STY | undefined, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): {w: number; h: number} {
+	if (! o) return {w: BTN_DEF_W, h: BTN_DEF_H};
+	const natSrc = o.pic ? natPic : o.b_pic ? natBPic : null;
+	return (o.pic || o.b_pic)
+		? {w: o.width ?? natSrc?.w ?? 0, h: o.height ?? natSrc?.h ?? 0}
+		: btnSize(o);
+}
+function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): CSSProperties {
 	const sty: CSSProperties = {};
 	if (o.left !== undefined || o.top !== undefined) {
 		sty.position = 'absolute';
@@ -46,9 +56,9 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 		sty.margin = 0;
 	}
 	{
-		// 画像ボタンは絵の実寸が箱の大きさ（本家 Button.ts:280）。読み込むまでは値を書かない
+		// 画像ボタンは絵の実寸が箱の大きさ。読み込むまでは値を書かない
 		//	——0pxで置くと一瞬潰れて見えるため
-		const {w, h} = o.pic ?{w: o.width ?? natPic?.w ?? 0, h: o.height ?? natPic?.h ?? 0} :btnSize(o);
+		const {w, h} = btnBoxSize(o, natPic, natBPic);
 		if (w > 0) sty.width = `${String(w)}px`;
 		if (h > 0) sty.height = `${String(h)}px`;
 		if (! o.pic) {
@@ -71,8 +81,7 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 		//	ルールより強く、状態で切り替えられなくなるため（切り替えはstyBtn側が持つ）
 	}
 	// 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
-	//	（Button.ts:249）。こちらは箱の背景として中央に敷く
-	//	（本家は絵の実寸ぶんに箱を広げるが、こちらは箱の大きさを変えない）
+	//	（Button.ts:249）。箱の大きさは上で絵の実寸に広げてあるので、こちらは中央に敷くだけでよい
 	else if (o.b_pic && o.b_src) {
 		sty.backgroundImage = `url("${o.b_src}")`;
 		sty.backgroundPosition = 'center';
@@ -205,22 +214,6 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 	//	素の文字寸法(offsetWidth/Height＝変形非依存・CSS px)を測り、箱寸法との比を fit として scale へ渡す。
 	//	useLayoutEffect なので描画前に確定し、未縮小の文字が一瞬はみ出すチラつきは出ない。
 	const [fit, setFit] = useState({x: 1, y: 1});
-	useLayoutEffect(()=> {
-		const el = ref.current;
-		if (! el) {setFit({x: 1, y: 1}); return}
-		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
-
-		const {w: bw, h: bh} = btnSize(sty);
-		const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
-		el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
-		const natW = el.offsetWidth, natH = el.offsetHeight;
-		el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
-
-		setFit({
-			x: natW > 0 ? bw / natW : 1,
-			y: natH > 0 ? bh / natH : 1,
-		});
-	}, [text, sty?.width, sty?.height, sty?.pic]);
 	// 画像ボタンの箱の大きさ＝**絵の実寸**（横は3コマ並びなので1/3）。本家 Button.ts:280 に対応。
 	//	実寸を知れるのはDOM側だけなので、ここで読み込んで測る。
 	//	width/heightが書かれていればそちらが勝つ（本家も `'width' in hArg` を優先する）
@@ -237,6 +230,36 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 		img.src = picSrc;
 		return ()=> {alive = false};
 	}, [picSrc]);
+	// b_pic（背景画像）の実寸。picと違い3コマ分割は無いので、そのままの寸法を使う
+	const bPicSrc = sty?.b_pic ? sty.b_src ?? '' : '';
+	const [natBPic, setNatBPic] = useState<{w: number; h: number} | null>(null);
+	useEffect(()=> {
+		if (! bPicSrc) {setNatBPic(null); return}
+
+		let alive = true;
+		const img = new Image;
+		img.onload = ()=> {
+			if (alive) setNatBPic({w: img.naturalWidth, h: img.naturalHeight});
+		};
+		img.src = bPicSrc;
+		return ()=> {alive = false};
+	}, [bPicSrc]);
+	useLayoutEffect(()=> {
+		const el = ref.current;
+		if (! el) {setFit({x: 1, y: 1}); return}
+		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
+
+		const {w: bw, h: bh} = btnBoxSize(sty, natPic, natBPic);
+		const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
+		el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
+		const natW = el.offsetWidth, natH = el.offsetHeight;
+		el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
+
+		setFit({
+			x: natW > 0 ? bw / natW : 1,
+			y: natH > 0 ? bh / natH : 1,
+		});
+	}, [text, sty?.width, sty?.height, sty?.pic, natBPic]);
 
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）。
 	//	マウスクリックと同じ「押された」動作なのでclickseも鳴らす
@@ -250,7 +273,7 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
-	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic) : undefined} ref={ref}
+	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic, natBPic) : undefined} ref={ref}
 		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
 		onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
 		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;

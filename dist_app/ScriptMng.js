@@ -2168,18 +2168,25 @@ var U = class {
 			case "tsy": {
 				let { layer: t } = r;
 				if (!t) throw "[tsy] layerは必須です";
-				let n = this.skipEnabled, i = n ? 0 : e.#n("tsy", "time", r.time ?? ""), a = n ? 0 : e.#i("tsy", "delay", r.delay, 0), s = e.#i("tsy", "repeat", r.repeat, 1);
-				return o.push({
+				let n = this.skipEnabled, a = n ? 0 : e.#n("tsy", "time", r.time ?? ""), s = n ? 0 : e.#i("tsy", "delay", r.delay, 0), c = e.#i("tsy", "repeat", r.repeat, 1), l = e.argPage(r, "fore");
+				return r.filter !== void 0 && o.push({
+					t: "addFilter",
+					aLayNm: [t],
+					page: l,
+					flt: i(r),
+					replace: !0
+				}), o.push({
 					t: "tsy",
 					tw_nm: L("tsy", r),
 					nm: t,
-					page: e.argPage(r, "fore"),
-					msec: i,
-					delay: a,
+					page: l,
+					msec: a,
+					delay: s,
 					ease: I(r.ease),
-					repeat: s > 0 ? s - 1 : -1,
+					repeat: c > 0 ? c - 1 : -1,
 					yoyo: (r.yoyo ?? "false") !== "false",
 					hTo: P("tsy", r),
+					backlay: (r.backlay ?? "false") !== "false",
 					...e.#g("tsy", r)
 				}), "skip";
 			}
@@ -3847,7 +3854,15 @@ var $ = 999e3, _e = class {
 				page: t.page,
 				sty: e
 			});
-		});
+		}, t.backlay ? () => {
+			let e = {};
+			for (let t of a) Object.assign(e, { [t]: r[t] });
+			this.$fncs.chgLay({
+				nm: t.nm,
+				page: t.page === "fore" ? "back" : "fore",
+				sty: e
+			});
+		} : void 0);
 	}
 	#Z(t) {
 		let n = this.#S.getSty(t.id), { from: r, aTo: i, aPrp: a } = e.#Q(t, (e) => n[e] ?? 0);
@@ -3870,50 +3885,50 @@ var $ = 999e3, _e = class {
 			aPrp: r
 		};
 	}
-	#$(e, t, n, r) {
+	#$(e, t, n, r, i) {
 		this.#J[e.tw_nm]?.tw.kill(), delete this.#J[e.tw_nm];
-		let i = {};
-		for (let e of n) Object.assign(i, e);
-		let a = () => {
-			Object.assign(t, i), r();
+		let a = {};
+		for (let e of n) Object.assign(a, e);
+		let o = () => {
+			Object.assign(t, a), r(), i?.();
 		};
 		if (e.msec <= 0 && e.delay <= 0) {
-			a(), this.#ee(e.tw_nm);
+			o(), this.#ee(e.tw_nm);
 			return;
 		}
-		let o = {
+		let s = {
 			duration: e.msec / 1e3,
 			delay: e.delay / 1e3,
 			ease: e.ease,
 			repeat: e.repeat,
 			yoyo: e.yoyo,
 			onUpdate: r
-		}, s = !!e.chain, c = () => {
-			a(), this.#ee(e.tw_nm);
-		}, l;
+		}, c = !!e.chain, l = () => {
+			o(), this.#ee(e.tw_nm);
+		}, u;
 		if (n.length > 1) {
 			let e = v.timeline({
-				paused: s,
-				onComplete: c
+				paused: c,
+				onComplete: l
 			});
 			for (let r of n) e.to(t, {
 				...r,
-				...o
+				...s
 			});
-			l = e;
-		} else l = v.to(t, {
+			u = e;
+		} else u = v.to(t, {
 			...n[0],
-			...o,
-			paused: s,
-			onComplete: c
+			...s,
+			paused: c,
+			onComplete: l
 		});
 		if (this.#J[e.tw_nm] = {
-			end: a,
-			tw: l
+			end: o,
+			tw: u
 		}, !e.chain) return;
-		let u = this.#J[e.chain];
-		if (!u) throw `${e.chain}は存在しない・または終了したトゥイーンです`;
-		u.next = () => l.play();
+		let d = this.#J[e.chain];
+		if (!d) throw `${e.chain}は存在しない・または終了したトゥイーンです`;
+		d.next = () => u.play();
 	}
 	#ee(e) {
 		let { next: t } = this.#J[e] ?? {};

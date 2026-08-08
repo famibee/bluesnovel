@@ -17,14 +17,14 @@
 
 ## タグ・変数の残り
 
-- [ ] 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が使っているかと思ったが、あれは**`[tsy path=]`で実現**していた（実装済み）ので、`layer=`の実需が見当たらない。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2>。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
+- [ ] 【凍結】`[quake]`の`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
 - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **履歴（ログ）の残り**。本体（`const.sn.log.json`・`save:sn.doRecLog`・`save:const.sn.sLog`・`[rec_ch]`/`[rec_r]`/`[reset_rec]`）は`src/ts/Log.ts`で対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play>
   - [ ] `[rec_ch]`の`style`/`r_style`と**任意属性**（本家は`const.sn.log.json`の各ページへそのまま載せ、フレーム側のJSが読む）。今は`text`のみ
   - [ ] `[log]`（本家`DebugMng.ts:57`）は**履歴とは別物**で、`downloads/log.txt`へ追記するデバッグ用。ファイル書き出しの置き場所が要るのでアプリ版の整備と一緒に
   - [ ] テンプレの`frames/_log.sn`＋`_log.htm`を実際に通すE2E（フレームへ`&const.sn.log.json`を流し込む経路）
-- [ ] **`[trans]`の残り**：`delay=`・`ease=`（進度は常に等速）。`glsl=`（自前シェーダ）はWebGLを使わないため実現しようがないので対象外
-- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い）・`render=`（pixi前提なので保留）・`filter=`・`backlay=`
+- [ ] 【凍結】`[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
+- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
   - [ ] `[add_filter blendmode=…]`（フィルター単位のブレンド）・`[lay blur_x=/blur_y=]`（CSSの`blur()`は半径1つしか持てない）
@@ -40,11 +40,7 @@
 - [ ] **アニメpng（スプライトシート）の残り**
   - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
   - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
-  - [ ] `[graph]`の`id`（本家は`id='break'`を待ちマークに使う内部用で、シナリオが書く場面が見当たらない）
-  - [ ] `[l]`/`[p]`の待ちマークの`visible`（本家は`breakLine`/`breakPage`の入口で**属性ごと消している**＝常に表示。効かせる意味があるのか要確認）
-- [ ] **`[button]`の残り**：既定の見た目（色・余白）も仮のまま。配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）も未対応。`pic=`（画像ボタン）・`b_pic=`（背景画像）・効果音（`clickse`/`enterse`/`leavese`）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
-  - [ ] `hint_opt`は本家popperのオプションJSONだが`placement`しか見ていない（依存を増やさず自前で位置決めしているため）
-  - [ ] `[button b_pic=…]`は箱の大きさを変えない（本家は絵の実寸ぶんに広げる）。テンプレで実害が出たら合わせる
+- [ ] **`[button]`の残り**：配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）が未対応（本家側もこの機構は未配線のデッドコードで参照実装が無いため、自前設計が必要）。`pic=`（画像ボタン）・`b_pic=`（背景画像、箱は絵の実寸へ拡大）・効果音（`clickse`/`enterse`/`leavese`）・`hint_opt`（`placement`＋画面端はみ出し対応）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
   - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**ロード時はページログを捨てている**（ロード後の位置は履歴と繋がらないため）。本家は`index=`でしおりの中の何ページ目かを選べるので、そこを繋ぐならページログ（`src/ts/PageLog.ts`）をしおりへ含める設計が要る

@@ -156,6 +156,21 @@
     「同じファイルへ追記し続ける」置き場が無いため、アプリ（Electron）版の整備と同時に対応する
     方針で`docs/tag.html`にも明記した（`todo.md`参照）
 
+- [x] **`todo.md`の棚卸し：`[quake]`/`[trans]`を凍結整理、`[graph] id`・`[l]`/`[p] visible`は対応不要と判断**（2026-08-08）
+  - `[quake] layer=`：コード側にパースの痕跡が無く（`ScriptEngine.ts`の`case 'quake'`は`time`/`hmax`/`vmax`のみ）、唯一の記述だった`docs/tag.html`の「未対応：layer」という一文も、`[tsy path=…]`で対象レイヤを絞った揺れを実現できる旨に書き換えた。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため引き続き凍結
+  - `[trans] delay=`/`ease=`/`glsl=`も同様に凍結（未実装のまま、現状使用しないため）
+  - `[graph] id`：bluesnovelは`[graph]`（`Txt.ts`の`grp`コマンド）と待ちマーク（`[l]`/`[p]`の`stop`アクション）が最初から別実装で、本家の`id='break'`が使う`grp`コマンド経路そのものを共有していない。`id`は渡しても無視されるだけなので実装不要と判断
+  - `[l]`/`[p]`の`visible`：「スキップを止めずにクリック待ちを隠す」用途は`l`/`p`というタグ種別の選択自体（`waitclick`/`s`とは別扱い）で既に担保されており、`visible`の有無はスキップ継続可否（`#calcResume()`）に一切関与しない。本家も現在は入口で属性ごと破棄して常時表示にしているため、実装不要と判断
+  - 4件ともサブエージェントで並行調査（コード・本家参照実装・過去のCHANGELOG記載を突き合わせ）した上で`todo.md`から削除
+
+- [x] **`[tsy]`の`filter=`/`backlay=`、`[button]`の`b_pic=`箱拡大・`hint_opt`の画面端はみ出し対応**（2026-08-08）
+  - `[tsy filter=/enable_filter=]`：本家同様「トゥイーン開始と同時に一度だけフィルターを差し替える」副作用として実装（値自体をアニメーションさせるわけではない）。`[lay filter=…]`と全く同じ`addFilter`アクションを`case 'tsy'`から積むだけで済んだ（`src/ts/Filter.ts`の`bldFilter()`をそのまま流用）
+  - `[tsy backlay=]`：`#runTsy()`に`onEnd`コールバックを追加し、トゥイーン終了時（`time=0`即時終了・GSAPの`onComplete`の両方）の最終値を反対側のページへも`chgLay`する。本家 `CmnTween.ts` の`backlay`（表で動かした最終形を裏にも反映）に対応
+  - `[button b_pic=…]`：本家 `Button.ts:249` と同様、箱の大きさを絵の実寸へ広げるようにした。`pic`用に既にあった自然サイズ計測（`natPic`）と同じパターンで`natBPic`を追加。`btnSize()`とサイズ決定ロジックが`styBtnArg`とフィット計算（`useLayoutEffect`）の2箇所に重複していたので`btnBoxSize()`へ共通化し、フィット計算もb_picの実寸を基準にするよう揃えた（揃えないと文字が箱に対して大小ズレて見える）
+  - `[button hint_opt]`：`hintFlip()`（主軸方向のスペースが無ければ反対側へ反転）と`clampPos()`（副軸方向を画面内へクランプ）を追加。本家popperの`flip`/`preventOverflow`モディファイア相当の簡易版で、依存は増やさない方針を維持
+  - `test/ScriptEngine_tsy.test.ts`に`tsy_backlay`・`tsy_filter`を追加（既存`tsy_pushesAction`は`backlay: false`込みに更新）。`test/Hint.test.ts`に`hintFlip`3件・`clampPos`3件を追加。ユニット1487件→1490件、全件成功。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
+  - `docs/tag.html`の`[tsy]`・`[button]`エントリを実装済みへ更新、`todo.md`から該当項目を削除
+
 - [ ]
 
 

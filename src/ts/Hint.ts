@@ -44,6 +44,43 @@ export function hintPos(
 	}
 }
 
+const OPPOSITE: {[K in T_PLACE]: T_PLACE} = {top: 'bottom', bottom: 'top', left: 'right', right: 'left'};
+
+// 主軸方向（hintPosの向き）にスペースが無ければ反対側へ切り替える
+//	（本家popperの`flip`モディファイア相当の簡易版。依存を増やさないので上下左右の反転のみ）
+export function hintFlip(
+	trg: {left: number; top: number; width: number; height: number},
+	box: {width: number; height: number},
+	place: T_PLACE,
+	gap: number,
+	viewport: {width: number; height: number},
+): T_PLACE {
+	const fits = (p: T_PLACE): boolean => {
+		switch (p) {
+			case 'top':		return trg.top - box.height - gap >= 0;
+			case 'bottom':	return trg.top + trg.height + gap + box.height <= viewport.height;
+			case 'left':	return trg.left - box.width - gap >= 0;
+			case 'right':	return trg.left + trg.width + gap + box.width <= viewport.width;
+		}
+	};
+	if (fits(place)) return place;
+	const opp = OPPOSITE[place];
+	return fits(opp) ? opp : place;	// どちらもはみ出すなら元の向きのまま（clampPosが画面内に収める）
+}
+
+// 副軸方向（中央揃えのずれ）を画面内に収める
+//	（本家popperの`preventOverflow`モディファイア相当の簡易版）
+export function clampPos(
+	pos: {left: number; top: number},
+	box: {width: number; height: number},
+	viewport: {width: number; height: number},
+): {left: number; top: number} {
+	return {
+		left: Math.min(Math.max(pos.left, 0), Math.max(0, viewport.width - box.width)),
+		top: Math.min(Math.max(pos.top, 0), Math.max(0, viewport.height - box.height)),
+	};
+}
+
 // 既定の見た目（本家 EventMng.ts:98 `.sn_hint`と同じ値）。[button hint_style=…]で上書きできる
 const STY_DEF = `position: fixed; background-color: #3c3225; color: white;`
 	+ ` padding: 4px 8px; border-radius: 4px; font-size: 1.2em;`
@@ -75,7 +112,10 @@ class HintMng {
 		//	position:fixedなので、対象のビューポート座標（getBoundingClientRect）をそのまま使える
 		const r = trg.getBoundingClientRect();
 		const b = el.getBoundingClientRect();
-		const {left, top} = hintPos(r, b, hintPlace(opt));
+		const vp = {width: window.innerWidth, height: window.innerHeight};
+		const gap = 8;	// hintPosの既定と揃える
+		const place = hintFlip(r, b, hintPlace(opt), gap, vp);
+		const {left, top} = clampPos(hintPos(r, b, place, gap), b, vp);
 		el.style.left = `${String(left)}px`;
 		el.style.top = `${String(top)}px`;
 	}

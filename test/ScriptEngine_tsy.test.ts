@@ -147,9 +147,25 @@ it('parseTsyPath_framePrp', ()=> {
 it('tsy_pushesAction', ()=> {
 	expect(tsy('[tsy layer=base time=500 left=100 alpha=0]')).toEqual({
 		t: 'tsy', tw_nm: 'base', nm: 'base', page: 'fore',
-		msec: 500, delay: 0, ease: 'none', repeat: 0, yoyo: false,
+		msec: 500, delay: 0, ease: 'none', repeat: 0, yoyo: false, backlay: false,
 		hTo: {alpha: {v: 0, rel: false}, left: {v: 100, rel: false}},
 	});
+});
+
+it('tsy_backlay', ()=> {
+	// backlay省略時はfalse。trueを書けばそのまま渡る（実際に裏へ反映するのはScriptMng側）
+	expect(tsy('[tsy layer=base time=500 left=100]').backlay).toBe(false);
+	expect(tsy('[tsy layer=base time=500 left=100 backlay=true]').backlay).toBe(true);
+});
+
+it('tsy_filter', ()=> {
+	// [tsy filter=…]は[lay filter=…]と同じaddFilterアクションを、トゥイーン本体より先に積む
+	//	（本家同様、開始と同時に一度だけ差し替える副作用。値をアニメーションさせるわけではない）
+	const a = acts(`${LAYS}[tsy layer=base time=500 left=100 filter=blur]あ[s]`);
+	const i = a.findIndex(v=> v.t === 'addFilter');
+	expect(i).toBeGreaterThanOrEqual(0);
+	expect(a[a.findIndex(v=> v.t === 'tsy')]).toBeDefined();
+	expect(i).toBeLessThan(a.findIndex(v=> v.t === 'tsy'));
 });
 
 it('tsy_doesNotStop', ()=> {

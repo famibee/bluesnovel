@@ -8,7 +8,11 @@
       "Bash(mv TESTING.md .claude/docs/TESTING.md)",
       "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)",
       "Bash(python3 -c ' *)",
-      "Bash(grep -v \"\\\\.ts$\\\\|\\\\.html$\")"
+      "Bash(grep -v \"\\\\.ts$\\\\|\\\\.html$\")",
+      "Bash(git log *)"
+    ],
+    "additionalDirectories": [
+      "/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/src/components"
     ]
   }
 }
