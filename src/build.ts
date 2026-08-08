@@ -73,7 +73,6 @@ const A_APP_EXTERNAL = [
 	'electron', /^electron\/.+/,
 	'electron-devtools-installer',
 	// package.json の dependencies のうち、node側で使うもの
-	'@electron-toolkit/typed-ipc', /^@electron-toolkit\/typed-ipc\/.+/,
 	'electron-store', 'fs-extra', 'adm-zip',
 	...builtinModules.flatMap(p=> [p, `node:${p}`]),
 ];

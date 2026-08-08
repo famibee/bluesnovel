@@ -55,6 +55,12 @@ var t = "skynovel", n = class {
 	}]) {
 		super(e, t), queueMicrotask(async () => this.loaded(e, t));
 	}
+	async loaded(...[e, t]) {
+		if (await super.loaded(e, t), !this.cfg.oCfg.debug.devtool) {
+			let { initDevToolsGuard: e } = await import("./DevToolsGuard.js");
+			e();
+		}
+	}
 };
 //#endregion
 export { r as SysWeb };

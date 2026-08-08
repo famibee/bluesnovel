@@ -21,7 +21,7 @@ import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 import type {T_IpcEvents, T_IpcRendererEvent} from './preload';
 
-import {IpcEmitter, IpcListener} from '@electron-toolkit/typed-ipc/renderer';
+import {IpcEmitter, IpcListener} from './IpcRenderer';
 
 
 export class SysApp extends SysBase {

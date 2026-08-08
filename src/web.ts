@@ -11,7 +11,7 @@ import type {TArg} from './sn/Grammar';
 export type {TArg};
 
 import {SysBase} from './sn/SysBase';
-import type {T_SysBaseParams} from './sn/CmnInterface';
+import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 
 // 仮置きでここに
 export class SysWeb extends SysBase {
@@ -20,6 +20,17 @@ export class SysWeb extends SysBase {
 // console.log(`fn:web.ts line:19 hPlg:%o`, this.hPlg);
 		//TODO: プラグイン
 		queueMicrotask(async ()=> this.loaded(hPlg, arg));
+	}
+
+	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
+		await super.loaded(hPlg, arg);	// cfg.oCfgはこの後で使える
+
+		// debug.devtool=falseの時だけ警告オーバーレイのガードを有効化（本家 devtools-detect相当。
+		//	理由・仕組みは DevToolsGuard.ts 参照。Electronアプリ版は appMain_cmn.ts が別途対応済み）
+		if (! this.cfg.oCfg.debug.devtool) {
+			const {initDevToolsGuard} = await import('./ts/DevToolsGuard');
+			initDevToolsGuard();
+		}
 	}
 
 }

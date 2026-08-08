@@ -91,6 +91,28 @@
   - `[link]`にも同様の効果音属性を追加する余地があるが、今回のスコープは`[button]`のみ。
     `todo.md`のPhase 3に残した
 
+- [x] **`@electron-toolkit/typed-ipc`・`devtools-detect`への依存を自前実装に置き換え**
+  - `@electron-toolkit/typed-ipc`：実質1人メンテ（alex8088）で該当パッケージのpushが約1年
+    止まっていたため、`IpcListener`/`IpcEmitter`（main側・renderer側）を`src/IpcMain.ts`・
+    `src/IpcRenderer.ts`として自前実装。実体は`ipcMain.on/handle`・`window.electron.ipcRenderer`
+    をチャンネル名→ペイロード型のマップでジェネリクスに包むだけの薄いラッパーで、npm配布物の
+    `dist/main.mjs`・`dist/renderer.mjs`をそのままTypeScript化した。renderer側が前提とする
+    `window.electron.ipcRenderer`の契約（`send`/`invoke`/`on`/`once`）はテンプレ側
+    （`@electron-toolkit/preload`の`exposeElectronAPI()`）が変わらず提供するので、preload側は
+    無改修。`appMain_cmn.ts`は元々`T_ipc_appMain_cmn`という最小限の自前interfaceで受けていた
+    ため、影響は`appMain.ts`・`app.ts`のimport元切替のみ。`src/build.ts`の`A_APP_EXTERNAL`と
+    `package.json`からパッケージ自体を除去
+  - `devtools-detect`：2026-05-12にsindresorhus自身がリポジトリをアーカイブ済み（README
+    「多くの欠陥がある」と作者が明記）で移植は避け、`src/ts/DevToolsGuard.ts`を新設。原理は
+    同ライブラリと同じ「window外寸と内寸の差」ヒューリスティック。ただしElectronアプリ版は
+    `appMain_cmn.ts`が`webContents.on('devtools-opened')`でネイティブに検知・強制終了まで
+    行うので対象外（元々未使用importとして依存からは撤去済みだった）。**web版(`SysWeb`)にだけ
+    新規適用**し、`debug.devtool=false`の時だけ警告オーバーレイを表示する（タブを閉じる・
+    シャットダウンする等はブラウザでは再現できないため、ユーザー確認の上でオーバーレイ表示のみ
+    に留めた）
+  - `bunx tsc --noEmit`・`bun test`（1459件）とも成功。`todo.md`「アセット・基盤」の
+    該当2項目はここへ移動
+
 - [ ]
 
 

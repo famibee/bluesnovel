@@ -9,7 +9,7 @@ import {appMain_cmn} from './appMain_cmn';
 import type {SAVE_WIN_INF, T_IpcEvents, T_IpcRendererEvent} from './preload';
 
 import {BrowserWindow} from 'electron';	// ギャラリーでエラーになる【error TS2503: Cannot find namespace 'Electron'.】ので const ではなく import の形に
-import {IpcListener, IpcEmitter} from '@electron-toolkit/typed-ipc/main'
+import {IpcListener, IpcEmitter} from './IpcMain'
 
 
 	// console.log はテンプレの VSCode に出る
