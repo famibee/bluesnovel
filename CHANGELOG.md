@@ -197,6 +197,33 @@
   - テスト：`test/Txt.test.ts`に`splitRubyAlign()`・傍点分離・`[link]`新属性のフォールバックを検証する追加（`rubyTxt_dropsAlign`は`splitRubyAlign`のテストへ差し替え）。E2Eは`test/e2e/app/prj_ruby/main.sn`にシーンを追加（末尾の`[s]`を`[l]`にしてクリックで先へ進めるよう変更）、`ruby.e2e.ts`に新規3件（`sesame`・`r_align`の優先順位・`[link]`4状態の実色）。ユニット1498件→1499件、E2E12件（同ファイル内、新規3件）。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
   - `docs/tag.html`の`[link]`エントリと`[lay]`の文字組み説明を更新、`todo.md`から該当3項目を削除
 
+- [x] **`[button]`の配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）を実装**（2026-08-09）
+  - 本家調査の結果、`Layer.ts:499-558`の`setXY()`に`isButton`分岐そのものはあったが、呼び出し3箇所（`GrpLayer.ts`/`TxtLayer.ts`）はどれも`isButton`を渡さず常に`false`、`Button.ts`も`setXY()`自体を通らず`left`/`top`を直読みするだけで、**一度も配線されたことのないデッドコード**だった（AIRNovel時代の名残と判明、`CHANGELOG.md`2026/08/02のエントリ参照）。仕様はこの未配線コードから掘り起こした：`center`/`right`は「指定値から表示物の幅を引く」寄せ、`s_right`/`s_bottom`は画面右端・下端からのオフセット
+  - bluesnovelは`[lay]`側で既に同じ仕様を実装済み（`align_x`/`align_y`/`s_right`/`s_bottom`＋CSSの独立`translate`プロパティで寄せを表現。表示物の実寸をエンジンが知らなくてよい設計）だったので、そのまま`[button]`へ移植した。画像ボタンは箱の幅が既に3コマ分割後の実寸（`natPic.w = naturalWidth/3`）になっているため、`translate: -50%`が本家の`b_width/3`計算と自然に一致する
+  - `T_BTN_STY`（`TxtLayer.tsx`）に`align_x`/`align_y`/`s_right`/`s_bottom`を追加、`BtnLayer.tsx`の`styBtnArg()`へCSS変換を追加（`Lay.ts`の`styLay()`と同じ形）。`ScriptEngine.ts`の`case 'button'`は`left`/`center`/`right`/`s_right`・`top`/`middle`/`bottom`/`s_bottom`をそれぞれ排他（`else if`）で処理するよう変更、`#A_BTN_NUM`からは`left`/`top`を外した（排他関係にあるため単純ループに乗らない）
+  - テスト：`test/ScriptEngine_lay.test.ts`に`btnAlign_*`を4件追加（中央寄せ・右端合わせ・画面端オフセット・`left`優先の排他順）。ユニット1499件→1503件。型チェック（`bunx tsc --noEmit --incremental false`）も通過
+  - `docs/tag.html`の`[button]`エントリを更新（「未対応」から実装済みの説明へ差し替え、属性表に配置属性の行を追加）、`todo.md`から該当項目を削除
+
+- [x] **`[lay back_clear=true]`を実装、`b_left`/`b_top`は本家調査の結果対応不要と判明**（2026-08-09）
+  - 本家`TxtLayer.ts:376-385`の`#drawBack()`を調査。`back_clear=true`は`b_color`/`b_alpha`/`b_alpha_isfixed`/`b_pic`を初期状態（`0x000000`/`0`/`false`/`''`）へ戻し、**指定時は他のb_*属性処理を素通りする**（早期return）。`false`指定時は何もしない
+  - `b_left`/`b_top`は`TxtLayer.ts`全体をgrepしても一切読まれておらず、**実質未配線**と判明。実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が`b_left=0 b_top=0`と指定していても本家上で効いていない値だったので、bluesnovel側でも対応不要と判断（`[button]`の配置属性のような「掘り起こせば仕様が分かる」デッドコードとは違い、こちらは手がかり自体が無い）
+  - 自動サイズ調整（本家`setMySize()`。`b_pic`ロード後、文字表示領域を画像の実寸へ合わせる）は`[lay width=/height=]`属性自体が未実装なのが前提となるため見送り、`todo.md`に理由を明記して残した
+  - 実装は`chgBAlpha`/`chgBPic`と同じ形の専用アクション`chgBackClear`（`ScriptEngine.ts`→`ScriptMng.ts`→`store.tsx`）。`ScriptEngine.ts`の`case 'lay'`は`back_clear`が指定されたら`b_alpha`/`b_alpha_isfixed`/`b_pic`/`b_color`の処理を丸ごとスキップする（本家の早期returnと同じ排他）
+  - テスト：`test/ScriptEngine_lay.test.ts`に3件（アクション発行・`false`時のno-op・他のb_*属性の排他）、`test/store_lay.test.ts`に1件（ストアの実際のリセット内容）、`test/e2e/lay.e2e.ts`に1件（算出CSSの`background-color`がtransparentへ戻ることを確認）。ユニット1503件→1507件、E2E12件（同ファイル内、新規1件）。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
+  - `docs/tag.html`の`[lay]`エントリを更新（`back_clear`対応済み・`b_left`/`b_top`が本家でも未配線である旨を明記）、`todo.md`の該当項目を更新（自動サイズ調整のみ残し、理由を明記）
+
+- [x] **`[save pic=…]`のサムネイル保存は既に実装済みと判明、`todo.md`から棚卸し**（2026-08-09）
+  - 「しおり・システム系の残り」の次の項目として調査したところ、必要な3パーツが既にそれぞれ独立して実装・テスト済みだった：`[save]`が`place`以外の属性を丸ごと`json`へ持たせる（`ScriptEngine.ts` `case 'save'`。本家`#save()`と同じ挙動）、`[snapshot fn='userdata:/…']`が`SaveMng.putFile()`でセーブ層へ画像を置く、`#searchPic()`が`userdata:`プレフィックスをセーブ層（`SaveMng.getFile()`）から引く分岐を持つ（`ScriptMng.ts:1189`）。テンプレの`frames/_archive.sn`はこの3つを`[let name=pic text="&'userdata:/'+place+'/pic.jpg'"]`→`[snapshot fn=&pic]`→`[save place=&place pic=&pic]`の順で繋いでいるだけなので、追加の実装は不要だった
+  - 検証のため`test/SaveMng.test.ts`に`bookmarkJson_carriesArbitraryAttrsLikePic`を追加（`pic`属性に`userdata:`パスを持たせても`bookmarkJson()`がそのまま返すことを確認）。ユニット1507件→1508件
+  - `docs/tag.html`の`[save]`エントリを更新（「未対応：サムネイル画像の保存」を対応済みの説明へ差し替え、残るのは暗号化のみに）、`todo.md`から該当項目を削除
+
+- [x] **`[load]`の`index=`／`do_rec=`を実装**（2026-08-09）
+  - 本家`ScriptIterator.ts:1415-1485`の`#load()`/`loadFromMark()`を調査した結果、`todo.md`の従来の理解（「本家は`index=`でしおりの中の何ページ目かを選べる」）は誤りと判明。本家tag.htmlにも`index`/`do_rec`の記載が無く未ドキュメント化の内部属性だが、コードを読むと`index`は**しおりのページログとは無関係**で、「保存時点の再開位置を無視し、`fn`（省略時は現在のスクリプト）の`index`位置（トークン番号）へ直接ジャンプする」ページ移動用の機能（本家コード中のコメントも「ページ移動用」）。`label`は無視され`fn`単独で書ける。ページログ（`PageLog.ts`）をしおりへ含める設計変更は不要だった
+  - `do_rec`（既定true）は、ロードした状態を次の`[record_place]`代わりの`#mark`として持たせるかどうか。`[reload_script]`は対象外（本家も`do_rec=false`で呼ぶ）。実装は`chgBAlpha`等と同じ`ScriptEngine.ts`→`ScriptMng.ts`の流れで、`case 'load'`のバリデーション（`fn`/`label`はセット必須）は`index`指定時のみ免除するよう変更
+  - `ScriptMng.ts`の`#procLoad()`に、`doRec !== false`なら`this.#mark = {...mark}`、`index`指定時は通常の再開位置取得を丸ごとスキップして`engine.switchScript()`で直接ジャンプする分岐を追加
+  - テスト：`test/ScriptEngine_save.test.ts`に3件（`index`指定時のfn単独許可・`do_rec`の値の伝搬）、`test/e2e/save.e2e.ts`に2件追加・1件更新（`index`でsub.snへジャンプ→`[jump]`で`*reload`へ戻り通常の`[load]`も確認、`do_rec`でロード時点の値が保存されることを確認）。E2E用に`prj_save/sub.sn`を新設。**`[load]`は必ずジャンプするため直後のコードには到達しない**（record_place位置への巻き戻りで無限ループしかけた）ことに気づき、`[jump]`でmain.snの`*reload`ラベルへ戻す設計にした。ユニット1508件→1510件、E2E5件（同ファイル内）。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
+  - `docs/tag.html`の`[load]`エントリを更新（`index`/`do_rec`の実際の仕様と対応済みである旨を明記、属性表に2行追加）、`todo.md`から該当項目を削除
+
 - [ ]
 
 

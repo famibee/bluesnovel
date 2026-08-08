@@ -625,6 +625,10 @@ var V = P()((e, t) => ({
 		let { idx: a, aLay: o } = L(e, n), s = B(o, t, "txt");
 		return s.b_pic = r, s.b_src = i, R(e, a, o);
 	}),
+	chgBackClear: ({ nm: t, page: n }) => e((e) => {
+		let { idx: r, aLay: i } = L(e, n), a = B(i, t, "txt");
+		return delete a.b_color, a.b_alpha = 0, a.b_alpha_isfixed = !1, delete a.b_pic, delete a.b_src, R(e, r, i);
+	}),
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
 		let { idx: i, aLay: a } = L(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;

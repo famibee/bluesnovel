@@ -211,6 +211,25 @@ it('clearLay_dropsBackPicAndFixedFlag', ()=> {
 	expect(lay.b_alpha).toBe(1);
 });
 
+it('chgBackClear_resetsBackground', ()=> {
+	// [lay back_clear=true]：b_color/b_pic/b_srcは消え、b_alphaは0（透明）、
+	//	b_alpha_isfixedはfalseになる（本家 TxtLayer.ts:376-385）
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
+	S().chgBPic({nm: 'mes', page: 'fore', fn: 'wafuu1', src: '/theme/wafuu1.png'});
+	S().chgBAlpha({nm: 'mes', page: 'fore', b_alpha: 0.4, isFixed: true});
+	S().chgLay({nm: 'mes', page: 'fore', sty: {b_color: 0xffffff}});
+
+	S().chgBackClear({nm: 'mes', page: 'fore'});
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.b_color).toBeUndefined();
+	expect(lay.b_pic).toBeUndefined();
+	expect(lay.b_src).toBeUndefined();
+	expect(lay.b_alpha_isfixed).toBe(false);
+	expect(lay.b_alpha).toBe(0);
+});
+
 // ===== [button]のnm（Reactのkey）＝ストア側で振る通し番号 =====
 //	本家にボタン名の概念は無い。ここのnmはStage.tsxのkeyのためだけの物なので、
 //	省略時に何を使うかはストアの都合＝ストア側でしか決められない

@@ -201,7 +201,7 @@ var y = typeof document < "u" ? v : function(e) {}, b = /* @__PURE__ */ n(((e) =
 				var m = Object.keys(n).filter(function(e) {
 					return e !== "key";
 				});
-				a = 0 < m.length ? "{key: someKey, " + m.join(": ..., ") + ": ...}" : "{key: someKey}", F[f + a] || (m = 0 < m.length ? "{" + m.join(": ..., ") + ": ...}" : "{}", console.error("A props object containing a \"key\" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />", a, f, m, f), F[f + a] = !0);
+				a = 0 < m.length ? "{key: someKey, " + m.join(": ..., ") + ": ...}" : "{key: someKey}", re[f + a] || (m = 0 < m.length ? "{" + m.join(": ..., ") + ": ...}" : "{}", console.error("A props object containing a \"key\" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />", a, f, m, f), re[f + a] = !0);
 			}
 			if (f = null, r !== void 0 && (i(r), f = "" + r), c(n) && (i(n.key), f = "" + n.key), "key" in n) for (var h in r = {}, n) h !== "key" && (r[h] = n[h]);
 			else r = n;
@@ -219,7 +219,7 @@ var y = typeof document < "u" ? v : function(e) {}, b = /* @__PURE__ */ n(((e) =
 		h = { react_stack_bottom_frame: function(e) {
 			return e();
 		} };
-		var j, M = {}, N = h.react_stack_bottom_frame.bind(h, s)(), P = A(a(s)), F = {};
+		var j, M = {}, N = h.react_stack_bottom_frame.bind(h, s)(), P = A(a(s)), re = {};
 		e.Fragment = v, e.jsx = function(e, t, n) {
 			var r = 1e4 > O.recentlyCreatedOwnerStacks++;
 			return f(e, t, n, !1, r ? Error("react-stack-top-frame") : N, r ? A(a(e)) : P);
@@ -267,10 +267,10 @@ var te = /*#__PURE__*/ function() {
 		}), this.tags = [], this.ctr = 0;
 	}, e;
 }(), w = "-ms-", T = "-moz-", E = "-webkit-", D = "comm", O = "rule", k = "decl", ne = "@import", A = "@keyframes", j = "@layer", M = Math.abs, N = String.fromCharCode, P = Object.assign;
-function F(e, t) {
+function re(e, t) {
 	return R(e, 0) ^ 45 ? (((t << 2 ^ R(e, 0)) << 2 ^ R(e, 1)) << 2 ^ R(e, 2)) << 2 ^ R(e, 3) : 0;
 }
-function re(e) {
+function F(e) {
 	return e.trim();
 }
 function ie(e, t) {
@@ -372,7 +372,7 @@ function pe(e) {
 	return K = "", e;
 }
 function me(e) {
-	return re(X(W - 1, _e(e === 91 ? e + 2 : e === 40 ? e + 1 : e)));
+	return F(X(W - 1, _e(e === 91 ? e + 2 : e === 40 ? e + 1 : e)));
 }
 function he(e) {
 	for (; (G = Y()) && G < 33;) J();
@@ -486,7 +486,7 @@ function xe(e, t, n, r, i, a, o, s, c) {
 	return a;
 }
 function Se(e, t, n, r, i, a, o, s, c, l, u) {
-	for (var d = i - 1, f = i === 0 ? a : [""], p = V(f), m = 0, h = 0, g = 0; m < r; ++m) for (var _ = 0, v = z(e, d + 1, d = M(h = o[m])), y = e; _ < p; ++_) (y = re(h > 0 ? f[_] + " " + v : I(v, /&\f/g, f[_]))) && (c[g++] = y);
+	for (var d = i - 1, f = i === 0 ? a : [""], p = V(f), m = 0, h = 0, g = 0; m < r; ++m) for (var _ = 0, v = z(e, d + 1, d = M(h = o[m])), y = e; _ < p; ++_) (y = F(h > 0 ? f[_] + " " + v : I(v, /&\f/g, f[_]))) && (c[g++] = y);
 	return ce(e, t, n, i === 0 ? O : s, c, l, u);
 }
 function Ce(e, t, n) {
@@ -574,7 +574,7 @@ var ke = function(e, t, n) {
 	}
 };
 function Fe(e, t) {
-	switch (F(e, t)) {
+	switch (re(e, t)) {
 		case 5103: return E + "print-" + e + e;
 		case 5737:
 		case 4201:
@@ -812,10 +812,10 @@ var Ie = [function(e, t, n, r) {
 		function P(e) {
 			return x(e) === u;
 		}
-		function F(e) {
+		function re(e) {
 			return x(e) === c;
 		}
-		function re(e) {
+		function F(e) {
 			return x(e) === s;
 		}
 		function ie(e) {
@@ -845,7 +845,7 @@ var Ie = [function(e, t, n, r) {
 		function ae(e) {
 			return x(e) === f;
 		}
-		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = ee, e.ContextProvider = te, e.Element = w, e.ForwardRef = T, e.Fragment = E, e.Lazy = D, e.Memo = O, e.Portal = k, e.Profiler = ne, e.StrictMode = A, e.Suspense = j, e.isAsyncMode = N, e.isConcurrentMode = P, e.isContextConsumer = F, e.isContextProvider = re, e.isElement = ie, e.isForwardRef = I, e.isFragment = L, e.isLazy = R, e.isMemo = z, e.isPortal = B, e.isProfiler = V, e.isStrictMode = H, e.isSuspense = ae, e.isValidElementType = b, e.typeOf = x;
+		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = ee, e.ContextProvider = te, e.Element = w, e.ForwardRef = T, e.Fragment = E, e.Lazy = D, e.Memo = O, e.Portal = k, e.Profiler = ne, e.StrictMode = A, e.Suspense = j, e.isAsyncMode = N, e.isConcurrentMode = P, e.isContextConsumer = re, e.isContextProvider = F, e.isElement = ie, e.isForwardRef = I, e.isFragment = L, e.isLazy = R, e.isMemo = z, e.isPortal = B, e.isProfiler = V, e.isStrictMode = H, e.isSuspense = ae, e.isValidElementType = b, e.typeOf = x;
 	})();
 })), Be = /* @__PURE__ */ n(((e, t) => {
 	t.exports = process.env.NODE_ENV === "production" ? Re() : ze();
@@ -1140,8 +1140,8 @@ function yt(e, t, n) {
 function bt({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: a } = e, o = i((e) => e.title), s = i((e) => e.addTitle);
 	y(o);
-	let c = i((e) => e.addLayer), d = i((e) => e.chgPic), f = i((e) => e.chgBAlpha), p = i((e) => e.chgStr), m = i((e) => e.chgLay), h = i((e) => e.defChStyle), _ = i((e) => e.setChWait), v = i((e) => e.setAutowc), b = i((e) => e.getLaySty), x = i((e) => e.getPages), S = i((e) => e.chgBPic), C = i((e) => e.setBackAlpha), ee = i((e) => e.setBtnFont), te = i((e) => e.getPagesJson), w = i((e) => e.replace), T = i((e) => e.toggleFullScr), E = i((e) => e.clearLay), D = i((e) => e.clearTxtLay), O = i((e) => e.moveLay), k = i((e) => e.chgFilter), ne = i((e) => e.enableEvent), A = i((e) => e.addBtn), j = i((e) => e.setReadBack), M = i((e) => e.setStyPaging), N = i((e) => e.isReadBack), P = i((e) => e.isTyping), F = i((e) => e.requestSkip), re = i((e) => e.setWait), ie = i((e) => e.setSkipping), I = i((e) => e.startTrans), L = i((e) => e.finishTrans), R = i((e) => e.startQuake), z = i((e) => e.finishQuake);
-	function B() {
+	let c = i((e) => e.addLayer), d = i((e) => e.chgPic), f = i((e) => e.chgBAlpha), p = i((e) => e.chgStr), m = i((e) => e.chgLay), h = i((e) => e.defChStyle), _ = i((e) => e.setChWait), v = i((e) => e.setAutowc), b = i((e) => e.getLaySty), x = i((e) => e.getPages), S = i((e) => e.chgBPic), C = i((e) => e.chgBackClear), ee = i((e) => e.setBackAlpha), te = i((e) => e.setBtnFont), w = i((e) => e.getPagesJson), T = i((e) => e.replace), E = i((e) => e.toggleFullScr), D = i((e) => e.clearLay), O = i((e) => e.clearTxtLay), k = i((e) => e.moveLay), ne = i((e) => e.chgFilter), A = i((e) => e.enableEvent), j = i((e) => e.addBtn), M = i((e) => e.setReadBack), N = i((e) => e.setStyPaging), P = i((e) => e.isReadBack), re = i((e) => e.isTyping), F = i((e) => e.requestSkip), ie = i((e) => e.setWait), I = i((e) => e.setSkipping), L = i((e) => e.startTrans), R = i((e) => e.finishTrans), z = i((e) => e.startQuake), B = i((e) => e.finishQuake);
+	function V() {
 		a.go();
 	}
 	u(() => {
@@ -1152,8 +1152,9 @@ function bt({ arg: e, inited: t }) {
 			chgPic: d,
 			chgBAlpha: f,
 			chgBPic: S,
-			setBackAlpha: C,
-			setBtnFont: ee,
+			chgBackClear: C,
+			setBackAlpha: ee,
+			setBtnFont: te,
 			chgStr: p,
 			chgLay: m,
 			defChStyle: h,
@@ -1161,26 +1162,26 @@ function bt({ arg: e, inited: t }) {
 			setAutowc: v,
 			getLaySty: b,
 			getPages: x,
-			getPagesJson: te,
-			replace: w,
-			clearLay: E,
-			clearTxtLay: D,
-			moveLay: O,
-			chgFilter: k,
-			enableEvent: ne,
-			addBtn: A,
+			getPagesJson: w,
+			replace: T,
+			clearLay: D,
+			clearTxtLay: O,
+			moveLay: k,
+			chgFilter: ne,
+			enableEvent: A,
+			addBtn: j,
 			addTitle: s,
-			toggleFullScr: T,
-			setWait: re,
+			toggleFullScr: E,
+			setWait: ie,
 			requestSkip: F,
-			setSkipping: ie,
-			startTrans: I,
-			finishTrans: L,
-			startQuake: R,
-			finishQuake: z,
-			setReadBack: j,
-			setStyPaging: M
-		}, e), t(), n.addEventListener("ev_next", B), () => n.removeEventListener("ev_next", B);
+			setSkipping: I,
+			startTrans: L,
+			finishTrans: R,
+			startQuake: z,
+			finishQuake: B,
+			setReadBack: M,
+			setStyPaging: N
+		}, e), t(), n.addEventListener("ev_next", V), () => n.removeEventListener("ev_next", V);
 	}), u(() => {
 		let e = (e) => a.setKeyDown(e.key, !0), t = (e) => a.setKeyDown(e.key, !1), n = () => a.clearKeyDown();
 		return document.addEventListener("keydown", e), document.addEventListener("keyup", t), globalThis.addEventListener("blur", n), () => {
@@ -1194,18 +1195,18 @@ function bt({ arg: e, inited: t }) {
 			document.removeEventListener("contextmenu", e);
 		};
 	});
-	function V() {
-		if (P) {
+	function H() {
+		if (re) {
 			F();
 			return;
 		}
-		if (N) {
+		if (P) {
 			a.page("next");
 			return;
 		}
-		B();
+		V();
 	}
-	function H() {
+	function ae() {
 		a.page("prev");
 	}
 	g(() => !0, (e) => {
@@ -1223,25 +1224,25 @@ function bt({ arg: e, inited: t }) {
 			case "Space":
 			case "ArrowDown":
 			case "PageDown":
-				e.stopPropagation(), e.preventDefault(), V();
+				e.stopPropagation(), e.preventDefault(), H();
 				break;
-			case "PageUp": e.stopPropagation(), e.preventDefault(), H();
+			case "PageUp": e.stopPropagation(), e.preventDefault(), ae();
 		}
 	});
-	function ae() {
+	function oe() {
 		if (Tt) {
 			Tt = !1;
 			return;
 		}
-		Ct || (a.cancelAuto(), a.unlockAudio(), !a.fireEvent("click") && V());
+		Ct || (a.cancelAuto(), a.unlockAudio(), !a.fireEvent("click") && H());
 	}
 	return /* @__PURE__ */ ht(l.Suspense, {
 		fallback: /* @__PURE__ */ ht(mt, { children: "Loading" }),
 		children: /* @__PURE__ */ ht(vt, {
 			arg: e,
-			next: V,
-			prev: H,
-			onClick: ae
+			next: H,
+			prev: ae,
+			onClick: oe
 		})
 	});
 }

@@ -46,6 +46,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
 	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
 	const chgBPic = useStore(s=> s.chgBPic);	// [lay b_pic=…]（文字レイヤ背後の枠画像）
+	const chgBackClear = useStore(s=> s.chgBackClear);	// [lay back_clear=true]（文字レイヤ背景を初期状態へ）
 	const setBackAlpha = useStore(s=> s.setBackAlpha);	// sys:TextLayer.Back.Alpha（全文字レイヤ共通の掛け率）
 	const setBtnFont = useStore(s=> s.setBtnFont);	// tmp:sn.button.fontFamily（[button]の文字フォント）
 	const getPagesJson = useStore(s=> s.getPagesJson);	// しおり（[record_place]/[save]）用
@@ -72,7 +73,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging}, hTag);
 
 		inited();
 

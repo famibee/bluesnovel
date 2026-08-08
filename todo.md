@@ -17,11 +17,8 @@
 
 ## タグ・変数の残り
 
-- [ ] **`[button]`の残り**：配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）が未対応（本家側もこの機構は未配線のデッドコードで参照実装が無いため、自前設計が必要）。`pic=`（画像ボタン）・`b_pic=`（背景画像、箱は絵の実寸へ拡大）・効果音（`clickse`/`enterse`/`leavese`）・`hint_opt`（`placement`＋画面端はみ出し対応）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
-- [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
+- [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
 - [ ] **しおり・システム系の残り**
-  - [ ] `[load]`の`index=`（ページ移動用）・`do_rec=`。**ロード時はページログを捨てている**（ロード後の位置は履歴と繋がらないため）。本家は`index=`でしおりの中の何ページ目かを選べるので、そこを繋ぐならページログ（`src/ts/PageLog.ts`）をしおりへ含める設計が要る
-  - [ ] `[save pic=…]`のサムネイル保存（テンプレの`_archive.sn`が枠に出す想定）。置き場は`[snapshot fn='userdata:/…']`と同じセーブ層（`SaveMng.putFile()`）でよい
   - [ ] セーブデータの**暗号化**（本家`sys.arg.crypto`／`enc()`/`dec()`）。`[export]`/`[import]`も含む。アセット暗号化と一緒に
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）
   - [ ] **アプリ（Electron）版の残り**。`src/app.ts`（`SysApp`）は**ウインドウが出て本編が動くところまで**実装済み（`getInfo`→Config→`inited`）。`[close]`／`[window]`も接続済み。残りは下記

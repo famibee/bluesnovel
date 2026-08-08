@@ -1077,6 +1077,22 @@ export class ScriptMng {
 			this.#pageStart = undefined;
 			this.#stopped = false;
 
+			// do_rec（既定true）：ロードした状態を次の[record_place]代わりの#markとして持たせる。
+			//	[record_place]を挟まず[save]しても、ロード直後の状態が保存されるように
+			//	（本家 ScriptIterator.ts:1434）。[reload_script]は対象外（本家もdo_rec=falseで呼ぶ）
+			if (act.t === 'load' && act.doRec !== false) this.#mark = {...mark};
+
+			// index指定時：保存時点の再開位置ではなく、fn（省略時は現在のスクリプト）のindex位置
+			//	（トークン番号）へ直接ジャンプする（本家 ScriptIterator.ts:1454「ページ移動用」）。
+			//	labelは無視される。**通常の再開位置（save:const.sn.scriptFn/scriptIdx）は見ない**
+			if (act.t === 'load' && act.index !== undefined) {
+				const scr2 = await this.#getScript(act.fn || engine.fn);
+				engine.switchScript(scr2, '', act.index);
+				this.#procing = false;
+				this.#goSafe();
+				return;
+			}
+
 			// 再開位置。**スクリプトは必ず読み直す**（本家も「吉里吉里に動作を合わせる」ため
 			//	キャッシュを捨てる。[reload_script]はファイルが編集された後の読み直しが目的なので必須）
 			const fn = String(engine.getVal('save:const.sn.scriptFn') ?? '');
@@ -1238,6 +1254,9 @@ export class ScriptMng {
 			// 文字レイヤ背後の枠画像。画像レイヤ（chgPic）と同じくここでパスを解決する
 			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn,
 				src: act.fn ? this.#searchPic('lay b_pic', act.fn) : ''});
+			break;
+		case 'chgBackClear':
+			this.$fncs.chgBackClear({nm: act.nm, page: act.page});
 			break;
 		case 'finishTrans':
 			// [finish_trans]。動いている演出が無ければ何も起きない

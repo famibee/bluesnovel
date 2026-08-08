@@ -52,4 +52,10 @@
 ; 背景が完全に透明（b_alpha=0）な層は、文字があっても箱（背景＋点線枠）を描かない。
 ;	テンプレの[txt_lay_fullscreen b_alpha=0]がこの形（b_colorは書くが透過度は0）
 [lay layer=mes visible=true b_color=0xFF8000 b_alpha=0]
-とうめい[s]
+とうめい[p]
+
+; [lay back_clear=true]：背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
+[lay layer=mes b_color=0x0000FF b_alpha=1 b_alpha_isfixed=true]
+はいけい[p]
+[lay layer=mes back_clear=true]
+けした[s]

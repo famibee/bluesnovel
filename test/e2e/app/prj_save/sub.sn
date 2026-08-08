@@ -1,0 +1,13 @@
+; main.sn から [load index=]（ページ移動用）で使う別ファイル。index=0（先頭）へ直接ジャンプする
+[er]
+いどうさき[p]
+
+; do_rec（既定true）：[load]した状態（hp=100）が次の[record_place]代わりの#markになる。
+;	ここでrecord_placeを挟まず[save]すれば、hpを999に変えていてもhp=100（ロード時点）が
+;	保存されるはず（本家 ScriptIterator.ts:1434）
+&game:hp = 999
+[save place=3]
+[er]
+どうれく[p]
+
+[jump fn=main label=*reload]

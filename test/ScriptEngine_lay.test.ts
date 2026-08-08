@@ -276,6 +276,29 @@ it('lay_bPic_isSeparateFromBColor', ()=> {
 	expect(a.find(v=> v.t === 'chgLay')?.sty.b_color).toBe(0xffffff);
 });
 
+it('lay_backClear_pushesAction', ()=> {
+	// [lay back_clear=true]：背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
+	//	（本家 TxtLayer.ts:376-385）
+	expect(acts('[lay layer=mes back_clear=true][s]').find(v=> v.t === 'chgBackClear'))
+		.toEqual({t: 'chgBackClear', nm: 'mes', page: 'fore'});
+});
+
+it('lay_backClear_falseDoesNothing', ()=> {
+	// back_clear=falseは本家も何もしない（argChk_Boolean(hArg,'back_clear',false)がtrueの時だけ実行）
+	const a = acts('[lay layer=mes back_clear=false][s]');
+	expect(a.find(v=> v.t === 'chgBackClear')).toBeUndefined();
+});
+
+it('lay_backClear_skipsOtherBAttrs', ()=> {
+	// back_clear指定時は他のb_*属性（b_alpha/b_pic/b_color）を本家同様に無視する
+	//	（#drawBack()が早期returnするのと同じ排他）
+	const a = acts('[lay layer=mes back_clear=true b_alpha=0.5 b_pic=wafuu1 b_color=0xffffff][s]');
+	expect(a.find(v=> v.t === 'chgBackClear')).toEqual({t: 'chgBackClear', nm: 'mes', page: 'fore'});
+	expect(a.some(v=> v.t === 'chgBAlpha')).toBe(false);
+	expect(a.some(v=> v.t === 'chgBPic')).toBe(false);
+	expect(a.find(v=> v.t === 'chgLay')?.sty.b_color).toBeUndefined();
+});
+
 // ============ blendmode（[lay]／[add_face]／[button]で同じ扱い） ============
 
 it('blendmode_convertsToCss', ()=> {
@@ -381,4 +404,40 @@ it('layAlign_leftWins', ()=> {
 it('layAlign_ratioWorksToo', ()=> {
 	// 寄せの指定値も-1〜1は割合（本家も同じ #argChkPos を通す）
 	expect(styOfWin('[lay layer=base center=0.5]')).toMatchObject({left: 512, align_x: 'center'});
+});
+
+
+// ============ [button]の中央寄せ・右端合わせ（本家 Layer.ts:513-552 の isButton 分岐。
+//	実際は3箇所とも isButton=false 固定で未配線だったデッドコードだが、仕様として掘り起こした） ============
+
+function btnStyOfWin(src: string) {
+	const a = seWin(src).find(v=> v.t === 'addBtn');
+	return a?.t === 'addBtn' ? a.sty : undefined;
+}
+
+it('btnAlign_centerAndMiddle', ()=> {
+	// [lay]と同じ設計：寄せの種類だけを渡し、実際のずらしはCSSのtranslateが行う（BtnLayer.tsx styBtnArg）
+	expect(btnStyOfWin('[button text=x label=*a center=0.5 middle=0.5]'))
+		.toMatchObject({left: 512, align_x: 'center', top: 384, align_y: 'middle'});
+});
+
+it('btnAlign_rightAndBottom', ()=> {
+	expect(btnStyOfWin('[button text=x label=*a right=800 bottom=600]'))
+		.toMatchObject({left: 800, align_x: 'right', top: 600, align_y: 'bottom'});
+});
+
+it('btnAlign_stageEdge', ()=> {
+	// s_right/s_bottomはステージの右端・下端からの距離。left/topとは排他（本家も else if）
+	const sty = btnStyOfWin('[button text=x label=*a s_right=20 s_bottom=30]');
+	expect(sty).toMatchObject({s_right: 20, s_bottom: 30});
+	expect(sty?.left).toBeUndefined();
+	expect(sty?.top).toBeUndefined();
+});
+
+it('btnAlign_leftWins', ()=> {
+	// 本家は else if の並び順で left > center > right > s_right
+	const sty = btnStyOfWin('[button text=x label=*a left=10 center=500 right=900 s_right=20]');
+	expect(sty).toMatchObject({left: 10});
+	expect(sty?.align_x).toBeUndefined();
+	expect(sty?.s_right).toBeUndefined();
 });

@@ -49,11 +49,23 @@ function btnBoxSize(o: T_BTN_STY | undefined, natPic: {w: number; h: number} | n
 }
 function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): CSSProperties {
 	const sty: CSSProperties = {};
-	if (o.left !== undefined || o.top !== undefined) {
+	if (o.left !== undefined || o.top !== undefined || o.s_right !== undefined || o.s_bottom !== undefined) {
 		sty.position = 'absolute';
-		sty.left = `${String(o.left ?? 0)}px`;
-		sty.top = `${String(o.top ?? 0)}px`;
 		sty.margin = 0;
+		// 横位置：left（＋center/rightの寄せ）か、ステージ右端からのs_rightか（本家も else if で排他。[lay]と同じ）
+		if (o.s_right !== undefined) sty.right = `${String(o.s_right)}px`;
+		else sty.left = `${String(o.left ?? 0)}px`;
+		if (o.s_bottom !== undefined) sty.bottom = `${String(o.s_bottom)}px`;
+		else sty.top = `${String(o.top ?? 0)}px`;
+	}
+	// 中央寄せ・右端合わせ（本家「表示物の幅を引く」）は独立translateプロパティで表現する。
+	//	transformとは別プロパティなので、下のrotation/scale（fit含む）と衝突しない。
+	//	画像ボタンの箱幅は既に3コマ分の1（natPic.w = naturalWidth/3）なので、-50%がそのまま
+	//	本家のb_width/3計算と一致する
+	if (o.align_x !== undefined || o.align_y !== undefined) {
+		const tx = o.align_x === 'center' ? '-50%' : o.align_x === 'right' ? '-100%' : '0';
+		const ty = o.align_y === 'middle' ? '-50%' : o.align_y === 'bottom' ? '-100%' : '0';
+		sty.translate = `${tx} ${ty}`;
 	}
 	{
 		// 画像ボタンは絵の実寸が箱の大きさ。読み込むまでは値を書かない

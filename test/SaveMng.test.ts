@@ -135,3 +135,17 @@ it('bookmarkJson_isSaveAttrsPlusPlace', ()=> {
 		{text: '第三章', place: 3},
 	]);
 });
+
+it('bookmarkJson_carriesArbitraryAttrsLikePic', ()=> {
+	// [save pic=…]のサムネイル保存：[save]は本家同様json（=[save]属性）を丸ごと持たせるだけ
+	//	（ScriptEngine.ts case 'save'）なので、pic属性名に特別な処理は要らない。
+	//	テンプレのframes/_archive.snは[snapshot fn='userdata:/…']で撮った絵のパスをpic属性に
+	//	渡し、しおり画面が[lay fn=&pic]で読み返す（#searchPic()のuserdata:分岐、snap.e2e.ts参照）
+	const sm = new SaveMng('prj');
+	sm.load();
+	sm.setMark(1, {hSave: {}, sPages: '{"aPage":[[],[]],"foreIdx":0}', aIfStk: [-1],
+		json: {text: '一章', pic: 'userdata:/1/pic.jpg'}});
+	expect(JSON.parse(sm.bookmarkJson())).toEqual([
+		{text: '一章', pic: 'userdata:/1/pic.jpg', place: 1},
+	]);
+});

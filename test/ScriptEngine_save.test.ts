@@ -147,6 +147,24 @@ it('load_fnAndLabelMustBePaired', ()=> {
 		.toEqual({t: 'load', place: 1, fn: 'other', label: '*a'});
 });
 
+it('load_indexAllowsFnAlone', ()=> {
+	// index指定時（本家「ページ移動用」）はlabelが要らない（fnだけでもよい）
+	expect(acts('[load place=1 fn=other index=5][s]').at(-1))
+		.toEqual({t: 'load', place: 1, fn: 'other', label: '', index: 5});
+	// fn省略でも通る（現在のスクリプトのままindex位置へ）
+	expect(acts('[load place=1 index=5][s]').at(-1))
+		.toEqual({t: 'load', place: 1, fn: '', label: '', index: 5});
+});
+
+it('load_doRec', ()=> {
+	// do_rec（既定true）：省略時はアクションに含めない（既定はScriptMng側が持つ）
+	expect(acts('[load place=1][s]').at(-1)).toEqual({t: 'load', place: 1, fn: '', label: ''});
+	expect(acts('[load place=1 do_rec=false][s]').at(-1))
+		.toEqual({t: 'load', place: 1, fn: '', label: '', doRec: false});
+	expect(acts('[load place=1 do_rec=true][s]').at(-1))
+		.toEqual({t: 'load', place: 1, fn: '', label: '', doRec: true});
+});
+
 
 // ============ [reload_script] ============
 

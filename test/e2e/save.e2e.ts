@@ -39,9 +39,33 @@ test('[save]→[load]で変数・再開位置・画面が戻る', async ({page})
 	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('かきだし');	// [export]
 
-	// [load place=1]：[record_place]の位置（hp=100の直後）へ戻る
+	// [load place=1 fn=sub index=0]：index=はページ移動用（本家 ScriptIterator.ts:1454）で、
+	//	保存時点の再開位置でなくsub.snの先頭（index=0）へ直接ジャンプする。
+	//	しおりの状態（save:変数等）自体は復元される。sub.snは[jump]で*reloadへ戻す
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('いどうさき');
+
+	// sub.sn内のdo_rec確認ステップ（どうれく）を経由してから*reloadへ
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('どうれく');
+
+	// *reloadの[load place=1]（index無し）：[record_place]の位置（hp=100の直後）へ戻る
 	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('100');
+});
+
+test('[load]のdo_rec（既定true）は、ロードした状態を次の[record_place]代わりにする', async ({page})=> {
+	// sub.snが[load index=]の直後にhpを999へ変え、[record_place]を挟まず[save place=3]する。
+	//	do_recによりロード時点（hp=100）が#markとして残っているはずなので、
+	//	保存されるhpは999ではなく100になる（本家 ScriptIterator.ts:1434）
+	for (let i = 0; i < 5; ++i) await pressKeyToWaitMark(page, 'Space');	// どうれく、まで進める
+	expect(await mesStr(page)).toBe('どうれく');
+
+	// 書き込みは最短500ms間隔にまとめられる（SaveMng.flush()）ので、pollで待つ
+	await expect.poll(async ()=> {
+		const mark = JSON.parse((await ls(page, KEY_MARK))!) as {[place: string]: {hSave: {[k: string]: unknown}} | undefined};
+		return mark['3']?.hSave.hp;
+	}).toBe(100);
 });
 
 test('[save]と[copybookmark]がlocalStorageへ残る', async ({page})=> {

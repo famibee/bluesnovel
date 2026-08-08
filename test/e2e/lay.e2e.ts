@@ -148,6 +148,25 @@ test('b_alpha=0の層は文字があっても箱（背景＋点線枠）を描�
 	expect(await txtBoxStyle(page, 'display')).toBe('block');
 });
 
+test('[lay back_clear=true]は背景を初期状態へ戻す', async ({page})=> {
+	// b_color/b_alpha/b_alpha_isfixedを積んでから[lay back_clear=true]で消す
+	for (let i = 0; i < 12; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('はいけい');
+	// アルファ1はブラウザがrgb()表記に丸める（noBoxのrgba(0,0,0,0)とは違う経路）
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgb(0, 0, 255)');
+
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('けした');
+
+	// b_alpha=0（透明）に戻るので、noBoxが立って箱（背景＋点線枠）ごと描かれなくなる
+	//	（noBox = bAlpha===0 || ... なので、b_colorが消えたかどうかに関わらずtransparent）
+	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(0, 0, 0, 0)');
+	expect(await txtBoxStyle(page, 'border-style')).toBe('none');
+	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');
+	expect(lay?.b_color).toBeUndefined();
+	expect(lay?.b_alpha).toBe(0);
+});
+
 test('[er]は変形まわりだけを既定へ戻し、位置と見た目には触らない', async ({page})=> {
 	// 本家 Layer.ts:420。[clear_lay]と違って位置（left/top）や style は残る
 	//	——本家の #er() も clearLay(hArg) しか呼ばないため

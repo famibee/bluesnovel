@@ -28,6 +28,12 @@ import gsap from 'gsap';
 export type T_BTN_STY = {
 	left?		: number;
 	top?		: number;
+	// 中央寄せ・右端合わせ・画面端からのオフセット（本家 Layer.ts:513-558 の center/right/middle/bottom/
+	//	s_right/s_bottom。実際は未配線のデッドコードだったが仕様として掘り起こした。[lay]と同じ設計 → Lay.ts styLay()）
+	align_x?	: 'center' | 'right';
+	align_y?	: 'middle' | 'bottom';
+	s_right?	: number;
+	s_bottom?	: number;
 	width?		: number;
 	height?		: number;	// 本家は文字の高さ＝フォントサイズでもある
 	rotation?	: number;

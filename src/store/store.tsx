@@ -31,6 +31,7 @@ type T_STATE = {
 	chgPic	: (arg: T_CHGPIC)=> void,
 	chgBAlpha	: (arg: T_CHGBALPHA)=> void,
 	chgBPic	: (arg: T_CHGBPIC)=> void,
+	chgBackClear	: (arg: T_CHGBACKCLEAR)=> void,
 	chgLay	: (arg: T_CHGLAY)=> void,
 	getLaySty: (nm: string, page: T_PAGE)=> T_LAY_STY,
 	getPages: ()=> {fore: T_LAY[]; back: T_LAY[]},	// [dump_lay]用。表裏まとめて覗く
@@ -161,6 +162,11 @@ export type T_CHGBPIC = {
 	fn		: string;
 	src		: string;
 }
+// [lay back_clear=true]：文字レイヤ背景を初期状態へ戻す（本家 TxtLayer.ts:376-385）
+export type T_CHGBACKCLEAR = {
+	nm		: string;
+	page	: T_PAGE;
+}
 // [lay]で指定できるレイヤの見た目。書かれた属性だけを持つ（未指定の属性は現状維持）
 export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	b_color?: number;	// 文字レイヤ背景色（0xRRGGBB）
@@ -250,7 +256,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>>;
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>>;
 
 
 // 指定ページのレイヤ配列を差し替えるための下ごしらえ。
@@ -369,6 +375,19 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 
 		e.b_pic = fn;
 		e.b_src = src;
+		return putPage(s, idx, aLay);
+	}),
+	// [lay back_clear=true]：背景を初期状態へ戻す（本家 TxtLayer.ts:376-385 の
+	//	b_color=0x000000/b_alpha=0/b_alpha_isfixed=false/b_pic=''と同じ）
+	chgBackClear	: ({nm, page}: T_CHGBACKCLEAR)=> set(s=> {
+		const {idx, aLay} = pickPage(s, page);
+		const e = findLay(aLay, nm, 'txt');
+
+		delete e.b_color;
+		e.b_alpha = 0;
+		e.b_alpha_isfixed = false;
+		delete e.b_pic;
+		delete e.b_src;
 		return putPage(s, idx, aLay);
 	}),
 	// [lay]のレイヤ共通属性。書かれた属性だけを上書きする（本家 Layer.lay() も `'x' in hArg` で判定）

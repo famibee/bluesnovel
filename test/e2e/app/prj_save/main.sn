@@ -24,5 +24,11 @@
 [er]
 かきだし[p]
 
+; index=はページ移動用：保存時点の再開位置でなく、fn（省略時は現在のスクリプト）のindex位置
+;	（トークン番号）へ直接ジャンプする（本家「ページ移動用」）。index=0はsub.snの先頭。
+;	**[load]は必ずジャンプするので直後には戻ってこない**（sub.snが[jump]で*reloadへ戻す）
+[load place=1 fn=sub index=0]
+
+*reload
 ; [record_place]の位置（hp=100の直後）へ戻る＝上の「&game:hp&」をもう一度通る
 [load place=1]

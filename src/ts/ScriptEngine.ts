@@ -86,6 +86,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
+	| {t: 'chgBackClear'; nm: string; page: T_PAGE}	// [lay back_clear=true]。文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す（本家 TxtLayer.ts:376-385）。他のb_*属性とは同時指定しない（本家も早期returnで排他）
 	| {t: 'trans'; aLayNm: string[] | null; time: number; rule?: string; vague?: number}	// [trans]。ページ裏表を交換する。aLayNm=nullは全レイヤ対象（layer属性省略時）。timeはミリ秒で、0なら演出無しで即交換。rule指定時はクロスフェードでなくルール画像によるワイプ（vagueは境界のぼかし幅）
 	| {t: 'waitTrans'; canskip: boolean}	// [wt]。[trans]の演出終了待ち。実際に待つのはScriptMngの担当なので、step()はここで一旦返る（canskip=falseならクリックで飛ばせない）
 	| {t: 'finishTrans'}				// [finish_trans]。[trans]の演出を今すぐ終わらせる（表裏の交換まで済ませる）
@@ -117,7 +118,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'snapshot'; fn: string; aLayNm: string[] | null; page: T_PAGE; width: number; height: number; smoothing: boolean; b_color?: number}	// [snapshot]。画面を画像で保存（b_colorは0xAARRGGBB）。width/heightの0はステージ実寸、aLayNm=nullは全レイヤ。画像化は非同期なのでstep()は一旦返る
 	| {t: 'recordPlace'}	// [record_place]。今の状態をしおり1件ぶんに組み立てて覚えておく（保存はしない）
 	| {t: 'save'; place: number; json: {[k: string]: string}}	// [save]。覚えてあるしおりをplaceへ保存。jsonは見出し（[save]の属性そのまま）
-	| {t: 'load'; place: number; fn: string; label: string}	// [load]。しおりから復元。スクリプトの読み直しが要るのでstep()は一旦返る
+	| {t: 'load'; place: number; fn: string; label: string; index?: number; doRec?: boolean}	// [load]。しおりから復元。スクリプトの読み直しが要るのでstep()は一旦返る。index指定時は保存時点の再開位置でなくfn（省略時は現在のスクリプト）のindex位置（トークン番号）へ直接ジャンプする（本家 ScriptIterator.ts:1454「ページ移動用」。labelは無視される）。doRec（既定true）はロードした状態を次の[record_place]代わりに持たせるかどうか
 	| {t: 'reloadScript'}	// [reload_script]。最後の[record_place]位置からスクリプトを読み直して再開
 	| {t: 'copyBookmark'; from: number; to: number}	// [copybookmark]
 	| {t: 'eraseBookmark'; place: number}			// [erasebookmark]
@@ -356,8 +357,9 @@ export class ScriptEngine {
 
 	// [add_frame]/[frame]の見た目属性。**書かれた属性だけ**を拾う（[lay]と同じ流儀）
 	static readonly #A_FRM_NUM = ['alpha', 'x', 'y', 'width', 'height', 'scale_x', 'scale_y', 'rotate'] as const;
-	// [button]の配置・寸法・変形（本家 Button.ts）
-	static readonly #A_BTN_NUM = ['left', 'top', 'width', 'height', 'rotation', 'pivot_x', 'pivot_y', 'scale_x', 'scale_y', 'alpha'] as const;
+	// [button]の配置・寸法・変形（本家 Button.ts）。left/topはcenter/right/middle/bottom/s_right/s_bottom
+	//	と排他関係にあるため、このループでなく専用処理（[lay]と同じ else if）で扱う
+	static readonly #A_BTN_NUM = ['width', 'height', 'rotation', 'pivot_x', 'pivot_y', 'scale_x', 'scale_y', 'alpha'] as const;
 	static #argFrmSty(tag: string, args: {[k: string]: string}): T_FRM_STY {
 		const sty: T_FRM_STY = {};
 		if (args.visible !== undefined) sty.visible = args.visible !== 'false';
@@ -1064,28 +1066,36 @@ export class ScriptEngine {
 				aAct.push({t: 'chgPic', nm: args.layer ?? '', page, fn: picFn, aFace});
 			}
 
-			// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
-			//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
-			if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
-				const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
-				if (args.b_alpha !== undefined) {
-					const v = Number(args.b_alpha);
-					if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
-					// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
-					//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
-					//	範囲外の値が残ってしまうため、ここで正規化する。
-					//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
-					o.b_alpha = Math.min(1, Math.max(0, v));
-				}
-				if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
-				aAct.push(o);
+			// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
+			//	（本家 TxtLayer.ts:376-385）。**指定時は他のb_*属性処理を素通りする**のが本家の規約
+			//	（#drawBack()が早期returnする）。false指定時は何もしない
+			if (args.back_clear !== undefined) {
+				if (args.back_clear === 'true') aAct.push({t: 'chgBackClear', nm: args.layer ?? '', page});
 			}
+			else {
+				// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
+				//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
+				if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
+					const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
+					if (args.b_alpha !== undefined) {
+						const v = Number(args.b_alpha);
+						if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+						// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
+						//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
+						//	範囲外の値が残ってしまうため、ここで正規化する。
+						//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
+						o.b_alpha = Math.min(1, Math.max(0, v));
+					}
+					if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
+					aAct.push(o);
+				}
 
-			// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
-			//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
-			//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
-			if (args.b_pic !== undefined) {
-				aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
+				// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
+				//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
+				//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
+				if (args.b_pic !== undefined) {
+					aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
+				}
 			}
 
 			// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）
@@ -1122,7 +1132,8 @@ export class ScriptEngine {
 			if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
 			if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
 			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
-			if (args.b_color !== undefined) sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
+			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
+			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
 			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）。
 			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
@@ -1745,13 +1756,34 @@ export class ScriptEngine {
 			//	本家は left/top を必ず持たせる（省略時0）が、こちらは未指定なら流し込み配置のまま。
 			//	試作のシナリオは複数ボタンを座標指定なしで並べており、既定を(0,0)にすると全部重なるため
 			const sty: T_BTN_STY = {};
+			// 横位置：left / center / right / s_right の排他（本家 Layer.ts:513-532。実際は未配線の
+			//	デッドコードだったが仕様として掘り起こした）。center・rightは表示物の実寸をエンジンが
+			//	知らないため、寄せの種類だけを渡してCSSのtranslateで表現する（[lay]と同じ → Lay.ts styLay()）
+			if (args.left !== undefined) sty.left = this.#argPos('button', 'left', args.left);
+			else if (args.center !== undefined) {
+				sty.left = this.#argPos('button', 'left', args.center);
+				sty.align_x = 'center';
+			}
+			else if (args.right !== undefined) {
+				sty.left = this.#argPos('button', 'left', args.right);
+				sty.align_x = 'right';
+			}
+			else if (args.s_right !== undefined) sty.s_right = this.#argPos('button', 'left', args.s_right);
+			// 縦位置も同じ並び（top / middle / bottom / s_bottom）
+			if (args.top !== undefined) sty.top = this.#argPos('button', 'top', args.top);
+			else if (args.middle !== undefined) {
+				sty.top = this.#argPos('button', 'top', args.middle);
+				sty.align_y = 'middle';
+			}
+			else if (args.bottom !== undefined) {
+				sty.top = this.#argPos('button', 'top', args.bottom);
+				sty.align_y = 'bottom';
+			}
+			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('button', 'top', args.s_bottom);
 			for (const k of ScriptEngine.#A_BTN_NUM) {
 				const v = args[k];
 				if (v === undefined) continue;
-				// left/topは**-1〜1がステージ幅・高さに対する割合**（本家 Layer.ts:513。
-				//	ボタンも同じ #argChkPos を通る）。それ以外は素の数値
-				Object.assign(sty, {[k]: k === 'left' || k === 'top'
-					? this.#argPos('button', k, v) : ScriptEngine.#argNum('button', k, v)});
+				Object.assign(sty, {[k]: ScriptEngine.#argNum('button', k, v)});
 			}
 			// **寸法だけは省略時も既定値を入れる**（本家 Button.ts:123 height=30 / :152 width=100）。
 			//	本家のpixi Textは width/height の代入で文字スプライトそのものを拡縮するので、
@@ -2006,16 +2038,22 @@ export class ScriptEngine {
 			return 'skip';
 		}
 
-		case 'load':	// しおりの読込（本家 ScriptIterator.ts:1415 #load()）
-			if (('fn' in args) !== ('label' in args)) throw '[load] fnとlabelはセットで指定して下さい';
+		case 'load': {	// しおりの読込（本家 ScriptIterator.ts:1415 #load()）
+			// index指定時は「ページ移動用」で、fn単独でよい（labelは無視される。本家1454行目）。
+			//	それ以外は従来どおりfn/labelをセットで要求する
+			if (args.index === undefined && ('fn' in args) !== ('label' in args)) throw '[load] fnとlabelはセットで指定して下さい';
 
 			aAct.push({
 				t		: 'load',
 				place	: ScriptEngine.#argNumDef('load', 'place', args.place, 0),
 				fn		: args.fn ?? '',
 				label	: args.label ?? '',
+				...(args.index === undefined ? {} : {index: ScriptEngine.#argNum('load', 'index', args.index)}),
+				// do_rec（既定true）：ロードした状態を次の[record_place]代わりに持たせるか（本家1434行目）
+				...(args.do_rec === undefined ? {} : {doRec: args.do_rec !== 'false'}),
 			});
 			return 'stop';	// 復元とスクリプトの読み直しが要る＝ScriptMng待ち
+		}
 
 		case 'reload_script':	// スクリプト再読込（本家 ScriptIterator.ts:1488 #reload_script()）
 			// 最後の[record_place]位置から、スクリプトを読み直して再開する。

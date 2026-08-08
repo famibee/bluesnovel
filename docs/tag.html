@@ -500,7 +500,7 @@
 
 </p>
 <h2 id="lay" class="w-heading">[lay]レイヤ設定(共通)</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：画像レイヤは <code>fn</code>／<code>face</code>、レイヤ共通は <code>visible</code>／<code>alpha</code>／<code>left</code>／<code>top</code>／<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>／<code>pivot_x</code>／<code>pivot_y</code>／<code>blendmode</code>／<code>index</code>／<code>float</code>／<code>dive</code>／<code>filter</code>／<code>page</code>に対応。文字レイヤの背景は <code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>／<code>style</code>。<br/><b>背景の実際の不透明度は <code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code></b>（本家 TxtLayer.ts:388。設定画面の「バック不透明度」がここに効く）。<code>b_alpha_isfixed=true</code> のレイヤだけが掛け算を免れる。<code>b_pic</code>（文字レイヤ背後の枠画像）を指定すると <b><code>b_color</code> は無視される</b>のも本家どおり。<br/>文字組みは <code>ffs</code>（文字詰め＝CSSの<code>font-feature-settings</code>。<b>1文字ずつ当てる</b>ので <code>noffs</code> で外せる）と <code>bura</code>（ぶら下げ禁則）に対応。<br/><b>ただし行分割そのものはブラウザ任せ</b>（本家は <code>Hyphenation.ts</code> で自前に計算して改行位置を決める）。<code>bura</code> はCSSの <code>hanging-punctuation: allow-end</code>＋<code>line-break: strict</code> へ読み替えるので、<b>ぶら下げが実際に効くかは閲覧ブラウザ次第</b>（Safariは対応、Chromeは<code>hanging-punctuation</code>未対応）。そのため禁則文字の指定（<code>kinsoku_sol</code>／<code>kinsoku_eol</code>／<code>kinsoku_dns</code>／<code>kinsoku_bura</code>）も受け付けない。<br/><code>r_align</code>（ルビ位置。<code>left</code>／<code>center</code>／<code>right</code>／<code>start</code>／<code>justify</code>／<code>121</code>／<code>even</code>／<code>1ruby</code>）にも対応：ルビ記法内の<code>位置｜ルビ</code>指定（傍点は<code>center｜ヽ</code>扱い）があればそちらが勝つ。CSSの論理プロパティ（<code>padding-inline</code>等）で組むので<b>本家と違い縦書き判定が要らない</b>のが相違点、Safari／Firefoxの分岐（<code>ruby-align</code>等への読み替え）は本家どおり。<code>sesame</code>（傍点の文字を変更）も対応。<br/>未対応：<code>b_left</code>／<code>b_top</code>（枠画像のずらし）・<code>back_clear</code>、および枠画像に合わせた文字表示領域の自動サイズ調整。<code>blur_x</code>／<code>blur_y</code> は CSS の <code>blur()</code> が半径1つしか持てないため表現できない。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：画像レイヤは <code>fn</code>／<code>face</code>、レイヤ共通は <code>visible</code>／<code>alpha</code>／<code>left</code>／<code>top</code>／<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>／<code>pivot_x</code>／<code>pivot_y</code>／<code>blendmode</code>／<code>index</code>／<code>float</code>／<code>dive</code>／<code>filter</code>／<code>page</code>に対応。文字レイヤの背景は <code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>／<code>style</code>。<br/><b>背景の実際の不透明度は <code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code></b>（本家 TxtLayer.ts:388。設定画面の「バック不透明度」がここに効く）。<code>b_alpha_isfixed=true</code> のレイヤだけが掛け算を免れる。<code>b_pic</code>（文字レイヤ背後の枠画像）を指定すると <b><code>b_color</code> は無視される</b>のも本家どおり。<br/>文字組みは <code>ffs</code>（文字詰め＝CSSの<code>font-feature-settings</code>。<b>1文字ずつ当てる</b>ので <code>noffs</code> で外せる）と <code>bura</code>（ぶら下げ禁則）に対応。<br/><b>ただし行分割そのものはブラウザ任せ</b>（本家は <code>Hyphenation.ts</code> で自前に計算して改行位置を決める）。<code>bura</code> はCSSの <code>hanging-punctuation: allow-end</code>＋<code>line-break: strict</code> へ読み替えるので、<b>ぶら下げが実際に効くかは閲覧ブラウザ次第</b>（Safariは対応、Chromeは<code>hanging-punctuation</code>未対応）。そのため禁則文字の指定（<code>kinsoku_sol</code>／<code>kinsoku_eol</code>／<code>kinsoku_dns</code>／<code>kinsoku_bura</code>）も受け付けない。<br/><code>r_align</code>（ルビ位置。<code>left</code>／<code>center</code>／<code>right</code>／<code>start</code>／<code>justify</code>／<code>121</code>／<code>even</code>／<code>1ruby</code>）にも対応：ルビ記法内の<code>位置｜ルビ</code>指定（傍点は<code>center｜ヽ</code>扱い）があればそちらが勝つ。CSSの論理プロパティ（<code>padding-inline</code>等）で組むので<b>本家と違い縦書き判定が要らない</b>のが相違点、Safari／Firefoxの分岐（<code>ruby-align</code>等への読み替え）は本家どおり。<code>sesame</code>（傍点の文字を変更）も対応。<br/>背景は<code>back_clear</code>（<code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>を初期状態へ戻す。本家 TxtLayer.ts:376-385）にも対応。<b>指定時は他のb_*属性を本家同様に無視する</b>（同じタグで<code>back_clear=true</code>と<code>b_pic=…</code>等を同時に書いても後者は効かない）。<br/>未対応：<code>b_left</code>／<code>b_top</code>（枠画像のずらし。調査の結果、<b>本家も一切読んでおらず実質未配線</b>——実プロジェクトのシナリオが指定していても効いていない）、および枠画像に合わせた文字表示領域の自動サイズ調整（<code>[lay width=/height=]</code>自体が未実装のため前提から要る）。<code>blur_x</code>／<code>blur_y</code> は CSS の <code>blur()</code> が半径1つしか持てないため表現できない。</p>
 <h4>レイヤに各種設定を行う。</h4>
 <p class="mb2 px1">
 
@@ -2268,7 +2268,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	デバッグ表示のみ）——存在チェックをボタン生成時に行う本家との相違点。
 	<a href="#playse">[playse]</a>と同様、<b>同じバッファに同じファイルの再生要求が重なったら頭から鳴り直さない</b>
 	（連打・素早いホバー→クリックでも音が途切れて聞こえることはない）。
-	<br/><b>未対応</b>：配置属性（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）。</p>
+	<br/><b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：本家では<code>Layer.ts</code>の<code>isButton</code>分岐が3箇所とも常に<code>false</code>で呼ばれておらず未配線のままだったが、仕様として掘り起こして実装した。詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。<code>center</code>／<code>right</code>は「表示物の実寸を指定値から引く」動きだが、画像ボタンの3コマ分割分も含めCSSの<code>translate</code>で表現するため素の実寸を問わず揃う。</p>
 <h4>文字レイヤにボタンを配置する。</h4>
 <p class="mb2 px1">
 
@@ -2301,7 +2301,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>style_hover</td><td></td><td>styleの設定＋「fill: white;」を採用</td><td><a href="https://pixijs.download/dev/docs/PIXI.TextStyle.html" target="_blank" rel="noopener">PIXI TextStyle</a>のJSON文字列</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしていない）のCSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
 <tr><td>style_clicked</td><td></td><td>style_hoverの設定＋「dropShadow: false;」を採用</td><td><a href="https://pixijs.download/dev/docs/PIXI.TextStyle.html" target="_blank" rel="noopener">PIXI TextStyle</a>のJSON文字列</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）のCSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
 <tr><td>alpha</td><td></td><td>1.0</td><td>0.0〜1.0；透過度</td><td>透過度。0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
-<tr><td>left<br/>top</td><td></td><td>※</td><td>※</td><td>※詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>を参照</td></tr>
+<tr><td>left<br/>top<br/>center<br/>middle<br/>right<br/>bottom<br/>s_right<br/>s_bottom</td><td></td><td>※</td><td>※</td><td>※詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>を参照</td></tr>
 <tr><td>rotation</td><td></td><td>0</td><td>-180〜180；回転角度</td><td>時計回りは0～180、反時計回りは0～-180を指定。 左上を中心に回る</td></tr>
 <tr><td>scale_x</td><td></td><td>1.0</td><td>実数</td><td>横方向を何倍に拡大／縮小するか。負の値ならレイヤを左右反転</td></tr>
 <tr><td>scale_y</td><td></td><td>1.0</td><td>実数</td><td>縦方向を何倍に拡大／縮小するか。負の値ならレイヤを上下反転</td></tr>
@@ -2661,13 +2661,15 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="load" class="w-heading">[load]しおりの読込</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<b>音声の復元</b>にも対応（本家 <code>playLoopFromSaveObj()</code>）：<code>save:const.sn.loopPlaying</code>に無いバッファは止め、有るバッファは<code>save:</code>の帳簿（volume/start_ms/end_ms/ret_ms）を読んで鳴らし直す。<br/>未対応：<code>index=</code>（ページ移動用）、<code>do_rec=</code>。また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<b>音声の復元</b>にも対応（本家 <code>playLoopFromSaveObj()</code>）：<code>save:const.sn.loopPlaying</code>に無いバッファは止め、有るバッファは<code>save:</code>の帳簿（volume/start_ms/end_ms/ret_ms）を読んで鳴らし直す。<br/><code>index</code>／<code>do_rec</code>にも対応：本家調査の結果、<code>index</code>は「しおりのページログの何ページ目か」ではなく、<b>保存時点の再開位置を無視して<code>fn</code>（省略時は現在のスクリプト）の<code>index</code>位置（トークン番号）へ直接ジャンプする</b>ページ移動用の機能（<code>label</code>は無視される）と判明。<code>do_rec</code>（既定<code>true</code>）は、ロードした状態を次の<a href="#record_place">record_place</a>代わりに持たせるかどうか——<code>false</code>にすると持たせない（本家は<a href="#reload_script">reload_script</a>がこの目的で使う）。<br/>また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
 <h4>しおりデータを読み込み、スクリプト処理を再開する</h4>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>place</td><td>y</td><td></td><td>0〜</td><td>処理対象のしおり番号</td></tr>
 <tr><td>fn</td><td>...</td><td>...</td><td>...</td><td>ロード後最初にしたい共通処理をコールする（処理は[return]で終わらせる）。指定方法は[jump]と同様。<br/>ただし指定する際、fnとlabelは両方指定しなければならない</td></tr>
+<tr><td>index</td><td></td><td>指定なし</td><td>トークン番号</td><td>指定すると、保存時点の再開位置でなく<code>fn</code>（省略時は現在のスクリプト）のこの位置へ直接ジャンプする（ページ移動用）。この時<code>label</code>は無視され、<code>fn</code>単独で指定できる</td></tr>
+<tr><td>do_rec</td><td></td><td>true</td><td>true、false</td><td>ロードした状態を次の[record_place]代わりに持たせるか。falseなら持たせない（[reload_script]用）</td></tr>
 </table>
 
 </p>
@@ -2699,7 +2701,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="save" class="w-heading">[save]しおりの保存</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：[<a href="#record_place">record_place</a>] で覚えたしおりを <code>place</code> へ保存する。<code>place</code> 以外の属性はそのまましおりの見出しになり、組み込み変数 <code>const.sn.bookmark.json</code> から読める（ロード画面はこれで枠を並べる）。保存先は localStorage で、キーは prj.json の <code>save_ns</code> ごと。書き込みは本家同様<b>最短500ms間隔にまとめられる</b>。<br/>未対応：サムネイル画像の保存（<code>userdata:/</code> へのファイル保存が要る）、暗号化。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：[<a href="#record_place">record_place</a>] で覚えたしおりを <code>place</code> へ保存する。<code>place</code> 以外の属性はそのまましおりの見出しになり、組み込み変数 <code>const.sn.bookmark.json</code> から読める（ロード画面はこれで枠を並べる）。保存先は localStorage で、キーは prj.json の <code>save_ns</code> ごと。書き込みは本家同様<b>最短500ms間隔にまとめられる</b>。<br/><b>サムネイル画像</b>（<code>pic</code>属性）にも対応：<code>[snapshot fn='userdata:/…']</code>で撮った絵を<code>pic</code>に渡せば、他の属性と同様そのまましおりの見出しへ乗る。<code>userdata:/</code>はセーブ層（<code>SaveMng</code>）にdata URLのまま置かれ、ロード画面は<code>[lay fn=&amp;pic]</code>で読み返せる（テンプレの<code>frames/_archive.sn</code>と同じ形）。<br/>未対応：暗号化。</p>
 <h4>しおりデータを保存する。</h4>
 <p class="mb2 px1">
 

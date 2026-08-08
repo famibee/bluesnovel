@@ -1888,8 +1888,6 @@ var K = class {
 		"rotate"
 	];
 	static #m = [
-		"left",
-		"top",
 		"width",
 		"height",
 		"rotation",
@@ -2272,27 +2270,34 @@ var K = class {
 						aFace: e
 					});
 				}
-				if (r.b_alpha !== void 0 || r.b_alpha_isfixed !== void 0) {
-					let e = {
-						t: "chgBAlpha",
-						nm: r.layer ?? "",
-						page: t
-					};
-					if (r.b_alpha !== void 0) {
-						let t = Number(r.b_alpha);
-						if (Number.isNaN(t)) throw `[lay] b_alphaの値が不正です：${r.b_alpha}`;
-						e.b_alpha = Math.min(1, Math.max(0, t));
-					}
-					r.b_alpha_isfixed !== void 0 && (e.isFixed = r.b_alpha_isfixed !== "false"), o.push(e);
-				}
-				r.b_pic !== void 0 && o.push({
-					t: "chgBPic",
+				if (r.back_clear !== void 0) r.back_clear === "true" && o.push({
+					t: "chgBackClear",
 					nm: r.layer ?? "",
-					page: t,
-					fn: r.b_pic
+					page: t
 				});
+				else {
+					if (r.b_alpha !== void 0 || r.b_alpha_isfixed !== void 0) {
+						let e = {
+							t: "chgBAlpha",
+							nm: r.layer ?? "",
+							page: t
+						};
+						if (r.b_alpha !== void 0) {
+							let t = Number(r.b_alpha);
+							if (Number.isNaN(t)) throw `[lay] b_alphaの値が不正です：${r.b_alpha}`;
+							e.b_alpha = Math.min(1, Math.max(0, t));
+						}
+						r.b_alpha_isfixed !== void 0 && (e.isFixed = r.b_alpha_isfixed !== "false"), o.push(e);
+					}
+					r.b_pic !== void 0 && o.push({
+						t: "chgBPic",
+						nm: r.layer ?? "",
+						page: t,
+						fn: r.b_pic
+					});
+				}
 				let a = {};
-				if (r.visible !== void 0 && (a.visible = r.visible !== "false"), r.alpha !== void 0 && (a.alpha = e.#n("lay", "alpha", r.alpha)), r.left === void 0 ? r.center === void 0 ? r.right === void 0 ? r.s_right !== void 0 && (a.s_right = this.#r("lay", "left", r.s_right)) : (a.left = this.#r("lay", "left", r.right), a.align_x = "right") : (a.left = this.#r("lay", "left", r.center), a.align_x = "center") : a.left = this.#r("lay", "left", r.left), r.top === void 0 ? r.middle === void 0 ? r.bottom === void 0 ? r.s_bottom !== void 0 && (a.s_bottom = this.#r("lay", "top", r.s_bottom)) : (a.top = this.#r("lay", "top", r.bottom), a.align_y = "bottom") : (a.top = this.#r("lay", "top", r.middle), a.align_y = "middle") : a.top = this.#r("lay", "top", r.top), r.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", r.rotation)), r.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", r.scale_x)), r.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", r.scale_y)), r.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", r.pivot_x)), r.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", r.pivot_y)), r.blendmode !== void 0 && (a.blendmode = e.#f(r.blendmode)), r.b_color !== void 0 && (a.b_color = e.#n("lay", "b_color", r.b_color)), r.style !== void 0 && (a.style = r.style), r.ffs !== void 0 && (a.ffs = r.ffs), r.noffs !== void 0 && (a.noffs = r.noffs), r.bura !== void 0 && (a.bura = r.bura !== "false"), O.setting(r), r.r_align !== void 0) {
+				if (r.visible !== void 0 && (a.visible = r.visible !== "false"), r.alpha !== void 0 && (a.alpha = e.#n("lay", "alpha", r.alpha)), r.left === void 0 ? r.center === void 0 ? r.right === void 0 ? r.s_right !== void 0 && (a.s_right = this.#r("lay", "left", r.s_right)) : (a.left = this.#r("lay", "left", r.right), a.align_x = "right") : (a.left = this.#r("lay", "left", r.center), a.align_x = "center") : a.left = this.#r("lay", "left", r.left), r.top === void 0 ? r.middle === void 0 ? r.bottom === void 0 ? r.s_bottom !== void 0 && (a.s_bottom = this.#r("lay", "top", r.s_bottom)) : (a.top = this.#r("lay", "top", r.bottom), a.align_y = "bottom") : (a.top = this.#r("lay", "top", r.middle), a.align_y = "middle") : a.top = this.#r("lay", "top", r.top), r.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", r.rotation)), r.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", r.scale_x)), r.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", r.scale_y)), r.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", r.pivot_x)), r.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", r.pivot_y)), r.blendmode !== void 0 && (a.blendmode = e.#f(r.blendmode)), r.b_color !== void 0 && r.back_clear !== "true" && (a.b_color = e.#n("lay", "b_color", r.b_color)), r.style !== void 0 && (a.style = r.style), r.ffs !== void 0 && (a.ffs = r.ffs), r.noffs !== void 0 && (a.noffs = r.noffs), r.bura !== void 0 && (a.bura = r.bura !== "false"), O.setting(r), r.r_align !== void 0) {
 					if (!B.includes(r.r_align)) throw `[lay] r_alignの値が不正です：${r.r_align}`;
 					a.r_align = r.r_align;
 				}
@@ -2667,9 +2672,10 @@ var K = class {
 				let { pic: a } = r;
 				if (!a && !r.text) throw "[button] textまたはpic属性は必須です";
 				let s = r.nm, c = r.call === "true", l = e.argPage(r, "back"), u = {};
+				r.left === void 0 ? r.center === void 0 ? r.right === void 0 ? r.s_right !== void 0 && (u.s_right = this.#r("button", "left", r.s_right)) : (u.left = this.#r("button", "left", r.right), u.align_x = "right") : (u.left = this.#r("button", "left", r.center), u.align_x = "center") : u.left = this.#r("button", "left", r.left), r.top === void 0 ? r.middle === void 0 ? r.bottom === void 0 ? r.s_bottom !== void 0 && (u.s_bottom = this.#r("button", "top", r.s_bottom)) : (u.top = this.#r("button", "top", r.bottom), u.align_y = "bottom") : (u.top = this.#r("button", "top", r.middle), u.align_y = "middle") : u.top = this.#r("button", "top", r.top);
 				for (let t of e.#m) {
 					let n = r[t];
-					n !== void 0 && Object.assign(u, { [t]: t === "left" || t === "top" ? this.#r("button", t, n) : e.#n("button", t, n) });
+					n !== void 0 && Object.assign(u, { [t]: e.#n("button", t, n) });
 				}
 				return a || (u.width ??= 100, u.height ??= 30), r.enabled !== void 0 && (u.enabled = r.enabled !== "false"), r.blendmode !== void 0 && (u.blendmode = e.#f(r.blendmode)), r.style !== void 0 && (u.style = e.#d(r.style)), r.style_hover !== void 0 && (u.style_hover = e.#d(r.style_hover)), r.style_clicked !== void 0 && (u.style_clicked = e.#d(r.style_clicked)), r.hint !== void 0 && (u.hint = r.hint), r.hint_style !== void 0 && (u.hint_style = r.hint_style), r.hint_opt !== void 0 && (u.hint_opt = r.hint_opt), a !== void 0 && (u.pic = a), r.b_pic !== void 0 && (u.b_pic = r.b_pic), r.clickse !== void 0 && (u.clickse = r.clickse, u.clicksebuf = r.clicksebuf || "SYS"), r.enterse !== void 0 && (u.enterse = r.enterse, u.entersebuf = r.entersebuf || "SYS"), r.leavese !== void 0 && (u.leavese = r.leavese, u.leavesebuf = r.leavesebuf || "SYS"), o.push({
 					t: "addBtn",
@@ -2821,12 +2827,14 @@ var K = class {
 				return t === i && this.#O.set("sys:const.sn.save.place", i + 1), "skip";
 			}
 			case "load":
-				if ("fn" in r != "label" in r) throw "[load] fnとlabelはセットで指定して下さい";
+				if (r.index === void 0 && "fn" in r != "label" in r) throw "[load] fnとlabelはセットで指定して下さい";
 				return o.push({
 					t: "load",
 					place: e.#i("load", "place", r.place, 0),
 					fn: r.fn ?? "",
-					label: r.label ?? ""
+					label: r.label ?? "",
+					...r.index === void 0 ? {} : { index: e.#n("load", "index", r.index) },
+					...r.do_rec === void 0 ? {} : { doRec: r.do_rec !== "false" }
 				}), "stop";
 			case "reload_script": return o.push({ t: "reloadScript" }), "stop";
 			case "copybookmark": {
@@ -4450,7 +4458,11 @@ var xe = 999e3, Se = class {
 		try {
 			let n = e.t === "reloadScript" ? this.#v : this.#p.getMark(e.place);
 			if (!n) throw e.t === "reloadScript" ? "[record_place]がまだ実行されていません" : `place=${String(e.place)} は存在しません`;
-			t.restoreMarkPart(n), this.#ae(t), this.$fncs.replace(n.sPages), this.#c.clear(), this.#l = void 0, this.#k = !1;
+			if (t.restoreMarkPart(n), this.#ae(t), this.$fncs.replace(n.sPages), this.#c.clear(), this.#l = void 0, this.#k = !1, e.t === "load" && e.doRec !== !1 && (this.#v = { ...n }), e.t === "load" && e.index !== void 0) {
+				let n = await this.#y(e.fn || t.fn);
+				t.switchScript(n, "", e.index), this.#A = !1, this.#O();
+				return;
+			}
 			let r = String(t.getVal("save:const.sn.scriptFn") ?? ""), i = Number(t.getVal("save:const.sn.scriptIdx") ?? 0);
 			if (!r) throw "再開位置（save:const.sn.scriptFn）が空です";
 			delete this.#n[r];
@@ -4567,6 +4579,12 @@ var xe = 999e3, Se = class {
 					page: e.page,
 					fn: e.fn,
 					src: e.fn ? this.#Ne("lay b_pic", e.fn) : ""
+				});
+				break;
+			case "chgBackClear":
+				this.$fncs.chgBackClear({
+					nm: e.nm,
+					page: e.page
 				});
 				break;
 			case "finishTrans":
