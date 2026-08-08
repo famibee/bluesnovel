@@ -188,7 +188,7 @@
 	<p>画像・画像レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#add_face">🟢 [add_face] 差分名称の定義</a></li>
-		<li class="mb1"><a href="#wv">🔴 [wv] 動画再生終了待ち</a></li>
+		<li class="mb1"><a href="#wv">🟢 [wv] 動画再生終了待ち</a></li>
 	</ul>
 	<p>HTMLフレーム</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -227,7 +227,7 @@
 		<li class="mb1"><a href="#wf">🟢 [wf] 効果音フェードの終了待ち</a></li>
 		<li class="mb1"><a href="#wl">🟢 [wl] BGM 再生の終了待ち</a></li>
 		<li class="mb1"><a href="#ws">🟢 [ws] 効果音再生の終了待ち</a></li>
-		<li class="mb1"><a href="#xchgbuf">🔴 [xchgbuf] サウンドバッファの交換</a></li>
+		<li class="mb1"><a href="#xchgbuf">🟢 [xchgbuf] サウンドバッファの交換</a></li>
 	</ul>
 	<p>条件分岐</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -1355,6 +1355,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="link" class="w-heading">[link]ハイパーリンク</h2>
 <h4>指定した文字レイヤの表ページに、ハイパーリンクを作成する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>r_style</code>（CSSでそのまま当てる）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/>未対応：<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>・<code>layer</code>／<code>page</code>（既定文字レイヤの表ページ固定）。</p>
 <p class="mb2 px1">
 
 <p>[link]から[endlink]（ハイパーリンクの終了）までで囲った範囲をリンク区間と呼び、<br/>
@@ -1628,13 +1629,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="wv" class="w-heading">[wv]動画再生終了待ち</h2>
 <h4>[lay]で開始したムービー再生の終了を待つ</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<b>レイヤ名でなくファイル名（<code>fn</code>）</b>で<code>&lt;video&gt;</code>要素を探し、その<code>'ended'</code>（自然終了）まで待つ（本家 SpritesMng.wv()）。<code>fn</code>は<a href="#lay">[lay fn=…]</a>で置いた論理名と同じもの（動画は本家同様<code>[lay layer=… fn=movie]</code>で画像レイヤにそのまま貼る方式で、専用の再生タグは無い）。対象の動画が無い・ループ中・既に終了していれば待たない。<code>stop</code>（既定<code>true</code>）は自然終了時・クリック打ち切り時のどちらでも動画を<code>pause()</code>+<code>currentTime = duration</code>で確定させる（本家 <code>stopVideo()</code>相当。<code>#hFn2hve</code>からの先削除によるblob URLのリークは移植しない）。<br/>未対応：<code>global</code>。</p>
 <p class="mb2 px1">
 
 <p>何かしらの画像レイヤで再生している動画の終了を待つ</p>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>fn</td><td>y</td><td></td><td>動画ファイル名</td><td>再生終了を待つ動画</td></tr>
 <tr><td>canskip</td><td></td><td>true</td><td>true、false</td><td>クリックなど（→詳細は<a href="tag.html#waitclick" target="_blank" rel="noopener">[waitclick]</a>）でウエイトをキャンセルできるか</td></tr>
-<tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
+<tr><td><s>global</s></td><td></td><td><s>true</s></td><td><s>true、false</s></td><td><s>グローバルイベント待ちを有効にするか</s></td></tr>
 <tr><td>stop</td><td></td><td>true</td><td>true、false</td><td>trueで「クリックキャンセル時の再生停止」、falseなら行なわない</td></tr>
 </table>
 
@@ -2197,6 +2199,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="xchgbuf" class="w-heading">[xchgbuf]サウンドバッファの交換</h2>
 <h4>二つのバッファを交換する。未再生でも再生中でも良いが、フェード中は避けること。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：再生中インスタンスの入れ替え（本家 SoundMng.ts:174-187）に加え、<a href="#playse">[playse]</a>系が書く<code>save:</code>の帳簿（<code>volume</code>／<code>fn</code>／<code>start_ms</code>／<code>end_ms</code>／<code>ret_ms</code>の5つ。本家は<code>volume</code>／<code>fn</code>の2つのみ）とループ再生表（<code>save:const.sn.loopPlaying</code>）を丸ごと入れ替える——<a href="#load">[load]</a>の音声復元が<code>start_ms</code>等も読むため、揃えないと復元時に食い違う。<b>フェード中でも安全</b>：交換前に両バッファの走行中フェードを終了状態へ確定させてから実体を動かすので、フェードのターゲットが取り残されない。<code>buf</code>と<code>buf2</code>が同じ指定なら何もしない。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2654,7 +2657,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="load" class="w-heading">[load]しおりの読込</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<br/>未対応：音声の復元（音声層が無いため。本家は <code>playLoopFromSaveObj()</code> でBGMを鳴らし直す）、<code>index=</code>（ページ移動用）、<code>do_rec=</code>。また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<b>音声の復元</b>にも対応（本家 <code>playLoopFromSaveObj()</code>）：<code>save:const.sn.loopPlaying</code>に無いバッファは止め、有るバッファは<code>save:</code>の帳簿（volume/start_ms/end_ms/ret_ms）を読んで鳴らし直す。<br/>未対応：<code>index=</code>（ページ移動用）、<code>do_rec=</code>。また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
 <h4>しおりデータを読み込み、スクリプト処理を再開する</h4>
 <p class="mb2 px1">
 
@@ -3033,6 +3036,7 @@ Linuxは 100MB 越えなので上げられていません。</p></blockquote>
 </p>
 <h2 id="log" class="w-heading">[log] ログ出力</h2>
 <h4>ダウンロードフォルダにテキスト出力する（追記ではなく上書き。追記する。出力日時・分・スクリプト名や行番号やプロジェクト名も出力</h4>
+<p class="mb2 px1" style="border-left:3px solid #999;padding-left:.6em"><b>bluesnovel</b>🔴：未実装。<a href="#rec_ch">[rec_ch]</a>系の履歴（<code>const.sn.log.json</code>）とは別物で、<code>downloads/log.txt</code>への追記が要るデバッグ専用タグ（本家 <code>DebugMng.ts:57</code>）。ブラウザ版はダウンロードという形でしか書き出せず、[snapshot]のような単発DLと違い「同じファイルへ追記し続ける」先が無いため、<b>アプリ（Electron）版の整備と同時に対応する</b>予定（todo.md参照）。</p>
 <p class="mb2 px1">
 
 	Web版でもログファイルをダウンロードします。ただし連続だと間隔が開いてないと失敗します。

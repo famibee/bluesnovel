@@ -121,6 +121,34 @@ it('playse_nonLoop_doesNotRegisterLoopPlaying', ()=> {
 });
 
 
+// ============ VOICE再生中のBGM絞り込み（sys:sn.sound.BGM.vol_mul_talking。本家 SndBuf.ts:143-157） ============
+
+it('voice_noDuckWhenMulIsDefault1', ()=> {
+	// 乗数が既定の1のままなら、duckBgmは積まない（本家も`v === 1`ならbreak）
+	const a = acts('[playse fn=v buf=VOICE join=false][s]');
+	expect(a.some(x=> x.t === 'duckBgm')).toBe(false);
+});
+
+it('voice_ducksCurrentlyPlayingBgm', ()=> {
+	const se = new ScriptEngine('t1',
+		'&sys:sn.sound.BGM.vol_mul_talking = 0.4\n[playbgm fn=b join=false][playse fn=v buf=VOICE join=false][s]');
+	const a = se.step();
+	// [playbgm]自体は乗数適用前（この時点ではvol_mul_talkingはまだ読まれていない値=1）のまま鳴り、
+	//	VOICE開始時にduckBgmで**今のBGM実効音量**へ乗数を掛けた値が積まれる
+	const duck = a.find(x=> x.t === 'duckBgm');
+	expect(duck).toEqual({t: 'duckBgm', volume: 0.4});
+});
+
+it('voice_subsequentBgmMultipliesByCurrentMul', ()=> {
+	// VOICE再生中に[playbgm]し直すと、その時点の乗数を掛けた音量で開始する（本家 SndBuf.ts:156）
+	const se = new ScriptEngine('t1',
+		'&sys:sn.sound.BGM.vol_mul_talking = 0.4\n[playse fn=v buf=VOICE join=false][playbgm fn=b2][s]');
+	const a = se.step();
+	const play = a.find(x=> x.t === 'playSnd' && x.buf === 'BGM');
+	expect(play).toMatchObject({volume: 0.4});
+});
+
+
 // ============ [stopse]/[stopbgm]/[stop_allse] ============
 
 it('stopse_defaultBuf', ()=> {
@@ -144,6 +172,55 @@ it('stop_allse_clearsAllLoopPlaying', ()=> {
 	const se = new ScriptEngine('t1', '[playse fn=a loop=true join=false][playse buf=BGM fn=b loop=true join=false][stop_allse][s]');
 	se.step();
 	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({});
+});
+
+
+// ============ [xchgbuf]（本家 SoundMng.ts:174-188 + SndBuf.ts:50-79） ============
+
+it('xchgbuf_pushesAction', ()=> {
+	expect(find('[xchgbuf buf=SE buf2=VOICE]', 'xchgBufSnd')).toEqual({t: 'xchgBufSnd', buf: 'SE', buf2: 'VOICE'});
+});
+
+it('xchgbuf_defaultsToSE', ()=> {
+	// buf/buf2の既定はどちらも'SE'。同一なら何もしない（本家も同一指定は無視）ので
+	//	既定同士（無指定）ではアクションが積まれない
+	expect(acts('[xchgbuf][s]').some(v=> v.t === 'xchgBufSnd')).toBe(false);
+	expect(find('[xchgbuf buf2=VOICE]', 'xchgBufSnd')).toEqual({t: 'xchgBufSnd', buf: 'SE', buf2: 'VOICE'});
+});
+
+it('xchgbuf_swapsSaveBookkeeping', ()=> {
+	// save:の5項目（volume/fn/start_ms/end_ms/ret_ms）を丸ごと入れ替える
+	const se = new ScriptEngine('t1',
+		'[playse fn=a volume=0.5 buf=SE join=false][playse fn=b volume=0.8 buf=VOICE join=false]'
+		+ '[xchgbuf buf=SE buf2=VOICE][s]');
+	se.step();
+	expect(se.getVal('save:const.sn.sound.SE.fn')).toBe('b');
+	expect(se.getVal('save:const.sn.sound.SE.volume')).toBe(0.8);
+	expect(se.getVal('save:const.sn.sound.VOICE.fn')).toBe('a');
+	expect(se.getVal('save:const.sn.sound.VOICE.volume')).toBe(0.5);
+});
+
+it('xchgbuf_onlyOneSideLooping_swapsLoopPlaying', ()=> {
+	// 片方だけループ中：交換後はループしていた方のfnがbuf2側へ移る
+	const se = new ScriptEngine('t1', '[playse fn=a loop=true join=false][xchgbuf buf=SE buf2=VOICE][s]');
+	se.step();
+	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({VOICE: 'a'});
+});
+
+it('xchgbuf_bothLooping_swapsBothSides', ()=> {
+	// 両方ループ中：本家 SndBuf.ts:64 の修正コメント（片方しか更新せず取り残される不備）を踏襲しない
+	const se = new ScriptEngine('t1',
+		'[playse fn=a loop=true buf=SE join=false][playse fn=b loop=true buf=VOICE join=false]'
+		+ '[xchgbuf buf=SE buf2=VOICE][s]');
+	se.step();
+	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({SE: 'b', VOICE: 'a'});
+});
+
+it('xchgbuf_sameBuf_doesNothing', ()=> {
+	const se = new ScriptEngine('t1', '[playse fn=a loop=true join=false][xchgbuf buf=SE buf2=SE][s]');
+	const a = se.step();
+	expect(a.some(v=> v.t === 'xchgBufSnd')).toBe(false);
+	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({SE: 'a'});
 });
 
 
@@ -250,4 +327,36 @@ it('wb_forcesBufBGM', ()=> {
 });
 it('wf_canskipTrue', ()=> {
 	expect(last('[wf canskip=true]')).toMatchObject({canskip: true});
+});
+
+
+// ============ [wv]（動画再生終了待ち。本家 SpritesMng.wv()） ============
+
+it('wv_defaults', ()=> {
+	// canskipの既定は**true**（[ws]/[wf]の既定falseとは逆。本家 ScriptIterator.ts:686-700の表）
+	expect(last('[wv fn=movie.mp4]')).toEqual({t: 'waitVideo', fn: 'movie.mp4', stop: true, canskip: true});
+});
+
+it('wv_fnRequired', ()=> {
+	expect(()=> acts('[wv][s]')).toThrow('[wv] fnは必須です');
+});
+
+it('wv_stopFalse', ()=> {
+	expect(last('[wv fn=movie.mp4 stop=false]')).toMatchObject({stop: false});
+});
+
+it('wv_canskipFalse', ()=> {
+	expect(last('[wv fn=movie.mp4 canskip=false]')).toMatchObject({canskip: false});
+});
+
+it('wv_stopsStepUntilResumed', ()=> {
+	const a = acts('[wv fn=movie.mp4]あ[s]');
+	expect(a.at(-1)).toMatchObject({t: 'waitVideo'});
+	expect(a.some(v=> v.t === 'chgStr')).toBe(false);
+});
+
+it('wv_resumesAfterStep', ()=> {
+	const se = new ScriptEngine('t1', '[wv fn=movie.mp4]あ[s]');
+	se.step();
+	expect(se.step().some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);
 });

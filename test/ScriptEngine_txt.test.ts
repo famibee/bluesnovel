@@ -160,6 +160,39 @@ it('link_hint', ()=> {
 			hint: 'ヒント', hs: 'color: red;', ho: `{"placement": "bottom"}`}}]);
 });
 
+// ===== [link]の効果音（clickse/enterse/leavese）=====
+//	本家 EventMng.ts:465-491。[button]と同じ形（属性の既定値は1箇所ルールに従いScriptEngineで確定）。
+//	実際に鳴らす（TxtLayer.tsx mkLink()経由）のはE2E側なので、ここでは表示単位に正しく運ばれることだけ見る
+
+it('linkSe_clickse', ()=> {
+	expect(units('[link label=*g clickse=ok]あ[endlink]')).toEqual([
+		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', clickse: 'ok', clicksebuf: 'SYS'}},
+	]);
+});
+
+it('linkSe_bufDefaultsToSYS', ()=> {
+	// bufの既定は'SYS'（本家 EventMng.ts:466,475,484）。[playse]自体の既定'SE'とは別
+	expect(units('[link label=*g enterse=hover]あ[endlink]')).toEqual([
+		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', enterse: 'hover', entersebuf: 'SYS'}},
+	]);
+	expect(units('[link label=*g leavese=bye]あ[endlink]')).toEqual([
+		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', leavese: 'bye', leavesebuf: 'SYS'}},
+	]);
+});
+
+it('linkSe_bufOverridable', ()=> {
+	expect(units('[link label=*g clickse=ok clicksebuf=BGM]あ[endlink]')).toEqual([
+		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', clickse: 'ok', clicksebuf: 'BGM'}},
+	]);
+});
+
+it('linkSe_omittedWhenNoFile', ()=> {
+	// clickse等を書かなければ、対応するbuf属性（既定値含め）も一切積まない
+	const v = units('[link label=*g]あ[endlink]').at(0)!;
+	expect(v.lnk && 'clickse' in v.lnk).toBe(false);
+	expect(v.lnk && 'clicksebuf' in v.lnk).toBe(false);
+});
+
 
 // ============ [graph]の寸法・ずらし ============
 //	本家 TxtStage.ts:685-688 が sp.x/y/width/height に入れる分。**書かれた属性だけ**を持たせ、

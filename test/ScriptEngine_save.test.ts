@@ -66,6 +66,28 @@ it('restoreMarkPart_restoresGameVarsAndClearsStacks', ()=> {
 	expect(se.getVal('mp:m')).toBeUndefined();	// マクロ引数は捨てる
 });
 
+it('restoreMarkPart_restoresLoopPlayBookkeeping', ()=> {
+	// save:const.sn.loopPlayingから内部の#hLoopPlayを復元する（[load]後の[xchgbuf]/[stop_allse]が
+	//	正しく動くように。実際に鳴らし直す・止めるのはScriptMng側の責務＝本家SoundMng.playLoopFromSaveObj()）
+	const se = new ScriptEngine('t1', '[s][xchgbuf buf=BGM buf2=SE][s]');
+	se.step();	// 最初の[s]まで
+	se.restoreMarkPart({hSave: {'const.sn.loopPlaying': '{"BGM":"town"}'}, aIfStk: []});
+	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({BGM: 'town'});
+
+	// 復元直後に[xchgbuf]を実行すると、内部#hLoopPlayが正しく引き継がれていれば
+	//	loopPlayingのキーがBGMからSEへ入れ替わる（内部帳簿がsave:と食い違っていれば入れ替わらない）
+	se.step();
+	expect(JSON.parse(String(se.getVal('save:const.sn.loopPlaying')))).toEqual({SE: 'town'});
+});
+
+it('restoreMarkPart_brokenLoopPlayingJsonBecomesEmpty', ()=> {
+	const se = new ScriptEngine('t1', '[s]');
+	se.step();
+	se.restoreMarkPart({hSave: {'const.sn.loopPlaying': '{broken'}, aIfStk: []});
+	// 壊れたJSONは空扱い（本家の全停止スタートに相当）。例外で[load]全体を巻き込まない
+	expect(se.getVal('save:const.sn.loopPlaying')).toBe('{broken');
+});
+
 it('cloneSys_setSys_roundTrip', ()=> {
 	// sys:の永続化用。cast=strの記録も一緒に運ぶ（でないと'0123'が復元後に123になる）
 	const se = new ScriptEngine('t1', '[let name=sys:a text=0123 cast=str][let name=sys:n text=5][s]');

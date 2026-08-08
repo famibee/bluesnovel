@@ -28,6 +28,7 @@
 //	`../skynovel_esm` が無い環境では丸ごとスキップする（このリポジトリの外にある参照用サンプル）。
 
 import {ScriptEngine} from '../src/ts/ScriptEngine';
+import {splitCh} from '../src/ts/Txt';
 
 import {existsSync, readdirSync, readFileSync} from 'node:fs';
 import {expect, it} from 'bun:test';
@@ -135,12 +136,28 @@ it('省略時の既定が本家と同じ値で積まれる', ()=> {
 	//	[wt]等（既定true）と紛らわしいのでScriptEngine_snd.test.tsのws_defaults_canskipFalseで別途固定
 	expect(actOf('[ws]', 'waitSnd')).toMatchObject({stop: true});
 
+	// [wv]：canskipの既定は**true**（[ws]/[wf]とは逆。本家 ScriptIterator.ts:686-700
+	//	#hTag2CanSkipの表でwv:true）。紛らわしいのでこちらもScriptEngine_snd.test.tsで別途固定
+	expect(actOf('[wv fn=movie.mp4]', 'waitVideo')).toEqual({t: 'waitVideo', fn: 'movie.mp4', stop: true, canskip: true});
+
 	// [button clickse=/enterse=/leavese=]：bufの既定は'SYS'（本家 EventMng.ts:466,475,484の
 	//	`hArg.clicksebuf ??= 'SYS'`。[playse]自体の既定'SE'とは別のボタン専用の既定値）。
 	//	`??=`代入なのでargChk_*パターンに乗らず、upstreamDefaults()には現れない
 	expect(actOf('[button text=x label=*a clickse=c enterse=e leavese=l]', 'addBtn')?.sty).toMatchObject({
 		clickse: 'c', clicksebuf: 'SYS', enterse: 'e', entersebuf: 'SYS', leavese: 'l', leavesebuf: 'SYS',
 	});
+
+	// [link clickse=/enterse=/leavese=]：[button]と同じくbufの既定は'SYS'（本家 EventMng.ts:465-491）。
+	//	[link]は本文ストリームへ埋め込む命令なので、chgStrアクションの**最後の**文字列
+	//	（#appendTxt()が文字ごとに積み直すため累積の最新分）をsplitCh()で割って見る
+	const aChgStr = new ScriptEngine('t1', `${LAYS}[link label=*g clickse=c]あ[endlink][s]`).step()
+		.filter(v=> v.t === 'chgStr');
+	const lastChgStr = aChgStr.at(-1);
+	const linkStr = lastChgStr?.t === 'chgStr' ? lastChgStr.str : '';
+	expect(splitCh(linkStr).at(-1)).toMatchObject({lnk: {clickse: 'c', clicksebuf: 'SYS'}});
+
+	// [xchgbuf]：buf/buf2の既定はどちらも'SE'（本家 SoundMng.ts:174-178）。同一なら何もしない
+	expect(actOf('[xchgbuf buf2=VOICE]', 'xchgBufSnd')).toMatchObject({buf: 'SE', buf2: 'VOICE'});
 });
 
 it.skipIf(! EXISTS)('扱いを決めた表に、本家から消えた属性が残っていない', ()=> {

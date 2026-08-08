@@ -701,7 +701,7 @@
 	<b>bluesnovel：しおりを保存する直前に1回だけ書く</b>。
 	本家は本文を1トークン追記するたびに書き直すが、この値を読むのはしおりの保存と復元だけなので
 </td></tr>
-<tr><td>🟡 save:const.sn.loopPlaying</td><td>'{}'</td><td>json</td><td>ループ中のサウンドバッファ。<b>bluesnovel</b>：[<a href="tag.html#playse" target="_blank" rel="noopener">playse</a>]/[<a href="tag.html#playbgm" target="_blank" rel="noopener">playbgm</a>]の<code>loop=true</code>・[<a href="tag.html#stopse" target="_blank" rel="noopener">stopse</a>]系で<b>書く側は実装済み</b>。読んで復元する側（[<a href="tag.html#load" target="_blank" rel="noopener">load</a>]でのBGM再生。本家<code>playLoopFromSaveObj()</code>）は未対応</td></tr>
+<tr><td>🟢 save:const.sn.loopPlaying</td><td>'{}'</td><td>json</td><td>ループ中のサウンドバッファ。<b>bluesnovel</b>：[<a href="tag.html#playse" target="_blank" rel="noopener">playse</a>]/[<a href="tag.html#playbgm" target="_blank" rel="noopener">playbgm</a>]の<code>loop=true</code>・[<a href="tag.html#stopse" target="_blank" rel="noopener">stopse</a>]系・[<a href="tag.html#xchgbuf" target="_blank" rel="noopener">xchgbuf</a>]で書く。[<a href="tag.html#load" target="_blank" rel="noopener">load</a>]がここから読んでBGM等を鳴らし直す（本家<code>playLoopFromSaveObj()</code>）</td></tr>
 <tr><td>🟢 save:const.sn.scriptFn</td><td>''</td><td>スクリプト名</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプト名</td></tr>
 <tr><td>🟢 save:const.sn.scriptIdx</td><td>0</td><td>整数</td><td>最後に[<a href="tag.html#record_place" target="_blank" rel="noopener">record_place</a>]したスクリプトインデックス（行番号ではなく内部トークン単位）</td></tr>
 <tr><td>🟢 save:const.sn.layer.（文字レイヤ名）.enabled</td><td>true</td><td>true、false</td><td>文字レイヤのenabled値。[<a href="tag.html#add_lay" target="_blank" rel="noopener">add_lay</a>]でtrue、[<a href="tag.html#enable_event" target="_blank" rel="noopener">enable_event</a>]で書き換わる。<b>読む専用</b>で、代入しても有効・無効は変わらない</td></tr>
@@ -762,7 +762,8 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	任意のbufの基準音量<br/>
 	[<a href="tag.html#volume" target="_blank" rel="noopener">volume</a>]で変更できる<br/>
 	<br/>
-	[playse][fadese]系での volume属性や、「save:const.sn.sound.【buf】.volume」は目標音量であり、別物である点に注意
+	[playse][fadese]系での volume属性や、「save:const.sn.sound.【buf】.volume」は目標音量であり、別物である点に注意<br/>
+	<b>bluesnovel</b>：bufが動的な変数名のため、<a href="tag.html#volume" target="_blank" rel="noopener">[volume]</a>タグを経由しない直接代入（<code>&amp;sys:const.sn.sound.VOICE.volume=…</code>や設定画面）にも即座に反応する専用の代入トリガを持つ（VarStore.defSetTriggerSoundVol()）
 </td></tr>
 <tr><td>🟢 sys:sn.auto.msecLineWait</td><td>500</td><td>0〜；ミリ秒</td><td>未読テキストの改行待ち時間（ミリ秒）<br/>※ここでの改行とは[l]の事</td></tr>
 <tr><td>🟢 sys:sn.auto.msecLineWait_Kidoku</td><td>500</td><td>0〜；ミリ秒</td><td>既読テキストの改行待ち時間（ミリ秒）<br/>※ここでの改行とは[l]の事</td></tr>
@@ -776,13 +777,13 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	's' …… 改行待ち=しない、改ページ待ち=しない<br/>
 	（初期値="s"）
 </td></tr>
-<tr><td>🟡 sys:sn.sound.BGM.vol_mul_talking</td><td>1.0</td><td>0.0〜1.0</td><td>
-	ボイス（VOICEバッファの音声）再生中のBGM音量への乗数。<b>bluesnovel</b>：値は持てるが、VOICE再生に連動してBGMを絞る機能は未対応（Phase 3。todo.md参照）。<br/>
+<tr><td>🟢 sys:sn.sound.BGM.vol_mul_talking</td><td>1.0</td><td>0.0〜1.0</td><td>
+	ボイス（VOICEバッファの音声）再生中のBGM音量への乗数（本家 SndBuf.ts:143-157）。<b>bluesnovel</b>：[<a href="tag.html#playse" target="_blank" rel="noopener">playse buf=VOICE</a>]の開始時にこの乗数を読み、今鳴っているBGMの実効音量へ直接反映する（<code>save:</code>は触れない一時的な上書き）。VOICE停止時（自然終了・[stopse]・[stop_allse]のどれでも）にBGM音量を素の実効音量へ戻す（本家 SndBuf.ts:505-512 StStop相当）。<br/>
 	1.0より小さい数字にすると、ボイス再生中のBGM音量を絞ることができる。ボイス再生終了次第、BGMの音量は元に戻る。<br/>
 	1.0にすると、この機能をOFFにできる。（後方互換）
 </td></tr>
 <tr><td>🟢 sys:sn.sound.global_volume</td><td>1</td><td>0.0〜1.0</td><td>全体的な音量を設定する。バッファの実際の音量は「sys:const.sn.sound.【buf】.volume」x「save:const.sn.sound.【buf】.volume」x「全体的な音量」の値となる。<b>bluesnovel</b>：[<a href="tag.html#volume" target="_blank" rel="noopener">volume</a>]等の専用タグを経由しない直接代入（<code>&amp;sys:sn.sound.global_volume=…</code>や設定画面）にも即座に反応する（本家の「代入トリガ関数」相当をVarStoreに追加した）</td></tr>
-<tr><td>🟡 sys:sn.sound.movie_volume</td><td>1</td><td>0.0〜1.0</td><td>ムービー音量を設定する。バッファの実際の音量はこの「ムービー音量」x「全体的な音量」の値となる。<b>bluesnovel</b>：値は持てるが、動画自体が未対応（Phase 4。todo.md参照）</td></tr>
+<tr><td>🟢 sys:sn.sound.movie_volume</td><td>1</td><td>0.0〜1.0</td><td>ムービー音量を設定する。バッファの実際の音量はこの「ムービー音量」x「全体的な音量」の値となる。<b>bluesnovel</b>：[<a href="tag.html#lay" target="_blank" rel="noopener">lay fn=movie</a>]で貼った<code>&lt;video&gt;</code>はWebAudioのGainNodeを通らないDOM要素なので、この値と<code>sys:sn.sound.global_volume</code>を掛け合わせてステージ配下の<code>&lt;video&gt;</code>全部へ直接反映する（ScriptMng.getMovieVolume()/#applyMovieVolume()）。専用タグを経由しない直接代入にも即座に反応する</td></tr>
 <tr><td>🟡 sys:sn.tagCh.canskip</td><td>true</td><td>true、false</td><td>テキストをクリックなどでスキップ可能か</td></tr>
 <tr><td>🟢 sys:sn.tagCh.doWait</td><td>true</td><td>true、false</td><td>未読テキストにウェイトを掛けるか</td></tr>
 <tr><td>🟢 sys:sn.tagCh.doWait_Kidoku</td><td>true</td><td>true、false</td><td>既読テキストにウェイトを掛けるか</td></tr>

@@ -96,8 +96,18 @@ export class ScriptMng {
 			const engine = this.#engine = new ScriptEngine(scr);
 			this.#defEnvBuiltins(engine);
 			// 音量スライダ（設定画面）等、[volume]タグを経由しない直接代入にも即座に反応させる
-			//	（本家 SoundMng.ts:58 setNoticeChgVolume() 相当。sn.sound.movie_volumeは動画実装時に接続）
-			engine.defSetTrigger('sys:sn.sound.global_volume', v=> this.#sndMng.setGlobalVol(Number(v)));
+			//	（本家 SoundMng.ts:58 setNoticeChgVolume() 相当）
+			engine.defSetTrigger('sys:sn.sound.global_volume', v=> {
+				this.#sndMng.setGlobalVol(Number(v));
+				this.#applyMovieVolume();	// <video>はWebAudioのGainNodeを通らないので自前で追随させる
+			});
+			// buf別の基準音量（例：&sys:const.sn.sound.VOICE.volume=…）。実効音量はsave:の目標音量
+			//	（[playse]系が書く）との掛け算なので、[volume]タグと同じ計算をここでも行う
+			engine.defSetTriggerSoundVol((buf, v)=> {
+				const savevol = Number(engine.getVal(`save:const.sn.sound.${buf}.volume`) ?? 1);
+				this.#sndMng.setVol(buf, savevol * Number(v));
+			});
+			engine.defSetTrigger('sys:sn.sound.movie_volume', ()=> this.#applyMovieVolume());
 			this.#loadSaveData(engine);
 			// プロジェクト同梱フォントを`@font-face`で使えるようにする（本家 TxtLayer.ts:97）。
 			//	シナリオ側に読み込みタグは無く、path.jsonにあるフォントは全部登録される
@@ -337,6 +347,9 @@ export class ScriptMng {
 	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl));
 	// ブラウザの自動再生ポリシー対策。初回のクリック・キー入力から呼ぶ（Main.tsx参照）
 	unlockAudio() {this.#sndMng.unlock()}
+	// 自動再生ブロック中か（GrpLayerが[lay fn=movie]の<video>を初期muted状態にするかの判定に使う。
+	//	本家 SpritesMng.ts:288-296 #charmVideoElm() 相当）
+	needClick2Play(): boolean {return this.#sndMng.needClick2Play()}
 
 	// [button clickse=/enterse=/leavese=]。本家 EventMng.ts:465-491 と同じくクリック/ホバー/
 	//	ホバー解除のたびに都度呼ばれる（事前生成キャッシュではない）投げっぱなし再生。
@@ -357,6 +370,25 @@ export class ScriptMng {
 	//	外側の#skynovelではなく内箱なのは、拡縮（transform: scale）が掛かる前の論理サイズで撮るため
 	#heStageBox?: HTMLElement;
 	attachStageBox(el: HTMLElement) {this.#heStageBox = el}
+
+	// sys:sn.sound.movie_volume × sys:sn.sound.global_volume（本家 docs/dev.html「バッファの実際の
+	//	音量はこの『ムービー音量』×『全体的な音量』」）。<video>（[lay fn=movie]）はWebAudioの
+	//	GainNodeを通らないDOM要素なので、音声バッファと違い自前で両方を掛け合わせる必要がある
+	getMovieVolume(): number {
+		const mv = Number(this.#engine?.getVal('sys:sn.sound.movie_volume') ?? 1);
+		const gv = Number(this.#engine?.getVal('sys:sn.sound.global_volume') ?? 1);
+		const v = mv * gv;
+		return v < 0 ? 0 : v > 1 ? 1 : v;
+	}
+	// 今ステージに乗っている<video>全部へ反映（本家 SpritesMng.ts:57-65 も同様に全hveへ直書き）。
+	//	新規にマウントされる<video>にはGrpLayer側がマウント時にgetMovieVolume()を読んで反映する
+	#applyMovieVolume() {
+		const box = this.#heStageBox;
+		if (! box) return;
+
+		const vol = this.getMovieVolume();
+		for (const ve of box.querySelectorAll('video')) ve.volume = vol;
+	}
 
 	// [toggle_full_screen key=…]で予約したキー。押されたらその場で全画面を切り替える。
 	//	[event]の予約（ラベルへ飛ぶ）とは別枠なので、Main.tsxはこちらを先に問い合わせる
@@ -453,6 +485,10 @@ export class ScriptMng {
 		}
 		if (this.#sndFadeWaiting) {
 			if (this.#sndFadeWaiting.canskip) this.#skipSndFadeWait();
+			return;
+		}
+		if (this.#videoWaiting) {
+			if (this.#videoWaiting.canskip) this.#skipVideoWait();
 			return;
 		}
 		// DOM絡みの非同期処理中（[add_frame]/[let_frame]/[loadplugin]/[snapshot]/[load]）は
@@ -710,10 +746,57 @@ export class ScriptMng {
 		const src = this.#searchSnd(tag, act.fn);
 		if (! src) return;	// 見つからない場合は#searchSndが既にmyTraceで知らせている
 
-		const {buf} = act;
-		await this.#sndMng.play(buf, src, act, ()=> {
-			this.#engine?.setValNochk(`tmp:const.sn.sound.${buf}.playing`, false);
+		// onStopには**終了時点のバッファ名**が渡される（[xchgbuf]で入れ替わっていることがあるため、
+		//	呼び出し時のact.bufをそのまま使わない。SndMng.play()参照）
+		await this.#sndMng.play(act.buf, src, act, nowBuf=> {
+			this.#engine?.setValNochk(`tmp:const.sn.sound.${nowBuf}.playing`, false);
+			// VOICE停止時にBGM音量を素の実効音量へ戻す（本家 SndBuf.ts:505-512 StStopのコンストラクタ。
+			//	自然終了・[stopse]・[stop_allse]のどれでもSndBuf.stop()経由でここへ来るので、
+			//	発生源ごとに個別対応する必要が無い）
+			if (nowBuf === 'VOICE') this.#restoreBgmDuck();
 		});
+	}
+	// VOICE停止時のBGM音量復元（本家 SndBuf.ts:505-512）。vol_mul_talkingは次のBGM開始時の
+	//	計算にも使うのでエンジン側の内部値も1へ戻す（resetVolMulTalking()）
+	#restoreBgmDuck() {
+		const engine = this.#engine;
+		if (! engine) return;
+
+		engine.resetVolMulTalking();
+		const vn = 'const.sn.sound.BGM.';
+		const savevol = Number(engine.getVal(`save:${vn}volume`) ?? 1);
+		const sysvol = Number(engine.getVal(`sys:${vn}volume`) ?? 1);
+		this.#sndMng.setVol('BGM', savevol * sysvol);
+	}
+	// [load]/[reload_script]でのBGM/ループ音声復元（本家 SoundMng.playLoopFromSaveObj()）。
+	//	save:const.sn.loopPlayingに無いバッファは止め、有るバッファはsave:の帳簿（volume/start_ms/
+	//	end_ms/ret_ms）を読んでloop=trueで鳴らし直す。SndMng.play()が既に「同一fnが鳴っていれば
+	//	鳴らし直さない」判定を持つので（同じ位置への[reload_script]等）、たまたま一致していれば
+	//	実質何もしない
+	#restoreLoopSnd(engine: ScriptEngine) {
+		let hLP: {[buf: string]: string};
+		try {hLP = JSON.parse(String(engine.getVal('save:const.sn.loopPlaying') ?? '{}')) as {[buf: string]: string}}
+		catch {hLP = {}}
+
+		// 復元表に無いバッファは止める（本家 playLoopFromSaveObj() の[1]）
+		for (const buf of this.#sndMng.bufs()) if (! (buf in hLP)) this.#sndMng.stop(buf);
+
+		// 復元表にあるバッファは鳴らし直す（[2]）。join=falseで投げっぱなし
+		//	（#procLoad()自体がスクリプトのfetchで既に非同期なので、ここで待たせる理由が無い）
+		for (const [buf, fn] of Object.entries(hLP)) {
+			if (! fn) continue;
+
+			const vn = `const.sn.sound.${buf}.`;
+			const savevol = Number(engine.getVal(`save:${vn}volume`) ?? 1);
+			const sysvol = Number(engine.getVal(`sys:${vn}volume`) ?? 1);
+			void this.#playSnd({
+				t: 'playSnd', buf, fn, loop: true, volume: savevol * sysvol, speed: 1, pan: 0,
+				start_ms: Number(engine.getVal(`save:${vn}start_ms`) ?? 0),
+				end_ms: Number(engine.getVal(`save:${vn}end_ms`) ?? MAX_END_MS),
+				ret_ms: Number(engine.getVal(`save:${vn}ret_ms`) ?? 0),
+				join: false, canskip: false,
+			}).catch(this.#catchErr);
+		}
 	}
 	// join=true（既定）経由。デコード完了（＝再生開始）まで#runStep()を待たせる
 	async #procSnd(act: Extract<T_ENGINE_ACTION, {t: 'playSnd'}>) {
@@ -797,9 +880,69 @@ export class ScriptMng {
 		const w = this.#sndFadeWaiting;
 		if (! w) return;
 
-		const ti = this.#hSndTw[w.buf];
+		this.#killSndFade(w.buf);
+	}
+	// 走行中のフェードを即座に終了状態へ送って畳む（フェードが無ければ何もしない）。
+	//	[wf]/[wb]待機中のクリック打ち切りと、[xchgbuf]が実体を動かす前の下ごしらえの両方から使う
+	//	（後者は#hSndTwのend()がact.buf/act.buf2をクロージャ捕捉したままなので、
+	//	交換を跨がせると別バッファへ音量が当たってしまうため先に確定させておく）
+	#killSndFade(buf: string) {
+		const ti = this.#hSndTw[buf];
 		if (ti) {ti.tw.kill(); ti.end()}
-		this.#onSndFadeEnd(w.buf);
+		this.#onSndFadeEnd(buf);
+	}
+
+	// [wv]：動画再生終了待ち（本家 SpritesMng.wv()）。**レイヤ名でなくファイル名（fn）**で
+	//	<video>を探す（GrpLayerがdata-fn属性に論理名を出している）。無い・ループ中・
+	//	既に終わっていれば待たず、stop指定なら（本家 stopVideo()相当で）その場で確定させる
+	#videoWaiting: {fn: string; canskip: boolean; stop: boolean} | undefined;
+	#findVideo(fn: string): HTMLVideoElement | undefined {
+		return this.#heStageBox?.querySelector<HTMLVideoElement>(`video[data-fn="${CSS.escape(fn)}"]`) ?? undefined;
+	}
+	// tries：直前の[lay fn=…]が同じstep()内でストアを更新しただけの場合、Reactの描画コミット
+	//	（GrpLayerが実際に<video>をマウントする。特にStage.tsx初回マウント直後は
+	//	lazy()チャンク読込待ちで遅れうる）がまだ済んでいないことがある。
+	//	見つからない間はrAFで数フレームだけ待ち直し、それでも見つからなければ
+	//	「そのfnは置かれていない」とみなして待たない（本家 tag.htmlの「無ければ待たない」通り）
+	#waitVideoPlay(fn: string, canskip: boolean, stop: boolean, tries = 30) {
+		const ve = this.#findVideo(fn);
+		if (! ve) {
+			if (tries > 0) {requestAnimationFrame(()=> this.#waitVideoPlay(fn, canskip, stop, tries - 1)); return}
+			this.#goSafe();
+			return;
+		}
+		if (ve.loop || ve.ended) {
+			if (ve.ended && stop) this.#stopVideo(ve);
+			this.#goSafe();
+			return;
+		}
+
+		const done = ()=> {
+			if (this.#videoWaiting?.fn !== fn) return;	// [wv]待機中のクリックで既に打ち切り済み
+			this.#videoWaiting = undefined;
+			if (stop) this.#stopVideo(ve);
+			this.#goSafe();
+		};
+		ve.addEventListener('ended', done, {once: true});
+		this.#videoWaiting = {fn, canskip, stop};
+	}
+	// [wv]待機中のクリックで打ち切る。'ended'は{once:true}なので、まだ発火していなければ
+	//	そのまま残っても無害（done()の#videoWaiting?.fn!==fnガードが二重発火を防ぐ）
+	#skipVideoWait() {
+		const w = this.#videoWaiting;
+		if (! w) return;
+
+		this.#videoWaiting = undefined;
+		if (w.stop) {
+			const ve = this.#findVideo(w.fn);
+			if (ve) this.#stopVideo(ve);
+		}
+		this.#goSafe();
+	}
+	// 本家 SpritesMng.stopVideo()相当。#hFn2hveからの先削除によるリークは移植しない（todo.md参照）
+	#stopVideo(ve: HTMLVideoElement) {
+		ve.pause();
+		ve.currentTime = ve.duration;
 	}
 
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
@@ -841,6 +984,7 @@ export class ScriptMng {
 				if (last?.t === 'waitQuake') {this.#waitQuake(last.canskip); return}
 				if (last?.t === 'waitSnd') {this.#waitSndPlay(last.buf, last.canskip, last.stop); return}
 				if (last?.t === 'waitFade') {this.#waitFadeSnd(last.buf, last.canskip); return}
+				if (last?.t === 'waitVideo') {this.#waitVideoPlay(last.fn, last.canskip, last.stop); return}
 				// [playse join=true]（既定）：ロード（デコード）完了まで待ってから続きを回す
 				if (last?.t === 'playSnd' && last.join) {
 					this.#procing = true;
@@ -921,6 +1065,7 @@ export class ScriptMng {
 				: `place=${String(act.place)} は存在しません`;
 
 			engine.restoreMarkPart(mark);
+			this.#restoreLoopSnd(engine);		// BGM等の復元（本家 SoundMng.playLoopFromSaveObj()）
 			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
 			this.#pageLog.clear();				// 読み戻し履歴は繋がらないので捨てる
 			this.#pageStart = undefined;
@@ -1200,6 +1345,18 @@ export class ScriptMng {
 		case 'stopAllSnd':
 			this.#sndMng.stopAll();
 			break;
+		case 'xchgBufSnd':
+			// save:/loopPlayingの帳簿はScriptEngine側で入れ替え済み。ここでは実体を動かす前に、
+			//	両バッファの走行中フェード（#hSndTw）を先に畳む——end()がact.buf（旧バッファ名）を
+			//	捕捉したままなので、交換を跨がせると別バッファへ音量が当たってしまう
+			this.#killSndFade(act.buf);
+			this.#killSndFade(act.buf2);
+			this.#sndMng.xchgBuf(act.buf, act.buf2);
+			break;
+		case 'duckBgm':
+			// VOICE再生開始時のBGM絞り込み（本家 SndBuf.ts:143-157）。save:へは触れない一時的な上書き
+			this.#sndMng.setVol('BGM', act.volume);
+			break;
 		case 'volumeSnd':
 			this.#sndMng.setVol(act.buf, act.volume);
 			break;
@@ -1211,6 +1368,9 @@ export class ScriptMng {
 			break;
 		case 'waitFade':
 			// 実処理は#runStep()側（#waitFadeSnd()）。表示への影響は無い
+			break;
+		case 'waitVideo':
+			// 実処理は#runStep()側（#waitVideoPlay()）。表示への影響は無い
 			break;
 
 		case 'title':

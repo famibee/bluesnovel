@@ -141,7 +141,19 @@ function a(t) {
 					...h.style_hover ? { sh: h.style_hover } : {},
 					...h.hint ? { hint: h.hint } : {},
 					...h.hint_style ? { hs: h.hint_style } : {},
-					...h.hint_opt ? { ho: h.hint_opt } : {}
+					...h.hint_opt ? { ho: h.hint_opt } : {},
+					...h.clickse ? {
+						clickse: h.clickse,
+						clicksebuf: h.clicksebuf
+					} : {},
+					...h.enterse ? {
+						enterse: h.enterse,
+						entersebuf: h.entersebuf
+					} : {},
+					...h.leavese ? {
+						leavese: h.leavese,
+						leavesebuf: h.leavesebuf
+					} : {}
 				};
 				break;
 			case "endlink": {

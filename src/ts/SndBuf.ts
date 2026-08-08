@@ -42,13 +42,15 @@ export type T_SND_OPT = {
 };
 
 export class SndBuf {
+	buf: string;	// [xchgbuf]でSndMng.xchgBuf()が書き換える（可変。コンストラクタでも同名引数から入れる）
 	constructor(
 		private readonly ctx: AudioContext,
 		dst: AudioNode,
-		readonly buf: string,
+		buf: string,
 		readonly src: string,	// 同一ファイル判定用（SndMng.play()が「既に同じ音が鳴っているか」を見る）
 		private readonly opt: T_SND_OPT,
 	) {
+		this.buf = buf;
 		const gn = this.gn = ctx.createGain();
 		gn.gain.value = opt.volume;
 		if (opt.pan !== 0 && typeof ctx.createStereoPanner === 'function') {

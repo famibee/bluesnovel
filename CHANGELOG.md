@@ -113,6 +113,49 @@
   - `bunx tsc --noEmit`・`bun test`（1459件）とも成功。`todo.md`「アセット・基盤」の
     該当2項目はここへ移動
 
+- [x] **ＢＧＭ・効果音（Phase 3）・動画（Phase 4）の実装**：`[xchgbuf]`・`[load]`の音声復元・
+  `[link]`の効果音・VOICE再生中のBGM絞り込み（`sys:sn.sound.BGM.vol_mul_talking`）・buf別音量の
+  代入トリガ・動画（`[lay fn=movie]`の`<video>`描画＋`[wv]`）
+  - `[xchgbuf]`（本家`SoundMng.ts:174-188`＋`SndBuf.ts:50-78`）：`save:`の帳簿（`volume`/`fn`/
+    `start_ms`/`end_ms`/`ret_ms`の5つ。本家は`volume`/`fn`のみ）とループ再生表を丸ごと入れ替え、
+    走行中フェードは交換前に終了状態へ確定させてから実体を動かす。**副産物として`SndMng.play()`の
+    不備を発見・修正**：`onEnd`コールバックが`buf`引数をクロージャ捕捉していたため、交換後に
+    自然終了すると交換前のバッファ名で`#hBuf`/`#hWaitCb`を触ってしまい`[ws]`の待ちが永久に解決
+    されない不具合があった（`SndBuf.buf`を可変にし、`onEnd`/`onStop`は都度`sb.buf`を読むよう修正。
+    E2Eで実際に再現させてから直し、回帰確認済み）
+  - `[load]`の音声復元（本家`playLoopFromSaveObj()`）：`ScriptEngine.restoreMarkPart()`が
+    `save:const.sn.loopPlaying`から内部`#hLoopPlay`を復元し、`ScriptMng.#restoreLoopSnd()`が
+    復元表に無いバッファを止め、有るバッファを`save:`の帳簿（`volume`/`start_ms`/`end_ms`/
+    `ret_ms`）から鳴らし直す
+  - `[link]`の効果音（`clickse`/`enterse`/`leavese`）：`[button]`と同じ経路（既定buf=`SYS`、
+    `join=false`）。`[link]`は本文ストリームへ埋め込む命令なので、`Txt.ts`の`T_LNK`に属性を足し
+    `TxtLayer.tsx`の`mkLink()`（クリック／マウス乗り降り）から鳴らす
+  - VOICE再生中のBGM絞り込み（本家`SndBuf.ts:143-157`）：`[playse buf=VOICE]`開始時に
+    `sys:sn.sound.BGM.vol_mul_talking`を読み、今鳴っているBGMの実効音量へ直接反映
+    （`save:`は触らない一時的な上書き）。VOICE停止時（自然終了・`[stopse]`・`[stop_allse]`の
+    どれでも`SndMng`の`onStop`経由で通る）にBGM音量を素の実効音量へ戻す
+  - buf別音量の代入トリガ：`VarStore`に`defSetTriggerSoundVol()`を新設（`sys:const.sn.sound.<buf>.
+    volume`はbufが動的なため、既存の`defSetTrigger()`のキー完全一致では表せない）
+  - 動画：`GrpLayer.tsx`が拡張子（`.mp4`/`.webm`）で`<img>`/`<video>`を出し分ける。自動再生対策で
+    未クリック状態（`SndMng.needClick2Play()`）なら初期`muted`（本家`SpritesMng.ts:288-296`相当）。
+    `sys:sn.sound.movie_volume`×`global_volume`をステージ配下の`<video>`全部へ直接反映（WebAudioの
+    GainNodeを通らないDOM要素なので自前で掛け合わせる必要がある）
+  - `[wv]`（本家`SpritesMng.wv()`）：レイヤ名でなく**ファイル名**（`fn`）で`<video>`を探し
+    `'ended'`まで待つ。**踏んだ穴**：`[lay fn=…][wv fn=…]`が同じ`step()`内で処理されると、Reactの
+    描画コミット（`<video>`の実マウント）がまだ済んでいないことがあり、特にStage.tsx初回マウント
+    直後（lazy chunkの読込待ち）は`#heStageBox`自体が未アタッチで「見つからない＝待たない」に
+    誤判定し、2秒の動画が一瞬で終わった扱いになっていた。rAFで最大30フレームまでリトライしてから
+    諦めるよう修正（E2Eでffmpeg生成の実動画を2秒再生させて検出・回帰確認済み）
+  - `test/ScriptEngine_snd.test.ts`・`ScriptEngine_save.test.ts`・`ScriptEngine_txt.test.ts`・
+    `VarStore.test.ts`・`argdef_parity.test.ts`に追加。E2Eは`test/e2e/snd.e2e.ts`を拡張
+    （`[xchgbuf]`・`[link]`効果音。既存の`[button]`テストとリンクのラベル文字列が重複するように
+    なったため`getByText`を`:text-is()`＋`data-lay`スコープに調整）、`test/e2e/movie.e2e.ts`＋
+    `test/e2e/app/prj_movie/`（新規。ffmpeg生成の2秒無音動画2本）を新設。ユニット1483件・
+    E2E 185件、いずれも全件成功
+  - `[log]`（`downloads/log.txt`への追記が要るデバッグ専用タグ）は未実装のまま：ブラウザ版には
+    「同じファイルへ追記し続ける」置き場が無いため、アプリ（Electron）版の整備と同時に対応する
+    方針で`docs/tag.html`にも明記した（`todo.md`参照）
+
 - [ ]
 
 

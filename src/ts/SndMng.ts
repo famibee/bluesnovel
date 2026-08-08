@@ -88,7 +88,10 @@ export class SndMng {
 	//	（ScriptMng側がtmp:const.sn.sound.<buf>.playingを倒すのに使う。
 	//	この変数は非同期な自然終了でも倒す必要があり、ScriptEngine.step()の外から
 	//	engine.setValNochk()で書くしかないため、ここを起点にする設計にした）
-	async play(buf: string, src: string, opt: T_SND_OPT, onStop?: () => void): Promise<void> {
+	//	onStopには**その時点のバッファ名**（sb.buf）を渡す。[xchgbuf]でバッファ名が
+	//	入れ替わった後に自然終了した場合、tmp:playingを倒すべきは呼び出し時のbufではなく
+	//	今そのSndBufが属しているbufのため
+	async play(buf: string, src: string, opt: T_SND_OPT, onStop?: (buf: string) => void): Promise<void> {
 		// 同じバッファで同じファイルが既に再生中（デコード待ちも含む）なら、頭から鳴り直さず何もしない。
 		//	新規SndBufを作らず今のインスタンスをそのまま使い続けるので、進行中のフェード（GainNodeを
 		//	直接掴んでいる）や[ws]/[wf]の待ち合わせ（このインスタンスを対象にしている）も壊れない
@@ -100,11 +103,14 @@ export class SndMng {
 		const {ctx, gn} = this.#getCtx();
 		const sb = new SndBuf(ctx, gn, buf, src, opt);
 		this.#hBuf[buf] = sb;
+		// buf名は[xchgbuf]で書き換わりうるので、クロージャ捕捉のbufでなく**その時点のsb.buf**を見る。
+		//	さもないと交換後の自然終了で、交換前のバッファ名の#hBuf/#hWaitCbを触ってしまう
 		sb.onEnd = () => {
-			if (this.#hBuf[buf] === sb) delete this.#hBuf[buf];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
-			const cb = this.#hWaitCb[buf];
-			delete this.#hWaitCb[buf];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
-			onStop?.();
+			const nowBuf = sb.buf;
+			if (this.#hBuf[nowBuf] === sb) delete this.#hBuf[nowBuf];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+			const cb = this.#hWaitCb[nowBuf];
+			delete this.#hWaitCb[nowBuf];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+			onStop?.(nowBuf);
 			cb?.();
 		};
 
@@ -122,6 +128,22 @@ export class SndMng {
 
 	stop(buf: string) {this.#hBuf[buf]?.stop()}
 	stopAll() {for (const sb of Object.values(this.#hBuf)) sb.stop()}
+	// 今何か鳴っているバッファ名の一覧（[load]の音声復元が「復元表に無いバッファは止める」
+	//	判定に使う。本家 SoundMng.playLoopFromSaveObj() の#hSndBuf走査に相当）
+	bufs(): string[] {return Object.keys(this.#hBuf)}
+
+	// [xchgbuf]。再生中インスタンスを入れ替える（本家 SoundMng.ts:174-187）。save:/loopPlayingの
+	//	帳簿はScriptEngine側で済んでいるので、ここでは実体（#hBuf）だけを動かす。片方だけ再生中でも
+	//	もう片方をdeleteし忘れないよう、両者いっぺんに読んでから書き戻す（noUncheckedIndexedAccess対策）。
+	//	[ws]/[wf]の待ち合わせ（#hWaitCb）は**交換しない**——「バッファ名SEの音が終わるまで」という
+	//	待ちの意味は交換後も変わらないため、交換後にSEへ来た音の終了で解決するのが正しい
+	xchgBuf(buf: string, buf2: string) {
+		const a = this.#hBuf[buf];
+		const b = this.#hBuf[buf2];
+		if (b) {this.#hBuf[buf] = b; b.buf = buf} else delete this.#hBuf[buf];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+		if (a) {this.#hBuf[buf2] = a; a.buf = buf2} else delete this.#hBuf[buf2];	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+	}
+
 	setVol(buf: string, v: number) {
 		const sb = this.#hBuf[buf];
 		if (sb) sb.volume = v < 0 ? 0 : v > 1 ? 1 : v;

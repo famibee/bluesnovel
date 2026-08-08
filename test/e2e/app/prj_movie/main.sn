@@ -1,0 +1,22 @@
+; E2E用シナリオ（movie.e2e.ts が使用）。
+;	動画は本家に専用の再生タグが無く、[lay fn=movie]で画像レイヤにそのまま貼る方式（Phase 4）。
+;	ffmpegで生成した2秒・無音・64x64のカラーバー（movie.mp4/movie2.mp4。2本目は打ち切りシーン用の
+;	別ファイル——同じfnを鳴らし直すとendedのまま既に待たない状態になるため分けた）を実際に持つ
+;	例外プロジェクト（prj_snd同様、絵ではなく「待ち合わせの結線」が本題）。
+;	見るのは：
+;	・[lay fn=movie]でGrpLayerが<img>でなく<video>を描画すること
+;	・[wv]が動画の自然終了（'ended'）まで進行を止めること
+;	・[wv]待機中のクリックで打ち切れること（canskip既定=true。[ws]/[wf]とは逆）
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[add_lay layer=base class=grp]
+
+[lay layer=base fn=movie]
+[wv fn=movie]
+どうがしゅうりょう[p]
+
+; [wv]待機中のクリックで打ち切れること（stop既定=trueなので、打ち切り後は動画も止まる）
+[lay layer=base fn=movie2]
+[wv fn=movie2]
+うちきり[l]
+[s]

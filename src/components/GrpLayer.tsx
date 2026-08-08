@@ -27,16 +27,22 @@ export type T_FACE_SRC = T_FACE & {src: string};
 type T_GRPARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	nm		: string;	// レイヤ名。data-lay属性としてDOMへ出す（[snapshot layer=…]の絞り込み用）
-	fn		: string;	// [lay fn=...]で指定された論理名（[dump_lay]・デバッグ用）
+	fn		: string;	// [lay fn=...]で指定された論理名（[dump_lay]・デバッグ用。動画時は<video data-fn=…>
+		//	としても出し、[wv fn=…]（本家 SpritesMng.wv()）がここを引いて終了を待つ）
 	src		: string;	// 解決済みURL。空なら描かない
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
+	// 動画（[lay fn=movie.mp4/.webm]）。本家に[playvideo]系タグは無く、画像レイヤにそのまま
+	//	貼る方式（Phase 4。todo.md参照）。getVideoVol/needClick2PlayはSndMngの状態を読むだけの
+	//	関数なので、都度呼ぶ関数として渡す（onSeと同じ流儀。値そのものはReactの状態に持たない）
+	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
+	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
 export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; aFace: T_FACE_SRC[]};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, src, aFace}: T_GRPARG) {
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -64,6 +70,18 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		return ()=> {alive = false};
 	}, [src, isSheet]);
 
+	// 動画（[lay fn=movie.mp4/.webm]）。本家に専用タグは無く、画像レイヤにそのまま貼る方式
+	//	（`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）
+	const isMovie = /\.(?:mp4|webm)$/i.test(src);
+	// マウント時点の値だけ当てる（ref callback。本家 SpritesMng.ts:288-296 #charmVideoElm()と同じ
+	//	タイミング）。以後の変化（音量スライダ操作）はScriptMng.#applyMovieVolume()がステージ配下の
+	//	<video>を直接書き換える側で追随させる
+	const onVideoRef = (ve: HTMLVideoElement | null)=> {
+		if (! ve) return;
+		ve.volume = getVideoVol();
+		ve.muted = needClick2Play();
+	};
+
 	const div0 = useRef<HTMLDivElement>(null);
 	const evt = (style: CSSStyleDeclaration, transform: string)=> {
 		noticeDrag();
@@ -75,7 +93,8 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 				（Reactがページ全体再ダウンロードの可能性を警告するため）。
 				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
 			{sheet && <div className={aniSpriteClass(sheet)}/>}
-			{src && ! isSheet && <img src={src} style={{display: 'block'}}/>}
+			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={{display: 'block'}}/>}
+			{src && ! isSheet && ! isMovie && <img src={src} style={{display: 'block'}}/>}
 			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
 				if (! faceSrc) return null;
 				return <img

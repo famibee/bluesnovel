@@ -12,6 +12,8 @@
 ;	・↑の対象が再生中でなくフェード中の場合、フェードを壊さず継続すること
 ;	・[button clickse=/enterse=/leavese=]が実際にクリック・ホバー・ホバー解除で効果音を鳴らすこと
 ;	・[button enabled=false]は効果音も鳴らさないこと
+;	・[xchgbuf]で交換した後も、交換先バッファ名での自然終了・[ws]待ちが正しく解決すること（回帰）
+;	・[link clickse=/enterse=/leavese=]が[button]と同じく実際に効果音を鳴らすこと
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
@@ -67,6 +69,24 @@
 ふぇーどをこわさない[p]
 [stopbgm]
 
+; 回帰：[xchgbuf]（本家 SoundMng.ts:174-188 + SndBuf.ts:50-79）。
+;	SndMng.play()のonEndがバッファ名をクロージャ捕捉したままだと、交換後の自然終了で
+;	[ws]の待ちが解決されずハングする（今回の実装で修正）。buf=SEで鳴らした音をVOICEへ
+;	交換してから[ws buf=VOICE]で待ち、時間内に解決すること自体が回帰の確認になる
+[playse fn=se buf=SE join=false]
+[xchgbuf buf=SE buf2=VOICE]
+[ws buf=VOICE]
+こうかんせいこう[p]
+
+; [link clickse=/enterse=/leavese=]（本家 EventMng.ts:465-491。[button]と同じ経路）。
+;	[l]の直後はそのままボタンシーンのセットアップへ続く（クリックしなければ素通りする）
+[add_lay layer=linkmes class=txt]
+[current layer=linkmes]
+[link label=*linkend clickse=se clicksebuf=lnkclick]クリック[endlink]
+[link label=*linkend enterse=se entersebuf=lnkhover]ホバー[endlink]
+[link label=*linkend leavese=se leavesebuf=lnkleave]はなれる[endlink]
+りんくてすと[l]
+
 ; 回帰：[button clickse=/enterse=/leavese=]（本家 EventMng.ts:465-491）。
 ;	同じバッファに同じ音の重複要求は鳴り直さない仕様（前段の回帰）と干渉しないよう、
 ;	ボタンごとに違うbufを明示して割り当てる
@@ -78,6 +98,9 @@
 [button page=fore nm=btn_off text=むこう enabled=false clickse=se enterse=se clicksebuf=btnoff entersebuf=btnoff label=*btnend]
 ぼたんてすと[l]
 [s]
+
+*linkend
+りんくおわり[s]
 
 *btnend
 おわり[s]

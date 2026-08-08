@@ -182,7 +182,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const frag = document.createDocumentFragment();
 		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
-			s.appendChild(elCh(ch, onLink, fncFfs));
+			s.appendChild(elCh(ch, onLink, fncFfs, onSe));
 			frag.appendChild(s);
 			return s;
 		});
@@ -520,7 +520,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string): Node {
+function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string,
+	onSe: (fn: string, buf: string)=> void): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
 	const ffs = fncFfs(c);
 	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs && ! src) return txt(c);
@@ -550,7 +551,7 @@ function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_L
 		rt.textContent = rubyTxt(r);
 		el.appendChild(rt);
 	}
-	if (lnk) mkLink(el, lnk, s ?? '', onLink);
+	if (lnk) mkLink(el, lnk, s ?? '', onLink, onSe);
 	return el;
 }
 
@@ -585,21 +586,26 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 // [link]区間の1単位をクリックできるようにする。
 //	**Reactの外で作るDOM**（文字送り演出のためTxtLayerが直接組み立てている）なので、
 //	BtnLayerのようなJSXではなくここでリスナを付ける。読み進めへ伝播させない点は同じ
-function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK) {
+function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK, onSe: (fn: string, buf: string)=> void) {
 	el.style.cursor = 'pointer';
 	el.addEventListener('click', e=> {
 		e.stopPropagation();	// クリックで本文も進む、の二重反応を防ぐ（BtnLayerと同じ）
 		hintMng.hide();
+		if (lnk.clickse) onSe(lnk.clickse, lnk.clicksebuf ?? 'SYS');
 		onLink(lnk);
 	});
 	// ツールチップ（[link hint=…]）とstyle_hover。どちらも乗っている間だけ
+	//	効果音（本家 EventMng.ts:465-491、[button]と同じ形。enabled=falseの間は
+	//	CSSのpointer-events:noneでイベント自体が来ないので、ここでの判定は不要）
 	el.addEventListener('mouseenter', ()=> {
 		if (lnk.sh) el.style.cssText = sty + lnk.sh;
 		if (lnk.hint) hintMng.show(el, lnk.hint, lnk.hs, lnk.ho);
+		if (lnk.enterse) onSe(lnk.enterse, lnk.entersebuf ?? 'SYS');
 	});
 	el.addEventListener('mouseleave', ()=> {
 		if (lnk.sh) {el.style.cssText = sty; el.style.cursor = 'pointer'}
 		hintMng.hide();
+		if (lnk.leavese) onSe(lnk.leavese, lnk.leavesebuf ?? 'SYS');
 	});
 }
 

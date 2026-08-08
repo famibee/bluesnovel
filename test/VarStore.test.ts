@@ -324,3 +324,35 @@ it('invalid_name_throws', ()=> {
 	const vs = new VarStore;
 	expect(()=> vs.get('   ')).toThrow();
 });
+
+
+// ============ 代入トリガ（defSetTrigger/defSetTriggerSoundVol） ============
+//	sys:への直接代入（設定画面のスライダ等、専用タグを経由しない代入）にも即座に副作用を
+//	効かせるための口。ScriptMng.ts参照（sys:sn.sound.global_volume・const.sn.sound.<buf>.volume）
+
+it('defSetTrigger_firesOnDirectAssign', ()=> {
+	const vs = new VarStore;
+	const aCalled: unknown[] = [];
+	vs.defSetTrigger('sys:a', v=> aCalled.push(v));
+	vs.set('sys:a', 0.5);
+	expect(aCalled).toEqual([0.5]);
+});
+
+it('defSetTriggerSoundVol_firesWithParsedBuf', ()=> {
+	// bufはキー完全一致では表せないので、const.sn.sound.<buf>.volumeの<buf>部分を渡す
+	const vs = new VarStore;
+	const aCalled: [string, unknown][] = [];
+	vs.defSetTriggerSoundVol((buf, v)=> aCalled.push([buf, v]));
+	vs.set('sys:const.sn.sound.VOICE.volume', 0.3);
+	vs.set('sys:const.sn.sound.BGM.volume', 0.7);
+	expect(aCalled).toEqual([['VOICE', 0.3], ['BGM', 0.7]]);
+});
+
+it('defSetTriggerSoundVol_ignoresUnrelatedKeys', ()=> {
+	const vs = new VarStore;
+	const aCalled: unknown[] = [];
+	vs.defSetTriggerSoundVol((buf, v)=> aCalled.push([buf, v]));
+	vs.set('sys:const.sn.sound.VOICE.fn', 'x');	// volumeでない属性
+	vs.set('game:const.sn.sound.VOICE.volume', 0.3);	// sys:名前空間でない
+	expect(aCalled).toEqual([]);
+});

@@ -9885,38 +9885,48 @@ var cu = /* @__PURE__ */ function(e) {
 }(P.PureComponent));
 //#endregion
 //#region src/components/GrpLayer.tsx
-function lu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, src: a, aFace: o }) {
-	let s = (e) => {
+function lu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, fn: a, src: o, aFace: s, getVideoVol: c, needClick2Play: l }) {
+	let u = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, c = a.endsWith(".json"), [l, u] = (0, P.useState)(void 0);
+	}, d = o.endsWith(".json"), [f, p] = (0, P.useState)(void 0);
 	(0, P.useEffect)(() => {
-		if (!c) {
-			u(void 0);
+		if (!d) {
+			p(void 0);
 			return;
 		}
 		let e = !0;
-		return H(a).then((t) => {
-			e && u(t);
+		return H(o).then((t) => {
+			e && p(t);
 		}), () => {
 			e = !1;
 		};
-	}, [a, c]);
-	let d = (0, P.useRef)(null), f = (e, t) => {
+	}, [o, d]);
+	let m = /\.(?:mp4|webm)$/i.test(o), h = (e) => {
+		e && (e.volume = c(), e.muted = l());
+	}, g = (0, P.useRef)(null), v = (e, t) => {
 		r(), e.transform = t;
 	};
 	return /* @__PURE__ */ _(b, { children: [/* @__PURE__ */ _("div", {
 		css: e,
-		ref: d,
+		ref: g,
 		"data-lay": i,
 		style: n,
-		onMouseDown: (e) => s(e),
+		onMouseDown: (e) => u(e),
 		children: [
-			l && /* @__PURE__ */ w("div", { className: ae(l) }),
-			a && !c && /* @__PURE__ */ w("img", {
-				src: a,
+			f && /* @__PURE__ */ w("div", { className: ae(f) }),
+			o && m && /* @__PURE__ */ w("video", {
+				ref: h,
+				src: o,
+				autoPlay: !0,
+				playsInline: !0,
+				"data-fn": a,
 				style: { display: "block" }
 			}),
-			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ w("img", {
+			o && !d && !m && /* @__PURE__ */ w("img", {
+				src: o,
+				style: { display: "block" }
+			}),
+			s.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ w("img", {
 				src: t,
 				style: {
 					position: "absolute",
@@ -9927,24 +9937,24 @@ function lu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, src: a, aFac
 			}, `${e}_${String(a)}`) : null)
 		]
 	}), t && /* @__PURE__ */ w(cu, {
-		target: d,
+		target: g,
 		draggable: !0,
 		throttleDrag: 1,
-		onDrag: ({ target: { style: e }, transform: t }) => f(e, t),
+		onDrag: ({ target: { style: e }, transform: t }) => v(e, t),
 		resizable: !0,
 		keepRatio: !0,
 		onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-			f(e, r), e.width = `${t}px`, e.height = `${n}px`;
+			v(e, r), e.width = `${t}px`, e.height = `${n}px`;
 		},
 		rotatable: !0,
 		throttleRotate: 0,
 		startDragRotate: 0,
 		throttleDragRotate: 0,
 		rotationPosition: "top",
-		onRotate: ({ target: { style: e }, drag: { transform: t } }) => f(e, t),
+		onRotate: ({ target: { style: e }, drag: { transform: t } }) => v(e, t),
 		originDraggable: !0,
 		onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-			f(e, n), e.transformOrigin = t;
+			v(e, n), e.transformOrigin = t;
 		}
 	})] });
 }
@@ -10196,7 +10206,7 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		}
 		let o = s.slice(i.length), c = document.createDocumentFragment(), l = o.map((e) => {
 			let t = document.createElement("span");
-			return t.appendChild(Su(e, V, U)), c.appendChild(t), t;
+			return t.appendChild(Su(e, V, U, D)), c.appendChild(t), t;
 		});
 		if (ne.current = [...ne.current, ...o], i.push(...l), e.appendChild(c), O || F) {
 			N.set(l, bu), j(!1);
@@ -10474,22 +10484,22 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		})] })
 	] });
 }
-function Su({ c: e, r: t, s: n, rs: r, tcy: i, lnk: a, src: o, gw: s, gh: c, gx: l, gy: u }, d, f) {
-	let p = (e) => document.createTextNode(e === " " ? "\xA0" : e), m = f(e);
-	if (t === void 0 && !n && !i && !a && !m && !o) return p(e);
-	let h = document.createElement(t === void 0 ? "span" : "ruby");
-	n && (h.style.cssText = n), m && (h.style.fontFeatureSettings = m);
-	let g = i ? document.createElement("span") : h;
-	if (i && (g.style.textCombineUpright = "all", h.appendChild(g)), g.appendChild(p(e)), o && (Cu(g, o, {
+function Su({ c: e, r: t, s: n, rs: r, tcy: i, lnk: a, src: o, gw: s, gh: c, gx: l, gy: u }, d, f, p) {
+	let m = (e) => document.createTextNode(e === " " ? "\xA0" : e), h = f(e);
+	if (t === void 0 && !n && !i && !a && !h && !o) return m(e);
+	let g = document.createElement(t === void 0 ? "span" : "ruby");
+	n && (g.style.cssText = n), h && (g.style.fontFeatureSettings = h);
+	let _ = i ? document.createElement("span") : g;
+	if (i && (_.style.textCombineUpright = "all", g.appendChild(_)), _.appendChild(m(e)), o && (Cu(_, o, {
 		...s === void 0 ? {} : { gw: s },
 		...c === void 0 ? {} : { gh: c },
 		...l === void 0 ? {} : { gx: l },
 		...u === void 0 ? {} : { gy: u }
-	}), g !== h && h.appendChild(g)), t !== void 0) {
+	}), _ !== g && g.appendChild(_)), t !== void 0) {
 		let e = document.createElement("rt");
-		r && (e.style.cssText = r), e.textContent = j(t), h.appendChild(e);
+		r && (e.style.cssText = r), e.textContent = j(t), g.appendChild(e);
 	}
-	return a && wu(h, a, n ?? "", d), h;
+	return a && wu(g, a, n ?? "", d, p), g;
 }
 function Cu(e, t, n) {
 	if ((n.gw !== void 0 || n.gh !== void 0) && (e.style.display = "inline-block", e.style.verticalAlign = "text-bottom", n.gw !== void 0 && (e.style.width = `${String(n.gw)}px`), n.gh !== void 0 && (e.style.height = `${String(n.gh)}px`)), (n.gx !== void 0 || n.gy !== void 0) && (e.style.translate = `${String(n.gx ?? 0)}px ${String(n.gy ?? 0)}px`), !t.endsWith(".json")) {
@@ -10500,13 +10510,13 @@ function Cu(e, t, n) {
 		t && e.classList.add(ae(t));
 	});
 }
-function wu(e, t, n, r) {
+function wu(e, t, n, r, i) {
 	e.style.cursor = "pointer", e.addEventListener("click", (e) => {
-		e.stopPropagation(), mu.hide(), r(t);
+		e.stopPropagation(), mu.hide(), t.clickse && i(t.clickse, t.clicksebuf ?? "SYS"), r(t);
 	}), e.addEventListener("mouseenter", () => {
-		t.sh && (e.style.cssText = n + t.sh), t.hint && mu.show(e, t.hint, t.hs, t.ho);
+		t.sh && (e.style.cssText = n + t.sh), t.hint && mu.show(e, t.hint, t.hs, t.ho), t.enterse && i(t.enterse, t.entersebuf ?? "SYS");
 	}), e.addEventListener("mouseleave", () => {
-		t.sh && (e.style.cssText = n, e.style.cursor = "pointer"), mu.hide();
+		t.sh && (e.style.cssText = n, e.style.cursor = "pointer"), mu.hide(), t.leavese && i(t.leavese, t.leavesebuf ?? "SYS");
 	});
 }
 function Tu(e) {
@@ -10787,7 +10797,9 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 							nm: e.nm,
 							fn: e.fn,
 							src: e.src,
-							aFace: e.aFace
+							aFace: e.aFace,
+							getVideoVol: () => n.getMovieVolume(),
+							needClick2Play: () => n.needClick2Play()
 						}, e.nm) : /* @__PURE__ */ w(xu, {
 							cmn: le.cmn,
 							sty: r,

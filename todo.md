@@ -17,27 +17,6 @@
 
 ## タグ・変数の残り
 
-- [ ] **音声・動画の残り**（Phase 1+2＝`[playse]`/`[playbgm]`/`[stopse]`/`[stopbgm]`/`[stop_allse]`/
-  `[volume]`/`[fadese]`/`[fadebgm]`/`[fadeoutse]`/`[fadeoutbgm]`/`[stopfadese]`/`[ws]`/`[wl]`/
-  `[wf]`/`[wb]`は実装済み。`src/ts/SndMng.ts`/`SndBuf.ts`。howlerは積まず自前のWeb Audio層
-  ——理由・設計は`.claude/docs/PITFALLS.md`「ＢＧＭ・効果音」節参照）
-  - [ ] **Phase 3：しおり復元と周辺接続**
-    - [ ] `[xchgbuf]`（本家`SoundMng.ts:174-188`＋`SndBuf.ts:50-78`）
-    - [ ] `[load]`の音声復元（本家`playLoopFromSaveObj()`）と`save:const.sn.loopPlaying`を読む側
-      （書く側は実装済み）
-    - [ ] `[link]`の効果音（`[button]`は対応済み。`enterse`/`clickse`等、既定buf=`SYS`、
-      `join=false`。本家`EventMng.ts:465-489`）。`ext_voice.sn`の`voice`系マクロも同じ
-    - [ ] VOICE再生中のBGM絞り込み（`sys:sn.sound.BGM.vol_mul_talking`）
-    - [ ] 設定画面のスライダから`sys:const.sn.sound.<buf>.volume`を即反映する場合の代入トリガ拡張
-      （`sys:sn.sound.global_volume`は`VarStore.defSetTrigger()`で対応済み。buf動的なので同じ形が
-      要る）
-  - [ ] **Phase 4：動画**（本家に`[video]`タグは無く、`[lay layer=base fn=movie]`で画像レイヤに
-    mp4/webmを貼る形。`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`に`mp4|webm`は追加済み）
-    - [ ] `GrpLayer.tsx`を拡張子で`<img>`/`<video>`出し分け
-    - [ ] `[wv]`（本家`SpritesMng.wv()`）。`<video>`の`ended`をScriptMngが待つ
-    - [ ] `sys:sn.sound.movie_volume`
-    - [ ] 本家`SpritesMng.stopVideo()`のblob URL/デコーダバッファのリーク（`#hFn2hve`から先に
-      削除するため`destroy()`の解放ループに届いていない）は移植しない
 - [ ] 【不使用かも・凍結】**`[quake]`の残り**：`layer=`（揺らす対象レイヤの限定。今は常に画面全体）。立ち絵を震わせる`[fg_shake]`/`[fg2_shake]`が使っているかと思ったが、あれは**`[tsy path=]`で実現**していた（実装済み）ので、`layer=`の実需が見当たらない。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ext_fg2>。`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
 - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **履歴（ログ）の残り**。本体（`const.sn.log.json`・`save:sn.doRecLog`・`save:const.sn.sLog`・`[rec_ch]`/`[rec_r]`/`[reset_rec]`）は`src/ts/Log.ts`で対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/log_and_play>
@@ -82,7 +61,7 @@
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
   - [ ] `save:const.sn.layer.（文字レイヤ名）.enabled`
-  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`const.sn.nativeWindow.*`、`sn.sound.BGM.vol_mul_talking`・`sn.sound.movie_volume`＝Phase 3/4待ち。`sn.sound.*`基準音量・`global_volume`・`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
+  - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`const.sn.nativeWindow.*`が残り。`sn.sound.*`基準音量・`global_volume`・`sn.sound.BGM.vol_mul_talking`・`sn.sound.movie_volume`・`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
 
 ## 挙動の詰め・実機確認

@@ -143,9 +143,8 @@ test('フェード中に同じファイルの再生要求が重なっても、�
 	expect(await gainNodeCount(page) - before).toBe(1);	// 1回目の[playbgm]の分だけ。2回目は増えない
 });
 
-// 「ぼたんてすと」（[l]）まで進める。GainNodeの増減で効果音の有無を見るテスト用に、
-//	ボタンごとに違うbufを明示しておく（前段の「重複要求は鳴り直さない」仕様と干渉しないため）
-async function toButtonScene(page: import('@playwright/test').Page) {
+// 「ふぇーどをこわさない」まで進める（[xchgbuf]/[link]/[button]シーンの前提合わせ）
+async function toFadeKeptScene(page: import('@playwright/test').Page) {
 	await toDupScene(page);
 	await page.keyboard.press('Space');
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('じゅうふくむし');
@@ -153,17 +152,84 @@ async function toButtonScene(page: import('@playwright/test').Page) {
 	await page.keyboard.press('Space');
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('ふぇーどをこわさない');
 	await waitIdle(page);
+}
 
-	await pressKey(page, 'Space');	// [stopbgm] + [add_lay]/[button]×4を経て[l]で停止
+test('[xchgbuf]で交換した後も、交換先バッファ名での自然終了・[ws]待ちが正しく解決する（回帰）', async ({page})=> {
+	await toFadeKeptScene(page);
+
+	// [playse fn=se buf=SE join=false][xchgbuf buf=SE buf2=VOICE][ws buf=VOICE]。
+	//	SndMng.play()のonEndがバッファ名をクロージャ捕捉したままだと、交換後の自然終了で
+	//	[ws buf=VOICE]の待ちが永久に解決されずここでタイムアウトする（今回の実装で修正）
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('こうかんせいこう');
+});
+
+// 「りんくてすと」（[l]）まで進める
+async function toLinkScene(page: import('@playwright/test').Page) {
+	await toFadeKeptScene(page);
+
+	await page.keyboard.press('Space');	// [stopbgm] + [xchgbuf]回帰（[ws buf=VOICE]で待つ）
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('こうかんせいこう');
+	await waitIdle(page);
+
+	await pressKey(page, 'Space');	// [add_lay]/[link]×3を経て[l]で停止
+	// [link]〜[endlink]は本文中のインライン要素（[button text=…]と違い独立UIではない）なので、
+	//	各リンクのラベル文字列も本文にそのまま積まれる
+	expect(await mesStr(page, 'linkmes')).toBe('クリックホバーはなれるりんくてすと');
+}
+
+// [link]〜[endlink]は[button]と違い**本文中の1文字＝1span**（TxtLayer.tsx elCh()）で、
+//	ラベル文字列をまとめて包む要素が無い。getByText('クリック')は一致する要素が無く
+//	（4文字がそれぞれ別spanのため）、代わりに全体を包むレイヤ本体のspan（[data-lay="linkmes"]自身）
+//	が集約テキストとしてヒットしてしまいstrict mode違反になる。
+//	そこで:text-is()（Playwright拡張CSS。子要素を持たない＝集約テキストでない葉要素だけを
+//	厳密一致させる）で各リンクから重複しない1文字を選んで指しておく
+const linkmesLoc = (page: import('@playwright/test').Page)=> page.locator('[data-lay="linkmes"]');
+
+test('[link clickse=]は実際にクリック時効果音を鳴らす', async ({page})=> {
+	await toLinkScene(page);
+
+	const before = await gainNodeCount(page);
+	await linkmesLoc(page).locator(':text-is("ッ")').click();	// 「クリック」の1文字。clickse再生と*linkendへのジャンプが同時に起きる
+	// [l]は改ページを伴わないので、飛び先の文字は追記される（[p]と違いクリアされない）
+	await expect.poll(async ()=> mesStr(page, 'linkmes'), {timeout: 5_000}).toBe('クリックホバーはなれるりんくてすとりんくおわり');
+	expect(await gainNodeCount(page)).toBeGreaterThan(before);
+});
+
+test('[link enterse=]は実際にマウスオーバー時効果音を鳴らす', async ({page})=> {
+	await toLinkScene(page);
+
+	const before = await gainNodeCount(page);
+	await linkmesLoc(page).locator(':text-is("ホ")').hover();	// 「ホバー」の1文字
+	await expect.poll(async ()=> gainNodeCount(page), {timeout: 2_000}).toBeGreaterThan(before);
+});
+
+test('[link leavese=]は実際にマウスアウト時効果音を鳴らす', async ({page})=> {
+	await toLinkScene(page);
+
+	await linkmesLoc(page).locator(':text-is("な")').hover();	// 「はなれる」の1文字。enterse未設定なので、ここではまだ鳴らない
+	const before = await gainNodeCount(page);
+	await page.mouse.move(0, 0);	// リンクの外へ動かしmouseleaveを発火させる
+	await expect.poll(async ()=> gainNodeCount(page), {timeout: 2_000}).toBeGreaterThan(before);
+});
+
+// 「ぼたんてすと」（[l]）まで進める。GainNodeの増減で効果音の有無を見るテスト用に、
+//	ボタンごとに違うbufを明示しておく（前段の「重複要求は鳴り直さない」仕様と干渉しないため）
+async function toButtonScene(page: import('@playwright/test').Page) {
+	await toLinkScene(page);
+
+	await pressKey(page, 'Space');	// りんくてすとの[l]を素通り。[add_lay]/[button]×4を経て[l]で停止
 	// [current layer=btnmes]で切り替えた先のレイヤに書く（本文レイヤ'mes'は[p]でクリア済みのまま）
 	expect(await mesStr(page, 'btnmes')).toBe('ぼたんてすと');
 }
+
+const btnmesLoc = (page: import('@playwright/test').Page)=> page.locator('[data-lay="btnmes"]');
 
 test('[button clickse=]は実際にクリック時効果音を鳴らす', async ({page})=> {
 	await toButtonScene(page);
 
 	const before = await gainNodeCount(page);
-	await page.getByText('クリック').click();	// clickse再生 と *btnendへのジャンプが同時に起きる
+	await btnmesLoc(page).getByText('クリック', {exact: true}).click();	// clickse再生 と *btnendへのジャンプが同時に起きる
 	// [l]は改ページを伴わないので、飛び先の文字は「ぼたんてすと」に追記される（[p]と違いクリアされない）
 	await expect.poll(async ()=> mesStr(page, 'btnmes'), {timeout: 5_000}).toBe('ぼたんてすとおわり');
 	expect(await gainNodeCount(page)).toBeGreaterThan(before);
@@ -173,14 +239,14 @@ test('[button enterse=]は実際にマウスオーバー時効果音を鳴らす
 	await toButtonScene(page);
 
 	const before = await gainNodeCount(page);
-	await page.getByText('ホバー').hover();
+	await btnmesLoc(page).getByText('ホバー', {exact: true}).hover();
 	await expect.poll(async ()=> gainNodeCount(page), {timeout: 2_000}).toBeGreaterThan(before);
 });
 
 test('[button leavese=]は実際にマウスアウト時効果音を鳴らす', async ({page})=> {
 	await toButtonScene(page);
 
-	await page.getByText('はなれる').hover();	// enterse未設定なので、ここではまだ鳴らない
+	await btnmesLoc(page).getByText('はなれる', {exact: true}).hover();	// enterse未設定なので、ここではまだ鳴らない
 	const before = await gainNodeCount(page);
 	await page.mouse.move(0, 0);	// ボタンの外へ動かしmouseleaveを発火させる
 	await expect.poll(async ()=> gainNodeCount(page), {timeout: 2_000}).toBeGreaterThan(before);
@@ -192,7 +258,7 @@ test('[button enabled=false]はクリックしても効果音を鳴らさない'
 	// pointer-events:none（本家 Button.ts:101相当）なので、forceしてもクリックはボタンへ
 	//	届かずステージへ抜ける（button.e2e.tsの既存パターンと同じ）
 	const before = await gainNodeCount(page);
-	await page.getByText('むこう').click({force: true});
+	await btnmesLoc(page).getByText('むこう', {exact: true}).click({force: true});
 	await waitIdle(page);
 	expect(await gainNodeCount(page)).toBe(before);
 });
@@ -201,7 +267,7 @@ test('[button enabled=false]はホバーしても効果音を鳴らさない', a
 	await toButtonScene(page);
 
 	const before = await gainNodeCount(page);
-	await page.getByText('むこう').hover({force: true});
+	await btnmesLoc(page).getByText('むこう', {exact: true}).hover({force: true});
 	// 「何も起きないこと」の確認なので、一定時間の経過を待つほかない
 	await page.waitForTimeout(300);
 	expect(await gainNodeCount(page)).toBe(before);

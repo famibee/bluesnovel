@@ -42,6 +42,9 @@ export class VarStore {
 	readonly #setNoCast	= new Set<string>();
 	// sys:代入時に即座に効かせたい副作用（本家の「代入トリガ関数」T_fncSetVal相当。VarStore.defSetTrigger()参照）
 	readonly #hSetTrigger	: {[key: string]: (v: T_VAL_D)=> void} = Object.create(null);
+	// sys:const.sn.sound.<buf>.volume専用の代入トリガ（buf動的なのでdefSetTrigger()の「キー完全一致」
+	//	では表せない）。今のところこの1系統しか要らないため、正規表現パターンへ汎用化はせず専用APIにしてある
+	#fncTriggerSoundVol: ((buf: string, v: T_VAL_D)=> void) | undefined;
 
 	constructor() {this.#initSys()}
 
@@ -72,6 +75,11 @@ export class VarStore {
 	defSetTrigger(name: string, fnc: (v: T_VAL_D)=> void) {
 		const {ns, key} = VarStore.parseName(name);
 		this.#hSetTrigger[`${ns}.${key}`] = fnc;
+	}
+	// sys:const.sn.sound.<buf>.volumeの代入トリガ登録（設定画面のスライダから
+	//	&sys:const.sn.sound.VOICE.volume=… のように直接代入された時にも即座に効かせるため）
+	defSetTriggerSoundVol(fnc: (buf: string, v: T_VAL_D)=> void) {
+		this.#fncTriggerSoundVol = fnc;
 	}
 
 	// 変数名の分解（本家 PropParser.getValName() 相当）
@@ -203,6 +211,12 @@ export class VarStore {
 		const v = VarStore.castTo(val, cast);
 		this.#h[k] = v;
 		this.#hSetTrigger[k]?.(v);
+
+		// sys:const.sn.sound.<buf>.volumeはbuf動的なので、#hSetTriggerの完全一致とは別に見る
+		if (ns === 'sys' && this.#fncTriggerSoundVol) {
+			const m = /^const\.sn\.sound\.([^.]+)\.volume$/.exec(key);
+			if (m) this.#fncTriggerSoundVol(m[1]!, v);
+		}
 	}
 
 	// cast指定による値の変換（本家 Variable.ts:317 #let() のswitchに対応）。

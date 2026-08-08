@@ -30,6 +30,14 @@ export type T_LNK = {
 	hint?	: string;	// ツールチップ（[link hint=…]）
 	hs?		: string;	// hint_style（吹き出しのCSS）
 	ho?		: string;	// hint_opt（本家popperのオプションJSON。placementだけ見る）
+	// 効果音（[link clickse=/enterse=/leavese=]。本家 EventMng.ts:465-491、[button]と同じ形）。
+	//	bufの既定'SYS'はScriptEngine側で確定済みなのでここでは受けるだけ
+	clickse?	: string;
+	clicksebuf?	: string;
+	enterse?	: string;
+	entersebuf?	: string;
+	leavese?	: string;
+	leavesebuf?	: string;
 };
 // 表示単位1つ。ルビ付きなら c が親文字（複数文字のこともある）、r がルビ文字。
 //	s / rs は[span]・[ch]・[link]で指定されたインラインCSS（本文側／ルビ側）
@@ -70,6 +78,8 @@ type T_CMD_ARG = {
 	pic?: string; width?: string; height?: string; x?: string; y?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
 	hint?: string; hint_style?: string; hint_opt?: string;	// ツールチップ
+	clickse?: string; clicksebuf?: string; enterse?: string; entersebuf?: string;
+	leavese?: string; leavesebuf?: string;	// [link]の効果音
 	ch_in_style?: string; ch_out_style?: string;	// 文字出現・消去演出（ChStyle.ts）
 	wait?: string;	// この文字ぶんの待ち時間（ミリ秒）
 };
@@ -161,6 +171,9 @@ export function splitCh(raw: string): T_CH[] {
 					...(o.hint ? {hint: o.hint} : {}),
 					...(o.hint_style ? {hs: o.hint_style} : {}),
 					...(o.hint_opt ? {ho: o.hint_opt} : {}),
+					...(o.clickse ? {clickse: o.clickse, clicksebuf: o.clicksebuf} : {}),
+					...(o.enterse ? {enterse: o.enterse, entersebuf: o.entersebuf} : {}),
+					...(o.leavese ? {leavese: o.leavese, leavesebuf: o.leavesebuf} : {}),
 				};
 				break;
 			case 'endlink': {
