@@ -39,7 +39,12 @@ export default defineConfig({
 		trace	: 'on-first-retry',
 	},
 
-	projects	: [{name: 'chromium', use: {...devices['Desktop Chrome']}}],
+	projects	: [{name: 'chromium', use: {
+		...devices['Desktop Chrome'],
+		// snd.e2e.ts用：PlaywrightのCDP経由操作はChromiumの自動再生ポリシー上「ユーザー操作」と
+		//	見なされないことがあり、AudioContextがsuspendedのままになるとテストがハングしうる
+		launchOptions: {args: ['--autoplay-policy=no-user-gesture-required']},
+	}}],
 
 	webServer	: {
 		// viteのルートはリポジトリルート、テストページは /test/e2e/app/index.html。

@@ -133,6 +133,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	//	予約があればそちらを発火し、読み進め・読み戻りは行わない
 	useKey(()=> true, e=> {
 		scrMng.cancelAuto();	// 手動操作が入ったらオート読み・既読スキップは止める（本家 cancelAutoSkip）
+		scrMng.unlockAudio();	// ブラウザの自動再生ポリシー対策。ユーザー操作のたびに呼んでおけば十分軽い
 		const key = keyName(e);
 		// [toggle_full_screen key=…]は[event]とは別枠（ラベルへ飛ばず全画面を切り替えるだけ）なので先に見る
 		if (scrMng.fireFullScrKey(key)) {e.stopPropagation(); e.preventDefault(); return}
@@ -150,6 +151,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		if (isLong) {isLong = false; return}
 		if (isDesignMode) return;
 		scrMng.cancelAuto();	// 手動クリックでオート読み・既読スキップを止める
+		scrMng.unlockAudio();	// ブラウザの自動再生ポリシー対策
 		if (scrMng.fireEvent('click')) return;
 		next();
 	}

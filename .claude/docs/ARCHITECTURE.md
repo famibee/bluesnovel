@@ -61,6 +61,13 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   エンジンの位置が繋がらない。ボタンジャンプはこの履歴を**触らない**。
 - **`src/sn/`** — 本家から持ってきた土台（`SysBase`, `Config`, `Grammar`, `CmnLib`,
   `AnalyzeTagArg`, `Areas`, `CallStack`）。
+- **`src/ts/SndMng.ts`/`src/ts/SndBuf.ts`** — 音声層。DOM/WebAudio を直接触るのは `ScriptMng` から
+  見てここだけ（`ScriptEngine.ts` は属性の解釈と `save:`/`sys:` の帳簿付けだけを行う）。本家は
+  howler（Howl）を積むが、こちらは Web Audio API を直接使う自前の薄い層。**1 バッファ＝1
+  インスタンス、停止＝破棄**という単純な作りで、本家の状態機械（`StLoading`〜`StStop` の 6
+  クラス。退場処理が無く不備の温床だった）は持たない。`[ws]`/`[wl]`/`[wf]`/`[wb]` の待ち合わせは
+  `SndBuf` ではなく **`ScriptMng` が持つ**（`[trans]`/`[tsy]` と同じ設計。詳細は
+  [PITFALLS.md](PITFALLS.md)）。
 
 **本家由来ファイルは本家のテストを無改変で持っている**（`test/Grammar.test.ts`,
 `test/ExprEval.test.ts`, `test/VarStore.test.ts` の後半）。これらを触るときはまず
@@ -85,6 +92,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 `close`/`window`（アプリ版のタグ。**ブラウザ版では何もしない**＝エンジンは属性の検査までで、
 実処理は `SysBase` の no-op メソッドを `SysApp` が上書きする形。本家も同じ。`update_check` は
 属性の検査だけで実処理は未実装），
+`playse`/`playbgm`/`stopse`/`stopbgm`/`stop_allse`/`volume`/`fadese`/`fadebgm`/`fadeoutse`/
+`fadeoutbgm`/`stopfadese`/`ws`/`wl`/`wf`/`wb`（ＢＧＭ・効果音。`src/ts/SndMng.ts`/`SndBuf.ts`。
+`xchgbuf` と音声の復元（`[load]`）・ボタン効果音は未対応），
 停止点 `l`/`p`/`s`/`waitclick`。
 
 **属性ごとの詳細と実装状況は `docs/tag.html`**（変数は `docs/dev.html`）。名前に

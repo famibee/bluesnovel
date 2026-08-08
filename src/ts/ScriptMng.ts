@@ -23,6 +23,8 @@ import {INI_STYPAGE, PageLog, type T_PAGE_TO} from './PageLog';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
 import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
+import {SndMng} from './SndMng';
+import {MAX_END_MS} from './SndBuf';
 
 import gsap from 'gsap';
 
@@ -93,6 +95,9 @@ export class ScriptMng {
 		else {
 			const engine = this.#engine = new ScriptEngine(scr);
 			this.#defEnvBuiltins(engine);
+			// 音量スライダ（設定画面）等、[volume]タグを経由しない直接代入にも即座に反応させる
+			//	（本家 SoundMng.ts:58 setNoticeChgVolume() 相当。sn.sound.movie_volumeは動画実装時に接続）
+			engine.defSetTrigger('sys:sn.sound.global_volume', v=> this.#sndMng.setGlobalVol(Number(v)));
 			this.#loadSaveData(engine);
 			// プロジェクト同梱フォントを`@font-face`で使えるようにする（本家 TxtLayer.ts:97）。
 			//	シナリオ側に読み込みタグは無く、path.jsonにあるフォントは全部登録される
@@ -107,7 +112,7 @@ export class ScriptMng {
 	// 本家の組み込み変数のうち、**エンジンが知りようのないもの**＝prj.jsonの設定と
 	//	ブラウザの情報（本家 SysBase.init() の val.defTmp(…) 群）。
 	//	エンジンをDOM非依存に保ったまま値を渡すため、ここから登録する。
-	//	レイヤの状態（const.sn.lay.*）と音声（const.sn.sound.*）はストア／音声層が要るので未対応
+	//	レイヤの状態（const.sn.lay.*）はストアが要るので未対応
 	#defEnvBuiltins(engine: ScriptEngine) {
 		const {oCfg} = this.sys.cfg;
 		const h: {[name: string]: ()=> string | number | boolean} = {
@@ -131,8 +136,10 @@ export class ScriptMng {
 			//	テンプレの theme/setting.sn は [if exp=const.sn.isFirstBoot] の中で
 			//	sys:TextLayer.Back.Alpha などの初期値を入れるので、ここが正しくないと設定画面が狂う
 			'const.sn.isFirstBoot'	: ()=> this.#isFirstBoot,
-			// ブラウザは音を鳴らす前にユーザー操作を要求する。音声層が無い今は常にfalse
-			'const.sn.needClick2Play'	: ()=> false,
+			// ブラウザは音を鳴らす前にユーザー操作を要求する（AudioContextがsuspended状態）
+			'const.sn.needClick2Play'	: ()=> this.#sndMng.needClick2Play(),
+			// 実行環境がどの拡張子を再生できるか（本家 Howler.codecs() 相当。JSON文字列）
+			'const.sn.sound.codecs'	: ()=> this.#sndMng.codecs(),
 			// しおり一覧（本家 Variable.ts:59 defTmp）。ロード画面（テンプレの frames/_archive）が
 			//	[set_frame … text=&const.sn.bookmark.json] で読む
 			'const.sn.bookmark.json'	: ()=> this.#saveMng.bookmarkJson(),
@@ -324,6 +331,28 @@ export class ScriptMng {
 	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext));
 	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
 
+	// 音声層（ts/SndMng.ts）。DOM/WebAudioを直接触るのはScriptMngから見てここだけ。
+	//	myTraceはクラスフィールドとしてこれより後ろで定義されている（フィールド初期化は宣言順）ので、
+	//	直接渡さず呼び出し時に引くラッパーにする（束縛時点ではまだ未初期化のため）
+	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl));
+	// ブラウザの自動再生ポリシー対策。初回のクリック・キー入力から呼ぶ（Main.tsx参照）
+	unlockAudio() {this.#sndMng.unlock()}
+
+	// [button clickse=/enterse=/leavese=]。本家 EventMng.ts:465-491 と同じくクリック/ホバー/
+	//	ホバー解除のたびに都度呼ばれる（事前生成キャッシュではない）投げっぱなし再生。
+	//	シナリオの読み進めとは無関係なUIイベントなので join は常に false（待つ意味が無い）。
+	//	目標音量（save:の概念）は無く、基準音量（sys:）だけが効く——本家もhArg.volume省略=1.0固定
+	playButtonSe(fn: string, buf: string) {
+		if (! fn) return;
+		const src = this.#searchSnd('button', fn);
+		if (! src) return;
+
+		const sysvol = Number(this.#engine?.getVal(`sys:const.sn.sound.${buf}.volume`) ?? 1);
+		void this.#sndMng.play(buf, src, {
+			loop: false, volume: sysvol, speed: 1, pan: 0, start_ms: 0, end_ms: MAX_END_MS, ret_ms: 0,
+		}).catch(this.#catchErr);
+	}
+
 	// ステージの内箱（等倍の座標系そのもの）。[snapshot]がここを複製して画像化する。
 	//	外側の#skynovelではなく内箱なのは、拡縮（transform: scale）が掛かる前の論理サイズで撮るため
 	#heStageBox?: HTMLElement;
@@ -416,6 +445,14 @@ export class ScriptMng {
 		}
 		if (this.#quakeWaiting) {
 			if (this.#quakeWaiting.canskip) this.#finishQuake();
+			return;
+		}
+		if (this.#sndWaiting) {
+			if (this.#sndWaiting.canskip) this.#skipSndWait();
+			return;
+		}
+		if (this.#sndFadeWaiting) {
+			if (this.#sndFadeWaiting.canskip) this.#skipSndFadeWait();
 			return;
 		}
 		// DOM絡みの非同期処理中（[add_frame]/[let_frame]/[loadplugin]/[snapshot]/[load]）は
@@ -659,6 +696,112 @@ export class ScriptMng {
 		this.#tsyWaiting = {tw_nm, canskip};
 	}
 
+	// ===== ＢＧＭ・効果音（[playse]/[playbgm]・[ws]/[wl]・[fadese]系・[wf]/[wb]） =====
+	//	実際にAudioContext/GainNodeを操作するのはSndMng（ts/SndMng.ts）。ここは[trans]/[tsy]と同じ
+	//	「待ち合わせを持つのはScriptMngで、ScriptEngineは属性の解釈と変数の帳簿付けだけ」という
+	//	既存の設計に揃えてある
+
+	// [playse]/[playbgm]の本体。パス解決してSndMngへ渡す。onStopは自然終了・明示停止どちらでも
+	//	必ず1回呼ばれるので、非同期にしか倒せないtmp:playingの後始末をここで行う
+	async #playSnd(act: Extract<T_ENGINE_ACTION, {t: 'playSnd'}>) {
+		// buf==='BGM'は[playbgm]強制（本家 SoundMng.ts:109-111）。エラー表示のタグ名を
+		//	見分ける手掛かりはこれしか残っていないので、ここでは近似で構わない（表示用途のみ）
+		const tag = act.buf === 'BGM' ? 'playbgm' : 'playse';
+		const src = this.#searchSnd(tag, act.fn);
+		if (! src) return;	// 見つからない場合は#searchSndが既にmyTraceで知らせている
+
+		const {buf} = act;
+		await this.#sndMng.play(buf, src, act, ()=> {
+			this.#engine?.setValNochk(`tmp:const.sn.sound.${buf}.playing`, false);
+		});
+	}
+	// join=true（既定）経由。デコード完了（＝再生開始）まで#runStep()を待たせる
+	async #procSnd(act: Extract<T_ENGINE_ACTION, {t: 'playSnd'}>) {
+		try {await this.#playSnd(act)}
+		catch (e) {
+			this.#procing = false;
+			this.myTrace(`[playse] エラー fn:${act.fn} ${String(e)}`, 'E');
+			return;
+		}
+		this.#procing = false;
+		this.#goSafe();
+	}
+
+	// [ws]/[wl]：再生終了待ち。既に鳴っていない・ループ中なら待たずに続きへ
+	//	（本家 tag.html の「loop=trueなら待たない」通り。SndMng.waitEnd()がその判定を持つ）
+	#sndWaiting: {buf: string; canskip: boolean; stop: boolean} | undefined;
+	#waitSndPlay(buf: string, canskip: boolean, stop: boolean) {
+		const done = ()=> {
+			if (this.#sndWaiting?.buf !== buf) return;	// [stopse]等で既に打ち切り済み
+			this.#sndWaiting = undefined;
+			this.#goSafe();
+		};
+		if (! this.#sndMng.waitEnd(buf, done)) {setTimeout(()=> this.#goSafe(), 0); return}
+
+		this.#sndWaiting = {buf, canskip, stop};
+	}
+	// [ws]/[wl]待機中のクリックで打ち切る。stop属性がtrueなら鳴っている音も止める
+	#skipSndWait() {
+		const w = this.#sndWaiting;
+		if (! w) return;
+		this.#sndWaiting = undefined;
+		this.#sndMng.cancelWaitEnd(w.buf);	// 自然終了時のdone()はもう要らない
+		if (w.stop) this.#sndMng.stop(w.buf);
+		this.#goSafe();
+	}
+
+	// [fadese]/[fadebgm]/[fadeoutse]/[fadeoutbgm]の本体（GSAPでGainNode.gainを動かす。
+	//	本家 SndBuf.ts の StPlaying.fade()/StFade と同じ役割だが、状態機械ではなくバッファ名ごとの
+	//	レジストリにした。#hTwとは別枠にしてあるのは、[stop_tsy]等の名前空間と混ざらないようにするため）
+	readonly #hSndTw: {[buf: string]: {tw: gsap.core.Tween; end: ()=> void}} = Object.create(null);
+	#beginFadeSnd(act: Extract<T_ENGINE_ACTION, {t: 'fadeSnd'}>) {
+		// 同じバッファへの再フェードは、前のフェードを畳んでから始める（本家は黙って無視するだけだが、
+		//	それは指摘済みの不備＝ロード中・フェード中の音量変更が消える。こちらは追随させる）
+		this.#hSndTw[act.buf]?.tw.kill();
+		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+		delete this.#hSndTw[act.buf];
+
+		// 終了状態の確定：時間切れでも[wf]/[wb]中のクリックでも必ずここを通すので、
+		//	中途半端な音量のまま止まることはない（#runTsy()のend()と同じ考え方）
+		const end = ()=> {
+			this.#sndMng.setVol(act.buf, act.volume);
+			if (act.stop) this.#sndMng.stop(act.buf);
+		};
+
+		const gn = this.#sndMng.gainNode(act.buf);
+		if (! gn || act.msec <= 0 && act.delay <= 0) {end(); this.#onSndFadeEnd(act.buf); return}
+
+		const onComplete = ()=> {end(); this.#onSndFadeEnd(act.buf)};
+		const tw = gsap.to(gn.gain, {value: act.volume, duration: act.msec / 1000, delay: act.delay / 1000, onComplete});
+		this.#hSndTw[act.buf] = {tw, end};
+	}
+	#onSndFadeEnd(buf: string) {
+		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+		delete this.#hSndTw[buf];
+		if (this.#sndFadeWaiting?.buf !== buf) return;
+
+		this.#sndFadeWaiting = undefined;
+		// #runStep()の中から呼ばれる場合がある（[fadese time=0]直後の[wf]等）ので、
+		//	#busyが下りるのを待ってから回す
+		setTimeout(()=> this.#goSafe(), 0);
+	}
+	// [wf]/[wb]：フェード終了待ち。動いているフェードが無ければ待たずに続きへ
+	#sndFadeWaiting: {buf: string; canskip: boolean} | undefined;
+	#waitFadeSnd(buf: string, canskip: boolean) {
+		if (! this.#hSndTw[buf]) {setTimeout(()=> this.#goSafe(), 0); return}
+
+		this.#sndFadeWaiting = {buf, canskip};
+	}
+	// [wf]/[wb]待機中のクリックで打ち切る。終了状態へ送ってから続行する
+	#skipSndFadeWait() {
+		const w = this.#sndFadeWaiting;
+		if (! w) return;
+
+		const ti = this.#hSndTw[w.buf];
+		if (ti) {ti.tw.kill(); ti.end()}
+		this.#onSndFadeEnd(w.buf);
+	}
+
 	// 停止点（[l][p][s]）かスクリプト終端まで進める。
 	//	途中で'loadScript'（別スクリプトへの移動要求）が返ったら、fetchしてから続きを回す。
 	//	engine.step()自体は同期のまま（DOM/fetch非依存でユニットテストできる設計を保つ）
@@ -696,6 +839,14 @@ export class ScriptMng {
 				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
 				if (last?.t === 'waitTsy') {this.#waitTsy(last.tw_nm, last.canskip); return}
 				if (last?.t === 'waitQuake') {this.#waitQuake(last.canskip); return}
+				if (last?.t === 'waitSnd') {this.#waitSndPlay(last.buf, last.canskip, last.stop); return}
+				if (last?.t === 'waitFade') {this.#waitFadeSnd(last.buf, last.canskip); return}
+				// [playse join=true]（既定）：ロード（デコード）完了まで待ってから続きを回す
+				if (last?.t === 'playSnd' && last.join) {
+					this.#procing = true;
+					this.#procSnd(last).catch(this.#catchErr);
+					return;
+				}
 				// HTMLフレーム：DOMを触った結果を組み込み変数へ書き戻してから続きを回す。
 				//	[add_frame]はHTMLのfetchが要るので非同期、[let_frame]は同期だが、
 				//	どちらも「書き戻し→再開」の順を守りたいのでここで一旦返る
@@ -898,6 +1049,17 @@ export class ScriptMng {
 		}
 	}
 
+	// 音声ファイルのパス解決（#searchPicと同型）。見つからなくても'ET'ではなく'E'
+	//	（効果音1つが無いだけでゲームごと止めるのはやり過ぎ）
+	#searchSnd(tag: string, fn: string): string {
+		if (! fn) return '';
+		try {return this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SOUND)}
+		catch (e) {
+			this.myTrace(`[${tag}] 音声ファイルが見つかりません fn:${fn} ${String(e)}`, 'E');
+			return '';
+		}
+	}
+
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
@@ -1026,6 +1188,31 @@ export class ScriptMng {
 		case 'pauseTsy':
 			this.#hTw[act.tw_nm]?.tw.paused(act.paused);
 			break;
+
+		// ---- ＢＧＭ・効果音（ts/SndMng.ts・ts/SndBuf.ts） ----
+		case 'playSnd':
+			// join=true（既定）なら#runStep()側で読み終わるまで待つ。ここへ来るのはjoin=falseのときだけ＝投げっぱなし
+			if (! act.join) void this.#playSnd(act).catch(this.#catchErr);
+			break;
+		case 'stopSnd':
+			this.#sndMng.stop(act.buf);
+			break;
+		case 'stopAllSnd':
+			this.#sndMng.stopAll();
+			break;
+		case 'volumeSnd':
+			this.#sndMng.setVol(act.buf, act.volume);
+			break;
+		case 'fadeSnd':
+			this.#beginFadeSnd(act);
+			break;
+		case 'waitSnd':
+			// 実処理は#runStep()側（#waitSndPlay()）。表示への影響は無い
+			break;
+		case 'waitFade':
+			// 実処理は#runStep()側（#waitFadeSnd()）。表示への影響は無い
+			break;
+
 		case 'title':
 			this.$fncs.addTitle(act.text);
 			break;

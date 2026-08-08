@@ -123,3 +123,41 @@ DOM を触らない。キー名を決めるのは `Main.tsx` の `keyName()`＝`
 `#scheduleResume()` のタイマが自分で `go()` を呼び、`cancelAuto()`（`Main.tsx` が手動入力時に呼ぶ）
 が止める。`isNextKidoku` はサブルーチン内なら本家に倣って呼び出し元ファイルを見る。
 `sys:sn.skip.mode` は既定 `'s'`（`[p]` を貫通）、`'p'` はページ毎停止。
+
+## ＢＧＭ・効果音：状態機械を持たず、待ち合わせは `ScriptMng` が持つ
+
+本家 `SndBuf.ts` は howler を積み、`StLoading`〜`StStop` の 6 状態を `sb.stt = new XXX(…)` の代入
+だけで渡り歩く状態機械を持つ。退場処理が無いまま終端の `StStop` だけが副作用の塊で、
+「`[wf]` 待機中に音が自然終了すると誰も終了通知を出さずスクリプトが永久停止する」
+「フェード停止時に `StStop` が 2 回構築される」等の不備の温床になっていた（2026-08 の
+skynovel_esm 調査で判明）。bluesnovel は howler を積まず、Web Audio API を直接使う自前の薄い層
+（`src/ts/SndMng.ts`/`SndBuf.ts`）にして設計自体を変えた。
+
+- **停止＝破棄**。`SndBuf` は 1 バッファ＝1 インスタンスで、状態は持たない（`#destroyed` フラグの
+  みで冪等）。同じ `buf` への `[playse]` は**ファイルが違えば**前のインスタンスを即座に破棄して
+  差し替えるが、`SndMng.play()` は**同じ `src` が既に生きていれば（デコード待ちも含め）何もせず
+  return する**（`SndBuf.src` で比較）。これが無いと「同じ効果音の連打」「フェード中の同じ曲を
+  もう一度 `[playbgm]`」のたびに頭から鳴り直し、フェード中の GainNode も差し替わってしまう
+  （フェード自体はタイマーとして時間通り終わるので `[wf]`/`[wb]` はハングしないが、**新しい
+  GainNode にはフェードが効かないまま鳴り続ける**という気付きにくい不具合になる。E2E は
+  `gainNodeCount()`——`AudioContext.createGain()` の呼び出し回数を計装して覗く——でこれを検出
+  している。`[wb]` の解決タイミングだけを見るテストでは検出できない点に注意）。
+- **待ち合わせ（`[ws]`/`[wl]`/`[wf]`/`[wb]`）を持つのは `SndBuf` ではなく `ScriptMng`**
+  （`[trans]`/`[tsy]` と同じ「終わりを宣言するのは ScriptMng」という設計に揃えた）。`SndBuf.stop()`
+  は明示停止でも自然終了でも**必ず 1 回だけ** `onEnd` を発火するので、本家の「終了通知の出し忘れ」
+  に起因するハングは構造的に起きない。フェードは GSAP が `GainNode.gain` を時間で動かすだけで
+  **音の再生状態と独立**しているため、フェード中に音が自然終了してもフェードの完了は影響を
+  受けない（本家の「`[wf]`待機中の自然終了でハング」不備が起こり得ない理由）。
+- **`AudioContext` は初回のユーザー操作まで `suspended`**（自動再生ポリシー）。`Main.tsx` の
+  クリック/キー入力ハンドラが毎回 `scrMng.unlockAudio()` を呼んで `resume()` する。`suspended` の
+  まま再生すると `ended` イベントが来ないため、`SndBuf` は非ループ再生に限り擬似終了タイマー
+  （`needClick2Play` 判定時のみ）を仕込んで `[ws]` のハングを防いでいる。
+- **`[fadese]`/`[wf]` の既定バッファは `SE`**（`[fadebgm]`/`[wb]` は `BGM` 固定）。`[playbgm]` の
+  あとに `buf=` を付け忘れて `[fadese]` を書くと、鳴っていない `SE` バッファを対象にした無音の
+  no-op になる（`gainNode()` が `undefined` を返し、フェードもしないまま `[wf]` も待たずに素通り
+  する）。BGM をフェードしたいときは `[fadebgm]`/`[wb]` を使うこと。
+- **実効音量の計算はすべて `ScriptEngine` 側**（`save:const.sn.sound.<buf>.volume`＝目標音量 ×
+  `sys:const.sn.sound.<buf>.volume`＝基準音量）。`ScriptMng`/`SndMng` は渡された数値をそのまま
+  `GainNode` へ適用するだけで、二重に掛け算しない。`sys:sn.sound.global_volume` だけは
+  `VarStore.defSetTrigger()`（本家の「代入トリガ関数」相当）で即時反映する専用経路を持つ——
+  `buf` が動的なため per-buf の基準音量には同じ仕組みを使っていない（`[volume]` タグ経由のみ）。

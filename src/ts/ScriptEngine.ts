@@ -140,6 +140,17 @@ export type T_ENGINE_ACTION =
 	| {t: 'waitTsy'; tw_nm: string; canskip: boolean}	// [wait_tsy]。トゥイーン終了待ち。[wt]と同じくstep()はここで一旦返る
 	| {t: 'stopTsy'; tw_nm: string}		// [stop_tsy]。トゥイーンを終了状態へ送って中断（本家 stop().end()）
 	| {t: 'pauseTsy'; tw_nm: string; paused: boolean}	// [pause_tsy]/[resume_tsy]
+	// ＢＧＭ・効果音（本家 SoundMng.ts/SndBuf.ts）。howlerを積む本家と違い、こちらはWeb Audio APIを
+	//	直接使う自前の薄い層（ts/SndMng.ts・ts/SndBuf.ts）。volumeは常に**実効音量**
+	//	（save:の目標音量 × sys:の基準音量。本家 SndBuf.ts の getVol() 合成をエンジン側で済ませた値）で、
+	//	ScriptMng/SndMngはそれをそのままGainNodeへ渡すだけにしてある
+	| {t: 'playSnd'; buf: string; fn: string; loop: boolean; volume: number; speed: number; pan: number; start_ms: number; end_ms: number; ret_ms: number; join: boolean; canskip: boolean}	// [playse]/[playbgm]。join=true（既定）はロード完了まで待つのでstep()は一旦返る
+	| {t: 'stopSnd'; buf: string}		// [stopse]/[stopbgm]
+	| {t: 'stopAllSnd'}					// [stop_allse]
+	| {t: 'volumeSnd'; buf: string; volume: number}	// [volume]。基準音量（sys:）の変更を実効音量へ反映する
+	| {t: 'fadeSnd'; buf: string; volume: number; msec: number; delay: number; stop: boolean}	// [fadese]/[fadebgm]/[fadeoutse]/[fadeoutbgm]。フェード自体は待たない（待ちたければ[wf]/[wb]）
+	| {t: 'waitSnd'; buf: string; canskip: boolean; stop: boolean}	// [ws]/[wl]。再生終了待ち。canskipの既定はfalse（[wt]等とは逆）。実際に待つのはScriptMngの担当なのでstep()はここで一旦返る
+	| {t: 'waitFade'; buf: string; canskip: boolean}	// [wf]/[wb]。フェード終了待ち。[ws]と同じ形
 	| {t: 'loadScript'; fn: string; label: string; idx: number}	// 別スクリプトへの移動要求。fetchはScriptMngの責務なのでstep()はここで一旦返る。ScriptMngはロード後 switchScript() を呼んで続行する（labelが空ならidxの位置へ）
 ;
 
@@ -273,6 +284,13 @@ export class ScriptEngine {
 		return v === undefined ? def : ScriptEngine.#argNum(tag, nm, v);
 	}
 
+	// 音声の実効音量計算（本家 SndBuf.ts:43 getVol()）で使う0.0〜1.0クランプ
+	static #clampVol(v: number): number {return v < 0 ? 0 : v > 1 ? 1 : v}
+	// end_ms省略時の「音声ファイルの末端」を表す番兵値（本家 SndBuf.ts:23 MAX_END_MS）。
+	//	実際の長さはAudioBufferが要る＝SndBuf.ts（DOM/WebAudio層）側でしか分からないので、
+	//	この定数はそちらにも同じ値で重複定義してある（ズレないよう変更時は両方直すこと）
+	static readonly #MAX_END_MS = 999000;
+
 	// reg属性・flags属性から正規表現を作る（本家 Variable.ts:387 #let_replace() /
 	//	:410 #let_search() が同じ処理を持つので切り出した）
 	static #argReg(tag: string, args: {[k: string]: string}): RegExp {
@@ -385,6 +403,26 @@ export class ScriptEngine {
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
 
+	// ループ再生中のサウンドバッファ表（本家 SndBuf.ts のモジュール変数hLPをインスタンスに閉じ込めた版。
+	//	モジュール変数のままだとテストごとに新しいScriptEngineを作っても前のテストの値が残ってしまう）。
+	//	[load]でのBGM復元（Phase 3）が読む save:const.sn.loopPlaying の実体
+	readonly #hLoopPlay: {[buf: string]: string} = Object.create(null);
+	#setLoopPlay(buf: string, fn: string) {
+		this.#hLoopPlay[buf] = fn;
+		this.#val.set('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
+	}
+	#delLoopPlay(buf: string) {
+		if (buf in this.#hLoopPlay) {
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+			delete this.#hLoopPlay[buf];
+			this.#val.set(`save:const.sn.sound.${buf}.fn`, '');
+		}
+		// bufが未登録でも書く：save:const.sn.loopPlayingの既定値'{}'（CmnInterface.ts）を
+		//	初回の[playse]/[stopse]の時点で確実に埋めておくため（本家はモジュール変数なので
+		//	常に存在するが、こちらはインスタンスの初期状態が「未定義」になり得る）
+		this.#val.set('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
+	}
+
 	// 変数ストア・式評価器（本家 Variable.ts/PropParser.ts の簡略版。VarStore.ts/ExprEval.ts参照）
 	readonly #val = new VarStore;
 	readonly #expr = new ExprEval(this.#val);
@@ -495,6 +533,10 @@ export class ScriptEngine {
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
 		'button', 'event', 'clear_event', 'enable_event', 'clearvar', 'clearsysvar', 'page',
 		'wait', 'waitclick', 'l', 'p', 's',
+		// ＢＧＭ・効果音。xchgbufは未実装（Phase 3）だが、Grammar.tsのT_HTagに既に居るので
+		//	マクロ名との衝突を避けるため今のうちに予約しておく
+		'fadebgm', 'fadeoutbgm', 'fadeoutse', 'fadese', 'playbgm', 'playse',
+		'stop_allse', 'stopbgm', 'stopfadese', 'stopse', 'volume', 'wb', 'wf', 'wl', 'ws', 'xchgbuf',
 	]);
 
 	// 「定義済みのタグ・マクロ名」一覧。[char2macro]/[bracket2macro]のname属性検査に使う。
@@ -595,6 +637,11 @@ export class ScriptEngine {
 	// ScriptMng（DOM側）が「DOMを触った結果」を組み込み変数へ書き戻すための口。
 	//	[add_frame]の読込完了や[let_frame]の取得値がこれを通る（本家 val.setVal_Nochk('tmp', …) 相当）
 	setValNochk(name: string, v: T_VAL_D) {this.#val.set(name, v)}
+
+	// sys:への代入に即座に反応させたい副作用の登録口（本家の「代入トリガ関数」T_fncSetVal相当）。
+	//	専用タグを経由しない直接代入（[let]・&=・設定画面）にも反応させたい値のためのフック。
+	//	音量スライダ（sys:sn.sound.global_volume）がこれを使う（ScriptMng参照）
+	defSetTrigger(name: string, fnc: (v: T_VAL_D)=> void) {this.#val.defSetTrigger(name, fnc)}
 
 	// 組み込み変数（読み取り専用・遅延評価）の登録口。
 	//	エンジン自身が知りようのない値——prj.jsonの設定やブラウザの情報——を
@@ -1670,6 +1717,14 @@ export class ScriptEngine {
 			if (pic !== undefined) sty.pic = pic;
 			if (args.b_pic !== undefined) sty.b_pic = args.b_pic;
 
+			// 効果音（本家 EventMng.ts:465-491）。パス解決は押される/乗る/外れるかどうか分からない
+			//	時点で先読みしても仕方ないので、鳴らす瞬間にScriptMng側で行う（論理名のまま積む）。
+			//	bufの既定'SYS'は[playse]自体の既定'SE'とは別の、ボタン専用の既定値なのでここで確定する
+			//	（属性の既定値は1箇所というルールに従い、BtnLayer側ではフォールバックしない）
+			if (args.clickse !== undefined) {sty.clickse = args.clickse; sty.clicksebuf = args.clicksebuf || 'SYS'}
+			if (args.enterse !== undefined) {sty.enterse = args.enterse; sty.entersebuf = args.entersebuf || 'SYS'}
+			if (args.leavese !== undefined) {sty.leavese = args.leavese; sty.leavesebuf = args.leavesebuf || 'SYS'}
+
 			aAct.push({t: 'addBtn', layerNm, page, text: pic ?'' :args.text ?? '', label, call,
 				...(nm === undefined ? {} : {nm}),
 				...(fn ? {fn} : {}), ...(Object.keys(sty).length > 0 ? {sty} : {})});
@@ -2073,6 +2128,130 @@ export class ScriptEngine {
 			}
 			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer,
 				...resume ? {resume} : {}, ...Object.keys(mark).length > 0 ? {mark} : {}});
+			return 'stop';
+		}
+
+		// ---- ＢＧＭ・効果音（本家 SoundMng.ts/SndBuf.ts）----
+		//	howlerを積む本家と違い、こちらはWeb Audio APIを直接使う自前の薄い層（ts/SndMng.ts・ts/SndBuf.ts）。
+		//	**1バッファ＝1インスタンス、停止＝破棄**という単純な作りにしたので、本家の状態機械
+		//	（StLoading〜StStopの6クラス）は無い。実際にAudioContext/GainNodeを触るのはScriptMng側で、
+		//	ここ（エンジン）は属性の解釈・実効音量の計算・save:/loopPlayingの帳簿付けだけを行う。
+		//	tmp:const.sn.sound.<buf>.playingは自然終了（非同期）でも倒す必要があるため、
+		//	ここでは書かない（ScriptMngが実際に停止した時にengine.setValNochk()で倒す）
+		case 'playse': case 'playbgm': {
+			const isBgm = name === 'playbgm';
+			// [playbgm]はキー押下スキップ中でも必ず再生する（本家 SoundMng.ts:109-111 canskip=false固定）
+			const canskip = isBgm ? false : (args.canskip ?? 'true') !== 'false';
+			// 既読スキップ中はcanskip指定分だけ鳴らさない。本家は直前の音を#stopse()する副作用を持つが
+			//	（SoundMng.ts:118）、それは指摘済みの不具合なのでこちらは踏襲せず何もしない
+			if (this.skipEnabled && canskip) return 'skip';
+
+			const buf = isBgm ? 'BGM' : (args.buf || 'SE');
+			const fn = args.fn ?? '';
+			if (! fn) throw `[${name}] fnは必須です`;
+
+			const loop = isBgm ? true : (args.loop ?? 'false') !== 'false';
+			const join = (args.join ?? 'true') !== 'false';
+			const speed = ScriptEngine.#argNumDef(name, 'speed', args.speed, 1);
+			const pan = ScriptEngine.#argNumDef(name, 'pan', args.pan, 0);
+			const start_ms = ScriptEngine.#argNumDef(name, 'start_ms', args.start_ms, 0);
+			if (start_ms < 0) throw `[${name}] start_ms:${String(start_ms)} が負の値です`;
+			const ret_ms = ScriptEngine.#argNumDef(name, 'ret_ms', args.ret_ms, 0);
+			if (ret_ms < 0) throw `[${name}] ret_ms:${String(ret_ms)} が負の値です`;
+			const end_ms = ScriptEngine.#argNumDef(name, 'end_ms', args.end_ms, ScriptEngine.#MAX_END_MS);
+			if (end_ms > 0) {	// 既定値(MAX_END_MS)も正なので常に通る検査（本家 SndBuf.ts:130 と同じ形）
+				if (end_ms <= start_ms) throw `[${name}] start_ms:${String(start_ms)} >= end_ms:${String(end_ms)} は異常値です`;
+				if (end_ms <= ret_ms) throw `[${name}] ret_ms:${String(ret_ms)} >= end_ms:${String(end_ms)} は異常値です`;
+			}
+
+			// 目標音量（save:）と基準音量（sys:。バッファごとに無ければ1で作る）の合成が実効音量
+			const vn = `const.sn.sound.${buf}.`;
+			const savevol = ScriptEngine.#clampVol(ScriptEngine.#argNumDef(name, 'volume', args.volume, 1));
+			this.#val.set(`save:${vn}volume`, savevol);
+			this.#val.set(`save:${vn}fn`, fn);
+			this.#val.set(`save:${vn}start_ms`, start_ms);
+			this.#val.set(`save:${vn}end_ms`, end_ms);
+			this.#val.set(`save:${vn}ret_ms`, ret_ms);
+			const sysvol = Number(this.#val.get(`sys:${vn}volume`, 1, true));
+
+			if (loop) this.#setLoopPlay(buf, fn); else this.#delLoopPlay(buf);
+
+			aAct.push({t: 'playSnd', buf, fn, loop, volume: savevol * sysvol, speed, pan,
+				start_ms, end_ms, ret_ms, join, canskip});
+			if (! join) return 'skip';
+
+			// join=true（既定）：ロード完了を待ってから次のタグへ進む（本家のjoin待ちと同じ意味）
+			return 'stop';
+		}
+
+		case 'stopse': case 'stopbgm': {
+			const buf = name === 'stopbgm' ? 'BGM' : (args.buf || 'SE');
+			this.#delLoopPlay(buf);
+			aAct.push({t: 'stopSnd', buf});
+			return 'skip';
+		}
+
+		case 'stop_allse': {
+			// 個々のtmp:playingはScriptMng側が実際に止めた時に倒す。ここではループ帳簿だけ畳む
+			for (const buf of Object.keys(this.#hLoopPlay)) this.#delLoopPlay(buf);
+			aAct.push({t: 'stopAllSnd'});
+			return 'skip';
+		}
+
+		case 'volume': {	// バッファの基準音量（sys:）設定（本家 SoundMng.ts:72 #volume()）
+			const buf = args.buf || 'SE';
+			const vn = `const.sn.sound.${buf}.`;
+			const sysvol = ScriptEngine.#clampVol(ScriptEngine.#argNumDef('volume', 'volume', args.volume, 1));
+			this.#val.set(`sys:${vn}volume`, sysvol);
+			const savevol = Number(this.#val.get(`save:${vn}volume`, 1, true));
+			aAct.push({t: 'volumeSnd', buf, volume: savevol * sysvol});
+			return 'skip';
+		}
+
+		// ---- フェード（本家 SndBuf.ts の StPlaying.fade()/StFade 相当） ----
+		case 'fadese': case 'fadebgm': case 'fadeoutse': case 'fadeoutbgm': {
+			const isBgm = name === 'fadebgm' || name === 'fadeoutbgm';
+			const isOut = name === 'fadeoutse' || name === 'fadeoutbgm';
+			const buf = isBgm ? 'BGM' : (args.buf || 'SE');
+			const vn = `const.sn.sound.${buf}.`;
+
+			// [fadeoutse]/[fadeoutbgm]はvolume=0固定（属性そのものを受け付けない。本家tag.html準拠）
+			const savevol = isOut ? 0 : ScriptEngine.#clampVol(ScriptEngine.#argNum(name, 'volume', args.volume ?? ''));
+			this.#val.set(`save:${vn}volume`, savevol);
+			const sysvol = Number(this.#val.get(`sys:${vn}volume`, 1, true));
+			// stopの既定：fadeoutは常にtrue、fadeはvolume=0を指定した時だけtrue（本家 SndBuf.ts:413）
+			const stop = (args.stop ?? (savevol === 0 ? 'true' : 'false')) !== 'false';
+			if (stop) this.#delLoopPlay(buf);
+
+			// 既読スキップ中は即座に終端の値へ（time=0扱い。本家 tsy と同じ作法）
+			const skip = this.skipEnabled;
+			const msec = skip ? 0 : ScriptEngine.#argNum(name, 'time', args.time ?? '');
+			const delay = skip ? 0 : ScriptEngine.#argNumDef(name, 'delay', args.delay, 0);
+			aAct.push({t: 'fadeSnd', buf, volume: savevol * sysvol, msec, delay, stop});
+			return 'skip';	// フェード自体は待たない（本家も false を返す）。待ちたければ[wf]/[wb]
+		}
+
+		case 'stopfadese':
+			// 本家で既に廃止済みの空実装（SoundMng.ts:38 `()=> false`）。
+			//	上流シナリオに残っている記述をエラーにしないためだけに受ける
+			return 'skip';
+
+		// ---- 再生・フェードの終了待ち ----
+		//	global属性は本家の「ローカル／グローバル予約イベント」の区別に由来するが、
+		//	こちらの待ち合わせにその区別が無いため受けても意味を持たない
+		case 'ws': case 'wl': {
+			const buf = name === 'wl' ? 'BGM' : (args.buf || 'SE');
+			// 待ち系のcanskip既定はfalse（[wt]/[wq]/[wait_tsy]/[wait]とは逆。本家 tag.html の通り）
+			const canskip = (args.canskip ?? 'false') !== 'false';
+			const stop = (args.stop ?? 'true') !== 'false';
+			aAct.push({t: 'waitSnd', buf, canskip, stop});
+			return 'stop';
+		}
+
+		case 'wf': case 'wb': {
+			const buf = name === 'wb' ? 'BGM' : (args.buf || 'SE');
+			const canskip = (args.canskip ?? 'false') !== 'false';
+			aAct.push({t: 'waitFade', buf, canskip});
 			return 'stop';
 		}
 

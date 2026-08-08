@@ -1,0 +1,83 @@
+; E2E用シナリオ（snd.e2e.ts が使用）。
+;	音声は実際にデコード・再生できるかが本題なので、prj_pic同様バイナリ（se.wav/bgm.wav。
+;	ffmpegで生成した0.3秒/0.6秒の無音に近いサイン波）を実際に持つ例外プロジェクト。
+;	見るのは波形ではなく「待ち合わせの結線」：
+;	・[playse join=true]（既定）がデコード完了まで止まり、[ws]が再生終了まで止まること
+;	・[playse join=false]は投げっぱなしですぐ進むこと
+;	・[fadebgm]は待たず、[wb]がフェード完了まで止まること
+;	・ロード完了前に[stopse]してもハングしないこと（回帰：skynovel_esm調査で見つかった
+;	　「[wf]待機中の自然終了で待ちが解決されない」不備の同族。本設計では構造的に起きないはずを確認）
+;	・鳴っていない／ループ中のバッファへの[ws]/[wl]/[wf]は待たずに進むこと
+;	・同じバッファに同じファイルの再生要求が重なったら、頭から鳴り直さず何もしないこと
+;	・↑の対象が再生中でなくフェード中の場合、フェードを壊さず継続すること
+;	・[button clickse=/enterse=/leavese=]が実際にクリック・ホバー・ホバー解除で効果音を鳴らすこと
+;	・[button enabled=false]は効果音も鳴らさないこと
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; join=true（既定）：デコード完了まで待つ。続けて[ws]で再生終了（0.3秒）まで待つ
+[playse fn=se]
+[ws]
+さいせいしゅうりょう[p]
+
+; join=false：投げっぱなしで即座に進む
+[playse fn=se join=false]
+すぐすすむ[p]
+
+; [fadebgm]自体は待たない。[wb]でフェード完了（0.6秒）まで待つ。
+;	[fadese]/[wf]は既定buf=SEなので、BGMを対象にするにはbuf=BGM明示か[fadebgm]/[wb]が要る
+[playbgm fn=bgm]
+[fadebgm volume=0.05 time=600]
+[wb]
+ふぇーどしゅうりょう[p]
+[stopbgm]
+
+; 回帰：デコード完了前に[stopse]してもハングしない（join=falseで投げっぱなしにした直後に止める）
+[playse fn=bgm loop=true join=false]
+[stopse buf=BGM]
+とめた[p]
+
+; 回帰：鳴っていないバッファへの[ws]/[wf]は待たない
+[ws]
+またない[p]
+[wf]
+またないふぇーど[p]
+
+; 本家 tag.html「loop=trueなら待たない」：ループ中バッファへの[wl]は待たない
+[playbgm fn=bgm]
+[wl]
+るーぷはまたない[p]
+[stopbgm]
+
+; 回帰：同じバッファに同じファイルの再生要求が重なっても、頭から鳴り直さない。
+;	鳴り直さなければ最初の再生開始から0.3秒後（合計約0.3秒後）、
+;	鳴り直せば2回目の要求からさらに0.3秒後（合計約0.5秒後）に[ws]が解決する
+[playse fn=se join=false]
+[wait time=200]
+[playse fn=se join=false]
+[ws]
+じゅうふくむし[p]
+
+; 回帰：フェード中に同じファイルの再生要求が重なっても、フェードを壊さず継続する
+;	（頭から鳴り直す実装だと、進行中のGainNodeが差し替わりフェードが壊れる）
+[playbgm fn=bgm]
+[fadebgm volume=0.05 time=600]
+[playbgm fn=bgm]
+[wb]
+ふぇーどをこわさない[p]
+[stopbgm]
+
+; 回帰：[button clickse=/enterse=/leavese=]（本家 EventMng.ts:465-491）。
+;	同じバッファに同じ音の重複要求は鳴り直さない仕様（前段の回帰）と干渉しないよう、
+;	ボタンごとに違うbufを明示して割り当てる
+[add_lay layer=btnmes class=txt]
+[current layer=btnmes]
+[button page=fore nm=btn_click text=クリック clickse=se clicksebuf=btnclick label=*btnend]
+[button page=fore nm=btn_hover text=ホバー enterse=se entersebuf=btnhover label=*btnend]
+[button page=fore nm=btn_leave text=はなれる leavese=se leavesebuf=btnleave label=*btnend]
+[button page=fore nm=btn_off text=むこう enabled=false clickse=se enterse=se clicksebuf=btnoff entersebuf=btnoff label=*btnend]
+ぼたんてすと[l]
+[s]
+
+*btnend
+おわり[s]

@@ -40,6 +40,8 @@ export class VarStore {
 	//	効くため、「文字列のまま扱う」という書き込み側の指定はここに覚えておく
 	//	（本家 setVal_Nochk(…, autocast) 相当）
 	readonly #setNoCast	= new Set<string>();
+	// sys:代入時に即座に効かせたい副作用（本家の「代入トリガ関数」T_fncSetVal相当。VarStore.defSetTrigger()参照）
+	readonly #hSetTrigger	: {[key: string]: (v: T_VAL_D)=> void} = Object.create(null);
 
 	constructor() {this.#initSys()}
 
@@ -50,8 +52,9 @@ export class VarStore {
 	#initSys() {
 		for (const [k, v] of Object.entries(creSYS_DATA())) {
 			// sn.sound.global_volume / movie_volume は本家では「代入時に効くトリガ関数」として
-			//	型が付いているが、値としては本家も起動時に1を入れ直す（SoundMng.ts:67）。
-			//	音声層が無いこちらは最初から数値1を置く
+			//	型が付いているが、値としては本家も起動時に1を入れ直す（SoundMng.ts:67。
+			//	しおりのsys:に前回の音量が残っていても起動直後は一旦1で鳴らす仕様）。
+			//	こちらも同じ挙動にするため、ここでは常に1を置く（SndMng.tsのトリガはScriptMng接続時に登録）
 			this.#h[`sys.${k}`] = typeof v === 'function' ? 1 : v;
 		}
 	}
@@ -60,6 +63,15 @@ export class VarStore {
 	//	name は"tmp:"を除いたキー（例：'const.sn.scriptFn'）。常にtmp:名前空間に属する
 	defBuiltin(name: string, fnc: ()=> T_VAL_D) {
 		this.#hBuiltin[name] = fnc;
+	}
+
+	// 代入トリガの登録（本家 sn.sound.global_volume 等、値としてはただの数値だが
+	//	代入された瞬間に効かせたい副作用を持つ変数のため）。専用タグを経由しない
+	//	直接代入（[let]・&=・設定画面）にも反応させたいので、defBuiltin()とは別に
+	//	set()の中で引く（読み出しは普通の変数として#hへ格納されたままで良い）
+	defSetTrigger(name: string, fnc: (v: T_VAL_D)=> void) {
+		const {ns, key} = VarStore.parseName(name);
+		this.#hSetTrigger[`${ns}.${key}`] = fnc;
 	}
 
 	// 変数名の分解（本家 PropParser.getValName() 相当）
@@ -188,7 +200,9 @@ export class VarStore {
 
 		const k = `${ns}.${key}`;
 		if (cast === 'str') this.#setNoCast.add(k); else this.#setNoCast.delete(k);
-		this.#h[k] = VarStore.castTo(val, cast);
+		const v = VarStore.castTo(val, cast);
+		this.#h[k] = v;
+		this.#hSetTrigger[k]?.(v);
 	}
 
 	// cast指定による値の変換（本家 Variable.ts:317 #let() のswitchに対応）。

@@ -1,4 +1,4 @@
-import { n as e } from "./rolldown-runtime.js";
+import { r as e } from "./rolldown-runtime.js";
 import { t } from "./react.js";
 //#region src/ts/Filter.ts
 var n = /* @__PURE__ */ e(t(), 1);
@@ -505,9 +505,7 @@ var E = [
 				case "exit":
 					this.#t = t;
 					break;
-				case "load":
-					this.#e = this.#e.slice(0, this.#t + 1);
-					break;
+				case "load": this.#e = this.#e.slice(0, this.#t + 1);
 			}
 			return this.#e[this.#t];
 		}

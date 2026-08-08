@@ -89,7 +89,9 @@ const A_NOT_YET: {[attr: string]: string} = {
 	dx			: 'SpritesMng（アニメpngのコマ位置）。未対応',
 	dy			: '同上',
 	er			: 'Reading.ts（読み戻り時の消去。[p er=true]）。読み戻りは演じ直す作り（PageLog）なので出番が無い',
-	stop		: 'SndBuf/SpritesMng。音声・アニメpngの停止。未対応',
+	// SndBuf.ts（[ws]の既定true）は実装済み（[ws]/[wl]。ScriptEngine_snd.test.ts参照）。
+	//	残るはSpritesMng.ts（[wv stop=]。動画・アニメpngの停止。Phase 4）
+	stop		: 'SpritesMng（[wv stop=]）。動画・アニメpngの停止。未対応',
 	wait		: 'LayerMng/TxtStage（文字表示ウェイト・文字出現演出）。[ch_in_style]系と一緒に',
 };
 
@@ -124,6 +126,21 @@ it('省略時の既定が本家と同じ値で積まれる', ()=> {
 	// [lay]：**配置・変形は埋めない**（下流のCSSが本家と同じ既定を持つため。A_CSS_DEF参照）。
 	//	埋めると毎renderで全属性のインラインスタイルが出てコンポーネントのCSSを上書きしてしまう
 	expect(actOf('[lay layer=base visible=true]', 'chgLay')?.sty).toEqual({visible: true});
+
+	// [playse]：start_ms/ret_ms/loop/pan/speed（本家 SndBuf.ts:103-107 の argChk_Num/Boolean 既定通り）。
+	//	volume/end_msは間接呼び出し（getVol()／MAX_END_MS定数）でupstreamDefaults()が拾えないため対象外
+	expect(actOf('[playse fn=a]', 'playSnd')).toMatchObject({start_ms: 0, ret_ms: 0, loop: false, pan: 0, speed: 1});
+
+	// [ws]：stop（本家 SndBuf.ts:398 の既定true）。canskipは本家も同じくfalseだが、
+	//	[wt]等（既定true）と紛らわしいのでScriptEngine_snd.test.tsのws_defaults_canskipFalseで別途固定
+	expect(actOf('[ws]', 'waitSnd')).toMatchObject({stop: true});
+
+	// [button clickse=/enterse=/leavese=]：bufの既定は'SYS'（本家 EventMng.ts:466,475,484の
+	//	`hArg.clicksebuf ??= 'SYS'`。[playse]自体の既定'SE'とは別のボタン専用の既定値）。
+	//	`??=`代入なのでargChk_*パターンに乗らず、upstreamDefaults()には現れない
+	expect(actOf('[button text=x label=*a clickse=c enterse=e leavese=l]', 'addBtn')?.sty).toMatchObject({
+		clickse: 'c', clicksebuf: 'SYS', enterse: 'e', entersebuf: 'SYS', leavese: 'l', leavesebuf: 'SYS',
+	});
 });
 
 it.skipIf(! EXISTS)('扱いを決めた表に、本家から消えた属性が残っていない', ()=> {

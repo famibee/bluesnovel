@@ -208,7 +208,9 @@ it('step_jumpLabel', ()=> {
 });
 
 it('step_unknownTagIgnored', ()=> {
-	const se = new ScriptEngine('t1', '[playbgm buf=BGM fn=a]あ[s]');
+	// [xchgbuf]はGrammar.tsのT_HTagには居るがPhase 3まで未実装（todo.md参照）＝
+	//	「宣言はあるが#execTag()にcaseが無いタグ」の実例として使う
+	const se = new ScriptEngine('t1', '[xchgbuf buf=SE buf2=BGM]あ[s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},

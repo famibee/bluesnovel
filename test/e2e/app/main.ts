@@ -23,6 +23,18 @@ const prj = new URLSearchParams(location.search).get('prj') ?? 'basic';
 // gsapも公開する。**演出の「時間を進める機構」をテスト側から止めるため**で、
 //	止めてしまえば進度（[trans rule=…]ならSVGフィルタの係数）をこちらで任意の値に置ける＝
 //	時間待ちに頼らず、狙った進度ちょうどの絵を撮れる。src/側と同一モジュール実体を掴む点はstoreと同じ
-(globalThis as any).__sn = {store: useStore, gsap};
+
+// snd.e2e.ts用：AudioContext.createGain()の呼び出し回数を数える。SndBuf（src/ts/SndBuf.ts）は
+//	生成のたびに必ず1回createGain()するので、「同じファイルの重複再生要求で頭から鳴り直して
+//	いないか（＝新しいSndBufを作っていないか）」をブラウザの外から確認する手段になる。
+//	src/側は一切変更せず、ブラウザAPIそのものを計装して覗く方式
+let gainNodeCount = 0;
+const origCreateGain = AudioContext.prototype.createGain;
+AudioContext.prototype.createGain = function(this: AudioContext) {
+	++gainNodeCount;
+	return origCreateGain.call(this);
+};
+
+(globalThis as any).__sn = {store: useStore, gsap, gainNodeCount: ()=> gainNodeCount};
 
 new SysWeb({}, {cur: `/test/e2e/app/prj_${prj}/`, crypto: false, dip: ''});

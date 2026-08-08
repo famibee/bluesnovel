@@ -152,16 +152,13 @@ function a(t) {
 			case "tcy":
 				p(h.t ?? "", h.r, h, !0);
 				break;
-			case "grp":
-				h.pic && (p("　", h.r, h), Object.assign(n.at(-1), {
-					pic: h.pic,
-					...r(h.width) === void 0 ? {} : { gw: r(h.width) },
-					...r(h.height) === void 0 ? {} : { gh: r(h.height) },
-					...r(h.x) === void 0 ? {} : { gx: r(h.x) },
-					...r(h.y) === void 0 ? {} : { gy: r(h.y) }
-				}));
-				break;
-			default: break;
+			case "grp": h.pic && (p("　", h.r, h), Object.assign(n.at(-1), {
+				pic: h.pic,
+				...r(h.width) === void 0 ? {} : { gw: r(h.width) },
+				...r(h.height) === void 0 ? {} : { gh: r(h.height) },
+				...r(h.x) === void 0 ? {} : { gx: r(h.x) },
+				...r(h.y) === void 0 ? {} : { gy: r(h.y) }
+			}));
 		}
 	}), m.putTxt(t), n;
 }
@@ -763,7 +760,7 @@ var f = {
 			return f / (1e3 / (e || 60));
 		},
 		wake: function() {
-			ce && (!ie && j() && (re = ie = window, ae = re.document || {}, oe.gsap = Z, (re.gsapVersions ||= []).push(Z.version), le(se || re.GreenSockGlobals || !re.gsap && re || {}), Bt.forEach(Vt)), u = typeof requestAnimationFrame < "u" && requestAnimationFrame, c && d.sleep(), l = u || function(e) {
+			ce && (!ie && j() && (re = ie = window, ae = re.document || {}, oe.gsap = Z, (re.gsapVersions || (re.gsapVersions = [])).push(Z.version), le(se || re.GreenSockGlobals || !re.gsap && re || {}), Bt.forEach(Vt)), u = typeof requestAnimationFrame < "u" && requestAnimationFrame, c && d.sleep(), l = u || function(e) {
 				return setTimeout(e, o - d.time * 1e3 + 1 | 0);
 			}, Xt = 1, m(2));
 		},
@@ -1230,7 +1227,7 @@ var pn = function(e, t, n, r, i, a, o) {
 		if (!l) return vn = 1, e.vars[t] = "+=0", yn(e, o), vn = 0, s ? de(t + " not eligible for reset. Try splitting into individual properties") : 1;
 		c.push(l);
 	}
-	for (f = c.length; f--;) u = c[f], l = u._pt || u, l.s = (r || r === 0) && !i ? r : l.s + (r || 0) + a * l.c, l.c = n - l.s, u.e &&= U(n) + G(u.e), u.b &&= l.s + G(u.b);
+	for (f = c.length; f--;) u = c[f], l = u._pt || u, l.s = (r || r === 0) && !i ? r : l.s + (r || 0) + a * l.c, l.c = n - l.s, u.e && (u.e = U(n) + G(u.e)), u.b && (u.b = l.s + G(u.b));
 }, xn = function(e, t) {
 	var n = e[0] ? De(e[0]).harness : 0, r = n && n.aliases, i, a, o, s;
 	if (!r) return t;

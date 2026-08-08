@@ -902,7 +902,7 @@ var t = /* @__PURE__ */ e(((e) => {
 		}, e.version = "19.2.8", typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u" && typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop == "function" && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
 })), r = /* @__PURE__ */ e(((e, r) => {
-	process.env.NODE_ENV === "production" ? r.exports = t() : r.exports = n();
+	r.exports = process.env.NODE_ENV === "production" ? t() : n();
 }));
 //#endregion
 export { r as t };

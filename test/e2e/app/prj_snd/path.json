@@ -1,0 +1,5 @@
+{
+	"main": {":cnt": 1, "sn": "main.sn"},
+	"se": {":cnt": 1, "wav": "se.wav"},
+	"bgm": {":cnt": 1, "wav": "bgm.wav"}
+}

@@ -46,7 +46,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'lay' | 'multi' | 'page' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'lay' | 'multi' | 'page' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'tsy' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと
@@ -207,6 +207,13 @@ export async function layNum(page: Page, nm: string, prop: 'alpha'|'left'|'top'|
 		const s = (globalThis as any).__sn.store.getState();
 		return s.aPage[s.foreIdx].find((l: any)=> l.nm === nm)?.[prop!] as number | undefined;
 	}, [nm, prop]);
+}
+
+// これまでに作られたGainNodeの総数（snd.e2e.ts用。test/e2e/app/main.tsがAudioContext.createGain()を
+//	計装して数えている）。SndBuf生成のたびに必ず1つ増えるので、「同じファイルの重複再生要求で
+//	頭から鳴り直していないか」を、音を実際に聴かずに確認できる
+export async function gainNodeCount(page: Page): Promise<number> {
+	return page.evaluate(()=> (globalThis as any).__sn.gainNodeCount());
 }
 
 // [trace]等のデバッグ表示（ScriptMng が document.body 直下へ挿す span）の内容を取得。

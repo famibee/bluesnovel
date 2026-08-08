@@ -156,12 +156,15 @@ export type TArg = {
 	buf2?	: string;
 	loop?	: boolean;
 	volume?	: number;
+	speed?	: number;
+	start_ms?	: number;
 	ret_ms?	: number;
 	end_ms?	: number;
 	join?	: boolean;
 	do_rec?	: boolean;
 	pan?	: number;
 	stop?	: boolean;
+	delay?	: number;
 
 	clear?	: boolean;
 

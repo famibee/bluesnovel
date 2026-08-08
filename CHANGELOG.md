@@ -28,6 +28,69 @@
     - `[button]`の配置属性（`center`/`middle`/`right`/`bottom`等）と`Layer.setXY()`の`isButton`分岐 — `setXY()`の呼び出し3箇所（`GrpLayer.ts`/`TxtLayer.ts`）はどれも`isButton`を渡しておらず常に`false`、`Button.ts`も`setXY()`を通らず`left`/`top`を直読みするだけ。AIRNovel時代の名残の消し忘れで、意図的な保持ではないと判明
   - E2Eテスト基盤（`test/e2e/`）の構成が本家へ逆輸入された。本家は状態がクラスの私有フィールドに散っていてzustandのような単一ストアが無いため、fixture側でブラウザAPI（`addEventListener`/`requestAnimationFrame`/`URL.createObjectURL`）を計装し「同じ操作をN回繰り返しても生存数が増えないこと」を見る方式に変えて輸入（`test/e2e/app/probe.ts`）。`src/ts/FrameMng.ts`の`#hDomLsn`（キー単位の`removeEventListener`）も本家の`EventMng`に無かった仕組みとして輸入された
 
+## 2026/08/08
+
+- [x] **ＢＧＭ・効果音（Phase 1+2）の実装**：`[playse]`/`[playbgm]`/`[stopse]`/`[stopbgm]`/
+  `[stop_allse]`/`[volume]`/`[fadese]`/`[fadebgm]`/`[fadeoutse]`/`[fadeoutbgm]`/`[stopfadese]`/
+  `[ws]`/`[wl]`/`[wf]`/`[wb]`
+  - 本家調査の結果、howlerは採用せず自前のWeb Audio層（新規`src/ts/SndMng.ts`/`SndBuf.ts`）にした。
+    理由：howlerの最終リリースv2.2.4は2023-09で以降更新なし・open PR未マージ多数（2026-08時点）。
+    本家が使うAPIはHowl/volume/fade/stereo/duration/play(sprite)/unload程度で代替が容易、かつ
+    `html5:false`固定＝常にWeb Audioなので素のAPIで書ける
+  - 設計は「1バッファ＝1インスタンス、停止＝破棄」。本家`SndBuf.ts`の状態機械（`StLoading`〜
+    `StStop`の6クラス）は退場処理が無く不備の温床だったため踏襲しなかった：
+    skynovel_esm側の調査で「`[wf]`待機中に音が自然終了すると誰も終了通知を出さずスクリプトが
+    永久停止する」「VOICE終了時のBGM音量復帰がVOICEの変数を読んでいる」「`[xchgbuf]`後に旧
+    バッファ名で変数を書く」「フェード停止時に`StStop`が2回構築される」等の不備を確認
+    （本家側は別コミットで対応予定。CLAUDE.mdの方針でこちらでは触らない）
+  - `[ws]`/`[wl]`/`[wf]`/`[wb]`の待ち合わせは`SndBuf`でなく`ScriptMng`が持つ（`[trans]`/`[tsy]`と
+    同じ設計）。フェードはGSAPで`GainNode.gain`を動かす（`delay=`属性は本家が読むだけで未実装だが
+    こちらはGSAPの`delay`にそのまま乗るので対応できた）
+  - `sys:sn.sound.global_volume`は`VarStore.defSetTrigger()`（新設。代入トリガ）で専用タグを経由
+    しない直接代入にも即時反応する
+  - 単体テスト`test/ScriptEngine_snd.test.ts`（新規）、E2E `test/e2e/snd.e2e.ts`＋
+    `test/e2e/app/prj_snd/`（新規。実wavファイルを持つ例外プロジェクト。`prj_pic`と同じ理由）
+  - 残り（しおり復元・`[xchgbuf]`・ボタン効果音・VOICEダッキング・動画）は`todo.md`のPhase 3/4へ
+
+- [x] **不具合修正：同じバッファへ同じファイルの再生要求が重なると頭から鳴り直していた**（`[playse]`/
+  `[playbgm]`の連打・フェード中の再取得で毎回新しいSndBufを作っていたのが原因）
+  - `SndMng.play()`の入口で「同じ`buf`に同じ`src`が既に生きている（デコード待ち含む）」場合は
+    新規SndBufを作らず即returnするよう修正（`SndBuf`に`src`を追加してファイル判定に使用）
+  - **検討：フェードへの影響**——新規SndBufを作らず今のインスタンスをそのまま使い続けるので、
+    進行中の`[fadese]`系フェード（GainNodeを直接掴んでいる）や`[ws]`/`[wf]`の待ち合わせ
+    （そのインスタンスを対象にしている）は壊れない。もし逆に「一旦stopしてから何もしない」と
+    実装していたら、stop()がGainNodeをdisconnectするため壊れていたはず
+  - E2Eで2件追加（`test/e2e/snd.e2e.ts`）。当初「`[wb]`の解決タイミングだけ」で検証していたが、
+    修正前のコードでも通ってしまうことが判明——`[wb]`の待ち合わせは`buf`名だけで管理しているため、
+    鳴り直して生まれた新しいGainNodeにフェードが効いていなくても、古いGainNode上のフェード自体は
+    時間通り終わり待ち合わせは解決してしまう（気付きにくい不具合の典型）。そこで
+    `AudioContext.createGain()`の呼び出し回数を計装して覗く`gainNodeCount()`を
+    `test/e2e/app/main.ts`に追加し、GainNodeの生成数そのもので検証するよう直した
+    （修正前のコードに戻して2件とも落ちることを確認済み）
+
+- [x] **不具合修正2：`[button clickse=…]`等のボタン効果音が鳴らなかった**（tmp_blues
+  `theme/title.sn:11` `[button clickse=&sysse_ok2_long]`。`Grammar.ts`の`TArg`に型はあったが
+  `ScriptEngine.ts`の`[button]` caseで一切読んでおらず未実装だった）
+  - 本家`EventMng.ts:465-491`を移植：`clickse`/`enterse`/`leavese`（クリック／マウスオーバー／
+    マウスアウト時の効果音）と`clicksebuf`/`entersebuf`/`leavesebuf`（buf既定は`'SYS'`。
+    `[playse]`自体の既定`'SE'`とは別）。パス解決は鳴らす瞬間（`ScriptMng.playButtonSe()`新設）に
+    行う——本家はボタン生成時に存在チェックするが、こちらは押されるかどうか分からない音を
+    先読みしても仕方ないので緩い方針（見つからなくてもデバッグ表示のみで画面は止めない）
+  - `join`は常にfalse固定（クリック/ホバーはシナリオの読み進めと無関係なUIイベント）。
+    `enabled=false`のボタンは効果音も鳴らない（CSSの`pointer-events:none`により、そもそも
+    `onClick`/`onMouseEnter`等のイベント自体がボタンへ届かない。`playSe()`内にも同じ条件の
+    ガードを二重に持たせてある）
+  - キーボード操作（Enter/Space、`FocusMng`経由）でもクリックと同じ扱いで`clickse`を鳴らす
+    （本家に無いbluesnovel独自のフォーカス操作拡張だが、一貫性のため）。フォーカスの出入り
+    （`onFocus`/`onBlur`）はヒント表示のみで、`enterse`/`leavese`は鳴らさない（本家は
+    `pointerover`/`pointerout`のみが対象のため、マウスの乗り降りだけに揃えた）
+  - 単体テスト`test/ScriptEngine_btn.test.ts`に追加。E2Eは`test/e2e/app/prj_snd/main.sn`に
+    ボタンシーンを追加し`test/e2e/snd.e2e.ts`で検証（`clickse`実装を一時的にno-op化して
+    3件が期待通り落ちることを確認済み）。ボタンごとに違うbufを明示して、前段で実装した
+    「同じバッファへの重複再生要求は鳴り直さない」仕様と干渉しないようにした
+  - `[link]`にも同様の効果音属性を追加する余地があるが、今回のスコープは`[button]`のみ。
+    `todo.md`のPhase 3に残した
+
 - [ ]
 
 

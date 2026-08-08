@@ -1,4 +1,4 @@
-import { n as e } from "./rolldown-runtime.js";
+import { r as e } from "./rolldown-runtime.js";
 //#region src/sn/SysBase.ts
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
 var t = "skynovel", n = class {
@@ -10,7 +10,7 @@ var t = "skynovel", n = class {
 	async loaded(...[n]) {
 		document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
-			import("./Main.js"),
+			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
 			import("./ScriptMng.js")
 		]).then(async ([{ createRoot: e }, { initMain: n }, { Config: r }, { ScriptMng: i }]) => {

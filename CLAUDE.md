@@ -71,6 +71,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 - `ScriptEngine.step()` が読むトークンを **`trimStart()` してはいけない**（Grammar 前提が壊れる）。
 - **`Stage.tsx` を静的 import してはいけない**（`lazy()` 分割が効かなくなる）。
 - フィルタは CSS 直変換 9 種 + `feColorMatrix` へ流す残りの 2 系統、`multiply` 属性は無視。
+- 音声は howler を積まず自前の Web Audio 層（`SndMng.ts`/`SndBuf.ts`）。**停止＝破棄**で状態機械を
+  持たず、`[ws]`/`[wf]` の待ち合わせは `SndBuf` でなく `ScriptMng` が持つ。`[fadese]`/`[wf]` の既定
+  バッファは `SE`（BGM には `[fadebgm]`/`[wb]`）。
 
 ## E2E テスト
 
@@ -79,8 +82,8 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 
 ## 規約
 
-- コメントとコミットメッセージは**日本語**。周囲のコメント密度に合わせる（このコードベースは
-  特に本家との相違について厚く書く）。
+- コメントとコミットメッセージは**日本語**。周囲のコメント密度に合わせる（このコードベースは特に本家との相違について厚く書Co-Authored-By署名は不要く）。
+- git add / git commit はユーザーが行う。
 - **TODO は `.ts`/`.tsx` で `//TODO: ` の形ちょうど**（`//` の前に空白なし、コロンの後に 1 個）。
   VSCode 拡張 *Todo+* がこの prefix しか拾わない。
 - **`todo.md`** がルートの作業計画（*Todo+* のチェックボックス形式、ほぼ優先度順）。セッション開始

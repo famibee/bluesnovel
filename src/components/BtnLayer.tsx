@@ -23,6 +23,7 @@ type T_BTNARG = {
 	fn		: string;
 	sty?	: T_BTN_STY | undefined;
 	onActivate: (label: string, call: boolean, fn: string)=> void;
+	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
 
 // [button]の配置・寸法・変形をCSSへ（本家 Button.ts のコンストラクタ相当）。
@@ -104,7 +105,7 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTNARG) {
+export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}: T_BTNARG) {
 	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
 	//	ストアへ写しているのはScriptMngで、ステージ既定フォント（Stage.tsx）とは別に差し替えられる
 	const btnFont = useStore(s=> s.btnFont);
@@ -160,9 +161,19 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		` : ''}
 	`;
 
+	// 効果音（本家 EventMng.ts:465-491）。enabled=falseのボタンは効果音も鳴らない
+	//	（本家 Button.ts:101 の `if (this.#o.enabled) evtMng.button(...)` でリスナー自体が張られない
+	//	のと同じ結果を、こちらは呼び出しの手前でガードして揃えている）
+	const playSe = (fnKey: 'clickse' | 'enterse' | 'leavese', bufKey: 'clicksebuf' | 'entersebuf' | 'leavesebuf')=> {
+		if (sty?.enabled === false) return;
+		const se = sty?.[fnKey];
+		if (se) onSe(se, sty?.[bufKey] ?? 'SYS');
+	};
+
 	const onClick = (e: MouseEvent)=> {
 		e.stopPropagation();	// 親(Stage)のonClick(=読み進め)へ伝播させないのがポイント
 		hintMng.hide();			// 本家もpointerdownで消す（EventMng.ts:424）
+		playSe('clickse', 'clicksebuf');
 		onActivate(label, call ?? false, fn);
 	};
 
@@ -171,6 +182,11 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 	const showHint = ()=> {
 		if (sty?.hint) hintMng.show(ref.current!, sty.hint, sty.hint_style, sty.hint_opt);
 	};
+	// マウスの乗り降り（本家 pointerover/pointerout）。フォーカス（onFocus/onBlur）は
+	//	キーボード操作でのヒント表示のためのbluesnovel独自拡張なので、本家に無いenterse/leavese
+	//	までは鳴らさない（マウスでの乗り降りだけに揃える）
+	const onMouseEnter = ()=> {showHint(); playSe('enterse', 'entersebuf')};
+	const onMouseLeave = ()=> {hintMng.hide(); playSe('leavese', 'leavesebuf')};
 
 	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
 	//	ゲーム内ボタンをFocusMngへ入れているのに対応）。表示されている間だけ輪に居ればよいので、
@@ -222,18 +238,20 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate}: T_BTN
 		return ()=> {alive = false};
 	}, [picSrc]);
 
-	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）
+	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）。
+	//	マウスクリックと同じ「押された」動作なのでclickseも鳴らす
 	const onKeyDown = (e: KeyboardEvent)=> {
 		if (e.key !== 'Enter' && e.key !== ' ') return;
 
 		e.stopPropagation();
 		e.preventDefault();
+		playSe('clickse', 'clicksebuf');
 		onActivate(label, call ?? false, fn);
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
 	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic) : undefined} ref={ref}
 		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
-		onMouseEnter={showHint} onMouseLeave={()=> hintMng.hide()}
+		onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
 		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;
 }

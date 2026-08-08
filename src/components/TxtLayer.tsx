@@ -52,6 +52,15 @@ export type T_BTN_STY = {
 	src?		: string;
 	b_pic?		: string;
 	b_src?		: string;
+	// 効果音（本家 EventMng.ts:465-491）。値は論理ファイル名のまま（パス解決は鳴らす瞬間に
+	//	ScriptMng側で行う。[lay fn=]と違い事前解決してsrcを持たせない——押されるかどうか
+	//	分からない音を先読みしても仕方ないため）。bufの既定は'SYS'（[playse]自体の既定'SE'とは別）
+	clickse?	: string;
+	enterse?	: string;
+	leavese?	: string;
+	clicksebuf?	: string;
+	entersebuf?	: string;
+	leavesebuf?	: string;
 };
 export type T_BTN = {
 	nm		: string;
@@ -80,6 +89,7 @@ type T_TXTARG = T_LAY_CMN & {
 	in_style?: string | undefined;	// [lay in_style=…]。[ch_in_style]で定義した文字出現演出名
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onNavigate: (url: string)=> void;	// [link url=…]
+	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
 // 文字出現演出のアニメ終端＝**素の表示状態**。[ch_in_style]がどんな値から始めても必ずここへ落とす。
 //	キル時の中途半端な状態を確定させるのにも使う（本家のkeyframesの`to`が`transform: none`なのと同じ）
@@ -93,7 +103,7 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; f
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -458,10 +468,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			}</span>}
 		</span>
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
+			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate} onSe={onSe}/>)}
 		</span>}
 		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate}/>)}
+			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} sty={b.sty} onActivate={onActivate} onSe={onSe}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */

@@ -212,21 +212,21 @@
 	</ul>
 	<p>ＢＧＭ・効果音</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#fadebgm">🔴 [fadebgm] BGMのフェード</a></li>
-		<li class="mb1"><a href="#fadeoutbgm">🔴 [fadeoutbgm] BGMのフェードアウト</a></li>
-		<li class="mb1"><a href="#fadeoutse">🔴 [fadeoutse] 効果音のフェードアウト</a></li>
-		<li class="mb1"><a href="#fadese">🔴 [fadese] 効果音のフェード</a></li>
-		<li class="mb1"><a href="#playbgm">🔴 [playbgm] BGM の演奏</a></li>
-		<li class="mb1"><a href="#playse">🔴 [playse] 効果音の再生</a></li>
-		<li class="mb1"><a href="#stop_allse">🔴 [stop_allse] 全効果音再生の停止</a></li>
-		<li class="mb1"><a href="#stopbgm">🔴 [stopbgm] BGM 演奏の停止</a></li>
-		<li class="mb1"><a href="#stopfadese">🔴 [stopfadese] 音声フェードの停止</a></li>
-		<li class="mb1"><a href="#stopse">🔴 [stopse] 効果音再生の停止</a></li>
-		<li class="mb1"><a href="#volume">🔴 [volume] 音量設定</a></li>
-		<li class="mb1"><a href="#wb">🔴 [wb] BGM フェードの終了待ち</a></li>
-		<li class="mb1"><a href="#wf">🔴 [wf] 効果音フェードの終了待ち</a></li>
-		<li class="mb1"><a href="#wl">🔴 [wl] BGM 再生の終了待ち</a></li>
-		<li class="mb1"><a href="#ws">🔴 [ws] 効果音再生の終了待ち</a></li>
+		<li class="mb1"><a href="#fadebgm">🟢 [fadebgm] BGMのフェード</a></li>
+		<li class="mb1"><a href="#fadeoutbgm">🟢 [fadeoutbgm] BGMのフェードアウト</a></li>
+		<li class="mb1"><a href="#fadeoutse">🟢 [fadeoutse] 効果音のフェードアウト</a></li>
+		<li class="mb1"><a href="#fadese">🟢 [fadese] 効果音のフェード</a></li>
+		<li class="mb1"><a href="#playbgm">🟢 [playbgm] BGM の演奏</a></li>
+		<li class="mb1"><a href="#playse">🟢 [playse] 効果音の再生</a></li>
+		<li class="mb1"><a href="#stop_allse">🟢 [stop_allse] 全効果音再生の停止</a></li>
+		<li class="mb1"><a href="#stopbgm">🟢 [stopbgm] BGM 演奏の停止</a></li>
+		<li class="mb1"><a href="#stopfadese">🟢 [stopfadese] 音声フェードの停止</a></li>
+		<li class="mb1"><a href="#stopse">🟢 [stopse] 効果音再生の停止</a></li>
+		<li class="mb1"><a href="#volume">🟢 [volume] 音量設定</a></li>
+		<li class="mb1"><a href="#wb">🟢 [wb] BGM フェードの終了待ち</a></li>
+		<li class="mb1"><a href="#wf">🟢 [wf] 効果音フェードの終了待ち</a></li>
+		<li class="mb1"><a href="#wl">🟢 [wl] BGM 再生の終了待ち</a></li>
+		<li class="mb1"><a href="#ws">🟢 [ws] 効果音再生の終了待ち</a></li>
 		<li class="mb1"><a href="#xchgbuf">🔴 [xchgbuf] サウンドバッファの交換</a></li>
 	</ul>
 	<p>条件分岐</p>
@@ -1993,6 +1993,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <h1><a id="ＢＧＭ・効果音"></a>ＢＧＭ・効果音</h1>
 <h2 id="fadebgm" class="w-heading">[fadebgm]BGMのフェード</h2>
 <h4>BGMを指定した音量に、段階的に変化させる。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：GSAPで<code>GainNode.gain</code>を時間をかけて動かす（本家はhowlerの<code>fade()</code>）。<code>delay</code>も対応——本家は読むだけで実は未実装（skynovel_esm調査で判明）だが、こちらはGSAPの<code>delay</code>オプションへそのまま渡るのでタダで効く。<br/>目標音量は<code>save:const.sn.sound.BGM.volume</code>へ、実際に適用するのはそれと基準音量（<code>sys:const.sn.sound.BGM.volume</code>）を掛けた実効音量。<a href="#wb">[wb]</a>で終了を待てる。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2004,6 +2005,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="fadeoutbgm" class="w-heading">[fadeoutbgm] BGMのフェードアウト</h2>
 <h4>BGMを無音に、段階的に変化させる。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#fadebgm">[fadebgm]</a>に<code>volume=0</code>を強制しただけ（実体は共通）。<code>stop</code>の既定<code>true</code>も同じ扱い。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2015,6 +2017,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="fadeoutse" class="w-heading">[fadeoutse] 効果音のフェードアウト</h2>
 <h4>効果音を無音に、段階的に変化させる。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#fadese">[fadese]</a>に<code>volume=0</code>を強制しただけ（実体は共通）。<code>stop</code>の既定<code>true</code>も同じ扱い。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2027,6 +2030,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="fadese" class="w-heading">[fadese]効果音のフェード</h2>
 <h4>効果音を指定した音量に、段階的に変化させる。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：GSAPで<code>GainNode.gain</code>を時間をかけて動かす（本家はhowlerの<code>fade()</code>）。<code>delay</code>も対応——本家は読むだけで実は未実装（skynovel_esm調査で判明）だが、こちらはGSAPの<code>delay</code>オプションへそのまま渡るのでタダで効く。<br/>対象は<code>buf</code>で指定したバッファ（既定<code>SE</code>）。何も鳴っていないバッファを指定しても、目標音量の書き込み（次回<a href="#playse">[playse]</a>時に効く）だけ行われ、フェード自体は起きない。<a href="#wf">[wf]</a>で終了を待てる。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2039,6 +2043,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="playbgm" class="w-heading">[playbgm]BGM の演奏</h2>
 <h4>BGMを再生する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#playse">[playse]</a>に<code>buf=BGM</code>／<code>loop=true</code>／<code>canskip=false</code>を強制しただけ（実体は共通）。<br/><b>howlerは積まず、Web Audio APIを直接使う自前の薄い層</b>（<code>ts/SndMng.ts</code>・<code>ts/SndBuf.ts</code>）。設計は「1バッファ＝1インスタンス、停止＝破棄」で、本家の状態機械（<code>StLoading</code>〜<code>StStop</code>の6クラス）は持たない——skynovel_esm調査で見つかった「フェード停止時にStStopが2回構築される」「VOICE終了時のBGM音量復帰がVOICEの変数を読んでいる」等の不備は、この設計だと構造的に起きない。<br/><code>start_ms</code>／<code>end_ms</code>／<code>ret_ms</code>は<code>AudioBufferSourceNode</code>の<code>loopStart</code>/<code>loopEnd</code>へそのまま渡せる（本家はhowlerに無い機能なので<code>sprite</code>＋自作<code>onend</code>の力技）。</p>
 <p class="mb2 px1">
 
 [playse]とは違い、キー押下Skip中でも必ず再生を行なう。（canskip = false固定）
@@ -2067,6 +2072,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="playse" class="w-heading">[playse]効果音の再生</h2>
 <h4>効果音を再生する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<code>fn</code>／<code>buf</code>／<code>loop</code>／<code>volume</code>／<code>speed</code>／<code>pan</code>／<code>join</code>／<code>canskip</code>／<code>start_ms</code>／<code>end_ms</code>／<code>ret_ms</code>全対応。<code>join=true</code>（既定）はデコード完了まで次のタグへ進まない（本家のHowlの<code>load</code>イベント待ちに相当）。<br/><b>howlerは積まず、Web Audio APIを直接使う自前の薄い層</b>（<code>ts/SndMng.ts</code>・<code>ts/SndBuf.ts</code>）。1バッファ＝1インスタンス・停止＝破棄という単純な作りで、本家の状態機械は持たない。同じ<code>buf</code>への<code>[playse]</code>は<b>ファイルが違えば</b>前の音を即座に止めて差し替えるが、<b>同じファイルが既に再生中（デコード待ち含む）なら頭から鳴り直さず何もしない</b>——新しいインスタンスを作らないので、進行中の<a href="#fadese">[fadese]</a>フェードや<a href="#ws">[ws]</a>/<a href="#wf">[wf]</a>の待ち合わせも壊れない。<br/>既読スキップ中は<code>canskip=true</code>（既定）なら鳴らさない。本家は直前の音を止める副作用を持つ（<code>SoundMng.ts:118</code>）が、それは指摘済みの不具合なのでこちらは踏襲していない（何もしない）。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2096,16 +2102,19 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="stop_allse" class="w-heading">[stop_allse] 全効果音再生の停止</h2>
 <h4>全てのサウンドを停止する。ぴたっと止める。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：鳴っている全バッファを止める。本家の<code>Howler.unload()</code>は<b>AudioContextをcloseして作り直す</b>ため、iOS/Safariでは次のタップまで無音になるリスクがあるが、こちらはGainNode側で個々のバッファを畳むだけでAudioContext自体は使い回す。</p>
 <p class="mb2 px1">
 
 </p>
 <h2 id="stopbgm" class="w-heading">[stopbgm]BGM 演奏の停止</h2>
 <h4>BGM 演奏を停止する。ぴたっと止める。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#stopse">[stopse]</a>に<code>buf=BGM</code>を強制しただけ（実体は共通）。</p>
 <p class="mb2 px1">
 
 </p>
 <h2 id="stopfadese" class="w-heading">[stopfadese] 音声フェードの停止</h2>
 <h4>音声フェードを停止する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：本家同様<b>何もしない</b>（本家も既に廃止済みで中身が空。<code>SoundMng.ts:38</code> <code>()=&gt; false</code>）。上流シナリオに残っている記述をエラーにしないためだけにタグ名を受ける。フェードを止めたいときは<a href="#fadese">[fadese]</a>/<a href="#fadebgm">[fadebgm]</a>を<code>time=0</code>で撃ち直すこと（本家 tag.html にもその案内は無いが、実質的な代替はこれのみ）。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2115,6 +2124,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="stopse" class="w-heading">[stopse]効果音再生の停止</h2>
 <h4>効果音再生を停止する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：指定バッファを即座に破棄する（1バッファ＝1インスタンス・停止＝破棄という設計なので、本家のように「解放漏れ」を気にする状態機械が無い）。ロード（デコード）完了前に呼んでもハングしない——完了後に自動再生される事故を防ぐ。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
@@ -2124,6 +2134,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="volume" class="w-heading">[volume]音量設定</h2>
 <h4>BGMや効果音の音量を指定</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<code>sys:const.sn.sound.&lt;buf&gt;.volume</code>（基準音量）を書き換え、鳴っていれば実効音量（基準×目標）を即座に反映する。</p>
 <p class="mb2 px1">
 
 	BGMや効果音を指定した音量にする。
@@ -2135,39 +2146,43 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="wb" class="w-heading">[wb]BGM フェードの終了待ち</h2>
 <h4>BGM フェードの終了を待つ。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#fadebgm">[fadebgm]</a>で始めたGSAPフェードの完了（またはクリック打ち切り）まで待つ。<b>待ち合わせを持つのはScriptMng</b>（<a href="#tsy">[tsy]</a>/<a href="#wait_tsy">[wait_tsy]</a>と同じ設計）で、SndBuf側は状態を持たない。<br/>本家は「<code>[wf]</code>待機中にフェード対象の音が自然終了すると、誰も終了通知を出さずスクリプトが永久停止する」不備がある（skynovel_esm調査で判明。<code>SndBuf.ts:478,486</code>）が、こちらはフェードが<b>GainNodeを対象にした時間駆動</b>（GSAP）で音の再生状態と独立しているため、この種のハングは構造的に起きない。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>canskip</td><td></td><td>false</td><td>true、false</td><td>trueでクリックキャンセル可能にする</td></tr>
-<tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
+<tr><td><s>global</s></td><td></td><td><s>true</s></td><td><s>true、false</s></td><td><s>グローバルイベント待ちを有効にするか</s></td></tr>
 </table>
 
 </p>
 <h2 id="wf" class="w-heading">[wf]効果音フェードの終了待ち</h2>
 <h4>効果音 フェードの終了を待つ。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#fadese">[fadese]</a>で始めたGSAPフェードの完了（またはクリック打ち切り）まで待つ。動いているフェードが無ければ待たずに続きへ進む。<a href="#wb">[wb]</a>参照（本家の永久停止不備がこちらでは起きない理由）。</p>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>buf</td><td></td><td>SE</td><td>サウンドバッファ名</td><td>効果音を識別する名前。サウンドバッファを変えれば同時に複数の音を操作することが出来ます</td></tr>
 <tr><td>canskip</td><td></td><td>false</td><td>true、false</td><td>trueでクリックキャンセル可能にする</td></tr>
-<tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
+<tr><td><s>global</s></td><td></td><td><s>true</s></td><td><s>true、false</s></td><td><s>グローバルイベント待ちを有効にするか</s></td></tr>
 </table>
 
 </p>
 <h2 id="wl" class="w-heading">[wl]BGM 再生の終了待ち</h2>
 <h4>BGM 再生の終了を待つ。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#playbgm">[playbgm]</a>の自然終了（またはクリック打ち切り）まで待つ。<code>loop=true</code>（<a href="#playbgm">[playbgm]</a>の既定）なら待たずに続きへ進む。</p>
 <p class="mb2 px1">
 
 	loop=true（[playbgm]のデフォルト値）なら待たない。<br/>
 	利用時は【音声再生[playbgm]がjoin=true(ちなみにデフォルト)であること】を必須条件とします。<br/>
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
+<tr><td><s>global</s></td><td></td><td><s>true</s></td><td><s>true、false</s></td><td><s>グローバルイベント待ちを有効にするか</s></td></tr>
 </table>
 
 </p>
 <h2 id="ws" class="w-heading">[ws]効果音再生の終了待ち</h2>
 <h4>効果音再生の終了を待つ。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<a href="#playse">[playse]</a>の自然終了（またはクリック打ち切り）まで待つ。<code>loop=true</code>・鳴っていないバッファは待たずに続きへ進む。<code>stop</code>（既定<code>true</code>）は<b>クリック打ち切り時だけ</b>効く——自然終了は既にSndBuf自身が破棄済みなので何もしない。<br/><b>待ち合わせを持つのはScriptMng</b>（SndBuf自身は状態を持たない設計）なので、本家のような「終了通知の出し忘れ」に起因するハングは無い。</p>
 <p class="mb2 px1">
 
 	loop=trueなら待たない。
@@ -2175,7 +2190,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>buf</td><td></td><td>SE</td><td>サウンドバッファ名</td><td>効果音を識別する名前。サウンドバッファを変えれば同時に複数の音を操作することが出来ます</td></tr>
 <tr><td>canskip</td><td></td><td>false</td><td>true、false</td><td>trueでクリックキャンセル可能にする</td></tr>
-<tr><td>global</td><td></td><td>true</td><td>true、false</td><td>グローバルイベント待ちを有効にするか</td></tr>
+<tr><td><s>global</s></td><td></td><td><s>true</s></td><td><s>true、false</s></td><td><s>グローバルイベント待ちを有効にするか</s></td></tr>
 <tr><td>stop</td><td></td><td>true</td><td>true、false</td><td>trueで「クリックキャンセル時の再生停止」、falseなら行なわない</td></tr>
 </table>
 
@@ -2239,7 +2254,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	<b>どのコマを見せるかはインラインstyleに書けない</b>（インラインは<code>:hover</code>／<code>:active</code>より強い）ので、状態別ルール側が持つ。
 	箱の大きさは絵の実寸（横は3コマ分の1/3）で、<code>width</code>／<code>height</code>を書けばそちらが勝つ。<b><code>pic</code>を書くと文字は出ない</b>（本家も文字の組み立てへ進まない）。
 	<code>b_pic</code>は文字を残して背後へ絵を中央合わせで敷く（本家は絵の実寸ぶんに箱を広げるが、こちらは箱の大きさを変えない）。
-	<br/><b>未対応</b>：効果音（<code>enterse</code>等）／配置属性（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）。</p>
+	<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）に対応（本家 EventMng.ts:465-491）。
+	<code>join</code>は常にfalse固定（クリック・ホバーはシナリオの読み進めと無関係なUIイベントなので、ロード完了を待つ意味が無い）。
+	<code>enabled=false</code>のボタンは効果音も鳴らない（本家 Button.ts:101 と同じくクリック/ホバーのイベント自体を受けない）。
+	パス解決は<b>鳴らす瞬間</b>に行う（押されるかどうか分からない音を先読みしても仕方ないため。見つからなくても画面は止めず、
+	デバッグ表示のみ）——存在チェックをボタン生成時に行う本家との相違点。
+	<a href="#playse">[playse]</a>と同様、<b>同じバッファに同じファイルの再生要求が重なったら頭から鳴り直さない</b>
+	（連打・素早いホバー→クリックでも音が途切れて聞こえることはない）。
+	<br/><b>未対応</b>：配置属性（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）。</p>
 <h4>文字レイヤにボタンを配置する。</h4>
 <p class="mb2 px1">
 

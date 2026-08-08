@@ -354,7 +354,7 @@ export default function Stage({
 				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
 				if (l.cls === 'grp') return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} aFace={l.aFace}/>;
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
-				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} in_style={l.in_style} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)}/>;
+				return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} enabled={l.enabled} aBtn={l.aBtn} in_style={l.in_style} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)} onSe={(fn, buf)=> scrMng.playButtonSe(fn, buf)}/>;
 			})}
 		</div>;
 		})}

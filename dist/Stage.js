@@ -1,7 +1,7 @@
-import { n as e, t } from "./rolldown-runtime.js";
+import { r as e, t } from "./rolldown-runtime.js";
 import { t as n } from "./react.js";
 import { d as r, f as i, g as a, h as o, l as s, m as c, n as l, o as u, s as d, u as f } from "./store.js";
-import { a as p, c as m, d as h, f as g, i as _, l as v, n as y, o as b, onLong as x, p as S, r as C, s as w, setDesignMode as T, t as E, u as D } from "./Main.js";
+import { a as p, c as m, d as h, f as g, i as _, l as v, m as y, n as b, o as x, onLong as S, p as C, r as w, s as T, setDesignMode as E, u as D } from "./Main.js";
 import { n as O, o as k, t as A } from "./CmnLib.js";
 import { a as j, n as M, t as N } from "./gsap.js";
 //#region node_modules/react-use/esm/useToggle.js
@@ -9,7 +9,7 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
 }, I = function(e) {
 	return (0, P.useReducer)(F, e);
-}, L = D ? P.useLayoutEffect : P.useEffect, R = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
+}, L = h ? P.useLayoutEffect : P.useEffect, R = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
 	(function() {
 		var e = typeof window < "u" && window.document !== void 0 ? window.document : {}, n = t !== void 0 && t.exports, r = (function() {
 			for (var t, n = [
@@ -129,11 +129,11 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 	})();
 })))()), z = function(e, t, n) {
 	n === void 0 && (n = {});
-	var r = n.video, i = n.onClose, a = i === void 0 ? h : i, o = (0, P.useState)(t), s = o[0], c = o[1];
+	var r = n.video, i = n.onClose, a = i === void 0 ? g : i, o = (0, P.useState)(t), s = o[0], c = o[1];
 	return L(function() {
 		if (t && e.current) {
 			var n = function() {
-				r?.current && g(r.current, "webkitendfullscreen", n), a();
+				r?.current && C(r.current, "webkitendfullscreen", n), a();
 			}, i = function() {
 				if (R.default.isEnabled) {
 					var e = R.default.isFullscreen;
@@ -147,12 +147,12 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 					a(e), c(!1);
 				}
 				R.default.on("change", i);
-			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), S(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
+			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), y(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
 			return function() {
 				if (c(!1), R.default.isEnabled) try {
 					R.default.off("change", i), R.default.exit();
 				} catch {}
-				else r && r.current && r.current.webkitExitFullscreen && (g(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
+				else r && r.current && r.current.webkitExitFullscreen && (C(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
 			};
 		}
 	}, [
@@ -166,7 +166,7 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 	B(e) && e.touches.length < 2 && e.preventDefault && e.preventDefault();
 }, V = function(e, t) {
 	var n = t === void 0 ? {} : t, r = n.isPreventDefault, i = r === void 0 || r, a = n.delay, o = a === void 0 ? 300 : a, s = (0, P.useRef)(), c = (0, P.useRef)(), l = (0, P.useCallback)(function(t) {
-		i && t.target && (S(t.target, "touchend", ee, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
+		i && t.target && (y(t.target, "touchend", ee, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
 			return e(t);
 		}, o);
 	}, [
@@ -174,7 +174,7 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 		o,
 		i
 	]), u = (0, P.useCallback)(function() {
-		s.current && clearTimeout(s.current), i && c.current && g(c.current, "touchend", ee);
+		s.current && clearTimeout(s.current), i && c.current && C(c.current, "touchend", ee);
 	}, [i]);
 	return {
 		onMouseDown: function(e) {
@@ -188,7 +188,7 @@ var P = /* @__PURE__ */ e(n()), F = function(e, t) {
 		onTouchEnd: u
 	};
 }, te = function(e) {
-	v(function() {
+	D(function() {
 		e();
 	});
 };
@@ -1226,7 +1226,7 @@ function mn(e, t) {
 				"%": t,
 				"o%": t
 			}, l = et(i).map(function(e, n) {
-				return n === 0 && "x%" in c ? c["%"] = t["x%"] : n === 1 && "y%" in c ? c["%"] = t["y%"] : c["%"] = t["o%"], ut(e, c);
+				return c["%"] = n === 0 && "x%" in c ? t["x%"] : n === 1 && "y%" in c ? t["y%"] : t["o%"], ut(e, c);
 			}), u = l[0], d = l[1], f = d === void 0 ? 0 : d, p = l[2], m = p === void 0 ? 0 : p;
 			a = tn, s = [
 				u,
@@ -1630,7 +1630,7 @@ var Ln = /*#__PURE__*/ function(e) {
 		var t = e.checkScrollEvent;
 		if (t) {
 			var n = t === !0 ? Fn : t, r = In(e.container);
-			t === !0 && (r === document.body || r === document.documentElement) ? this._unregister = Fn(window, this._onScroll) : this._unregister = n(r, this._onScroll);
+			this._unregister = t === !0 && (r === document.body || r === document.documentElement) ? Fn(window, this._onScroll) : n(r, this._onScroll);
 		}
 	}, n._unregisterScrollEvent = function() {
 		var e;
@@ -1735,10 +1735,12 @@ function qn(e, t) {
 	if (c) {
 		var d = -i / r;
 		return d === -s / o ? [[-Infinity, d], [Infinity, d]] : [];
-	} else if (l) {
+	}
+	if (l) {
 		var f = -i / n;
 		return f === -s / a ? [[f, -Infinity], [f, Infinity]] : [];
-	} else if (n === 0) {
+	}
+	if (n === 0) {
 		var p = -i / r, m = -(o * p + s) / a;
 		u = [[m, p]];
 	} else if (a === 0) {
@@ -1850,7 +1852,7 @@ function Xn(e, t) {
 	var l = {};
 	return c.filter(function(e) {
 		var t = e.pos, n = t[0] + "x" + t[1];
-		return l[n] ? !1 : (l[n] = !0, !0);
+		return !l[n] && (l[n] = !0, !0);
 	});
 }
 function Zn(e, t) {
@@ -3592,7 +3594,7 @@ function Ga(e, t, n) {
 		[1, -1].forEach(function(e) {
 			[1, -1].forEach(function(n) {
 				var a = [e * i[0], n * i[1]];
-				t[0] === a[0] && t[1] === a[1] || r.push([t, a]);
+				(t[0] !== a[0] || t[1] !== a[1]) && r.push([t, a]);
 			});
 		});
 	} else if (e[0]) {
@@ -3680,7 +3682,8 @@ function Za(e, t, n, r, i, a) {
 			isBound: v,
 			offset: v ? _ : 0
 		};
-	} else if (!f) {
+	}
+	if (!f) {
 		if (a && !m) return {
 			isBound: !1,
 			offset: 0
@@ -5121,7 +5124,7 @@ function Bo(e, t, n, r, i) {
 			})), !1)), g = Math.min.apply(Math, Y([h], J(o.map(function(e) {
 				return e.rect[d.end];
 			})), !1)), _ = (s + g) / 2;
-			s === g || _ === (m + h) / 2 || o.forEach(function(t) {
+			s !== g && _ !== (m + h) / 2 && o.forEach(function(t) {
 				var o = t.rect, s = t.className, d = [n[0], n[1]];
 				if (o[u.end] < f) d[c] += o[u.end] - f;
 				else if (p < o[u.start]) d[c] += o[u.start] - f - r;
@@ -7243,10 +7246,9 @@ function sl(e, t, n, r, i, a, o, s) {
 			if (d && !l && (l = !0, c.push("/")), l) {
 				var p = Math.max(0, d === 1 ? f[1] - a : s - f[1]);
 				return c.push(gc(p, r, t)), p;
-			} else {
-				var p = Math.max(0, u === 1 ? f[0] - i : o - f[0]);
-				return c.push(gc(p, n, t)), p;
 			}
+			var p = Math.max(0, u === 1 ? f[0] - i : o - f[0]);
+			return c.push(gc(p, n, t)), p;
 		})
 	};
 }
@@ -7440,7 +7442,8 @@ function hl(e, t, n) {
 			}), r, v, y, m, f, p, h).styles), !1));
 		}
 		return g;
-	} else if (d || c === "ellipse") {
+	}
+	if (d || c === "ellipse") {
 		var b = n[0], x = gc($(n[1][1] - b[1]), d ? Math.sqrt((a * a + o * o) / 2) : o, r), g = d ? [x] : [gc($(n[2][0] - b[0]), a, r), x];
 		return g.push("at", gc(b[0], a, r), gc(b[1], o, r)), g;
 	}
@@ -7505,7 +7508,8 @@ function vl(e, t, n, r, i) {
 					top: E.minY,
 					bottom: E.maxY
 				};
-			} else if (S || y === "ellipse") {
+			}
+			if (S || y === "ellipse") {
 				var D = "", O = "", k = 0, A = 0, w = $e(x);
 				if (S) {
 					var j = "";
@@ -7540,7 +7544,8 @@ function vl(e, t, n, r, i) {
 					poses: T,
 					splitter: C
 				};
-			} else if (y === "inset") {
+			}
+			if (y === "inset") {
 				var w = $e(x || "0 0 0 0"), F = w.indexOf("round"), I = (F > -1 ? w.slice(0, F) : w).length, L = w.slice(I + 1), R = J(w.slice(0, I), 4), z = R[0], B = R[1], ee = B === void 0 ? z : B, V = R[2], te = V === void 0 ? z : V, ne = R[3], re = ne === void 0 ? ee : ne, H = J([z, te].map(function(e) {
 					return ut(e, n);
 				}), 2), U = H[0], ie = H[1], W = J([re, ee].map(function(e) {
@@ -7557,7 +7562,8 @@ function vl(e, t, n, r, i) {
 					radius: L,
 					splitter: C
 				};
-			} else if (y === "rect") {
+			}
+			if (y === "rect") {
 				var w = et(x || `0px, ${t}px, ${n}px, 0px`);
 				C = ",";
 				var ue = J(w.map(function(e) {
@@ -9531,12 +9537,11 @@ function nu(e, t) {
 		if (We(t)) {
 			var n = nu(e, t), r = n.length;
 			return r > 1 ? n : r === 1 ? n[0] : null;
-		} else {
-			var i = ot(e, function(e) {
-				return e.manager.props.target === t;
-			});
-			return i ? (i.finded = !0, i.manager) : null;
 		}
+		var i = ot(e, function(e) {
+			return e.manager.props.target === t;
+		});
+		return i ? (i.finded = !0, i.manager) : null;
 	}).filter(Boolean);
 	return n.length === 1 && We(n[0]) ? n[0] : n;
 }
@@ -9588,7 +9593,8 @@ var ru = /* @__PURE__ */ function(e) {
 						poses: r,
 						rotation: n.rotation
 					};
-				} else return {
+				}
+				return {
 					poses: Qs(e.state),
 					rotation: e.getRotation()
 				};
@@ -9816,22 +9822,21 @@ var cu = /* @__PURE__ */ function(e) {
 				targetGroups: m,
 				firstRenderState: f
 			}));
-		} else {
-			var g = c[0];
-			if (p && (p.props.groupable || p.props.individualGroupable)) {
-				var _ = ot(p.moveables || [], function(e) {
-					return e.props.target === g;
-				});
-				_ && (f = q({}, _.state));
-			}
-			return P.createElement(Wl, q({
-				key: "single",
-				ref: Oe(this, "moveable")
-			}, d, {
-				target: g,
-				firstRenderState: f
-			}));
 		}
+		var g = c[0];
+		if (p && (p.props.groupable || p.props.individualGroupable)) {
+			var _ = ot(p.moveables || [], function(e) {
+				return e.props.target === g;
+			});
+			_ && (f = q({}, _.state));
+		}
+		return P.createElement(Wl, q({
+			key: "single",
+			ref: Oe(this, "moveable")
+		}, d, {
+			target: g,
+			firstRenderState: f
+		}));
 	}, t.prototype.componentDidMount = function() {
 		this._checkChangeTargets();
 	}, t.prototype.componentDidUpdate = function() {
@@ -9899,19 +9904,19 @@ function lu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, src: a, aFac
 	let d = (0, P.useRef)(null), f = (e, t) => {
 		r(), e.transform = t;
 	};
-	return /* @__PURE__ */ C(E, { children: [/* @__PURE__ */ C("div", {
+	return /* @__PURE__ */ _(b, { children: [/* @__PURE__ */ _("div", {
 		css: e,
 		ref: d,
 		"data-lay": i,
 		style: n,
 		onMouseDown: (e) => s(e),
 		children: [
-			l && /* @__PURE__ */ y("div", { className: ae(l) }),
-			a && !c && /* @__PURE__ */ y("img", {
+			l && /* @__PURE__ */ w("div", { className: ae(l) }),
+			a && !c && /* @__PURE__ */ w("img", {
 				src: a,
 				style: { display: "block" }
 			}),
-			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ y("img", {
+			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ w("img", {
 				src: t,
 				style: {
 					position: "absolute",
@@ -9921,7 +9926,7 @@ function lu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, src: a, aFac
 				}
 			}, `${e}_${String(a)}`) : null)
 		]
-	}), t && /* @__PURE__ */ y(cu, {
+	}), t && /* @__PURE__ */ w(cu, {
 		target: d,
 		draggable: !0,
 		throttleDrag: 1,
@@ -9998,12 +10003,12 @@ var pu = "position: fixed; background-color: #3c3225; color: white; padding: 4px
 		this.#e && (this.#e.hidden = !0);
 	}
 }();
-m();
+v();
 var hu = function(e, t) {
 	var n = arguments;
-	if (t == null || !b.call(t, "css")) return P.createElement.apply(void 0, n);
+	if (t == null || !T.call(t, "css")) return P.createElement.apply(void 0, n);
 	var r = n.length, i = Array(r);
-	i[0] = _, i[1] = p(e, t);
+	i[0] = p, i[1] = x(e, t);
 	for (var a = 2; a < r; a++) i[a] = n[a];
 	return P.createElement.apply(null, i);
 };
@@ -10012,7 +10017,7 @@ var hu = function(e, t) {
 	t ||= e.JSX ||= {};
 })(hu ||= {});
 function gu() {
-	return w([...arguments]);
+	return m([...arguments]);
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
@@ -10036,8 +10041,8 @@ function vu(e, t, n) {
 	let i = (e.scale_x ?? 1) * t.x, a = (e.scale_y ?? 1) * t.y, o = t.x !== 1 || t.y !== 1;
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || o) && (r.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(i)}, ${String(a)})`, r.transformOrigin = o ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (r.mixBlendMode = e.blendmode), e.enabled === !1 && (r.color = "gray", r.pointerEvents = "none"), r;
 }
-function yu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
-	let o = gu`
+function yu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o }) {
+	let s = gu`
 		position: relative;
 		z-index: 2;
 
@@ -10076,30 +10081,38 @@ function yu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
 		${i?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
-	`, s = (e) => {
-		e.stopPropagation(), mu.hide(), a(t, n ?? !1, r);
-	}, c = () => {
-		i?.hint && mu.show(u.current, i.hint, i.hint_style, i.hint_opt);
-	}, u = (0, P.useRef)(null);
+	`, c = (e, t) => {
+		if (i?.enabled === !1) return;
+		let n = i?.[e];
+		n && o(n, i?.[t] ?? "SYS");
+	}, u = (e) => {
+		e.stopPropagation(), mu.hide(), c("clickse", "clicksebuf"), a(t, n ?? !1, r);
+	}, d = () => {
+		i?.hint && mu.show(m.current, i.hint, i.hint_style, i.hint_opt);
+	}, f = () => {
+		d(), c("enterse", "entersebuf");
+	}, p = () => {
+		mu.hide(), c("leavese", "leavesebuf");
+	}, m = (0, P.useRef)(null);
 	(0, P.useEffect)(() => {
-		let e = u.current;
+		let e = m.current;
 		if (e) return M.add(e), () => M.remove(e);
 	}, []);
-	let [d, f] = (0, P.useState)({
+	let [h, g] = (0, P.useState)({
 		x: 1,
 		y: 1
 	});
 	(0, P.useLayoutEffect)(() => {
-		let e = u.current;
+		let e = m.current;
 		if (!e) {
-			f({
+			g({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		if (i?.pic) {
-			f({
+			g({
 				x: 1,
 				y: 1
 			});
@@ -10108,7 +10121,7 @@ function yu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		let { w: t, h: n } = _u(i), r = e.style.width, a = e.style.transform, o = e.style.whiteSpace;
 		e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
 		let s = e.offsetWidth, c = e.offsetHeight;
-		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, f({
+		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, g({
 			x: s > 0 ? t / s : 1,
 			y: c > 0 ? n / c : 1
 		});
@@ -10118,33 +10131,33 @@ function yu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a }) {
 		i?.height,
 		i?.pic
 	]);
-	let p = i?.pic ? i.src ?? "" : "", [m, h] = (0, P.useState)(null);
+	let _ = i?.pic ? i.src ?? "" : "", [v, y] = (0, P.useState)(null);
 	return (0, P.useEffect)(() => {
-		if (!p) {
-			h(null);
+		if (!_) {
+			y(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && h({
+			e && y({
 				w: t.naturalWidth / 3,
 				h: t.naturalHeight
 			});
-		}, t.src = p, () => {
+		}, t.src = _, () => {
 			e = !1;
 		};
-	}, [p]), /* @__PURE__ */ y("span", {
-		css: o,
-		style: i ? vu(i, d, m) : void 0,
-		ref: u,
+	}, [_]), /* @__PURE__ */ w("span", {
+		css: s,
+		style: i ? vu(i, h, v) : void 0,
+		ref: m,
 		tabIndex: 0,
-		onClick: s,
+		onClick: u,
 		onKeyDown: (e) => {
-			e.key !== "Enter" && e.key !== " " || (e.stopPropagation(), e.preventDefault(), a(t, n ?? !1, r));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), c("clickse", "clicksebuf"), a(t, n ?? !1, r));
 		},
-		onMouseEnter: c,
-		onMouseLeave: () => mu.hide(),
-		onFocus: c,
+		onMouseEnter: f,
+		onMouseLeave: p,
+		onFocus: d,
 		onBlur: () => mu.hide(),
 		children: e
 	});
@@ -10159,39 +10172,39 @@ var bu = {
 	scaleY: 1,
 	rotation: 0
 };
-function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, str: o, aCh: s, ffs: c, noffs: f, bura: p, b_color: m, b_alpha: h, b_alpha_isfixed: g, b_src: _, styTxt: v, enabled: b, aBtn: x, in_style: S, onActivate: w, onNavigate: T }) {
-	let D = l((e) => e.isReadBack), O = l((e) => e.styPaging), k = l((e) => e.isTyping), A = l((e) => e.setIsTyping), j = l((e) => e.skipReq), M = l((e) => e.skipping), F = l((e) => e.wait), I = l((e) => e.hChIn), L = l((e) => e.chWait), R = l((e) => e.autowc), z = (0, P.useRef)(null), B = (0, P.useRef)(null), ee = (e) => {
+function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, str: o, aCh: s, ffs: c, noffs: f, bura: p, b_color: m, b_alpha: h, b_alpha_isfixed: g, b_src: v, styTxt: y, enabled: x, aBtn: S, in_style: C, onActivate: T, onNavigate: E, onSe: D }) {
+	let O = l((e) => e.isReadBack), k = l((e) => e.styPaging), A = l((e) => e.isTyping), j = l((e) => e.setIsTyping), M = l((e) => e.skipReq), F = l((e) => e.skipping), I = l((e) => e.wait), L = l((e) => e.hChIn), R = l((e) => e.chWait), z = l((e) => e.autowc), B = (0, P.useRef)(null), ee = (0, P.useRef)(null), V = (e) => {
 		if (e.url) {
-			T(e.url);
+			E(e.url);
 			return;
 		}
-		w(e.label, e.call, e.fn, e.arg);
-	}, V = (0, P.useRef)([]), te = (0, P.useRef)([]), ne = (0, P.useRef)(null), re = (0, P.useCallback)((e) => c ? RegExp(`[　${f ?? ""}]`).test(e) ? "" : c : "", [c, f]);
+		T(e.label, e.call, e.fn, e.arg);
+	}, te = (0, P.useRef)([]), ne = (0, P.useRef)([]), re = (0, P.useRef)(null), U = (0, P.useCallback)((e) => c ? RegExp(`[　${f ?? ""}]`).test(e) ? "" : c : "", [c, f]);
 	(0, P.useLayoutEffect)(() => {
-		let e = B.current;
+		let e = ee.current;
 		if (!e) return;
-		ne.current?.kill();
-		let t = te.current, n = Math.min(t.length, s.length), r = 0;
+		re.current?.kill();
+		let t = ne.current, n = Math.min(t.length, s.length), r = 0;
 		for (; r < n && t[r].c === s[r].c && t[r].r === s[r].r && t[r].s === s[r].s && t[r].rs === s[r].rs;) ++r;
-		r < n && (V.current = [], te.current = [], e.textContent = "");
-		let i = V.current, a = Math.min(s.length, i.length);
+		r < n && (te.current = [], ne.current = [], e.textContent = "");
+		let i = te.current, a = Math.min(s.length, i.length);
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < a;) e.appendChild(i[e.childNodes.length]);
 		if (a > 0 && N.set(i.slice(0, a), bu), s.length <= i.length) {
-			A(!1);
+			j(!1);
 			return;
 		}
 		let o = s.slice(i.length), c = document.createDocumentFragment(), l = o.map((e) => {
 			let t = document.createElement("span");
-			return t.appendChild(Su(e, ee, re)), c.appendChild(t), t;
+			return t.appendChild(Su(e, V, U)), c.appendChild(t), t;
 		});
-		if (te.current = [...te.current, ...o], i.push(...l), e.appendChild(c), D || M) {
-			N.set(l, bu), A(!1);
+		if (ne.current = [...ne.current, ...o], i.push(...l), e.appendChild(c), O || F) {
+			N.set(l, bu), j(!1);
 			return;
 		}
-		let f = N.timeline({ onComplete: () => A(!1) }), p = 0, m = 0;
+		let f = N.timeline({ onComplete: () => j(!1) }), p = 0, m = 0;
 		if (l.forEach((e, t) => {
-			let n = o[t], r = I[n.cis ?? S ?? "default"] ?? u, i = n.w ?? (R.enabled ? R.h[n.c.at(0) ?? ""] ?? 0 : L);
+			let n = o[t], r = L[n.cis ?? C ?? "default"] ?? u, i = n.w ?? (z.enabled ? z.h[n.c.at(0) ?? ""] ?? 0 : R);
 			if (r.join && (p += i / 1e3), r.wait <= 0) {
 				N.set(e, bu);
 				return;
@@ -10199,40 +10212,40 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			let { from: a, to: s } = d(r);
 			f.fromTo(e, a, s, r.join ? p : 0), ++m;
 		}), m === 0) {
-			f.kill(), A(!1);
+			f.kill(), j(!1);
 			return;
 		}
-		A(!0), ne.current = f;
+		j(!0), re.current = f;
 	}, [
 		s,
-		D,
-		re,
-		S,
-		I,
+		O,
+		U,
+		C,
 		L,
-		R
+		R,
+		z
 	]), (0, P.useEffect)(() => {
-		ne.current && ne.current.progress() < 1 && ne.current.progress(1);
-	}, [j]);
-	let U = F?.src ?? "", ie = U.endsWith(".json"), [W, oe] = (0, P.useState)(void 0);
+		re.current && re.current.progress() < 1 && re.current.progress(1);
+	}, [M]);
+	let ie = I?.src ?? "", W = ie.endsWith(".json"), [oe, se] = (0, P.useState)(void 0);
 	(0, P.useEffect)(() => {
-		if (!ie) {
-			oe(void 0);
+		if (!W) {
+			se(void 0);
 			return;
 		}
 		let e = !0;
-		return H(U).then((t) => {
-			e && oe(t);
+		return H(ie).then((t) => {
+			e && se(t);
 		}), () => {
 			e = !1;
 		};
-	}, [U, ie]);
-	let se = a && !D && !k && F !== null && F.nm === i, [ce, le] = (0, P.useState)(!1);
+	}, [ie, W]);
+	let ce = a && !O && !A && I !== null && I.nm === i, [le, ue] = (0, P.useState)(!1);
 	(0, P.useLayoutEffect)(() => {
-		let e = z.current;
-		le(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
-	}, [v, n]);
-	let ue = gu`
+		let e = B.current;
+		ue(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
+	}, [y, n]);
+	let de = gu`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
@@ -10243,24 +10256,24 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
 			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
 			置いているため、向きが本文と食い違うと目立つ */
-		${ce ? "rotate: -90deg;" : ""}
-	`, de = {
-		...F?.width === void 0 ? {} : { width: `${String(F.width)}px` },
-		...F?.height === void 0 ? {} : { height: `${String(F.height)}px` },
-		...F?.x !== void 0 || F?.y !== void 0 ? { translate: `${String(F?.x ?? 0)}px ${String(F?.y ?? 0)}px` } : {}
-	}, fe = gu`
+		${le ? "rotate: -90deg;" : ""}
+	`, fe = {
+		...I?.width === void 0 ? {} : { width: `${String(I.width)}px` },
+		...I?.height === void 0 ? {} : { height: `${String(I.height)}px` },
+		...I?.x !== void 0 || I?.y !== void 0 ? { translate: `${String(I?.x ?? 0)}px ${String(I?.y ?? 0)}px` } : {}
+	}, pe = gu`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-		${b ? "" : "pointer-events: none;"}
-	`, { display: pe, opacity: me, mixBlendMode: he, filter: ge } = n, _e = {
-		...pe === void 0 ? {} : { display: pe },
-		...me === void 0 ? {} : { opacity: me },
-		...he === void 0 ? {} : { mixBlendMode: he },
-		...ge === void 0 ? {} : { filter: ge }
-	}, ve = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, ye = x.filter((e) => !ve(e)), be = x.filter(ve), xe = gu`
-		${b ? "" : "pointer-events: none;"}
-	`, { r: Se, g: Ce, b: we } = Tu(m), Te = l((e) => e.backAlpha), Ee = h * (g ? 1 : Te), De = Ee === 0 || o.length === 0 && m === void 0 && !_, Oe = gu`
+		${x ? "" : "pointer-events: none;"}
+	`, { display: me, opacity: he, mixBlendMode: ge, filter: _e } = n, ve = {
+		...me === void 0 ? {} : { display: me },
+		...he === void 0 ? {} : { opacity: he },
+		...ge === void 0 ? {} : { mixBlendMode: ge },
+		..._e === void 0 ? {} : { filter: _e }
+	}, ye = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, be = S.filter((e) => !ye(e)), xe = S.filter(ye), Se = gu`
+		${x ? "" : "pointer-events: none;"}
+	`, { r: Ce, g: we, b: Te } = Tu(m), Ee = l((e) => e.backAlpha), De = h * (g ? 1 : Ee), Oe = De === 0 || o.length === 0 && m === void 0 && !v, ke = gu`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10270,17 +10283,17 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${De || _ ? "transparent" : `rgba(${Se}, ${Ce}, ${we}, ${Ee})`};
-		border: ${De || _ ? "none" : "dotted 6px #ffa500"};
-		${_ ? `
+		background-color: ${Oe || v ? "transparent" : `rgba(${Ce}, ${we}, ${Te}, ${De})`};
+		border: ${Oe || v ? "none" : "dotted 6px #ffa500"};
+		${v ? `
 		&::before {
 			content: '';
 			position: absolute;
 			left: 0; top: 0; right: 0; bottom: 0;
-			background-image: url(${JSON.stringify(_)});
+			background-image: url(${JSON.stringify(v)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${Ee};
+			opacity: ${De};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10299,16 +10312,16 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
 			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
 			クリックはステージへ抜けるので、読み進め自体は止まらない */
-		${b ? "" : "pointer-events: none;"}
+		${x ? "" : "pointer-events: none;"}
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
-		${v ?? ""}
+		${y ?? ""}
 
 		/* 読み戻り中の見た目（[page style=…]。既定は本家 INI_STYPAGE と同じ黄色＋黒フチ）。
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
-		${D ? O : ""}
-	`, ke = gu`
+		${O ? k : ""}
+	`, Ae = gu`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10368,93 +10381,95 @@ function xu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [Ae, je] = (0, P.useState)("");
-	(0, P.useEffect)(() => je(o), [o]);
-	let Me = (0, P.useRef)(null), Ne = (e, t) => {
+	`, [je, Me] = (0, P.useState)("");
+	(0, P.useEffect)(() => Me(o), [o]);
+	let Ne = (0, P.useRef)(null), Pe = (e, t) => {
 		r(), e.transform = t;
 	};
-	return /* @__PURE__ */ C(E, { children: [
-		/* @__PURE__ */ C("span", {
-			css: [e, Oe],
-			ref: z,
+	return /* @__PURE__ */ _(b, { children: [
+		/* @__PURE__ */ _("span", {
+			css: [e, ke],
+			ref: B,
 			"data-lay": i,
 			style: n,
-			children: [/* @__PURE__ */ y("span", { ref: B }), se && /* @__PURE__ */ y("span", {
-				css: ue,
-				style: de,
-				children: W ? /* @__PURE__ */ y("span", { className: ae(W) }) : U && !ie ? /* @__PURE__ */ y("img", {
-					src: U,
+			children: [/* @__PURE__ */ w("span", { ref: ee }), ce && /* @__PURE__ */ w("span", {
+				css: de,
+				style: fe,
+				children: oe ? /* @__PURE__ */ w("span", { className: ae(oe) }) : ie && !W ? /* @__PURE__ */ w("img", {
+					src: ie,
 					style: {
 						verticalAlign: "text-bottom",
-						...F.width !== void 0 || F.height !== void 0 ? {
+						...I.width !== void 0 || I.height !== void 0 ? {
 							width: "100%",
 							height: "100%"
 						} : {}
 					}
-				}) : F.kind === "l" ? "🩷" : "✅"
+				}) : I.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		ye.length > 0 && /* @__PURE__ */ y("span", {
-			css: [e, fe],
+		be.length > 0 && /* @__PURE__ */ w("span", {
+			css: [e, pe],
 			"data-lay": i,
-			style: _e,
-			children: ye.map((e) => /* @__PURE__ */ y(yu, {
+			style: ve,
+			children: be.map((e) => /* @__PURE__ */ w(yu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: w
+				onActivate: T,
+				onSe: D
 			}, e.nm))
 		}),
-		be.length > 0 && /* @__PURE__ */ y("span", {
-			css: [e, xe],
+		xe.length > 0 && /* @__PURE__ */ w("span", {
+			css: [e, Se],
 			"data-lay": i,
-			style: _e,
-			children: be.map((e) => /* @__PURE__ */ y(yu, {
+			style: ve,
+			children: xe.map((e) => /* @__PURE__ */ w(yu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: w
+				onActivate: T,
+				onSe: D
 			}, e.nm))
 		}),
-		t && /* @__PURE__ */ y(cu, {
-			target: z,
+		t && /* @__PURE__ */ w(cu, {
+			target: B,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => Ne(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Pe(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				Ne(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				Pe(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => Ne(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => Pe(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				Ne(e, n), e.transformOrigin = t;
+				Pe(e, n), e.transformOrigin = t;
 			}
 		}),
-		t && /* @__PURE__ */ C(E, { children: [/* @__PURE__ */ C("label", {
-			css: ke,
-			ref: Me,
-			children: ["テキスト入力", /* @__PURE__ */ y("textarea", {
+		t && /* @__PURE__ */ _(b, { children: [/* @__PURE__ */ _("label", {
+			css: Ae,
+			ref: Ne,
+			children: ["テキスト入力", /* @__PURE__ */ w("textarea", {
 				rows: 3,
-				value: Ae,
-				onChange: (e) => je(e.target.value)
+				value: je,
+				onChange: (e) => Me(e.target.value)
 			})]
-		}), /* @__PURE__ */ y(cu, {
-			target: Me,
+		}), /* @__PURE__ */ w(cu, {
+			target: Ne,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => Ne(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Pe(e, t),
 			preventDefault: !1
 		})] })
 	] });
@@ -10518,16 +10533,16 @@ function Ou(e, t = Eu) {
 //#endregion
 //#region src/components/Stage.tsx
 function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next: d }) {
-	let p = l((e) => e.aPage), m = l((e) => e.foreIdx), h = l((e) => e.trans), g = (0, P.useRef)(null), _ = (0, P.useRef)(null), v = [g, _], b = (0, P.useRef)(null), S = (0, P.useRef)(null);
+	let p = l((e) => e.aPage), m = l((e) => e.foreIdx), h = l((e) => e.trans), g = (0, P.useRef)(null), v = (0, P.useRef)(null), y = [g, v], x = (0, P.useRef)(null), C = (0, P.useRef)(null);
 	(0, P.useEffect)(() => {
-		if (b.current?.kill(), b.current = null, !h) {
-			N.set([g.current, _.current].filter((e) => e !== null), { opacity: 1 });
+		if (x.current?.kill(), x.current = null, !h) {
+			N.set([g.current, v.current].filter((e) => e !== null), { opacity: 1 });
 			return;
 		}
-		let e = v[m].current;
+		let e = y[m].current;
 		if (!e) return;
 		if (!h.ruleSrc) {
-			b.current = N.to(e, {
+			x.current = N.to(e, {
 				opacity: 0,
 				duration: h.time / 1e3,
 				ease: "none"
@@ -10535,32 +10550,32 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 			return;
 		}
 		let t = (e) => {
-			let t = S.current;
+			let t = C.current;
 			if (!t) return;
 			let { slope: n, intercept: r } = Ou(e, h.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
 		let n = { tick: 0 };
-		b.current = N.to(n, {
+		x.current = N.to(n, {
 			tick: 1,
 			duration: h.time / 1e3,
 			ease: "none",
 			onUpdate: () => t(n.tick)
 		});
 	}, [h]);
-	let w = l((e) => e.quake), D = (0, P.useRef)(null);
+	let T = l((e) => e.quake), D = (0, P.useRef)(null);
 	(0, P.useEffect)(() => {
 		D.current?.kill(), D.current = null;
-		let e = [g.current, _.current].filter((e) => e !== null);
-		if (!w) {
+		let e = [g.current, v.current].filter((e) => e !== null);
+		if (!T) {
 			N.set(e, {
 				x: 0,
 				y: 0
 			});
 			return;
 		}
-		let { hmax: t, vmax: n } = w;
+		let { hmax: t, vmax: n } = T;
 		D.current = N.to({ v: 0 }, {
 			v: 1,
 			duration: 3600,
@@ -10572,7 +10587,7 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 				});
 			}
 		});
-	}, [w]);
+	}, [T]);
 	let [O, k] = (0, P.useState)(ju());
 	te(() => {
 		function e() {
@@ -10652,7 +10667,7 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 	});
 	let [oe, se] = I(!1);
 	V((e) => {
-		e.stopPropagation(), x(), !f() && (se(), T(!oe));
+		e.stopPropagation(), S(), !f() && (se(), E(!oe));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
@@ -10673,36 +10688,36 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 			transform: "translate(0px, 0px) rotate(0deg)"
 		}
 	} };
-	return /* @__PURE__ */ C("div", {
+	return /* @__PURE__ */ _("div", {
 		css: re,
 		onClick: r,
 		ref: L,
 		children: [
-			h?.ruleSrc && /* @__PURE__ */ y("svg", {
+			h?.ruleSrc && /* @__PURE__ */ w("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ C("defs", { children: [/* @__PURE__ */ C("filter", {
+				children: /* @__PURE__ */ _("defs", { children: [/* @__PURE__ */ _("filter", {
 					id: "sn_rule_flt",
 					colorInterpolationFilters: "sRGB",
-					children: [/* @__PURE__ */ y("feColorMatrix", {
+					children: [/* @__PURE__ */ w("feColorMatrix", {
 						type: "matrix",
 						values: "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"
-					}), /* @__PURE__ */ y("feComponentTransfer", { children: /* @__PURE__ */ y("feFuncA", {
-						ref: S,
+					}), /* @__PURE__ */ w("feComponentTransfer", { children: /* @__PURE__ */ w("feFuncA", {
+						ref: C,
 						type: "linear",
 						slope: "1",
 						intercept: "0"
 					}) })]
-				}), /* @__PURE__ */ y("mask", {
+				}), /* @__PURE__ */ w("mask", {
 					id: "sn_rule_msk",
 					maskUnits: "userSpaceOnUse",
 					x: "0",
 					y: "0",
 					width: M,
 					height: F,
-					children: /* @__PURE__ */ y("image", {
+					children: /* @__PURE__ */ w("image", {
 						href: h.ruleSrc,
 						x: "0",
 						y: "0",
@@ -10713,46 +10728,46 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 					})
 				})] })
 			}),
-			ce.length > 0 && /* @__PURE__ */ y("svg", {
+			ce.length > 0 && /* @__PURE__ */ w("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ y("defs", { children: ce.map((e) => /* @__PURE__ */ y("filter", {
+				children: /* @__PURE__ */ w("defs", { children: ce.map((e) => /* @__PURE__ */ w("filter", {
 					id: c(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
 					y: "0",
 					width: "100%",
 					height: "100%",
-					children: /* @__PURE__ */ y("feColorMatrix", {
+					children: /* @__PURE__ */ w("feColorMatrix", {
 						type: "matrix",
 						values: o(e)
 					})
 				}, c(e))) })
 			}),
-			oe && /* @__PURE__ */ C(E, { children: [
-				/* @__PURE__ */ y("button", {
+			oe && /* @__PURE__ */ _(b, { children: [
+				/* @__PURE__ */ w("button", {
 					onClick: () => ee(),
 					css: W,
 					children: "FullScr"
 				}),
-				/* @__PURE__ */ y("button", {
+				/* @__PURE__ */ w("button", {
 					onClick: () => {},
 					css: W,
 					children: "Back"
 				}),
-				/* @__PURE__ */ y("button", {
+				/* @__PURE__ */ w("button", {
 					onClick: () => {},
 					css: W,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ y("span", { children: ne }),
+			/* @__PURE__ */ w("span", { children: ne }),
 			p.map((e, t) => {
 				let r = h?.aLayNm && t !== m ? e.map((e) => h.aLayNm.includes(e.nm) ? e : p[m].find((t) => t.nm === e.nm) ?? e) : e;
-				return /* @__PURE__ */ y("div", {
-					ref: v[t],
+				return /* @__PURE__ */ w("div", {
+					ref: y[t],
 					"data-page": t === m ? "fore" : "back",
 					css: ie,
 					style: {
@@ -10766,14 +10781,14 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 							...le.cmn.sty4Moveable,
 							...i(e)
 						};
-						return e.cls === "grp" ? /* @__PURE__ */ y(lu, {
+						return e.cls === "grp" ? /* @__PURE__ */ w(lu, {
 							cmn: le.cmn,
 							sty: r,
 							nm: e.nm,
 							fn: e.fn,
 							src: e.src,
 							aFace: e.aFace
-						}, e.nm) : /* @__PURE__ */ y(xu, {
+						}, e.nm) : /* @__PURE__ */ w(xu, {
 							cmn: le.cmn,
 							sty: r,
 							nm: e.nm,
@@ -10792,12 +10807,13 @@ function ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: u, next:
 							aBtn: e.aBtn,
 							in_style: e.in_style,
 							onActivate: (e, t, r, i) => n.jumpToLabelAndGo(e, t, r, i),
-							onNavigate: (e) => n.navigateTo(e)
+							onNavigate: (e) => n.navigateTo(e),
+							onSe: (e, t) => n.playButtonSe(e, t)
 						}, e.nm);
 					})
 				}, t);
 			}),
-			/* @__PURE__ */ y("div", {
+			/* @__PURE__ */ w("div", {
 				ref: ae,
 				css: U
 			})

@@ -164,6 +164,34 @@ it('btn_textOrPicIsRequired', ()=> {
 	expect(()=> acts('[button pic=btn_ok label=*a]')).not.toThrow();
 });
 
+// ============ 効果音（[button clickse=/enterse=/leavese=]）============
+//	本家 EventMng.ts:465-491。実際に鳴らす（ScriptMng.playButtonSe()経由）のはBtnLayer.tsxの
+//	クリック・マウスの乗り降りなのでE2E側（button.e2e.ts）。エンジンは論理ファイル名を運ぶだけ
+
+it('btnSe_clickse', ()=> {
+	expect(styOf('[button text=x label=*a clickse=ok]')).toEqual({...DEF, clickse: 'ok', clicksebuf: 'SYS'});
+});
+it('btnSe_bufDefaultsToSYS', ()=> {
+	// bufの既定は'SYS'（本家 EventMng.ts:466,475,484）。[playse]自体の既定'SE'とは別
+	expect(styOf('[button text=x label=*a enterse=hover]')).toMatchObject({entersebuf: 'SYS'});
+	expect(styOf('[button text=x label=*a leavese=bye]')).toMatchObject({leavesebuf: 'SYS'});
+});
+it('btnSe_bufOverridable', ()=> {
+	expect(styOf('[button text=x label=*a clickse=ok clicksebuf=BGM]')).toMatchObject({clicksebuf: 'BGM'});
+});
+it('btnSe_omittedWhenNoFile', ()=> {
+	// clickse等を書かなければ、対応するbuf属性（既定値含め）も一切積まない
+	//	（sty自体に余計なキーを持たせない。[lay]と同じ「書かれた属性だけ」の流儀）
+	const sty = styOf('[button text=x label=*a]') as Record<string, unknown>;
+	expect('clickse' in sty).toBe(false);
+	expect('clicksebuf' in sty).toBe(false);
+});
+it('btnSe_allThree', ()=> {
+	expect(styOf('[button text=x label=*a clickse=c enterse=e leavese=l]')).toEqual({
+		...DEF, clickse: 'c', clicksebuf: 'SYS', enterse: 'e', entersebuf: 'SYS', leavese: 'l', leavesebuf: 'SYS',
+	});
+});
+
 it('btn_bPicKeepsText', ()=> {
 	// b_picは文字の背後に敷く絵（本家 Button.ts:249）。文字は消えない
 	const a = btn('[button b_pic=waku text=おす label=*a]');
