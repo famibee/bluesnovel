@@ -43,7 +43,8 @@ test('傍点`《*》`は1文字ずつに圏点（既定ヽ）が付く', async (
 	await pressKey(page, 'Space');
 
 	expect(await mesStr(page)).toBe('漢字は親文字と傍点');
-	// 傍点は親文字1つごとに1ルビ。位置指定（center｜）は落として文字だけを出す
+	// 傍点は親文字1つごとに1ルビ。位置指定（center｜）はr_alignとして分離されるが、
+	//	rtの文字自体（textContent）には出ないのでこの見え方は変わらない
 	expect(await aRuby(page)).toEqual(['漢字:かんじ', '親文字:おやもじ', '傍:ヽ', '点:ヽ']);
 });
 
@@ -136,6 +137,63 @@ test('[link url=…]はジャンプせずURLを開く', async ({page})=> {
 	expect(popup.url()).toBe('https://example.com/');
 	await popup.close();
 	expect(await mesStr(page)).toBe('そと');	// シナリオは止まったまま（ジャンプしない）
+});
+
+// 上の[link url=…]のシーンから続けて進む共通手順
+const gotoSesame = async (page: import('@playwright/test').Page)=> {
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	await page.getByText('リ', {exact: true}).click();
+	await waitIdle(page);
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// あ・い→そと→傍点
+	await page.mouse.move(0, 0);	// 直前のクリックでマウスが残った位置に次のシーンの要素が来て、
+		//	意図せずhover扱いになるのを防ぐ
+};
+
+test('[lay sesame=…]で傍点の文字を変更できる', async ({page})=> {
+	await gotoSesame(page);
+
+	expect(await mesStr(page)).toBe('傍点');
+	expect(await aRuby(page)).toEqual(['傍:★', '点:★']);
+});
+
+test('[lay r_align=…]はレイヤ既定のルビ位置になり、記法内指定（`位置｜ルビ`）が優先される', async ({page})=> {
+	await gotoSesame(page);
+	await pressKey(page, 'Space');	// r_alignのシーンへ
+
+	expect(await mesStr(page)).toBe('永蜊');
+	const aAlign = await page.$$eval(`${SEL_FORE} span[data-lay="mes"] ruby rt`,
+		aEl=> aEl.map(el=> getComputedStyle(el).textAlign));
+	// 永＝レイヤ既定（[lay r_align=center]）、蜊＝ルビ記法内指定（left）が優先される
+	expect(aAlign).toEqual(['center', 'left']);
+});
+
+test('[link]のstyle_hover/style_clicked/r_style_hover/r_style_clickedが実際の色になる', async ({page})=> {
+	await gotoSesame(page);
+	await pressKey(page, 'Space');	// r_alignのシーンへ
+	await pressKey(page, 'Space');	// linkのシーンへ
+
+	expect(await mesStr(page)).toBe('蜊');
+	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`);
+	const rt = page.locator(`${SEL_FORE} span[data-lay="mes"] ruby rt`);
+
+	// 素の状態：style／r_style
+	expect(await el.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(0, 0, 255)');
+	expect(await rt.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(0, 0, 128)');
+
+	// ホバー：style_hover／r_style_hover（r_style_hoverは省略なのでstyle_hoverの値へ落ちる）
+	await el.hover();
+	expect(await el.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(0, 255, 0)');
+	expect(await rt.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(0, 255, 0)');
+
+	// 押し下げ：style_clicked／r_style_clicked（本文DOMをReactの外で直接組むため:activeが
+	//	使えず、mousedown〜mouseupの間だけ乗せる実装。本家 #mkStyle_r_align() 相当）
+	await page.mouse.down();
+	expect(await el.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(255, 0, 0)');
+	expect(await rt.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(128, 0, 0)');
+
+	await page.mouse.up();
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('とどいた');	// クリックとして扱われジャンプする
 });
 
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {

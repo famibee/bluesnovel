@@ -189,6 +189,14 @@
   - `test/ScriptEngine.test.ts`に`[log]`のAction発行を検証する3件を追加。ユニット1495件→1498件、E2E新規2件。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
   - `docs/tag.html`の`[log]`エントリを🟢実装済みへ更新、`todo.md`から該当項目を削除
 
+- [x] **傍点文字の変更（`[lay sesame=]`）・ルビ位置指定（`[lay r_align=]`）・`[link]`のクリック中スタイルを実装**（2026-08-09）
+  - `[lay sesame=]`は`RubySpliter.setting()`が実装済みなのに配線されていなかっただけ（本家 `TxtLayer.ts:303`）。`ScriptEngine.ts`の`case 'lay'`から呼ぶだけで済んだ
+  - `r_align`は本家`TxtLayer.ts:504-555`の`#mkStyle_r_align()`/`#mkStyle_r_align4ff()`を移植。8種（`left`/`center`/`right`/`start`/`justify`/`121`/`even`/`1ruby`）とSafari／Firefox分岐は忠実に踏襲したが、**縦書き判定はJS側で持たずCSS論理プロパティ（`padding-inline`等）へ寄せた**のが相違点：本家は物理プロパティ＋DOM実測の縦書きフラグで左右/上下を出し分けるが、こちらは`useLayoutEffect`が2本あるため実測結果が1レンダー遅れて反映される構造上の問題があり（縦書きレイヤの初回マウントで誤った向きのCSSがDOMに固まりうる）、論理プロパティにすれば判定自体が要らずこの問題を避けられる。ルビ記法内の位置指定（`｜蜊《left｜あさり》`）は`Txt.ts`の`splitRubyAlign()`で`T_CH.ra`へ分離し、`[lay r_align=]`（レイヤ既定）より優先させた。**`rubyTxt()`は`splitRubyAlign()`に統合して削除**（`Log.ts`・`TxtLayer.tsx`の呼び出し側も`v.r`を直接使う形に整理）
+  - `[link]`の`style_clicked`/`r_style_hover`/`r_style_clicked`。本文DOMをReactの外で直接組む都合上CSSの`:active`が使えないため、`mousedown`で乗せ`mouseup`／`mouseleave`で戻す実装（`[button]`の`&:active`とは別のアプローチが要った）。省略時のフォールバックは`docs/tag.html`の仕様どおり：`style_clicked`省略時は追加CSSなし、`r_style_hover`省略時は`style_hover`の値、`r_style_clicked`省略時は`r_style`の値
+  - `r_size`（ルビサイズ）は調べたところ**本家にも`docs/tag.html`にも存在しない属性**だった。`r_style="font-size:…"`で同じことができるため専用属性は追加せず、`todo.md`に代替手段を明記して整理
+  - テスト：`test/Txt.test.ts`に`splitRubyAlign()`・傍点分離・`[link]`新属性のフォールバックを検証する追加（`rubyTxt_dropsAlign`は`splitRubyAlign`のテストへ差し替え）。E2Eは`test/e2e/app/prj_ruby/main.sn`にシーンを追加（末尾の`[s]`を`[l]`にしてクリックで先へ進めるよう変更）、`ruby.e2e.ts`に新規3件（`sesame`・`r_align`の優先順位・`[link]`4状態の実色）。ユニット1498件→1499件、E2E12件（同ファイル内、新規3件）。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
+  - `docs/tag.html`の`[link]`エントリと`[lay]`の文字組み説明を更新、`todo.md`から該当3項目を削除
+
 - [ ]
 
 

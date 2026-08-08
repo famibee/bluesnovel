@@ -7,9 +7,9 @@
       "Bash(mv PITFALLS.md .claude/docs/PITFALLS.md)",
       "Bash(mv TESTING.md .claude/docs/TESTING.md)",
       "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)",
-      "Bash(python3 -c ' *)",
       "Bash(grep -v \"\\\\.ts$\\\\|\\\\.html$\")",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(python3 *)"
     ],
     "additionalDirectories": [
       "/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/src/components"

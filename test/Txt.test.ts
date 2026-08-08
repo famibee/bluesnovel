@@ -10,7 +10,7 @@
 //	ここで見るのは移植先の都合＝「表示単位の配列にどう受け直すか」と、
 //	[span]/[ch]が本文ストリームへ埋め込んだ命令の解釈（本家 LayerMng.ts:315 #cmdTxt 相当）。
 
-import {plainTxt, rubyTxt, splitCh} from '../src/ts/Txt';
+import {plainTxt, splitCh, splitRubyAlign} from '../src/ts/Txt';
 
 import {expect, it} from 'bun:test';
 
@@ -29,9 +29,9 @@ it('splitCh_ruby', ()=> {
 });
 
 it('splitCh_sesame', ()=> {
-	// 傍点は1文字ずつに付く。位置指定`center｜`が付いた形で来る
+	// 傍点は1文字ずつに付く。位置指定`center｜`はraへ分離され、rはルビ文字だけになる
 	expect(splitCh('｜傍点《*》')).toEqual([
-		{c: '傍', r: 'center｜ヽ'}, {c: '点', r: 'center｜ヽ'},
+		{c: '傍', r: 'ヽ', ra: 'center'}, {c: '点', r: 'ヽ', ra: 'center'},
 	]);
 });
 
@@ -40,11 +40,11 @@ it('plainTxt_dropsRuby', ()=> {
 	expect(plainTxt('｜奇天烈《きてれつ》大百科')).toBe('奇天烈大百科');
 });
 
-it('rubyTxt_dropsAlign', ()=> {
-	// ルビの位置指定は未対応なので落とす（ルビ文字だけを返す）
-	expect(rubyTxt('center｜ヽ')).toBe('ヽ');
-	expect(rubyTxt('あさり')).toBe('あさり');
-	expect(rubyTxt('｜あさり')).toBe('｜あさり');	// 位置指定の形でなければそのまま
+it('splitRubyAlign_splitsAlignFromRuby', ()=> {
+	expect(splitRubyAlign('center｜ヽ')).toEqual({ra: 'center', ruby: 'ヽ'});
+	expect(splitRubyAlign('あさり')).toEqual({ruby: 'あさり'});
+	expect(splitRubyAlign('｜あさり')).toEqual({ruby: '｜あさり'});	// 位置指定の形でなければそのまま
+	expect(splitRubyAlign('dummy｜あさり')).toEqual({ruby: 'dummy｜あさり'});	// 8種以外は位置指定と見なさない
 });
 
 // ===== 埋め込み命令 =====
@@ -124,8 +124,17 @@ it('splitCh_linkStyleIsDroppedAtEndlink', ()=> {
 });
 
 it('splitCh_linkCallAndArg', ()=> {
+	// r_style_hover省略時はstyle_hoverの値へ落ちる（tag.html仕様）
 	expect(splitCh(`${cmd('link', {fn: 'sub', label: '*g', call: 'true', arg: 'x', style_hover: 'color: lime;'})}あ${cmd('endlink', {})}`))
-		.toEqual([{c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x', sh: 'color: lime;'}}]);
+		.toEqual([{c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x', sh: 'color: lime;', rsh: 'color: lime;'}}]);
+});
+
+it('splitCh_linkClickedStyles', ()=> {
+	// style_clicked省略時は追加CSSなし（tag.html「省略時：styleの値」＝クリックしても見た目が変わらない）。
+	//	r_style_clicked省略時はr_styleの値へ落ちる
+	expect(splitCh(`${cmd('link', {fn: 'sub', label: '*g', style: 'color: red;', r_style: 'color: blue;', style_clicked: 'color: gold;'})}あ${cmd('endlink', {})}`))
+		.toEqual([{c: 'あ', s: 'color: red;', rs: 'color: blue;',
+			lnk: {label: '*g', fn: 'sub', call: false, arg: '', sc: 'color: gold;', rsc: 'color: blue;'}}]);
 });
 
 it('splitCh_cmdIsNotCountedAsPlainText', ()=> {
@@ -134,6 +143,7 @@ it('splitCh_cmdIsNotCountedAsPlainText', ()=> {
 });
 
 it('splitCh_rubyAlignIsNotACmd', ()=> {
-	// ルビの位置指定は命令と同じ`名前｜値`の形。コマンド名でないのでルビのまま
-	expect(splitCh('｜蜊《left｜あさり》')).toEqual([{c: '蜊', r: 'left｜あさり'}]);
+	// ルビの位置指定は命令と同じ`名前｜値`の形。コマンド名でないのでルビとして扱われ、
+	//	位置指定（left）とルビ文字はraとrへ分離される
+	expect(splitCh('｜蜊《left｜あさり》')).toEqual([{c: '蜊', r: 'あさり', ra: 'left'}]);
 });

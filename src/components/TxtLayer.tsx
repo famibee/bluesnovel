@@ -8,9 +8,10 @@
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
 import {CH_IN_DEF, chInTween} from '../ts/ChStyle';
-import {type T_CH, type T_LNK, rubyTxt} from '../ts/Txt';
+import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 import {hintMng} from '../ts/Hint';
+import {CmnLib} from '../sn/CmnLib';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
@@ -79,6 +80,7 @@ type T_TXTARG = T_LAY_CMN & {
 	ffs?	: string | undefined;	// [lay ffs=…]。文字詰め（font-feature-settingsの値）
 	noffs?	: string | undefined;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean | undefined;	// [lay bura=…]。ぶら下げ禁則
+	r_align?: T_R_ALIGN | undefined;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
@@ -97,13 +99,13 @@ const CH_END = {opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0};
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
 	// 文字出現・消去演出の名前（[lay in_style=/out_style=]）。定義そのものはストアの hChIn/hChOut
 	in_style?: string; out_style?: string};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -182,7 +184,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const frag = document.createDocumentFragment();
 		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
-			s.appendChild(elCh(ch, onLink, fncFfs, onSe));
+			s.appendChild(elCh(ch, r_align, onLink, fncFfs, onSe));
 			frag.appendChild(s);
 			return s;
 		});
@@ -520,8 +522,39 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）
-function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_LINK, fncFfs: (c: string)=> string,
-	onSe: (fn: string, buf: string)=> void): Node {
+function styRAlign(ch: string, rb: string, r_align: T_R_ALIGN): string {
+	const len = ch.length * 2;
+	if (len - rb.length < 0) return `text-align: ${r_align};`;
+
+	if (CmnLib.isFirefox) switch (r_align) {
+	case 'left':	return 'ruby-align: start;';
+	case 'center':	return 'ruby-align: center;';
+	case 'right':	return 'ruby-align: start;';	// 本家同様エレガントにサポートできていない
+	case 'justify':	return 'ruby-align: space-between;';
+	case '121':		return 'ruby-align: space-around;';
+	case 'even':	return `ruby-align: space-between; padding-inline: ${
+		String((len - rb.length) / (rb.length + 1))}em;`;
+	case '1ruby':	return 'ruby-align: space-between; padding-inline: 1em;';
+	default:		return `text-align: ${r_align};`;
+	}
+
+	const pd = (v: string)=> CmnLib.isSafari
+		? `text-align: start; inline-size: ${String(len)}em; padding-inline: ${v};`
+		: `text-align: justify; text-align-last: justify; padding-inline: ${v};`;
+	switch (r_align) {
+	case 'justify':	return pd('0');
+	case '121':		return pd(`calc(${String((len - rb.length) / (rb.length * 2))}em)`);
+	case 'even':	return pd(`calc(${String((len - rb.length) / (rb.length + 1))}em)`);
+	case '1ruby':	return pd('1em');
+	default:		return `text-align: ${r_align};`;
+	}
+}
+
+// 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。
+//	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）。
+//	r_alignは[lay r_align=]の既定値（記法内指定chのraがあればそちらが勝つ。本家も同じ優先順位）
+function elCh({c, r, ra, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, r_align: T_R_ALIGN | undefined,
+	onLink: T_ON_LINK, fncFfs: (c: string)=> string, onSe: (fn: string, buf: string)=> void): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
 	const ffs = fncFfs(c);
 	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs && ! src) return txt(c);
@@ -545,13 +578,16 @@ function elCh({c, r, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, onLink: T_ON_L
 		if (base !== el) el.appendChild(base);
 	}
 
+	let rt: HTMLElement | undefined;
 	if (r !== undefined) {
-		const rt = document.createElement('rt');
-		if (rs) rt.style.cssText = rs;
-		rt.textContent = rubyTxt(r);
+		rt = document.createElement('rt');
+		const align = ra ?? r_align;
+		// 位置指定由来のCSSが先、r_styleが後（後勝ち。本家 #mkStyle_r_align() の引数順と同じ）
+		rt.style.cssText = (align ? styRAlign(c, r, align) : '') + (rs ?? '');
+		rt.textContent = r;
 		el.appendChild(rt);
 	}
-	if (lnk) mkLink(el, lnk, s ?? '', onLink, onSe);
+	if (lnk) mkLink(el, lnk, s ?? '', rt, rs ?? '', onLink, onSe);
 	return el;
 }
 
@@ -586,7 +622,8 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 // [link]区間の1単位をクリックできるようにする。
 //	**Reactの外で作るDOM**（文字送り演出のためTxtLayerが直接組み立てている）なので、
 //	BtnLayerのようなJSXではなくここでリスナを付ける。読み進めへ伝播させない点は同じ
-function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK, onSe: (fn: string, buf: string)=> void) {
+function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | undefined, rSty: string,
+	onLink: T_ON_LINK, onSe: (fn: string, buf: string)=> void) {
 	el.style.cursor = 'pointer';
 	el.addEventListener('click', e=> {
 		e.stopPropagation();	// クリックで本文も進む、の二重反応を防ぐ（BtnLayerと同じ）
@@ -599,14 +636,31 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, onLink: T_ON_LINK, onS
 	//	CSSのpointer-events:noneでイベント自体が来ないので、ここでの判定は不要）
 	el.addEventListener('mouseenter', ()=> {
 		if (lnk.sh) el.style.cssText = sty + lnk.sh;
+		if (rt && lnk.rsh) rt.style.cssText = rSty + lnk.rsh;
 		if (lnk.hint) hintMng.show(el, lnk.hint, lnk.hs, lnk.ho);
 		if (lnk.enterse) onSe(lnk.enterse, lnk.entersebuf ?? 'SYS');
 	});
 	el.addEventListener('mouseleave', ()=> {
 		if (lnk.sh) {el.style.cssText = sty; el.style.cursor = 'pointer'}
+		if (rt && lnk.rsh) rt.style.cssText = rSty;
 		hintMng.hide();
 		if (lnk.leavese) onSe(lnk.leavese, lnk.leavesebuf ?? 'SYS');
 	});
+	// 押し下げ中（style_clicked/r_style_clicked）。CSSの:activeが素直に使えない
+	//	（本文DOMをReactの外で直接組むため、BtnLayerのようなemotionの&:activeが書けない）ので、
+	//	mousedownで乗せ、mouseup／mouseleaveでホバー状態（乗っていればsh、居なければsty）へ戻す
+	if (lnk.sc || lnk.rsc) {
+		const restore = ()=> {
+			if (lnk.sc) {el.style.cssText = lnk.sh ? sty + lnk.sh : sty; el.style.cursor = 'pointer'}
+			if (rt && lnk.rsc) rt.style.cssText = lnk.rsh ? rSty + lnk.rsh : rSty;
+		};
+		el.addEventListener('mousedown', ()=> {
+			if (lnk.sc) el.style.cssText = sty + lnk.sc;
+			if (rt && lnk.rsc) rt.style.cssText = rSty + lnk.rsc;
+		});
+		el.addEventListener('mouseup', restore);
+		el.addEventListener('mouseleave', restore);
+	}
 }
 
 // [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）

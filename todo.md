@@ -17,24 +17,6 @@
 
 ## タグ・変数の残り
 
-- [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
-- [ ] 【凍結】`[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
-- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
-- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
-  - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
-  - [ ] `[add_filter blendmode=…]`（フィルター単位のブレンド）・`[lay blur_x=/blur_y=]`（CSSの`blur()`は半径1つしか持てない）
-  - [ ] ギャラリーの`filter`サンプルと実機で見比べ、色の出方が本家と揃っているか確認（pixiはシェーダ、こちらはSVGフィルタなので端の丸めが違いうる）
-- [ ] **文字組みの残り**
-  - [ ] `max_row`（最大行数を超えたら自動改ページ）・`r_size`（ルビサイズ）・`break_fixed`系。**行分割そのものはブラウザ任せ**にした帰結で、禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）も渡す手段が無い。ギャラリーの`line_breaking_rules`と実機で見比べ、必要なら本家`Hyphenation.ts`のような自前計算へ寄せる
-  - [ ] `bura`はChromeが`hanging-punctuation`未対応なので実質Safariのみ効く
-  - [ ] ルビの位置指定（`《center｜るび》`等の`r_align`。今は指定を落としてルビ文字だけ出す）と`[lay sesame=…]`（傍点文字の変更）
-  - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
-  - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
-  - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）
-  - [ ] `[link]`の残り：`global`・`onenter`/`onleave`・`style_clicked`/`r_style_hover`/`r_style_clicked`
-- [ ] **アニメpng（スプライトシート）の残り**
-  - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
-  - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
 - [ ] **`[button]`の残り**：配置属性（`center`/`middle`/`right`/`bottom`/`s_right`/`s_bottom`）が未対応（本家側もこの機構は未配線のデッドコードで参照実装が無いため、自前設計が必要）。`pic=`（画像ボタン）・`b_pic=`（背景画像、箱は絵の実寸へ拡大）・効果音（`clickse`/`enterse`/`leavese`）・`hint_opt`（`placement`＋画面端はみ出し対応）は対応済み。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/ch_button>
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）・`b_left`/`b_top`・`back_clear`。テンプレは`style=`でwidth/heightを明示するので実害は出ていない
 - [ ] **しおり・システム系の残り**
@@ -49,11 +31,28 @@
     - [ ] パッケージ版のアセット読み込み（`file://`になるので`fetch`が使えず、主処理の`fetch`/`readFile` IPC経由が要る）。今のところ`electron-vite dev`のみ確認
     - [ ] アプリ版の`[snapshot]`は`capturePage`（Electronがネイティブに撮る＝**HTMLフレームの中身も写る**）。web版のDOM→SVG方式はブラウザ制約でフレームが写らないので、ここは版ごとに実装が分かれる
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
+- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
+- [ ] **文字組みの残り**
+  - [ ] `max_row`（最大行数を超えたら自動改ページ）・`break_fixed`系。**行分割そのものはブラウザ任せ**にした帰結で、禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）も渡す手段が無い。ギャラリーの`line_breaking_rules`と実機で見比べ、必要なら本家`Hyphenation.ts`のような自前計算へ寄せる。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
+  - [ ] `bura`はChromeが`hanging-punctuation`未対応なので実質Safariのみ効く
+  - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
+  - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
+  - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）
+  - [ ] `[link]`の残り：`global`・`onenter`/`onleave`
+- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
+  - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
+  - [ ] `[add_filter blendmode=…]`（フィルター単位のブレンド）・`[lay blur_x=/blur_y=]`（CSSの`blur()`は半径1つしか持てない）
+  - [ ] ギャラリーの`filter`サンプルと実機で見比べ、色の出方が本家と揃っているか確認（pixiはシェーダ、こちらはSVGフィルタなので端の丸めが違いうる）
+- [ ] **アニメpng（スプライトシート）の残り**
+  - [ ] コマ数が格子に満たないシート（余りの位置で一瞬空白になる）
+  - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
+- [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
   - [ ] `save:const.sn.layer.（文字レイヤ名）.enabled`
   - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`const.sn.nativeWindow.*`が残り。`sn.sound.*`基準音量・`global_volume`・`sn.sound.BGM.vol_mul_talking`・`sn.sound.movie_volume`・`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
+- [ ] 【凍結】`[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
 - [ ] 【凍結】`[quake]`の`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
 
 ## 挙動の詰め・実機確認

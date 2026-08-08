@@ -27,6 +27,9 @@ export type T_LNK = {
 	arg		: string;	// 飛び先で &sn.eventArg として受け取れる（本家と同じ）
 	url?	: string;	// [link url=…]。指定時はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
 	sh?		: string;	// style_hover。マウスが乗っている間だけ当てるCSS
+	sc?		: string;	// style_clicked。押し下げている間だけ当てるCSS（未指定ならshのまま）
+	rsh?	: string;	// r_style_hover。ルビ側のホバーCSS（未指定ならrsのまま）
+	rsc?	: string;	// r_style_clicked。ルビ側の押し下げCSS（未指定ならrshかrsに落ちる）
 	hint?	: string;	// ツールチップ（[link hint=…]）
 	hs?		: string;	// hint_style（吹き出しのCSS）
 	ho?		: string;	// hint_opt（本家popperのオプションJSON。placementだけ見る）
@@ -44,6 +47,7 @@ export type T_LNK = {
 export type T_CH = {
 	c	: string;
 	r?	: string;
+	ra?	: T_R_ALIGN;	// ルビ記法内の位置指定（`位置｜ルビ`。無指定なら[lay r_align=]へ落ちる）
 	s?	: string;
 	rs?	: string;
 	tcy?: true;
@@ -74,6 +78,7 @@ export type T_CH = {
 const A_CMD = ['span', 'add', 'add_close', 'grp', 'tcy', 'link', 'endlink', 'del', 'gotxt'];
 type T_CMD_ARG = {
 	style?: string; r_style?: string; style_hover?: string;
+	style_clicked?: string; r_style_hover?: string; r_style_clicked?: string;	// [link]
 	t?: string; r?: string;			// [tcy]
 	pic?: string; width?: string; height?: string; x?: string; y?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
@@ -127,8 +132,10 @@ export function splitCh(raw: string): T_CH[] {
 		const ci = o?.ch_in_style ?? add?.ch_in_style ?? cis;
 		const co = o?.ch_out_style ?? add?.ch_out_style ?? cos;
 		const w = num(o?.wait) ?? num(add?.wait) ?? wait;
+		const {ra, ruby} = r ? splitRubyAlign(r) : {ra: undefined, ruby: undefined};
 		aCh.push({c,
-			...(r ? {r} : {}),
+			...(ruby ? {r: ruby} : {}),
+			...(ra ? {ra} : {}),
 			...(s ? {s} : {}),
 			...(rst ? {rs: rst} : {}),
 			...(tcy ? {tcy} : {}),
@@ -168,6 +175,11 @@ export function splitCh(raw: string): T_CH[] {
 					arg		: o.arg ?? '',
 					...(o.url ? {url: o.url} : {}),
 					...(o.style_hover ? {sh: o.style_hover} : {}),
+					// style_clicked省略時は「styleの値」＝クリック中も追加CSSなし（tag.html仕様）。
+					//	r_style_hover/r_style_clickedも同様に、本文側の対応値へ落ちる
+					...(o.style_clicked ? {sc: o.style_clicked} : {}),
+					...((o.r_style_hover ?? o.style_hover) ? {rsh: o.r_style_hover ?? o.style_hover} : {}),
+					...((o.r_style_clicked ?? o.r_style) ? {rsc: o.r_style_clicked ?? o.r_style} : {}),
 					...(o.hint ? {hint: o.hint} : {}),
 					...(o.hint_style ? {hs: o.hint_style} : {}),
 					...(o.hint_opt ? {ho: o.hint_opt} : {}),
@@ -212,9 +224,15 @@ export function plainOf(aCh: readonly T_CH[]): string {
 }
 export function plainTxt(raw: string): string {return plainOf(splitCh(raw))}
 
-// ルビ文字は `位置指定｜ルビ` の形を取れる（本家 TxtStage の r_align。傍点は`center｜ヽ`）。
-//	**位置指定はまだ未対応**なので、指定が付いていたら落としてルビ文字だけを返す
-export function rubyTxt(r: string): string {
+// ルビ文字は `位置指定｜ルビ` の形を取れる（本家 TxtLayer.ts:587-599 の #putCh() switch。
+//	傍点は`center｜ヽ`で同じ形）。位置指定はレイヤ既定[lay r_align=]を1文字だけ上書きする
+export const A_R_ALIGN = ['start', 'left', 'center', 'right', 'justify', '121', 'even', '1ruby'] as const;
+export type T_R_ALIGN = typeof A_R_ALIGN[number];
+export function splitRubyAlign(r: string): {ra?: T_R_ALIGN; ruby: string} {
 	const i = r.indexOf('｜');
-	return i > 0 && /^[0-9a-z]+$/.test(r.slice(0, i)) ? r.slice(i + 1) : r;
+	if (i > 0) {
+		const a0 = r.slice(0, i);
+		if ((A_R_ALIGN as readonly string[]).includes(a0)) return {ra: a0 as T_R_ALIGN, ruby: r.slice(i + 1)};
+	}
+	return {ruby: r};
 }

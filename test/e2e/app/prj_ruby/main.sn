@@ -30,4 +30,24 @@
 
 ; [link url=…]はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
 [er]
-[link url='https://example.com/']そと[endlink][s]
+[link url='https://example.com/']そと[endlink][l]
+
+; 傍点の文字を変更する（[lay sesame=…]）
+[er]
+[lay layer=mes sesame='★']
+｜傍点《*》[l]
+
+; ルビ位置の既定（[lay r_align=…]）とルビ記法内の位置指定（後者が優先）
+[er]
+[clear_lay layer=mes page=fore]
+[lay layer=mes r_align=center]
+永《なが》｜蜊《left｜あさり》[l]
+
+; [link]のstyle_clicked/r_style_hover/r_style_clicked
+[er]
+[clear_lay layer=mes page=fore]
+[link label=*goal2 style='color: rgb(0, 0, 255);' style_hover='color: rgb(0, 255, 0);' style_clicked='color: rgb(255, 0, 0);' r_style='color: rgb(0, 0, 128);' r_style_clicked='color: rgb(128, 0, 0);']蜊《あさり》[endlink][s]
+
+*goal2
+[er]
+とどいた[l]

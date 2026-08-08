@@ -628,7 +628,7 @@ var V = P()((e, t) => ({
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
 		let { idx: i, aLay: a } = L(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
-		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/buraは文字レイヤ専用）`;
+		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_alignは文字レイヤ専用）`;
 		return Object.assign(o, r), R(e, i, a);
 	}),
 	getLaySty: (e, n) => {
@@ -673,7 +673,7 @@ var V = P()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of f) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.bura, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
+			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.bura, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
 		}, i = (e) => {
 			if (!t) {
 				e.forEach(r);

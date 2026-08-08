@@ -19,7 +19,7 @@
 //	・`[graph]`のインライン画像は本文と同じ全角空白1つになる（画像のパス解決はScriptMngの
 //	  仕事で、エンジン側が持つ生文字列にはURLが入っていないため）
 
-import {rubyTxt, splitCh, type T_CH} from './Txt';
+import {splitCh, type T_CH} from './Txt';
 
 
 export type T_LOG_ENTRY = {text: string; [k: string]: string};
@@ -42,7 +42,7 @@ export function htmlOfCh(aCh: readonly T_CH[]): string {
 
 		const c = esc(v.c);
 		const body = v.r
-			? `<ruby>${c}<rt${v.rs ?` style='${escAttr(v.rs)}'` :''}>${esc(rubyTxt(v.r))}</rt></ruby>`
+			? `<ruby>${c}<rt${v.rs ?` style='${escAttr(v.rs)}'` :''}>${esc(v.r)}</rt></ruby>`
 			: c;
 		// 縦中横は履歴でも縦中横のまま出す（本家もTxtLayer.ts:690で
 		//	`text-combine-upright: all`を残したHTMLを記録する）

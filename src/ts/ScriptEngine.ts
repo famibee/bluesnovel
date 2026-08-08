@@ -17,12 +17,13 @@ import {ExprEval} from './ExprEval';
 import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
+import {RubySpliter} from '../sn/RubySpliter';
 import {Areas, type T_H_Areas} from '../sn/Areas';
 import {getDateStr, int, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
-import {plainTxt} from './Txt';
+import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
 import {parseChStyle, type T_CH_STYLE} from './ChStyle';
 import {A_PAGE_TO, type T_PAGE_TO} from './PageLog';
@@ -70,6 +71,7 @@ export type T_LAY_STY_ARG = {
 	ffs?		: string;	// 文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?		: string;	// ffsを効かせない文字の並び
 	bura?		: boolean;	// ぶら下げ禁則
+	r_align?	: T_R_ALIGN;	// ルビ位置の既定（本家 TxtLayer.ts:307）
 	// 文字出現・消去演出（本家 TxtLayer.ts:67 の in_style/out_style）。[ch_in_style]で定義した名前
 	in_style?	: string;
 	out_style?	: string;
@@ -1129,6 +1131,14 @@ export class ScriptEngine {
 			if (args.ffs !== undefined) sty.ffs = args.ffs;
 			if (args.noffs !== undefined) sty.noffs = args.noffs;
 			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
+			// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要
+			RubySpliter.setting(args);
+			// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ
+			if (args.r_align !== undefined) {
+				if (! (A_R_ALIGN as readonly string[]).includes(args.r_align))
+					throw `[lay] r_alignの値が不正です：${args.r_align}`;
+				sty.r_align = args.r_align as T_R_ALIGN;
+			}
 			// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
 			if (args.in_style !== undefined) sty.in_style = args.in_style;
 			if (args.out_style !== undefined) sty.out_style = args.out_style;

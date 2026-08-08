@@ -9,7 +9,7 @@ import {A_LAY_STY_KEY, type T_LAY, type T_LAY_STY} from '../components/Lay';
 import type {T_FLT} from '../ts/Filter';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
-import type {T_CH} from '../ts/Txt';
+import type {T_CH, T_R_ALIGN} from '../ts/Txt';
 import {CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
 import {INI_STYPAGE} from '../ts/PageLog';
 
@@ -168,6 +168,7 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	ffs?	: string;	// [lay ffs=…]。文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?	: string;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean;	// [lay bura=…]。ぶら下げ禁則
+	r_align?: T_R_ALIGN;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
 	// [lay in_style=/out_style=]。[ch_in_style]/[ch_out_style]で定義した演出名
 	in_style?	: string;
 	out_style?	: string;
@@ -375,10 +376,11 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/style/文字組み（ffs/noffs/bura）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
+		// b_color/style/文字組み（ffs/noffs/bura/r_align）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
 		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined
-			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined))
-			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/buraは文字レイヤ専用）`;
+			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined
+			|| sty.r_align !== undefined))
+			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_alignは文字レイヤ専用）`;
 
 		Object.assign(e, sty);
 		return putPage(s, idx, aLay);
@@ -441,7 +443,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
-			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.bura; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
+			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.bura; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {
