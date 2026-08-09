@@ -59,6 +59,24 @@ test('PageDownで最新まで戻ると読み戻り状態が解除される', asy
 	expect(await txtBoxStyle(page, 'color')).not.toBe(YELLOW);
 });
 
+test('PageDownで最新へ戻った直後、既読部分は瞬時表示される（文字送り演出をやり直さない）', async ({page})=> {
+	await readToEnd(page);
+	await pressKey(page, 'PageUp');
+	await pressKey(page, 'PageUp');
+
+	await pressKey(page, 'PageDown');	// まだ読み戻り中の中間ページ
+	const t0 = Date.now();
+	await pressKey(page, 'PageDown');	// 最新（既読の末尾）へ復帰。ここでisPagingがfalseになる
+	// 本文「二ページ目のいち。おしまい。」（14文字）。文字送り演出が走ると
+	//	[autowc]既定chWait(10ms)×13＋[ch_in_style]既定500msだけでも600ms超かかる。
+	//	既読ページの再表示は瞬時（アニメ無し）のはずなので、それより十分短いはず
+	//	（回帰させると、isPagingがfalseになった直後の演じ直しがisReadBack=falseのまま
+	//	走ってしまい、既読のはずの本文が通常の文字送りでもう一度アニメし直す）
+	expect(Date.now() - t0).toBeLessThan(300);
+	expect(await mesStr(page)).toBe('二ページ目のいち。おしまい。');
+	expect((await snap(page)).isReadBack).toBe(false);
+});
+
 test('先頭より前へは戻れない', async ({page})=> {
 	// 最初の停止点にいる状態でPageUpしても何も起きない
 	const before = await mesStr(page);

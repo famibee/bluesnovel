@@ -539,6 +539,23 @@
     `isTyping`は画面全体で1つのストア値（複数`TxtLayer`が共有）なので、この1本の監視で足りる
   - `todo.md`「挙動の詰め・実機確認」の当該項目を消化。単体テスト1648件・型チェックとも回帰なし
 
+- [x] **読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない不具合を修正**（2026-08-10）
+  - 原因：`ScriptMng#procPage()`は移動先を決めた直後に`#applyPaging()`で`isReadBack`を確定させて
+    いたが、最新ページ（`PageLog.isPaging`が`false`になる位置）へ戻る移動では、その時点で既に
+    `isReadBack=false`が立ってしまう。実際に本文を再生成する（`engine.switchScript`以降の
+    `chgStr`群）のはその後なので、**既読のはずの最新ページの本文が、通常の文字送り演出
+    （`isReadBack`で瞬時表示を切り替える`TxtLayer.tsx`）でもう一度アニメし直してしまっていた**
+  - `ScriptMng`に`#pageReplaying`を新設。`page(to=…)`によるページの演じ直し中は（移動先が
+    最新ページでisPagingがfalseになる場合も含めて）trueを保ち、`#applyPaging()`は
+    `isPaging || pageReplaying`でストアの`isReadBack`を立てるようにした。演じ直しが停止点
+    （`[l]`/`[p]`/`[s]`＝`'stop'`アクション）へ到達した時点で`#pageReplaying`を落としてから
+    最後の`#applyPaging()`を呼び、以降は`isPaging`の実値どおりに戻す
+  - E2E（`test/e2e/readback.e2e.ts`）に、最新ページへの復帰にかかった時間を計測するケースを追加。
+    修正前は文字送り演出（既定値換算で600ms超）が走って558ms掛かっていたのに対し、修正後は
+    瞬時表示になり閾値300ms未満に収まることを確認。既存の読み戻り系E2E（`readback`/`page`/`wait`/
+    `autoskip`）・単体テスト1648件・型チェックとも回帰なし
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
 - [ ]
 
 

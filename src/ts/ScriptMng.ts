@@ -211,10 +211,17 @@ export class ScriptMng {
 	#pageStart: {fn: string; idx: number; mark: T_MARK; clearOnResume: boolean} | undefined;
 	// [page key=…]（[page style=…]は save:const.sn.styPaging に置く＝しおりに乗る。本家も同じ）
 	#aKeysAtPaging: string[] = [];
+	// [page to=…]でページを演じ直している最中か。**最新ページ（isPaging=false）へ戻り着く
+	//	移動の最中もtrue**にする必要がある：#procPageは移動先を決めた直後にisReadBackを
+	//	確定させるが、実際に本文を再生成する（engine.switchScript以降のchgStr群）のはその後で、
+	//	最新ページへ戻る場合はその時点でisPagingが既にfalseになっている。isReadBackだけで
+	//	瞬時表示を判定するTxtLayerに任せると、既読のはずの本文が通常の文字送り演出で
+	//	もう一度アニメしてしまう（実機確認バグ：読み戻りから戻ると既読部分が瞬時表示されない）
+	#pageReplaying = false;
 
 	// 読み戻り状態を画面へ反映（本文の色。本家 setAllStyle2TxtLay(styPaging)）
 	#applyPaging() {
-		this.$fncs.setReadBack(this.#pageLog.isPaging);
+		this.$fncs.setReadBack(this.#pageLog.isPaging || this.#pageReplaying);
 		this.$fncs.setStyPaging(
 			String(this.#engine?.getVal('save:const.sn.styPaging') ?? '') || INI_STYPAGE);
 	}
@@ -233,12 +240,15 @@ export class ScriptMng {
 
 		try {
 			const ent = this.#pageLog.move(to);
-			this.#applyPaging();
 			if (! ent) {
 				// 動かなかった（端まで来ている／to=load）。to=loadはここから読み進めるだけ
+				this.#applyPaging();
 				this.#procing = false;
 				return;
 			}
+
+			this.#pageReplaying = true;	// 演じ直しの間は（最新ページに戻り着く移動でも）瞬時表示にする
+			this.#applyPaging();
 
 			engine.restoreMarkPart(ent.mark);
 			engine.clearOnResume = ent.clearOnResume;
@@ -247,6 +257,7 @@ export class ScriptMng {
 			this.#pageStart = undefined;	// 演じ直しの先頭は積んだときの位置のまま
 			engine.switchScript(await this.#getScript(ent.fn), '', ent.idx);
 		} catch (e) {
+			this.#pageReplaying = false;
 			this.#procing = false;
 			this.myTrace(`[page] ${String(e)}`, 'ET');
 			return;
@@ -1691,6 +1702,7 @@ export class ScriptMng {
 			const ps = this.#pageStart;
 			this.#pageStart = undefined;
 			if (ps) this.#pageLog.push(ps.fn, ps.idx, ps.mark, ps.clearOnResume);
+			this.#pageReplaying = false;	// 演じ直しはここで完了。以降はisPagingの実値どおりに戻す
 			this.#applyPaging();
 			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
 			if (act.kind === 'l' || act.kind === 'p') {

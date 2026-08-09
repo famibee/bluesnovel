@@ -42,7 +42,6 @@
   - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
 - [ ] `test/e2e/pic.e2e.ts`の`[lay fn=…]がpath.json経由で解決され、画像が表示される`が時々`naturalWidth`を0で読んで落ちる（既存のflaky。暗号化アセット対応の作業中に発見、`git stash`で変更前コードに戻しても再現するので無関係。`beforeEach`直後に読みに行くタイミング依存と見られる）
 - [ ] 文字送りの速さを実機（`tmp_blues`）で確認。1文字あたりの遅れは`sys:sn.tagCh.msecWait`（既定10ms）、1文字のアニメ時間は`[ch_in_style]`の`default`（既定500ms）で、どちらも本家の既定値にした
-- [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない（実機確認）
 - [ ] 全画面時の見た目（中央寄せは実装済み）を実機で確認
 - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）
   - [ ] デザインモードでのMoveableリサイズ時、差分画像（face）は`dx`/`dy`が絶対px指定のため拡大縮小に追随しない（`GrpLayer.tsx`）
