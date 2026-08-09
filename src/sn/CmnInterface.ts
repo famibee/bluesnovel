@@ -31,6 +31,10 @@ export type T_PropParser = {
 //	セーブ暗号化をweb/app版で統一しenc()一本にするため消費先が無い）は対象外（todo.mdへ）
 export type T_PluginInitArg = {
 	setDec(fnc: (ext: string, tx: string)=> Promise<string>): void;
+	// 画像・動画の中身を復号する。本家は{ext_num, ab}を返させ拡張子情報まで秘匿するが、
+	//	bluesnovelはファイル名（path.jsonが持つ論理名）自体は秘匿対象にしていないので、
+	//	プラグインは複号だけ担当すればよい（拡張子→MIME判定はScriptMng側でURLから行う）
+	setDecAB(fnc: (ab: ArrayBuffer)=> Promise<ArrayBuffer>): void;
 	setEnc(fnc: (tx: string)=> Promise<string>): void;
 	getHash(fnc: (str: string)=> string): void;
 }
@@ -60,6 +64,7 @@ export type T_SysBase = {
 	// initVal(hTmp: T_H_TMP_DATA, comp: (data: T_Data4Vari)=> void): Promise<void>;
 	// flush(): void;
 	dec(ext: string, tx: string): Promise<string>;
+	decAB(ab: ArrayBuffer): Promise<ArrayBuffer>;
 	enc(tx: string): Promise<string>;
 
 	// addHook(fnc: T_FncHook): void;

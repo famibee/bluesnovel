@@ -9838,9 +9838,9 @@ var iu = /* @__PURE__ */ function(e) {
 function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, aFace: o, getVideoVol: c, needClick2Play: l }) {
 	let u = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, d = a.endsWith(".json"), [f, p] = (0, R.useState)(void 0);
+	}, d = i.endsWith(".json"), [f, p] = (0, R.useState)(void 0);
 	(0, R.useEffect)(() => {
-		if (!d) {
+		if (!d || !a) {
 			p(void 0);
 			return;
 		}
@@ -9851,7 +9851,7 @@ function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 			e = !1;
 		};
 	}, [a, d]);
-	let m = /\.(?:mp4|webm)$/i.test(a), h = (e) => {
+	let m = /\.(?:mp4|webm)$/i.test(i), h = (e) => {
 		e && (e.volume = c(), e.muted = l());
 	}, g = (0, R.useRef)(null), _ = (e, t) => {
 		s(), e.transform = t;

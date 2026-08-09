@@ -33,6 +33,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		delete hPlg.snsys_pre;	// eslint-disable-line @typescript-eslint/no-dynamic-delete
 		await pre?.init({
 			setDec: f=> {this.dec = f},
+			setDecAB: f=> {this.decAB = f},
 			setEnc: f=> {this.enc = f},
 			getHash: f=> {this.hash = f},
 		});
@@ -92,6 +93,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	get path_userdata() {return this.$path_userdata}
 
 	dec = (_ext: string, tx: string)=> Promise.resolve(tx);
+	decAB = (ab: ArrayBuffer)=> Promise.resolve(ab);
 	enc = (tx: string)=> Promise.resolve(tx);
 	readonly fetch = (url: string, init?: RequestInit)=> fetch(url, init);
 	hash = (_str: string)=> '';

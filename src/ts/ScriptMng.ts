@@ -31,6 +31,32 @@ import gsap from 'gsap';
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
 
+// 画像・動画の拡張子→MIME（ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSMのうち#decryptPicが対象にするもの）
+const H_PIC_EXT2MIME: {[ext: string]: string} = {
+	png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+	webp: 'image/webp', svg: 'image/svg+xml',
+	mp4: 'video/mp4', webm: 'video/webm',
+};
+// crypto:true時のみ呼ぶ。fetchしたバイナリをdecAB()へ通し、Blob URLへ差し替える。
+//	アニメpngシート（.json）はここを通さない——シートの中の画像URLは別途平文で解決される
+//	仕組みなので、シートごと暗号化するなら別段階の対応が要る（todo.mdへ）。
+//	`userdata:/…`由来（data URL）・既にBlob URL化済みのものもそのまま素通し。
+//	ScriptMngのメソッドから切り出したモジュール関数（fetch/decABを引数で受け、
+//	SysBaseをまるごと用意せずにユニットテストできるようにするため）
+export async function decryptPicUrl(url: string, sysFetch: SysBase['fetch'], sysDecAB: SysBase['decAB']): Promise<string> {
+	if (! url || url.startsWith('data:') || url.startsWith('blob:') || url.endsWith('.json')) return url;
+	const ext = /\.([a-z0-9]+)$/i.exec(url)?.[1]?.toLowerCase() ?? '';
+	const type = H_PIC_EXT2MIME[ext];
+	if (! type) return url;	// 知らない拡張子はそのまま（今のところ画像・動画以外はここに来ない）
+
+	const res = await sysFetch(url);
+	const ab = await sysDecAB(await res.arrayBuffer());
+	return URL.createObjectURL(new Blob([ab], {type}));
+	// revokeしない。本家 SysBase.ts #genImage も同じ判断（onload契機でrevokeすると
+	//	暗号化構成でフレーム内画像が出なくなった実績があるため）
+}
+
+
 export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
 
@@ -1259,6 +1285,14 @@ export class ScriptMng {
 		}
 	}
 
+	// crypto:true時のみ呼ぶ。fetchしたバイナリをsys.decAB()へ通し、Blob URLへ差し替える
+	#decryptPic(url: string): Promise<string> {
+		return decryptPicUrl(url, this.sys.fetch, (ab: ArrayBuffer)=> this.sys.decAB(ab));
+	}
+	// chgPicの非同期解決が追い越されたとき、古い方でstoreを上書きしないための世代カウンタ
+	//	（key: `${nm}:${page}`）
+	readonly #picReqSeq = new Map<string, number>();
+
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
@@ -1268,14 +1302,34 @@ export class ScriptMng {
 				? {cls: 'grp', nm: act.nm, fn: '', src: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
 				: {cls: 'txt', nm: act.nm, str: '', aCh: [], aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
-		case 'chgPic':
+		case 'chgPic': {
 			// **画像パスの解決はここ**（描画時ではなく）。searchPath()はサーチパスに無ければ
 			//	例外を投げるが、renderの中で投げるとReactごと落ちるので、
 			//	シナリオ実行時に解決してエラーはデバッグ表示へ出す。GrpLayerは出来上がったURLを描くだけ
-			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn,
-				src: this.#searchPic('lay', act.fn),
-				aFace: act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}))});
+			const src = this.#searchPic('lay', act.fn);
+			const aFace = act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}));
+			if (! this.sys.crypto) {
+				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src, aFace});
+				break;
+			}
+
+			// crypto時：復号にfetchを挟むため同期では返せない。まず空で確定させ
+			//	（画像の先読み自体が未対応＝切替時に一瞬空白は元から許容している。todo.md参照）、
+			//	Blob URL化でき次第差し替える。連続して同じレイヤへ[lay fn=]が来た場合、
+			//	後発を追い越して古い方が上書きしないよう世代カウンタで捨てる
+			const key = `${act.nm}:${act.page}`;
+			const seq = (this.#picReqSeq.get(key) ?? 0) + 1;
+			this.#picReqSeq.set(key, seq);
+			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '',
+				aFace: aFace.map(f=> ({...f, src: ''}))});
+			void Promise.all([this.#decryptPic(src), ...aFace.map(f=> this.#decryptPic(f.src))])
+			.then(([dSrc, ...aFaceSrc])=> {
+				if (this.#picReqSeq.get(key) !== seq) return;	// 追い越された
+				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc,
+					aFace: aFace.map((f, i)=> ({...f, src: aFaceSrc[i] ?? ''}))});
+			});
 			break;
+		}
 		case 'chgBAlpha':
 			this.$fncs.chgBAlpha({nm: act.nm, page: act.page,
 				...(act.b_alpha === undefined ? {} : {b_alpha: act.b_alpha}),

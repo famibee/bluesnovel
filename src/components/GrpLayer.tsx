@@ -60,10 +60,14 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	そこからコマの格子と再生速度を読んでCSSアニメで再生する（Sprite.ts / Lay.ts styAniSprite）。
 	//	読み込みが非同期なのでここで待つ：ストアはURLまでを持ち、
 	//	**アセットの中身（コマ割り）は画面側の関心事**という切り分け（画像の自然サイズと同じ扱い）
-	const isSheet = src.endsWith('.json');
+	//	**種別の判定はsrcでなくfn（論理名）で行う**：暗号化構成ではsrcがBlob URL
+	//	（`blob:http://…`。拡張子情報を持たない）に化けるため（ScriptMng #decryptPic）。
+	//	fnはpath.json解決前の論理名で、暗号化されても平文のまま保たれる
+	const isSheet = fn.endsWith('.json');
 	const [sheet, setSheet] = useState<T_SHEET | undefined>(undefined);
 	useEffect(()=> {
-		if (! isSheet) {setSheet(undefined); return}
+		// crypto構成では復号中の一瞬src=''になる（ScriptMng #decryptPic）。空のままfetchしない
+		if (! isSheet || ! src) {setSheet(undefined); return}
 
 		let alive = true;
 		void loadSheet(src).then(v=> {if (alive) setSheet(v)});
@@ -72,7 +76,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 
 	// 動画（[lay fn=movie.mp4/.webm]）。本家に専用タグは無く、画像レイヤにそのまま貼る方式
 	//	（`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）
-	const isMovie = /\.(?:mp4|webm)$/i.test(src);
+	const isMovie = /\.(?:mp4|webm)$/i.test(fn);
 	// マウント時点の値だけ当てる（ref callback。本家 SpritesMng.ts:288-296 #charmVideoElm()と同じ
 	//	タイミング）。以後の変化（音量スライダ操作）はScriptMng.#applyMovieVolume()がステージ配下の
 	//	<video>を直接書き換える側で追随させる

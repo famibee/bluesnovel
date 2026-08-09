@@ -19,8 +19,7 @@
 
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
 - [ ] **しおり・システム系の残り**
-  - [ ] **暗号化の残り（第2〜4段階）**：セーブデータの暗号化（プラグイン注入・`enc`/`dec`の配線・`[export]`/`[import]`）は完了（CHANGELOG参照）。残りはアセット暗号化
-    - [ ] 画像・動画（`decAB`・Blob URL化・`GrpLayer.tsx`の拡張子スニッフィング修正）
+  - [ ] **暗号化の残り（第3〜4段階）**：セーブデータの暗号化と画像・動画アセットの暗号化（`decAB`・Blob URL化・`GrpLayer.tsx`の拡張子スニッフィング修正）は完了（CHANGELOG参照）。残りは下記
     - [ ] 音声・アニメpngシート・`[add_frame]`のHTML/フレーム内画像
     - [ ] E2Eフィクスチャ生成（本家`mkPrjCrypto.mjs`相当）＋改竄検査の実証。暗号化mp4はffmpeg依存が重いので対象外
   - [ ] 一般プラグインの配線（`addTag`/`addLayCls`/`getInfo`/`getVal`/`resume`/`render`/`searchPath`）。`[loadplugin]`がCSS専用で受け皿が無いため今回は`T_PluginInitArg`から外した
@@ -57,6 +56,7 @@
   - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
   - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
   - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
+- [ ] `test/e2e/pic.e2e.ts`の`[lay fn=…]がpath.json経由で解決され、画像が表示される`が時々`naturalWidth`を0で読んで落ちる（既存のflaky。暗号化アセット対応の作業中に発見、`git stash`で変更前コードに戻しても再現するので無関係。`beforeEach`直後に読みに行くタイミング依存と見られる）
 - [ ] オート読み・既読スキップの残課題
   - [ ] オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む
 - [ ] 文字送りの速さを実機（`tmp_blues`）で確認。1文字あたりの遅れは`sys:sn.tagCh.msecWait`（既定10ms）、1文字のアニメ時間は`[ch_in_style]`の`default`（既定500ms）で、どちらも本家の既定値にした

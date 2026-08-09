@@ -31,6 +31,9 @@ var n = "skynovel", r = class {
 			setDec: (e) => {
 				this.dec = e;
 			},
+			setDecAB: (e) => {
+				this.decAB = e;
+			},
 			setEnc: (e) => {
 				this.enc = e;
 			},
@@ -74,6 +77,7 @@ var n = "skynovel", r = class {
 		return this.$path_userdata;
 	}
 	dec = (e, t) => Promise.resolve(t);
+	decAB = (e) => Promise.resolve(e);
 	enc = (e) => Promise.resolve(e);
 	fetch = (e, t) => fetch(e, t);
 	hash = (e) => "";

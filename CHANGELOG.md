@@ -293,6 +293,17 @@
   - テスト：`test/SaveMng.test.ts`にcrypto:true版の偽物（`btoa`/`atob`は日本語を扱えないため`Buffer`のbase64で代用）を追加し、暗号化往復・デバウンス越しの順序保証・crypto:false時にオブジェクトのまま保存されることを検証。単体テスト1519件→1522件、型チェック（`tsc --noEmit`／`-p test/e2e`）・E2E193件はいずれもパス（**crypto:falseのまま経路が完全に現状維持であることの証明**）
   - **アセット暗号化（画像・動画・音声・アニメpngシート・`[add_frame]`）と、それを実証するE2Eフィクスチャ生成・改竄検査の実地確認は次段階**（`todo.md`へ）
 
+- [x] **セーブデータの暗号化（第2段階：画像・動画アセットの暗号化）**（2026-08-09）
+  - `todo.md`「暗号化の残り」のうち画像・動画（`[lay fn=]`の静止画・動画、`[add_face]`の差分絵）に着手。音声・アニメpngシート・`[add_frame]`のHTML/フレーム内画像は対象外（`todo.md`へ残す）
+  - `T_PluginInitArg`（`src/sn/CmnInterface.ts`）に`setDecAB`を追加。**本家は`{ext_num, ab}`を返させ拡張子情報まで秘匿する**が、bluesnovelは`path.json`が持つ論理名（ファイル名）自体を秘匿対象にしていないので、プラグインは複号だけ担当すればよい形にした（拡張子→MIME判定は呼び出し側のURLから行う）。`T_SysBase`にも`decAB(ab): Promise<ArrayBuffer>`を追加し、`SysBase.ts`の`loaded()`で`setDecAB: f=> {this.decAB = f}`を配線。既定実装は恒等変換（`Promise.resolve(ab)`）＝プラグイン未注入時は何も変わらない
+  - `ScriptMng.ts`：`#applyAction`の`chgPic`ケースを、`sys.crypto`が`true`のときだけ非同期のBlob URL化経路へ分岐。**画像は`[add_frame]`のような停止点にしていない**（先読み自体が元から未対応で、切替時の一瞬の空白は`todo.md`で既知・許容済みのため）。まず`src: ''`で確定させてから、`fetch→decAB→Blob URL`が終わり次第差し替える
+  - 連続して同じレイヤへ`[lay fn=]`が来た場合、非同期解決が入れ替わって古い方が新しい方を上書きしてしまう競合があるため、`nm:page`単位の世代カウンタ（`#picReqSeq`）を新設。解決が終わった時点で世代が一致しなければ（＝後発に追い越されていれば）そのstore更新は捨てる
+  - 復号本体は`decryptPicUrl(url, fetch, decAB)`としてモジュール関数へ切り出し（`ScriptMng`のメソッドのままだと`SysBase`丸ごと・DOMが要りユニットテストできないため）。`data:`／`blob:`／`.json`（アニメpngシート。中の画像URLは別途平文で解決される仕組みなので今回は対象外）と、拡張子不明なものはfetchせずそのまま素通し。**revokeはしない**——本家`SysBase.ts`の`#genImage`も同じ判断で、コメントに「`onload`契機で`revokeObjectURL`すると暗号化構成でフレーム内の画像が出なくなる」実績が残っている
+  - `GrpLayer.tsx`：アニメpngシート判定（`.endsWith('.json')`）と動画判定（`/\.(?:mp4|webm)$/`）を**`src`（解決済みURL）から`fn`（論理名）ベースへ変更**。crypto構成では`src`がBlob URL（拡張子情報を持たない）に化けるため、`src`のままだと種別判定が壊れる。`fn`はpath.json解決前の論理名で暗号化されても平文のまま保たれるので、判定の土台として使える
+  - テスト：`test/ScriptMng_decryptPic.test.ts`（新規4件）。`decryptPicUrl`単体を対象に、空/`data:`/`blob:`/`.json`/拡張子不明はfetchを呼ばず素通しすること、画像・動画の既知拡張子（png/jpg/webp/mp4/webm）は`fetch`→`decAB`を経て`blob:`で始まるURLになることを見る。crypto:false経路（現状維持）は既存のE2E（`pic.e2e.ts`等）が変更なく通ることで担保。単体テスト1522件→1526件、型チェック（`tsc --noEmit`／`-p test/e2e`）はパス
+  - **`pic.e2e.ts`の1件（`[lay fn=…]がpath.json経由で解決され、画像が表示される`の`naturalWidth`検証）が今回の変更と無関係に不安定**なことに気づいた（`git stash`で変更前コードに戻しても同じ形で失敗する＝既存のflaky test。`beforeEach`直後に`naturalWidth`を読みに行くタイミング依存と見られる）。今回の作業では深追いせず`todo.md`へ記録した
+  - 音声・アニメpngシート・`[add_frame]`のアセット暗号化と、E2Eフィクスチャ生成（本家`mkPrjCrypto.mjs`相当）＋改竄検査の実地確認は次段階（`todo.md`へ）
+
 - [ ]
 
 

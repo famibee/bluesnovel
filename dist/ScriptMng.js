@@ -3784,14 +3784,30 @@ var Se = 999e3, Ce = class {
 	cancelWaitEnd(e) {
 		delete this.#o[e];
 	}
-}, Ee = class e {
+}, Ee = {
+	png: "image/png",
+	jpg: "image/jpeg",
+	jpeg: "image/jpeg",
+	webp: "image/webp",
+	svg: "image/svg+xml",
+	mp4: "video/mp4",
+	webm: "video/webm"
+};
+async function De(e, t, n) {
+	if (!e || e.startsWith("data:") || e.startsWith("blob:") || e.endsWith(".json")) return e;
+	let r = Ee[/\.([a-z0-9]+)$/i.exec(e)?.[1]?.toLowerCase() ?? ""];
+	if (!r) return e;
+	let i = await n(await (await t(e)).arrayBuffer());
+	return URL.createObjectURL(new Blob([i], { type: r }));
+}
+var Oe = class e {
 	sys;
 	#e;
 	constructor(e) {
 		this.sys = e, this.#p = new ve(e, ""), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Re(e), this.#t.log = (e) => this.#Be(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Be(e), this.#t.log = (e) => this.#He(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -3927,7 +3943,7 @@ var Se = 999e3, Ce = class {
 	}
 	#v;
 	async #y(e) {
-		return this.#n[e] ??= new D(e, await this.#Le(e), this.#x());
+		return this.#n[e] ??= new D(e, await this.#ze(e), this.#x());
 	}
 	#b;
 	#x() {
@@ -4387,7 +4403,7 @@ var Se = 999e3, Ce = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#Ie(e);
+					for (let e of t) this.#Re(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#R(n.canskip);
@@ -4557,6 +4573,10 @@ var Se = 999e3, Ce = class {
 		}
 	}
 	#Ie(e) {
+		return De(e, this.sys.fetch, (e) => this.sys.decAB(e));
+	}
+	#Le = /* @__PURE__ */ new Map();
+	#Re(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -4575,18 +4595,45 @@ var Se = 999e3, Ce = class {
 					enabled: !0
 				});
 				break;
-			case "chgPic":
-				this.$fncs.chgPic({
+			case "chgPic": {
+				let t = this.#Pe("lay", e.fn), n = e.aFace.map((e) => ({
+					...e,
+					src: this.#Pe("add_face", e.fn)
+				}));
+				if (!this.sys.crypto) {
+					this.$fncs.chgPic({
+						nm: e.nm,
+						page: e.page,
+						fn: e.fn,
+						src: t,
+						aFace: n
+					});
+					break;
+				}
+				let r = `${e.nm}:${e.page}`, i = (this.#Le.get(r) ?? 0) + 1;
+				this.#Le.set(r, i), this.$fncs.chgPic({
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: this.#Pe("lay", e.fn),
-					aFace: e.aFace.map((e) => ({
+					src: "",
+					aFace: n.map((e) => ({
 						...e,
-						src: this.#Pe("add_face", e.fn)
+						src: ""
 					}))
+				}), Promise.all([this.#Ie(t), ...n.map((e) => this.#Ie(e.src))]).then(([t, ...a]) => {
+					this.#Le.get(r) === i && this.$fncs.chgPic({
+						nm: e.nm,
+						page: e.page,
+						fn: e.fn,
+						src: t,
+						aFace: n.map((e, t) => ({
+							...e,
+							src: a[t] ?? ""
+						}))
+					});
 				});
 				break;
+			}
 			case "chgBAlpha":
 				this.$fncs.chgBAlpha({
 					nm: e.nm,
@@ -4871,10 +4918,10 @@ var Se = 999e3, Ce = class {
 				break;
 			case "pageTo": break;
 			case "trace":
-				this.#Re({ text: e.text });
+				this.#Be({ text: e.text });
 				break;
 			case "log":
-				this.#Be({ text: e.text }, e.fn, e.lineNum);
+				this.#He({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "loadScript": break;
 			case "stop": {
@@ -4893,7 +4940,7 @@ var Se = 999e3, Ce = class {
 			}
 		}
 	}
-	async #Le(e) {
+	async #ze(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await this.sys.fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -4902,13 +4949,13 @@ var Se = 999e3, Ce = class {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#Re(e) {
+	#Be(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#ze = !0;
-	#Be(e, t, n) {
+	#Ve = !0;
+	#He(e, t, n) {
 		let r = "";
-		return this.#ze && (this.#ze = !1, r = `== ${a.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${r}--- ${i("-", "_", "")} [fn:${t} line:${String(n)}] prj:${this.sys.arg.cur}\n${e.text || `(text is ${String(e.text)})`}\n`), !1;
+		return this.#Ve && (this.#Ve = !1, r = `== ${a.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${r}--- ${i("-", "_", "")} [fn:${t} line:${String(n)}] prj:${this.sys.arg.cur}\n${e.text || `(text is ${String(e.text)})`}\n`), !1;
 	}
 	myTrace = (e, t = "E") => {
 		let n = "";
@@ -4945,6 +4992,6 @@ var Se = 999e3, Ce = class {
 	};
 };
 //#endregion
-export { Ee as ScriptMng };
+export { Oe as ScriptMng, De as decryptPicUrl };
 
 //# sourceMappingURL=ScriptMng.js.map
