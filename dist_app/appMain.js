@@ -40,15 +40,14 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 				ok: n.ok,
 				ab: await n.arrayBuffer()
 			};
-		}), i.handle("existsSync", (e, t) => f(t)), i.handle("copy", (e, t, n) => u(t, n)), i.handle("remove", (e, t) => m(t)), i.handle("ensureFile", (e, t) => d(t)), i.handle("readFile", (e, t, n) => g(t, n)), i.handle("writeFile", (e, t, n, r) => h(t, n, r)), i.handle("appendFile", (e, t, n) => l(t, n).catch((e) => console.error(e))), i.handle("outputFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), i.handle("win_close", () => t.close()), i.handle("win_setTitle", (e, n) => t.setTitle(n)), i.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), i.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), i.handle("capturePage", (e, n, r, i) => t.webContents.capturePage().then(async (e) => {
-			await d(n);
-			let t = e.resize({
+		}), i.handle("existsSync", (e, t) => f(t)), i.handle("copy", (e, t, n) => u(t, n)), i.handle("remove", (e, t) => m(t)), i.handle("ensureFile", (e, t) => d(t)), i.handle("readFile", (e, t, n) => g(t, n)), i.handle("writeFile", (e, t, n, r) => h(t, n, r)), i.handle("appendFile", (e, t, n) => l(t, n).catch((e) => console.error(e))), i.handle("outputFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), i.handle("win_close", () => t.close()), i.handle("win_setTitle", (e, n) => t.setTitle(n)), i.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), i.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), i.handle("capturePage", async (e, n, r, i, a) => {
+			let o = (await t.webContents.capturePage(n)).resize({
 				width: r,
 				height: i,
 				quality: "best"
 			});
-			await h(n, n.endsWith(".png") ? t.toPNG() : t.toJPEG(80));
-		})), i.handle("navigate_to", (e, t) => a.openExternal(t));
+			return a === "image/jpeg" ? `data:image/jpeg;base64,${o.toJPEG(80).toString("base64")}` : o.toDataURL();
+		}), i.handle("navigate_to", (e, t) => a.openExternal(t));
 		let o;
 		i.handle("Store", (e, t) => {
 			o = new s(t);

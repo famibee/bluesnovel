@@ -3771,7 +3771,7 @@ var Se = 999e3, Ce = class {
 		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Le(e), this.#t.log = (e) => this.#ze(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Re(e), this.#t.log = (e) => this.#Be(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
@@ -3903,7 +3903,7 @@ var Se = 999e3, Ce = class {
 	}
 	#v;
 	async #y(e) {
-		return this.#n[e] ??= new D(e, await this.#Ie(e), this.#x());
+		return this.#n[e] ??= new D(e, await this.#Le(e), this.#x());
 	}
 	#b;
 	#x() {
@@ -3931,7 +3931,7 @@ var Se = 999e3, Ce = class {
 	}
 	playButtonSe(e, t) {
 		if (!e) return;
-		let n = this.#Pe("button", e);
+		let n = this.#Fe("button", e);
 		if (!n) return;
 		let r = Number(this.#r?.getVal(`sys:const.sn.sound.${t}.volume`) ?? 1);
 		this.#C.play(t, n, {
@@ -4109,7 +4109,7 @@ var Se = 999e3, Ce = class {
 		this.#$(t, r, i, () => {
 			let e = {};
 			for (let t of a) Object.assign(e, { [t]: r[t] });
-			this.#Ae(this.#S.frame(t.id, e));
+			this.#je(this.#S.frame(t.id, e));
 		});
 	}
 	static #Q(e, t) {
@@ -4189,7 +4189,7 @@ var Se = 999e3, Ce = class {
 		};
 	}
 	async #re(e) {
-		let t = e.buf === "BGM" ? "playbgm" : "playse", n = this.#Pe(t, e.fn);
+		let t = e.buf === "BGM" ? "playbgm" : "playse", n = this.#Fe(t, e.fn);
 		n && await this.#C.play(e.buf, n, e, (e) => {
 			this.#r?.setValNochk(`tmp:const.sn.sound.${e}.playing`, !1), e === "VOICE" && this.#ie();
 		});
@@ -4363,7 +4363,7 @@ var Se = 999e3, Ce = class {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#Fe(e);
+					for (let e of t) this.#Ie(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#R(n.canskip);
@@ -4431,7 +4431,7 @@ var Se = 999e3, Ce = class {
 	}
 	async #Te(e) {
 		try {
-			e.t === "addFrame" ? this.#Ae(await this.#S.add(e.id, e.src, e.sty)) : this.#Ae({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#S.get(e.id, e.var_name, e.fnc) });
+			e.t === "addFrame" ? this.#je(await this.#S.add(e.id, e.src, e.sty)) : this.#je({ [`const.sn.frm.${e.id}.${e.var_name}`]: this.#S.get(e.id, e.var_name, e.fnc) });
 		} catch (t) {
 			this.#A = !1, this.myTrace(`[${e.t === "addFrame" ? "add_frame" : "let_frame"}] エラー id:${e.id} ${String(t)}`, "ET");
 			return;
@@ -4484,29 +4484,38 @@ var Se = 999e3, Ce = class {
 	async #ke(e) {
 		let t = this.#w;
 		if (!t) throw "ステージがまだ表示されていません";
-		let n = e.fn.startsWith(h), r = n ? e.fn : Z(e.fn || "snapshot"), { stageW: i, stageH: o } = a, s = await ue({
+		let n = e.fn.startsWith(h), r = n ? e.fn : Z(e.fn || "snapshot"), i = ce(r), { stageW: o, stageH: s } = a, c = e.width || o, l = e.height || s, u = (e.aLayNm === null && e.page === "fore" && e.b_color === void 0 ? await this.sys.capturePage(this.#Ae(t), c, l, i) : "") || await ue({
 			el: t,
-			sw: i,
-			sh: o,
-			width: e.width || i,
-			height: e.height || o,
+			sw: o,
+			sh: s,
+			width: c,
+			height: l,
 			bgColor: e.b_color === void 0 ? "black" : le(e.b_color),
 			page: e.page,
 			aLayNm: e.aLayNm,
-			mime: ce(r),
+			mime: i,
 			smoothing: e.smoothing
 		});
-		n ? this.#p.putFile(r, s) : ge(r, s);
+		n ? this.#p.putFile(r, u) : ge(r, u);
 	}
 	#Ae(e) {
+		let t = e.getBoundingClientRect();
+		return {
+			x: Math.round(t.x),
+			y: Math.round(t.y),
+			width: Math.round(t.width),
+			height: Math.round(t.height)
+		};
+	}
+	#je(e) {
 		for (let [t, n] of Object.entries(e)) this.#r?.setValNochk(t, n);
 	}
-	#je = Object.create(null);
-	#Me(e) {
+	#Me = Object.create(null);
+	#Ne(e) {
 		let t = e === "l" ? "breakline" : "breakpage";
-		return this.#je[e] ??= this.sys.cfg.matchPath(`^${t}$`, g.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, g.SP_GSM) : "";
+		return this.#Me[e] ??= this.sys.cfg.matchPath(`^${t}$`, g.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, g.SP_GSM) : "";
 	}
-	#Ne(e, t) {
+	#Pe(e, t) {
 		if (!t) return "";
 		if (t.startsWith("userdata:/")) return this.#p.getFile(t) || (this.myTrace(`[${e}] 保存された画像がありません fn:${t}`, "E"), "");
 		try {
@@ -4515,7 +4524,7 @@ var Se = 999e3, Ce = class {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#Pe(e, t) {
+	#Fe(e, t) {
 		if (!t) return "";
 		try {
 			return this.sys.cfg.searchPath(t, g.SOUND);
@@ -4523,7 +4532,7 @@ var Se = 999e3, Ce = class {
 			return this.myTrace(`[${e}] 音声ファイルが見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#Fe(e) {
+	#Ie(e) {
 		switch (e.t) {
 			case "addLay":
 				this.$fncs.addLayer(e.cls === "grp" ? {
@@ -4547,10 +4556,10 @@ var Se = 999e3, Ce = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: this.#Ne("lay", e.fn),
+					src: this.#Pe("lay", e.fn),
 					aFace: e.aFace.map((e) => ({
 						...e,
-						src: this.#Ne("add_face", e.fn)
+						src: this.#Pe("add_face", e.fn)
 					}))
 				});
 				break;
@@ -4567,7 +4576,7 @@ var Se = 999e3, Ce = class {
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: e.fn ? this.#Ne("lay b_pic", e.fn) : ""
+					src: e.fn ? this.#Pe("lay b_pic", e.fn) : ""
 				});
 				break;
 			case "chgBackClear":
@@ -4583,7 +4592,7 @@ var Se = 999e3, Ce = class {
 				this.#L(), this.$fncs.startTrans({
 					aLayNm: e.aLayNm,
 					time: e.time,
-					...e.rule ? { ruleSrc: this.#Ne("trans", e.rule) } : {},
+					...e.rule ? { ruleSrc: this.#Pe("trans", e.rule) } : {},
 					...e.vague === void 0 ? {} : { vague: e.vague }
 				}), this.#I(e.time);
 				break;
@@ -4591,7 +4600,7 @@ var Se = 999e3, Ce = class {
 			case "chgStr":
 				{
 					let t = z(e.str);
-					for (let e of t) e.pic && (e.src = this.#Ne("graph", e.pic));
+					for (let e of t) e.pic && (e.src = this.#Pe("graph", e.pic));
 					this.$fncs.chgStr({
 						nm: e.nm,
 						page: e.page,
@@ -4603,8 +4612,8 @@ var Se = 999e3, Ce = class {
 			case "addBtn": {
 				let t = e.sty && {
 					...e.sty,
-					...e.sty.pic ? { src: this.#Ne("button pic", e.sty.pic) } : {},
-					...e.sty.b_pic ? { b_src: this.#Ne("button b_pic", e.sty.b_pic) } : {}
+					...e.sty.pic ? { src: this.#Pe("button pic", e.sty.pic) } : {},
+					...e.sty.b_pic ? { b_src: this.#Pe("button b_pic", e.sty.b_pic) } : {}
 				};
 				this.$fncs.addBtn({
 					layerNm: e.layerNm,
@@ -4785,7 +4794,7 @@ var Se = 999e3, Ce = class {
 				break;
 			}
 			case "frame":
-				this.#Ae(this.#S.frame(e.id, e.sty, e.order, e.disabled));
+				this.#je(this.#S.frame(e.id, e.sty, e.order, e.disabled));
 				break;
 			case "setFrame":
 				this.#S.set(e.id, e.var_name, e.text);
@@ -4838,16 +4847,16 @@ var Se = 999e3, Ce = class {
 				break;
 			case "pageTo": break;
 			case "trace":
-				this.#Le({ text: e.text });
+				this.#Re({ text: e.text });
 				break;
 			case "log":
-				this.#ze({ text: e.text }, e.fn, e.lineNum);
+				this.#Be({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
 				if (this.#l = void 0, t && this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#d(), e.kind === "l" || e.kind === "p") {
-					let t = this.#Me(e.kind);
+					let t = this.#Ne(e.kind);
 					this.$fncs.setWait({
 						nm: e.nm,
 						kind: e.kind,
@@ -4860,7 +4869,7 @@ var Se = 999e3, Ce = class {
 			}
 		}
 	}
-	async #Ie(e) {
+	async #Le(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await fetch(t);
 			if (!n.ok) throw Error(n.statusText);
@@ -4869,13 +4878,13 @@ var Se = 999e3, Ce = class {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#Le(e) {
+	#Re(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#Re = !0;
-	#ze(e, t, n) {
+	#ze = !0;
+	#Be(e, t, n) {
 		let r = "";
-		return this.#Re && (this.#Re = !1, r = `== ${a.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${r}--- ${i("-", "_", "")} [fn:${t} line:${String(n)}] prj:${this.sys.arg.cur}\n${e.text || `(text is ${String(e.text)})`}\n`), !1;
+		return this.#ze && (this.#ze = !1, r = `== ${a.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${r}--- ${i("-", "_", "")} [fn:${t} line:${String(n)}] prj:${this.sys.arg.cur}\n${e.text || `(text is ${String(e.text)})`}\n`), !1;
 	}
 	myTrace = (e, t = "E") => {
 		let n = "";

@@ -1158,14 +1158,25 @@ export class ScriptMng {
 
 		const toUD = act.fn.startsWith(PROTOCOL_USERDATA);
 		const fn = toUD ? act.fn : dlFn(act.fn || 'snapshot');
+		const mime = mimeOfFn(fn);
 
 		const {stageW, stageH} = CmnLib;
-		const dataUrl = await snapshotToPng({
+		const width		= act.width || stageW;
+		const height	= act.height || stageH;
+
+		// 素朴な撮影（全レイヤ・表ページ・背景色未指定）に限り、アプリ版はネイティブ撮影
+		//	（SysBase.capturePage＝Electronのcapturepage。HTMLフレームの中身も写る）を試す。
+		//	レイヤ絞り込み・裏ページ・背景色指定はDOM要素の選別が要るためcapturePageでは
+		//	実現できない（画素をそのまま撮るだけ）ので、その場合と非対応（web版）はDOM→SVG方式へ
+		const dataUrl = act.aLayNm === null && act.page === 'fore' && act.b_color === undefined
+			? await this.sys.capturePage(this.#rectOfStageBox(el), width, height, mime)
+			: '';
+		const dataUrl2 = dataUrl || await snapshotToPng({
 			el,
 			sw		: stageW,
 			sh		: stageH,
-			width	: act.width || stageW,
-			height	: act.height || stageH,
+			width,
+			height,
 			// 未指定はステージと同じ黒（本家も背景色の既定はステージの背景色）。
 			//	指定時は0xAARRGGBB＝高2桁がアルファ（0x0で完全透過）。**本家web版はここが逆**
 			//	（LayerMng.ts:383 が透過2桁アリのときbackgroundAlphaを0にする）だが、
@@ -1173,10 +1184,17 @@ export class ScriptMng {
 			bgColor	: act.b_color === undefined ? 'black' : rgbaOf(act.b_color),
 			page	: act.page,
 			aLayNm	: act.aLayNm,
-			mime	: mimeOfFn(fn),
+			mime,
 			smoothing: act.smoothing,
 		});
-		if (toUD) this.#saveMng.putFile(fn, dataUrl); else savePic(fn, dataUrl);
+		if (toUD) this.#saveMng.putFile(fn, dataUrl2); else savePic(fn, dataUrl2);
+	}
+
+	// capturePage（Electron主処理）へ渡す撮影範囲。stageRef自体がtransform: scaleを持つ要素
+	//	（Stage.tsx styStage）なので、getBoundingClientRect()が拡縮後の実際の画面上矩形になる
+	#rectOfStageBox(el: HTMLElement) {
+		const r = el.getBoundingClientRect();
+		return {x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height)};
 	}
 
 	#setVals(h: {[name: string]: unknown}) {

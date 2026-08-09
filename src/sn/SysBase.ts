@@ -87,4 +87,9 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	window(_o: {centering: boolean; x: number; y: number; w: number; h: number}) { /* アプリ版のみ */ }
 	updateCheck(_url: string) { /* アプリ版のみ */ }
 
+	// [snapshot]のネイティブ撮影（本家に無いbluesnovel独自経路）。ScriptMngのDOM→SVG方式に対し、
+	//	アプリ版はElectronのcapturePageでHTMLフレームの中身まで撮れる。空文字は「非対応」の意味で、
+	//	呼び出し側（ScriptMng #snapshot）がDOM→SVG方式へフォールバックする
+	async capturePage(_rect: {x: number; y: number; width: number; height: number}, _outW: number, _outH: number, _mime: string): Promise<string> {return ''}
+
 }

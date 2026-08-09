@@ -26,7 +26,6 @@
     - [ ] しおり・`sys:`の保存先を`electron-store`（`userdata/storage/`）へ。今はブラウザ版と同じlocalStorage（`SaveMng`）のままで、アプリを消すと消える。`[export]`/`[import]`も本家は`.spd`（zip）
     - [ ] ウインドウ位置・大きさの復元。今は毎回「ステージ実寸で中央」。本家は`sys:const.sn.nativeWindow.*`から復元し、`save_win_inf`で動かすたび保存する（受け口は`appMain_cmn`に有る）
     - [ ] パッケージ版のアセット読み込み（`file://`になるので`fetch`が使えず、主処理の`fetch`/`readFile` IPC経由が要る）。今のところ`electron-vite dev`のみ確認
-    - [ ] アプリ版の`[snapshot]`は`capturePage`（Electronがネイティブに撮る＝**HTMLフレームの中身も写る**）。web版のDOM→SVG方式はブラウザ制約でフレームが写らないので、ここは版ごとに実装が分かれる
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
@@ -53,7 +52,6 @@
 ## 挙動の詰め・実機確認
 
 - [ ] オート読み・既読スキップの残課題
-  - [ ] スキップモード`'p'`（改ページで止まる）は`#calcResume()`まで実装したが、`Main.tsx`が手動操作のたびに`cancelAuto()`を呼ぶため、ユーザーがその改ページをクリックで越えるとスキップも解除される（本家は継続）。「モード'p'の改ページ停止」を手動停止と区別する必要がある。既定`'s'`は正しく動く
   - [ ] オート読みの待ち時間カウントは停止点の時点から開始（本家は文字送り演出の完了後）。演出が待ち時間より長いと途中で進む
 - [ ] 文字送りの速さを実機（`tmp_blues`）で確認。1文字あたりの遅れは`sys:sn.tagCh.msecWait`（既定10ms）、1文字のアニメ時間は`[ch_in_style]`の`default`（既定500ms）で、どちらも本家の既定値にした
 - [ ] 読み戻り（PageUp/PageDown）から戻った際、既読部分が瞬時表示されない（実機確認）
@@ -66,10 +64,10 @@
 
 ## アセット・基盤
 
-- [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像も同じ仕組み
 - [ ] 画像の**先読み**（本家`SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる。実機で要確認
 - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず）
+- [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像も同じ仕組み
+- [ ] 【低優先度・技術的負債】`parsimmon`（README「UNMAINTAINED」明記、2021-12から更新停止）への依存を外す。使用箇所は`src/ts/ExprEval.ts`1ファイルのみで、優先順位クライミング（PREFIX/POSTFIX/BINARY_LEFT/BINARY_RIGHT）は既に自前実装済み。parsimmonが担っているのは正規表現マッチ・`alt`によるバックトラック・`lazy`による再帰・`seq`/`seqMap`の逐次合成という基礎部分のみで依存範囲が狭いため、他のパーサコンビネータ（parjs/ts-parsec等、これらも小規模で同種のリスクを抱える）へ乗り換えるより、howlerを外して自前Web Audio層にした`SndMng.ts`と同じ判断で**手書きのPratt parserに置き換えて依存自体を無くす**のが筋が良い。ただし現状動作に実害は無いので緊急対応は不要
 - [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
   - [ ] 復活したら`eslint-plugin-import`（2.32.0のまま更新停止、ESLint 10対応PRが未マージ）を`eslint-plugin-import-x`へ切替。peerDependencyがESLint 10を公式サポート済みで移行も軽微（このリポジトリの`import/no-unresolved: 'off'`1行だけ`import-x/`にプレフィックスを変える程度）。本家`skynovel_esm`もeslint関連が全く同じバージョン構成・同じ1行なので同時に対応可能
-- [ ] 【低優先度・技術的負債】`parsimmon`（README「UNMAINTAINED」明記、2021-12から更新停止）への依存を外す。使用箇所は`src/ts/ExprEval.ts`1ファイルのみで、優先順位クライミング（PREFIX/POSTFIX/BINARY_LEFT/BINARY_RIGHT）は既に自前実装済み。parsimmonが担っているのは正規表現マッチ・`alt`によるバックトラック・`lazy`による再帰・`seq`/`seqMap`の逐次合成という基礎部分のみで依存範囲が狭いため、他のパーサコンビネータ（parjs/ts-parsec等、これらも小規模で同種のリスクを抱える）へ乗り換えるより、howlerを外して自前Web Audio層にした`SndMng.ts`と同じ判断で**手書きのPratt parserに置き換えて依存自体を無くす**のが筋が良い。ただし現状動作に実害は無いので緊急対応は不要

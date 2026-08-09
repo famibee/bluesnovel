@@ -48,6 +48,9 @@ var t = "skynovel", n = class {
 	close() {}
 	window(e) {}
 	updateCheck(e) {}
+	async capturePage(e, t, n, r) {
+		return "";
+	}
 }, r = class {
 	send(e, ...t) {
 		window.electron.ipcRenderer.send(e, ...t);
@@ -93,6 +96,9 @@ var t = "skynovel", n = class {
 	}
 	window(e) {
 		this.#e.invoke("window", e.centering, e.x, e.y, e.w, e.h);
+	}
+	capturePage(e, t, n, r) {
+		return this.#e.invoke("capturePage", e, t, n, r);
 	}
 };
 //#endregion

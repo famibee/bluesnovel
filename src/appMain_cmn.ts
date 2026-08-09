@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {SAVE_WIN_INF, TAG_WINDOW} from './preload';
+import type {SAVE_WIN_INF, TAG_WINDOW, T_CAPTURE_RECT} from './preload';
 import type {T_CFG} from './sn/ConfigBase';
 
 import type {BrowserWindow, MessageBoxOptions, OpenDialogOptions, Size} from 'electron/main';
@@ -124,14 +124,16 @@ export class appMain_cmn {
 		ipc.handle('showMessageBox', (_, o: MessageBoxOptions)=> dialog.showMessageBox(bw, o));
 		ipc.handle('showOpenDialog', (_, o: OpenDialogOptions)=> dialog.showOpenDialog(bw, o));
 
-		ipc.handle('capturePage', (_, path: string, width: number, height: number)=> bw.webContents.capturePage()
-		.then(async ni=> {
-			await ensureFile(path);	// 【必須】ディレクトリ、なければ作る
-
-			const c = ni.resize({width, height, quality: 'best'});
-			const d = path.endsWith('.png') ?c.toPNG() :c.toJPEG(80);
-			await writeFile(path, d);
-		}));
+		// [snapshot]のネイティブ撮影（本家に無いbluesnovel独自経路。SysBase.capturePage参照）。
+		//	素朴な撮影（全レイヤ・表ページ・背景色未指定）のときだけScriptMngがここを呼ぶ。
+		//	ウインドウの実描画をそのまま撮るため、iframe（[add_frame]）の中身も写る
+		ipc.handle('capturePage', async (_, rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string)=> {
+			const ni = await bw.webContents.capturePage(rect);
+			const c = ni.resize({width: outW, height: outH, quality: 'best'});
+			return mime === 'image/jpeg'
+				? `data:image/jpeg;base64,${c.toJPEG(80).toString('base64')}`
+				: c.toDataURL();
+		});
 		ipc.handle('navigate_to', (_, url: string)=> shell.openExternal(url));
 
 

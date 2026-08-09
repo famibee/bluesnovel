@@ -19,7 +19,7 @@ export type {TArg};
 
 import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
-import type {T_IpcEvents, T_IpcRendererEvent} from './preload';
+import type {T_CAPTURE_RECT, T_IpcEvents, T_IpcRendererEvent} from './preload';
 
 import {IpcEmitter, IpcListener} from './IpcRenderer';
 
@@ -64,6 +64,10 @@ export class SysApp extends SysBase {
 
 	override window(o: {centering: boolean; x: number; y: number; w: number; h: number}) {
 		void this.#em.invoke('window', o.centering, o.x, o.y, o.w, o.h);
+	}
+
+	override capturePage(rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string) {
+		return this.#em.invoke('capturePage', rect, outW, outH, mime);
 	}
 
 }

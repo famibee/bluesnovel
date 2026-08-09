@@ -238,8 +238,21 @@
   - テスト：`test/Sprite.test.ts`に2件追加（余りマスの位置を踏まないこと／一巡の終わりが1コマ目へ戻ること）。既存の`test/e2e/anime.e2e.ts`は単一アニメーション形式に合わせて更新（速い軸／遅い軸2本のCSSプロパティを検証していた箇所を1本に修正）。ユニット1518件→1520件、E2Eは既存8件がそのままパス
   - `todo.md`の該当項目を削除（文字レイヤ枠画像でのシート再生は別項目として残る）
 
-- [ ]
+- [x] **スキップモード`'p'`の改ページ停止が手動停止と区別されない件を調査、「対応不要」と結論**（2026-08-09）
+  - todo.mdは「本家は継続する」という前提で、`Main.tsx`が手動操作のたびに`cancelAuto()`を呼ぶせいでモード`'p'`の改ページ停止をクリックで越えるとスキップまで解除されてしまう、とbluesnovel固有のバグ扱いにしていた
+  - 隣接チェックアウト`skynovel_esm`（`EventMng.ts`／`Reading.ts`）を読むと、クリック・キー・ホイールの全ハンドラが`Reading.fire(key, e, true)`を呼び、`fire()`は`cancelAutoSkip=true`のとき進行処理より前に無条件で`cancelAutoSkip()`を実行する。「モード`'p'`の改ページ停止だけ継続扱いする分岐」はソース上に存在しない
+  - `tmp_esm_uc`（本家web版、`npm run web`）で実機検証。既読を作った上で`sn.skip.mode='p'`を一時的に仕込んで`toggle_skip_all`（`Ctrl+F`）を起動し、改ページのクリック待ちに到達したところでクリックすると、**本家でも自動送りが止まった**（テスト用の一時変更は確認後に元へ戻した）
+  - つまりbluesnovelの`cancelAuto()`（`ScriptMng.ts`）とその呼び出し箇所（`Main.tsx`等）は本家`cancelAutoSkip()`／`EventMng`と同じ設計で、実装漏れではなく本家から受け継いだ仕様どおりの挙動と判明。`todo.md`の該当項目を削除
+  - 「モード`'p'`の改ページ停止だけユーザー操作でスキップを切らせない」という体験向上は本家にもない改修になるため、要望があれば別途新規タスクとして起こす
 
+- [x] **アプリ（Electron）版の`[snapshot]`を`capturePage`でネイティブ撮影に対応**（2026-08-09）
+  - IPC（`appMain_cmn.ts`の`capturePage`ハンドラ・`preload.ts`の型）は用意済みだったが、レンダラ側（`ScriptMng`）から未接続だった
+  - `capturePage`はElectronのウインドウ画素をそのまま撮るため、DOM→SVG方式（`Snapshot.ts`）が担っていたレイヤ絞り込み（`aLayNm`）・裏ページ（`page`）・背景色指定（`b_color`）は原理的に再現できない。そこで「全レイヤ・表ページ・背景色未指定」という素朴な撮影のときだけ`SysBase.capturePage()`（アプリ版のみオーバーライド、既定はブラウザ版も含め空文字＝非対応）を試し、それ以外・非対応時は従来のDOM→SVG方式へフォールバックする設計にした
+  - `capturePage`ハンドラは`path`へ直接書き込む方式（未使用だった）からdata URLを返す方式へ変更。呼び出し元が無かったため既存動作への影響は無い。撮影範囲は`ScriptMng`側で`stageRef`（`transform: scale`を持つ要素そのもの）の`getBoundingClientRect()`から求め、拡縮後の実際の画面上矩形をIPCへ渡す
+  - `[snapshot]`のtodo.md該当行を削除（HTMLフレームが写らない件は引き続きweb版側の制約として残る）
+  - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト（1520件）はいずれもパス。`tmp_blues`（`electron-vite build`→Playwright `_electron`で操作）での実機確認も実施：設定画面（`[add_frame]`のHTMLフレーム）を開いた状態で`[snapshot]`（`main.sn`の`P`キー割り当て）を実行し、保存されたPNGにフレームの中身が写ることを確認した
+
+- [ ]
 
 
 

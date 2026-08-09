@@ -26,6 +26,13 @@ export	type	SAVE_WIN_INF	= {
 	h	: number;
 };
 
+export	type	T_CAPTURE_RECT	= {
+	x	: number;
+	y	: number;
+	width	: number;
+	height	: number;
+};
+
 export	type	T_FETCH		= {
 	ok	: boolean;
 	txt	: string;
@@ -65,7 +72,7 @@ export	type	T_IpcEvents	= {
 	showMessageBox	: (o: MessageBoxOptions)=> MessageBoxReturnValue;
 	showOpenDialog	: (o: OpenDialogOptions)=> OpenDialogReturnValue;
 
-	capturePage	: (path: string, w: number, h: number)=> void;
+	capturePage	: (rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string)=> string;
 	navigate_to	: (url: string)=> void;
 
 	Store	: (o: object)=> void;

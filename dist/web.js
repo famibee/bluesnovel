@@ -48,6 +48,9 @@ var t = "skynovel", n = class {
 	close() {}
 	window(e) {}
 	updateCheck(e) {}
+	async capturePage(e, t, n, r) {
+		return "";
+	}
 }, r = class extends n {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
