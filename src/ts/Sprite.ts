@@ -81,8 +81,10 @@ export function sheetImgSrc(jsonSrc: string, json: unknown): string {
 // 再生用CSSを<head>へ入れ、当てるクラス名を返す。**シートごとに1回だけ**作って使い回す。
 //	emotionのcssではなく素のクラスにしてあるのは、Reactの外で組み立てるDOM
 //	（TxtLayerの本文＝[graph]や[l]/[p]の待ちマーク）からも同じ物を当てたいため。
-//	・JSは1コマも跨がない：背景位置をCSSのstepsアニメで送る（本家はpixiのAnimatedSprite）
-//	・速い軸／遅い軸の2本を重ねて格子を走査する。並びが縦優先（isCol）なら速い軸は縦
+//	JSは1コマも跨がない：実コマ（cnt個）ぶんのbackground-positionを@keyframesへ
+//	直接列挙し、animation-timing-function: step-endでコマ間をジャンプさせる
+//	（本家はpixiのAnimatedSprite）。cols*rows（物理格子）ではなくcnt基準なので、
+//	格子が埋まりきらないシートでも余りマス（透明領域）を踏まない
 const hCls: {[img: string]: string} = Object.create(null);
 let cntCls = 0;
 
@@ -99,12 +101,20 @@ export function aniSpriteClass(sh: T_SHEET, doc: Document = document): string {
 }
 
 // 上のCSS本体（純粋）。テストしたいのはこちら
-export function aniSpriteCss({img, fw, fh, cols, rows, sec, isCol}: T_SHEET, cls: string): string {
-	// 一巡の時間。速い軸は「遅い軸1コマぶん」の間に一巡する
-	const secX = isCol ? sec : sec / rows;
-	const secY = isCol ? sec / cols : sec;
-	return `@keyframes ${cls}_x {to {background-position-x: ${String(-cols * fw)}px}}
-@keyframes ${cls}_y {to {background-position-y: ${String(-rows * fh)}px}}
+export function aniSpriteCss({img, fw, fh, cols, rows, cnt, sec, isCol}: T_SHEET, cls: string): string {
+	// コマ番号iから格子上の位置(col, row)へ。isColなら列ごとに下へ進む（縦優先）
+	const posOf = (i: number): string => {
+		const col = isCol ? Math.floor(i / rows) : i % cols;
+		const row = isCol ? i % rows : Math.floor(i / cols);
+		return `${String(-col * fw)}px ${String(-row * fh)}px`;
+	};
+	const aStep = Array.from({length: cnt}, (_, i)=>
+		`\t${String(Math.round(i / cnt * 1e6) / 1e4)}% {background-position: ${posOf(i)}; animation-timing-function: step-end;}`
+	).join('\n');
+	return `@keyframes ${cls}_f {
+${aStep}
+	100% {background-position: ${posOf(0)};}
+}
 .${cls} {
 	display: inline-block;
 	width: ${String(fw)}px;
@@ -112,6 +122,6 @@ export function aniSpriteCss({img, fw, fh, cols, rows, sec, isCol}: T_SHEET, cls
 	background-image: url(${JSON.stringify(img)});
 	background-repeat: no-repeat;
 	background-position: 0 0;
-	animation: ${cls}_x ${String(secX)}s steps(${String(cols)}) infinite, ${cls}_y ${String(secY)}s steps(${String(rows)}) infinite;
+	animation: ${cls}_f ${String(sec)}s infinite;
 }`;
 }

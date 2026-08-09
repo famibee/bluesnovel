@@ -232,6 +232,12 @@
   - テスト：`test/ScriptEngine_filter.test.ts`に8件追加（`blendmode`の4種変換・不正値のthrow・`blendmodeOf`の優先順位、`blur_x`/`blur_y`無指定時の既存動作維持・どちらか一方のみでも既定値2で補うこと・`blurId`/`blurValues`/`blursOf`）。ユニット1510件→1518件。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過（E2Eは追加していない：見た目の確認は将来必要ならフィルターギャラリーサンプルで）
   - `docs/tag.html`のフィルターセクションを更新（未対応から対応済みの説明へ差し替え、`[add_filter]`属性表に`blendmode`行を追加）、`[link]`エントリの`global`欄と、内容が古いまま残っていた重複説明ブロック（`style_clicked`等を「未対応」と誤記していた）を削除。`todo.md`の該当項目を更新・削除
 
+- [x] **アニメpng（スプライトシート）の「コマ数が格子に満たないシート」を修正**（2026-08-09）
+  - 原因：`src/ts/Sprite.ts`の`aniSpriteCss()`は「速い軸／遅い軸の2本のCSS `steps()`を重ねて格子を走査する」トリックで再生していたが、これは常に物理格子（`cols*rows`）全マスを踏む実装で、実コマ数`cnt`が格子に満たない場合、png上に絵の無い余りマスも毎周期通過し一瞬空白になっていた。本家（`skynovel_esm/src/sn/SpritesMng.ts`）はpixiの`AnimatedSprite`に実フレーム数ぶんのTextureだけを渡すため、この問題自体が存在しない
+  - 2軸トリックをやめ、実コマ（`cnt`個）ぶんの`background-position`を単一の`@keyframes`へ直接列挙し、各ステップに`animation-timing-function: step-end`を指定してコマ間をジャンプさせる方式に変更。余りマスという概念自体が無くなる
+  - テスト：`test/Sprite.test.ts`に2件追加（余りマスの位置を踏まないこと／一巡の終わりが1コマ目へ戻ること）。既存の`test/e2e/anime.e2e.ts`は単一アニメーション形式に合わせて更新（速い軸／遅い軸2本のCSSプロパティを検証していた箇所を1本に修正）。ユニット1518件→1520件、E2Eは既存8件がそのままパス
+  - `todo.md`の該当項目を削除（文字レイヤ枠画像でのシート再生は別項目として残る）
+
 - [ ]
 
 

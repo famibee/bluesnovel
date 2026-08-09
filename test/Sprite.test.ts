@@ -10,7 +10,7 @@
 //	ここで見るのは「CSSアニメを組むのに要る情報へ畳む」ところだけで、DOMは要らない。
 //	値はギャラリーの anime_png サンプル（SKYNovel_gallery/public/prj/anime_png）から取った。
 
-import {parseSheet, sheetImgSrc} from '../src/ts/Sprite';
+import {aniSpriteCss, parseSheet, sheetImgSrc} from '../src/ts/Sprite';
 
 import {expect, it} from 'bun:test';
 
@@ -69,4 +69,26 @@ it('sheetImgSrc_resolvesBesideJson', ()=> {
 	// meta.imageはjsonと同じ場所から引く（path.jsonでは`論理名.列x行`が別項目になっている）
 	expect(sheetImgSrc('/prj/mat/clock.json', CLOCK)).toBe('/prj/mat/clock.5x8.png');
 	expect(sheetImgSrc('clock.json', CLOCK)).toBe('clock.5x8.png');
+});
+
+it('aniSpriteCss_stepCountMatchesCntNotGrid', ()=> {
+	// CLOCKは格子5x8=40マスだが実コマは3つ。余りマス（37個）の位置を踏んではいけない
+	const sh = parseSheet(CLOCK, 'x.png')!;
+	const css = aniSpriteCss(sh, 'sn_ani1');
+	// 各コマの位置（列優先：1コマ目=(0,0), 2コマ目=(0,-150px), 3コマ目=(0,-300px)）
+	expect(css).toContain('background-position: 0px 0px; animation-timing-function: step-end;');
+	expect(css).toContain('background-position: 0px -150px; animation-timing-function: step-end;');
+	expect(css).toContain('background-position: 0px -300px; animation-timing-function: step-end;');
+	// 4コマ目（格子上は存在するが実コマではない位置）は出てこない
+	expect(css).not.toContain('-450px');
+	// steps()による格子丸ごと走査（cols=5/rows=8）はもう使わない
+	expect(css).not.toContain('steps(');
+});
+
+it('aniSpriteCss_wrapsToFirstFrameAt100Percent', ()=> {
+	// 一巡の終わりは次周期の1コマ目位置へ（stepsのラップ挙動を模倣）
+	const sh = parseSheet(BLINK, 'x.png')!;
+	const css = aniSpriteCss(sh, 'sn_ani2');
+	expect(css).toContain('100% {background-position: 0px 0px;}');
+	expect(css).toContain('50% {background-position: -200px 0px; animation-timing-function: step-end;}');
 });

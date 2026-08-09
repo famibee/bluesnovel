@@ -32,7 +32,6 @@ test('[lay fn=…]の解決結果が.jsonならスプライトシートとして
 			w: s.width, h: s.height,
 			img: s.backgroundImage,
 			dur: s.animationDuration,
-			fnc: s.animationTimingFunction,
 			cnt: s.animationIterationCount,
 		};
 	});
@@ -41,10 +40,10 @@ test('[lay fn=…]の解決結果が.jsonならスプライトシートとして
 	expect(o.h).toBe('20px');
 	expect(o.img).toMatch(/anime\.4x1\.png/);
 	// 4コマ・animationSpeed=0.2（毎秒12コマ）＝一巡 4/12 秒。
-	//	横並び（1行）なので、速い軸（横）が一巡ぶん、遅い軸（縦）も同じ長さになる
-	expect(o.dur).toBe('0.333333s, 0.333333s');
-	expect(o.fnc).toBe('steps(4), steps(1)');
-	expect(o.cnt).toBe('infinite, infinite');	// 速い軸・遅い軸の2本とも回し続ける
+	//	実コマぶんのbackground-positionを@keyframesへ直接列挙する単一アニメーション
+	//	（コマ間のジャンプは各ステップのanimation-timing-function: step-endが担う）
+	expect(o.dur).toBe('0.333333s');
+	expect(o.cnt).toBe('infinite');
 });
 
 test('シート画像は実際に読み込まれる（404にならない）', async ({page})=> {

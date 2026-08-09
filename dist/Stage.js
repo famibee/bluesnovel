@@ -229,18 +229,23 @@ function se(e, t = document) {
 	let r = ae[e.img] = `sn_ani${String(++oe)}`, i = t.createElement("style");
 	return i.dataset.sn = "sprite", i.textContent = ce(e, r), t.head.appendChild(i), r;
 }
-function ce({ img: e, fw: t, fh: n, cols: r, rows: i, sec: a, isCol: o }, s) {
-	let c = o ? a : a / i, l = o ? a / r : a;
-	return `@keyframes ${s}_x {to {background-position-x: ${String(-r * t)}px}}
-@keyframes ${s}_y {to {background-position-y: ${String(-i * n)}px}}
-.${s} {
+function ce({ img: e, fw: t, fh: n, cols: r, rows: i, cnt: a, sec: o, isCol: s }, c) {
+	let l = (e) => {
+		let a = s ? Math.floor(e / i) : e % r, o = s ? e % i : Math.floor(e / r);
+		return `${String(-a * t)}px ${String(-o * n)}px`;
+	};
+	return `@keyframes ${c}_f {
+${Array.from({ length: a }, (e, t) => `\t${String(Math.round(t / a * 1e6) / 1e4)}% {background-position: ${l(t)}; animation-timing-function: step-end;}`).join("\n")}
+	100% {background-position: ${l(0)};}
+}
+.${c} {
 	display: inline-block;
 	width: ${String(t)}px;
 	height: ${String(n)}px;
 	background-image: url(${JSON.stringify(e)});
 	background-repeat: no-repeat;
 	background-position: 0 0;
-	animation: ${s}_x ${String(c)}s steps(${String(r)}) infinite, ${s}_y ${String(l)}s steps(${String(i)}) infinite;
+	animation: ${c}_f ${String(o)}s infinite;
 }`;
 }
 //#endregion
