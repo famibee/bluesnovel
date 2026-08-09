@@ -803,6 +803,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	vintage	…… ビンテージ<br/>
 </td></tr>
 <tr><td>enabled</td><td></td><td>true</td><td>true、false</td><td>フィルターを有効にするか</td></tr>
+<tr><td>blendmode</td><td></td><td>何もしない</td><td>ブレンドモード名（"screen"など）</td><td>このフィルターと下のレイヤとの重なりにおいて、<br/>ドット単位で色のブレンド演算を行なう。<br/>詳細は<a href="tag.html#blendMode" target="_blank" rel="noopener">blendModeの解説</a>を参照</td></tr>
 </table>
 
 　以下はフィルターごとに指定できる属性説明です。<br/>
@@ -937,9 +938,18 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	掛け合わせは並べた時点で起きている）。またpixiは<code>multiply=true</code>のときだけ
 	オフセット列を255で割る（同じプリセットでも指定で明るさが変わる）が、こちらは行列を
 	最初からSVGの流儀（オフセットは0〜1）で書き、その揺れを持ち込まない<br/>
+	<code>blendmode</code>（フィルター単位のブレンド）にも対応：CSSは要素につき<code>mix-blend-mode</code>を
+	1つしか持てないため、<b>レイヤ自身の<a href="#lay">[lay blendmode=]</a>と同じ枠へ合流させる</b>
+	（有効なフィルターの中で最後に指定されたものが勝つ。<code>[lay blendmode=]</code>が明示されていれば
+	そちらが優先）。複数フィルターがそれぞれ別のblendmodeを持つケースは表現できない。値は
+	<a href="#lay">[lay]</a>・<a href="#button">[button]</a>と同じ4種のみ<br/>
+	<code>blur</code>の<code>blur_x</code>／<code>blur_y</code>にも対応：CSSの<code>blur()</code>は
+	半径1つしか持てないため、指定があるときだけSVGの<code>feGaussianBlur</code>
+	（<code>stdDeviation</code>がX/Y別々に持てる）へ切り替える。無指定時は従来どおり
+	<code>strength</code>をそのまま半径pxとしたCSSの<code>blur()</code>のまま。本家
+	（Layer.ts:122-123）は常に<code>blur_x</code>／<code>blur_y</code>（既定2）で上書きし
+	<code>strength</code>は見た目に効かないため、指定時は本家の既定値2をそのまま使う<br/>
 	<b>未対応</b>：<code>noise</code>（CSSにもSVGの単純な組合せにも相当が無い）・
-	<code>blendmode</code>（フィルター単位のブレンド）・<code>blur</code>の
-	<code>blur_x</code>／<code>blur_y</code>（CSSの<code>blur()</code>は半径1つしか持てない）・
 	<code>quality</code>／<code>kernel_size</code>／<code>resolution</code>／<code>repeat_edge_pixels</code>（pixi前提）
 </p>
 
@@ -1355,7 +1365,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="link" class="w-heading">[link]ハイパーリンク</h2>
 <h4>指定した文字レイヤの表ページに、ハイパーリンクを作成する。</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>style_clicked</code>／<code>r_style</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>（CSSでそのまま当てる。<code>style_clicked</code>は<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗せる——本文DOMをReactの外で直接組むため<code>:active</code>疑似クラスが使えない。省略時の既定は表のとおり）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/>未対応：<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>layer</code>／<code>page</code>（既定文字レイヤの表ページ固定）。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>style_clicked</code>／<code>r_style</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>（CSSでそのまま当てる。<code>style_clicked</code>は<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗せる——本文DOMをReactの外で直接組むため<code>:active</code>疑似クラスが使えない。省略時の既定は表のとおり）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/><code>global</code>は**受理はするが効果を持たない**：本家はローカル予約イベント表が読み進めの節目ごとにリセットされ、<code>global=true</code>がそれを生き延びさせる仕組みだが、こちらのクリックは予約表を経由せずReactが要素に直接ハンドラを付ける方式（表示されている間は常にクリック可能＝本家の<code>global=true</code>相当が既定）なので、本家のリセットに相当するものが無く効きようがない。<br/>未対応：<code>onenter</code>／<code>onleave</code>（詳細はtodo.md）・<code>layer</code>／<code>page</code>（既定文字レイヤの表ページ固定）。</p>
 <p class="mb2 px1">
 
 <p>[link]から[endlink]（ハイパーリンクの終了）までで囲った範囲をリンク区間と呼び、<br/>
@@ -1411,17 +1421,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td><s>hint_color</s></td><td></td><td><s>'white'</s></td><td><s>css色指定。'white', '#FF0000'など</s></td><td><s>ツールチップス文字色を指定</s></td></tr>
 <tr><td><s>hint_font</s></td><td></td><td><s>'22px Arial'</s></td><td><s>文字サイズとフォント</s></td><td><s>hint文字サイズとフォントを指定</s></td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>と
-	<code>style</code>・<code>r_style</code>・<code>style_hover</code>に対応。クリックは[button]と同じ経路
-	（<code>ScriptMng.jumpToLabelAndGo</code>）へ流し、<code>arg</code>は飛び先で<code>&amp;sn.eventArg</code>として受け取れる。
-	本文DOMは文字送り演出のためReactの外で組み立てているので、リンクのリスナは<code>TxtLayer</code>が直接付けている。<br/>
-	本家は「リンク区間の入れ子は不可」だが、こちらはスタックで戻すので入れ子でも壊れない。<br/>
-	<code>url</code>も対応（指定時はラベルへ飛ばず<a href="tag.html#navigate_to">[navigate_to]</a>と同じ経路で別タブに開く。本家同様 fn・label より優先）。<br/>
-	<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）も[<a href="#button">button</a>]と同じ仕組みで出る。<br/>
-	未対応：<code>global</code>・<code>onenter</code>／<code>onleave</code>・<code>style_clicked</code>／
-	<code>r_style_hover</code>／<code>r_style_clicked</code>・効果音・<code>layer</code>／<code>page</code>・<code>wait</code>。</p>
-
-</p>
 <h2 id="r" class="w-heading">[r] 改行</h2>
 <h4>指定した文字レイヤの表ページに、改行を出力する。</h4>
 <p class="mb2 px1">

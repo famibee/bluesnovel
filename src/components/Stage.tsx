@@ -12,7 +12,7 @@ import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
 import {onLong, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {ruleMaskFunc} from '../ts/Trans';
-import {fltId, fltValues, matsOf} from '../ts/Filter';
+import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
 
 import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
@@ -278,6 +278,15 @@ export default function Stage({
 		}
 		return [...h.values()];
 	})();
+	// 今どちらかのページで使われているblur_x/blur_y（[add_filter filter=blur blur_x=/blur_y=]。
+	//	重複はidで畳む。CSSのblur()は半径1つしか持てないのでSVGのfeGaussianBlurへ回した分）
+	const aBlur = (()=> {
+		const h = new Map<string, readonly [number, number]>();
+		for (const aLay of aPage) for (const l of aLay) {
+			if (l.aFlt) for (const b of blursOf(l.aFlt)) h.set(blurId(b), b);
+		}
+		return [...h.values()];
+	})();
 
 	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
 		maxWidth	: 'auto',
@@ -318,6 +327,17 @@ export default function Stage({
 				{aMat.map(m=> <filter key={fltId(m)} id={fltId(m)} colorInterpolationFilters="sRGB"
 					x="0" y="0" width="100%" height="100%">
 					<feColorMatrix type="matrix" values={fltValues(m)}/>
+				</filter>)}
+			</defs>
+		</svg>}
+		{/* blur_x/blur_y指定ありの[add_filter filter=blur]。CSSのblur()は半径1つしか持てないので
+			SVGのfeGaussianBlur（stdDeviationがX/Y別々）へ回した分（src/ts/Filter.ts）。
+			上のfeColorMatrixと違い**x/y/width/heightは既定のまま**にする：ぼかしは見た目の箱を
+			はみ出すので、100%に絞ると縁が切れる */}
+		{aBlur.length > 0 && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+			<defs>
+				{aBlur.map(b=> <filter key={blurId(b)} id={blurId(b)}>
+					<feGaussianBlur stdDeviation={blurValues(b)}/>
 				</filter>)}
 			</defs>
 		</svg>}

@@ -5,6 +5,9 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
+import {uint} from '../sn/CmnLib';
+import {argBlendmode} from './Blendmode';
+
 // フィルター（[add_filter]/[clear_filter]/[enable_filter]・[lay filter=…]）のうち、
 //	DOMを触らない部分。本家 Layer.ts:101 bldFilters() ＋ hBldFilter に対応する。
 //	エンジンから呼べるようにここへ分けてある（filter名の書き間違いをその場で例外にできる）。
@@ -24,9 +27,17 @@
 //	  つまり同じプリセットでもmultiplyの指定で明るさが変わる。こちらは行列を最初から
 //	  SVGの流儀（オフセットは0〜1）で書き、その揺れを持ち込まない
 
+//	blur_x/blur_yも同じ理由でSVG行き：CSSの`blur()`は半径1つしか持てないが、SVGの
+//	`feGaussianBlur`は`stdDeviation="X Y"`でXY別々に持てるので、指定があるときだけそちらへ回す
+//	（本家Layer.ts:122-123は常にblur_x/blur_y＝既定2でblurX/blurYを上書きするので、
+//	strengthは事実上見た目に効かない。ここは互換性のため無指定時のみ従来のstrength=半径のままにする）
+
 // フィルター1件。CSSのfilterプロパティに並べる1つぶんと、[enable_filter]用の有効フラグ。
-//	matがあるものはSVGのfeColorMatrix行きで、cssは`url(#…)`になる
-export type T_FLT = {css: string; enabled: boolean; mat?: number[]};
+//	matがあるものはSVGのfeColorMatrix行き、blurXYがあるものはSVGのfeGaussianBlur行きで、
+//	どちらもcssは`url(#…)`になる。blendmodeは[add_filter blendmode=]（Lay.tsがレイヤの
+//	mix-blend-modeへ合流させる。CSSは要素につき1つしか持てないため、フィルター単位の合成は
+//	表現できない）
+export type T_FLT = {css: string; enabled: boolean; blendmode?: string; mat?: number[]; blurXY?: readonly [number, number]};
 
 // 数値属性（本家 argChk_Num 相当。ここは省略値ありのみ）
 function num(args: {[k: string]: string}, nm: string, def: number): number {
@@ -40,8 +51,8 @@ function num(args: {[k: string]: string}, nm: string, def: number): number {
 
 // filter名 -> CSSのfilter関数。既定値は本家（Layer.ts hBldFilter）に合わせてある
 const H_BLD: {[nm: string]: (args: {[k: string]: string})=> string} = {
-	// CSSのblurは1つの半径しか持てないので、本家のblur_x/blur_y（軸別強度）は表現できない。
-	//	strength（本家の既定8）をそのまま半径pxとして使う
+	// blur_x/blur_yが指定された場合はbldFilter()側でSVGのfeGaussianBlurへ回す（この関数は
+	//	無指定時のみ通る）。strength（本家の既定8）をそのまま半径pxとして使う
 	blur			: a=> `blur(${String(num(a, 'strength', 8))}px)`,
 	brightness		: a=> `brightness(${String(num(a, 'b', 0.5))})`,
 	contrast		: a=> `contrast(${String(num(a, 'amount', 0.5))})`,
@@ -174,13 +185,30 @@ export function fltId(mat: readonly number[]): string {
 // feColorMatrixのvalues属性。pixiの`m[0..19]`と**並びが同じ**なのでそのまま並べる
 export const fltValues = (mat: readonly number[])=> mat.join(' ');
 
+// blur_x/blur_y → SVGの`<filter>`のid。行列と同じく中身（X,Y）から決めて使い回す
+export function blurId([x, y]: readonly [number, number]): string {
+	return `sn_gb_${String(x)}_${String(y)}`;
+}
+// feGaussianBlurのstdDeviation属性。X/Yを空白区切りで並べる
+export const blurValues = ([x, y]: readonly [number, number])=> `${String(x)} ${String(y)}`;
+
 export function bldFilter(args: {[k: string]: string}): T_FLT {
 	const {filter = ''} = args;
+	const blendmode = args.blendmode !== undefined ? argBlendmode(args.blendmode) : undefined;
+	const enabled = (args.enable_filter ?? 'true') !== 'false';	// 本家 bldFilters()
+
+	// blur_x/blur_yが書かれていればCSSのblur()（半径1つ）を諦め、SVGのfeGaussianBlurへ回す
+	//	（本家Layer.ts:122-123と同じくblur_x/blur_yの既定は2。uint()も本家のcast関数をそのまま使う）
+	if (filter === 'blur' && (args.blur_x !== undefined || args.blur_y !== undefined)) {
+		const blurXY: [number, number] = [uint(num(args, 'blur_x', 2)), uint(num(args, 'blur_y', 2))];
+		return {css: `url(#${blurId(blurXY)})`, enabled, blurXY, ...blendmode !== undefined ? {blendmode} : {}};
+	}
+
 	// 色成分の行列で描くもの（CSSのfilter関数には無い）はSVGのfeColorMatrixへ回す
 	const fncMat = H_MAT[filter];
 	if (fncMat) {
 		const mat = fncMat(args);
-		return {css: `url(#${fltId(mat)})`, enabled: (args.enable_filter ?? 'true') !== 'false', mat};
+		return {css: `url(#${fltId(mat)})`, enabled, mat, ...blendmode !== undefined ? {blendmode} : {}};
 	}
 
 	const fnc = H_BLD[filter];
@@ -191,13 +219,26 @@ export function bldFilter(args: {[k: string]: string}): T_FLT {
 		throw 'filter が異常です';	// 本家と同じ文言
 	}
 
-	// enable_filter属性で「足すけれど最初は効かせない」ができる（本家 bldFilters()）
-	return {css: fnc(args), enabled: (args.enable_filter ?? 'true') !== 'false'};
+	return {css: fnc(args), enabled, ...blendmode !== undefined ? {blendmode} : {}};
 }
 
 // レイヤの持つフィルターのうち、SVGのfeColorMatrixで描くもの（Stage.tsxが要素を出すため）
 export function matsOf(aFlt: readonly T_FLT[]): number[][] {
 	return aFlt.filter(f=> f.enabled && f.mat).map(f=> f.mat!);
+}
+
+// レイヤの持つフィルターのうち、SVGのfeGaussianBlurで描くもの（Stage.tsxが要素を出すため）
+export function blursOf(aFlt: readonly T_FLT[]): (readonly [number, number])[] {
+	return aFlt.filter(f=> f.enabled && f.blurXY).map(f=> f.blurXY!);
+}
+
+// レイヤが持つフィルターのうち、有効かつblendmode指定があるものの**最後の1つ**。
+//	CSSは要素につきmix-blend-modeを1つしか持てないため、[lay blendmode=]と同じ枠を取り合う
+//	（Lay.tsのstyLay()が[lay blendmode=]優先でこちらへフォールバックする）
+export function blendmodeOf(aFlt: readonly T_FLT[]): string | undefined {
+	let ret: string | undefined;
+	for (const f of aFlt) if (f.enabled && f.blendmode !== undefined) ret = f.blendmode;
+	return ret;
 }
 
 // レイヤの持つフィルター一覧をCSSのfilterプロパティ値へ。

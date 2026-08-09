@@ -23,6 +23,7 @@ import {getDateStr, int, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
+import {argBlendmode} from './Blendmode';
 import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
 import {parseChStyle, type T_CH_STYLE} from './ChStyle';
@@ -64,7 +65,7 @@ export type T_LAY_STY_ARG = {
 	scale_y?	: number;
 	pivot_x?	: number;	// 回転・拡縮の原点（本家のpivot。CSSではtransform-origin）
 	pivot_y?	: number;
-	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み（#argBlendmode()）
+	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み（argBlendmode()）
 	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?		: string;	// 文字レイヤへそのまま足すCSS
 	// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）
@@ -313,13 +314,6 @@ export class ScriptEngine {
 		return a.length > 0 ? a : null;
 	}
 
-	// blendmodeをCSSのmix-blend-mode値へ。本家（Layer.getBlendmodeNum()）が受け付けるのは
-	//	pixiのBLEND_MODESへ引ける4種だけなので、同じ名前だけを通す。
-	//	addはCSSに同名が無いので plus-lighter（加算合成）を当てる。
-	//	[lay]・[add_face]・[button]の3タグとも**ここを通す**（受ける名前と例外の文言を揃えるため）
-	static readonly #H_BLENDMODE: {[nm: string]: string} = {
-		normal: 'normal', add: 'plus-lighter', multiply: 'multiply', screen: 'screen',
-	};
 	// [button style=/style_hover=/style_clicked=]の値をCSSにする。
 	//	**bluesnovelはCSSで書けるようにする**（本家はpixiのTextStyleのJSON）。
 	//	ただしギャラリーのサンプルは`{"fill": "plum"}`のようにJSONで書くので、
@@ -347,12 +341,6 @@ export class ScriptEngine {
 				return `${p}: ${sv};`;
 			})
 			.join('');
-	}
-
-	static #argBlendmode(v: string): string {
-		const s = ScriptEngine.#H_BLENDMODE[v];
-		if (! s) throw `${v} はサポートされない blendmode です`;	// 本家と同じ文言
-		return s;
 	}
 
 	// [add_frame]/[frame]の見た目属性。**書かれた属性だけ**を拾う（[lay]と同じ流儀）
@@ -1043,7 +1031,7 @@ export class ScriptEngine {
 				dx			: Number(args.dx || '0'),
 				dy			: Number(args.dy || '0'),
 				//	[lay]・[button]と同じ4種だけを受けてCSSの値へ直す（以前はCSSの値を素通ししていた）
-				blendmode	: ScriptEngine.#argBlendmode(args.blendmode || 'normal'),
+				blendmode	: argBlendmode(args.blendmode || 'normal'),
 			};
 			return 'skip';
 		}
@@ -1131,7 +1119,7 @@ export class ScriptEngine {
 			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
 			if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
 			if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
-			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
+			if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
 			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
 			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
@@ -1800,7 +1788,7 @@ export class ScriptEngine {
 				sty.height ??= BTN_DEF_H;
 			}
 			if (args.enabled !== undefined) sty.enabled = args.enabled !== 'false';
-			if (args.blendmode !== undefined) sty.blendmode = ScriptEngine.#argBlendmode(args.blendmode);
+			if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
 			// ツールチップ（本家 EventMng.ts:418 #dispHint()）。hint_styleは吹き出しのCSS、
 			//	hint_optは本家popperのオプションJSON（こちらはplacementだけ見る）
 			// 見た目（bluesnovelはCSSで指定する。本家はpixiのTextStyle JSON）。

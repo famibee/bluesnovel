@@ -224,6 +224,14 @@
   - テスト：`test/ScriptEngine_save.test.ts`に3件（`index`指定時のfn単独許可・`do_rec`の値の伝搬）、`test/e2e/save.e2e.ts`に2件追加・1件更新（`index`でsub.snへジャンプ→`[jump]`で`*reload`へ戻り通常の`[load]`も確認、`do_rec`でロード時点の値が保存されることを確認）。E2E用に`prj_save/sub.sn`を新設。**`[load]`は必ずジャンプするため直後のコードには到達しない**（record_place位置への巻き戻りで無限ループしかけた）ことに気づき、`[jump]`でmain.snの`*reload`ラベルへ戻す設計にした。ユニット1508件→1510件、E2E5件（同ファイル内）。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過
   - `docs/tag.html`の`[load]`エントリを更新（`index`/`do_rec`の実際の仕様と対応済みである旨を明記、属性表に2行追加）、`todo.md`から該当項目を削除
 
+- [x] **`[add_filter blendmode=]`（フィルター単位のブレンド）と`[lay blur_x=/blur_y=]`を実装**（2026-08-09）
+  - `[link]`の`global`・`onenter`/`onleave`も併せて調査。`global`はbluesnovelのクリックが本家の予約イベント表を経由せずReactが直接ハンドラを付ける方式（表示中は常に本家の`global=true`相当）のため実装不能ではなく**効きようがない**属性と判明、受理はするが無視する扱いで決着し`docs/tag.html`にその理由を明記。`onenter`/`onleave`は素朴に`[button call=true]`と同じ経路（`callToLabel`→通常のstep実行継続）を流用するとマウスが乗っただけで本編が読み進んでしまうため、専用の「`[return]`まで走らせたらそこで止める」実行経路の新設が要ると分かり見送り、`todo.md`に理由を残した
+  - `[add_filter blendmode=]`：CSSは要素につき`mix-blend-mode`を1つしか持てないため、`[lay blendmode=]`と同じ枠へ合流させる設計にした（有効なフィルターの中で最後に指定されたものが勝つ、`[lay blendmode=]`が明示されていればそちらが優先）。ブレンドモード名→CSS値の変換（`normal`/`add`/`multiply`/`screen`の4種、`add`は`plus-lighter`）は`ScriptEngine.ts`に`[lay]`/`[add_face]`/`[button]`用として private static であったものを`src/ts/Blendmode.ts`へ切り出し、`Filter.ts`と共有した（循環import回避のため）
+  - `[lay blur_x=/blur_y=]`（実体は`[add_filter filter=blur blur_x=/blur_y=]`。`todo.md`の表記はやや不正確だった）：CSSの`blur()`は半径1つしか持てないため、指定があるときだけSVGの`feGaussianBlur`（`stdDeviation`がX/Y別々）へ切り替える。本家`Layer.ts:122-123`を読むと`blur_x`/`blur_y`は常に既定2で`blurX`/`blurY`を上書きし`strength`は見た目に事実上効かないと判明したため、指定時は本家の既定値2をそのまま使う。無指定時は従来どおり`strength`をCSSの`blur()`半径として使う既存動作を変えていない（回帰リスクを避けるため）
+  - 実装は色成分フィルター（`feColorMatrix`）と同じ「行列/値の中身からidを決めて`<filter>`要素を使い回す」設計を踏襲：`Filter.ts`に`blurId`/`blurValues`/`blursOf`/`blendmodeOf`を追加、`Stage.tsx`が`aBlur`を集めて`<feGaussianBlur>`を出す（`feColorMatrix`と違い`x`/`y`/`width`/`height`は既定のまま＝ぼかしが箱をはみ出しても切れないように）。`Lay.ts`の`styLay()`は`l.blendmode`優先で`blendmodeOf(l.aFlt)`にフォールバックする1行を追加
+  - テスト：`test/ScriptEngine_filter.test.ts`に8件追加（`blendmode`の4種変換・不正値のthrow・`blendmodeOf`の優先順位、`blur_x`/`blur_y`無指定時の既存動作維持・どちらか一方のみでも既定値2で補うこと・`blurId`/`blurValues`/`blursOf`）。ユニット1510件→1518件。型チェック（`bunx tsc --noEmit --incremental false`・`-p test/e2e`）も通過（E2Eは追加していない：見た目の確認は将来必要ならフィルターギャラリーサンプルで）
+  - `docs/tag.html`のフィルターセクションを更新（未対応から対応済みの説明へ差し替え、`[add_filter]`属性表に`blendmode`行を追加）、`[link]`エントリの`global`欄と、内容が古いまま残っていた重複説明ブロック（`style_clicked`等を「未対応」と誤記していた）を削除。`todo.md`の該当項目を更新・削除
+
 - [ ]
 
 

@@ -14,7 +14,7 @@
 //	型だけの参照（import type）は消えるので、下のGrpLayer/TxtLayerからの読み込みは影響しない
 
 import type {SysBase} from '../sn/SysBase';
-import {styFilter, type T_FLT} from '../ts/Filter';
+import {styFilter, blendmodeOf, type T_FLT} from '../ts/Filter';
 import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
@@ -95,7 +95,10 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 		// pivot未指定なら 0 0 ＝ 従来の left top と同じ
 		sty.transformOrigin = `${String(l.pivot_x ?? 0)}px ${String(l.pivot_y ?? 0)}px`;
 	}
-	if (l.blendmode !== undefined) sty.mixBlendMode = l.blendmode as CSSProperties['mixBlendMode'];
+	// [lay blendmode=]優先、無指定なら[add_filter blendmode=]（フィルター単位のブレンド）に
+	//	フォールバック。CSSはmix-blend-modeを要素につき1つしか持てないため両者は同じ枠を取り合う
+	const bm = l.blendmode ?? (l.aFlt !== undefined ? blendmodeOf(l.aFlt) : undefined);
+	if (bm !== undefined) sty.mixBlendMode = bm as CSSProperties['mixBlendMode'];
 	// [add_filter]で重ねたぶんを1つのfilterプロパティへ。全部無効／空なら出さない
 	if (l.aFlt !== undefined) {
 		const f = styFilter(l.aFlt);

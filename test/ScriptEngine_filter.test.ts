@@ -11,7 +11,7 @@
 //	bluesnovelはCSSのfilterプロパティなので素で書ける9種のみ（src/ts/Filter.ts参照）
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
-import {bldFilter, fltId, matsOf, styFilter} from '../src/ts/Filter';
+import {bldFilter, fltId, matsOf, styFilter, blurId, blurValues, blursOf, blendmodeOf} from '../src/ts/Filter';
 
 import {expect, it} from 'bun:test';
 
@@ -202,4 +202,61 @@ it('matsOf_有効な行列だけを集める', ()=> {
 	const a = bldFilter({filter: 'lsd'});
 	const b = bldFilter({filter: 'browni', enable_filter: 'false'});
 	expect(matsOf([a, b, {css: 'sepia(1)', enabled: true}])).toEqual([a.mat!]);
+});
+
+
+// ============ blendmode（[add_filter blendmode=…]。フィルター単位のブレンド）============
+//	CSSは要素につきmix-blend-modeを1つしか持てないので、実際に効くのは
+//	Lay.ts styLay()が[lay blendmode=]の枠へ合流させた先。ここではFilter.ts側の純粋部分だけ見る
+
+it('bldFilter_blendmodeは4種のみ受ける（[lay]/[button]と同じ表）', ()=> {
+	expect(bldFilter({filter: 'sepia', blendmode: 'screen'}).blendmode).toBe('screen');
+	expect(bldFilter({filter: 'sepia', blendmode: 'add'}).blendmode).toBe('plus-lighter');	// CSSに同名が無いので加算合成へ
+	expect(bldFilter({filter: 'sepia'}).blendmode).toBeUndefined();	// 省略時は持たない
+	expect(()=> bldFilter({filter: 'sepia', blendmode: 'なぞ'})).toThrow('はサポートされない blendmode です');
+});
+
+it('blendmodeOf_有効なものの中で最後の指定が勝つ', ()=> {
+	expect(blendmodeOf([])).toBeUndefined();
+	expect(blendmodeOf([{css: '', enabled: true}])).toBeUndefined();
+	expect(blendmodeOf([
+		{css: '', enabled: true, blendmode: 'multiply'},
+		{css: '', enabled: false, blendmode: 'screen'},	// 無効化中は無視
+		{css: '', enabled: true, blendmode: 'add'},
+	])).toBe('add');
+});
+
+
+// ============ blur_x/blur_y（CSSのblur()は半径1つなのでSVGのfeGaussianBlur行き）============
+
+it('bldFilter_blur_x_y無指定なら従来どおりCSSのblur()', ()=> {
+	const f = bldFilter({filter: 'blur'});
+	expect(f.css).toBe('blur(8px)');
+	expect(f.blurXY).toBeUndefined();
+});
+
+it('bldFilter_blur_xかblur_yのどちらかでもSVG行きに切り替わる', ()=> {
+	// 本家Layer.ts:122-123と同じく既定は2（strengthは効かなくなる）
+	const f = bldFilter({filter: 'blur', blur_x: '5'});
+	expect(f.blurXY).toEqual([5, 2]);
+	expect(f.css).toBe(`url(#${blurId(f.blurXY!)})`);
+});
+
+it('bldFilter_blur_x_y両方指定', ()=> {
+	expect(bldFilter({filter: 'blur', blur_x: '5', blur_y: '9'}).blurXY).toEqual([5, 9]);
+});
+
+it('blurId_同じXYは同じid・違えば違うid', ()=> {
+	expect(blurId([5, 9])).toBe(blurId([5, 9]));
+	expect(blurId([5, 9])).not.toBe(blurId([5, 8]));
+});
+
+it('blurValues_feGaussianBlurのstdDeviationへ', ()=> {
+	expect(blurValues([5, 9])).toBe('5 9');
+});
+
+it('blursOf_有効なblurXYだけを集める', ()=> {
+	const a = bldFilter({filter: 'blur', blur_x: '3'});
+	const b = bldFilter({filter: 'blur', blur_x: '4', enable_filter: 'false'});
+	expect(blursOf([a, b, {css: 'sepia(1)', enabled: true}])).toEqual([a.blurXY!]);
 });
