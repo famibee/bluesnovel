@@ -20,7 +20,7 @@ export type {TArg};
 import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 import type {TAG_WINDOW, T_CAPTURE_RECT, T_IpcEvents, T_IpcRendererEvent} from './preload';
-import type {T_DATA4VARI} from './ts/SaveMng';
+import {decTransportField, type T_DATA4VARI, type T_DATA4VARI_TRANSPORT} from './ts/SaveMng';
 
 import {IpcEmitter, IpcListener} from './IpcRenderer';
 
@@ -61,10 +61,12 @@ export class SysApp extends SysBase {
 		let tagW: TAG_WINDOW = {c: true, x: 0, y: 0, w: width, h: height};
 		try {
 			const d = await this.storeLoad(this.cfg.oCfg.save_ns);
-			const x = d?.sys['const.sn.nativeWindow.x'];
-			const y = d?.sys['const.sn.nativeWindow.y'];
-			const w = d?.sys['const.sn.nativeWindow.w'];
-			const h = d?.sys['const.sn.nativeWindow.h'];
+			// SaveMngがまだ無いので、crypto有効時に備え自前で1フィールドだけ復号する
+			const sys = await decTransportField<T_DATA4VARI['sys']>(this.dec, d?.sys);
+			const x = sys?.['const.sn.nativeWindow.x'];
+			const y = sys?.['const.sn.nativeWindow.y'];
+			const w = sys?.['const.sn.nativeWindow.w'];
+			const h = sys?.['const.sn.nativeWindow.h'];
 			if (typeof x === 'number' && typeof y === 'number' && typeof w === 'number' && typeof h === 'number')
 				tagW = {c: false, x, y, w, h};
 		} catch { /* 読めなければ既定（中央）のまま */ }
@@ -89,15 +91,15 @@ export class SysApp extends SysBase {
 	//	localStorageで、アプリを消すと消えてしまうため（todo.md）。sys/mark/kidoku/storageを
 	//	分けず**1つのJSONブロックとしてまるごと**保存する（appMain_cmn.tsの`flush`ハンドラが
 	//	store全体を置き換える作りに合わせた。ブラウザ版の4キー分割はSysWeb側の互換用途なので触らない）
-	override async storeLoad(ns: string): Promise<T_DATA4VARI | undefined> {
+	override async storeLoad(ns: string): Promise<T_DATA4VARI_TRANSPORT | undefined> {
 		await this.#em.invoke('Store', {name: ns});
 		if (await this.#em.invoke('Store_isEmpty')) return undefined;
 
 		const d = await this.#em.invoke('Store_get');
 		return {sys: d.sys ?? {}, mark: d.mark ?? {}, kidoku: d.kidoku ?? {}, storage: d.storage ?? {}};
 	}
-	override storeFlush(_ns: string, data: T_DATA4VARI) {
-		void this.#em.invoke('flush', data);
+	override async storeFlush(_ns: string, data: T_DATA4VARI_TRANSPORT): Promise<void> {
+		await this.#em.invoke('flush', data);
 	}
 
 }

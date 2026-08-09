@@ -7,7 +7,7 @@
 
 import type {T_HINFO} from './appMain_cmn';
 import type {T_CFG} from './sn/ConfigBase';
-import type {T_DATA4VARI} from './ts/SaveMng';
+import type {T_DATA4VARI_TRANSPORT} from './ts/SaveMng';
 
 import type {MessageBoxOptions, MessageBoxReturnValue, OpenDialogOptions, OpenDialogReturnValue} from 'electron/renderer';
 import type {readFile} from 'fs-extra';
@@ -77,9 +77,9 @@ export	type	T_IpcEvents	= {
 	navigate_to	: (url: string)=> void;
 
 	Store	: (o: {name: string})=> void;
-	flush	: (o: T_DATA4VARI)=> void;
+	flush	: (o: T_DATA4VARI_TRANSPORT)=> void;
 	Store_isEmpty	: ()=> boolean;
-	Store_get		: ()=> T_DATA4VARI;
+	Store_get		: ()=> T_DATA4VARI_TRANSPORT;
 
 	zip		: (inp: string, out: string)=> void;
 	unzip	: (inp: string, out: string)=> void;

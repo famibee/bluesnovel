@@ -1616,7 +1616,7 @@ export class ScriptMng {
 			const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
 			const res = await this.sys.fetch(path);
 			if (! res.ok) throw Error(res.statusText);
-			return await res.text();
+			return await this.sys.dec(path, await res.text());
 		} catch (e) {
 			// path.jsonに載っていない・取得できない＝シナリオが続けられないので、
 			//	ここは黙って代替せず止める（'ET'は表示してからthrowする）

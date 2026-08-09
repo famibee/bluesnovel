@@ -270,8 +270,8 @@
 	<p>システム</p>
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#close">🟢 [close] アプリの終了</a></li>
-		<li class="mb1"><a href="#export">🟡 [export] プレイデータをエクスポート</a></li>
-		<li class="mb1"><a href="#import">🟡 [import] プレイデータをインポート</a></li>
+		<li class="mb1"><a href="#export">🟢 [export] プレイデータをエクスポート</a></li>
+		<li class="mb1"><a href="#import">🟢 [import] プレイデータをインポート</a></li>
 		<li class="mb1"><a href="#loadplugin">🟢 [loadplugin] プラグインの読み込み</a></li>
 		<li class="mb1"><a href="#navigate_to">🟢 [navigate_to] ＵＲＬを開く</a></li>
 		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
@@ -2762,21 +2762,23 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="export" class="w-heading">[export]プレイデータをエクスポート</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>{sys, mark, kidoku}</code> を <code>.swpd</code> ファイルとしてダウンロードさせる。終わったら本家同様 [<a href="#event">event</a>] の <code>sn:exported</code> が発火する。<br/>未対応：暗号化（常に平文なので、本家の非暗号化と同じく <code>no_crypto_</code> が接頭辞に付く）。</p>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：<code>{sys, mark, kidoku, storage}</code> を <code>.swpd</code> ファイルとしてダウンロードさせる。<code>sys.arg.crypto</code> が有効なら暗号化し、無効なら本家の非暗号化と同じく <code>no_crypto_</code> が接頭辞に付く。終わったら本家同様 [<a href="#event">event</a>] の <code>sn:exported</code> が発火する。</p>
 <h4>プレイデータをファイルとしてエクスポートする</h4>
 <p class="mb2 px1">
 	ダウンロードフォルダにプレイデータファイルが保存される。<br/>
 	ブラウザならファイルをダウンロードする。<br/>
 	プレイデータ拡張子、ウェブ版は.swpd、アプリ版は.spdで互換性はない。<br/>
 	暗号化するプロジェクトの場合、出力するプレイデータファイルも暗号化される。<br/>
-	関連するデータファイル（[snapshot fn='userdata:/777/pic.jpg']などと保存したサムネイル画像など）も含むが、暗号化しない。
+	関連するデータファイル（[snapshot fn='userdata:/777/pic.jpg']などと保存したサムネイル画像など）も含む。
+	bluesnovelでは<code>{sys, mark, kidoku, storage}</code>を1つのファイルとして丸ごと暗号化するため、
+	本家と異なり関連データファイルも暗号化の対象になる。
 	<br/>
 	エクスポート完了時には【sn:exported】というイベントを発火する。<br/>
 	【[event key='sn:exported' 〜]】という記述でジャンプできる。<br/>
 
 </p>
 <h2 id="import" class="w-heading">[import]プレイデータをインポート</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：ファイル選択ダイアログから <code>.swpd</code> を読み、sys: と既読を差し替える。<b>別プロジェクトのデータは弾く</b>（<code>sys:const.sn.cfg.ns</code> で判定）。終わったら [<a href="#event">event</a>] の <code>sn:imported</code> が発火する。<br/>未対応：暗号化。</p>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：ファイル選択ダイアログから <code>.swpd</code> を読み、sys: と既読を差し替える。<b>別プロジェクトのデータは弾く</b>（<code>sys:const.sn.cfg.ns</code> で判定）。暗号化ビルドでも <code>no_crypto_</code> 付きの平文ファイルを読める（まず平文として解釈を試み、失敗したら復号する）。終わったら [<a href="#event">event</a>] の <code>sn:imported</code> が発火する。</p>
 <h4>プレイデータファイルをインポートする</h4>
 <p class="mb2 px1">
 	読み込みダイアログが表示され、選択したプレイデータファイルをインポートする。<br/>

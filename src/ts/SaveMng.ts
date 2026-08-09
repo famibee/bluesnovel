@@ -44,11 +44,30 @@ function creData(): T_DATA4VARI {return {sys: {}, mark: {}, kidoku: {}, storage:
 
 const EXT = '.swpd';	// 本家と同じ拡張子（SKYNovel Web Play Data）
 
+// 輸送層が実際にやり取りする形。crypto有効時は各フィールドが「JSON文字列をenc()した文字列」になる
+//	（本家 SysWeb.ts:79-88 と同じく種別ごとに暗号化。丸ごと1本にまとめない）
+export type T_DATA4VARI_TRANSPORT = {[K in keyof T_DATA4VARI]: T_DATA4VARI[K] | string};
+
+// storeLoadが返した1フィールド分を復元する（本体はSaveMng.#decTransportと同じ処理）。
+//	**SysApp.loaded()専用**：SaveMngがまだ無い段階でウインドウ位置復元のため
+//	storeLoad()を直接覗く箇所があり、そこでも復号が要るためここに公開する
+export async function decTransportField<T>(
+	dec: (ext: string, tx: string)=> Promise<string>, v: T | string | undefined,
+): Promise<T | undefined> {
+	return v === undefined ? undefined
+		: typeof v === 'string' ? JSON.parse(await dec('json', v)) as T : v;
+}
+
 // 永続化の輸送層（SysBase/SysAppが実装。ブラウザ版はlocalStorage、アプリ版はelectron-store）。
-//	SaveMngはこの2メソッドだけを使い、保存先の実体もキー形式も知らない
+//	SaveMngはstoreLoad/storeFlushで保存先の実体もキー形式も知らずに済ませ、
+//	暗号化はcrypto/enc/dec経由でここ（SaveMng）に一括する（本家のようにSysWeb側へ分散させない。
+//	Electron版もelectron-storeのencryptionKeyでなくenc()で統一するため、経路が1本になる）
 export type T_SaveStore = {
-	storeLoad(ns: string): Promise<T_DATA4VARI | undefined>;
-	storeFlush(ns: string, data: T_DATA4VARI): void;
+	readonly crypto: boolean;
+	enc(tx: string): Promise<string>;
+	dec(ext: string, tx: string): Promise<string>;
+	storeLoad(ns: string): Promise<T_DATA4VARI_TRANSPORT | undefined>;
+	storeFlush(ns: string, data: T_DATA4VARI_TRANSPORT): Promise<void>;
 };
 
 
@@ -65,8 +84,18 @@ export class SaveMng {
 		const d = await this.sys.storeLoad(this.ns);
 		if (! d) {this.#data = creData(); return true}
 
-		this.#data = d;
+		try {
+			this.#data = this.sys.crypto ? await this.#decTransport(d) : d as T_DATA4VARI;
+		}
+		catch { this.#data = creData(); return true }
 		return false;
+	}
+	async #decTransport(d: T_DATA4VARI_TRANSPORT): Promise<T_DATA4VARI> {
+		const dec1 = <T>(v: T | string)=> decTransportField(this.sys.dec, v) as Promise<T>;
+		return {
+			sys: await dec1(d.sys), mark: await dec1(d.mark),
+			kidoku: await dec1(d.kidoku), storage: await dec1(d.storage),
+		};
 	}
 
 	// 保存。**立て続けの呼び出しをまとめる**（本家 SysBase.flush()：即時に1回書き、
@@ -86,8 +115,39 @@ export class SaveMng {
 	}
 	#tid: ReturnType<typeof setTimeout> | undefined;
 	#rsv = false;
+
+	// 直近のflush()が実際に書き込まれるまで待つ（アプリ終了直前の確実な保存や、
+	//	テストでの検証に使う。storeFlushの非同期化＝enc()を挟むまでは不要だった口）
+	flushed(): Promise<void> {return this.#pWrite}
+
+	// storeFlushは非同期（Electron版はIPC）。**立て続けの#write()が到着順に着地するよう直列化**する
+	//	（enc()を挟むと処理時間が読めなくなるため）。JSON化は#write()の同期部分で即座に済ませ、
+	//	チェーンに積んだ後で#dataが書き換わっても影響しないスナップショットにする
+	#pWrite: Promise<void> = Promise.resolve();
 	#write() {
-		this.sys.storeFlush(this.ns, this.#data);
+		const sSys		= JSON.stringify(this.#data.sys);
+		const sMark		= JSON.stringify(this.#data.mark);
+		const sKidoku	= JSON.stringify(this.#data.kidoku);
+		const sStorage	= JSON.stringify(this.#data.storage);
+		const {crypto} = this.sys;
+
+		this.#pWrite = this.#pWrite.then(async ()=> {
+			const payload: T_DATA4VARI_TRANSPORT = crypto
+				? {
+					sys		: await this.sys.enc(sSys),
+					mark	: await this.sys.enc(sMark),
+					kidoku	: await this.sys.enc(sKidoku),
+					storage	: await this.sys.enc(sStorage),
+				}
+				: {
+					sys		: JSON.parse(sSys) as T_DATA4VARI['sys'],
+					mark	: JSON.parse(sMark) as T_DATA4VARI['mark'],
+					kidoku	: JSON.parse(sKidoku) as T_DATA4VARI['kidoku'],
+					storage	: JSON.parse(sStorage) as T_DATA4VARI['storage'],
+				};
+			await this.sys.storeFlush(this.ns, payload);
+		// 失敗を次の書き込みへ持ち越さない（#pWriteがrejectされたままだと以降すべて即失敗になる）
+		}).catch(e=> console.error('SaveMng #write failed:', e));
 	}
 
 	// ===== userdata:/ の中身（[snapshot fn='userdata:/…']が置くサムネイル等） =====
@@ -128,19 +188,23 @@ export class SaveMng {
 	}
 
 	// ===== プレイデータの書き出し・読み込み（本家 SysWeb _export/_import） =====
-	//	暗号化（本家の arg.crypto）は未対応なので、常に平文のJSON
-	export() {
-		const blob = new Blob([JSON.stringify(this.#data)], {type: 'text/json'});
+	async export() {
+		const {crypto, enc} = this.sys;
+		const s = JSON.stringify(this.#data);
+		const blob = new Blob([crypto ? await enc(s) : s], {type: 'text/json'});
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `no_crypto_${this.ns}${dateStr()}${EXT}`;	// 本家も非暗号化には接頭辞を付ける
+		// 非暗号化には接頭辞を付ける（本家 SysWeb.ts:191 と同じ）。crypto時は付けない
+		a.download = `${crypto ? '' : 'no_crypto_'}${this.ns}${dateStr()}${EXT}`;
 		a.click();
 		URL.revokeObjectURL(url);
 	}
 
 	// ファイル選択ダイアログを開いて読み込む。**別プロジェクトのデータは弾く**（本家と同じ）。
-	//	選択がキャンセルされた場合はresolveされないまま（本家も同じで、待っているのはPromiseだけ）
+	//	選択がキャンセルされた場合はresolveされないまま（本家も同じで、待っているのはPromiseだけ）。
+	//	**平文（no_crypto_）ファイルはcrypto有効なビルドでも読める**（まずJSON.parseを試し、
+	//	失敗したらdec()を通す。本家より寛容だが破綻しない）
 	async import(): Promise<T_DATA4VARI> {
 		const blob = await new Promise<Blob>((re, rj)=> {
 			const inp = document.createElement('input');
@@ -152,7 +216,11 @@ export class SaveMng {
 			};
 			inp.click();
 		});
-		const o = JSON.parse(await blob.text()) as T_DATA4VARI;
+		const tx = await blob.text();
+		const o = await (async ()=> {
+			try {return JSON.parse(tx) as T_DATA4VARI}
+			catch {return JSON.parse(await this.sys.dec('json', tx)) as T_DATA4VARI}
+		})();
 		const ns = o.sys['const.sn.cfg.ns'];
 		if (ns !== this.ns) throw `別のゲーム【プロジェクト名=${String(ns)}】のプレイデータです`;
 

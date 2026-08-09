@@ -70,16 +70,10 @@ var i = class {
 			let n = this.hPathFn2Exts[e] = t;
 			for (let [e, t] of Object.entries(n)) e !== ":cnt" && (n[e] = this.sys.arg.cur + t);
 		}
-		this.#e = this.matchPath("^breakline$", "png|jpg|jpeg|json|svg|webp|mp4|webm").length > 0, this.#t = this.matchPath("^breakpage$", "png|jpg|jpeg|json|svg|webp|mp4|webm").length > 0;
-		let a = {};
-		if (this.sys.arg.crypto) for (let [e, t] of Object.entries(this.hPathFn2Exts)) for (let [n, r] of Object.entries(t)) {
-			if (!n.startsWith(":")) {
-				a[e] = n;
-				continue;
-			}
-			if (!n.endsWith(":id")) continue;
-			let i = r.slice(r.lastIndexOf("/") + 1), o = t[n.slice(0, -10)] ?? "", s = await (await this.sys.fetch(o)).text();
-			if (i !== this.sys.hash(s)) throw `ファイル改竄エラーです fn:${o}`;
+		if (this.#e = this.matchPath("^breakline$", "png|jpg|jpeg|json|svg|webp|mp4|webm").length > 0, this.#t = this.matchPath("^breakpage$", "png|jpg|jpeg|json|svg|webp|mp4|webm").length > 0, this.sys.arg.crypto) for (let e of Object.values(this.hPathFn2Exts)) for (let [t, n] of Object.entries(e)) {
+			if (!t.startsWith(":") || !t.endsWith(":id")) continue;
+			let r = n.slice(n.lastIndexOf("/") + 1), i = e[t.slice(0, -10)] ?? "", a = await (await this.sys.fetch(i)).text();
+			if (r !== this.sys.hash(a)) throw `ファイル改竄エラーです fn:${i}`;
 		}
 	}
 	#e = !1;

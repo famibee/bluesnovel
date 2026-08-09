@@ -3485,7 +3485,11 @@ function Q() {
 		storage: {}
 	};
 }
-var $ = ".swpd", _e = class {
+var $ = ".swpd";
+async function _e(e, t) {
+	return t === void 0 ? void 0 : typeof t == "string" ? JSON.parse(await e("json", t)) : t;
+}
+var ve = class {
 	sys;
 	ns;
 	#e = Q();
@@ -3497,21 +3501,54 @@ var $ = ".swpd", _e = class {
 	}
 	async load() {
 		let e = await this.sys.storeLoad(this.ns);
-		return e ? (this.#e = e, !1) : (this.#e = Q(), !0);
+		if (!e) return this.#e = Q(), !0;
+		try {
+			this.#e = this.sys.crypto ? await this.#t(e) : e;
+		} catch {
+			return this.#e = Q(), !0;
+		}
+		return !1;
+	}
+	async #t(e) {
+		let t = (e) => _e(this.sys.dec, e);
+		return {
+			sys: await t(e.sys),
+			mark: await t(e.mark),
+			kidoku: await t(e.kidoku),
+			storage: await t(e.storage)
+		};
 	}
 	flush() {
-		if (this.#t) {
-			this.#n = !0;
+		if (this.#n) {
+			this.#r = !0;
 			return;
 		}
-		this.#r(), this.#t = setTimeout(() => {
-			this.#t = void 0, this.#n && (this.#n = !1, this.flush());
+		this.#a(), this.#n = setTimeout(() => {
+			this.#n = void 0, this.#r && (this.#r = !1, this.flush());
 		}, 500);
 	}
-	#t;
-	#n = !1;
-	#r() {
-		this.sys.storeFlush(this.ns, this.#e);
+	#n;
+	#r = !1;
+	flushed() {
+		return this.#i;
+	}
+	#i = Promise.resolve();
+	#a() {
+		let e = JSON.stringify(this.#e.sys), t = JSON.stringify(this.#e.mark), n = JSON.stringify(this.#e.kidoku), r = JSON.stringify(this.#e.storage), { crypto: i } = this.sys;
+		this.#i = this.#i.then(async () => {
+			let a = i ? {
+				sys: await this.sys.enc(e),
+				mark: await this.sys.enc(t),
+				kidoku: await this.sys.enc(n),
+				storage: await this.sys.enc(r)
+			} : {
+				sys: JSON.parse(e),
+				mark: JSON.parse(t),
+				kidoku: JSON.parse(n),
+				storage: JSON.parse(r)
+			};
+			await this.sys.storeFlush(this.ns, a);
+		}).catch((e) => console.error("SaveMng #write failed:", e));
 	}
 	getFile(e) {
 		return this.#e.storage[e];
@@ -3539,43 +3576,49 @@ var $ = ".swpd", _e = class {
 			place: Number(e)
 		})));
 	}
-	export() {
-		let e = new Blob([JSON.stringify(this.#e)], { type: "text/json" }), t = URL.createObjectURL(e), n = document.createElement("a");
-		n.href = t, n.download = `no_crypto_${this.ns}${ve()}${$}`, n.click(), URL.revokeObjectURL(t);
+	async export() {
+		let { crypto: e, enc: t } = this.sys, n = JSON.stringify(this.#e), r = new Blob([e ? await t(n) : n], { type: "text/json" }), i = URL.createObjectURL(r), a = document.createElement("a");
+		a.href = i, a.download = `${e ? "" : "no_crypto_"}${this.ns}${ye()}${$}`, a.click(), URL.revokeObjectURL(i);
 	}
 	async import() {
-		let e = await new Promise((e, t) => {
+		let e = await (await new Promise((e, t) => {
 			let n = document.createElement("input");
 			n.type = "file", n.accept = `${$}, text/plain`, n.onchange = () => {
 				let r = n.files?.[0];
 				r ? e(r) : t(/* @__PURE__ */ Error("ファイル選択に失敗しました"));
 			}, n.click();
-		}), t = JSON.parse(await e.text()), n = t.sys["const.sn.cfg.ns"];
+		})).text(), t = await (async () => {
+			try {
+				return JSON.parse(e);
+			} catch {
+				return JSON.parse(await this.sys.dec("json", e));
+			}
+		})(), n = t.sys["const.sn.cfg.ns"];
 		if (n !== this.ns) throw `別のゲーム【プロジェクト名=${String(n)}】のプレイデータです`;
 		return t.storage ??= {}, this.#e = t, this.flush(), t;
 	}
 };
-function ve() {
+function ye() {
 	let e = /* @__PURE__ */ new Date(), t = (e) => String(e).padStart(2, "0");
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
 //#region src/ts/Font.ts
-function ye(e) {
+function be(e) {
 	return e.matchPath(".+", g.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
 	font-family: ${JSON.stringify(t)};
 	src: url(${JSON.stringify(e.searchPath(t, g.FONT))});
 }`).join("\n");
 }
-function be(e, t = document) {
-	let n = ye(e);
+function xe(e, t = document) {
+	let n = be(e);
 	if (!n) return;
 	let r = t.createElement("style");
 	r.dataset.sn = "font", r.textContent = n, t.head.appendChild(r);
 }
 //#endregion
 //#region src/ts/SndBuf.ts
-var xe = 999e3, Se = class {
+var Se = 999e3, Ce = class {
 	ctx;
 	src;
 	opt;
@@ -3631,7 +3674,7 @@ var xe = 999e3, Se = class {
 	set volume(e) {
 		this.gn.gain.value = e;
 	}
-}, Ce = {
+}, we = {
 	mp3: "audio/mpeg",
 	mpeg: "audio/mpeg",
 	opus: "audio/ogg; codecs=\"opus\"",
@@ -3646,7 +3689,7 @@ var xe = 999e3, Se = class {
 	webm: "audio/webm; codecs=\"vorbis\"",
 	dolby: "audio/mp4; codecs=\"ec-3\"",
 	flac: "audio/flac"
-}, we = class {
+}, Te = class {
 	trace;
 	fetch;
 	constructor(e, t) {
@@ -3677,7 +3720,7 @@ var xe = 999e3, Se = class {
 	}
 	codecs() {
 		let e = document.createElement("audio"), t = {};
-		for (let [n, r] of Object.entries(Ce)) t[n] = e.canPlayType(r) !== "";
+		for (let [n, r] of Object.entries(we)) t[n] = e.canPlayType(r) !== "";
 		return JSON.stringify(t);
 	}
 	#r = /* @__PURE__ */ new Map();
@@ -3698,7 +3741,7 @@ var xe = 999e3, Se = class {
 		let i = this.#a[e];
 		if (i && !i.destroyed && i.src === t) return;
 		this.stop(e);
-		let { ctx: a, gn: o } = this.#n(), s = new Se(a, o, e, t, n);
+		let { ctx: a, gn: o } = this.#n(), s = new Ce(a, o, e, t, n);
 		this.#a[e] = s, s.onEnd = () => {
 			let e = s.buf;
 			this.#a[e] === s && delete this.#a[e];
@@ -3741,11 +3784,11 @@ var xe = 999e3, Se = class {
 	cancelWaitEnd(e) {
 		delete this.#o[e];
 	}
-}, Te = class e {
+}, Ee = class e {
 	sys;
 	#e;
 	constructor(e) {
-		this.sys = e, this.#p = new _e(e, ""), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
+		this.sys = e, this.#p = new ve(e, ""), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
 			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Re(e), this.#t.log = (e) => this.#Be(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
@@ -3778,7 +3821,7 @@ var xe = 999e3, Se = class {
 			}), e.defSetTriggerSoundVol((t, n) => {
 				let r = Number(e.getVal(`save:const.sn.sound.${t}.volume`) ?? 1);
 				this.#C.setVol(t, r * Number(n));
-			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#T()), await this.#h(e), be(this.sys.cfg);
+			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#T()), await this.#h(e), xe(this.sys.cfg);
 		}
 		this.go = () => this.#O(), this.$trgNext();
 	}
@@ -3859,7 +3902,7 @@ var xe = 999e3, Se = class {
 	#p;
 	#m = !0;
 	async #h(e) {
-		this.#p = new _e(this.sys, this.sys.cfg.oCfg.save_ns);
+		this.#p = new ve(this.sys, this.sys.cfg.oCfg.save_ns);
 		try {
 			this.#m = await this.#p.load();
 		} catch (e) {
@@ -3903,7 +3946,7 @@ var xe = 999e3, Se = class {
 	attachFrameBox(e) {
 		this.#S.attachBox(e);
 	}
-	#C = new we((e, t) => this.myTrace(e, t), (e, t) => this.sys.fetch(e, t));
+	#C = new Te((e, t) => this.myTrace(e, t), (e, t) => this.sys.fetch(e, t));
 	unlockAudio() {
 		this.#C.unlock();
 	}
@@ -3921,7 +3964,7 @@ var xe = 999e3, Se = class {
 			speed: 1,
 			pan: 0,
 			start_ms: 0,
-			end_ms: xe,
+			end_ms: Se,
 			ret_ms: 0
 		}).catch(this.#i);
 	}
@@ -4854,7 +4897,7 @@ var xe = 999e3, Se = class {
 		try {
 			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await this.sys.fetch(t);
 			if (!n.ok) throw Error(n.statusText);
-			return await n.text();
+			return await this.sys.dec(t, await n.text());
 		} catch (t) {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
@@ -4902,6 +4945,6 @@ var xe = 999e3, Se = class {
 	};
 };
 //#endregion
-export { Te as ScriptMng };
+export { Ee as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

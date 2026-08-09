@@ -280,6 +280,19 @@
   - ついでに`FrameMng.ts#srcOf()`の絶対URL判定（`/^(?:https?:|\/|data:)/`）に`app:`が無く、フレームHTML内の完全修飾URLが誤って`searchPath()`へ流れる穴があったので、任意スキームを見る形（`/^(?:[a-z][a-z\d+\-.]*:|\/)/i`）へ広げた
   - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト1519件はいずれもパス。**実機（`tmp_blues`での`npm run app_bld`→`out/`起動、`npm run pkg:mac`）は未検証**（サンドボックスにディスプレイが無くGUI起動不可）。特に音声（`fetch`＋`decodeAudioData`）・`@font-face`・`[add_frame]`のiframeとその中の画像は要確認（`todo.md`へ）
 
+- [x] **セーブデータの暗号化（第1段階：プラグイン注入機構の配線＋セーブ層の暗号化）**（2026-08-09）
+  - `todo.md`「しおり・システム系の残り＞暗号化」に着手。本家は暗号アルゴリズムの実体をコアに持たず、外部プラグイン（`snsys_pre`）が`SysBase.loaded()`経由で`setDec`/`setDecAB`/`setEnc`/`getStK`/`getHash`を注入する設計（秘匿性のため）。bluesnovelもこの方式を踏襲するが、丸写しはせず**必要なものだけに絞った**：`setDec`/`setEnc`/`getHash`の3つだけを`T_PluginInitArg`（`src/sn/CmnInterface.ts`）に残し、一般プラグイン向け（`addTag`/`addLayCls`/`getInfo`/`getVal`/`resume`/`render`/`searchPath`）は`[loadplugin]`がCSS専用で受け皿が無いため削除（`todo.md`へ）。`getStK`も削除——本家はelectron-storeの`encryptionKey`に使うが、bluesnovelはElectron版もブラウザ版と同じ`enc()`経路に統一し**新規ライブラリなしで経路を1本にする**方針にしたため消費先が無い。重複していた`getInfo`/`addTag`の二重宣言、`setDecAB`の2オーバーロードも整理（第2段階＝アセット暗号化で入れ直す）
+  - `SysBase.loaded()`（`src/sn/SysBase.ts`）が`hPlg`を捨てていて（`...[_hPlg,]`）プラグインの`init()`を一度も呼んでいなかったのを配線。`prj.json`/`path.json`の読込（`Config.generate`）より**前**に`snsys_pre`だけ先取りして`init()`をawaitする（本家`SysBase.ts:49-50`と同じ順序。これらの読込が既に`sys.dec()`を通るため）
+  - ついでに見つかったバグ修正：**シナリオ（`.sn`）本体だけが`dec()`を通っていなかった**（`ScriptMng.ts#fetchScript()`が`res.text()`を素通し）。prj.json/path.jsonは元から通っていたのに、肝心のスクリプトが漏れていた
+  - `SaveMng.ts`：`T_SaveStore`に`crypto`/`enc`/`dec`を追加し、**暗号化はSaveMng側に一括**（本家はSysWeb側に分散）。輸送層のペイロード型`T_DATA4VARI_TRANSPORT`（各フィールドが`元の型 | string`）を新設し、crypto時は`sys`/`mark`/`kidoku`/`storage`を種別ごとに`JSON.stringify`→`enc()`した文字列にする（本家`SysWeb.ts:79-88`と同じく丸ごと1本にまとめない）。localStorageのキーもcrypto有無で`_enc`サフィックスを分け、開発中の切り替えで平文を暗号文として読む事故を防ぐ（**crypto:false時のキー・形式は変更なし＝本家データ互換を維持**）
+  - `storeFlush`を非同期化（`enc()`を挟むため。Electron版はIPCで元々非同期）。**立て続けの`flush()`が到着順に着地するよう`#pWrite`で直列化**——JSON化は同期部分で即座にスナップショットを取り、非同期チェーンへ積む。失敗を次の書き込みへ持ち越さない`.catch`も追加。テストのタイミング調整用に`flushed(): Promise<void>`（直近の書き込み完了を待つ）を追加
+  - `[export]`/`[import]`：`export()`はcrypto時のみ`enc()`をかけ`no_crypto_`接頭辞を外す（本家`SysWeb.ts:191`と同じ判断基準）。`import()`はまず`JSON.parse`を試し、失敗したら`dec()`を通して再パース——crypto有効ビルドでも平文（`no_crypto_`付き）のプレイデータを読める、本家より寛容な設計
+  - `src/app.ts`（`SysApp`）のウインドウ位置復元処理（`SaveMng`がまだ無い段階で`storeLoad()`を直接覗く箇所）も、crypto時に文字列で返ってくるフィールドを復号できるよう`decTransportField()`（`SaveMng.ts`からexport、`SaveMng`の`#decTransport`と共有）を通す形に修正。ここを見落とすとcrypto有効時にウインドウ位置復元だけ壊れるところだった
+  - `preload.ts`/`appMain_cmn.ts`のIPC型（`flush`/`Store_get`、electron-storeの`Store<T>`）も`T_DATA4VARI_TRANSPORT`に追従
+  - 改竄検査（`ConfigBase.ts:186-201`、`crypto`時の`path.json`ハッシュ照合）は`getHash`の配線で動くようになった。ついでに書くだけで読まれていなかったデッド変数`hFn2Ext`を削除
+  - テスト：`test/SaveMng.test.ts`にcrypto:true版の偽物（`btoa`/`atob`は日本語を扱えないため`Buffer`のbase64で代用）を追加し、暗号化往復・デバウンス越しの順序保証・crypto:false時にオブジェクトのまま保存されることを検証。単体テスト1519件→1522件、型チェック（`tsc --noEmit`／`-p test/e2e`）・E2E193件はいずれもパス（**crypto:falseのまま経路が完全に現状維持であることの証明**）
+  - **アセット暗号化（画像・動画・音声・アニメpngシート・`[add_frame]`）と、それを実証するE2Eフィクスチャ生成・改竄検査の実地確認は次段階**（`todo.md`へ）
+
 - [ ]
 
 

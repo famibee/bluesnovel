@@ -185,11 +185,10 @@ export class ConfigBase implements T_Config {
 		this.#existsBreakpage = this.matchPath('^breakpage$', SEARCH_PATH_ARG_EXT.SP_GSM).length > 0;
 
 		// ファイル改竄チェック
-		const hFn2Ext: {[fn: string]: string}	= {};
 		if (this.sys.arg.crypto)
-		for (const [fn0, hExts] of Object.entries(this.hPathFn2Exts)) {
+		for (const hExts of Object.values(this.hPathFn2Exts)) {
 			for (const [ext, pp] of Object.entries(hExts)) {
-				if (! ext.startsWith(':')) {hFn2Ext[fn0] = ext; continue}
+				if (! ext.startsWith(':')) continue;
 				if (! ext.endsWith(':id')) continue;
 
 				const hp = (<string>pp).slice((<string>pp).lastIndexOf('/') +1);
@@ -200,12 +199,6 @@ export class ConfigBase implements T_Config {
 				if (hp !== hf) throw `ファイル改竄エラーです fn:${fn}`;
 			}
 		}
-		// 出力・副作用なしなのでコメントアウト
-		// else for (const [fn0, hExts] of Object.entries(this.hPathFn2Exts)) {
-		// 	for (const ext of Object.keys(hExts)) {
-		// 		if (! ext.startsWith(':')) hFn2Ext[fn0] = ext;
-		// 	}
-		// }
 	}
 	#existsBreakline = false;
 	get existsBreakline(): boolean {return this.#existsBreakline}

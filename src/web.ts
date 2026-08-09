@@ -17,8 +17,6 @@ import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 export class SysWeb extends SysBase {
 	constructor(...[hPlg = {}, arg = {cur: 'prj/', crypto: false, dip: ''}]: T_SysBaseParams) {	// DOMContentLoaded は呼び出し側でやる
 		super(hPlg, arg);
-// console.log(`fn:web.ts line:19 hPlg:%o`, this.hPlg);
-		//TODO: プラグイン
 		queueMicrotask(async ()=> this.loaded(hPlg, arg));
 	}
 

@@ -1,6 +1,7 @@
 import { r as e } from "./rolldown-runtime.js";
+import { n as t } from "./SaveMng.js";
 //#region src/sn/localStore.ts
-var t = {
+var n = {
 	get(e) {
 		let t = localStorage.getItem(e);
 		if (t != null) try {
@@ -19,28 +20,39 @@ var t = {
 //#endregion
 //#region src/sn/SysBase.ts
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
-var n = "skynovel", r = class {
+var r = "skynovel", i = class {
 	hPlg;
 	arg;
 	constructor(e = {}, t) {
 		this.hPlg = e, this.arg = t;
 	}
 	async loaded(...[t]) {
-		document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
+		let n = t.snsys_pre;
+		delete t.snsys_pre, await n?.init({
+			setDec: (e) => {
+				this.dec = e;
+			},
+			setEnc: (e) => {
+				this.enc = e;
+			},
+			getHash: (e) => {
+				this.hash = e;
+			}
+		}), document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
 			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
 			import("./ScriptMng.js"),
 			import("./Sprite.js").then((e) => e.t)
-		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: r }, { ScriptMng: i }, { setFetch: a }]) => {
+		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: i }, { setFetch: a }]) => {
 			a((e, t) => this.fetch(e, t));
-			let o = await r.generate(this);
+			let o = await n.generate(this);
 			this.setMain(o), document.body.style.backgroundColor = String(o.oCfg.init.bg_color);
-			let s = document.getElementById(n);
+			let s = document.getElementById(r);
 			if (s) {
 				let e = s.cloneNode(!0);
-				e.id = n;
-			} else s = document.createElement("div"), s.id = n, document.body.appendChild(s);
+				e.id = r;
+			} else s = document.createElement("div"), s.id = r, document.body.appendChild(s);
 			let c = new i(this);
 			t(e(s), {
 				heStage: s,
@@ -63,21 +75,25 @@ var n = "skynovel", r = class {
 		return this.$path_userdata;
 	}
 	dec = (e, t) => Promise.resolve(t);
+	enc = (e) => Promise.resolve(e);
 	fetch = (e, t) => fetch(e, t);
 	hash = (e) => "";
 	async appendFile(e, t) {}
+	get crypto() {
+		return this.arg.crypto;
+	}
 	async storeLoad(e) {
-		let n = (t) => `skynovel.${e} - ${t}`, r = t.get(n("sys"));
+		let t = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`, r = n.get(t("sys"));
 		if (r !== void 0) return {
 			sys: r,
-			mark: t.get(n("mark")) ?? {},
-			kidoku: t.get(n("kidoku")) ?? {},
-			storage: t.get(n("storage")) ?? {}
+			mark: n.get(t("mark")) ?? {},
+			kidoku: n.get(t("kidoku")) ?? {},
+			storage: n.get(t("storage")) ?? {}
 		};
 	}
-	storeFlush(e, n) {
-		let r = (t) => `skynovel.${e} - ${t}`;
-		t.set(r("sys"), n.sys), t.set(r("mark"), n.mark), t.set(r("kidoku"), n.kidoku), t.set(r("storage"), n.storage);
+	storeFlush(e, t) {
+		let r = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`;
+		return n.set(r("sys"), t.sys), n.set(r("mark"), t.mark), n.set(r("kidoku"), t.kidoku), n.set(r("storage"), t.storage), Promise.resolve();
 	}
 	close() {}
 	window(e) {}
@@ -85,21 +101,21 @@ var n = "skynovel", r = class {
 	async capturePage(e, t, n, r) {
 		return "";
 	}
-}, i = class {
+}, a = class {
 	send(e, ...t) {
 		window.electron.ipcRenderer.send(e, ...t);
 	}
 	invoke(e, ...t) {
 		return window.electron.ipcRenderer.invoke(e, ...t);
 	}
-}, a = class {
+}, o = class {
 	on(e, t) {
 		return window.electron.ipcRenderer.on(e, t);
 	}
 	once(e, t) {
 		return window.electron.ipcRenderer.once(e, t);
 	}
-}, o = class extends r {
+}, s = class extends i {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
 		crypto: !1,
@@ -107,32 +123,32 @@ var n = "skynovel", r = class {
 	}]) {
 		super(e, t), queueMicrotask(async () => this.loaded(e, t));
 	}
-	#e = new i();
-	#t = new a();
-	async loaded(...[e, t]) {
-		let n = await this.#e.invoke("getInfo");
-		this.$path_downloads = n.downloads.replaceAll("\\", "/") + "/", this.$path_userdata = n.userData.replaceAll("\\", "/") + "/", this.#t.on("log", (e, t) => console.info("main: %o", t)), this.#t.on("fire", (e, t) => document.dispatchEvent(new KeyboardEvent("keydown", {
+	#e = new a();
+	#t = new o();
+	async loaded(...[e, n]) {
+		let r = await this.#e.invoke("getInfo");
+		this.$path_downloads = r.downloads.replaceAll("\\", "/") + "/", this.$path_userdata = r.userData.replaceAll("\\", "/") + "/", this.#t.on("log", (e, t) => console.info("main: %o", t)), this.#t.on("fire", (e, t) => document.dispatchEvent(new KeyboardEvent("keydown", {
 			key: t,
 			bubbles: !0
-		}))), this.#t.on("save_win_inf", (e, t) => document.dispatchEvent(new CustomEvent("sn_win_inf", { detail: t }))), await super.loaded(e, t);
-		let { width: r, height: i } = this.cfg.oCfg.window, a = {
+		}))), this.#t.on("save_win_inf", (e, t) => document.dispatchEvent(new CustomEvent("sn_win_inf", { detail: t }))), await super.loaded(e, n);
+		let { width: i, height: a } = this.cfg.oCfg.window, o = {
 			c: !0,
 			x: 0,
 			y: 0,
-			w: r,
-			h: i
+			w: i,
+			h: a
 		};
 		try {
-			let e = await this.storeLoad(this.cfg.oCfg.save_ns), t = e?.sys["const.sn.nativeWindow.x"], n = e?.sys["const.sn.nativeWindow.y"], r = e?.sys["const.sn.nativeWindow.w"], i = e?.sys["const.sn.nativeWindow.h"];
-			typeof t == "number" && typeof n == "number" && typeof r == "number" && typeof i == "number" && (a = {
+			let e = await this.storeLoad(this.cfg.oCfg.save_ns), n = await t(this.dec, e?.sys), r = n?.["const.sn.nativeWindow.x"], i = n?.["const.sn.nativeWindow.y"], a = n?.["const.sn.nativeWindow.w"], s = n?.["const.sn.nativeWindow.h"];
+			typeof r == "number" && typeof i == "number" && typeof a == "number" && typeof s == "number" && (o = {
 				c: !1,
-				x: t,
-				y: n,
-				w: r,
-				h: i
+				x: r,
+				y: i,
+				w: a,
+				h: s
 			});
 		} catch {}
-		await this.#e.invoke("inited", this.cfg.oCfg, a);
+		await this.#e.invoke("inited", this.cfg.oCfg, o);
 	}
 	appendFile = (e, t) => this.#e.invoke("appendFile", e, t);
 	close() {
@@ -154,11 +170,11 @@ var n = "skynovel", r = class {
 			storage: t.storage ?? {}
 		};
 	}
-	storeFlush(e, t) {
-		this.#e.invoke("flush", t);
+	async storeFlush(e, t) {
+		await this.#e.invoke("flush", t);
 	}
 };
 //#endregion
-export { o as SysApp };
+export { s as SysApp };
 
 //# sourceMappingURL=app.js.map

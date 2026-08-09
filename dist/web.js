@@ -26,7 +26,18 @@ var n = "skynovel", r = class {
 		this.hPlg = e, this.arg = t;
 	}
 	async loaded(...[t]) {
-		document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
+		let r = t.snsys_pre;
+		delete t.snsys_pre, await r?.init({
+			setDec: (e) => {
+				this.dec = e;
+			},
+			setEnc: (e) => {
+				this.enc = e;
+			},
+			getHash: (e) => {
+				this.hash = e;
+			}
+		}), document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
 			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
@@ -63,11 +74,15 @@ var n = "skynovel", r = class {
 		return this.$path_userdata;
 	}
 	dec = (e, t) => Promise.resolve(t);
+	enc = (e) => Promise.resolve(e);
 	fetch = (e, t) => fetch(e, t);
 	hash = (e) => "";
 	async appendFile(e, t) {}
+	get crypto() {
+		return this.arg.crypto;
+	}
 	async storeLoad(e) {
-		let n = (t) => `skynovel.${e} - ${t}`, r = t.get(n("sys"));
+		let n = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`, r = t.get(n("sys"));
 		if (r !== void 0) return {
 			sys: r,
 			mark: t.get(n("mark")) ?? {},
@@ -76,8 +91,8 @@ var n = "skynovel", r = class {
 		};
 	}
 	storeFlush(e, n) {
-		let r = (t) => `skynovel.${e} - ${t}`;
-		t.set(r("sys"), n.sys), t.set(r("mark"), n.mark), t.set(r("kidoku"), n.kidoku), t.set(r("storage"), n.storage);
+		let r = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`;
+		return t.set(r("sys"), n.sys), t.set(r("mark"), n.mark), t.set(r("kidoku"), n.kidoku), t.set(r("storage"), n.storage), Promise.resolve();
 	}
 	close() {}
 	window(e) {}

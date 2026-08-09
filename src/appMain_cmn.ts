@@ -7,7 +7,7 @@
 
 import type {SAVE_WIN_INF, TAG_WINDOW, T_CAPTURE_RECT} from './preload';
 import type {T_CFG} from './sn/ConfigBase';
-import type {T_DATA4VARI} from './ts/SaveMng';
+import type {T_DATA4VARI_TRANSPORT} from './ts/SaveMng';
 
 import type {BrowserWindow, MessageBoxOptions, OpenDialogOptions, Size} from 'electron/main';
 import {app, dialog, screen, shell} from 'electron';
@@ -138,9 +138,9 @@ export class appMain_cmn {
 		ipc.handle('navigate_to', (_, url: string)=> shell.openExternal(url));
 
 
-		let	st: Store<T_DATA4VARI>;
-		ipc.handle('Store', (_, o: {name: string})=> {st = new Store<T_DATA4VARI>(o); return});	// return必要、Storeをcloneしてしまうので
-		ipc.handle('flush', (_, o: T_DATA4VARI)=> {st.store = o; return});
+		let	st: Store<T_DATA4VARI_TRANSPORT>;
+		ipc.handle('Store', (_, o: {name: string})=> {st = new Store<T_DATA4VARI_TRANSPORT>(o); return});	// return必要、Storeをcloneしてしまうので
+		ipc.handle('flush', (_, o: T_DATA4VARI_TRANSPORT)=> {st.store = o; return});
 		ipc.handle('Store_isEmpty', ()=> st.size === 0);
 		ipc.handle('Store_get', ()=> st.store);
 

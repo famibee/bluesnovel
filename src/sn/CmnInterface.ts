@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {TArg, TTag} from './Grammar';
+import type {TArg} from './Grammar';
 import type {Areas, T_H_Areas} from './Areas';
 import type {T_H_VAL_MP} from './CallStack';
 import {CmnLib, getDateStr} from './CmnLib';
@@ -24,45 +24,20 @@ export type T_PropParser = {
 
 
 // =============== Plugin
-// import {DisplayObject, RenderTexture} from 'pixi.js';
-export type T_PLUGIN_DECAB_RET = {
-	ext_num	: number;
-	ab		: ArrayBuffer;
-};
-export type T_PLUGIN_INFO = {
-	window: {
-		width	: number;
-		height	: number;
-	},
-}
-import type {T_SEARCHPATH} from './ConfigBase';
+// 本家（skynovel_esm）は暗号化・改竄検査のロジック自体を秘匿するため、プラグイン（snsys_pre）が
+//	SysBase.loaded()経由でsetDec/setEnc/getHashを注入する設計を取る。bluesnovelもこれを踏襲するが、
+//	一般プラグイン向けのフック（addTag/addLayCls/getInfo/getVal/resume/render/searchPath）と
+//	Electron専用のgetStK（本家はelectron-storeのencryptionKeyに使うが、bluesnovelは
+//	セーブ暗号化をweb/app版で統一しenc()一本にするため消費先が無い）は対象外（todo.mdへ）
 export type T_PluginInitArg = {
-	getInfo(): void;
-	addTag(tag_name: string, tag_fnc: boolean): void;
-	addLayCls(cls: string, fnc: Function): void;
-	getInfo(): T_PLUGIN_INFO;
-	addTag(tag_name: string, tag_fnc: TTag): void;
-	// addLayCls(cls: string, fnc: T_LayerFactory): void;
-	searchPath: T_SEARCHPATH;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	getVal(arg_name: string, def?: number | string): any;
-	resume(fnc?: ()=> void): void;
-	render(): void;
-	// render(dsp: DisplayObject, renTx?: RenderTexture, clear?: boolean): void;
 	setDec(fnc: (ext: string, tx: string)=> Promise<string>): void;
-	setDecAB(fnc: (ab: ArrayBuffer)=> Promise<boolean>): void;
-	setDecAB(fnc: (ab: ArrayBuffer)=> Promise<T_PLUGIN_DECAB_RET>): void;
 	setEnc(fnc: (tx: string)=> Promise<string>): void;
-	getStK(fnc: ()=> string): void;
 	getHash(fnc: (str: string)=> string): void;
 }
 export type T_Plugin = {
 	init(pia: T_PluginInitArg): Promise<void>;
 }
 export type T_HPlugin = {[name: string]: T_Plugin;}
-
-// import {Layer} from './Layer';
-// export type T_LayerFactory = ()=> Layer
 
 
 // =============== SysBase
@@ -81,12 +56,11 @@ export type T_SysBaseLoadedParams = [
 ];
 
 
-export type SYS_DEC_RET = HTMLImageElement | HTMLVideoElement | ArrayBuffer;
 export type T_SysBase = {
 	// initVal(hTmp: T_H_TMP_DATA, comp: (data: T_Data4Vari)=> void): Promise<void>;
 	// flush(): void;
 	dec(ext: string, tx: string): Promise<string>;
-	// decAB(ab: ArrayBuffer): Promise<SYS_DEC_RET>;
+	enc(tx: string): Promise<string>;
 
 	// addHook(fnc: T_FncHook): void;
 	// callHook: T_FncHook;

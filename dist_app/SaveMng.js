@@ -7,7 +7,11 @@ function e() {
 		storage: {}
 	};
 }
-var t = ".swpd", n = class {
+var t = ".swpd";
+async function n(e, t) {
+	return t === void 0 ? void 0 : typeof t == "string" ? JSON.parse(await e("json", t)) : t;
+}
+var r = class {
 	sys;
 	ns;
 	#e = e();
@@ -19,21 +23,54 @@ var t = ".swpd", n = class {
 	}
 	async load() {
 		let t = await this.sys.storeLoad(this.ns);
-		return t ? (this.#e = t, !1) : (this.#e = e(), !0);
+		if (!t) return this.#e = e(), !0;
+		try {
+			this.#e = this.sys.crypto ? await this.#t(t) : t;
+		} catch {
+			return this.#e = e(), !0;
+		}
+		return !1;
+	}
+	async #t(e) {
+		let t = (e) => n(this.sys.dec, e);
+		return {
+			sys: await t(e.sys),
+			mark: await t(e.mark),
+			kidoku: await t(e.kidoku),
+			storage: await t(e.storage)
+		};
 	}
 	flush() {
-		if (this.#t) {
-			this.#n = !0;
+		if (this.#n) {
+			this.#r = !0;
 			return;
 		}
-		this.#r(), this.#t = setTimeout(() => {
-			this.#t = void 0, this.#n && (this.#n = !1, this.flush());
+		this.#a(), this.#n = setTimeout(() => {
+			this.#n = void 0, this.#r && (this.#r = !1, this.flush());
 		}, 500);
 	}
-	#t;
-	#n = !1;
-	#r() {
-		this.sys.storeFlush(this.ns, this.#e);
+	#n;
+	#r = !1;
+	flushed() {
+		return this.#i;
+	}
+	#i = Promise.resolve();
+	#a() {
+		let e = JSON.stringify(this.#e.sys), t = JSON.stringify(this.#e.mark), n = JSON.stringify(this.#e.kidoku), r = JSON.stringify(this.#e.storage), { crypto: i } = this.sys;
+		this.#i = this.#i.then(async () => {
+			let a = i ? {
+				sys: await this.sys.enc(e),
+				mark: await this.sys.enc(t),
+				kidoku: await this.sys.enc(n),
+				storage: await this.sys.enc(r)
+			} : {
+				sys: JSON.parse(e),
+				mark: JSON.parse(t),
+				kidoku: JSON.parse(n),
+				storage: JSON.parse(r)
+			};
+			await this.sys.storeFlush(this.ns, a);
+		}).catch((e) => console.error("SaveMng #write failed:", e));
 	}
 	getFile(e) {
 		return this.#e.storage[e];
@@ -61,27 +98,33 @@ var t = ".swpd", n = class {
 			place: Number(e)
 		})));
 	}
-	export() {
-		let e = new Blob([JSON.stringify(this.#e)], { type: "text/json" }), n = URL.createObjectURL(e), i = document.createElement("a");
-		i.href = n, i.download = `no_crypto_${this.ns}${r()}${t}`, i.click(), URL.revokeObjectURL(n);
+	async export() {
+		let { crypto: e, enc: n } = this.sys, r = JSON.stringify(this.#e), a = new Blob([e ? await n(r) : r], { type: "text/json" }), o = URL.createObjectURL(a), s = document.createElement("a");
+		s.href = o, s.download = `${e ? "" : "no_crypto_"}${this.ns}${i()}${t}`, s.click(), URL.revokeObjectURL(o);
 	}
 	async import() {
-		let e = await new Promise((e, n) => {
+		let e = await (await new Promise((e, n) => {
 			let r = document.createElement("input");
 			r.type = "file", r.accept = `${t}, text/plain`, r.onchange = () => {
 				let t = r.files?.[0];
 				t ? e(t) : n(/* @__PURE__ */ Error("ファイル選択に失敗しました"));
 			}, r.click();
-		}), n = JSON.parse(await e.text()), r = n.sys["const.sn.cfg.ns"];
+		})).text(), n = await (async () => {
+			try {
+				return JSON.parse(e);
+			} catch {
+				return JSON.parse(await this.sys.dec("json", e));
+			}
+		})(), r = n.sys["const.sn.cfg.ns"];
 		if (r !== this.ns) throw `別のゲーム【プロジェクト名=${String(r)}】のプレイデータです`;
 		return n.storage ??= {}, this.#e = n, this.flush(), n;
 	}
 };
-function r() {
+function i() {
 	let e = /* @__PURE__ */ new Date(), t = (e) => String(e).padStart(2, "0");
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
-export { n as t };
+export { n, r as t };
 
 //# sourceMappingURL=SaveMng.js.map

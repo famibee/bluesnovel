@@ -7,7 +7,7 @@
 
 import type {T_HPlugin, T_SysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import { T_Config, T_SysRoots } from './ConfigBase';
-import type {T_DATA4VARI} from '../ts/SaveMng';
+import type {T_DATA4VARI_TRANSPORT} from '../ts/SaveMng';
 import store from './localStore';
 
 
@@ -25,7 +25,18 @@ const	SN_ID	= 'skynovel';
 
 export class SysBase implements T_SysRoots, T_SysBase {
 	constructor(readonly hPlg: T_HPlugin = {}, readonly arg: HSysBaseArg) {}
-	protected async loaded(...[_hPlg,]: T_SysBaseLoadedParams) {
+	protected async loaded(...[hPlg,]: T_SysBaseLoadedParams) {
+		// 暗号化・改竄検査のロジックはコアに持たず、プラグイン（snsys_pre）から注入する
+		//	（本家 SysBase.ts:49-50 と同じ扱い。秘匿性のため）。prj.json/path.jsonの読込
+		//	（Config.generate、直後）が既にdec()を通るので、それより前に済ませる必要がある
+		const pre = hPlg.snsys_pre;
+		delete hPlg.snsys_pre;	// eslint-disable-line @typescript-eslint/no-dynamic-delete
+		await pre?.init({
+			setDec: f=> {this.dec = f},
+			setEnc: f=> {this.enc = f},
+			getHash: f=> {this.hash = f},
+		});
+
 		document.head.insertAdjacentHTML('beforeend',
 `<style type="text/css">
 	body {
@@ -80,34 +91,39 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	protected $path_userdata	= '';
 	get path_userdata() {return this.$path_userdata}
 
-	readonly dec = (_ext: string, tx: string)=> Promise.resolve(tx);
+	dec = (_ext: string, tx: string)=> Promise.resolve(tx);
+	enc = (tx: string)=> Promise.resolve(tx);
 	readonly fetch = (url: string, init?: RequestInit)=> fetch(url, init);
-	readonly hash = (_str: string)=> '';
+	hash = (_str: string)=> '';
 
 	async appendFile(_path: string, _data: string) { /* SysApp/SysWebが上書き（本家 SysBase.ts:583） */ }
 
 
 	// ===== しおり・sys:の永続化（SaveMng.tsが呼ぶ。本家 data/flush()/initVal() 相当） =====
 	//	既定はlocalStorage（本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式のキー4本。
-	//	同じプロジェクトなら本家が書いたデータをそのまま読める）。SysAppがelectron-storeへ上書きする
-	async storeLoad(ns: string): Promise<T_DATA4VARI | undefined> {
-		const key = (kind: string)=> `skynovel.${ns} - ${kind}`;
+	//	同じプロジェクトなら本家が書いたデータをそのまま読める）。SysAppがelectron-storeへ上書きする。
+	//	暗号化そのものはSaveMng.tsが行う（crypto/enc/dec経由）ので、ここは保存先とキー名だけの責務
+	get crypto() {return this.arg.crypto}
+	async storeLoad(ns: string): Promise<T_DATA4VARI_TRANSPORT | undefined> {
+		// crypto有無で別キーにする（開発中の切り替えで平文を暗号文として読む事故を防ぐ）
+		const key = (kind: string)=> `skynovel.${ns} - ${kind}${this.arg.crypto ? '_enc' : ''}`;
 		const sys = store.get(key('sys'));
 		if (sys === undefined) return undefined;
 
 		return {
-			sys		: sys as T_DATA4VARI['sys'],
-			mark	: (store.get(key('mark')) ?? {}) as T_DATA4VARI['mark'],
-			kidoku	: (store.get(key('kidoku')) ?? {}) as T_DATA4VARI['kidoku'],
-			storage	: (store.get(key('storage')) ?? {}) as T_DATA4VARI['storage'],
+			sys		: sys as T_DATA4VARI_TRANSPORT['sys'],
+			mark	: (store.get(key('mark')) ?? {}) as T_DATA4VARI_TRANSPORT['mark'],
+			kidoku	: (store.get(key('kidoku')) ?? {}) as T_DATA4VARI_TRANSPORT['kidoku'],
+			storage	: (store.get(key('storage')) ?? {}) as T_DATA4VARI_TRANSPORT['storage'],
 		};
 	}
-	storeFlush(ns: string, data: T_DATA4VARI) {
-		const key = (kind: string)=> `skynovel.${ns} - ${kind}`;
+	storeFlush(ns: string, data: T_DATA4VARI_TRANSPORT): Promise<void> {
+		const key = (kind: string)=> `skynovel.${ns} - ${kind}${this.arg.crypto ? '_enc' : ''}`;
 		store.set(key('sys'), data.sys);
 		store.set(key('mark'), data.mark);
 		store.set(key('kidoku'), data.kidoku);
 		store.set(key('storage'), data.storage);
+		return Promise.resolve();
 	}
 
 
