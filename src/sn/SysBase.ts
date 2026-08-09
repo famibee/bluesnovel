@@ -54,10 +54,11 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			import('./Config'),
 			import('../ts/ScriptMng'),
 			import('../ts/Sprite'),
-		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch}])=> {
+		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch, setDecFncs}])=> {
 			// GrpLayer/TxtLayer（Reactコンポーネント）はsysを持たないので、アニメpngシートの
-			//	.json取得だけモジュールレベルで注入する（Sprite.ts参照）
+			//	.json取得・複号だけモジュールレベルで注入する（Sprite.ts参照）
 			setFetch((url, init)=> this.fetch(url, init));
+			setDecFncs((ext, tx)=> this.dec(ext, tx), ab=> this.decAB(ab), this.arg.crypto);
 
 			// React 初期表示
 			const cfg = await Config.generate(this);

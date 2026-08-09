@@ -14,6 +14,8 @@
 //	本家はpixiの`AnimatedSprite`（テクスチャを差し替えて再生）だが、こちらはDOMなので
 //	**CSSのstepsアニメ**で背景位置をコマ送りする。JSは1回もフレームを跨がない。
 
+import {decryptPicUrl} from './Crypto';
+
 // 1コマの大きさと格子。CSSアニメを組むのに要るだけの情報へ畳んである
 export type T_SHEET = {
 	img		: string;	// シート画像（png）の解決済みURL
@@ -58,9 +60,17 @@ export function parseSheet(json: unknown, img: string): T_SHEET | undefined {
 }
 
 // GrpLayer/TxtLayerはsysを持たない（Reactコンポーネント）ので、SysBase.loaded()から
-//	一度だけ注入する。既定は素のfetch（テストや未注入時のフォールバック）
+//	一度だけ注入する。既定は素のfetch・恒等関数・crypto:false（テストや未注入時のフォールバック）
 let snFetch: (url: string, init?: RequestInit)=> Promise<Response> = (url, init)=> fetch(url, init);
+let snDec: (ext: string, tx: string)=> Promise<string> = (_ext, tx)=> Promise.resolve(tx);
+let snDecAB: (ab: ArrayBuffer)=> Promise<ArrayBuffer> = ab=> Promise.resolve(ab);
+let snCrypto = false;
 export function setFetch(f: typeof snFetch) {snFetch = f}
+// crypto:true構成での複号関数。jsonは本家と同じくテキストとしてsys.decへ（ScriptMng #fetchScript
+//	と同じ扱い）、シート画像はts/Crypto.tsのdecryptPicUrlで他の画像・動画と同じ経路へ通す。
+//	**cryptoも一緒に渡す**——decryptPicUrl自身がcrypto:false時に素通しする作りなので、ここは
+//	sys.cryptoをそのまま伝えるだけでよい（渡し忘れるとcrypto:false構成でも無駄にBlob URL化される）
+export function setDecFncs(dec: typeof snDec, decAB: typeof snDecAB, crypto: boolean) {snDec = dec; snDecAB = decAB; snCrypto = crypto}
 
 // .jsonのURLからシートを読む。**同じシートを何度も取りに行かないようここで覚える**
 //	（表裏ページ・複数レイヤが同じ画像を使う。モジュールレベルに置くのは FocusMng と同じ形）
@@ -70,9 +80,10 @@ export function loadSheet(jsonSrc: string): Promise<T_SHEET | undefined> {
 	return hSheet[jsonSrc] ??= snFetch(jsonSrc)
 		.then(async r=> {
 			if (! r.ok) throw `${String(r.status)} ${r.statusText}`;
-			return r.json() as Promise<unknown>;
+			return snDec('json', await r.text());
 		})
-		.then(json=> parseSheet(json, sheetImgSrc(jsonSrc, json)))
+		.then(tx=> JSON.parse(tx) as unknown)
+		.then(async json=> parseSheet(json, await decryptPicUrl(sheetImgSrc(jsonSrc, json), snCrypto, snFetch, snDecAB)))
 		.catch(()=> undefined);	// 読めなければただの静止画として扱う（表示は止めない）
 }
 

@@ -25,36 +25,11 @@ import {addFontFaces} from './Font';
 import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
 import {SndMng} from './SndMng';
 import {MAX_END_MS} from './SndBuf';
+import {decryptPicUrl} from './Crypto';
 
 import gsap from 'gsap';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
-
-
-// 画像・動画の拡張子→MIME（ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSMのうち#decryptPicが対象にするもの）
-const H_PIC_EXT2MIME: {[ext: string]: string} = {
-	png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-	webp: 'image/webp', svg: 'image/svg+xml',
-	mp4: 'video/mp4', webm: 'video/webm',
-};
-// crypto:true時のみ呼ぶ。fetchしたバイナリをdecAB()へ通し、Blob URLへ差し替える。
-//	アニメpngシート（.json）はここを通さない——シートの中の画像URLは別途平文で解決される
-//	仕組みなので、シートごと暗号化するなら別段階の対応が要る（todo.mdへ）。
-//	`userdata:/…`由来（data URL）・既にBlob URL化済みのものもそのまま素通し。
-//	ScriptMngのメソッドから切り出したモジュール関数（fetch/decABを引数で受け、
-//	SysBaseをまるごと用意せずにユニットテストできるようにするため）
-export async function decryptPicUrl(url: string, sysFetch: SysBase['fetch'], sysDecAB: SysBase['decAB']): Promise<string> {
-	if (! url || url.startsWith('data:') || url.startsWith('blob:') || url.endsWith('.json')) return url;
-	const ext = /\.([a-z0-9]+)$/i.exec(url)?.[1]?.toLowerCase() ?? '';
-	const type = H_PIC_EXT2MIME[ext];
-	if (! type) return url;	// 知らない拡張子はそのまま（今のところ画像・動画以外はここに来ない）
-
-	const res = await sysFetch(url);
-	const ab = await sysDecAB(await res.arrayBuffer());
-	return URL.createObjectURL(new Blob([ab], {type}));
-	// revokeしない。本家 SysBase.ts #genImage も同じ判断（onload契機でrevokeすると
-	//	暗号化構成でフレーム内画像が出なくなった実績があるため）
-}
 
 
 export class ScriptMng {
@@ -62,6 +37,8 @@ export class ScriptMng {
 
 	constructor(private readonly sys: SysBase) {
 		this.#saveMng = new SaveMng(sys, '');	// sys（parameter property）を参照するのでフィールド初期化子には書けない
+		this.#frmMng = new FrameMng((fn, ext)=> sys.cfg.searchPath(fn, ext), (u, init)=> sys.fetch(u, init),
+			(ext, tx)=> sys.dec(ext, tx), ab=> sys.decAB(ab), sys.crypto);
 		this.#spnDbg = document.createElement('span');
 		this.#spnDbg.hidden = true;
 		this.#spnDbg.textContent = '';
@@ -378,14 +355,16 @@ export class ScriptMng {
 	}
 
 	// HTMLフレーム（[add_frame]系）。レイヤと違いストアには載せず、ここが抱える（FrameMng.ts参照）。
-	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる
-	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext), (u, init)=> this.sys.fetch(u, init));
+	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる。
+	//	this.sys.cryptoを値として渡す都合上sysの初期化後でないと組み立てられない（TS2729）ので、
+	//	#saveMngと同じくフィールド初期化子ではなくコンストラクタ本体で代入する
+	readonly #frmMng: FrameMng;
 	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
 
 	// 音声層（ts/SndMng.ts）。DOM/WebAudioを直接触るのはScriptMngから見てここだけ。
 	//	myTraceはクラスフィールドとしてこれより後ろで定義されている（フィールド初期化は宣言順）ので、
 	//	直接渡さず呼び出し時に引くラッパーにする（束縛時点ではまだ未初期化のため）
-	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl), (u, init)=> this.sys.fetch(u, init));
+	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl), (u, init)=> this.sys.fetch(u, init), ab=> this.sys.decAB(ab));
 	// ブラウザの自動再生ポリシー対策。初回のクリック・キー入力から呼ぶ（Main.tsx参照）
 	unlockAudio() {this.#sndMng.unlock()}
 	// 自動再生ブロック中か（GrpLayerが[lay fn=movie]の<video>を初期muted状態にするかの判定に使う。
@@ -1285,9 +1264,10 @@ export class ScriptMng {
 		}
 	}
 
-	// crypto:true時のみ呼ぶ。fetchしたバイナリをsys.decAB()へ通し、Blob URLへ差し替える
+	// crypto:true時のみ呼ぶ（呼び出し元のchgPicケースが既に分岐済み）。
+	//	fetchしたバイナリをsys.decAB()へ通し、Blob URLへ差し替える
 	#decryptPic(url: string): Promise<string> {
-		return decryptPicUrl(url, this.sys.fetch, (ab: ArrayBuffer)=> this.sys.decAB(ab));
+		return decryptPicUrl(url, this.sys.crypto, this.sys.fetch, (ab: ArrayBuffer)=> this.sys.decAB(ab));
 	}
 	// chgPicの非同期解決が追い越されたとき、古い方でstoreを上書きしないための世代カウンタ
 	//	（key: `${nm}:${page}`）
@@ -1299,7 +1279,7 @@ export class ScriptMng {
 			// [lay]で変えられる見た目（visible/alpha/left/top/rotation/scale_*）は初期値を持たせない。
 			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
 			this.$fncs.addLayer(act.cls === 'grp'
-				? {cls: 'grp', nm: act.nm, fn: '', src: '', aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
+				? {cls: 'grp', nm: act.nm, fn: '', src: '', isSheet: false, isMovie: false, aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
 				: {cls: 'txt', nm: act.nm, str: '', aCh: [], aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
 			break;
 		case 'chgPic': {
@@ -1307,9 +1287,14 @@ export class ScriptMng {
 			//	例外を投げるが、renderの中で投げるとReactごと落ちるので、
 			//	シナリオ実行時に解決してエラーはデバッグ表示へ出す。GrpLayerは出来上がったURLを描くだけ
 			const src = this.#searchPic('lay', act.fn);
+			// アニメpngシート／動画判定は**Blob URL化前のここで確定**させ、ストアへ渡す（GrpLayer.tsx参照）。
+			//	fn（論理名）はアニメpngシートでは拡張子を持たず（例："anime"）、crypto構成ではsrcも
+			//	Blob URLに化けて拡張子情報を失うため、どちらでも判定できるのはこのタイミングだけ
+			const isSheet = src.endsWith('.json');
+			const isMovie = /\.(?:mp4|webm)$/i.test(src);
 			const aFace = act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}));
 			if (! this.sys.crypto) {
-				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src, aFace});
+				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src, isSheet, isMovie, aFace});
 				break;
 			}
 
@@ -1320,12 +1305,12 @@ export class ScriptMng {
 			const key = `${act.nm}:${act.page}`;
 			const seq = (this.#picReqSeq.get(key) ?? 0) + 1;
 			this.#picReqSeq.set(key, seq);
-			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '',
+			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '', isSheet, isMovie,
 				aFace: aFace.map(f=> ({...f, src: ''}))});
 			void Promise.all([this.#decryptPic(src), ...aFace.map(f=> this.#decryptPic(f.src))])
 			.then(([dSrc, ...aFaceSrc])=> {
 				if (this.#picReqSeq.get(key) !== seq) return;	// 追い越された
-				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc,
+				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc, isSheet, isMovie,
 					aFace: aFace.map((f, i)=> ({...f, src: aFaceSrc[i] ?? ''}))});
 			});
 			break;

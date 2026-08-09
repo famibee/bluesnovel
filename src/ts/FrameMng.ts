@@ -18,6 +18,7 @@
 import type {T_SEARCHPATH} from '../sn/ConfigBase';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {CmnLib} from '../sn/CmnLib';
+import {decryptPicUrl} from './Crypto';
 
 // [add_frame]/[frame]で指定できる見た目。**書かれた属性だけ**を持つ
 export type T_FRM_STY = {
@@ -42,6 +43,13 @@ export class FrameMng {
 	constructor(
 		private readonly searchPath: T_SEARCHPATH,
 		private readonly fetch: (url: string, init?: RequestInit)=> Promise<Response>,
+		// crypto:true時のみ意味を持つ（既定は恒等関数。SysBase.dec/decAB参照）。
+		//	HTML本体はテキストなのでdec、フレーム内<img>はdecryptPicUrl経由でdecABを使う（本家
+		//	FrameMng.ts:107-118／200-220と同じ2箇所）。cryptoはdecryptPicUrlのcrypto:false
+		//	素通し判定に使う（渡し忘れるとcrypto:false構成でも無駄にBlob URL化されるため必須）
+		private readonly dec: (ext: string, tx: string)=> Promise<string>,
+		private readonly decAB: (ab: ArrayBuffer)=> Promise<ArrayBuffer>,
+		private readonly crypto: boolean,
 	) { /* empty */ }
 
 	// フレームを載せる箱。Stage.tsxがステージ（拡縮される内側の箱）の中に置いてくれる。
@@ -89,7 +97,8 @@ export class FrameMng {
 		const url = this.searchPath(src, SEARCH_PATH_ARG_EXT.HTML);
 		const res = await this.fetch(url);
 		if (! res.ok) throw `[add_frame] HTMLの読込に失敗しました src:${src} ${res.statusText}`;
-		const html = FrameMng.#resolveUrls(await res.text(), url);
+		// crypto:false時はdecが恒等関数なのでそのまま通る（ScriptMng #fetchScriptと同じ形）
+		const html = FrameMng.#resolveUrls(await this.dec(url, await res.text()), url);
 
 		const f = document.createElement('iframe');
 		f.id = id;
@@ -122,7 +131,7 @@ export class FrameMng {
 		//	絶対URL・data:・ルート絶対はそのまま通す
 		const dir = FrameMng.#dirOf(url);
 		(f.contentWindow as unknown as {sn_repRes?: (fnc: (i: HTMLImageElement)=> void)=> void})
-			.sn_repRes?.((i: HTMLImageElement)=> {i.src = this.#srcOf(dir, i.dataset.src ?? '')});
+			.sn_repRes?.((i: HTMLImageElement)=> {void this.#srcOf(dir, i.dataset.src ?? '').then(src=> {i.src = src})});
 
 		// フレーム内にフォーカスがある間、キー入力は**親のdocumentまで飛んでこない**。
 		//	そのままだと[set_focus to=next]で一度フレームへ入ったら最後、矢印キーが効かなくなる。
@@ -291,10 +300,15 @@ export class FrameMng {
 	//	（ファイル名＋拡張子で引ける形なので）。
 	//	絶対URL（任意スキーム。app:/file:含む）・ルート絶対・data:はそのまま通し、サーチパスに
 	//	無ければ従来どおりディレクトリ前置へ落とす（枠に同梱しただけでpath.jsonに載らない画像のため）
-	#srcOf(dir: string, ds: string): string {
+	async #srcOf(dir: string, ds: string): Promise<string> {
 		if (! ds) return '';
 		if (/^(?:[a-z][a-z\d+\-.]*:|\/)/i.test(ds)) return ds;
-		try {return this.searchPath(ds, SEARCH_PATH_ARG_EXT.SP_GSM)}
+		try {
+			// searchPathで解決できたものだけcrypto対象（本家 #loadPic2Img も同様）。
+			//	解決できずディレクトリ前置へ落ちるものは枠に同梱しただけの画像で暗号化対象外
+			const url = this.searchPath(ds, SEARCH_PATH_ARG_EXT.SP_GSM);
+			return await decryptPicUrl(url, this.crypto, this.fetch, this.decAB);
+		}
 		catch {return dir + ds.replace(/^\.\//, '')}
 	}
 

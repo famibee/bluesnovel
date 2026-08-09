@@ -30,19 +30,22 @@ type T_GRPARG = T_LAY_CMN & {
 	fn		: string;	// [lay fn=...]で指定された論理名（[dump_lay]・デバッグ用。動画時は<video data-fn=…>
 		//	としても出し、[wv fn=…]（本家 SpritesMng.wv()）がここを引いて終了を待つ）
 	src		: string;	// 解決済みURL。空なら描かない
+	isSheet	: boolean;	// アニメpngシートか（ScriptMngがBlob URL化前のsrc拡張子で判定済み。下記参照）
+	// 動画（[lay fn=movie.mp4/.webm]）か（ScriptMngがBlob URL化前のsrc拡張子で判定済み）。
+	//	本家に[playvideo]系タグは無く、画像レイヤにそのまま貼る方式（Phase 4。todo.md参照）。
+	//	getVideoVol/needClick2PlayはSndMngの状態を読むだけの関数なので、都度呼ぶ関数として渡す
+	//	（onSeと同じ流儀。値そのものはReactの状態に持たない）
+	isMovie			: boolean;
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
-	// 動画（[lay fn=movie.mp4/.webm]）。本家に[playvideo]系タグは無く、画像レイヤにそのまま
-	//	貼る方式（Phase 4。todo.md参照）。getVideoVol/needClick2PlayはSndMngの状態を読むだけの
-	//	関数なので、都度呼ぶ関数として渡す（onSeと同じ流儀。値そのものはReactの状態に持たない）
 	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
 	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; aFace: T_FACE_SRC[]};
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -59,11 +62,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	// アニメpng（スプライトシート）。`[lay fn=…]`のパス解決結果が.jsonなら**シートの定義**で、
 	//	そこからコマの格子と再生速度を読んでCSSアニメで再生する（Sprite.ts / Lay.ts styAniSprite）。
 	//	読み込みが非同期なのでここで待つ：ストアはURLまでを持ち、
-	//	**アセットの中身（コマ割り）は画面側の関心事**という切り分け（画像の自然サイズと同じ扱い）
-	//	**種別の判定はsrcでなくfn（論理名）で行う**：暗号化構成ではsrcがBlob URL
-	//	（`blob:http://…`。拡張子情報を持たない）に化けるため（ScriptMng #decryptPic）。
-	//	fnはpath.json解決前の論理名で、暗号化されても平文のまま保たれる
-	const isSheet = fn.endsWith('.json');
+	//	**アセットの中身（コマ割り）は画面側の関心事**という切り分け（画像の自然サイズと同じ扱い）。
+	//	**isSheetはpropsで受け取る**（ScriptMngがBlob URL化前のsrcで判定してストアへ渡す）。
+	//	fn（論理名。例："anime"）は拡張子を持たないためここでは判定できず、
+	//	crypto構成ではsrcもBlob URLに化けて拡張子情報を失う
 	const [sheet, setSheet] = useState<T_SHEET | undefined>(undefined);
 	useEffect(()=> {
 		// crypto構成では復号中の一瞬src=''になる（ScriptMng #decryptPic）。空のままfetchしない
@@ -74,9 +76,8 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		return ()=> {alive = false};
 	}, [src, isSheet]);
 
-	// 動画（[lay fn=movie.mp4/.webm]）。本家に専用タグは無く、画像レイヤにそのまま貼る方式
-	//	（`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）
-	const isMovie = /\.(?:mp4|webm)$/i.test(fn);
+	// 動画（[lay fn=movie.mp4/.webm]）はisMovie propsで判定（上記isSheetと同じ理由でfnからは
+	//	判定できない。`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）。
 	// マウント時点の値だけ当てる（ref callback。本家 SpritesMng.ts:288-296 #charmVideoElm()と同じ
 	//	タイミング）。以後の変化（音量スライダ操作）はScriptMng.#applyMovieVolume()がステージ配下の
 	//	<video>を直接書き換える側で追随させる

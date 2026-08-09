@@ -9835,24 +9835,24 @@ var iu = /* @__PURE__ */ function(e) {
 }(R.PureComponent));
 //#endregion
 //#region src/components/GrpLayer.tsx
-function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, aFace: o, getVideoVol: c, needClick2Play: l }) {
-	let u = (e) => {
+function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: c, aFace: l, getVideoVol: u, needClick2Play: d }) {
+	let f = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, d = i.endsWith(".json"), [f, p] = (0, R.useState)(void 0);
+	}, [p, m] = (0, R.useState)(void 0);
 	(0, R.useEffect)(() => {
-		if (!d || !a) {
-			p(void 0);
+		if (!o || !a) {
+			m(void 0);
 			return;
 		}
 		let e = !0;
 		return F(a).then((t) => {
-			e && p(t);
+			e && m(t);
 		}), () => {
 			e = !1;
 		};
-	}, [a, d]);
-	let m = /\.(?:mp4|webm)$/i.test(i), h = (e) => {
-		e && (e.volume = c(), e.muted = l());
+	}, [a, o]);
+	let h = (e) => {
+		e && (e.volume = u(), e.muted = d());
 	}, g = (0, R.useRef)(null), _ = (e, t) => {
 		s(), e.transform = t;
 	};
@@ -9861,10 +9861,10 @@ function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 		ref: g,
 		"data-lay": r,
 		style: n,
-		onMouseDown: (e) => u(e),
+		onMouseDown: (e) => f(e),
 		children: [
-			f && /* @__PURE__ */ A("div", { className: P(f) }),
-			a && m && /* @__PURE__ */ A("video", {
+			p && /* @__PURE__ */ A("div", { className: P(p) }),
+			a && c && /* @__PURE__ */ A("video", {
 				ref: h,
 				src: a,
 				autoPlay: !0,
@@ -9872,11 +9872,11 @@ function au({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 				"data-fn": i,
 				style: { display: "block" }
 			}),
-			a && !d && !m && /* @__PURE__ */ A("img", {
+			a && !o && !c && /* @__PURE__ */ A("img", {
 				src: a,
 				style: { display: "block" }
 			}),
-			o.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ A("img", {
+			l.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ A("img", {
 				src: t,
 				style: {
 					position: "absolute",
@@ -10844,6 +10844,8 @@ function Au({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 							nm: e.nm,
 							fn: e.fn,
 							src: e.src,
+							isSheet: e.isSheet,
+							isMovie: e.isMovie,
 							aFace: e.aFace,
 							getVideoVol: () => n.getMovieVolume(),
 							needClick2Play: () => n.needClick2Play()

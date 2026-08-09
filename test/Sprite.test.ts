@@ -10,7 +10,7 @@
 //	ここで見るのは「CSSアニメを組むのに要る情報へ畳む」ところだけで、DOMは要らない。
 //	値はギャラリーの anime_png サンプル（SKYNovel_gallery/public/prj/anime_png）から取った。
 
-import {aniSpriteCss, parseSheet, sheetImgSrc} from '../src/ts/Sprite';
+import {aniSpriteCss, loadSheet, parseSheet, setDecFncs, setFetch, sheetImgSrc} from '../src/ts/Sprite';
 
 import {expect, it} from 'bun:test';
 
@@ -91,4 +91,50 @@ it('aniSpriteCss_wrapsToFirstFrameAt100Percent', ()=> {
 	const css = aniSpriteCss(sh, 'sn_ani2');
 	expect(css).toContain('100% {background-position: 0px 0px;}');
 	expect(css).toContain('50% {background-position: -200px 0px; animation-timing-function: step-end;}');
+});
+
+// crypto:true構成でのアニメpngシート読込（.jsonはsys.decでテキスト複号、シート画像は
+//	ts/Crypto.tsのdecryptPicUrl経由でsys.decABしBlob URL化）。setFetch/setDecFncsで
+//	SysBase丸ごと・DOMの<img>無しに注入関数の呼ばれ方だけを見る
+it('loadSheet_decryptsJsonAndSheetImageThroughInjectedFncs', async ()=> {
+	const json = {frames: {a: {frame: {x: 0, y: 0, w: 10, h: 10}}}, meta: {image: 'clock.5x8.png', size: {w: 10, h: 10}}};
+	const encJson = `ENC:${JSON.stringify(json)}`;
+
+	setFetch((async (url: string)=> {
+		if (url === '/prj/mat/clock.json') return new Response(encJson);
+		if (url === '/prj/mat/clock.5x8.png') return new Response(new Uint8Array([1, 2, 3]).buffer);
+		throw `想定外のURL ${url}`;
+	}) as typeof fetch);
+
+	const called = {dec: false, decAB: false};
+	setDecFncs(
+		async (ext, tx)=> {called.dec = true; expect(ext).toBe('json'); return tx.replace(/^ENC:/, '')},
+		async ab=> {called.decAB = true; return ab},
+		true,	// crypto:true
+	);
+
+	const sh = await loadSheet('/prj/mat/clock.json');
+	expect(called.dec).toBe(true);
+	expect(called.decAB).toBe(true);
+	expect(sh?.img.startsWith('blob:')).toBe(true);
+
+	// 後続テストへ影響しないよう、既定（恒等関数・crypto:false）へ戻す
+	setFetch((url, init)=> fetch(url, init));
+	setDecFncs((_ext, tx)=> Promise.resolve(tx), ab=> Promise.resolve(ab), false);
+});
+
+// crypto:falseならシート画像はBlob URL化せず元のURLのまま（anime.e2e.tsが実際に確認する回帰。
+//	decryptPicUrlへcryptoを渡し忘れると、crypto:false構成でも無駄にBlob URL化してしまっていた）
+it('loadSheet_keepsOriginalImageUrlWhenCryptoFalse', async ()=> {
+	const json = {frames: {a: {frame: {x: 0, y: 0, w: 10, h: 10}}}, meta: {image: 'walk.4x1.png', size: {w: 10, h: 10}}};
+
+	setFetch((async (url: string)=> {
+		if (url === '/prj/mat/walk.json') return new Response(JSON.stringify(json));
+		throw `想定外のURL ${url}`;	// crypto:falseならシート画像へのfetchは発生しない
+	}) as typeof fetch);
+
+	const sh = await loadSheet('/prj/mat/walk.json');
+	expect(sh?.img).toBe('/prj/mat/walk.4x1.png');
+
+	setFetch((url, init)=> fetch(url, init));
 });

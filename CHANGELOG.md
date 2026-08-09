@@ -304,6 +304,27 @@
   - **`pic.e2e.ts`の1件（`[lay fn=…]がpath.json経由で解決され、画像が表示される`の`naturalWidth`検証）が今回の変更と無関係に不安定**なことに気づいた（`git stash`で変更前コードに戻しても同じ形で失敗する＝既存のflaky test。`beforeEach`直後に`naturalWidth`を読みに行くタイミング依存と見られる）。今回の作業では深追いせず`todo.md`へ記録した
   - 音声・アニメpngシート・`[add_frame]`のアセット暗号化と、E2Eフィクスチャ生成（本家`mkPrjCrypto.mjs`相当）＋改竄検査の実地確認は次段階（`todo.md`へ）
 
+- [x] **セーブデータの暗号化（第3段階：音声・アニメpngシート・`[add_frame]`のアセット暗号化）**（2026-08-09）
+  - `todo.md`「暗号化の残り」のうち画像・動画で対象外にしていた3種に着手し、これでアセット暗号化が一巡した
+  - **共通化**：第2段階で`ScriptMng.ts`に置いた`decryptPicUrl`（fetch→decAB→Blob URL化）を、循環import（`FrameMng.ts`は元から`ScriptMng.ts`にimportされる側）を避けるため新規`src/ts/Crypto.ts`へ切り出し。`ScriptMng`/`Sprite`/`FrameMng`の3箇所が同じ判定ロジックを共有する
+  - **音声**（`SndMng.ts`）：`#decode()`が`fetch`→`decodeAudioData`の間で素通りしていたのへ`decAB`を挟むだけ。本家`SpritesMng.ts:213`と同じ位置づけだが、decode先が`AudioBuffer`でBlob URL化が要らないためSndMng専用に持たせた（画像・動画とは別枠）。コンストラクタへ第3引数として追加
+  - **アニメpngシート**（`Sprite.ts`）：本家（`SpritesMng.ts:207-208`）は`.json`もテキストとして`sys.dec()`で複号している——bluesnovel側は前段階で「`.json`は平文のまま」という誤った前提を置いていたが、本家を読み直して訂正した。`loadSheet()`を`fetch→sys.dec('json', …)→JSON.parse→シート画像をdecryptPicUrlで複号`の順に変更。`setFetch()`と対になる`setDecFncs(dec, decAB)`をモジュールレベルに新設し、`SysBase.loaded()`から注入する（GrpLayer/TxtLayerはReactコンポーネントで`sys`を持たないため、この手の注入は`setFetch`と同じ形に揃えた）
+  - **`[add_frame]`**（`FrameMng.ts`）も本家（`FrameMng.ts:107-118`／`200-220`）に倣い2箇所：HTML本体は`res.text()`を`sys.dec(url, …)`に通してから`srcdoc`へ、フレーム内`<img>`（`sn_repRes`フック経由）は`#srcOf()`を非同期化し`decryptPicUrl`を通す。**`searchPath()`で解決できたものだけ**crypto対象（本家の`#loadPic2Img`も同じ判定基準）——解決できずディレクトリ前置へ落ちる方は「枠に同梱しただけでpath.jsonに載らない画像」なので暗号化対象外のまま
+  - コンストラクタ引数が増えた`SndMng`/`FrameMng`と、モジュール関数`setDecFncs`は`SysBase.ts`（`setFetch`のすぐ隣）と`ScriptMng.ts`の生成箇所から配線
+  - テスト：`test/Sprite.test.ts`に`loadSheet_decryptsJsonAndSheetImageThroughInjectedFncs`を追加（`setFetch`/`setDecFncs`で注入した偽関数が正しい引数・順序で呼ばれ、シート画像URLが`blob:`になることを確認）。`test/ScriptMng_decryptPic.test.ts`は移動先の`src/ts/Crypto.ts`を指すようimport元だけ変更（中身は無変更）。`SndMng`/`FrameMng`は`AudioContext`/DOM依存が強く単体テスト対象外——crypto:false経路（現状維持）は既存のE2E・単体テストが変更なく通ることで担保。単体テスト1526件→1527件、型チェック（`tsc --noEmit`／`-p test/e2e`）はパス
+  - 残りは`todo.md`の「E2Eフィクスチャ生成＋改竄検査の実証」のみ（実際に暗号化した音声・アニメpngシート・フレームアセットで通し読みする確認は未実施）
+
+- [x] **セーブデータの暗号化（第4段階：E2Eフィクスチャ生成＋改竄検査の実証）、および前段階で混入していたリグレッションの発見・修正**（2026-08-09）
+  - `todo.md`「暗号化の残り」最後の項目に着手。本家`mkPrjCrypto.mjs`相当として`test/e2e/app/mkPrjCrypto.ts`（`bun test/e2e/app/mkPrjCrypto.ts`で実行）を新設し、`test/e2e/app/prj_crypto/`（画像・音声・アニメpngシート・`[add_frame]`＋フレーム内画像を暗号化したフィクスチャ一式）と、使い捨て鍵の複号プラグイン`test/e2e/app/snsys_pre.ts`を生成した。**実プロジェクトの鍵と資材は持ち込まない**方針は本家と同じ。bluesnovelはdecABが`{ext_num, ab}`のような拡張子秘匿を行わず復号済み`ArrayBuffer`をそのまま返す設計のため、本家のような`.bin`への付け替えは不要——元の拡張子のまま中身だけAES-GCMで暗号化して置ける
+  - `test/e2e/app/main.ts`に`?prj=crypto`時だけ`crypto:true`＋`snsys_pre`を注入する分岐を追加。`test/e2e/crypto.e2e.ts`（新規4件）で画像・アニメpngシート・音声・`[add_frame]`（HTML本体＋フレーム内画像）の4経路を1本のシナリオで通し確認
+  - **この過程で、前段階（第2〜3段階）に混入していた2件のリグレッションを発見・修正した**（いずれも`anime.e2e.ts`/`movie.e2e.ts`という**既存の**E2Eをフルセットで流して初めて表面化。ユニットテストだけでは検出できなかった）
+    - **1. `decryptPicUrl`が`crypto:false`でもBlob URL化してしまっていた**：`Sprite.ts`（アニメpngシート画像）と`FrameMng.ts`（フレーム内画像）が`crypto`の真偽を問わず常に`decryptPicUrl`を呼んでいたため、暗号化を使っていない既存プロジェクトでも無駄な`fetch`＋Blob生成が走り、`anime.e2e.ts`の「シート画像は実際に読み込まれる」等が壊れていた（`ScriptMng.ts`側は`if (!this.sys.crypto)`で早期returnしていたので気づかなかった）。`decryptPicUrl`自体に`crypto: boolean`引数を追加し、falseなら即座に元のURLを返すよう修正——呼び出し側の判断任せにせず、共通関数の入口で必ず弾く形にした。`Sprite.ts`は`setDecFncs()`にcryptoも一緒に渡すよう拡張、`FrameMng.ts`はコンストラクタへ`crypto`を追加
+    - **2. `GrpLayer.tsx`のアニメpngシート・動画判定が`fn`（論理名）ベースで、原理的に常にfalseになっていた**：第2段階で「crypto構成では`src`がBlob URLに化けて拡張子情報を失う」という理由で`src.endsWith('.json')`／`/\.(?:mp4|webm)$/.test(src)`を`fn`ベースへ変更していたが、**アニメpngシートの`fn`は`[lay fn=anime]`のような拡張子なしの論理名**（path.jsonで「論理名→.json」「論理名.列x行→.png」に分かれる仕組みのため）で、そもそも`.json`を含まない。動画も同様の想定違いだった。正しい判定情報は`ScriptMng.ts`の`chgPic`ケースが`searchPath()`直後（Blob URL化するより前）にしか持てないため、`isSheet`/`isMovie`をそこで確定させて`T_CHGPIC`／ストア（`T_GRPLAY_DATA`）経由で`GrpLayer.tsx`へ渡す形に直した（`fn`・`src`どちらからも判定できないcrypto構成でも成立する）
+  - 改竄検査（`ConfigBase.ts`の`path.json`内`:id`ハッシュ照合）は`test/ConfigBase_crypto.test.ts`（新規3件）で検証。`ConfigBase`は`protected constructor`かつ`T_SysRoots`という軽量インターフェースしか要求しないため、実`SysBase`（`window`参照を持ちbunでは読めない）を使わずテスト用サブクラス＋最小の偽`sys`で直接ロジックを叩けた（`SaveMng.test.ts`と同じ「その場で偽物を挿す」流儀）。crypto:true×ハッシュ一致／不一致／crypto:falseでチェック自体をスキップ、の3パターンを確認
+  - `test/ScriptMng_decryptPic.test.ts`は`test/Crypto.test.ts`へ改名し、`decryptPicUrl`の新しい`crypto`引数ぶん（false時は画像拡張子でも`fetch`/`decAB`を呼ばず素通しすること）のケースを追加
+  - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト1527件→1532件・**E2E全197件**（今回新設の4件込み。フルセットで流したのは本作業が初めて）はいずれもパス
+  - `todo.md`「暗号化の残り」が全項目完了し、見出しごと削除
+
 - [ ]
 
 

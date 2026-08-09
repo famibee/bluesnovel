@@ -29,6 +29,10 @@ export class SndMng {
 	constructor(
 		private readonly trace: (txt: string, lvl?: 'D' | 'W' | 'F' | 'E' | 'I' | 'ET') => void,
 		private readonly fetch: (url: string, init?: RequestInit)=> Promise<Response>,
+		// crypto:true時のみ実体を持つ（既定は恒等関数。SysBase.decAB参照）。fetchしたバイナリを
+		//	decodeAudioData()へ渡す前に通す（本家 SpritesMng.ts:213 と同じ位置づけだが、
+		//	こちらは画像/動画と共有せずSndMng専用に持つ——decode先がAudioBufferでBlob URL化が要らないため）
+		private readonly decAB: (ab: ArrayBuffer)=> Promise<ArrayBuffer>,
 	) {}
 
 	#ctx?: AudioContext;
@@ -75,6 +79,7 @@ export class SndMng {
 					if (! r.ok) throw `fetch失敗 ${String(r.status)} ${r.statusText}`;
 					return r.arrayBuffer();
 				})
+				.then(ab => this.decAB(ab))
 				.then(ab => ctx.decodeAudioData(ab));
 			p.catch(() => this.#hAB.delete(src));
 			this.#hAB.set(src, p);

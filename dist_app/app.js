@@ -47,21 +47,21 @@ var r = "skynovel", i = class {
 			import("./Config.js"),
 			import("./ScriptMng.js"),
 			import("./Sprite.js").then((e) => e.t)
-		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: i }, { setFetch: a }]) => {
-			a((e, t) => this.fetch(e, t));
-			let o = await n.generate(this);
-			this.setMain(o), document.body.style.backgroundColor = String(o.oCfg.init.bg_color);
-			let s = document.getElementById(r);
-			if (s) {
-				let e = s.cloneNode(!0);
+		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: i }, { setFetch: a, setDecFncs: o }]) => {
+			a((e, t) => this.fetch(e, t)), o((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto);
+			let s = await n.generate(this);
+			this.setMain(s), document.body.style.backgroundColor = String(s.oCfg.init.bg_color);
+			let c = document.getElementById(r);
+			if (c) {
+				let e = c.cloneNode(!0);
 				e.id = r;
-			} else s = document.createElement("div"), s.id = r, document.body.appendChild(s);
-			let c = new i(this);
-			t(e(s), {
-				heStage: s,
+			} else c = document.createElement("div"), c.id = r, document.body.appendChild(c);
+			let l = new i(this);
+			t(e(c), {
+				heStage: c,
 				sys: this,
-				scrMng: c
-			}, () => queueMicrotask(() => c.load("main")));
+				scrMng: l
+			}, () => queueMicrotask(() => l.load("main")));
 		});
 	}
 	cfg;

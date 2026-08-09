@@ -144,6 +144,11 @@ export type T_CHGPIC = {
 	page: T_PAGE;
 	fn	: string;	// 論理名（[dump_lay]・デバッグ用）
 	src	: string;	// 解決済みURL。パス解決（path.json）はScriptMngが行う
+	// アニメpngシート（[lay fn=…]の解決結果が.json）／動画（同.mp4|.webm）か。**crypto構成では
+	//	srcがBlob URLに化けて拡張子情報を失う**ため、ScriptMngがBlob URL化する前（searchPath直後）に
+	//	確定させてここへ渡す。fnは拡張子なしの論理名（例："anime"）のこともあるためfnからは判定できない
+	isSheet	: boolean;
+	isMovie	: boolean;
 	aFace	: T_FACE_SRC[];	// [lay face=...]で重ねる差分絵（重なり順＝配列順）
 }
 // [lay b_alpha=/b_alpha_isfixed=]：文字レイヤ背景の不透明度。値域は0.0（透明）～1.0（不透過）。
@@ -351,12 +356,14 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(sty !== undefined ? {sty} : {})}];
 		return putPage(s, idx, aLay);
 	}),
-	chgPic	: ({nm, page, fn, src, aFace}: T_CHGPIC)=> set(s=> {
+	chgPic	: ({nm, page, fn, src, isSheet, isMovie, aFace}: T_CHGPIC)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, nm, 'grp');
 
 		e.fn = fn;
 		e.src = src;
+		e.isSheet = isSheet;
+		e.isMovie = isMovie;
 		e.aFace = aFace;	// [lay face=...]の差分合成情報も同時に更新（未指定時は空配列）
 		return putPage(s, idx, aLay);
 	}),

@@ -19,9 +19,6 @@
 
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
 - [ ] **しおり・システム系の残り**
-  - [ ] **暗号化の残り（第3〜4段階）**：セーブデータの暗号化と画像・動画アセットの暗号化（`decAB`・Blob URL化・`GrpLayer.tsx`の拡張子スニッフィング修正）は完了（CHANGELOG参照）。残りは下記
-    - [ ] 音声・アニメpngシート・`[add_frame]`のHTML/フレーム内画像
-    - [ ] E2Eフィクスチャ生成（本家`mkPrjCrypto.mjs`相当）＋改竄検査の実証。暗号化mp4はffmpeg依存が重いので対象外
   - [ ] 一般プラグインの配線（`addTag`/`addLayCls`/`getInfo`/`getVal`/`resume`/`render`/`searchPath`）。`[loadplugin]`がCSS専用で受け皿が無いため今回は`T_PluginInitArg`から外した
   - [ ] `arg.dip`がどこからも参照されていない（`web.ts`/`app.ts`で渡すだけ）
   - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）

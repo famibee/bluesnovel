@@ -1,14 +1,16 @@
 import { n as e } from "./rolldown-runtime.js";
+import { t } from "./Crypto.js";
 //#region src/ts/Sprite.ts
-var t = /* @__PURE__ */ e({
-	aniSpriteClass: () => u,
-	aniSpriteCss: () => d,
-	loadSheet: () => o,
-	parseSheet: () => n,
-	setFetch: () => i,
-	sheetImgSrc: () => s
+var n = /* @__PURE__ */ e({
+	aniSpriteClass: () => h,
+	aniSpriteCss: () => g,
+	loadSheet: () => d,
+	parseSheet: () => r,
+	setDecFncs: () => l,
+	setFetch: () => c,
+	sheetImgSrc: () => f
 });
-function n(e, t) {
+function r(e, t) {
 	let { frames: n, meta: r } = e, i = Object.values(n ?? {}).map((e) => e.frame), a = i[0];
 	if (!a || !r.size) return;
 	let { w: o, h: s } = a;
@@ -25,29 +27,32 @@ function n(e, t) {
 		isCol: c
 	};
 }
-var r = (e, t) => fetch(e, t);
-function i(e) {
-	r = e;
+var i = (e, t) => fetch(e, t), a = (e, t) => Promise.resolve(t), o = (e) => Promise.resolve(e), s = !1;
+function c(e) {
+	i = e;
 }
-var a = Object.create(null);
-function o(e) {
-	return a[e] ??= r(e).then(async (e) => {
+function l(e, t, n) {
+	a = e, o = t, s = n;
+}
+var u = Object.create(null);
+function d(e) {
+	return u[e] ??= i(e).then(async (e) => {
 		if (!e.ok) throw `${String(e.status)} ${e.statusText}`;
-		return e.json();
-	}).then((t) => n(t, s(e, t))).catch(() => void 0);
+		return a("json", await e.text());
+	}).then((e) => JSON.parse(e)).then(async (n) => r(n, await t(f(e, n), s, i, o))).catch(() => void 0);
 }
-function s(e, t) {
+function f(e, t) {
 	let n = t.meta.image ?? "";
 	return e.replace(/[^/]*$/, "") + n;
 }
-var c = Object.create(null), l = 0;
-function u(e, t = document) {
-	let n = c[e.img];
+var p = Object.create(null), m = 0;
+function h(e, t = document) {
+	let n = p[e.img];
 	if (n) return n;
-	let r = c[e.img] = `sn_ani${String(++l)}`, i = t.createElement("style");
-	return i.dataset.sn = "sprite", i.textContent = d(e, r), t.head.appendChild(i), r;
+	let r = p[e.img] = `sn_ani${String(++m)}`, i = t.createElement("style");
+	return i.dataset.sn = "sprite", i.textContent = g(e, r), t.head.appendChild(i), r;
 }
-function d({ img: e, fw: t, fh: n, cols: r, rows: i, cnt: a, sec: o, isCol: s }, c) {
+function g({ img: e, fw: t, fh: n, cols: r, rows: i, cnt: a, sec: o, isCol: s }, c) {
 	let l = (e) => {
 		let a = s ? Math.floor(e / i) : e % r, o = s ? e % i : Math.floor(e / r);
 		return `${String(-a * t)}px ${String(-o * n)}px`;
@@ -67,6 +72,6 @@ ${Array.from({ length: a }, (e, t) => `\t${String(Math.round(t / a * 1e6) / 1e4)
 }`;
 }
 //#endregion
-export { u as n, o as r, t };
+export { h as n, d as r, n as t };
 
 //# sourceMappingURL=Sprite.js.map

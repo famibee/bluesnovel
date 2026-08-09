@@ -652,9 +652,9 @@ var J = V()((e, t) => ({
 			...c === void 0 ? {} : { sty: c }
 		}], G(e, l, u);
 	}),
-	chgPic: ({ nm: t, page: n, fn: r, src: i, aFace: a }) => e((e) => {
-		let { idx: o, aLay: s } = W(e, n), c = q(s, t, "grp");
-		return c.fn = r, c.src = i, c.aFace = a, G(e, o, s);
+	chgPic: ({ nm: t, page: n, fn: r, src: i, isSheet: a, isMovie: o, aFace: s }) => e((e) => {
+		let { idx: c, aLay: l } = W(e, n), u = q(l, t, "grp");
+		return u.fn = r, u.src = i, u.isSheet = a, u.isMovie = o, u.aFace = s, G(e, c, l);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r, isFixed: i }) => e((e) => {
 		let { idx: a, aLay: o } = W(e, n), s = q(o, t, "txt");

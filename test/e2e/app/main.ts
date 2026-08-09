@@ -19,6 +19,9 @@ import gsap from 'gsap';
 //	SysBase.loaded() が読むのは常に main（ScriptMng.load('main') 固定）なので、
 //	シナリオごとにプロジェクトフォルダ自体を分ける方式にした。
 const prj = new URLSearchParams(location.search).get('prj') ?? 'basic';
+// ?prj=crypto だけ crypto:true で起動し、複号プラグイン（test/e2e/app/mkPrjCrypto.ts が
+//	生成した使い捨ての鍵）を注入する。他のプロジェクトはcrypto:false固定のまま
+const isCrypto = prj === 'crypto';
 
 // gsapも公開する。**演出の「時間を進める機構」をテスト側から止めるため**で、
 //	止めてしまえば進度（[trans rule=…]ならSVGフィルタの係数）をこちらで任意の値に置ける＝
@@ -37,4 +40,5 @@ AudioContext.prototype.createGain = function(this: AudioContext) {
 
 (globalThis as any).__sn = {store: useStore, gsap, gainNodeCount: ()=> gainNodeCount};
 
-new SysWeb({}, {cur: `/test/e2e/app/prj_${prj}/`, crypto: false, dip: ''});
+const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')} : {};
+new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto, dip: ''});
