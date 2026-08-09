@@ -57,6 +57,35 @@ it('nowMarkPart_savesGameVarsAndIfStack', ()=> {
 	expect(mk.aIfStk.length).toBe(1);	// [if]で1つ積まれている
 });
 
+it('nowMarkPart_hTxtBkは裏ページの蓄積を持つ', ()=> {
+	const se = new ScriptEngine('t1',
+		'[add_lay layer=mes class=txt][current layer=mes]あ[ch page=back text=う][s]');
+	se.step();
+	const mk = se.nowMarkPart();
+	expect(mk.hTxt['mes']).toBe('あ');
+	expect(mk.hTxtBk['mes']).toContain('う');	// [ch]は埋め込み命令つきなので生の蓄積を含むかだけ見る
+});
+
+it('restoreMarkPart_hTxtBkが往復する', ()=> {
+	const writer = new ScriptEngine('t1',
+		'[add_lay layer=mes class=txt][current layer=mes]あ[ch page=back text=う][s]');
+	writer.step();
+	const mk = writer.nowMarkPart();
+
+	// 読み手は別インスタンス（[load]相当）
+	const reader = new ScriptEngine('t1', '[add_lay layer=mes class=txt][s]');
+	reader.step();
+	reader.restoreMarkPart(mk);
+	expect(reader.nowMarkPart().hTxtBk['mes']).toContain('う');
+});
+
+it('restoreMarkPart_hTxtBk無しの古いしおりも読める', ()=> {
+	// hTxtBk導入前のしおり（optional）。古いしおりには無いので空＝次の裏書きから積み直しになる
+	const se = new ScriptEngine('t1', '[add_lay layer=mes class=txt][s]');
+	se.step();
+	expect(()=> se.restoreMarkPart({hSave: {}, aIfStk: [], hTxt: {mes: 'あ'}})).not.toThrow();
+});
+
 it('restoreMarkPart_restoresGameVarsAndClearsStacks', ()=> {
 	const se = new ScriptEngine('t1', '[let name=game:hp text=80][let name=mp:m text=1][s]');
 	se.step();

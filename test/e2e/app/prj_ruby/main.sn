@@ -51,3 +51,11 @@
 *goal2
 [er]
 とどいた[l]
+
+; layer=/page= 対応：別レイヤ・裏ページへ本当に書けること（ユニットではストアへ積むアクション
+;	までしか見られない。TxtLayer.tsxが実際にそのレイヤ・ページへ描くかはブラウザでしか確かめられない）
+[er]
+[add_lay layer=sub class=txt]
+[ch layer=sub text=べつのレイヤ]
+[ch page=back text=うらのぶん]
+それでも[s]

@@ -237,3 +237,63 @@ it('waitMark_書かなければ持たない', ()=> {
 it('waitMark_数値でなければthrow', ()=> {
 	expect(()=> markOf('[l x=もじ]')).toThrow();
 });
+
+
+// ============ layer=/page= 対応 ============
+//	本家 LayerMng.ts:935 #getTxtLayer()。省略時は現在の文字レイヤの表ページ（従来どおり）
+
+const LAYS2 = '[add_lay layer=mes class=txt][current layer=mes][add_lay layer=sub class=txt]';
+function chgStrOf(src: string, nm: string, page: 'fore' | 'back') {
+	const acts = new ScriptEngine('t1', `${LAYS2}${src}[s]`).step()
+		.filter(v=> v.t === 'chgStr')
+		.filter(v=> v.nm === nm && v.page === page);
+	return acts.at(-1);
+}
+
+it('ch_layer_別レイヤへ書け、現在レイヤは触らない', ()=> {
+	const sub = chgStrOf('[ch layer=sub text=あ]', 'sub', 'fore');
+	expect(sub && splitCh(sub.str)).toEqual([{c: 'あ'}]);
+	expect(chgStrOf('[ch layer=sub text=あ]', 'mes', 'fore')).toBeUndefined();
+});
+
+it('ch_page=back_裏ページへ書け、表の蓄積は汚さない', ()=> {
+	const back = chgStrOf('あ[ch page=back text=う]い', 'mes', 'back');
+	expect(back && splitCh(back.str)).toEqual([{c: 'う'}]);
+	const fore = chgStrOf('あ[ch page=back text=う]い', 'mes', 'fore');
+	expect(fore && splitCh(fore.str)).toEqual([{c: 'あ'}, {c: 'い'}]);
+});
+
+it('span/link/endlink/tcy/graph/ruby2/rもlayer=/page=を受け付ける', ()=> {
+	expect(chgStrOf('[span layer=sub style="color: red;"]あ', 'sub', 'fore')).toBeDefined();
+	expect(chgStrOf('[link layer=sub page=back label=*g]あ[endlink layer=sub page=back]', 'sub', 'back')).toBeDefined();
+	expect(chgStrOf('[tcy layer=sub t=1 r=r]', 'sub', 'fore')).toBeDefined();
+	expect(chgStrOf('[graph layer=sub pic=e]', 'sub', 'fore')).toBeDefined();
+	expect(chgStrOf('[ruby2 layer=sub t=蜊 r=あさり]', 'sub', 'fore')).toBeDefined();
+	expect(chgStrOf('[r layer=sub]', 'sub', 'fore')).toBeDefined();
+});
+
+it('埋め込み命令のJSONにlayer/pageが乗らない', ()=> {
+	// #cmdTxt()へ渡す前にlayer/pageを落としている（JSON.stringifyはundefinedの項目を落とす）
+	const act = chgStrOf('[span layer=sub page=back style="color: red;"]あ', 'sub', 'back');
+	expect(act?.str).not.toContain('layer');
+	expect(act?.str).not.toContain('page');
+});
+
+it('clear_text_page=backは裏だけ消し、表の蓄積は残る', ()=> {
+	const src = 'あ[ch page=back text=う][clear_text page=back]い';
+	expect(chgStrOf(src, 'mes', 'fore') && splitCh(chgStrOf(src, 'mes', 'fore')!.str))
+		.toEqual([{c: 'あ'}, {c: 'い'}]);
+	// クリア後は裏に書いたものが無いので、直後のchgStr(back)は空文字
+	const back = chgStrOf(src, 'mes', 'back');
+	expect(back && splitCh(back.str)).toEqual([]);
+});
+
+it('clear_lay_page=bothは表裏とも蓄積をクリアする', ()=> {
+	// [clear_lay]自体はchgStrを積まないので、クリア後に追記した内容で確かめる
+	//	（前の内容が残っていれば継ぎ足されて見える）
+	const src = 'あ[ch page=back text=う][clear_lay layer=mes page=both]い[ch page=back text=え]';
+	const fore = chgStrOf(src, 'mes', 'fore');
+	expect(fore && splitCh(fore.str)).toEqual([{c: 'い'}]);
+	const back = chgStrOf(src, 'mes', 'back');
+	expect(back && splitCh(back.str)).toEqual([{c: 'え'}]);
+});

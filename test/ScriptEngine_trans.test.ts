@@ -11,6 +11,7 @@
 //	本家：LayerMng.ts:603 #trans() / CmnTween.ts:249 wt() / Pages.ts:65 argChk_page()
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
+import {splitCh} from '../src/ts/Txt';
 
 import {expect, it} from 'bun:test';
 
@@ -262,4 +263,38 @@ it('trans_glslThrows', ()=> {
 	//	黙って無視すると「指定したのに違う絵が出る」ので、フィルターと同じくその場で知らせる
 	expect(()=> acts(`${LAYS}[trans time=500 glsl=xxx][s]`))
 		.toThrow('[trans] glsl=はサポートされません');
+});
+
+
+// ============ 本文蓄積の[trans]追随（transDone） ============
+//	store側のfinTrans()（store.tsx）は交換対象レイヤの表裏を入れ替えるが、エンジンが持つ
+//	本文の蓄積（#hTxt/#hTxtBk）は自動では追随しない。追随させないと、[er]を挟まず[trans]した
+//	とき前の場面の文がエンジン内部の蓄積として残り、次の本文がそこへ継ぎ足されて復活する
+//	（bluesnovelが#hTxtを表専用にしていた頃の潜在バグ）。呼ぶのはScriptMng（演出完了時）
+
+it('transDone_表の蓄積が裏の内容になり、続く本文がそこへ継ぎ足される', ()=> {
+	const se = new ScriptEngine('t1', `${LAYS}あ[ch page=back text=う][l]い[s]`);
+	se.step();	// [l]まで（表='あ'、裏='う'）
+	se.transDone(['mes']);
+	const a = se.step();	// 'い'を表へ追記
+	const act = a.find(v=> v.t === 'chgStr' && v.nm === 'mes' && v.page === 'fore');
+	expect(act && act.t === 'chgStr' && splitCh(act.str)).toEqual([{c: 'う'}, {c: 'い'}]);
+});
+
+it('transDone_対象外レイヤは触らない', ()=> {
+	const se = new ScriptEngine('t1', `${LAYS}あ[l]い[s]`);
+	se.step();	// [l]まで（表='あ'）
+	se.transDone(['other']);	// 'mes'は対象外
+	const a = se.step();
+	const act = a.find(v=> v.t === 'chgStr' && v.nm === 'mes' && v.page === 'fore');
+	expect(act && act.t === 'chgStr' && splitCh(act.str)).toEqual([{c: 'あ'}, {c: 'い'}]);
+});
+
+it('transDone_nullで全レイヤ対象', ()=> {
+	const se = new ScriptEngine('t1', `${LAYS}あ[ch page=back text=う][l]い[s]`);
+	se.step();
+	se.transDone(null);
+	const a = se.step();
+	const act = a.find(v=> v.t === 'chgStr' && v.nm === 'mes' && v.page === 'fore');
+	expect(act && act.t === 'chgStr' && splitCh(act.str)).toEqual([{c: 'う'}, {c: 'い'}]);
 });

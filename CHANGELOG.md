@@ -361,6 +361,15 @@
   - `docs/tag.html`の`[lay]`段落を更新（自前計算への移植、`bura`が全ブラウザで効くこと、英単語の途中分割という相違点、`break_fixed`系が未対応であることを明記）。`todo.md`から`kinsoku_*`関連の記述を削り、`max_row`/`break_fixed`系だけ残した
   - ユニットテスト1613件→1633件、E2E 17ファイル（既存分は無回帰。`movie.e2e.ts`の1件失敗はフルスイート並列実行時の既存flakyで、単体実行では再現せず無関係と確認）
 
+- [x] **文字装飾タグ（`[ch]`/`[span]`/`[link]`/`[endlink]`/`[tcy]`/`[graph]`/`[ruby2]`/`[r]`）の`layer`/`page`対応**（2026-08-09）
+  - `todo.md`「文字組みの残り」の最後のタグ属性項目。本家`LayerMng.ts:935 #getTxtLayer()`相当を`ScriptEngine.ts`に`#txtTarget()`として追加し、既存の`ScriptEngine.argPage()`を再利用。埋め込み命令のJSON（`#cmdTxt`）からは`layer`/`page`を除いて渡す（`[ch]`が`text`を除くのと同じ手）
+  - **調査で潜在バグが1つ見つかった**：エンジンが持つ本文の蓄積`#hTxt`（しおり・`[er]`/`[clear_lay]`/`[clear_text]`が共有する内部状態）が表ページ専用のまま`[trans]`の表裏交換に追随していなかった。`[er]`を挟まずに`[trans]`すると、古い表の蓄積が残ったまま次の本文が継ぎ足され、前の場面の文が復活する（`A[l]`→`[trans]`→`B`が`AB`になる）。実テンプレは場面転換のたびに`[er]`を打つため露見していなかった。`page=`対応のため`#hTxt`を表裏2面（`#hTxtBk`追加）にするのと同時に修正できたので合わせて直した
+  - `[trans]`の演出**完了時**（`ScriptMng`の`#beginTrans`/`#finishTrans`。`time<=0`は演出を経ないのでその場で）に`ScriptEngine#transDone(aLayNm)`を呼び、交換対象レイヤの表の蓄積を裏の内容へ合わせる。タグ実行時に呼ぶと`[trans]`自体は`'skip'`で読み進めが続くため、演出中に書いた本文が古い裏へ紛れ込んでしまう
+  - **履歴（本文ログ）は本家と1点だけ意図的に違える**：本家`TxtLayer.ts:604`の`isCur`は同名レイヤの表裏どちらにも立つため裏ページの本文も履歴に入るが、こちらは現在レイヤの**表ページだけ**に限定した。理由は(a)履歴は「プレイヤーが読んだもの」で裏ページはまだ見えていない、(b)`[clear_text]`の改ページ判定が既に`nm===#curTxtLayer && pg==='fore'`（本家`LayerMng.ts:995`も同条件）で、記録側だけ裏を含めると履歴の改ページと噛み合わなくなるため
+  - `docs/tag.html`：`[ch]`/`[graph]`/`[link]`/`[endlink]`/`[ruby2]`/`[span]`/`[tcy]`の bluesnovel 欄から「`layer`/`page`は未対応」を外した（他の未対応属性が残るタグは一覧の🟡マークをそのまま維持）。`todo.md`の該当行を削除
+  - テスト：`test/ScriptEngine_txt.test.ts`・`test/Log.test.ts`・`test/ScriptEngine_trans.test.ts`・`test/ScriptEngine_save.test.ts`に追加。E2Eは`test/e2e/ruby.e2e.ts`（別レイヤ・裏ページへ実際に描かれること）と`test/e2e/trans.e2e.ts`（`[er]`を挟まない`[trans]`で前の場面の文が復活しない回帰テスト。`test/e2e/app/prj_trans/main.sn`にシーン追加）に1件ずつ追加
+  - ユニットテスト1618件→1632件
+
 - [ ]
 
 

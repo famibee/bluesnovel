@@ -397,6 +397,8 @@ export class ScriptEngine {
 	//	その名前のレイヤ・差分名・マクロを定義できなくなる
 	#curTxtLayer = 'mes';
 	#hTxt: {[nm: string]: string} = Object.create(null);	// レイヤ名 -> そのページの蓄積文字列（しおりに含む。nowMarkPart参照）
+	#hTxtBk: {[nm: string]: string} = Object.create(null);	// 同上、裏ページ分（layer=/page=対応で追加）
+	#hTxtOf(page: T_PAGE) {return page === 'back' ? this.#hTxtBk : this.#hTxt}
 	// 前回[p]で停止した後、次のstep()開始時に現在レイヤをクリアするか。
 	//	**ページログ（読み戻り）が覚えて戻す**：改ページはトークンではなくこのフラグで起きるので、
 	//	これが無いと[p]の直後から演じ直したページに前ページの本文が残る（PageLog.ts参照）
@@ -713,7 +715,7 @@ export class ScriptEngine {
 	}
 	// しおりのエンジン側の中身。ifスタックはコールスタックぶんを切り落とす
 	//	（本家 #aIfStk.slice(#aCallStk.length)。復元時はコールスタックが空になるため）
-	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt: {[nm: string]: string}} {
+	nowMarkPart(): {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt: {[nm: string]: string}; hTxtBk: {[nm: string]: string}} {
 		// 履歴をsave:へ焼き付ける（本家 Log.ts:59 の`save:const.sn.sLog`）。
 		//	**本家は本文を1トークン追記するたびにこれを書き直す**が、この値を読むのは
 		//	しおりの保存と復元だけなので、ここ＝スナップショットを取る直前の1回で足りる。
@@ -726,13 +728,15 @@ export class ScriptEngine {
 			//	ストアのページを戻すだけではここが古いままで、復元後に1文字足しただけで
 			//	前の本文が丸ごと戻ってくる。読み戻り（PageLog）で露見した
 			hTxt	: {...this.#hTxt},
+			hTxtBk	: {...this.#hTxtBk},
 		};
 	}
 	// [load]／[reload_script]での復元（本家 loadFromMark()）。
 	//	コールスタックとマクロ引数は捨てる＝しおりは常に最上位の位置を指しているため
-	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt?: {[nm: string]: string}}) {
+	restoreMarkPart(o: {hSave: {[k: string]: T_VAL_D}; aIfStk: number[]; hTxt?: {[nm: string]: string}; hTxtBk?: {[nm: string]: string}}) {
 		this.#val.setNs('game', o.hSave);
 		this.#hTxt = {...o.hTxt};	// 古いしおり（hTxt導入前）は空＝次の本文から積み直しになる
+		this.#hTxtBk = {...o.hTxtBk};	// 更に古いしおり（hTxtBk導入前）も同様
 		// 既定文字レイヤも戻す（[current]はsave:へ書いてあるので、そこから引く）
 		this.#curTxtLayer = String(this.#val.get('save:const.sn.mesLayer') ?? this.#curTxtLayer);
 		// 履歴の復帰（本家 Log.ts:113 playback()）。保存時点の全ページを確定ページとして読み直し、
@@ -759,6 +763,20 @@ export class ScriptEngine {
 	// sys:名前空間の出し入れ（永続化用。本家 SysBase.data.sys ↔ Variable の sys スコープ）
 	cloneSys(): {[k: string]: T_VAL_D} {return this.#val.cloneNs('sys')}
 	setSys(h: {[k: string]: T_VAL_D}) {this.#val.setNs('sys', h)}
+
+	// [trans]の演出完了時、交換対象レイヤの本文蓄積を表裏入れ替える（本家 Pages.transPage 相当）。
+	//	store側のfinTrans()（store.tsx）は交換対象レイヤについて「新しい表＝古い裏」「新しい裏＝
+	//	新しい表の複製」にするが、値としては新しい裏＝古い裏のまま＝表だけ古い裏の値にすれば足りる。
+	//	これを呼ばずに[er]を挟まず[trans]すると、エンジンの蓄積（＝表専用だった名残）が
+	//	古い表のまま残り、次の本文が前の場面の文へ継ぎ足されてしまう（読み進めて実際に踏んだ不具合）。
+	//	タグ実行時ではなく演出完了時に呼ぶこと（ScriptMng#finishTrans()）。[trans]自体は
+	//	'skip'で読み進めが続くので、タグ実行時に写すと演出中に書いた本文が古い裏へ紛れ込む
+	transDone(aLayNm: string[] | null) {
+		for (const nm of Object.keys(this.#hTxt)) {
+			if (aLayNm && ! aLayNm.includes(nm)) continue;
+			this.#hTxt[nm] = this.#hTxtBk[nm] ?? '';
+		}
+	}
 
 
 	// ===== 既読処理 =====
@@ -1010,6 +1028,7 @@ export class ScriptEngine {
 			if (! nm) throw '[add_lay] layerは必須です（試作仕様）';
 			const cls = (args.class ?? 'txt').toLowerCase() === 'grp' ? 'grp' : 'txt';
 			this.#hTxt[nm] = '';
+			this.#hTxtBk[nm] = '';
 			// 文字レイヤは作った時点で「イベントを受ける」（本家 LayerMng.ts:465）。
 			//	[enable_event]がこれを書き換える。**シナリオから読むための値**なので、
 			//	これを書き換えても効かない（有効・無効を変えるのは[enable_event]）
@@ -1207,12 +1226,16 @@ export class ScriptEngine {
 			// エンジン側が持つ蓄積文字列も捨てる（本家 TxtLayer.clearLay() が中身を捨てるのと同じ）。
 			//	chgStrは「そのレイヤの全文字列」を毎回送る作りなので、ここを消し忘れると
 			//	ストアのstrを空にしても次の本文がその蓄積へ追記され、消したはずの文が復活する。
-			//	#hTxtが指すのは表ページ（#appendTxt()がfore固定）なので、裏だけ消すときは触らない
+			//	sPageで指定された面だけ触る（表裏それぞれ独立した蓄積を持つため）
 			if (sPage !== 'back') {
 				// 履歴は既定文字レイヤの分だけ確定させる（消す対象に入っていれば）
 				if (! aLayNm || aLayNm.includes(this.#curTxtLayer)) this.#recPagebreak();
 				if (aLayNm) for (const nm of aLayNm) this.#hTxt[nm] = '';
 				else for (const nm of Object.keys(this.#hTxt)) this.#hTxt[nm] = '';
+			}
+			if (sPage !== 'fore') {
+				if (aLayNm) for (const nm of aLayNm) this.#hTxtBk[nm] = '';
+				else for (const nm of Object.keys(this.#hTxtBk)) this.#hTxtBk[nm] = '';
 			}
 
 			aAct.push({t: 'clearLay', aLayNm, page: sPage});
@@ -1471,9 +1494,11 @@ export class ScriptEngine {
 			this.#endif();
 			return 'skip';
 
-		case 'r':		// 改行
-			this.#appendTxt(aAct, '\n');
+		case 'r': {		// 改行（本家 LayerMng.ts:1037 #r(hArg) => #ch({...hArg, text:'\n'})）
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, '\n', true, nm, page);
 			return 'skip';
+		}
 		case 'er':		// ページ両面の文字消去（試作簡略：現在レイヤのみ）
 			//	タグ名のとおり表裏どちらの文字も消す（本家 LayerMng.ts hTag.er「ページ両面の文字消去」）。
 			//	これが片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
@@ -1481,6 +1506,7 @@ export class ScriptEngine {
 			//	（本家 LayerMng.ts:1006。既定true）
 			if ((args.rec_page_break ?? 'true') !== 'false') this.#recPagebreak();
 			this.#hTxt[this.#curTxtLayer] = '';
+			this.#hTxtBk[this.#curTxtLayer] = '';
 			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
 			// **ボタンを消し、変形まわりの属性を既定へ戻す**。本家の[er]は
 			//	TxtLayer.clearLay()（TxtLayer.ts:857）を表裏に呼び、本文とボタンを捨てたうえで
@@ -1498,12 +1524,14 @@ export class ScriptEngine {
 		//	借りて、ルビ側にURIエンコードしたJSONを載せる仕組みで、RubySpliterがそのまま
 		//	1単位として通してくれる。ここでも同じ形で#hTxtへ積み、解釈はTxt.ts splitCh()が行う
 		//	（エンジンは相変わらず「文字列を貯める」だけで済み、chgStrの形も変わらない）
-		case 'span':	// インラインスタイル設定（本家 LayerMng.ts:1053 #span()）
+		case 'span': {	// インラインスタイル設定（本家 LayerMng.ts:1053 #span()）
 			//	属性なしの[span]は指定の解除（本家 #mergePushSpan の「どちらも指定されてなければクリア」）
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', args));
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
+		}
 
-		case 'link':	// ハイパーリンク開始（本家 LayerMng.ts:1024 #link()）
+		case 'link': {	// ハイパーリンク開始（本家 LayerMng.ts:1024 #link()）
 			//	url指定時はラベルへ飛ばずURLを開く（本家も「指定時は fn・label を無視する」）
 			if (! args.url && ! args.label && ! args.fn) throw '[link] fn・label・urlのいずれかは必須です';
 			// 効果音（本家 EventMng.ts:465-491。[button]と同じ形——ext_voice.snのvoice系マクロも
@@ -1513,22 +1541,30 @@ export class ScriptEngine {
 			if (args.clickse !== undefined) args.clicksebuf = args.clicksebuf || 'SYS';
 			if (args.enterse !== undefined) args.entersebuf = args.entersebuf || 'SYS';
 			if (args.leavese !== undefined) args.leavesebuf = args.leavesebuf || 'SYS';
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('link', args));
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('link', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
+		}
 
-		case 'endlink':	// ハイパーリンク終了（本家 LayerMng.ts:1002 #endlink()）
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('endlink', {}));
+		case 'endlink': {	// ハイパーリンク終了（本家 LayerMng.ts:1002 #endlink()）
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('endlink', {}), true, nm, page);
 			return 'skip';
+		}
 
-		case 'graph':	// 本文中のインライン画像（本家 LayerMng.ts:1015 #graph()）。アニメpngも置ける
+		case 'graph': {	// 本文中のインライン画像（本家 LayerMng.ts:1015 #graph()）。アニメpngも置ける
 			if (! args.pic) throw '[graph] picは必須です';
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('grp', args));
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('grp', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
+		}
 
-		case 'tcy':		// 縦中横（本家 LayerMng.ts:1059 #tcy()）
+		case 'tcy': {	// 縦中横（本家 LayerMng.ts:1059 #tcy()）
 			if (! args.t) throw '[tcy] tは必須です';
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('tcy', args));
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('tcy', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
+		}
 
 		case 'ruby2':	// 文字列と複数ルビの追加（本家 LayerMng.ts:1040 #ruby2()）
 		case 'ch': {	// 文字を追加する（本家 LayerMng.ts:906 #ch()）
@@ -1547,10 +1583,11 @@ export class ScriptEngine {
 
 			// style/r_styleは**このtextの間だけ**効く（本家は add｜…／add_close｜ で挟む）。
 			//	[r]を改行にするのは本家 LayerMng.ts:922（[ch text=…]に改行を含める書き方）
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('add', {...args, text: undefined})
+			const {nm, page} = this.#txtTarget(args);
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('add', {...args, text: undefined, layer: undefined, page: undefined})
 				+ text.replaceAll('[r]', '\n')
 				+ ScriptEngine.#cmdTxt('add_close', {}),
-				args.record !== 'false');	// record=falseなら履歴に残さない（本家 LayerMng.ts:920）
+				args.record !== 'false', nm, page);	// record=falseなら履歴に残さない（本家 LayerMng.ts:920）
 			return 'skip';
 		}
 
@@ -1964,7 +2001,7 @@ export class ScriptEngine {
 			const pg = ScriptEngine.argPage(args, 'fore');
 			// 履歴は既定文字レイヤの表ページだけが対象（本家 LayerMng.ts:995 も同じ条件）
 			if (nm === this.#curTxtLayer && pg === 'fore') this.#recPagebreak();
-			this.#hTxt[nm] = '';
+			this.#hTxtOf(pg)[nm] = '';
 			aAct.push({t: 'chgStr', nm, page: pg, str: ''});
 			return 'skip';
 		}
@@ -2580,14 +2617,23 @@ export class ScriptEngine {
 		return `｜&emsp;《${cmd}｜${encodeURIComponent(JSON.stringify(args))}》`;
 	}
 
-	// 文字表示（地の文・[r]）は表ページ固定。本家は[ch]にpage属性があるが、
-	//	地の文には属性を書けない＝実質常に既定（fore）なので、試作では表のみとする
-	#appendTxt(aAct: T_ENGINE_ACTION[], add: string, rec = true) {
-		const nm = this.#curTxtLayer;
-		const str = (this.#hTxt[nm] ?? '') + add;
-		this.#hTxt[nm] = str;
-		if (rec && this.#doRecLog) this.#log.add(add);	// 履歴（本家 TxtLayer.ts:604 recText）
-		aAct.push({t: 'chgStr', nm, page: 'fore', str});
+	// 対象の文字レイヤとページを決める（本家 LayerMng.ts:935 #$getTxtLayer()）。
+	//	地の文・&式&はこれを通さず常に現在レイヤの表ページ（属性を書けないため）
+	#txtTarget(args: {[k: string]: string}): {nm: string; page: T_PAGE} {
+		return {nm: args.layer || this.#curTxtLayer, page: ScriptEngine.argPage(args, 'fore')};
+	}
+
+	// 文字表示（地の文・[r]・[span]/[ch]/[link]/[tcy]/[graph]/[ruby2]）。
+	//	nm/pageの省略時は現在の文字レイヤの表ページ
+	#appendTxt(aAct: T_ENGINE_ACTION[], add: string, rec = true, nm = this.#curTxtLayer, page: T_PAGE = 'fore') {
+		const hTxt = this.#hTxtOf(page);
+		const str = (hTxt[nm] ?? '') + add;
+		hTxt[nm] = str;
+		// 履歴に残るのは現在レイヤの表ページだけ（本家 TxtLayer.ts:604 `if (this.isCur)`に対応。
+		//	本家はisCurが同名レイヤの表裏どちらにも立つが、こちらは表だけに絞る——
+		//	[clear_text]の改ページ判定（nm===#curTxtLayer && pg==='fore'）と条件を揃えるため）
+		if (rec && this.#doRecLog && nm === this.#curTxtLayer && page === 'fore') this.#log.add(add);	// 履歴（本家 TxtLayer.ts:604 recText）
+		aAct.push({t: 'chgStr', nm, page, str});
 	}
 
 	// 履歴の改ページ（本家 Log.pagebreak()）。**既定文字レイヤの表ページの本文が

@@ -28,6 +28,8 @@ export type T_MARK = {
 	// エンジンが積んでいる各文字レイヤの本文（本家に無い。ScriptEngine.nowMarkPart参照）。
 	//	**古いしおりには無い**ので optional
 	hTxt?	: {[nm: string]: string};
+	// 同上、裏ページ分（layer=/page=対応で追加。**更に古いしおりには無い**ので optional）
+	hTxtBk?	: {[nm: string]: string};
 	json	: {[k: string]: string};	// [save]タグの属性（タイトル・サムネイル等）。const.sn.bookmark.jsonが返す中身
 };
 

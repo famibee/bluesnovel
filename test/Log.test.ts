@@ -147,6 +147,16 @@ it('log_[clear_text page=back]は履歴に触らない', ()=> {
 	expect(logOf('いち[clear_text page=back]に')).toEqual([{text: 'いちに'}]);
 });
 
+it('log_layer指定で別レイヤへ書いた本文は履歴に積まない', ()=> {
+	// 履歴に残るのは現在レイヤの表ページだけ（本家 TxtLayer.ts:604 isCur。本家はisCurが
+	//	同名レイヤの表裏どちらにも立つが、こちらは表だけに絞る。[trans]の項参照）
+	expect(logOf('いち[ch layer=sub text=別レイヤ]')).toEqual([{text: 'いち'}]);
+});
+
+it('log_page=backへ書いた本文は履歴に積まない', ()=> {
+	expect(logOf('いち[ch page=back text=裏]')).toEqual([{text: 'いち'}]);
+});
+
 it('log_[current]の切替前に確定させる', ()=> {
 	// 本家 LayerMng.ts:956「カレント変更前に現在の履歴を保存」。
 	//	でないと前のレイヤの書きかけが次のレイヤの本文と地続きになる

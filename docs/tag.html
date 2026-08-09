@@ -1176,9 +1176,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
 <tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>に対応。
+<p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>・
+	<code>layer</code>／<code>page</code>に対応。
 	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、styleはそのtextの間だけ効く。
-	<code>layer</code>／<code>page</code>（現在は既定文字レイヤの表ページ固定）・<code>record</code>・<code>wait</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
+	<code>record</code>・<code>wait</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
 <p>[ch]を使わない、より簡潔な記述文法があります。<br/>
 	以下の記述は、<br/>
 	[ch text=&amp;test]<br/>
@@ -1304,7 +1305,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：リンク区間の終了に対応（<code>[link]</code>の指定を元へ戻す）。
-	<code>layer</code>／<code>page</code>は未対応（現在は既定文字レイヤの表ページ固定）。</p>
+	<code>layer</code>／<code>page</code>に対応（対応する<code>[link]</code>と同じレイヤ・ページを指定すること）。</p>
 
 </p>
 <h2 id="er" class="w-heading">[er]ページ両面の文字消去</h2>
@@ -1352,20 +1353,20 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>pic</code>（アニメpng＝スプライトシートも可）・<code>r</code>（ルビ）・
-	<code>style</code>／<code>r_style</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く
+	<code>style</code>／<code>r_style</code>・<code>layer</code>／<code>page</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く
 	（本家も<code>&amp;emsp;</code>を置いてそこへ重ねる）。<br/>
 	<code>width</code>／<code>height</code>／<code>x</code>／<code>y</code>に対応（本家 TxtStage.ts:685-688）。
 	<b>書いた時だけ当てる</b>——省略すれば全角空白1つぶんの枠に<code>background-size: contain</code>で収まる
 	（本家の既定もフォントサイズなので同じ絵）。<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、
 	CSSの独立<code>translate</code>で表す（行の高さや隣の文字の位置を動かさないため）。<br/>
-	未対応：<code>id</code>・<code>wait</code>・<code>layer</code>／<code>page</code>。</p>
+	未対応：<code>id</code>・<code>wait</code>。</p>
 <p>※省略時は画像サイズになるが、ロード完了直後に文字配置を決めるのでちらつく。それを嫌う際に指定する<br/>
 	※特にモバイルなどでゲーム画面が自動で拡大縮小される場合、省略したらその時の本文文字サイズとして扱われる。なるべくサイズ指定を推奨。</p>
 
 </p>
 <h2 id="link" class="w-heading">[link]ハイパーリンク</h2>
 <h4>指定した文字レイヤの表ページに、ハイパーリンクを作成する。</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>style_clicked</code>／<code>r_style</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>（CSSでそのまま当てる。<code>style_clicked</code>は<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗せる——本文DOMをReactの外で直接組むため<code>:active</code>疑似クラスが使えない。省略時の既定は表のとおり）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/><code>global</code>は**受理はするが効果を持たない**：本家はローカル予約イベント表が読み進めの節目ごとにリセットされ、<code>global=true</code>がそれを生き延びさせる仕組みだが、こちらのクリックは予約表を経由せずReactが要素に直接ハンドラを付ける方式（表示されている間は常にクリック可能＝本家の<code>global=true</code>相当が既定）なので、本家のリセットに相当するものが無く効きようがない。<br/>未対応：<code>onenter</code>／<code>onleave</code>（詳細はtodo.md）・<code>layer</code>／<code>page</code>（既定文字レイヤの表ページ固定）。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>style_clicked</code>／<code>r_style</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>（CSSでそのまま当てる。<code>style_clicked</code>は<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗せる——本文DOMをReactの外で直接組むため<code>:active</code>疑似クラスが使えない。省略時の既定は表のとおり）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）・<code>layer</code>／<code>page</code>に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/><code>global</code>は**受理はするが効果を持たない**：本家はローカル予約イベント表が読み進めの節目ごとにリセットされ、<code>global=true</code>がそれを生き延びさせる仕組みだが、こちらのクリックは予約表を経由せずReactが要素に直接ハンドラを付ける方式（表示されている間は常にクリック可能＝本家の<code>global=true</code>相当が既定）なので、本家のリセットに相当するものが無く効きようがない。<br/>未対応：<code>onenter</code>／<code>onleave</code>（詳細はtodo.md）。</p>
 <p class="mb2 px1">
 
 <p>[link]から[endlink]（ハイパーリンクの終了）までで囲った範囲をリンク区間と呼び、<br/>
@@ -1507,9 +1508,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>に対応。
+<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>・
+	<code>layer</code>／<code>page</code>に対応。
 	本家同様[ch]へ書き換えて処理する（t/rはURIエンコードするので、空白や《》を含んでも壊れない）。
-	<code>layer</code>／<code>page</code>・<code>wait</code>・<code>dummy</code>は未対応。</p>
+	<code>wait</code>・<code>dummy</code>は未対応。</p>
 
 </p>
 <h2 id="set_focus" class="w-heading">[set_focus] フォーカス移動</h2>
@@ -1575,10 +1577,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
 </td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>に対応（次の[span]まで効き、属性なしの[span]で解除）。
+<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
+	（次の[span]まで効き、属性なしの[span]で解除）。
 	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。
-	<code>layer</code>／<code>page</code>（現在は既定文字レイヤの表ページ固定）・<code>wait</code>・<code>r_align</code>・
-	<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
+	<code>wait</code>・<code>r_align</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
 
 </p>
 <h2 id="tcy" class="w-heading">[tcy]縦中横を表示する</h2>
@@ -1599,8 +1601,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>に対応
-	（CSSの<code>text-combine-upright: all</code>で組む）。<code>layer</code>／<code>page</code>・<code>wait</code>・
+<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
+	（CSSの<code>text-combine-upright: all</code>で組む）。<code>wait</code>・
 	<code>dummy</code>は未対応。縦書き（<code>writing-mode</code>）の詰めは別項目。</p>
 
 </p>

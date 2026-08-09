@@ -552,22 +552,31 @@ export class ScriptMng {
 	#transTimer		: ReturnType<typeof setTimeout> | undefined;
 	#transRunning	= false;	// 演出中か（time=0は即交換済みなのでfalseのまま）
 	#transWaiting	: {canskip: boolean} | undefined;	// [wt]で待っている最中か
+	#transALayNm	: string[] | null = null;	// 演出中の[trans]が交換するレイヤ名（本文蓄積の追随用）
 
 	// [trans]適用時：演出時間ぶんのタイマーを仕込む。[wt]の有無に関わらず必ず終わらせる
-	#beginTrans(time: number) {
+	#beginTrans(time: number, aLayNm: string[] | null) {
 		clearTimeout(this.#transTimer);
 		this.#transRunning = time > 0;
+		this.#transALayNm = aLayNm;
 		this.#transTimer = this.#transRunning
 			? setTimeout(()=> this.#finishTrans(), time)
 			: undefined;
+		// time<=0はstore側のstartTrans()がその場でfinTrans()する（#finishTrans()を経由しない）ので、
+		//	エンジンの本文蓄積もここで揃える（ScriptEngine#transDone参照）
+		if (! this.#transRunning) this.#engine?.transDone(aLayNm);
 	}
 	// 演出終了：表裏を交換し、[wt]で待っていたなら続きを回す。
 	//	演出が途中でも必ず終了状態へ送るので、中途半端な見た目のまま止まることはない
 	#finishTrans() {
 		clearTimeout(this.#transTimer);
 		this.#transTimer = undefined;
+		const wasRunning = this.#transRunning;
 		this.#transRunning = false;
 		this.$fncs.finishTrans();	// zustandのsetは同期＝この行の後は書き込み先が新しい表ページになる
+		// 演出中だった分だけエンジンの本文蓄積も追随させる（動いている演出が無ければ何もしない。
+		//	store側のfinishTransが s.trans が無ければ何もしないのと同じ理屈）
+		if (wasRunning) this.#engine?.transDone(this.#transALayNm);
 
 		if (! this.#transWaiting) return;
 		this.#transWaiting = undefined;
@@ -1347,7 +1356,7 @@ export class ScriptMng {
 				...act.rule ? {ruleSrc: this.#searchPic('trans', act.rule)} : {},
 				...act.vague !== undefined ? {vague: act.vague} : {},
 			});
-			this.#beginTrans(act.time);
+			this.#beginTrans(act.time, act.aLayNm);
 			break;
 		case 'waitTrans':
 			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い

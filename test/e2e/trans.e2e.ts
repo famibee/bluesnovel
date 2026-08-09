@@ -171,6 +171,24 @@ test('[finish_trans]は長い演出を待たずに終わらせ、表裏の交換
 	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');	// 0.4 × 0.5
 });
 
+test('[er]を挟まない[trans]でも前の場面の文字が復活しない（回帰テスト）', async ({page})=> {
+	// エンジン内部の本文蓄積（#hTxt/#hTxtBk）が[trans]の表裏交換に追随していないと、
+	//	新しい表（＝元の裏）へ古い表の文が継ぎ足されて「まえつぎ」になってしまう
+	for (let i = 0; i < 5; ++i) {	// みっつめ → うちきった まで
+		await page.keyboard.press('Space');
+		await waitTransDone(page);
+	}
+	expect(await mesStr(page)).toBe('うちきった');
+
+	await page.keyboard.press('Space');	// [er]まえ[l]
+	await waitTransDone(page);
+	expect(await mesStr(page)).toBe('まえ');
+
+	await page.keyboard.press('Space');	// [trans time=300][wt]つぎ[l]（[er]は挟まない）
+	await waitTransDone(page);
+	expect(await mesStr(page)).toBe('つぎ');
+});
+
 // ============ ルール画像によるワイプ（[trans rule=…]） ============
 //	**「時間を進める機構」と「進度→見た目」を切り離してある**（src/ts/Trans.ts のコメント）。
 //	進度→係数の計算は単体テスト（test/Trans.test.ts）が全域を押さえているので、ここでは
@@ -202,7 +220,7 @@ async function toRuleScene(page: Page) {
 	//	「ストアもDOMも一致して文字送りも終わっている」瞬間があり、waitTransDone()だけだと
 	//	そこで押したキーが進行に使われず失われる（Main.tsx next()）。5つとも[l]/[p]なので
 	//	マーカーが立つ
-	for (let i = 0; i < 5; ++i) {	// うちきった まで
+	for (let i = 0; i < 7; ++i) {	// つぎ（回帰テスト用ブロックの終端）まで
 		await pressKeyToWaitMark(page, 'Space');
 		await waitTransDone(page);
 	}

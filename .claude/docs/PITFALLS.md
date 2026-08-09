@@ -31,6 +31,14 @@
 - **遷移の完了を宣言するのは `ScriptMng`**（GSAP の `onComplete` ではない）。`Stage` は描くだけ。
   `finishTrans()` が同期的に `foreIdx` を反転し、その後シナリオが再開する。`[wt]` も同じ期限を待ち、
   途中クリックは「今すぐ終われ」と読み替える（`#goSafe()`）ので必ず最終状態に着地する。
+- **`ScriptEngine` も本文の蓄積（`#hTxt`/`#hTxtBk`。`[ch]`/`[span]`等の `layer=`/`page=` 対応で表裏
+  2 面持ちにした）を store の交換に追随させる必要がある**。store は `foreIdx` 反転だけで済むが、
+  エンジン側は「次に本文を追記するときの下地」を自分で持っているため、`[trans]` の**演出完了時**に
+  `ScriptEngine#transDone(aLayNm)` を呼んで表裏を入れ替える（`ScriptMng` の `#beginTrans`/
+  `#finishTrans` から。`time<=0` は演出を経ずに `#beginTrans()` 内でその場で呼ぶ）。呼び忘れると、
+  `[er]` を挟まない `[trans]` で古い表の蓄積が残ったまま次の本文が継ぎ足され、前の場面の文が
+  復活する（`test/e2e/trans.e2e.ts` の回帰テスト参照）。**タグ実行時に呼んではいけない**——`[trans]`
+  自体は `'skip'` で読み進めが続くので、演出中に書いた本文が古い裏へ紛れ込む。
 
 ## `[tsy]` は `[trans]` と逆で、DOM でなく store を通す
 

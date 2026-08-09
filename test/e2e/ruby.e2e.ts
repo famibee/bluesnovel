@@ -197,6 +197,27 @@ test('[link]のstyle_hover/style_clicked/r_style_hover/r_style_clickedが実際�
 	expect(await mesStr(page)).toBe('とどいた');	// クリックとして扱われジャンプする
 });
 
+test('layer=/page=で別レイヤ・裏ページへ本当に書ける', async ({page})=> {
+	await gotoSesame(page);
+	await pressKey(page, 'Space');	// r_alignのシーンへ
+	await pressKey(page, 'Space');	// linkのシーンへ
+
+	// [link]をクリックして*goal2へジャンプ（「とどいた」）。本文は蜊《あさり》なので
+	//	textContentは"蜊あさり"になる（<rt>込み）——getByTextでなくruby要素自体をロケートする
+	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('とどいた');
+
+	await pressKey(page, 'Space');	// layer=/page=対応の確認ブロックへ
+	// mes（表）は[ch layer=sub]/[ch page=back]の影響を受けず「それでも」だけ
+	expect(await mesStr(page)).toBe('それでも');
+	// sub（表）は別レイヤとして独立してDOMに描かれている
+	expect(await mesStr(page, 'sub')).toBe('べつのレイヤ');
+	// mes（裏）はまだ表に出ていないが、ストアには正しく積まれている
+	const {aLayBack} = await snap(page);
+	expect(aLayBack.find(l=> l.nm === 'mes')?.str).toBe('うらのぶん');
+});
+
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
 	// path.jsonにあるフォントは全部、拡張子を除いたファイル名がそのままfont-family名になる
 	//	（本家 TxtLayer.ts:97。シナリオ側に読み込みタグは無い）。
