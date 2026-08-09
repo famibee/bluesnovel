@@ -438,6 +438,92 @@
     対応と制約（`[lay width=]`を先に書いたレイヤ限定）の記述へ差し替え
   - `todo.md`から該当2項目を削除、組み込み変数の項目を現状に合わせて更新
 
+- [x] **`[lay pl=/pr=/pt=/pb=]`（文字表示領域の内側余白）を実装**：`Grammar.ts`の`TArg`には
+  以前から`pl?/pr?/pt?/pb?`の型定義だけがあり、`ScriptEngine.ts`の`case 'lay':`では一度も
+  読まれていなかった（未配線のプレースホルダ）。`ScriptEngine.ts`（`T_LAY_STY_ARG`・`case 'lay':`）→
+  `store.tsx`（`T_LAY_STY_ARG`・`chgLay`の文字レイヤ専用バリデーション・`clearLay`での既定復帰）→
+  `TxtLayer.tsx`（`T_TXTARG`/`T_TXTLAY_DATA`・`styBox`で指定した辺だけ`paddingLeft`等を上書き）→
+  `Stage.tsx`（props受け渡し）の順に、既存の`b_color`/`style`と同じ「文字レイヤ専用・書かれた
+  属性だけ上書き」の流儀で配線した
+  - **`box-sizing: border-box`化は見送った**：本家`TxtStage.ts`は`width/height`を外枠サイズ、
+    `padding`をその内側と解釈する（border-box相当）が、bluesnovelの既定`padding: 1em 1.5em`は
+    `font-size: xxx-large`基準で左右72px・上下48pxにもなり、`[lay b_pic=…]`の自然サイズ自動調整
+    （`waku.png`の80×40）のように余白より小さい`width`を指定する既存機能で「content box幅が
+    負にできず、padding分だけの大きさへ潰れる」というCSSの仕様に直撃した（実際にE2E
+    `[lay b_pic=…]は文字表示領域を枠画像の自然サイズへ自動調整する`が80pxのはずが144pxで失敗する
+    形で再現）。bluesnovelは元々「`width`はエンジンが実寸を知らない中身の寸法」という流儀（画像
+    レイヤと同じ）なので、**`content-box`のまま`padding`は`width`の外側に足される**仕様で確定した。
+    本家との完全一致（縦書き時の行数・余白）はこの解釈差が残るぶん未達だが、シナリオ側が
+    `pl=/pr=/pt=/pb=`で明示すれば余白は制御できるようになった
+  - テスト：`test/ScriptEngine_lay.test.ts`に`lay_padding`、`test/store_lay.test.ts`に
+    `chgLay_paddingOnGrpLayerThrows`／`clearLay_dropsPadding`。E2Eは`test/e2e/argdef.e2e.ts`
+    （`prj_argdef`に`p`レイヤを追加）で`pl/pr/pt/pb`の算出paddingと、content-boxのため
+    `width`が中身の幅のまま保たれる（`offsetWidth === width + pl + pr`）ことを確認。単体テスト
+    1641件、E2E全212件（フルセットで回帰なし確認済み）
+  - `docs/tag.html`：`[lay]レイヤ設定(文字レイヤ)`の表へ`pl`/`pr`/`pt`/`pb`の4行を追加
+  - `todo.md`の「文字組みの残り」から余白配線の分を整理。ルビ付き行の行間不揃い（前後で行送りが
+    非対称になる問題）は、対称に配分するCSS調整では解消できず全行の行送りを最初から均一に確保する
+    設計変更が要ると分かったため、`max_row`実装とセットで扱う方針を明記のうえ残す
+
+- [x] **画像の先読み**を実装：`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる
+  （crypto:true構成では`ScriptMng.ts`の`case 'chgPic':`が復号fetchの間`src: ''`を経由するぶん、
+  空白がより目立っていた）。todo.mdに書かれていた設計方針案（列挙はpure関数、fetchはUI側）通りに
+  2段構成で実装した
+  - `ScriptEngine.ts`に`peekUpcomingPicFn()`を追加：現在位置から次の停止点
+    （`[l]/[p]/[s]/[waitclick]`）またはスクリプト終端までの間に出てきそうな画像の論理名`fn`を
+    集める**実行を伴わない走査**。本家`SpritesMng`に専用の先読みタグは無く、`Loader`の
+    ロード済みキャッシュ＋「ロード完了まで差し替えない」制御が実体なので、そのまま移植できる
+    仕組みは無かった。`[if]`の両分岐とも拾い（実際にどちらへ進むかは実行しないと分からないため
+    多めに拾う）、`&式`／`%マクロ引数`で書かれた値は解決できずそのまま無視するbest-effort。
+    `[lay face=…]`は走査中に見つけた`[add_face]`も含めて実体の`fn`へ解決する
+  - `ScriptMng.ts`に`#preloadUpcomingPics()`を追加。`#runStep()`が停止点に達した直後
+    （`last?.t !== 'loadScript'`かつ`! engine.atEnd`の分岐、従来からある「本当に止まった」判定
+    そのまま）に呼ぶ。`Map<url, Promise<string>>`の`#picPreloadCache`を新設し、non-crypto構成は
+    `new Image().src = url`でブラウザの標準HTTPキャッシュを温めるだけ、crypto構成は
+    `#decryptPic(url)`（fetch→復号→Blob URL化）を前倒しでキャッシュに積む。`chgPic`ケース側は
+    新設の`takePreloaded()`でキャッシュを先に引き（無ければ従来どおりその場で`#decryptPic`）、
+    使ったエントリはその場で捨てる（無制限に溜めない）。`searchPath`の失敗（サーチパスに無い画像）は
+    先読み側では黙って諦め、実際に使われる時にあらためて`myTrace`でエラーを出す（同じエラーの
+    二重表示を避けるため）
+  - テスト：`test/ScriptEngine_preload.test.ts`（新規、7件）で`peekUpcomingPicFn()`の列挙規則
+    （次の停止点で打ち切る・`pic`は`fn`の別名・`face`解決・`&`/`%`無視・`[if]`両分岐・
+    スクリプト終端で空）を検証。E2Eは既存の`test/e2e/crypto.e2e.ts`・`test/e2e/pic.e2e.ts`が
+    無改変のまま通ることでキャッシュ経路に回帰が無いことを確認（新規のプリロード専用E2Eは、
+    実際に空白が縮んだかの検証がタイミング依存で壊れやすいため見送り、todo.md含め本来
+    「実機で要確認」としていた項目でもあるので実機確認に委ねる）。単体テスト1648件、
+    E2E全212件（フルセットで回帰なし確認済み）
+
+- [x] **`parsimmon`依存を除去**し、`src/ts/ExprEval.ts`を手書きのトークナイザ＋Pratt parser
+  （優先順位登坂法）に置き換えた。README「UNMAINTAINED」明記・2021-12から更新停止のライブラリで、
+  使用箇所はこの1ファイルのみだった（低優先度の技術的負債としてtodo.mdに積んであったもの）
+  - **リスクを抑えるため、文法（各トークンの正規表現・変換ロジック）と評価器（`#calc`/`#hFnc`
+    ディスパッチテーブル）は一切変更していない**。変えたのは「文字列→AST」の組み立て方だけ：
+    parsimmonの`alt`/`seq`/`seqMap`/`lazy`/`of`によるコンビネータ合成を、`#tokenize()`
+    （トークン列への分解）と`#parseToAst()`（優先順位登坂法によるAST構築）の2関数に置き換えた。
+    生成するASTの形（`[opcode, ...operand]`の入れ子配列、リーフは`['!num!'|'!str!'|'!bool!', 値]`）は
+    従来と完全に同一で、`#hFnc`のディスパッチキー（`'+'`/`'**'`/`UnaryNegate`/`PrefixInc`等）も
+    そのまま流用できる形にした
+  - 本家の優先順位表（PREFIX関数呼び出し→POSTFIX `++`/`--`→PREFIX `!`/`~`/`++`/`--`/単項`-`→
+    `**`→`*`/`/`/`¥`/`%`→…→`||`→`:`→`?`の重なり順）を、`parseUnary()`の自己再帰チェーン
+    （前置演算子の連続適用。「`- - -4`」等）と、`H_BINOP`優先順位表を引く`parseExpr(minBp)`の
+    標準的な優先順位登坂ループへ対応させた。`:`/`?`は特別扱いせず**ただの右結合2項演算子**として
+    扱う（単独の`"4 : 10"`が構文としては通り、評価時に`#hFnc[':']`が無条件に例外を出す、という
+    元の設計をそのまま踏襲——`?`の直後に`:`があるかの整合性チェックは元から評価側の責務だった）
+  - 数値・`null`・真偽値・文字列（`"..."`/`'...'`/`#...#`の3種、エスケープ文字`ce`）・変数参照
+    （名前空間`tmp:`/`sys:`/`game:`/`save:`/`mp:`、`.`区切り・`[...]`添字の繰り返し、`@str`終端）・
+    関数呼び出し（ASCII識別子の直後に空白無しで`(`が来た時だけ）の各正規表現・変換処理は
+    本家`PropParser`のものをそのまま移植
+  - **実装中に踏んだ罠**：整数除算`¥`（半角ではなく全角記号。非ASCII）は「空白・ASCII記号以外は
+    全部許す」という変数名の文字クラスにも該当してしまい、演算子判定より変数判定を先に試すと
+    `"10 ¥ 4"`が壊れる（`¥`を変数名として食ってしまう）。演算子・括弧の判定を変数参照より
+    先に行うよう順序を直して解消した
+  - テスト：本家`test/PropParser.test.ts`を丸ごと移植した`test/ExprEval.test.ts`（266件、
+    数値計算・比較・変な文法・文字列・変数・連想配列・変数埋め込み・不具合修正の再現ケースまで
+    網羅）が無改変のまま全件通過。加えて`test/uc_goal.test.ts`（フルサンプルシナリオを
+    エンジンだけで走らせる到達目標テスト）と、単体テスト1648件・E2E全212件（フルセットで
+    回帰なし確認済み）
+  - `package.json`から`parsimmon`・`@types/parsimmon`を`bun remove`で除去
+
 - [ ]
 
 

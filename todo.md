@@ -20,8 +20,15 @@
 - [ ] **トゥイーンの残り**：`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
   - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
-        ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
-  - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
+        ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。対称に配分するCSS調整では治らない
+        （前後どちらかに寄せて配分しても「ルビ行だけ行送りが違う」不揃いさ自体は消えない）。
+        本当に直すには全行の行送りをルビ想定の高さで最初から均一に確保する設計が要り、
+        「行」を扱う基盤が無い現状では`max_row`実装と同時にやるのが筋（詳細はセッション
+        2026-08-10のCHANGELOG.md参照）
+  - [ ] 縦書き時の行数・余白が本家と完全一致ではない：`[lay pl=/pr=/pt=/pb=]`は配線済みに
+        なったが、本家のborder-box解釈までは揃えていない（`content-box`のまま。理由は
+        CHANGELOG.md参照）。厳密な行数一致はブラウザの自動折返しと本家のRange計測ベース
+        折返しの差もあり達成が難しく、実用上の近似止まりでよい
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
   - [ ] ギャラリーの`filter`サンプルと実機で見比べ、色の出方が本家と揃っているか確認（pixiはシェーダ、こちらはSVGフィルタなので端の丸めが違いうる）
@@ -58,12 +65,7 @@
 
 ## アセット・基盤
 
-- [ ] 画像の**先読み**（本家`SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる。実機で要確認
-  - [ ] 暗号化アセット対応（`ScriptMng.ts`の`#applyAction()` `case 'chgPic':`）で既に同種の空白が発生済み（復号fetchが非同期のため一旦`src: ''`を経由）。先読みを入れるならここも解消できるはず
-  - [ ] 本家`SpritesMng`は専用の先読みタグを持たず、PIXIの`Loader`/`TextureCache`によるロード済みキャッシュと「ロード完了までSpriteを差し替えない」というタイミング制御が実体（`skynovel_esm/src/sn/SpritesMng.ts`）
-  - [ ] 設計方針案：「次に必要になりそうな論理名`fn`を列挙する」部分は`ScriptEngine`側にpure関数として置ける（`bun test`で検証可）。「`searchPath`でURL解決→実際に`fetch`/`Image`でキャッシュへ乗せる」からは`ScriptMng`/UI側の責務。ただし実際に切替時の空白が消えたかは視覚的な話なので単体テストだけでは担保できず、`test/e2e/pic.e2e.ts`への追加か実機確認が要る（同ファイルに既知のflakyあり）
 - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず）
-- [ ] 【低優先度・技術的負債】`parsimmon`（README「UNMAINTAINED」明記、2021-12から更新停止）への依存を外す。使用箇所は`src/ts/ExprEval.ts`1ファイルのみで、優先順位クライミング（PREFIX/POSTFIX/BINARY_LEFT/BINARY_RIGHT）は既に自前実装済み。parsimmonが担っているのは正規表現マッチ・`alt`によるバックトラック・`lazy`による再帰・`seq`/`seqMap`の逐次合成という基礎部分のみで依存範囲が狭いため、他のパーサコンビネータ（parjs/ts-parsec等、これらも小規模で同種のリスクを抱える）へ乗り換えるより、howlerを外して自前Web Audio層にした`SndMng.ts`と同じ判断で**手書きのPratt parserに置き換えて依存自体を無くす**のが筋が良い。ただし現状動作に実害は無いので緊急対応は不要
 - [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
   - [ ] 復活したら`eslint-plugin-import`（2.32.0のまま更新停止、ESLint 10対応PRが未マージ）を`eslint-plugin-import-x`へ切替。peerDependencyがESLint 10を公式サポート済みで移行も軽微（このリポジトリの`import/no-unresolved: 'off'`1行だけ`import-x/`にプレフィックスを変える程度）。本家`skynovel_esm`もeslint関連が全く同じバージョン構成・同じ1行なので同時に対応可能

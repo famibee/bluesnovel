@@ -1061,6 +1061,8 @@ export class ScriptMng {
 				}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
+					// 停止点で読んでいる間に、次に必要になりそうな画像を先に温めておく
+					else this.#preloadUpcomingPics();
 					return;
 				}
 
@@ -1290,6 +1292,27 @@ export class ScriptMng {
 	//	（key: `${nm}:${page}`）
 	readonly #picReqSeq = new Map<string, number>();
 
+	// 画像の先読み（本家SpritesMngのロード済みキャッシュ相当。todo.md参照）。crypto:true構成は
+	//	fetch→復号→Blob URL化に時間がかかり、[lay fn=]を跨いで一瞬空白が出ていた
+	//	（chgPicケースの#decryptPic呼び出し箇所のコメント参照）。次の停止点までに出てきそうな
+	//	画像を停止直後（＝ユーザーがクリックする前）に先に温めておくことで、実際にchgPicが
+	//	来たときには既に解決済み（or 解決中）のPromiseを使い回せるようにする。
+	//	non-crypto構成はブラウザの標準HTTPキャッシュに任せる（new Imageで先にリクエストするだけ）
+	readonly #picPreloadCache = new Map<string, Promise<string>>();
+	#preloadUpcomingPics() {
+		const engine = this.#engine;
+		if (! engine) return;
+
+		for (const fn of new Set(engine.peekUpcomingPicFn())) {
+			let url: string;
+			try {url = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)}
+			catch {continue}	// 先読みでは黙って諦める（実際に使われる時にあらためてエラーを出す）
+
+			if (! this.sys.crypto) {new Image().src = url; continue}
+			if (! this.#picPreloadCache.has(url)) this.#picPreloadCache.set(url, this.#decryptPic(url));
+		}
+	}
+
 	#applyAction(act: T_ENGINE_ACTION) {
 		switch (act.t) {
 		case 'addLay':
@@ -1315,16 +1338,22 @@ export class ScriptMng {
 				break;
 			}
 
-			// crypto時：復号にfetchを挟むため同期では返せない。まず空で確定させ
-			//	（画像の先読み自体が未対応＝切替時に一瞬空白は元から許容している。todo.md参照）、
-			//	Blob URL化でき次第差し替える。連続して同じレイヤへ[lay fn=]が来た場合、
-			//	後発を追い越して古い方が上書きしないよう世代カウンタで捨てる
+			// crypto時：復号にfetchを挟むため同期では返せない。まず空で確定させ、
+			//	Blob URL化でき次第差し替える（#preloadUpcomingPics()が事前に温めていれば、
+			//	ここでは新規fetchせず解決済み・解決中のPromiseを使い回すだけで済み、空白が縮む）。
+			//	連続して同じレイヤへ[lay fn=]が来た場合、後発を追い越して古い方が
+			//	上書きしないよう世代カウンタで捨てる
 			const key = `${act.nm}:${act.page}`;
 			const seq = (this.#picReqSeq.get(key) ?? 0) + 1;
 			this.#picReqSeq.set(key, seq);
 			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '', isSheet, isMovie,
 				aFace: aFace.map(f=> ({...f, src: ''}))});
-			void Promise.all([this.#decryptPic(src), ...aFace.map(f=> this.#decryptPic(f.src))])
+			const takePreloaded = (u: string)=> {
+				const p = this.#picPreloadCache.get(u);
+				if (p) this.#picPreloadCache.delete(u);	// 使い終わったら捨てる（無制限に溜めない）
+				return p ?? this.#decryptPic(u);
+			};
+			void Promise.all([takePreloaded(src), ...aFace.map(f=> takePreloaded(f.src))])
 			.then(([dSrc, ...aFaceSrc])=> {
 				if (this.#picReqSeq.get(key) !== seq) return;	// 追い越された
 				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc, isSheet, isMovie,

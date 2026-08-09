@@ -75,6 +75,12 @@ export type T_LAY_STY_ARG = {
 	blendmode?	: string;	// CSSのmix-blend-mode値へ変換済み（argBlendmode()）
 	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?		: string;	// 文字レイヤへそのまま足すCSS
+	// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb。px指定）。
+	//	**未指定は既定のCSS値（1em/1.5em）のまま**（他の見た目属性と同じ「書かれた属性だけ」原則）
+	pl?			: number;
+	pr?			: number;
+	pt?			: number;
+	pb?			: number;
 	// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）
 	ffs?		: string;	// 文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?		: string;	// ffsを効かせない文字の並び
@@ -677,6 +683,38 @@ export class ScriptEngine {
 	get lineNum() {return this.#script.aLNum[Math.min(this.#idx, this.#script.len -1)] ?? NaN}
 	get atEnd() {return this.#idx >= this.#script.len}
 
+	// 画像の先読み用：現在位置から次の停止点（[l]/[p]/[s]/[waitclick]）またはスクリプト終端までに
+	//	出てきそうな画像の論理名fnを集める（本家SpritesMngにあたる専用先読みタグは無いが、
+	//	todo.mdの設計方針どおりpure関数として切り出した）。**実行を伴わない走査**なので、
+	//	[if]の両分岐とも拾う（実際にどちらへ進むかは実行しないと分からないため多めに拾う）し、
+	//	「&式」「%マクロ引数」で書かれた値は解決できずそのまま無視する（best-effort）
+	peekUpcomingPicFn(): string[] {
+		const aFn: string[] = [];
+		// 既に実行済みの[add_face]（this.#hFace）に加え、走査中に見つかった[add_face]も
+		//	その場で足す（宣言直後に使う書き方が普通なので、まだ実行していなくても拾えたほうがよい）
+		const hFace = new Map(Object.entries(this.#hFace).map(([nm, f])=> [nm, f.fn]));
+		for (let i = this.#idx; i < this.#script.len; ++i) {
+			const token = this.#script.aToken[i]!;
+			if (token.charCodeAt(0) !== 91) continue;	// [ タグ開始以外は無視
+
+			const {name, args} = ScriptEngine.parseTag(token);
+			if (name === 'l' || name === 'p' || name === 's' || name === 'waitclick') break;
+			if (name === 'add_face') {
+				if (args.name) hFace.set(args.name, args.fn || args.name);
+				continue;
+			}
+			if (name !== 'lay') continue;
+
+			const picFn = args.fn || args.pic;
+			if (picFn && ! picFn.startsWith('&') && ! picFn.startsWith('%')) aFn.push(picFn);
+			if (args.face) for (const nm of args.face.split(',')) {
+				const fn = hFace.get(nm);
+				if (fn) aFn.push(fn);
+			}
+		}
+		return aFn;
+	}
+
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
 	jumpToLabel(label: string) {
 		const to = this.#script.label2idx(label);
@@ -1160,6 +1198,11 @@ export class ScriptEngine {
 			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
 			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
+			// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
+			if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);
+			if (args.pr !== undefined) sty.pr = ScriptEngine.#argNum('lay', 'pr', args.pr);
+			if (args.pt !== undefined) sty.pt = ScriptEngine.#argNum('lay', 'pt', args.pt);
+			if (args.pb !== undefined) sty.pb = ScriptEngine.#argNum('lay', 'pb', args.pb);
 			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
 			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
 			//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**

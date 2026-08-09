@@ -98,6 +98,11 @@ type T_TXTARG = T_LAY_CMN & {
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
 	b_src?	: string | undefined;	// [lay b_pic=…]の解決済みURL。**あればb_colorより優先**（本家 TxtLayer.ts:393）
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
+	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（1em/1.5em）のまま
+	pl?		: number | undefined;
+	pr?		: number | undefined;
+	pt?		: number | undefined;
+	pb?		: number | undefined;
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンと[link]がクリックを受けない
 	aBtn	: T_BTN[];
 	in_style?: string | undefined;	// [lay in_style=…]。[ch_in_style]で定義した文字出現演出名
@@ -114,6 +119,7 @@ export type T_ON_LINK = (lnk: T_LNK)=> void;
 export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean;
 	kinsoku_sol?: string; kinsoku_eol?: string; kinsoku_dns?: string; kinsoku_bura?: string;
 	r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
+	pl?: number; pr?: number; pt?: number; pb?: number;
 	// 文字出現・消去演出の名前（[lay in_style=/out_style=]）。定義そのものはストアの hChIn/hChOut
 	in_style?: string; out_style?: string};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
@@ -121,7 +127,7 @@ export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura,
 	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
-	r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+	r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -150,10 +156,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		img.src = b_src;
 		return ()=> {alive = false};
 	}, [b_src]);
-	const styBox: CSSProperties = natBPic && (! ('width' in sty) || ! ('height' in sty))
-		? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
-			...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
-		: sty;
+	const styBox: CSSProperties = {
+		...(natBPic && (! ('width' in sty) || ! ('height' in sty))
+			? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
+				...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
+			: sty),
+		// [lay pl=/pr=/pt=/pb=]。指定された辺だけ既定のCSS padding（1em/1.5em）を上書きする
+		...(pl !== undefined ? {paddingLeft: `${String(pl)}px`} : {}),
+		...(pr !== undefined ? {paddingRight: `${String(pr)}px`} : {}),
+		...(pt !== undefined ? {paddingTop: `${String(pt)}px`} : {}),
+		...(pb !== undefined ? {paddingBottom: `${String(pb)}px`} : {}),
+	};
 
 	// 1文字ずつの文字送り演出（GSAP stagger）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。

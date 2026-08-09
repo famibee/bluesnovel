@@ -169,3 +169,26 @@ test('縦書きでもクリック待ちマークは直前の文字の次（下�
 	expect(Math.abs(pos.markX - pos.chX)).toBeLessThan(24);
 });
 
+test('pl/pr/pt/pb は文字表示領域の内側余白（指定した辺だけ既定のCSS値を上書きする）', async ({page})=> {
+	await pressKey(page, 'Space');	// よせた
+	await pressKey(page, 'Space');	// たてがき
+	await pressKey(page, 'Space');	// よこ
+	await pressKey(page, 'Space');	// よはく（pレイヤ配置）
+
+	const r = await page.evaluate(()=> {
+		const el = document.querySelector('#skynovel [data-page="fore"] [data-lay="p"]')! as HTMLElement;
+		const cs = getComputedStyle(el);
+		return {
+			pl: cs.paddingLeft, pr: cs.paddingRight, pt: cs.paddingTop, pb: cs.paddingBottom,
+			w: el.offsetWidth,	// transformの拡縮に影響されない論理px
+		};
+	});
+	expect(r.pl).toBe('10px');
+	expect(r.pr).toBe('20px');
+	expect(r.pt).toBe('30px');
+	expect(r.pb).toBe('40px');
+	// content-box（既定のまま）なので[lay width=300]は内側の文字表示領域の幅、
+	//	paddingはその外側に足される（本家の画像レイヤ同様、bluesnovelのwidthは常に「中身」の寸法）
+	expect(r.w).toBe(300 + 10 + 20);
+});
+

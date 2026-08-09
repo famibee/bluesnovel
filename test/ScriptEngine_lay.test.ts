@@ -96,6 +96,12 @@ it('lay_style', ()=> {
 		.toEqual({style: 'color: red; font-size: 20px;'});
 });
 
+it('lay_padding', ()=> {
+	// 文字表示領域の内側余白。片方だけの指定でも成立する（width/heightと同じ独立if）
+	expect(styOf('[lay layer=mes pl=10 pr=20 pt=30 pb=40]')).toEqual({pl: 10, pr: 20, pt: 30, pb: 40});
+	expect(styOf('[lay layer=mes pl=10]')).toEqual({pl: 10});
+});
+
 it('lay_invalidNumThrows', ()=> {
 	expect(()=> styOf('[lay layer=base alpha=abc]')).toThrow('[lay] alphaの値が不正です');
 	expect(()=> styOf('[lay layer=base rotation=xyz]')).toThrow('[lay] rotationの値が不正です');

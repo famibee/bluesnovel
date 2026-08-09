@@ -177,6 +177,11 @@ export type T_CHGBACKCLEAR = {
 export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	b_color?: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?	: string;	// 文字レイヤへそのまま足すCSS
+	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（1em/1.5em）のまま
+	pl?		: number;
+	pr?		: number;
+	pt?		: number;
+	pb?		: number;
 	ffs?	: string;	// [lay ffs=…]。文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?	: string;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean;	// [lay bura=…]。ぶら下げ禁則
@@ -408,12 +413,13 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
+		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）/pl・pr・pt・pbは文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
 		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined
 			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined
 			|| sty.r_align !== undefined || sty.kinsoku_sol !== undefined || sty.kinsoku_eol !== undefined
-			|| sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined))
-			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*は文字レイヤ専用）`;
+			|| sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined
+			|| sty.pl !== undefined || sty.pr !== undefined || sty.pt !== undefined || sty.pb !== undefined))
+			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
 
 		// 禁則の競合チェック（本家 Hyphenation.lay()。行頭禁則との重複はチェック対象外）。
 		//	マージ後の値（新規指定 → そのレイヤの現在値 → 既定）で判定する必要があるので、
@@ -489,7 +495,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
 			// bura/kinsoku_*は[clear_lay]で変更しない（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない。
 			//	docs/tag.htmlのbura欄も既定値「現在値」＝クリアしても引き継ぐ、と明記）
-			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
+			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1; delete e.pl; delete e.pr; delete e.pt; delete e.pb}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {

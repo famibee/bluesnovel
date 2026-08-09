@@ -28,4 +28,10 @@
 [lay layer=mes page=fore style="writing-mode: vertical-rl; width: 300px; height: 400px;"]
 [er]
 たてがき[l]
-よこ[s]
+よこ[l]
+
+; pl/pr/pt/pb：文字表示領域の内側余白。content-box（既定）のため[lay width=]は中身の幅で、
+;	paddingはその外側に足される（他のwidth/heightと同じ「エンジンは実寸を知らない」流儀）
+[add_lay layer=p class=txt]
+[lay layer=p width=300 height=200 pl=10 pr=20 pt=30 pb=40]
+よはく[s]

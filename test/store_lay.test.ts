@@ -292,6 +292,28 @@ it('chgLay_ffsOnGrpLayerThrows', ()=> {
 	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {kinsoku_bura: '、'}})).toThrow();
 });
 
+it('chgLay_paddingOnGrpLayerThrows', ()=> {
+	// pl/pr/pt/pbもb_color/styleと同じく文字レイヤ専用
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {pl: 10}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {pr: 10}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {pt: 10}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {pb: 10}})).toThrow();
+});
+
+it('clearLay_dropsPadding', ()=> {
+	// pl/pr/pt/pbはb_color/style等と同じ「見た目」扱いなので[clear_lay]で既定へ戻る
+	addMes();
+	S().chgLay({nm: 'mes', page: 'fore', sty: {pl: 10, pr: 20, pt: 30, pb: 40}});
+	S().clearLay({aLayNm: null, page: 'fore'});
+
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.pl).toBeUndefined();
+	expect(lay.pr).toBeUndefined();
+	expect(lay.pt).toBeUndefined();
+	expect(lay.pb).toBeUndefined();
+});
+
 it('clearLay_dropsFfsButKeepsBuraAndKinsoku', ()=> {
 	// ffs/noffsは[clear_lay]で消えるが、bura/kinsoku_*は現在値のまま引き継ぐ
 	//	（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない）

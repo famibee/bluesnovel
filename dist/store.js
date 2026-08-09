@@ -780,7 +780,7 @@ var ee = q()((e, t) => ({
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
 		let { idx: i, aLay: a } = X(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
-		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*は文字レイヤ専用）`;
+		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
 		return o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && L(r.kinsoku_eol ?? o.kinsoku_eol ?? P.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? P.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? P.bura), Object.assign(o, r), Z(e, i, a);
 	}),
 	getLaySty: (e, n) => {
@@ -825,7 +825,7 @@ var ee = q()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of y) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
+			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, i = (e) => {
 			if (!t) {
 				e.forEach(r);
