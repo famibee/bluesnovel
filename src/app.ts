@@ -18,9 +18,12 @@ import type {TArg} from './sn/Grammar';
 export type {TArg};
 
 import {SysBase} from './sn/SysBase';
+import {CmnLib} from './sn/CmnLib';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 import type {TAG_WINDOW, T_CAPTURE_RECT, T_IpcEvents, T_IpcRendererEvent} from './preload';
+import type {T_HINFO} from './appMain_cmn';
 import {decTransportField, type T_DATA4VARI, type T_DATA4VARI_TRANSPORT} from './ts/SaveMng';
+import {updateCheck} from './UpdateCheck';
 
 import {IpcEmitter, IpcListener} from './IpcRenderer';
 
@@ -34,10 +37,12 @@ export class SysApp extends SysBase {
 	readonly #em	= new IpcEmitter<T_IpcEvents>;
 	readonly #ipc	= new IpcListener<T_IpcRendererEvent>;
 
+	#hInfo	: T_HINFO	= {getAppPath: '', isPackaged: false, downloads: '', userData: '', getVersion: '', env: {}, platform: '', arch: ''};
+
 	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
 		// 主処理からアプリの情報を貰う。**Configより先**：`userdata:/`・`downloads:/`の
 		//	解決先（Config.searchPath）がこれで決まるため
-		const hInfo = await this.#em.invoke('getInfo');
+		const hInfo = this.#hInfo = await this.#em.invoke('getInfo');
 		this.$path_downloads	= hInfo.downloads.replaceAll('\\', '/') +'/';
 		this.$path_userdata		= hInfo.userData.replaceAll('\\', '/') +'/';
 
@@ -85,6 +90,26 @@ export class SysApp extends SysBase {
 
 	override capturePage(rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string) {
 		return this.#em.invoke('capturePage', rect, outW, outH, mime);
+	}
+
+	// 更新チェック（本家 SysApp.ts:306）。ロジック本体（バージョン比較・_index.json/.ymlの
+	//	読み分け・ダウンロード）はUpdateCheck.tsへ切り出し、ここはIPC呼び出しの結線だけ持つ
+	override updateCheck(url: string) {
+		void updateCheck(url, {
+			fetchText	: u=> this.#em.invoke('fetch', u),
+			fetchAb		: u=> this.#em.invoke('fetchAb', u),
+			writeFile	: (path, data)=> this.#em.invoke('writeFile', path, data),
+			showMessageBox	: o=> this.#em.invoke('showMessageBox', o),
+			downloadsDir	: this.#hInfo.downloads.replaceAll('\\', '/'),
+			appVersion	: this.#hInfo.getVersion,
+			platform	: this.#hInfo.platform,
+			arch		: this.#hInfo.arch,
+			// bluesnovelは本家と違いcrypto有無でdocフォルダを分けていない（配布構成が別物のため）
+			iconPath	: this.#hInfo.getAppPath.replaceAll('\\', '/') +'/doc/icon.png',
+			bookTitle	: this.cfg.oCfg.book.title,
+			isMac		: CmnLib.isMac,
+			debugLog	: CmnLib.debugLog,
+		}).catch((e: unknown)=> console.error(`[update_check] ${String(e)}`));
 	}
 
 	// しおり・sys:の永続化先をelectron-store（userDataフォルダのJSON）へ。SysBaseの既定は

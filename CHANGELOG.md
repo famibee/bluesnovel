@@ -325,6 +325,31 @@
   - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト1527件→1532件・**E2E全197件**（今回新設の4件込み。フルセットで流したのは本作業が初めて）はいずれもパス
   - `todo.md`「暗号化の残り」が全項目完了し、見出しごと削除
 
+- [x] **棚卸し：暗号化アセット項目の消し忘れと`arg.dip`を調査**（2026-08-09）
+  - `todo.md`「アセット・基盤」に残っていた「暗号化アセット」の行は、直前のエントリで既に実装・完了していた内容の消し忘れだったため削除
+  - `arg.dip`（本家のディップスイッチ機構。`arg.dip`のJSON文字列 or URLクエリ`?dip=`で`CmnLib.hDip`を埋める）を調査。本家`SysWeb.ts`が実際に消費するのは4項目：`expanding`（拡大有無。`Stage.tsx`は既に`argChk_Boolean(CmnLib.hDip, 'expanding', true)`で読む配線があるが、`CmnLib.hDip`自体を埋める処理がbluesnovelに無く常に既定値`true`のまま＝本家の既定と同じ結果で実害なし）・`oninit_run`（初期化後の自動実行制御。対象のギャラリー機能＝`data-prj`クリックで実行開始、がbluesnovelに未移植）・`dbg`（デバッグ切替。`prj.json`の`debug.devtool`という別の仕組みで代替済み）・`port`（VSCode拡張連携ポート。`[dump_script]`と同じ理由で対象外）。`tmp_blues`/`tmp_esm_uc`とも`dip`を使っていないことも確認済み。**4項目とも配線する実益が無いと判断し、`arg.dip`機構自体は対応不要で決着**
+  - `todo.md`の該当2行を削除
+
+- [x] **調査：一般プラグイン機構（`addTag`/`addLayCls`等）の配線は対応不要と結論**（2026-08-09）
+  - `todo.md`「しおり・システム系の残り」の次項目。`hPlg`（複数プラグイン注入の仕組み自体）はbluesnovelにも既にあり、テンプレ`tmp_blues/src/web.ts`が`plugin.json`から動的importして`new SysWeb(hPlg)`へ渡す配線まで揃っているが、`SysBase.loaded()`（`src/sn/SysBase.ts:32-39`）は`hPlg.snsys_pre`（暗号化プラグイン）だけを取り出して`init()`を呼び、**それ以外のプラグインは一度も`init()`されず捨てられている**
+  - `tmp_blues`/`tmp_esm_uc`双方に実例（`src/plugin/humane/`）があり、これが一般プラグインフックの唯一の消費者。中身は`pia.addTag('notice', hArg=> {Humane.log(hArg.text); return false})`——**まさに`[notice]`用で、CLAUDE.mdに「`[notice]`はプロジェクト側プラグインなので対象外」と既に明記されている機能**。実プロジェクトが必要とする一般プラグイン機構の実例が、そもそも対応不要と決着済みの用途だった
+  - 残る5フックのうち`render`/`resume`は本家がpixi.jsの`DisplayObject`/`RenderTexture`/Tickerを直接引数に取る設計で、React/DOMベースのbluesnovelには構造的に対応する概念が無い。`addLayCls`/`getInfo`/`getVal`/`searchPath`も実プロジェクト側に使用例なし
+  - 以上より`T_PluginInitArg`を一般プラグイン向けに拡張する実益が現状無いと判断。`todo.md`の該当行を削除（`T_PluginInitArg`のコメントは元々この判断を先取りして書かれていたため、コード側の変更は無し）
+
+- [x] **`[snapshot]`の残り（HTMLフレームが写らない件）：ドキュメント更新漏れを修正し、web版側の恒久的な制約として決着**（2026-08-09）
+  - `todo.md`「しおり・システム系の残り」の次項目。`[add_frame]`の中身が写らない件自体は2026-08-09の別エントリ（アプリ版の`capturePage`対応）時点で「web版側の制約として残る」と既に結論が出ていたが、その`capturePage`対応（Electron版は`<img>`化SVGでなくウインドウ画素を直接撮るため、HTMLフレームの中身も写る）が`docs/tag.html`の`[snapshot]`セクションに未反映のままだった（CLAUDE.mdの「実装・変更したらマークを更新する」規約に反する状態）
+  - `docs/tag.html`の`[snapshot]`セクションへ、アプリ版は`capturePage`で全レイヤ・表ページ・背景色未指定の素朴な撮影のときだけフレームの中身も写ること、それ以外（`layer`／裏ページ／`b_color`指定時）はDOM→SVG方式にフォールバックすること、web版はDOM→SVG方式の構造的制約（`<img>`化されたSVGはiframeを描画しない）でフレームの中身が写らないままであることを追記
+  - web版の制約はブラウザの構造的な限界（本家web版も同じ結果）で、bluesnovel側の実装漏れではないため対応不能。`todo.md`の該当行を削除
+
+- [x] **アプリ（Electron）版：`[update_check]`（更新チェック機能）を実装**（2026-08-09）
+  - `todo.md`「しおり・システム系の残り」の次項目。本家`SysApp.ts:306`〜`:437`（`update_check`〜`#dl_comp()`）を移植。必要なIPC（`fetch`/`fetchAb`/`writeFile`/`showMessageBox`/`getInfo`）は既存の他機能から流用でき、新規のIPCハンドラ追加は不要だった
+  - ロジック本体（`_index.json`/`.yml`の読み分け・バージョン比較・ダウンロード・ダイアログ文言）を新規`src/UpdateCheck.ts`へ切り出し、`fetch`/`fetchAb`/`writeFile`/`showMessageBox`を関数引数として受け取る形にした（`Crypto.ts`の`decryptPicUrl`と同じ流儀）。`app.ts`（`SysApp`）は`updateCheck(url)`のoverrideでIPC呼び出しを結線するだけの薄いラッパー
+  - **本家の実装をそのまま移植し、追加実装はしなかった点**：`_index.json`/`.yml`はどちらも`sha512`フィールドを持つが、本家のコードを読むと取得はしていてもダウンロード後の検証には一切使われていない（コメントアウトされた分岐の痕跡のみ）。`todo.md`の従来の記述（「sha512検証」）は本家コードの実態と食い違っていたと判明。「移植時は本家<file>:<line>が仕様書」の方針に従い、bluesnovelも検証なしのまま移植した（ダウンロード実行ファイル自体の署名検証はOS側＝Gatekeeper／Windows SmartScreenの領分という判断はコメントに明記）
+  - **本家との相違点はもう1つ**：アイコンパスの`doc`/`doc_crypto`切替（本家はセーブ暗号化構成によって配布フォルダを分ける）。bluesnovelはElectron版・ブラウザ版のセーブ暗号化を単一の`enc()`経路へ統一済みで配布フォルダ構成自体が本家と異なるため、`doc`固定にした
+  - テスト：`test/UpdateCheck.test.ts`（新規9件）。IPC呼び出しをすべて偽関数に差し替え、`_index.json`が見つかる／自機種向けファイルが無く同OS一覧へ落ちる／`.yml`へフォールバック（Mac版は`latest-mac.yml`）／バージョン一致で何もしない／確認ダイアログでCancelされたら中断／`.yml`も無ければ`debugLog`次第でthrowするか黙って終わる、の各経路を検証。`app.ts`自体は`window`参照を持ちbunでは読めないため対象外（`SaveMng.test.ts`等と同じ事情）。単体テスト1532件→1541件、型チェック（`tsc --noEmit`／`-p test/e2e`）はいずれもパス
+  - `docs/tag.html`の`[update_check]`エントリを🟡から🟢へ更新（未対応→対応済みの説明、本家との相違点を明記）。`todo.md`の該当項目（「アプリ（Electron）版の残り」の唯一の子項目だったため見出しごと）を削除
+  - **実機（`npm run app`等でのダウンロード往復）は未検証**：サンドボックス環境にディスプレイが無くElectronのGUIプロセスを起動できないため。ロジック自体はIPC層の既存ハンドラ（`fetch`/`fetchAb`/`writeFile`/`showMessageBox`）をそのまま呼ぶだけで新規処理は無いが、実際の配信URL・ダイアログ表示・ダウンロード完了の確認は別途必要
+
 - [ ]
 
 

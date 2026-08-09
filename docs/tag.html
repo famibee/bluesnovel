@@ -277,7 +277,7 @@
 		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
 		<li class="mb1"><a href="#title">🟢 [title] タイトル指定</a></li>
 		<li class="mb1"><a href="#toggle_full_screen">🟢 [toggle_full_screen] 全画面状態切替</a></li>
-		<li class="mb1"><a href="#update_check">🟡 [update_check] 更新チェック機能</a></li>
+		<li class="mb1"><a href="#update_check">🟢 [update_check] 更新チェック機能</a></li>
 		<li class="mb1"><a href="#window">🟢 [window] アプリウインドウ設定</a></li>
 	</ul>
 	<p>デバッグ・その他</p>
@@ -2814,7 +2814,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家は pixi のレンダラで描き直すが、こちらの表示は DOM なので<b>「DOM を複製 → SVG の <code>&lt;foreignObject&gt;</code> → canvas → 画像」</b>で撮る（外部ライブラリ無し）。全属性に対応。<br/>
 	<b>行き先は <code>fn</code> の書き方で決まる</b>。<code>userdata:/…</code> なら<b>セーブ層</b>（本家はセーブデータと同じフォルダの実ファイル。ブラウザにフォルダは無いので localStorage へ data URL のまま置く）で、日時は付かないので <code>[lay fn='userdata:/…']</code> で読み返せる（しおりのサムネイル用途）。それ以外は<b>ダウンロード</b>（本家の <code>downloads:/</code>）で、名前の後ろに日時が付く。<code>[export]</code>／<code>[import]</code> にも一緒に乗る。<br/>
 	<b>相違</b>：ダウンロード名は<b>日時を拡張子の前</b>に入れる（本家は <code>fn＋日時＋'.png'</code> 固定で、拡張子でフォーマットを選べるのは <code>userdata:/</code> 側だけだった）。<code>b_color</code> は表のとおり <b>0xAARRGGBB</b> として扱う（<code>0x0</code> で透過 png・<code>0xFF000000</code> が不透明な黒。本家 web 版の実装はここが逆になっている）。<br/>
-	<b>未対応</b>：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。</p>
+	<b>アプリ（Electron）版</b>：Electron の <code>capturePage</code> でウインドウ画素をそのまま撮る（全レイヤ・表ページ・背景色未指定の素朴な撮影のときだけ。<code>layer</code>／裏ページ／<code>b_color</code> 指定時は原理的に再現できないため下記の DOM→SVG 方式へフォールバック）ため、<b>HTML フレーム（[add_frame]）の中身も写る</b>。<br/>
+	<b>web 版の未対応</b>：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。</p>
 <h4>アプリ表示部分全体を画像として保存する</h4>
 <p class="mb2 px1">
 
@@ -2868,7 +2869,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="update_check" class="w-heading">[update_check] 更新チェック機能</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：属性の検査までは対応（シナリオを止めずに素通りする）が、<b>更新チェックの実処理はこれから</b>（本家 <code>SysApp.ts:306</code>）。ブラウザ版では何もしない。</p>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟢：本家 <code>SysApp.ts:306</code> を移植（アプリ版のみ。ブラウザ版では何もしない）。<code>_index.json</code>／<code>latest(-mac).yml</code>のどちらの方式も対応。<br/>
+	<b>本家との相違</b>：本家は<code>_index.json</code>／<code>.yml</code>が持つ<code>sha512</code>を取得はするがどこにも渡しておらず、実際にはダウンロードしたファイルの改竄検査を行っていない（コメントアウトされた分岐の痕跡のみが残る）。bluesnovelもこの実装のまま（検査なし）で移植した——ダウンロード実行ファイル自体の署名検証はOS側（Gatekeeper／Windows SmartScreen）の領分という判断。<br/>
+	クリプト構成時のアイコンパス分け（本家は<code>doc</code>／<code>doc_crypto</code>を切り替える）は、bluesnovelがElectron版・ブラウザ版のセーブ暗号化を単一の<code>enc()</code>経路に統一済みで配布フォルダ構成も本家と異なるため、<code>doc</code>固定にしている。</p>
 <h4>ネットにアプリの更新を確認し、ダウンロードもサポートする</h4>
 <p class="mb2 px1">
 

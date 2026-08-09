@@ -19,11 +19,6 @@
 
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
 - [ ] **しおり・システム系の残り**
-  - [ ] 一般プラグインの配線（`addTag`/`addLayCls`/`getInfo`/`getVal`/`resume`/`render`/`searchPath`）。`[loadplugin]`がCSS専用で受け皿が無いため今回は`T_PluginInitArg`から外した
-  - [ ] `arg.dip`がどこからも参照されていない（`web.ts`/`app.ts`で渡すだけ）
-  - [ ] `[snapshot]`の残り：**HTMLフレームの中身が写らない**（`<img>`化したSVGはiframeを描画しないというブラウザ側の制約。本家web版も同じ結果）
-  - [ ] **アプリ（Electron）版の残り**。`src/app.ts`（`SysApp`）は**ウインドウが出て本編が動くところまで**実装済み（`getInfo`→Config→`inited`）。`[close]`／`[window]`も接続済み。残りは下記
-    - [ ] `[update_check]`の実処理（本家`SysApp.ts:306`。`_index.json`／`.yml`の取得・版比較・ダイアログ・ダウンロード・sha512検証）
   - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
@@ -69,7 +64,6 @@
 
 - [ ] 画像の**先読み**（本家`SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる。実機で要確認
 - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず）
-- [ ] 暗号化アセット（`sys.arg.crypto`／`sys.dec()`）。本家は`Loader`で復号してBlob URLへ差し替える。`[add_frame]`のHTMLとフレーム内画像も同じ仕組み
 - [ ] 【低優先度・技術的負債】`parsimmon`（README「UNMAINTAINED」明記、2021-12から更新停止）への依存を外す。使用箇所は`src/ts/ExprEval.ts`1ファイルのみで、優先順位クライミング（PREFIX/POSTFIX/BINARY_LEFT/BINARY_RIGHT）は既に自前実装済み。parsimmonが担っているのは正規表現マッチ・`alt`によるバックトラック・`lazy`による再帰・`seq`/`seqMap`の逐次合成という基礎部分のみで依存範囲が狭いため、他のパーサコンビネータ（parjs/ts-parsec等、これらも小規模で同種のリスクを抱える）へ乗り換えるより、howlerを外して自前Web Audio層にした`SndMng.ts`と同じ判断で**手書きのPratt parserに置き換えて依存自体を無くす**のが筋が良い。ただし現状動作に実害は無いので緊急対応は不要
 - [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
