@@ -1456,6 +1456,8 @@ var ee = { save: "game" }, T = class e {
 	"alpha",
 	"left",
 	"top",
+	"width",
+	"height",
 	"rotation",
 	"scale_x",
 	"scale_y",
@@ -2295,7 +2297,7 @@ var X = class {
 					});
 				}
 				let r = {};
-				if (i.visible !== void 0 && (r.visible = i.visible !== "false"), i.alpha !== void 0 && (r.alpha = e.#n("lay", "alpha", i.alpha)), i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (r.s_right = this.#r("lay", "left", i.s_right)) : (r.left = this.#r("lay", "left", i.right), r.align_x = "right") : (r.left = this.#r("lay", "left", i.center), r.align_x = "center") : r.left = this.#r("lay", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (r.s_bottom = this.#r("lay", "top", i.s_bottom)) : (r.top = this.#r("lay", "top", i.bottom), r.align_y = "bottom") : (r.top = this.#r("lay", "top", i.middle), r.align_y = "middle") : r.top = this.#r("lay", "top", i.top), i.rotation !== void 0 && (r.rotation = e.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (r.scale_x = e.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (r.scale_y = e.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (r.pivot_x = e.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (r.pivot_y = e.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (r.blendmode = f(i.blendmode)), i.b_color !== void 0 && i.back_clear !== "true" && (r.b_color = e.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (r.style = i.style), i.ffs !== void 0 && (r.ffs = i.ffs), i.noffs !== void 0 && (r.noffs = i.noffs), i.bura !== void 0 && (r.bura = i.bura !== "false"), i.kinsoku_sol !== void 0 && (r.kinsoku_sol = i.kinsoku_sol), i.kinsoku_eol !== void 0 && (r.kinsoku_eol = i.kinsoku_eol), i.kinsoku_dns !== void 0 && (r.kinsoku_dns = i.kinsoku_dns), i.kinsoku_bura !== void 0 && (r.kinsoku_bura = i.kinsoku_bura), k.setting(i), i.r_align !== void 0) {
+				if (i.visible !== void 0 && (r.visible = i.visible !== "false"), i.alpha !== void 0 && (r.alpha = e.#n("lay", "alpha", i.alpha)), i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (r.s_right = this.#r("lay", "left", i.s_right)) : (r.left = this.#r("lay", "left", i.right), r.align_x = "right") : (r.left = this.#r("lay", "left", i.center), r.align_x = "center") : r.left = this.#r("lay", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (r.s_bottom = this.#r("lay", "top", i.s_bottom)) : (r.top = this.#r("lay", "top", i.bottom), r.align_y = "bottom") : (r.top = this.#r("lay", "top", i.middle), r.align_y = "middle") : r.top = this.#r("lay", "top", i.top), i.width !== void 0 && (r.width = e.#n("lay", "width", i.width)), i.height !== void 0 && (r.height = e.#n("lay", "height", i.height)), i.rotation !== void 0 && (r.rotation = e.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (r.scale_x = e.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (r.scale_y = e.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (r.pivot_x = e.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (r.pivot_y = e.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (r.blendmode = f(i.blendmode)), i.b_color !== void 0 && i.back_clear !== "true" && (r.b_color = e.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (r.style = i.style), i.ffs !== void 0 && (r.ffs = i.ffs), i.noffs !== void 0 && (r.noffs = i.noffs), i.bura !== void 0 && (r.bura = i.bura !== "false"), i.kinsoku_sol !== void 0 && (r.kinsoku_sol = i.kinsoku_sol), i.kinsoku_eol !== void 0 && (r.kinsoku_eol = i.kinsoku_eol), i.kinsoku_dns !== void 0 && (r.kinsoku_dns = i.kinsoku_dns), i.kinsoku_bura !== void 0 && (r.kinsoku_bura = i.kinsoku_bura), k.setting(i), i.r_align !== void 0) {
 					if (!W.includes(i.r_align)) throw `[lay] r_alignの値が不正です：${i.r_align}`;
 					r.r_align = i.r_align;
 				}
@@ -3919,8 +3921,8 @@ var Ce = 999e3, we = class {
 					y: r,
 					left: n,
 					top: r,
-					width: +!!t,
-					height: +!!t
+					width: e.width ?? +!!t,
+					height: e.height ?? +!!t
 				};
 			}, r = {};
 			for (let i of e) r[i.nm] = {
@@ -4171,7 +4173,11 @@ var Ce = 999e3, we = class {
 	#Y = Object.create(null);
 	#X;
 	#Z(t) {
-		let n = this.$fncs.getLaySty(t.nm, t.page), { from: r, aTo: i, aPrp: a } = e.#$(t, (e) => n[e] ?? ne[e]);
+		let n = this.$fncs.getLaySty(t.nm, t.page), { from: r, aTo: i, aPrp: a } = e.#$(t, (e) => {
+			let t = n[e] ?? ne[e];
+			if (t === void 0) throw `[tsy] ${e} は [lay ${e}=…] で寸法を明示したレイヤにしか使えません`;
+			return t;
+		});
 		this.#ee(t, r, i, () => {
 			let e = {};
 			for (let t of a) Object.assign(e, { [t]: r[t] });

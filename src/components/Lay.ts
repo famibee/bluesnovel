@@ -45,6 +45,12 @@ export type T_LAY_STY = {
 	//	left/topとは排他（本家も else if で分岐する）
 	s_right?	: number;
 	s_bottom?	: number;
+	// レイヤの寸法（本家 GrpLayer.ts / TxtStage.ts の width/height）。**本家と違い独立して扱う**：
+	//	本家の画像レイヤはwidth単独指定だとheightに0が入り絵が縦潰れで消えるバグを持つ
+	//	（argChk_Numが未指定時に0を返すため）。bluesnovelは本家[button]と同じ「未指定は
+	//	自然サイズ維持」の形に揃える（ScriptEngine.ts #execTag 'lay' 参照）
+	width?		: number;
+	height?		: number;
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
@@ -65,7 +71,7 @@ export type T_LAY_STY = {
 export const BTN_DEF_W = 100;
 export const BTN_DEF_H = 30;
 
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
 
 export type T_LAY_IDX = T_LAY_STY & {
 	cls		: 'grp'|'txt';
@@ -89,6 +95,10 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 		sty.translate = `${tx} ${ty}`;
 	}
 	if (l.alpha !== undefined) sty.opacity = l.alpha;
+	// レイヤの寸法。**独立した2つのif**（片方だけの指定でも成立）。GrpLayerは箱の大きさとして、
+	//	TxtLayerは文字表示領域の大きさとして使う（styChild/styTxtのwidth既定=70%を上書きする）
+	if (l.width !== undefined) sty.width = `${String(l.width)}px`;
+	if (l.height !== undefined) sty.height = `${String(l.height)}px`;
 	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined
 	 || l.pivot_x !== undefined || l.pivot_y !== undefined) {
 		sty.transform = `rotate(${String(l.rotation ?? 0)}deg) scale(${String(l.scale_x ?? 1)}, ${String(l.scale_y ?? 1)})`;

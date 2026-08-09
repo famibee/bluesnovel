@@ -46,4 +46,10 @@
 [tsy layer=base name=tw_a time=400 top=300]
 [tsy layer=base2 name=tw_b time=200 left=100 chain=tw_a]
 [wait_tsy name=tw_b]
-つなげた[s]
+つなげた[p]
+
+; width/height。[lay width=/height=]で数値を明示したレイヤに限り動かせる
+[lay layer=base width=100 height=50]
+[tsy layer=base time=200 width=300 height=150]
+[wait_tsy layer=base]
+すんぽう[s]

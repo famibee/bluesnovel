@@ -87,6 +87,14 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		ve.muted = needClick2Play();
 	};
 
+	// [lay width=/height=]（本家 GrpLayer.ts:88-91 sp.width/height 相当）。div0（親）は
+	//	styLay()がpxで箱のサイズを決めるので、中身は**指定された軸だけ**100%を当てて箱に合わせる
+	//	（本家pixiのSprite.width/heightと同じくアスペクト比は無視。片方だけ指定時は他方auto＝
+	//	自然サイズのまま、というTxtLayer.tsx:502-504の待ちマーク画像と同じパターン）。
+	//	差分絵（aFace）は対象外（本家もcsvの先頭スプライトにしか適用しないため常に自然サイズ）
+	const styFit: CSSProperties = {display: 'block',
+		...('width' in sty ? {width: '100%'} : {}), ...('height' in sty ? {height: '100%'} : {})};
+
 	const div0 = useRef<HTMLDivElement>(null);
 	const evt = (style: CSSStyleDeclaration, transform: string)=> {
 		noticeDrag();
@@ -98,8 +106,8 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 				（Reactがページ全体再ダウンロードの可能性を警告するため）。
 				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
 			{sheet && <div className={aniSpriteClass(sheet)}/>}
-			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={{display: 'block'}}/>}
-			{src && ! isSheet && ! isMovie && <img src={src} style={{display: 'block'}}/>}
+			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}/>}
+			{src && ! isSheet && ! isMovie && <img src={src} style={styFit}/>}
 			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
 				if (! faceSrc) return null;
 				return <img

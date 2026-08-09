@@ -60,6 +60,13 @@ export type T_LAY_STY_ARG = {
 	align_y?	: 'middle' | 'bottom';
 	s_right?	: number;	// ステージ右端からの距離（本家 s_right）。leftとは排他
 	s_bottom?	: number;
+	// レイヤの寸法（本家 GrpLayer.ts:88-91 / TxtStage.ts:219-220）。**本家と違い独立して扱う**：
+	//	本家の画像レイヤは`'width' in hArg || 'height' in hArg`の単一ORブロックで両方に
+	//	argChk_Num(hArg,'height',0)相当を代入するため、width単独指定だとheightに0が入り絵が
+	//	縦潰れで消える（pixiのSprite.set heightがscale.y=0にするため）。bluesnovelは本家が
+	//	[button]（Button.ts:287-296）で採っている「独立if＋未指定は自然サイズ維持」の形に揃える
+	width?		: number;
+	height?		: number;
 	rotation?	: number;
 	scale_x?	: number;
 	scale_y?	: number;
@@ -1139,6 +1146,11 @@ export class ScriptEngine {
 				sty.align_y = 'bottom';
 			}
 			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
+			// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
+			//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
+			//	**独立した2つのif**：片方だけの指定でも成立させる（本家の潰れバグは踏襲しない）
+			if (args.width !== undefined) sty.width = ScriptEngine.#argNum('lay', 'width', args.width);
+			if (args.height !== undefined) sty.height = ScriptEngine.#argNum('lay', 'height', args.height);
 			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
 			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
 			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);

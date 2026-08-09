@@ -24,7 +24,12 @@
 [add_face name=face_m fn=face_a dx=1 dy=2 blendmode=multiply]
 [lay layer=base fn=bg face=face_m blendmode=screen]
 [button layer=mes page=fore text=ぼたん label=*here blendmode=add]
-ごうせい[s]
+ごうせい[p]
+
+; 画像の拡縮（[lay width=/height=]）。bg.pngの自然サイズ(40x30)を80x60へ拡大する。
+;	fn再指定でaFaceは空配列に戻る（差分絵は消える）
+[lay layer=base fn=bg width=80 height=60]
+かくだい[s]
 
 *here
 とんだ[s]

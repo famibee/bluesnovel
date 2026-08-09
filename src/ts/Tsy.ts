@@ -13,12 +13,15 @@
 
 
 // トゥイーンできるレイヤ属性。本家 CmnTween.aLayerPrpNm はpixiのプロパティ名で
-//	x/y/width/height/pivot_x/pivot_y/alpha/rotation/scale_x/scale_y だが、
-//	bluesnovelのレイヤ属性はCSS寄りのleft/topで、width/heightはまだ持っていない。
+//	x/y/width/height/pivot_x/pivot_y/alpha/rotation/scale_x/scale_y。
 //	x/yはleft/topの別名として受ける（本家 ext_fg.sn が[tsy]にleft/topと書き、
 //	ext_fg2.sn がx/yと書いていて揺れているため。**本家では[tsy left=…]は
-//	aLayerPrpNmに無いので黙って無視される**が、こちらは両方効くようにした）
-export const A_TSY_PRP = ['alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y'] as const;
+//	aLayerPrpNmに無いので黙って無視される**が、こちらは両方効くようにした）。
+//	width/heightは[lay width=/height=]で数値を持たせたレイヤに限り動かせる
+//	（CSSの既定=auto＝画像の自然サイズ／文字レイヤの70%には対応する現在値が無いため。
+//	H_TSY_DEFに無いキーはScriptMng.#beginTsy()が「[lay width=…]で寸法を明示したレイヤにしか
+//	使えない」という文言で例外にする）
+export const A_TSY_PRP = ['alpha', 'left', 'top', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y'] as const;
 export type T_TSY_PRP = typeof A_TSY_PRP[number];
 
 // [tsy_frame]（HTMLフレームのトゥイーン）が動かせる属性。本家 FrameMng.ts:373 #tsy_frame() が読む分。
@@ -30,8 +33,10 @@ export type T_TSY_FRM_PRP = typeof A_TSY_FRM_PRP[number];
 //	持っているので、最終的な数値を決めるのはScriptMng側（＝ここでは相対のままにしておく）
 export type T_TSY_TO = {[prp: string]: {v: number; rel: boolean} | undefined};
 
-// 属性値が未指定のときに現在値として使う既定（＝T_LAY_STYが未指定＝各レイヤのCSS既定の値）
-export const H_TSY_DEF: {[K in T_TSY_PRP]: number} = {
+// 属性値が未指定のときに現在値として使う既定（＝T_LAY_STYが未指定＝各レイヤのCSS既定の値）。
+//	width/heightはCSSの既定（auto）に対応する数値が無いため、キーを持たせない
+//	（未指定＝そのレイヤに[lay width=/height=]の明示が無い、とScriptMng側が区別する）
+export const H_TSY_DEF: {[K in T_TSY_PRP]?: number} = {
 	alpha: 1, left: 0, top: 0, rotation: 0, scale_x: 1, scale_y: 1, pivot_x: 0, pivot_y: 0,
 };
 

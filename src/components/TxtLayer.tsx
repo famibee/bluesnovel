@@ -134,6 +134,27 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
 	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
 
+	// b_pic（文字レイヤ背後の枠画像）の自動サイズ調整（本家 TxtLayer.ts:396-414
+	//	setMySize(sp.width, sp.height) 相当）。**[lay width=/height=]の明示があればそちらが勝つ**
+	//	（本家は#txs.lay()の後に#drawBack()が走るのでb_picが勝つが、順序に同じb_pic再指定だと
+	//	setMySize()が呼ばれず明示指定が生き残るという罠がある。bluesnovelはBtnLayer.tsxの
+	//	btnBoxSize()＝「明示(o.width)が絵の実寸(natSrc?.w)に優先」と同じ形に揃え、順序依存を持ち込まない）。
+	//	実測はBtnLayer.tsx:245-258のnatBPicと同じ流儀（new Image + onload + aliveフラグでキャンセル）
+	const [natBPic, setNatBPic] = useState<{w: number; h: number} | null>(null);
+	useEffect(()=> {
+		if (! b_src) {setNatBPic(null); return}
+
+		let alive = true;
+		const img = new Image;
+		img.onload = ()=> {if (alive) setNatBPic({w: img.naturalWidth, h: img.naturalHeight})};
+		img.src = b_src;
+		return ()=> {alive = false};
+	}, [b_src]);
+	const styBox: CSSProperties = natBPic && (! ('width' in sty) || ! ('height' in sty))
+		? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
+			...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
+		: sty;
+
 	// 1文字ずつの文字送り演出（GSAP stagger）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
 	//	  前回からの差分（新規追加分）だけをspan化してアニメする
@@ -494,7 +515,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		style.transform = transform;
 	}
 	return <>
-		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={sty}>
+		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={styBox}>
 			<span ref={charsRef}></span>
 			{showWait && <span css={styWaitMark} style={styWaitPos}>{
 				// プロジェクトに`breakline`/`breakpage`があればそれを、無ければ試作の絵文字を出す

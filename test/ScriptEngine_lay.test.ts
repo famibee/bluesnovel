@@ -45,6 +45,33 @@ it('lay_leftTop', ()=> {
 	expect(styOf('[lay layer=base left=100 top=-20]')).toEqual({left: 100, top: -20});
 });
 
+it('lay_widthHeight', ()=> {
+	expect(styOf('[lay layer=base width=320 height=240]')).toEqual({width: 320, height: 240});
+});
+
+it('lay_widthOnly_doesNotZeroHeight', ()=> {
+	// 本家GrpLayer.ts:88-91の「width単独指定でheightに0が入り縦潰れする」バグは踏襲しない。
+	//	独立したif（ScriptEngine.ts）なので、width単独ならheightキー自体が無い
+	const sty = styOf('[lay layer=base width=320]');
+	expect(sty).toEqual({width: 320});
+	expect(sty?.height).toBeUndefined();
+});
+
+it('lay_heightOnly_doesNotZeroWidth', ()=> {
+	const sty = styOf('[lay layer=base height=240]');
+	expect(sty).toEqual({height: 240});
+	expect(sty?.width).toBeUndefined();
+});
+
+it('lay_widthHeight_notScreenRatio', ()=> {
+	// left/topと違い#argPos()を通さない：0.0〜1.0を画面比率として拡大しない（素のargChk_Num）
+	expect(styOf('[lay layer=base width=0.5 height=0.25]')).toEqual({width: 0.5, height: 0.25});
+});
+
+it('lay_widthHeight_throwsOnNonNumeric', ()=> {
+	expect(()=> styOf('[lay layer=base width=abc]')).toThrow();
+});
+
 it('lay_rotationIsDegrees', ()=> {
 	// 本家もflash由来で「度」（pixiのradianではない）
 	expect(styOf('[lay layer=base rotation=90]')).toEqual({rotation: 90});

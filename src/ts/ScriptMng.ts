@@ -178,8 +178,9 @@ export class ScriptMng {
 		//	  `[add_lay layer=0 cond=!const.sn.lay.0]`の重複防止や`*max_lay_lp`が効く。
 		//	・詳細：`const.sn.lay[N].<fore|back>.visible/.alpha/.x/.y/.width`。立ち絵[fg2]のGCが使う。
 		//	  visible/alpha/x/y は T_LAY_STY の実値（本家の座標名は x/y。left/top の別名で両方返す）。
-		//	  **width/height はストアに実寸が無いので「表示物があるか（grp=画像src有り／txt=文字かボタン有り）」を
-		//	  1/0 で代用**（GCは width>0 判定に使う）
+		//	  **width/heightは[lay width=/height=]で明示していればその値。未指定はストアに実寸が
+		//	  無いので「表示物があるか（grp=画像src有り／txt=文字かボタン有り）」を1/0で代用**
+		//	  （GCは width>0 判定に使う）
 		engine.defBuiltin('const.sn.lay', ()=> {
 			const {fore, back} = this.$fncs.getPages();
 			const attrs = (l: (typeof fore)[number] | undefined)=> {
@@ -190,8 +191,8 @@ export class ScriptMng {
 					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）
 					alpha	: l.alpha ?? 1,
 					x, y, left: x, top: y,	// 本家は x/y。left/top の別名としても引けるように両方持たせる
-					width	: has ? 1 : 0,
-					height	: has ? 1 : 0,
+					width	: l.width ?? (has ? 1 : 0),
+					height	: l.height ?? (has ? 1 : 0),
 				};
 			};
 			const hLay: {[nm: string]: {fore: unknown; back: unknown}} = {};
@@ -648,8 +649,15 @@ export class ScriptMng {
 		const cur = this.$fncs.getLaySty(act.nm, act.page);
 		// GSAPに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
 		//	未指定属性の開始値は各レイヤのCSS既定（H_TSY_DEF）。
-		//	エンジン側は現在値を知らないので相対指定（left='=100'）のまま渡してくる
-		const {from, aTo, aPrp} = ScriptMng.#tsyVals(act, k=> cur[k as T_TSY_PRP] ?? H_TSY_DEF[k as T_TSY_PRP]);
+		//	エンジン側は現在値を知らないので相対指定（left='=100'）のまま渡してくる。
+		//	width/heightはH_TSY_DEFにキーが無い（CSSの既定=autoに対応する数値が無いため）。
+		//	[lay width=/height=]で数値を明示していないレイヤを動かそうとしたら、0から伸びる
+		//	驚きの挙動にせずその場で例外にする（Tsy.ts参照）
+		const {from, aTo, aPrp} = ScriptMng.#tsyVals(act, k=> {
+			const v = cur[k as T_TSY_PRP] ?? H_TSY_DEF[k as T_TSY_PRP];
+			if (v === undefined) throw `[tsy] ${k} は [lay ${k}=…] で寸法を明示したレイヤにしか使えません`;
+			return v;
+		});
 		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
 		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
 		//	structuredClone（addLayer/[trans]）もJSON化（しおり）も落ちる。

@@ -89,6 +89,17 @@ it('clearLay_allLayers', ()=> {
 	expect(fore[0]!.visible).toBe(false);
 });
 
+it('clearLay_dropsWidthHeight', ()=> {
+	// [lay width=/height=]もA_LAY_STY_KEY経由でclearLayが消す対象（visible以外の見た目の一部）
+	S().chgLay({nm: 'a', page: 'fore', sty: {width: 320, height: 240}});
+
+	S().clearLay({aLayNm: ['a'], page: 'fore'});
+
+	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e?.width).toBeUndefined();
+	expect(e?.height).toBeUndefined();
+});
+
 it('clearLay_someLayers', ()=> {
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: []});
 	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', src: '/pc.png', isSheet: false, isMovie: false, aFace: []});

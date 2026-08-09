@@ -126,3 +126,22 @@ test('[tsy chain=…]は繋いだ元の終了まで動き出さない', async ({
 	expect(await layNum(page, 'base', 'top')).toBe(300);
 	expect(await layNum(page, 'base2', 'left')).toBe(100);
 });
+
+test('[tsy width=/height=]は[lay width=/height=]で寸法を明示したレイヤを動かせる', async ({page})=> {
+	await toPathScene(page);	// 'うちきり'まで進める
+
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('けいろ');
+	await waitIdle(page);
+
+	// chain=（tw_a→tw_b）はwait_tsy終了で自動的に次へ進む。追加のクリックは要らない
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('つなげた');
+	await waitIdle(page);
+
+	// [lay width=100 height=50] → [tsy width=300 height=150]
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('すんぽう');
+	expect(await layNum(page, 'base', 'width')).toBe(300);
+	expect(await layNum(page, 'base', 'height')).toBe(150);
+});

@@ -58,4 +58,26 @@
 [lay layer=mes b_color=0x0000FF b_alpha=1 b_alpha_isfixed=true]
 はいけい[p]
 [lay layer=mes back_clear=true]
-けした[s]
+けした[p]
+
+; 画像レイヤの寸法（[lay width=/height=]）。div0の箱サイズとして出る
+;	（画像そのものの拡縮はアセットが要るのでpic.e2e.ts側で見る）
+[lay layer=base width=120 height=90]
+がぞうわく[p]
+
+; 片方だけの指定なら他方はheightキー自体を持たない＝自然サイズ（auto）のまま
+;	（本家GrpLayer.ts:88-91の潰れバグは踏襲しない）。既存レイヤは現在値を維持するだけなので
+;	検証にならない → 新規レイヤで確かめる
+[add_lay layer=base3 class=grp]
+[lay layer=base3 width=200]
+はばだけ[p]
+
+; b_pic（文字レイヤ背後の枠画像）の自動サイズ調整（本家 TxtLayer.ts:396-414 setMySize()相当）。
+;	[lay width=/height=]の明示が無ければ、枠画像waku.pngの自然サイズ(80x40)がそのまま箱になる
+;	（mesは[clear_lay]前のvisible=falseがまだ残っているので、ここで戻す。本家もclearLayはvisible不触）
+[lay layer=mes visible=true b_pic=waku]
+わくじどう[p]
+
+; [lay width=/height=]の明示があればそちらが勝つ（本家の順序依存の罠は持ち込まない）
+[lay layer=mes width=200 height=100]
+わくめいじ[s]

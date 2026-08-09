@@ -72,3 +72,18 @@ test('blendmodeは[lay]・[add_face]・[button]のどれもmix-blend-modeにな�
 	// [button blendmode=add]はCSSに同名が無いのでplus-lighter（加算合成）
 	expect(await mbm(`${SEL_FORE} span[data-lay="mes"] span[tabindex]`)).toBe('plus-lighter');
 });
+
+test('[lay width=/height=]で画像の表示サイズが拡縮される（本家pixiのSprite.width/height相当）', async ({page})=> {
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('かくだい');
+
+	const a = await imgs(page);
+	expect(a).toHaveLength(1);
+	expect(a[0]!.w).toBe(40);	// naturalWidth/Heightは元のまま（拡縮は表示サイズだけ）
+	expect(a[0]!.h).toBe(30);
+
+	const box = await page.$eval(`${SEL_FORE} div[data-lay="base"] img`,
+		el=> ({w: getComputedStyle(el).width, h: getComputedStyle(el).height}));
+	expect(box.w).toBe('80px');
+	expect(box.h).toBe('60px');
+});

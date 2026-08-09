@@ -391,6 +391,53 @@
     `todo.md`に残す
   - `test/e2e/ruby.e2e.ts`に1件追加（`marginBlockStart`が実測`<rt>`高さと一致することを確認）
 
+- [x] **`[lay width=/height=]`を実装、todo.mdの棚卸し**（2026-08-10）
+  - `todo.md`「タグ・変数の残り」の先頭2項目（`[lay b_pic=…]`の残り＝枠画像に合わせた文字表示領域の
+    自動サイズ調整、トゥイーンのwidth/height）が揃って`[lay width=/height=]`自体の未実装を前提に
+    ブロックされていたので、まずここへ着手した。組み込み変数`const.sn.lay[N].width/.height`が実寸
+    でなく1/0で代用していた件も同時に解けた
+  - **本家調査で、`width`単独指定は本家自身にバグがあると判明**：`GrpLayer.ts:88-91`が
+    `if ('width' in hArg || 'height' in hArg)`という単一ORブロック内で両方に
+    `argChk_Num(hArg, 'height', 0)`相当を代入するため、`height`未指定だと`0`が入り、pixiの
+    `Sprite.set height`が`scale.y = 0`にして絵が縦潰れで消える（`CmnLib.ts:81-86`の
+    `argChk_Num`は未指定時に`0`を返しつつ`hArg`にも書き込む）。一方`TxtStage.ts:219-220`
+    （文字レイヤ側）は`'width' in hArg`／`'height' in hArg`を独立に見ており、この潰れは
+    画像レイヤだけの現象。**bluesnovelは本家のこのバグを移植せず**、本家自身が`[button]`
+    （`Button.ts:287-296`）で採っている「独立if＋未指定は自然サイズ維持」の形に揃えた
+  - `ScriptEngine.ts`の`T_LAY_STY_ARG`・`Lay.ts`の`T_LAY_STY`/`A_LAY_STY_KEY`へ`width`/`height`を追加。
+    `#argPos()`（0.0〜1.0を画面比率に変換する位置属性用の変換）は通さない：本家でも比率変換は
+    left/center/right/s_right/top/…だけの仕様で、width/heightは素の`argChk_Num`のため
+  - `GrpLayer.tsx`：`sty.width`/`sty.height`が指定された**軸だけ**`<img>`/`<video>`へ100%を当てて
+    箱（div0）に合わせる。片方だけの指定なら他方はCSSの`auto`（自然サイズ）のまま。差分絵（`aFace`）
+    は対象外（本家もcsvの先頭スプライトにしか適用しないため常に自然サイズ）
+  - **`b_pic`の自動サイズ調整**（本家`TxtLayer.ts:396-414 setMySize()`相当）：`TxtLayer.tsx`が
+    `BtnLayer.tsx`の`natBPic`と同じ流儀（`new Image`+`onload`+aliveフラグ）で枠画像の自然サイズを
+    実測し、`[lay width=/height=]`が無い軸だけ箱のサイズに反映する。**明示指定が常に勝つ**よう
+    揃えた：本家は`#txs.lay()`の後に`#drawBack()`が走るので同じ`b_pic`を再指定すると`setMySize()`
+    が呼ばれず明示指定が生き残るという順序依存の罠があるが、`[button]`の`btnBoxSize()`
+    （`o.width ?? natSrc?.w`）と同じ形にしてこの罠を持ち込まなかった
+  - **`[tsy width=/height=]`**：`Tsy.ts`の`A_TSY_PRP`へ追加。CSSの既定（`auto`）に対応する数値が
+    無いため、`H_TSY_DEF`の型を`{[K in T_TSY_PRP]?: number}`に変え、width/heightはキーを持たせない。
+    `ScriptMng.#beginTsy()`で`cur[k] ?? H_TSY_DEF[k]`が`undefined`なら
+    「`[lay width=…]`で寸法を明示したレイヤにしか使えません」と例外にする（0から伸びる驚きの
+    挙動より、書き間違いをその場で知らせる既存の流儀に合わせた）
+  - `ScriptMng.ts`の`const.sn.lay[N].<fore|back>.width/.height`：`[lay width=/height=]`で明示した
+    レイヤはその値を返し、未指定レイヤは従来どおり表示物の有無を1/0で代用
+  - テスト：`test/ScriptEngine_lay.test.ts`に6件、`test/store_lay.test.ts`に1件（`[clear_lay]`が
+    width/heightも消すこと）、`test/argdef_parity.test.ts`の`A_CSS_DEF`へ理由付きで追加
+    （本家の既定`0`はそのまま採らないことを明記）。E2Eは`test/e2e/lay.e2e.ts`
+    （`prj_lay`に`waku.png`を追加。箱サイズ・単独指定で潰れないこと・b_pic自動サイズ・明示指定が
+    勝つことの4件）、`test/e2e/pic.e2e.ts`（`prj_pic`のbg.pngを実際に拡縮。naturalサイズは
+    変わらないことも確認）、`test/e2e/tsy.e2e.ts`（`prj_tsy`に`[lay width=]`済みレイヤを動かす
+    シーンを追加）。`test/e2e/snPage.ts`に`grpBoxStyle`/`imgBoxStyle`/`hasInlineStyle`
+    （インラインstyleの有無で「そもそも書いていない」ことを判定。算出値だと未指定でも
+    `0px`等が返ってしまい判定できないため）を新設、`layNum`の対象に`width`/`height`を追加。
+    単体テスト1638件、E2E全211件（フルセットで回帰なし確認済み）
+  - `docs/tag.html`：`[lay]`共通属性表へ`width`/`height`の行を追加し、bluesnovel欄に対応した属性・
+    本家との相違（潰さない）・`b_pic`自動サイズを追記。`[tsy]`欄の「未対応：width/height」を、
+    対応と制約（`[lay width=]`を先に書いたレイヤ限定）の記述へ差し替え
+  - `todo.md`から該当2項目を削除、組み込み変数の項目を現状に合わせて更新
+
 - [ ]
 
 

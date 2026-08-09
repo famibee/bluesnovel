@@ -12,7 +12,8 @@
       "Bash(python3 *)",
       "Bash(bun x *)",
       "Bash(npx playwright *)",
-      "Bash(bunx vite *)"
+      "Bash(bunx vite *)",
+      "Bash(grep -n \"^- \\\\[ \\\\]$\" \"/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/CHANGELOG.md\")"
     ],
     "additionalDirectories": [
       "/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/src/components",

@@ -10,7 +10,7 @@
 //	ここで見るのは「そのアクションが最終的に算出CSSへ落ちているか」だけ。
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, snap, txtBoxStyle} from './snPage';
+import {gotoSn, grpBoxStyle, hasInlineStyle, mesStr, pressKey, snap, txtBoxStyle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'lay')});
 
@@ -184,4 +184,39 @@ test('[er]は変形まわりだけを既定へ戻し、位置と見た目には�
 	// 算出値でも変形が落ちている（[lay]が書いた分のインラインstyleごと消える）
 	expect(await txtBoxStyle(page, 'opacity')).toBe('1');
 	expect(await txtBoxStyle(page, 'mix-blend-mode')).toBe('normal');
+});
+
+test('[lay width=/height=]が画像レイヤの箱サイズ（div0のCSS width/height）になる', async ({page})=> {
+	for (let i = 0; i < 14; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('がぞうわく');
+
+	expect(await grpBoxStyle(page, 'width', 'base')).toBe('120px');
+	expect(await grpBoxStyle(page, 'height', 'base')).toBe('90px');
+});
+
+test('[lay width=]単独指定は本家と違い他方を潰さない（heightキー自体を持たない）', async ({page})=> {
+	for (let i = 0; i < 15; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('はばだけ');
+
+	// base3は新規レイヤ（widthだけ指定）。本家GrpLayer.ts:88-91ならheightに0が入り
+	//	縦潰れで消えるが、bluesnovelはwidth/heightを独立して扱うのでheightは未指定のまま
+	expect(await grpBoxStyle(page, 'width', 'base3')).toBe('200px');
+	expect(await hasInlineStyle(page, 'base3', 'height')).toBe(false);
+});
+
+test('[lay b_pic=…]は文字表示領域を枠画像の自然サイズへ自動調整する（[lay width=/height=]が無ければ）', async ({page})=> {
+	for (let i = 0; i < 16; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('わくじどう');
+
+	// waku.pngの自然サイズは80x40（prj_btnpicと共有）
+	await expect.poll(async ()=> txtBoxStyle(page, 'width', 'mes'), {timeout: 5_000}).toBe('80px');
+	expect(await txtBoxStyle(page, 'height', 'mes')).toBe('40px');
+});
+
+test('[lay width=/height=]の明示はb_picの自動サイズより勝つ', async ({page})=> {
+	for (let i = 0; i < 17; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('わくめいじ');
+
+	expect(await txtBoxStyle(page, 'width', 'mes')).toBe('200px');
+	expect(await txtBoxStyle(page, 'height', 'mes')).toBe('100px');
 });

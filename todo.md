@@ -17,8 +17,7 @@
 
 ## タグ・変数の残り
 
-- [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
-- [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
+- [ ] **トゥイーンの残り**：`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
   - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
         ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
@@ -30,7 +29,7 @@
   - [ ] 【現状不使用・優先順位低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **組み込み変数の残り**
-  - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
+  - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
   - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`const.sn.nativeWindow.*`が残り。`sn.sound.*`基準音量・`global_volume`・`sn.sound.BGM.vol_mul_talking`・`sn.sound.movie_volume`・`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
 - [ ] `[dump_script]`（本家はVSCode拡張との連携）

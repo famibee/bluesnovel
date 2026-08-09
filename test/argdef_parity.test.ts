@@ -70,6 +70,12 @@ const A_CSS_DEF: {[attr: string]: string} = {
 	scale_x	: 'transformを出さない＝等倍=1',
 	scale_y	: 'transformを出さない＝等倍=1',
 	rotate	: '[add_frame]/[frame]。FrameMngが既定を持つ（rotate:0）',
+	// 本家の既定はargChk_Num(hArg,'width'/'height',0)の**0**（GrpLayer.ts:89-90）だが、
+	//	そのまま移植すると単独指定でもう片方が0＝画像が潰れて消えるバグを踏襲することになる。
+	//	bluesnovelは意図的に本家と違え、CSSの既定=auto（画像の自然サイズ／文字レイヤCSSの70%）に
+	//	委ねる（[button]が既に採っている「独立if＋未指定は自然サイズ維持」と同じ形。ScriptEngine.ts参照）
+	width	: 'CSSのwidth既定=auto（画像は自然サイズ、文字レイヤはstyTxtの70%）。本家の既定0は採らない',
+	height	: 'CSSのheight既定=auto。同上',
 };
 
 // **本家に既定はあるが、bluesnovelでは別の場所・別の形で持っているもの**。

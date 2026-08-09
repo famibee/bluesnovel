@@ -202,7 +202,7 @@ export async function waitTransDone(page: Page) {
 
 // [tsy]（トゥイーン）で動くレイヤ属性を1つ読む。演出中の途中経過も見たいので、
 //	snap()のようにページ全体を取らず、必要な1値だけを即座に読む
-export async function layNum(page: Page, nm: string, prop: 'alpha'|'left'|'top'|'rotation'|'scale_x'|'scale_y'): Promise<number | undefined> {
+export async function layNum(page: Page, nm: string, prop: 'alpha'|'left'|'top'|'width'|'height'|'rotation'|'scale_x'|'scale_y'): Promise<number | undefined> {
 	return page.evaluate(([nm, prop])=> {
 		const s = (globalThis as any).__sn.store.getState();
 		return s.aPage[s.foreIdx].find((l: any)=> l.nm === nm)?.[prop!] as number | undefined;
@@ -230,6 +230,35 @@ export async function txtBoxStyle(page: Page, prop: string, nm = 'mes'): Promise
 		const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${nm!}"]`);
 		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
 	}, [prop, nm]);
+}
+
+// GrpLayer（画像レイヤ）の箱（div0）の算出スタイル。[lay width=/height=]がdiv0のCSS width/height
+//	として出ているかを見る（中の<img>側の拡縮はimgBoxStyle参照）
+export async function grpBoxStyle(page: Page, prop: string, nm: string): Promise<string> {
+	return page.evaluate(([p, nm])=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] div[data-lay="${nm!}"]`);
+		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
+	}, [prop, nm]);
+}
+
+// GrpLayer内の<img>の算出スタイル。[lay width=/height=]が指定された軸だけ100%になり、
+//	div0の実サイズに合わせて拡縮しているかを見る
+export async function imgBoxStyle(page: Page, prop: string, nm: string): Promise<string> {
+	return page.evaluate(([p, nm])=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] div[data-lay="${nm!}"] img`);
+		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
+	}, [prop, nm]);
+}
+
+// [lay]である属性を**書いたかどうか**を、算出値でなくインラインstyleの有無で見る。
+//	未指定の属性でもgetComputedStyleは常に何らかの値（0px等）を返してしまい「そもそも
+//	書いていない」ことを判定できないため（[lay width=]単独指定でheightキー自体が
+//	出ないこと＝本家の潰れバグを踏襲していないこと、の確認に使う）
+export async function hasInlineStyle(page: Page, nm: string, prop: string): Promise<boolean> {
+	return page.evaluate(([nm, prop])=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] [data-lay="${nm!}"]`) as HTMLElement | null;
+		return !! el && el.style.getPropertyValue(prop!) !== '';
+	}, [nm, prop]);
 }
 
 // 表・裏それぞれのページコンテナの見え方（[trans]のクロスフェード検証用）。

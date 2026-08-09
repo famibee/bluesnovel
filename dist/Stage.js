@@ -9853,12 +9853,16 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 	}, [a, o]);
 	let h = (e) => {
 		e && (e.volume = l(), e.muted = d());
-	}, g = (0, z.useRef)(null), _ = (e, t) => {
+	}, g = {
+		display: "block",
+		..."width" in n ? { width: "100%" } : {},
+		..."height" in n ? { height: "100%" } : {}
+	}, _ = (0, z.useRef)(null), v = (e, t) => {
 		u(), e.transform = t;
 	};
 	return /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("div", {
 		css: e,
-		ref: g,
+		ref: _,
 		"data-lay": r,
 		style: n,
 		onMouseDown: (e) => f(e),
@@ -9870,11 +9874,11 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 				autoPlay: !0,
 				playsInline: !0,
 				"data-fn": i,
-				style: { display: "block" }
+				style: g
 			}),
 			a && !o && !s && /* @__PURE__ */ j("img", {
 				src: a,
-				style: { display: "block" }
+				style: g
 			}),
 			c.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ j("img", {
 				src: t,
@@ -9887,24 +9891,24 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 			}, `${e}_${String(a)}`) : null)
 		]
 	}), t && /* @__PURE__ */ j(au, {
-		target: g,
+		target: _,
 		draggable: !0,
 		throttleDrag: 1,
-		onDrag: ({ target: { style: e }, transform: t }) => _(e, t),
+		onDrag: ({ target: { style: e }, transform: t }) => v(e, t),
 		resizable: !0,
 		keepRatio: !0,
 		onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-			_(e, r), e.width = `${t}px`, e.height = `${n}px`;
+			v(e, r), e.width = `${t}px`, e.height = `${n}px`;
 		},
 		rotatable: !0,
 		throttleRotate: 0,
 		startDragRotate: 0,
 		throttleDragRotate: 0,
 		rotationPosition: "top",
-		onRotate: ({ target: { style: e }, drag: { transform: t } }) => _(e, t),
+		onRotate: ({ target: { style: e }, drag: { transform: t } }) => v(e, t),
 		originDraggable: !0,
 		onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-			_(e, n), e.transformOrigin = t;
+			v(e, n), e.transformOrigin = t;
 		}
 	})] });
 }
@@ -10184,13 +10188,33 @@ var xu = {
 	rotation: 0
 };
 function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, str: a, aCh: o, ffs: s, noffs: l, bura: d, kinsoku_sol: f, kinsoku_eol: h, kinsoku_dns: _, kinsoku_bura: v, r_align: y, b_color: b, b_alpha: x, b_alpha_isfixed: S, b_src: C, styTxt: T, enabled: E, aBtn: O, in_style: k, onActivate: A, onNavigate: M, onSe: N }) {
-	let P = p((e) => e.isReadBack), L = p((e) => e.styPaging), ee = p((e) => e.isTyping), te = p((e) => e.setIsTyping), B = p((e) => e.skipReq), V = p((e) => e.skipping), H = p((e) => e.wait), ne = p((e) => e.hChIn), U = p((e) => e.chWait), W = p((e) => e.autowc), re = (0, z.useRef)(null), ie = (0, z.useRef)(null), ae = (e) => {
+	let P = p((e) => e.isReadBack), L = p((e) => e.styPaging), ee = p((e) => e.isTyping), te = p((e) => e.setIsTyping), B = p((e) => e.skipReq), V = p((e) => e.skipping), H = p((e) => e.wait), ne = p((e) => e.hChIn), U = p((e) => e.chWait), W = p((e) => e.autowc), [re, ie] = (0, z.useState)(null);
+	(0, z.useEffect)(() => {
+		if (!C) {
+			ie(null);
+			return;
+		}
+		let e = !0, t = new Image();
+		return t.onload = () => {
+			e && ie({
+				w: t.naturalWidth,
+				h: t.naturalHeight
+			});
+		}, t.src = C, () => {
+			e = !1;
+		};
+	}, [C]);
+	let ae = re && (!("width" in n) || !("height" in n)) ? {
+		...n,
+		..."width" in n ? {} : { width: `${String(re.w)}px` },
+		..."height" in n ? {} : { height: `${String(re.h)}px` }
+	} : n, oe = (0, z.useRef)(null), se = (0, z.useRef)(null), ce = (e) => {
 		if (e.url) {
 			M(e.url);
 			return;
 		}
 		A(e.label, e.call, e.fn, e.arg);
-	}, oe = (0, z.useRef)([]), se = (0, z.useRef)([]), ce = (0, z.useRef)(null), le = (0, z.useCallback)((e) => s ? RegExp(`[　${l ?? ""}]`).test(e) ? "" : s : "", [s, l]), ue = (0, z.useMemo)(() => new m({
+	}, le = (0, z.useRef)([]), ue = (0, z.useRef)([]), de = (0, z.useRef)(null), fe = (0, z.useCallback)((e) => s ? RegExp(`[　${l ?? ""}]`).test(e) ? "" : s : "", [s, l]), pe = (0, z.useMemo)(() => new m({
 		sol: f,
 		eol: h,
 		dns: _,
@@ -10200,29 +10224,29 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		h,
 		_,
 		v
-	]), de = () => !!re.current && globalThis.getComputedStyle(re.current).writingMode.startsWith("vertical");
+	]), me = () => !!oe.current && globalThis.getComputedStyle(oe.current).writingMode.startsWith("vertical");
 	(0, z.useLayoutEffect)(() => {
-		let e = ie.current;
+		let e = se.current;
 		if (!e) return;
-		ce.current?.kill();
-		let t = se.current, n = Math.min(t.length, o.length), r = 0;
+		de.current?.kill();
+		let t = ue.current, n = Math.min(t.length, o.length), r = 0;
 		for (; r < n && t[r].c === o[r].c && t[r].r === o[r].r && t[r].s === o[r].s && t[r].rs === o[r].rs;) ++r;
-		r < n && (oe.current = [], se.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
-		let i = oe.current, a = Math.min(o.length, i.length);
+		r < n && (le.current = [], ue.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
+		let i = le.current, a = Math.min(o.length, i.length);
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < a;) e.appendChild(i[e.childNodes.length]);
 		if (a > 0 && R.set(i.slice(0, a), xu), o.length <= i.length) {
-			wu(e, i, se.current, ue, d ?? !1, de()), te(!1);
+			wu(e, i, ue.current, pe, d ?? !1, me()), te(!1);
 			return;
 		}
 		let s = o.slice(i.length), l = document.createDocumentFragment(), u = s.map((e) => {
 			let t = document.createElement("span");
-			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, y, ae, le, N)), l.appendChild(t), t;
+			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, y, ce, fe, N)), l.appendChild(t), t;
 		});
-		if (se.current = [...se.current, ...s], i.push(...u), e.appendChild(l), u.forEach((e) => {
+		if (ue.current = [...ue.current, ...s], i.push(...u), e.appendChild(l), u.forEach((e) => {
 			let t = e.querySelector("rt");
 			t && (e.style.marginBlockStart = `${String(t.getBoundingClientRect().height)}px`);
-		}), wu(e, i, se.current, ue, d ?? !1, de()), P || V) {
+		}), wu(e, i, ue.current, pe, d ?? !1, me()), P || V) {
 			R.set(u, xu), te(!1);
 			return;
 		}
@@ -10239,40 +10263,40 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			f.kill(), te(!1);
 			return;
 		}
-		te(!0), ce.current = f;
+		te(!0), de.current = f;
 	}, [
 		o,
 		P,
-		le,
+		fe,
 		k,
 		ne,
 		U,
 		W,
 		d,
-		ue,
+		pe,
 		y
 	]), (0, z.useEffect)(() => {
-		ce.current && ce.current.progress() < 1 && ce.current.progress(1);
+		de.current && de.current.progress() < 1 && de.current.progress(1);
 	}, [B]);
-	let fe = H?.src ?? "", pe = fe.endsWith(".json"), [me, he] = (0, z.useState)(void 0);
+	let he = H?.src ?? "", ge = he.endsWith(".json"), [_e, ve] = (0, z.useState)(void 0);
 	(0, z.useEffect)(() => {
-		if (!pe) {
-			he(void 0);
+		if (!ge) {
+			ve(void 0);
 			return;
 		}
 		let e = !0;
-		return I(fe).then((t) => {
-			e && he(t);
+		return I(he).then((t) => {
+			e && ve(t);
 		}), () => {
 			e = !1;
 		};
-	}, [fe, pe]);
-	let ge = i && !P && !ee && H !== null && H.nm === r, [_e, ve] = (0, z.useState)(!1);
+	}, [he, ge]);
+	let ye = i && !P && !ee && H !== null && H.nm === r, [be, xe] = (0, z.useState)(!1);
 	(0, z.useLayoutEffect)(() => {
-		let e = re.current;
-		ve(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
+		let e = oe.current;
+		xe(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
 	}, [T, n]);
-	let ye = gu`
+	let Se = gu`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
@@ -10283,24 +10307,24 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
 			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
 			置いているため、向きが本文と食い違うと目立つ */
-		${_e ? "rotate: -90deg;" : ""}
-	`, be = {
+		${be ? "rotate: -90deg;" : ""}
+	`, Ce = {
 		...H?.width === void 0 ? {} : { width: `${String(H.width)}px` },
 		...H?.height === void 0 ? {} : { height: `${String(H.height)}px` },
 		...H?.x !== void 0 || H?.y !== void 0 ? { translate: `${String(H?.x ?? 0)}px ${String(H?.y ?? 0)}px` } : {}
-	}, xe = gu`
+	}, we = gu`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
 		${E ? "" : "pointer-events: none;"}
-	`, { display: Se, opacity: Ce, mixBlendMode: we, filter: Te } = n, Ee = {
-		...Se === void 0 ? {} : { display: Se },
-		...Ce === void 0 ? {} : { opacity: Ce },
-		...we === void 0 ? {} : { mixBlendMode: we },
-		...Te === void 0 ? {} : { filter: Te }
-	}, De = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Oe = O.filter((e) => !De(e)), ke = O.filter(De), Ae = gu`
+	`, { display: Te, opacity: Ee, mixBlendMode: De, filter: Oe } = n, ke = {
+		...Te === void 0 ? {} : { display: Te },
+		...Ee === void 0 ? {} : { opacity: Ee },
+		...De === void 0 ? {} : { mixBlendMode: De },
+		...Oe === void 0 ? {} : { filter: Oe }
+	}, Ae = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, je = O.filter((e) => !Ae(e)), Me = O.filter(Ae), Ne = gu`
 		${E ? "" : "pointer-events: none;"}
-	`, { r: je, g: Me, b: Ne } = ku(b), Pe = p((e) => e.backAlpha), Fe = x * (S ? 1 : Pe), Ie = Fe === 0 || a.length === 0 && b === void 0 && !C, Le = gu`
+	`, { r: Pe, g: Fe, b: Ie } = ku(b), Le = p((e) => e.backAlpha), Re = x * (S ? 1 : Le), ze = Re === 0 || a.length === 0 && b === void 0 && !C, Be = gu`
 		padding: 1em 1.5em;
 		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
@@ -10310,8 +10334,8 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${Ie || C ? "transparent" : `rgba(${je}, ${Me}, ${Ne}, ${Fe})`};
-		border: ${Ie || C ? "none" : "dotted 6px #ffa500"};
+		background-color: ${ze || C ? "transparent" : `rgba(${Pe}, ${Fe}, ${Ie}, ${Re})`};
+		border: ${ze || C ? "none" : "dotted 6px #ffa500"};
 		${C ? `
 		&::before {
 			content: '';
@@ -10320,7 +10344,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			background-image: url(${JSON.stringify(C)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${Fe};
+			opacity: ${Re};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10343,7 +10367,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
 		${P ? L : ""}
-	`, Re = gu`
+	`, Ve = gu`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10398,22 +10422,22 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				border-color: #ff9900;
 			}
 		}
-	`, [ze, Be] = (0, z.useState)("");
-	(0, z.useEffect)(() => Be(a), [a]);
-	let Ve = (0, z.useRef)(null), He = (e, t) => {
+	`, [He, Ue] = (0, z.useState)("");
+	(0, z.useEffect)(() => Ue(a), [a]);
+	let We = (0, z.useRef)(null), Ge = (e, t) => {
 		u(), e.transform = t;
 	};
 	return /* @__PURE__ */ w(D, { children: [
 		/* @__PURE__ */ w("span", {
-			css: [e, Le],
-			ref: re,
+			css: [e, Be],
+			ref: oe,
 			"data-lay": r,
-			style: n,
-			children: [/* @__PURE__ */ j("span", { ref: ie }), ge && /* @__PURE__ */ j("span", {
-				css: ye,
-				style: be,
-				children: me ? /* @__PURE__ */ j("span", { className: F(me) }) : fe && !pe ? /* @__PURE__ */ j("img", {
-					src: fe,
+			style: ae,
+			children: [/* @__PURE__ */ j("span", { ref: se }), ye && /* @__PURE__ */ j("span", {
+				css: Se,
+				style: Ce,
+				children: _e ? /* @__PURE__ */ j("span", { className: F(_e) }) : he && !ge ? /* @__PURE__ */ j("img", {
+					src: he,
 					style: {
 						verticalAlign: "text-bottom",
 						...H.width !== void 0 || H.height !== void 0 ? {
@@ -10424,11 +10448,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				}) : H.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		Oe.length > 0 && /* @__PURE__ */ j("span", {
-			css: [e, xe],
+		je.length > 0 && /* @__PURE__ */ j("span", {
+			css: [e, we],
 			"data-lay": r,
-			style: Ee,
-			children: Oe.map((e) => /* @__PURE__ */ j(bu, {
+			style: ke,
+			children: je.map((e) => /* @__PURE__ */ j(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10438,11 +10462,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				onSe: N
 			}, e.nm))
 		}),
-		ke.length > 0 && /* @__PURE__ */ j("span", {
-			css: [e, Ae],
+		Me.length > 0 && /* @__PURE__ */ j("span", {
+			css: [e, Ne],
 			"data-lay": r,
-			style: Ee,
-			children: ke.map((e) => /* @__PURE__ */ j(bu, {
+			style: ke,
+			children: Me.map((e) => /* @__PURE__ */ j(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10453,40 +10477,40 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			}, e.nm))
 		}),
 		t && /* @__PURE__ */ j(au, {
-			target: re,
+			target: oe,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => He(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Ge(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				He(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				Ge(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => He(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => Ge(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				He(e, n), e.transformOrigin = t;
+				Ge(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("label", {
-			css: Re,
-			ref: Ve,
+			css: Ve,
+			ref: We,
 			children: ["テキスト入力", /* @__PURE__ */ j("textarea", {
 				rows: 3,
-				value: ze,
-				onChange: (e) => Be(e.target.value)
+				value: He,
+				onChange: (e) => Ue(e.target.value)
 			})]
 		}), /* @__PURE__ */ j(au, {
-			target: Ve,
+			target: We,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => He(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => Ge(e, t),
 			preventDefault: !1
 		})] })
 	] });
