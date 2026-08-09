@@ -72,6 +72,12 @@ export type T_LAY_STY_ARG = {
 	ffs?		: string;	// 文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?		: string;	// ffsを効かせない文字の並び
 	bura?		: boolean;	// ぶら下げ禁則
+	// 禁則文字集合の指定（本家 Hyphenation.ts:64-84）。**未指定は現在値維持**
+	//	（本家も`if (hArg.kinsoku_sol)`のtruthy判定＝既定値ではなく「変更しない」扱い）
+	kinsoku_sol?: string;
+	kinsoku_eol?: string;
+	kinsoku_dns?: string;
+	kinsoku_bura?: string;
 	r_align?	: T_R_ALIGN;	// ルビ位置の既定（本家 TxtLayer.ts:307）
 	// 文字出現・消去演出（本家 TxtLayer.ts:67 の in_style/out_style）。[ch_in_style]で定義した名前
 	in_style?	: string;
@@ -1123,13 +1129,17 @@ export class ScriptEngine {
 			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
 			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
 			if (args.style !== undefined) sty.style = args.style;
-			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:85）。
+			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
 			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
-			//	buraはぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
-			//	本家Hyphenationの禁則文字指定（kinsoku_*）は受けない
+			//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**
+			//	（既定値はここに書かない。本家もtruthy判定＝現在値維持で、既定はKinsokuクラスが持つ）
 			if (args.ffs !== undefined) sty.ffs = args.ffs;
 			if (args.noffs !== undefined) sty.noffs = args.noffs;
 			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
+			if (args.kinsoku_sol !== undefined) sty.kinsoku_sol = args.kinsoku_sol;
+			if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
+			if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
+			if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
 			// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要
 			RubySpliter.setting(args);
 			// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ

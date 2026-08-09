@@ -11,6 +11,7 @@ import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import type {T_CH, T_R_ALIGN} from '../ts/Txt';
 import {CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
+import {chkKinsoku, DEF_KINSOKU} from '../ts/Hyphenation';
 import {INI_STYPAGE} from '../ts/PageLog';
 
 import {create} from 'zustand';
@@ -179,6 +180,11 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	ffs?	: string;	// [lay ffs=…]。文字詰め（CSSのfont-feature-settingsの値。'"palt"'等）
 	noffs?	: string;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean;	// [lay bura=…]。ぶら下げ禁則
+	// [lay kinsoku_sol=/kinsoku_eol=/kinsoku_dns=/kinsoku_bura=]。禁則文字集合の指定
+	kinsoku_sol?	: string;
+	kinsoku_eol?	: string;
+	kinsoku_dns?	: string;
+	kinsoku_bura?	: string;
 	r_align?: T_R_ALIGN;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
 	// [lay in_style=/out_style=]。[ch_in_style]/[ch_out_style]で定義した演出名
 	in_style?	: string;
@@ -402,11 +408,23 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/style/文字組み（ffs/noffs/bura/r_align）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
+		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）は文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
 		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined
 			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined
-			|| sty.r_align !== undefined))
-			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_alignは文字レイヤ専用）`;
+			|| sty.r_align !== undefined || sty.kinsoku_sol !== undefined || sty.kinsoku_eol !== undefined
+			|| sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined))
+			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*は文字レイヤ専用）`;
+
+		// 禁則の競合チェック（本家 Hyphenation.lay()。行頭禁則との重複はチェック対象外）。
+		//	マージ後の値（新規指定 → そのレイヤの現在値 → 既定）で判定する必要があるので、
+		//	状態を持たないエンジン側ではなくここで行う
+		if (e.cls === 'txt' && (sty.kinsoku_eol !== undefined || sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined)) {
+			chkKinsoku(
+				sty.kinsoku_eol ?? e.kinsoku_eol ?? DEF_KINSOKU.eol,
+				sty.kinsoku_dns ?? e.kinsoku_dns ?? DEF_KINSOKU.dns,
+				sty.kinsoku_bura ?? e.kinsoku_bura ?? DEF_KINSOKU.bura,
+			);
+		}
 
 		Object.assign(e, sty);
 		return putPage(s, idx, aLay);
@@ -469,7 +487,9 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
 			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
-			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.bura; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
+			// bura/kinsoku_*は[clear_lay]で変更しない（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない。
+			//	docs/tag.htmlのbura欄も既定値「現在値」＝クリアしても引き継ぐ、と明記）
+			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1}
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {

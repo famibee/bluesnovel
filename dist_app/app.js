@@ -1,7 +1,8 @@
 import { r as e } from "./rolldown-runtime.js";
-import { n as t } from "./SaveMng.js";
+import { t } from "./CmnLib.js";
+import { n } from "./SaveMng.js";
 //#region src/sn/localStore.ts
-var n = {
+var r = {
 	get(e) {
 		let t = localStorage.getItem(e);
 		if (t != null) try {
@@ -20,7 +21,7 @@ var n = {
 //#endregion
 //#region src/sn/SysBase.ts
 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
-var r = "skynovel", i = class {
+var i = "skynovel", a = class {
 	hPlg;
 	arg;
 	constructor(e = {}, t) {
@@ -47,16 +48,16 @@ var r = "skynovel", i = class {
 			import("./Config.js"),
 			import("./ScriptMng.js"),
 			import("./Sprite.js").then((e) => e.t)
-		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: i }, { setFetch: a, setDecFncs: o }]) => {
+		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: r }, { setFetch: a, setDecFncs: o }]) => {
 			a((e, t) => this.fetch(e, t)), o((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto);
 			let s = await n.generate(this);
 			this.setMain(s), document.body.style.backgroundColor = String(s.oCfg.init.bg_color);
-			let c = document.getElementById(r);
+			let c = document.getElementById(i);
 			if (c) {
 				let e = c.cloneNode(!0);
-				e.id = r;
-			} else c = document.createElement("div"), c.id = r, document.body.appendChild(c);
-			let l = new i(this);
+				e.id = i;
+			} else c = document.createElement("div"), c.id = i, document.body.appendChild(c);
+			let l = new r(this);
 			t(e(c), {
 				heStage: c,
 				sys: this,
@@ -87,17 +88,17 @@ var r = "skynovel", i = class {
 		return this.arg.crypto;
 	}
 	async storeLoad(e) {
-		let t = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`, r = n.get(t("sys"));
-		if (r !== void 0) return {
-			sys: r,
-			mark: n.get(t("mark")) ?? {},
-			kidoku: n.get(t("kidoku")) ?? {},
-			storage: n.get(t("storage")) ?? {}
+		let t = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`, n = r.get(t("sys"));
+		if (n !== void 0) return {
+			sys: n,
+			mark: r.get(t("mark")) ?? {},
+			kidoku: r.get(t("kidoku")) ?? {},
+			storage: r.get(t("storage")) ?? {}
 		};
 	}
 	storeFlush(e, t) {
-		let r = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`;
-		return n.set(r("sys"), t.sys), n.set(r("mark"), t.mark), n.set(r("kidoku"), t.kidoku), n.set(r("storage"), t.storage), Promise.resolve();
+		let n = (t) => `skynovel.${e} - ${t}${this.arg.crypto ? "_enc" : ""}`;
+		return r.set(n("sys"), t.sys), r.set(n("mark"), t.mark), r.set(n("kidoku"), t.kidoku), r.set(n("storage"), t.storage), Promise.resolve();
 	}
 	close() {}
 	window(e) {}
@@ -105,21 +106,88 @@ var r = "skynovel", i = class {
 	async capturePage(e, t, n, r) {
 		return "";
 	}
-}, a = class {
+};
+//#endregion
+//#region src/UpdateCheck.ts
+async function o(e, t) {
+	let n = await t.fetchText(e + "_index.json"), r = {
+		title: "アプリ更新",
+		icon: t.iconPath,
+		buttons: ["OK", "Cancel"],
+		defaultId: 0,
+		cancelId: 1,
+		message: `アプリ【${t.bookTitle}】に更新があります。\nダウンロードしますか？`
+	};
+	n.ok ? await s(n.txt, e, r, t) : await c(e, r, t);
+}
+async function s(e, t, n, r) {
+	let i = JSON.parse(e);
+	if (!await l(i.version, n, r)) return;
+	let a = r.platform + "_" + r.arch, o = i[a];
+	if (o && typeof o == "object") {
+		let { cn: e, path: i } = o;
+		await u(t, a + "-" + e, i, r), await d(n, r);
+		return;
+	}
+	let s = "", c = RegExp("^" + r.platform + "_"), f = Object.entries(i).flatMap(([e, n]) => {
+		if (typeof n != "object" || !c.test(e)) return [];
+		let { path: i, cn: a } = n;
+		return s += "\n- " + i, [u(t, e + "-" + a, i, r)];
+	});
+	n.message = `CPU = ${r.arch}\nに対応するファイルが見つかりません。同じOSのファイルをすべてダウンロードしますか？`, n.detail = `${String(f.length)} 個ファイルがあります` + s;
+	let { response: p } = await r.showMessageBox(n);
+	p > 0 || (await Promise.allSettled(f), await d(n, r));
+}
+async function c(e, t, n) {
+	let r = await n.fetchText(e + `latest${n.isMac ? "-mac" : ""}.yml`);
+	if (!r.ok) {
+		if (n.debugLog) throw "[update_check] .ymlが見つかりません";
+		return;
+	}
+	let i = r.txt, a = /version: (.+)/.exec(i)?.[1];
+	if (!a) throw "[update_check] .yml に version が見つかりません";
+	if (!await l(a, t, n)) return;
+	let o = /path: (.+)/.exec(i);
+	if (!o) throw "[update_check] path が見つかりません";
+	let [, s] = o;
+	if (!s) throw "[update_check] path が見つかりません.";
+	let [, c, f] = /(.+)(\.\w+)/.exec(s) ?? [
+		"",
+		"",
+		""
+	];
+	await u(e, c + "-" + n.arch + f, s, n), await d(t, n);
+}
+async function l(e, t, n) {
+	if (e === n.appVersion) return !1;
+	t.detail = `現在 NOW ver ${n.appVersion}\n新規 NEW ver ${e}`;
+	let { response: r } = await n.showMessageBox(t);
+	return r === 0;
+}
+async function u(e, t, n, r) {
+	let i = await r.fetchAb(e + t);
+	i.ok && await r.writeFile(r.downloadsDir + "/" + n, new DataView(i.ab));
+}
+async function d(e, t) {
+	e.buttons.pop(), e.message = `アプリ【${t.bookTitle}】の更新パッケージを\nダウンロードしました`, await t.showMessageBox(e);
+}
+//#endregion
+//#region src/IpcRenderer.ts
+var f = class {
 	send(e, ...t) {
 		window.electron.ipcRenderer.send(e, ...t);
 	}
 	invoke(e, ...t) {
 		return window.electron.ipcRenderer.invoke(e, ...t);
 	}
-}, o = class {
+}, p = class {
 	on(e, t) {
 		return window.electron.ipcRenderer.on(e, t);
 	}
 	once(e, t) {
 		return window.electron.ipcRenderer.once(e, t);
 	}
-}, s = class extends i {
+}, m = class extends a {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
 		crypto: !1,
@@ -127,14 +195,24 @@ var r = "skynovel", i = class {
 	}]) {
 		super(e, t), queueMicrotask(async () => this.loaded(e, t));
 	}
-	#e = new a();
-	#t = new o();
-	async loaded(...[e, n]) {
-		let r = await this.#e.invoke("getInfo");
+	#e = new f();
+	#t = new p();
+	#n = {
+		getAppPath: "",
+		isPackaged: !1,
+		downloads: "",
+		userData: "",
+		getVersion: "",
+		env: {},
+		platform: "",
+		arch: ""
+	};
+	async loaded(...[e, t]) {
+		let r = this.#n = await this.#e.invoke("getInfo");
 		this.$path_downloads = r.downloads.replaceAll("\\", "/") + "/", this.$path_userdata = r.userData.replaceAll("\\", "/") + "/", this.#t.on("log", (e, t) => console.info("main: %o", t)), this.#t.on("fire", (e, t) => document.dispatchEvent(new KeyboardEvent("keydown", {
 			key: t,
 			bubbles: !0
-		}))), this.#t.on("save_win_inf", (e, t) => document.dispatchEvent(new CustomEvent("sn_win_inf", { detail: t }))), await super.loaded(e, n);
+		}))), this.#t.on("save_win_inf", (e, t) => document.dispatchEvent(new CustomEvent("sn_win_inf", { detail: t }))), await super.loaded(e, t);
 		let { width: i, height: a } = this.cfg.oCfg.window, o = {
 			c: !0,
 			x: 0,
@@ -143,7 +221,7 @@ var r = "skynovel", i = class {
 			h: a
 		};
 		try {
-			let e = await this.storeLoad(this.cfg.oCfg.save_ns), n = await t(this.dec, e?.sys), r = n?.["const.sn.nativeWindow.x"], i = n?.["const.sn.nativeWindow.y"], a = n?.["const.sn.nativeWindow.w"], s = n?.["const.sn.nativeWindow.h"];
+			let e = await this.storeLoad(this.cfg.oCfg.save_ns), t = await n(this.dec, e?.sys), r = t?.["const.sn.nativeWindow.x"], i = t?.["const.sn.nativeWindow.y"], a = t?.["const.sn.nativeWindow.w"], s = t?.["const.sn.nativeWindow.h"];
 			typeof r == "number" && typeof i == "number" && typeof a == "number" && typeof s == "number" && (o = {
 				c: !1,
 				x: r,
@@ -164,6 +242,22 @@ var r = "skynovel", i = class {
 	capturePage(e, t, n, r) {
 		return this.#e.invoke("capturePage", e, t, n, r);
 	}
+	updateCheck(e) {
+		o(e, {
+			fetchText: (e) => this.#e.invoke("fetch", e),
+			fetchAb: (e) => this.#e.invoke("fetchAb", e),
+			writeFile: (e, t) => this.#e.invoke("writeFile", e, t),
+			showMessageBox: (e) => this.#e.invoke("showMessageBox", e),
+			downloadsDir: this.#n.downloads.replaceAll("\\", "/"),
+			appVersion: this.#n.getVersion,
+			platform: this.#n.platform,
+			arch: this.#n.arch,
+			iconPath: this.#n.getAppPath.replaceAll("\\", "/") + "/doc/icon.png",
+			bookTitle: this.cfg.oCfg.book.title,
+			isMac: t.isMac,
+			debugLog: t.debugLog
+		}).catch((e) => console.error(`[update_check] ${String(e)}`));
+	}
 	async storeLoad(e) {
 		if (await this.#e.invoke("Store", { name: e }), await this.#e.invoke("Store_isEmpty")) return;
 		let t = await this.#e.invoke("Store_get");
@@ -179,6 +273,6 @@ var r = "skynovel", i = class {
 	}
 };
 //#endregion
-export { s as SysApp };
+export { m as SysApp };
 
 //# sourceMappingURL=app.js.map

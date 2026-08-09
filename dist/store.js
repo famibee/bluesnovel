@@ -487,15 +487,122 @@ function M(e) {
 	};
 }
 //#endregion
-//#region src/ts/PageLog.ts
-var N = [
+//#region src/ts/Hyphenation.ts
+var N = "、。，．）］｝〉」』】〕”〟ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ！？!?‼⁉・ーゝゞヽヾ々", P = {
+	sol: N,
+	eol: "［（｛〈「『【〔“〝",
+	dns: "─‥…",
+	bura: N
+}, F = /* @__PURE__ */ new Map();
+function I(e) {
+	let t = F.get(e);
+	return t || (t = RegExp(`[${e}]`), F.set(e, t)), t;
+}
+function L(e, t, n) {
+	for (let t of n) if (e.includes(t)) throw `禁則の競合があります。文字 ${t} がぶら下げ と 行末禁則 の両方に含まれます`;
+	for (let e of n) if (t.includes(e)) throw `禁則の競合があります。文字 ${e} がぶら下げ と 分割禁止 の両方に含まれます`;
+}
+var R = class {
+	#e;
+	#t;
+	#n;
+	#r;
+	constructor(e) {
+		this.#e = I(e?.sol ?? P.sol), this.#t = I(e?.eol ?? P.eol), this.#n = I(e?.dns ?? P.dns), this.#r = I(e?.bura ?? P.bura);
+	}
+	i2pi(e, t) {
+		let n = t - 1;
+		return e[n]?.rt ? n - 1 : n;
+	}
+	hyphAlg(e, t, n, r, i) {
+		let a = r;
+		if (!this.#t.test(n)) {
+			if (this.#e.test(i)) for (; (a = this.i2pi(e, a)) >= 0 && this.#e.test(e[a].ch););
+			else if (!(n === i && this.#n.test(n))) return {
+				cont: !0,
+				ins: a + 1
+			};
+		}
+		for (a = t; (a = this.i2pi(e, a)) >= 0 && this.#t.test(e[a].ch););
+		return {
+			cont: !1,
+			ins: a + 1
+		};
+	}
+	hyphAlgBura(e, t, n, r) {
+		let i = this.i2pi(e, t), { ch: a } = e[i];
+		if (this.#r.test(a) || this.#e.test(a)) {
+			let r = t;
+			(this.#r.test(n) || this.#e.test(n)) && ++r;
+			let i = this.i2pi(e, r), { ch: a } = e[i], { ch: o } = e[r];
+			if (a === o && this.#n.test(o)) return {
+				cont: !1,
+				ins: i
+			};
+			if (!this.#t.test(a)) return {
+				cont: !1,
+				ins: r
+			};
+			r = i;
+			do
+				if (!this.#t.test(e[r].ch)) break;
+			while ((r = this.i2pi(e, r)) >= 0);
+			return {
+				cont: !1,
+				ins: r + 1
+			};
+		}
+		let o = this.i2pi(e, i);
+		if (r >= 3) {
+			let { ch: t } = e[o];
+			if (this.#n.test(a) && t === a) return {
+				cont: !1,
+				ins: o
+			};
+			if (this.#t.test(t)) {
+				let t = o;
+				for (; (t = this.i2pi(e, t)) >= 0 && this.#t.test(e[t].ch););
+				return {
+					cont: !1,
+					ins: t + 1
+				};
+			}
+		}
+		return {
+			cont: !1,
+			ins: i
+		};
+	}
+	scan(e, t, n, r) {
+		let i = -Infinity;
+		for (let a = r; a < e.length; ++a) {
+			if (e[a].rt) continue;
+			let r = t[a];
+			if (i <= r || e[a].afterBr) {
+				i = r;
+				continue;
+			}
+			let o = this.i2pi(e, a), s = e[o].ch, c = a, { cont: l, ins: u } = n ? this.hyphAlgBura(e, o, s, a) : this.hyphAlg(e, o, s, a, e[a].ch);
+			if (l) {
+				a = u - 1;
+				continue;
+			}
+			let d = u + 2;
+			return d < c && (d = c), {
+				ins: u,
+				resumeAt: d
+			};
+		}
+		return null;
+	}
+}, z = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], P = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", F = class {
+], B = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", V = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -556,7 +663,7 @@ var N = [
 			place: n
 		})));
 	}
-}, I = (e) => {
+}, H = (e) => {
 	let t, n = /* @__PURE__ */ new Set(), r = (e, r) => {
 		let i = typeof e == "function" ? e(t) : e;
 		if (!Object.is(i, t)) {
@@ -570,15 +677,15 @@ var N = [
 		subscribe: (e) => (n.add(e), () => n.delete(e))
 	}, o = t = e(r, i, a);
 	return a;
-}, L = ((e) => e ? I(e) : I), R = (e) => e;
-function z(e, t = R) {
+}, U = ((e) => e ? H(e) : H), W = (e) => e;
+function G(e, t = W) {
 	let n = r.useSyncExternalStore(e.subscribe, r.useCallback(() => t(e.getState()), [e, t]), r.useCallback(() => t(e.getInitialState()), [e, t]));
 	return r.useDebugValue(n), n;
 }
-var B = (e) => {
-	let t = L(e), n = (e) => z(t, e);
+var K = (e) => {
+	let t = U(e), n = (e) => G(t, e);
 	return Object.assign(n, t), n;
-}, V = ((e) => e ? B(e) : B), H = [
+}, q = ((e) => e ? K(e) : K), J = [
 	"alpha",
 	"blendmode",
 	"pivot_x",
@@ -586,19 +693,19 @@ var B = (e) => {
 	"rotation",
 	"scale_x",
 	"scale_y"
-], U = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif";
-function W(e, t) {
+], Y = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif";
+function X(e, t) {
 	let n = t === "fore" ? e.foreIdx : 1 - e.foreIdx;
 	return {
 		idx: n,
 		aLay: [...e.aPage[n]]
 	};
 }
-function G(e, t, n) {
+function Z(e, t, n) {
 	let r = [e.aPage[0], e.aPage[1]];
 	return r[t] = n, { aPage: r };
 }
-function K(e, t) {
+function Q(e, t) {
 	let n = e.foreIdx, r = 1 - n, i = e.aPage[n], a = e.aPage[r], o = (e) => t !== null && !t.includes(e), s = (e, t) => e.map((e) => o(e.nm) ? t.find((t) => t.nm === e.nm) ?? e : e), c = [[], []];
 	return c[r] = s(a, i), c[n] = s(i, a), c[n] = c[n].map((e) => o(e.nm) ? e : structuredClone(c[r].find((t) => t.nm === e.nm) ?? e)), {
 		aPage: c,
@@ -606,13 +713,13 @@ function K(e, t) {
 		trans: null
 	};
 }
-function q(e, t, n) {
+function $(e, t, n) {
 	let r = e.find((e) => e.nm === t);
 	if (!r) throw `存在しないレイヤ ${t} です`;
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var J = V()((e, t) => ({
+var ee = q()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
@@ -640,7 +747,7 @@ var J = V()((e, t) => ({
 		return { aPage: [[...e.aPage[0], structuredClone(t)], [...e.aPage[1], structuredClone(t)]] };
 	}),
 	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, sty: c }) => e((e) => {
-		let { idx: l, aLay: u } = W(e, n), d = q(u, t, "txt");
+		let { idx: l, aLay: u } = X(e, n), d = $(u, t, "txt");
 		if (r === void 0) r = `${a || s || "btn"}#${String(d.aBtn.length)}`;
 		else if (d.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
 		return d.aBtn = [...d.aBtn, {
@@ -650,29 +757,29 @@ var J = V()((e, t) => ({
 			...o === void 0 ? {} : { call: o },
 			...s === void 0 ? {} : { fn: s },
 			...c === void 0 ? {} : { sty: c }
-		}], G(e, l, u);
+		}], Z(e, l, u);
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, src: i, isSheet: a, isMovie: o, aFace: s }) => e((e) => {
-		let { idx: c, aLay: l } = W(e, n), u = q(l, t, "grp");
-		return u.fn = r, u.src = i, u.isSheet = a, u.isMovie = o, u.aFace = s, G(e, c, l);
+		let { idx: c, aLay: l } = X(e, n), u = $(l, t, "grp");
+		return u.fn = r, u.src = i, u.isSheet = a, u.isMovie = o, u.aFace = s, Z(e, c, l);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r, isFixed: i }) => e((e) => {
-		let { idx: a, aLay: o } = W(e, n), s = q(o, t, "txt");
-		return r !== void 0 && (s.b_alpha = r), i !== void 0 && (s.b_alpha_isfixed = i), G(e, a, o);
+		let { idx: a, aLay: o } = X(e, n), s = $(o, t, "txt");
+		return r !== void 0 && (s.b_alpha = r), i !== void 0 && (s.b_alpha_isfixed = i), Z(e, a, o);
 	}),
 	chgBPic: ({ nm: t, page: n, fn: r, src: i }) => e((e) => {
-		let { idx: a, aLay: o } = W(e, n), s = q(o, t, "txt");
-		return s.b_pic = r, s.b_src = i, G(e, a, o);
+		let { idx: a, aLay: o } = X(e, n), s = $(o, t, "txt");
+		return s.b_pic = r, s.b_src = i, Z(e, a, o);
 	}),
 	chgBackClear: ({ nm: t, page: n }) => e((e) => {
-		let { idx: r, aLay: i } = W(e, n), a = q(i, t, "txt");
-		return delete a.b_color, a.b_alpha = 0, a.b_alpha_isfixed = !1, delete a.b_pic, delete a.b_src, G(e, r, i);
+		let { idx: r, aLay: i } = X(e, n), a = $(i, t, "txt");
+		return delete a.b_color, a.b_alpha = 0, a.b_alpha_isfixed = !1, delete a.b_pic, delete a.b_src, Z(e, r, i);
 	}),
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
-		let { idx: i, aLay: a } = W(e, n), o = a.find((e) => e.nm === t);
+		let { idx: i, aLay: a } = X(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
-		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_alignは文字レイヤ専用）`;
-		return Object.assign(o, r), G(e, i, a);
+		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*は文字レイヤ専用）`;
+		return o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && L(r.kinsoku_eol ?? o.kinsoku_eol ?? P.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? P.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? P.bura), Object.assign(o, r), Z(e, i, a);
 	}),
 	getLaySty: (e, n) => {
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
@@ -697,26 +804,26 @@ var J = V()((e, t) => ({
 	},
 	enableEvent: ({ nm: t, enabled: n }) => e((e) => ({ aPage: e.aPage.map((e) => {
 		let r = [...e];
-		return q(r, t, "txt").enabled = n, r;
+		return $(r, t, "txt").enabled = n, r;
 	}) })),
 	clearTxtLay: ({ nm: t, page: n, clearFilter: r }) => e((e) => {
 		let i = (e) => {
-			let n = q(e, t, "txt");
+			let n = $(e, t, "txt");
 			n.aBtn.length > 0 && (n.aBtn = []);
-			for (let e of H) delete n[e];
+			for (let e of J) delete n[e];
 			r && delete n.aFlt;
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
 			return i(t), t;
 		}) };
-		let { idx: a, aLay: o } = W(e, n);
-		return i(o), G(e, a, o);
+		let { idx: a, aLay: o } = X(e, n);
+		return i(o), Z(e, a, o);
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of y) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.bura, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
+			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1);
 		}, i = (e) => {
 			if (!t) {
 				e.forEach(r);
@@ -732,8 +839,8 @@ var J = V()((e, t) => ({
 			let t = [...e];
 			return i(t), t;
 		}) };
-		let { idx: a, aLay: o } = W(e, n);
-		return i(o), G(e, a, o);
+		let { idx: a, aLay: o } = X(e, n);
+		return i(o), Z(e, a, o);
 	}),
 	moveLay: ({ nm: t, mode: n, index: r, dive: i }) => e((e) => {
 		let a = e.aPage[0], o = a.findIndex((e) => e.nm === t);
@@ -797,30 +904,30 @@ var J = V()((e, t) => ({
 			let t = [...e];
 			return c(t), t;
 		}) };
-		let { idx: l, aLay: u } = W(e, n);
-		return c(u), G(e, l, u);
+		let { idx: l, aLay: u } = X(e, n);
+		return c(u), Z(e, l, u);
 	}),
 	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
 		let a = (e) => {
-			let n = q(e, t, "txt");
+			let n = $(e, t, "txt");
 			n.str = r, n.aCh = i;
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
 			return a(t), t;
 		}) };
-		let { idx: o, aLay: s } = W(e, n);
-		return a(s), G(e, o, s);
+		let { idx: o, aLay: s } = X(e, n);
+		return a(s), Z(e, o, s);
 	}),
 	trans: null,
-	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? K(e, t) : { trans: {
+	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? Q(e, t) : { trans: {
 		seq: (e.trans?.seq ?? 0) + 1,
 		aLayNm: t,
 		time: n,
 		...r === void 0 ? {} : { ruleSrc: r },
 		...i === void 0 ? {} : { vague: i }
 	} }),
-	finishTrans: () => e((e) => e.trans ? K(e, e.trans.aLayNm) : {}),
+	finishTrans: () => e((e) => e.trans ? Q(e, e.trans.aLayNm) : {}),
 	quake: null,
 	startQuake: ({ hmax: t, vmax: n }) => e((e) => ({ quake: {
 		seq: (e.quake?.seq ?? 0) + 1,
@@ -835,13 +942,13 @@ var J = V()((e, t) => ({
 	toggleFullScr: () => e((e) => ({ fullScr: !e.fullScr })),
 	isReadBack: !1,
 	setReadBack: (t) => e(() => ({ isReadBack: t })),
-	styPaging: P,
+	styPaging: B,
 	setStyPaging: (t) => e(() => ({ styPaging: t })),
 	isTyping: !1,
 	setIsTyping: (t) => e(() => ({ isTyping: t })),
 	backAlpha: 1,
 	setBackAlpha: (t) => e(() => ({ backAlpha: t })),
-	btnFont: U,
+	btnFont: Y,
 	setBtnFont: (t) => e(() => ({ btnFont: t })),
 	skipReq: 0,
 	requestSkip: () => e((e) => ({ skipReq: e.skipReq + 1 })),
@@ -851,6 +958,6 @@ var J = V()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { u as _, F as a, a as b, k as c, S as d, b as f, g, p as h, P as i, C as l, f as m, J as n, T as o, m as p, N as r, M as s, U as t, w as u, d as v, h as y };
+export { g as _, V as a, h as b, M as c, w as d, S as f, p as g, f as h, B as i, k as l, m, ee as n, R as o, b as p, z as r, T as s, Y as t, C as u, u as v, a as x, d as y };
 
 //# sourceMappingURL=store.js.map

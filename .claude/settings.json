@@ -11,7 +11,8 @@
       "Bash(git log *)",
       "Bash(python3 *)",
       "Bash(bun x *)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "Bash(bunx vite *)"
     ],
     "additionalDirectories": [
       "/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/src/components",

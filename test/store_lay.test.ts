@@ -275,18 +275,71 @@ it('chgLay_ffsOnGrpLayerThrows', ()=> {
 	// b_color/styleと同じ扱い。画像レイヤへ来たら黙って無視せず知らせる
 	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {ffs: '"palt"'}})).toThrow();
 	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {bura: true}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {kinsoku_sol: '、'}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {kinsoku_eol: '「'}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {kinsoku_dns: '…'}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {kinsoku_bura: '、'}})).toThrow();
 });
 
-it('clearLay_dropsFfsAndBura', ()=> {
+it('clearLay_dropsFfsButKeepsBuraAndKinsoku', ()=> {
+	// ffs/noffsは[clear_lay]で消えるが、bura/kinsoku_*は現在値のまま引き継ぐ
+	//	（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない）
 	addMes();
-	S().chgLay({nm: 'mes', page: 'fore', sty: {ffs: '"palt"', noffs: '・', bura: true}});
+	S().chgLay({nm: 'mes', page: 'fore', sty: {ffs: '"palt"', noffs: '・', bura: true, kinsoku_eol: '「'}});
 	S().clearLay({aLayNm: null, page: 'fore'});
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
 	if (lay.cls !== 'txt') throw '文字レイヤのはず';
 	expect(lay.ffs).toBeUndefined();
 	expect(lay.noffs).toBeUndefined();
-	expect(lay.bura).toBeUndefined();
+	expect(lay.bura).toBe(true);
+	expect(lay.kinsoku_eol).toBe('「');
+});
+
+it('chgLay_kinsokuMergesAndPersists', ()=> {
+	// 書かれた属性だけが上書きされ、未指定は現在値のまま
+	addMes();
+	S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_sol: '、。', kinsoku_bura: '、'}});
+	S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_eol: '「'}});
+
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.kinsoku_sol).toBe('、。');
+	expect(lay.kinsoku_bura).toBe('、');
+	expect(lay.kinsoku_eol).toBe('「');
+});
+
+it('chgLay_kinsokuConflictThrows', ()=> {
+	// ぶら下げ と 行末禁則／分割禁止 の重複はエラー（本家 Hyphenation.ts の競合チェックと同じ文言）。
+	//	'】'はぶら下げの既定集合（行頭禁則の既定と同じ）に含まれる文字
+	addMes();
+	expect(()=> S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_eol: '】'}}))
+		.toThrow('禁則の競合があります。文字 】 がぶら下げ と 行末禁則 の両方に含まれます');
+	expect(()=> S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_dns: '】'}}))
+		.toThrow('禁則の競合があります。文字 】 がぶら下げ と 分割禁止 の両方に含まれます');
+});
+
+it('chgLay_kinsokuConflictAgainstCurrentValue', ()=> {
+	// 新規指定どうしでなく「新規指定 × そのレイヤの現在値」でも競合を検出する
+	addMes();
+	S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_eol: '【'}});	// '【'は行末禁則の既定集合の文字。この時点では衝突なし
+	expect(()=> S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_bura: '【'}}))
+		.toThrow('禁則の競合があります。文字 【 がぶら下げ と 行末禁則 の両方に含まれます');
+});
+
+it('chgLay_kinsokuSurvivesJsonRoundtrip', ()=> {
+	// レイヤデータはgetPagesJson()→replaceでセーブ復元される。RegExpを持たせていないので
+	//	文字列のまま生き残ることの確認（PITFALLS.md：storeへ入れる値はJSON化可能なプレーン値に限る）
+	addMes();
+	S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_eol: '「', kinsoku_bura: '、'}});
+
+	const json = S().getPagesJson();
+	S().replace(json);
+
+	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
+	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	expect(lay.kinsoku_eol).toBe('「');
+	expect(lay.kinsoku_bura).toBe('、');
 });
 
 

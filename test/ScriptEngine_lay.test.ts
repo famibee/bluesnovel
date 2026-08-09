@@ -176,6 +176,17 @@ it('lay_ffsIsNotPushedWhenUnspecified', ()=> {
 	expect(styOf('[lay layer=mes alpha=0.5]')).toEqual({alpha: 0.5});
 });
 
+it('lay_kinsoku', ()=> {
+	// 禁則文字集合の指定。値は文字列のまま素通し（正規表現化は描画側）
+	expect(styOf(`[lay layer=mes kinsoku_sol='、。' kinsoku_eol='「' kinsoku_dns='…' kinsoku_bura='、']`))
+		.toEqual({kinsoku_sol: '、。', kinsoku_eol: '「', kinsoku_dns: '…', kinsoku_bura: '、'});
+});
+
+it('lay_kinsokuIsNotPushedWhenUnspecified', ()=> {
+	// 書かれた属性だけを積む（未指定は現在値維持。既定値はここに書かない）
+	expect(styOf('[lay layer=mes alpha=0.5]')).toEqual({alpha: 0.5});
+});
+
 
 // ============ [clear_lay] ============
 

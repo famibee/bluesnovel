@@ -8,6 +8,7 @@
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
 import {CH_IN_DEF, chInTween} from '../ts/ChStyle';
+import {Kinsoku, type T_KIN_CH} from '../ts/Hyphenation';
 import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 import {hintMng} from '../ts/Hint';
@@ -15,7 +16,7 @@ import {CmnLib} from '../sn/CmnLib';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
-import {type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
 import gsap from 'gsap';
 
@@ -86,6 +87,11 @@ type T_TXTARG = T_LAY_CMN & {
 	ffs?	: string | undefined;	// [lay ffs=…]。文字詰め（font-feature-settingsの値）
 	noffs?	: string | undefined;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean | undefined;	// [lay bura=…]。ぶら下げ禁則
+	// [lay kinsoku_sol=/kinsoku_eol=/kinsoku_dns=/kinsoku_bura=]。禁則文字集合の指定
+	kinsoku_sol?	: string | undefined;
+	kinsoku_eol?	: string | undefined;
+	kinsoku_dns?	: string | undefined;
+	kinsoku_bura?	: string | undefined;
 	r_align?: T_R_ALIGN | undefined;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
@@ -105,13 +111,17 @@ const CH_END = {opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0};
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean; r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean;
+	kinsoku_sol?: string; kinsoku_eol?: string; kinsoku_dns?: string; kinsoku_bura?: string;
+	r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
 	// 文字出現・消去演出の名前（[lay in_style=/out_style=]）。定義そのものはストアの hChIn/hChOut
 	in_style?: string; out_style?: string};
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura, r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura,
+	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
+	r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -151,6 +161,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		return new RegExp(`[　${noffs ?? ''}]`).test(c) ? '' : ffs;
 	}, [ffs, noffs]);
 
+	// 禁則文字集合（[lay kinsoku_sol=/eol=/dns=/bura=]）。競合チェックはstore.tsxのchgLayが
+	//	済ませている（マージ後のそのレイヤ全体の値が要るため、エンジン単体では判定できない）
+	const kin = useMemo(()=> new Kinsoku({sol: kinsoku_sol, eol: kinsoku_eol, dns: kinsoku_dns, bura: kinsoku_bura}),
+		[kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura]);
+	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。isTateステートは別のuseLayoutEffectで
+	//	styの変化時にしか更新されないので、禁則計算の直前は都度読み直す
+	const isTategaki = ()=> !! boxRef.current && globalThis.getComputedStyle(boxRef.current).writingMode.startsWith('vertical');
+
 	useLayoutEffect(()=> {
 		const el = charsRef.current;
 		if (! el) return;
@@ -168,6 +186,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			chRef.current = [];
 			el.textContent = '';
 		}
+		// 前回の禁則処理で挿した<br>を一度削除（本家 TxtStage.ts:369）。文字が増えるたびに
+		//	`el.childNodes.length === span数`の前提でDOM同期する下のwhile2本より前に置く必要がある
+		el.querySelectorAll(':scope > br').forEach(e=> e.remove());
 
 		const cache = spansRef.current;
 		const target = Math.min(aCh.length, cache.length);
@@ -180,7 +201,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		if (target > 0) gsap.set(cache.slice(0, target), CH_END);	// キル時の中途半端な状態を確定させる
 
 		if (aCh.length <= cache.length) {
-			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要
+			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要。
+			//	ただしbura/kinsoku_*だけが変わってこの効果が再実行された場合もあるので禁則は掛け直す
+			applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
 			setIsTyping(false);
 			return;
 		}
@@ -190,6 +213,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const frag = document.createDocumentFragment();
 		const newSpans = added.map(ch=> {
 			const s = document.createElement('span');
+			// ブラウザ標準の行分割・禁則を無効化して自前計算に一本化する（本家 TxtLayer.ts:114-117
+			//	の.sn_ch同様inline-block化。[r]由来の改行だけは箱の中で完結させず行を割らせたいのでinlineのまま）
+			s.style.display = ch.c === '\n' ? 'inline' : 'inline-block';
 			s.appendChild(elCh(ch, r_align, onLink, fncFfs, onSe));
 			frag.appendChild(s);
 			return s;
@@ -197,6 +223,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		chRef.current = [...chRef.current, ...added];
 		cache.push(...newSpans);
 		el.appendChild(frag);
+
+		// GSAPが変形を当てる前（＝計測が祖先transformで汚染されない唯一の安全点）に禁則を掛ける
+		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
 
 		if (isReadBack || skipping) {
 			// 読み戻り中／既読スキップ中：staggerを使わず瞬時にアニメ終端状態へ
@@ -237,7 +266,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		setIsTyping(true);
 		tlRef.current = tl;
-	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc]);
+	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）
@@ -368,11 +397,6 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			z-index: -1;
 		}` : ''}
 
-		/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
-			本家Hyphenationのような自前計算ではなくCSSで頼む。
-			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
-		${bura ? 'hanging-punctuation: allow-end; line-break: strict;' : ''}
-
 		font-size: xxx-large;
 		top: 48%;
 		width: 70%;
@@ -442,12 +466,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			border: 2px solid gray;
 			outline: none;
 			padding: 0 0.3em;
-			/* [lay bura=true]：ぶら下げ禁則。**行分割そのものはブラウザ任せ**にしたので、
-			本家Hyphenationのような自前計算ではなくCSSで頼む。
-			hanging-punctuationは対応ブラウザ（Safari）でのみ効く */
-		${bura ? 'hanging-punctuation: allow-end; line-break: strict;' : ''}
-
-		font-size: xxx-large;
+			font-size: xxx-large;
 			line-height: 1.2;
 			&:focus {
 				border-color: #ff9900;
@@ -524,6 +543,49 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			/>
 		</>}
 	</>;
+}
+
+// T_CH（表示単位。ルビ付きは親文字＋ルビで1要素）→ 禁則処理用の判定単位列。
+//	本家は親文字・ルビが別々の1文字ずつDOM要素として並ぶが、bluesnovelは1要素にまとまっているので、
+//	ここで「親文字1要素＋ルビ1要素」の2要素へ展開する（Hyphenation.ts冒頭コメント参照）。
+//	idxはkc[j]が対応するaCh（＝spansRef.current）の添字。ルビはその親文字と同じ外側spanを指す
+function mkKinCh(aCh: readonly T_CH[]): {kc: T_KIN_CH[]; idx: number[]} {
+	const kc: T_KIN_CH[] = [];
+	const idx: number[] = [];
+	aCh.forEach((ch, i)=> {
+		const afterBr = i > 0 && aCh[i -1]!.c === '\n';
+		kc.push({ch: ch.c.at(0) ?? '', ...(afterBr ? {afterBr: true as const} : {})});
+		idx.push(i);
+		if (ch.r !== undefined) {
+			kc.push({ch: ch.r.at(0) ?? '', rt: true});
+			idx.push(i);
+		}
+	});
+	return {kc, idx};
+}
+
+// 禁則処理（本家 TxtStage.ts:184-283 hyph() のDOM計測・`<br>`挿入ループ）。
+//	表示単位spanの矩形で折り返しを検出する（inline-block化により表示単位は内部で
+//	折り返さない原子的な箱になるため、本家のRange一文字ずつの計測は不要）。
+//	1つ`<br>`を挿すたびに後続文字の位置が変わるので、違反が無くなるまで測り直しながら繰り返す
+function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aCh: readonly T_CH[],
+	kin: Kinsoku, bura: boolean, tategaki: boolean): void {
+	const {kc, idx} = mkKinCh(aCh);
+	if (kc.length < 2) return;
+
+	let i = 2;
+	for (let guard = 0; guard <= kc.length; ++guard) {
+		const xy = kc.map((_, j)=> {
+			const r = cache[idx[j]!]!.getBoundingClientRect();
+			return tategaki ? r.top : r.left;
+		});
+
+		const found = kin.scan(kc, xy, bura, i);
+		if (! found) break;
+
+		el.insertBefore(document.createElement('br'), cache[idx[found.ins]!]!);
+		i = found.resumeAt;
+	}
 }
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。

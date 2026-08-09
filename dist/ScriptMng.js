@@ -1,6 +1,6 @@
 import { t as e } from "./rolldown-runtime.js";
 import { a as t, i as n, o as r, r as i, t as a } from "./CmnLib.js";
-import { a as o, b as s, c, i as l, p as u, r as d, t as f } from "./store.js";
+import { a as o, i as s, l as c, m as l, r as u, t as d, x as f } from "./store.js";
 import { t as p } from "./Crypto.js";
 import { n as m, t as h } from "./gsap.js";
 import { PROTOCOL_USERDATA as g, t as _ } from "./Config.js";
@@ -2239,7 +2239,7 @@ var X = class {
 					fn: i.fn || e,
 					dx: Number(i.dx || "0"),
 					dy: Number(i.dy || "0"),
-					blendmode: s(i.blendmode || "normal")
+					blendmode: f(i.blendmode || "normal")
 				}, "skip";
 			}
 			case "lay": {
@@ -2287,7 +2287,7 @@ var X = class {
 					});
 				}
 				let r = {};
-				if (i.visible !== void 0 && (r.visible = i.visible !== "false"), i.alpha !== void 0 && (r.alpha = e.#n("lay", "alpha", i.alpha)), i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (r.s_right = this.#r("lay", "left", i.s_right)) : (r.left = this.#r("lay", "left", i.right), r.align_x = "right") : (r.left = this.#r("lay", "left", i.center), r.align_x = "center") : r.left = this.#r("lay", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (r.s_bottom = this.#r("lay", "top", i.s_bottom)) : (r.top = this.#r("lay", "top", i.bottom), r.align_y = "bottom") : (r.top = this.#r("lay", "top", i.middle), r.align_y = "middle") : r.top = this.#r("lay", "top", i.top), i.rotation !== void 0 && (r.rotation = e.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (r.scale_x = e.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (r.scale_y = e.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (r.pivot_x = e.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (r.pivot_y = e.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (r.blendmode = s(i.blendmode)), i.b_color !== void 0 && i.back_clear !== "true" && (r.b_color = e.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (r.style = i.style), i.ffs !== void 0 && (r.ffs = i.ffs), i.noffs !== void 0 && (r.noffs = i.noffs), i.bura !== void 0 && (r.bura = i.bura !== "false"), k.setting(i), i.r_align !== void 0) {
+				if (i.visible !== void 0 && (r.visible = i.visible !== "false"), i.alpha !== void 0 && (r.alpha = e.#n("lay", "alpha", i.alpha)), i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (r.s_right = this.#r("lay", "left", i.s_right)) : (r.left = this.#r("lay", "left", i.right), r.align_x = "right") : (r.left = this.#r("lay", "left", i.center), r.align_x = "center") : r.left = this.#r("lay", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (r.s_bottom = this.#r("lay", "top", i.s_bottom)) : (r.top = this.#r("lay", "top", i.bottom), r.align_y = "bottom") : (r.top = this.#r("lay", "top", i.middle), r.align_y = "middle") : r.top = this.#r("lay", "top", i.top), i.rotation !== void 0 && (r.rotation = e.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (r.scale_x = e.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (r.scale_y = e.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (r.pivot_x = e.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (r.pivot_y = e.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (r.blendmode = f(i.blendmode)), i.b_color !== void 0 && i.back_clear !== "true" && (r.b_color = e.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (r.style = i.style), i.ffs !== void 0 && (r.ffs = i.ffs), i.noffs !== void 0 && (r.noffs = i.noffs), i.bura !== void 0 && (r.bura = i.bura !== "false"), i.kinsoku_sol !== void 0 && (r.kinsoku_sol = i.kinsoku_sol), i.kinsoku_eol !== void 0 && (r.kinsoku_eol = i.kinsoku_eol), i.kinsoku_dns !== void 0 && (r.kinsoku_dns = i.kinsoku_dns), i.kinsoku_bura !== void 0 && (r.kinsoku_bura = i.kinsoku_bura), k.setting(i), i.r_align !== void 0) {
 					if (!W.includes(i.r_align)) throw `[lay] r_alignの値が不正です：${i.r_align}`;
 					r.r_align = i.r_align;
 				}
@@ -2321,7 +2321,7 @@ var X = class {
 					t: "addFilter",
 					aLayNm: [o],
 					page: t,
-					flt: u(i),
+					flt: l(i),
 					replace: !0
 				}), "skip";
 			}
@@ -2329,7 +2329,7 @@ var X = class {
 				t: "addFilter",
 				aLayNm: e.#c(i.layer),
 				page: e.#h("add_filter", i, "fore"),
-				flt: u(i),
+				flt: l(i),
 				replace: !1
 			}), "skip";
 			case "clear_filter": return a.push({
@@ -2399,7 +2399,7 @@ var X = class {
 					t: "addFilter",
 					aLayNm: [t],
 					page: c,
-					flt: u(i),
+					flt: l(i),
 					replace: !0
 				}), a.push({
 					t: "tsy",
@@ -2661,22 +2661,22 @@ var X = class {
 				if (!n && !r) throw "[button] fnまたはlabelは必須です";
 				let { pic: o } = i;
 				if (!o && !i.text) throw "[button] textまたはpic属性は必須です";
-				let c = i.nm, l = i.call === "true", u = e.argPage(i, "back"), d = {};
-				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (d.s_right = this.#r("button", "left", i.s_right)) : (d.left = this.#r("button", "left", i.right), d.align_x = "right") : (d.left = this.#r("button", "left", i.center), d.align_x = "center") : d.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (d.s_bottom = this.#r("button", "top", i.s_bottom)) : (d.top = this.#r("button", "top", i.bottom), d.align_y = "bottom") : (d.top = this.#r("button", "top", i.middle), d.align_y = "middle") : d.top = this.#r("button", "top", i.top);
+				let s = i.nm, c = i.call === "true", l = e.argPage(i, "back"), u = {};
+				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (u.s_right = this.#r("button", "left", i.s_right)) : (u.left = this.#r("button", "left", i.right), u.align_x = "right") : (u.left = this.#r("button", "left", i.center), u.align_x = "center") : u.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (u.s_bottom = this.#r("button", "top", i.s_bottom)) : (u.top = this.#r("button", "top", i.bottom), u.align_y = "bottom") : (u.top = this.#r("button", "top", i.middle), u.align_y = "middle") : u.top = this.#r("button", "top", i.top);
 				for (let t of e.#f) {
 					let n = i[t];
-					n !== void 0 && Object.assign(d, { [t]: e.#n("button", t, n) });
+					n !== void 0 && Object.assign(u, { [t]: e.#n("button", t, n) });
 				}
-				return o || (d.width ??= 100, d.height ??= 30), i.enabled !== void 0 && (d.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (d.blendmode = s(i.blendmode)), i.style !== void 0 && (d.style = e.#u(i.style)), i.style_hover !== void 0 && (d.style_hover = e.#u(i.style_hover)), i.style_clicked !== void 0 && (d.style_clicked = e.#u(i.style_clicked)), i.hint !== void 0 && (d.hint = i.hint), i.hint_style !== void 0 && (d.hint_style = i.hint_style), i.hint_opt !== void 0 && (d.hint_opt = i.hint_opt), o !== void 0 && (d.pic = o), i.b_pic !== void 0 && (d.b_pic = i.b_pic), i.clickse !== void 0 && (d.clickse = i.clickse, d.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (d.enterse = i.enterse, d.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (d.leavese = i.leavese, d.leavesebuf = i.leavesebuf || "SYS"), a.push({
+				return o || (u.width ??= 100, u.height ??= 30), i.enabled !== void 0 && (u.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (u.blendmode = f(i.blendmode)), i.style !== void 0 && (u.style = e.#u(i.style)), i.style_hover !== void 0 && (u.style_hover = e.#u(i.style_hover)), i.style_clicked !== void 0 && (u.style_clicked = e.#u(i.style_clicked)), i.hint !== void 0 && (u.hint = i.hint), i.hint_style !== void 0 && (u.hint_style = i.hint_style), i.hint_opt !== void 0 && (u.hint_opt = i.hint_opt), o !== void 0 && (u.pic = o), i.b_pic !== void 0 && (u.b_pic = i.b_pic), i.clickse !== void 0 && (u.clickse = i.clickse, u.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (u.enterse = i.enterse, u.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (u.leavese = i.leavese, u.leavesebuf = i.leavesebuf || "SYS"), a.push({
 					t: "addBtn",
 					layerNm: t,
-					page: u,
+					page: l,
 					text: o ? "" : i.text ?? "",
 					label: n,
-					call: l,
-					...c === void 0 ? {} : { nm: c },
+					call: c,
+					...s === void 0 ? {} : { nm: s },
 					...r ? { fn: r } : {},
-					...Object.keys(d).length > 0 ? { sty: d } : {}
+					...Object.keys(u).length > 0 ? { sty: u } : {}
 				}), "skip";
 			}
 			case "page": {
@@ -2691,7 +2691,7 @@ var X = class {
 				if (i.clear === "true") return a.push({ t: "clearPageLog" }), "skip";
 				if (i.to === void 0) return "skip";
 				let e = i.to;
-				if (!d.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
+				if (!u.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
 				return a.push({
 					t: "pageTo",
 					to: e
@@ -4908,7 +4908,7 @@ var Ce = 999e3, we = class {
 				this.sys.updateCheck(e.url);
 				break;
 			case "clearPageLog":
-				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", l), this.#d();
+				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", s), this.#d();
 				break;
 			case "pageStyle":
 				this.#r?.setValNochk("save:const.sn.styPaging", e.style), this.#d();
@@ -4935,7 +4935,7 @@ var Ce = 999e3, we = class {
 						...e.mark
 					});
 				}
-				this.#k = e.kind === "s", e.resume ? this.#M(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#g(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || f), this.#r && this.$fncs.setChWait(this.#r.chWait);
+				this.#k = e.kind === "s", e.resume ? this.#M(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#g(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || d), this.#r && this.$fncs.setChWait(this.#r.chWait);
 				break;
 			}
 		}

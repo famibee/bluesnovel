@@ -102,7 +102,7 @@ test('[link]はクリックでジャンプし、argを飛び先へ渡す', async
 	expect(await mesStr(page)).toBe('飛んだ:あるぐ');
 });
 
-test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当て、[lay bura=]はぶら下げ禁則のCSSを足す', async ({page})=> {
+test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当てる', async ({page})=> {
 	// このページは[link]の飛び先（*goal）の続きにある＝リンクを踏まないと辿り着けない
 	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
 	await page.getByText('リ', {exact: true}).click();
@@ -115,9 +115,10 @@ test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当て、[lay bura=]はぶ
 		aEl=> aEl.map(el=> `${el.textContent ?? ''}:${getComputedStyle(el.firstElementChild ?? el).fontFeatureSettings}`)))
 		.toEqual(['あ:"palt"', '・:normal', 'い:"palt"']);
 
-	// ぶら下げ禁則は文字レイヤ本体のCSSへ（行分割そのものはブラウザ任せ）
-	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"]`,
-		el=> getComputedStyle(el).lineBreak)).toBe('strict');
+	// 文字spanはブラウザ標準の行分割・禁則を無効化するためinline-block（禁則処理は
+	//	Hyphenation.tsの自前計算に一本化した。[lay bura=]の実効検証はkinsoku.e2e.ts）
+	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+		el=> getComputedStyle(el).display)).toBe('inline-block');
 });
 
 test('[link url=…]はジャンプせずURLを開く', async ({page})=> {

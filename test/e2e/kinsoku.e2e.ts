@@ -1,0 +1,69 @@
+/* ***** BEGIN LICENSE BLOCK *****
+	Copyright (c) 2026-2026 Famibee (famibee.blog38.fc2.com)
+
+	This software is released under the MIT License.
+	http://opensource.org/licenses/mit-license.php
+** ***** END LICENSE BLOCK ***** */
+
+// 禁則処理（[lay kinsoku_sol=/kinsoku_eol=/kinsoku_dns=/kinsoku_bura=/bura=]）の実効検証。
+//	アルゴリズムそのものの正しさは test/Hyphenation.test.ts（本家テストの丸移植）が保証する。
+//	ここで見るのはユニットでは届かない部分だけ＝実際にブラウザ上で`<br>`が挿入され、
+//	折り返し位置が変わること。main.snは幅・フォントを固定して折り返しを決定的にしている
+//	（monospace指定でも実際の折り返しは1文字24px相当。border:noneで内側幅=100pxのとき
+//	自然な折り返しは5文字/行になることを実機で確認して文字列を組んだ）。
+
+import {expect, test} from '@playwright/test';
+import {SEL_FORE, gotoSn, pressKey} from './snPage';
+
+// charsRef（本文の流し込み先）直下の子ノードを「文字」と「<br>」の並びで拾う
+const domRow = (page: import('@playwright/test').Page)=> page.$eval(
+	`${SEL_FORE} span[data-lay="mes"] > span:first-child`,
+	el=> Array.from(el.childNodes).map(n=> n.nodeName === 'BR' ? '<br>' : (n.textContent ?? '')),
+);
+
+test.beforeEach(async ({page})=> {await gotoSn(page, 'kinsoku')});
+
+test('既定の行頭禁則：「。」が行頭に来ないよう前の行へ追い出される', async ({page})=> {
+	// 自然な折り返しなら「あいうえお」|「。かきくけこ」|「さしすせそ」の5文字区切りだが、
+	//	「。」が行頭禁則なので「あいうえ」|「お。かきくけこ」|「さしすせそ」になる
+	expect(await domRow(page)).toEqual([
+		'あ', 'い', 'う', 'え', '<br>', 'お', '。', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ',
+	]);
+});
+
+test('kinsoku_solでカスタム集合を指定すると対象文字が変わる', async ({page})=> {
+	await pressKey(page, 'Space');
+	// 既定の禁則には無い「か」をkinsoku_solに指定。「か」が2行目の先頭に来る位置なので、
+	//	既定禁則の「。」のケースと同じ位置（'お'の前）で追い出しが発生する
+	expect(await domRow(page)).toEqual([
+		'あ', 'い', 'う', 'え', '<br>', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ',
+	]);
+});
+
+test('bura=trueでぶら下げ禁則の自前計算に切り替わり、既定の禁則（bura=false）と折り返し位置が変わる', async ({page})=> {
+	// Chromiumはhanging-punctuation未対応なのでCSS任せでは効かなかった。自前計算なら効く
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	const aRow = await domRow(page);
+	expect(aRow).not.toEqual([	// 既定の禁則（bura=false、1つ目のケース）とは異なる位置になる
+		'あ', 'い', 'う', 'え', '<br>', 'お', '。', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ',
+	]);
+	expect(aRow.filter(v=> v === '<br>').length).toBeGreaterThan(0);	// 実際に<br>が挿入されている
+});
+
+test('[clear_lay]はkinsoku_*/buraを変更しない', async ({page})=> {
+	// bura=true（前のケースで設定）が[clear_lay]後も効き続け、同じ折り返し結果になる
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	const beforeClear = await domRow(page);
+
+	await pressKey(page, 'Space');
+	const afterClear = await domRow(page);
+	expect(afterClear).toEqual(beforeClear);
+});
+
+test('文字spanは[r]以外すべてinline-block（ブラウザ標準の行分割・禁則を無効化するため）', async ({page})=> {
+	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+		aEl=> aEl.map(el=> getComputedStyle(el).display)))
+		.toEqual(Array(16).fill('inline-block'));	// 「あいうえお。かきくけこさしすせそ」＝16文字
+});

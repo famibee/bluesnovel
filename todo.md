@@ -18,16 +18,11 @@
 ## タグ・変数の残り
 
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
-- [ ] **しおり・システム系の残り**
-  - [ ] `[dump_script]`（本家はVSCode拡張との連携）
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
-  - [ ] `max_row`（最大行数を超えたら自動改ページ）・`break_fixed`系。**行分割そのものはブラウザ任せ**にした帰結で、禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）も渡す手段が無い。ギャラリーの`line_breaking_rules`と実機で見比べ、必要なら本家`Hyphenation.ts`のような自前計算へ寄せる。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
-  - [ ] `bura`はChromeが`hanging-punctuation`未対応なので実質Safariのみ効く
   - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
   - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
   - [ ] `[span]`/`[ch]`/`[link]`/`[tcy]`/`[graph]`共通の残り属性：`layer`/`page`（今は既定文字レイヤの表ページ固定）
-  - [ ] `[link]`の残り：`onenter`/`onleave`（本家はラベルをコールし`[return]`で戻る仕様。素朴に`[button call=true]`と同じ経路（`callToLabel`→通常のstep実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまうバグになる——`[return]`後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを`[return]`まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する必要があり、`[button]`と共通の中規模な追加実装になる。`global`は対応済み（受理はするが効果を持たない扱いで決着。理由はdocs/tag.htmlの`[link]`欄）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
   - [ ] ギャラリーの`filter`サンプルと実機で見比べ、色の出方が本家と揃っているか確認（pixiはシェーダ、こちらはSVGフィルタなので端の丸めが違いうる）
@@ -36,9 +31,11 @@
 - [ ] **`[ch_out_style]`の適用**（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は実寸ではなく「表示物の有無」を1/0で代用中。実寸が要る用途が出たら描画側から集める設計に
-  - [ ] `save:const.sn.layer.（文字レイヤ名）.enabled`
   - [ ] **sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い**（`const.sn.nativeWindow.*`が残り。`sn.sound.*`基準音量・`global_volume`・`sn.sound.BGM.vol_mul_talking`・`sn.sound.movie_volume`・`sn.tagCh.*`・`TextLayer.Back.Alpha`・`const.sn.aPageLog`は接続済み）。docs/dev.htmlで🟡。各層の実装時に繋ぐ
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に
+- [ ] `[dump_script]`（本家はVSCode拡張との連携）
+- [ ] `max_row`（最大行数を超えたら自動改ページ）・`break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
+- [ ] `[link]`の残り：`onenter`/`onleave`（本家はラベルをコールし`[return]`で戻る仕様。素朴に`[button call=true]`と同じ経路（`callToLabel`→通常のstep実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまうバグになる——`[return]`後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを`[return]`まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する必要があり、`[button]`と共通の中規模な追加実装になる。`global`は対応済み（受理はするが効果を持たない扱いで決着。理由はdocs/tag.htmlの`[link]`欄）
 - [ ] 【凍結】`[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
 - [ ] 【凍結】`[quake]`の`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
 
@@ -63,6 +60,9 @@
 ## アセット・基盤
 
 - [ ] 画像の**先読み**（本家`SpritesMng`）は未対応。`<img>`のsrcを差し替えるだけなので切替時に一瞬空白になりうる。実機で要確認
+  - [ ] 暗号化アセット対応（`ScriptMng.ts`の`#applyAction()` `case 'chgPic':`）で既に同種の空白が発生済み（復号fetchが非同期のため一旦`src: ''`を経由）。先読みを入れるならここも解消できるはず
+  - [ ] 本家`SpritesMng`は専用の先読みタグを持たず、PIXIの`Loader`/`TextureCache`によるロード済みキャッシュと「ロード完了までSpriteを差し替えない」というタイミング制御が実体（`skynovel_esm/src/sn/SpritesMng.ts`）
+  - [ ] 設計方針案：「次に必要になりそうな論理名`fn`を列挙する」部分は`ScriptEngine`側にpure関数として置ける（`bun test`で検証可）。「`searchPath`でURL解決→実際に`fetch`/`Image`でキャッシュへ乗せる」からは`ScriptMng`/UI側の責務。ただし実際に切替時の空白が消えたかは視覚的な話なので単体テストだけでは担保できず、`test/e2e/pic.e2e.ts`への追加か実機確認が要る（同ファイルに既知のflakyあり）
 - [ ] `tmp_esm_uc/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず）
 - [ ] 【低優先度・技術的負債】`parsimmon`（README「UNMAINTAINED」明記、2021-12から更新停止）への依存を外す。使用箇所は`src/ts/ExprEval.ts`1ファイルのみで、優先順位クライミング（PREFIX/POSTFIX/BINARY_LEFT/BINARY_RIGHT）は既に自前実装済み。parsimmonが担っているのは正規表現マッチ・`alt`によるバックトラック・`lazy`による再帰・`seq`/`seqMap`の逐次合成という基礎部分のみで依存範囲が狭いため、他のパーサコンビネータ（parjs/ts-parsec等、これらも小規模で同種のリスクを抱える）へ乗り換えるより、howlerを外して自前Web Audio層にした`SndMng.ts`と同じ判断で**手書きのPratt parserに置き換えて依存自体を無くす**のが筋が良い。ただし現状動作に実害は無いので緊急対応は不要
 - [ ] npmリリース処理を`skynovel_esm`に合わせる。`semantic-release`本体が依存に無く、`.github/workflows`も未整備

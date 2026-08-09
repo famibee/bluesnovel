@@ -350,6 +350,17 @@
   - `docs/tag.html`の`[update_check]`エントリを🟡から🟢へ更新（未対応→対応済みの説明、本家との相違点を明記）。`todo.md`の該当項目（「アプリ（Electron）版の残り」の唯一の子項目だったため見出しごと）を削除
   - **実機（`npm run app`等でのダウンロード往復）は未検証**：サンドボックス環境にディスプレイが無くElectronのGUIプロセスを起動できないため。ロジック自体はIPC層の既存ハンドラ（`fetch`/`fetchAb`/`writeFile`/`showMessageBox`）をそのまま呼ぶだけで新規処理は無いが、実際の配信URL・ダイアログ表示・ダウンロード完了の確認は別途必要
 
+- [x] **禁則処理（`[lay kinsoku_sol=/kinsoku_eol=/kinsoku_dns=/kinsoku_bura=]`、`bura`の全ブラウザ対応）を実装**（2026-08-09）
+  - `todo.md`「文字組みの残り」の該当項目。従来は行分割そのものをブラウザ任せ（CSSの`line-break: strict`）にしており、禁則文字集合をカスタマイズする手段がCSSに存在しなかった。`bura`（ぶら下げ）も`hanging-punctuation: allow-end`任せでChromeでは効いていなかった
+  - 本家`skynovel_esm/src/sn/Hyphenation.ts`を移植。純粋な判定アルゴリズム（`hyphAlg`/`hyphAlgBura`/`i2pi`、競合チェック）は`src/ts/Hyphenation.ts`へ、DOM計測・`<br>`挿入ループは`src/components/TxtLayer.tsx`（`mkKinCh`/`applyKinsoku`）へ分離した。**移植しなかったもの**：`break_fixed`系（`[l]`/`[p]`待ちマーカーの位置決め用。bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無い）、`record()`/`playback()`（`T_TXTLAY_DATA`へ載せればセーブ復元が自動で面倒を見るので専用コードは不要）、`#getChRects()`（Range一文字ずつの計測はしない）
+  - **文字spanを`display: inline-block`化**してブラウザ標準の行分割・禁則（UAX #14）を無効化し、自前計算に一本化（本家`.sn_ch`と同じ手）。`[r]`由来の改行spanだけは`inline`のまま。副作用として、従来効いていなかった`[ch_in_style]`のtransform（x/y/scale/rotate）が効き始める（非置換インライン要素にtransformが適用されない仕様のため）ことと、英単語が本家同様に途中で分割されうることをPhase 0の実機確認で確認済み
+  - **本家との計測方法の相違**：本家はRangeで1文字ずつ矩形を取るが、bluesnovelは表示単位spanの矩形で折り返しを検出する（inline-block化で表示単位が内部で折り返さない原子的な箱になるため、これで足りる）。bluesnovelのT_CH（`Txt.ts`）は「1表示単位」が1要素（ルビ付きは親文字＋ルビで1要素）なので、`mkKinCh()`で「親文字1要素＋ルビ1要素」の2要素へ展開してから本家アルゴリズムへ渡す
+  - 禁則の競合チェック（ぶら下げと行末禁則／分割禁止の重複はエラー）は`store.tsx`の`chgLay`で行う。エンジンはレイヤの現在値を保持しない純粋層のため、マージ後の値が要るこの判定はエンジン単体ではできない
+  - **付随修正2件**：(a) `[clear_lay]`が`bura`を削除していたのを修正（本家`TxtLayer.ts:857`はclearLayでHyphenationに触らず、`docs/tag.html`の`bura`欄も既定値「現在値」と明記済みだった、既存の食い違い）。(b) `TxtLayer.tsx`の文字送り`useLayoutEffect`の依存配列に`r_align`が抜けていたのを追加（`bura`/`kinsoku_*`を足す過程で発見）
+  - テスト：`test/Hyphenation.test.ts`（新規。本家`test/HyphTest.test.ts`の丸移植66件＋`scan()`単体5件）、`test/ScriptEngine_lay.test.ts`・`test/store_lay.test.ts`・`test/argdef_parity.test.ts`に追加、`test/e2e/kinsoku.e2e.ts`（新規。折り返し・`<br>`挿入・`bura`の実効・`[clear_lay]`後の継続・inline-block化を実ブラウザで確認）、`test/e2e/ruby.e2e.ts`の`lineBreak`確認を`display`確認へ差し替え
+  - `docs/tag.html`の`[lay]`段落を更新（自前計算への移植、`bura`が全ブラウザで効くこと、英単語の途中分割という相違点、`break_fixed`系が未対応であることを明記）。`todo.md`から`kinsoku_*`関連の記述を削り、`max_row`/`break_fixed`系だけ残した
+  - ユニットテスト1613件→1633件、E2E 17ファイル（既存分は無回帰。`movie.e2e.ts`の1件失敗はフルスイート並列実行時の既存flakyで、単体実行では再現せず無関係と確認）
+
 - [ ]
 
 

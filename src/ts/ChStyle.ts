@@ -71,10 +71,11 @@ export function parseChStyle(tag: string, args: {[k: string]: string}, joinDef: 
 //
 //	**本家は`${nx * 100}%`（TxtLayer.ts:151）だが、こちらは`em`にする**。パーセントは
 //	要素自身の箱を基準にするため、本家は`.sn_ch`へ`display: inline-block`を敷いて箱を作っている。
-//	bluesnovelの文字spanはinlineのまま（inline-blockにすると行分割・ルビ・禁則の扱いが変わり、
-//	行分割をブラウザに任せている前提が崩れる）ので、幅が0＝パーセントが効かない。
-//	`em`ならフォントサイズ基準なので箱に依らず、**全角文字では本家と同じ値**になる
-//	（全角の箱＝フォントサイズなので 30% == 0.3em）。半角文字だけずれる
+//	bluesnovelの文字spanも禁則処理（Hyphenation.ts）の移植でinline-block化した（[r]由来の
+//	改行spanだけ例外でinlineのまま）ので、`%`にしても箱は取れる。それでも`em`のまま据え置くのは、
+//	`em`ならフォントサイズ基準なので箱の実寸に依らず**全角文字では本家と同じ値**になるため
+//	（全角の箱＝フォントサイズなので 30% == 0.3em）。半角文字だけずれるが、`%`へ変えるのは
+//	見た目がさらに動く別タスクとして切り離す
 export function chStylePos(v: string): string {
 	const rel = v.startsWith('=');
 	const n = parseFloat(rel ? v.slice(1) : v);

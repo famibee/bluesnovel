@@ -1,0 +1,31 @@
+; E2E用シナリオ（kinsoku.e2e.ts が使用）
+;	禁則処理（[lay kinsoku_sol=/kinsoku_eol=/kinsoku_dns=/kinsoku_bura=/bura=]）は
+;	src/ts/Hyphenation.tsが自前計算し、TxtLayer.tsxがDOM計測して<br>を挿す。
+;	ここで見るのはブラウザでしか確かめられない部分＝「実際に折り返し位置が変わること」。
+;	幅・フォントを固定して折り返しを決定的にする（monospaceなら全角文字はほぼ1em四方）
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
+
+; 自然な折り返しは5文字/行。既定の行頭禁則に'。'が含まれるので、6文字目に置くと
+;	行頭に来ないよう前の行へ追い出される（「あいうえお」|「。かきくけこ」ではなく
+;	「あいうえお。」|「かきくけこ」になる）
+あいうえお。かきくけこさしすせそ[l]
+
+[er]
+; kinsoku_solでカスタム集合を指定すると、対象文字が変わる（既定では禁則でない'か'を
+;	6文字目＝2行目の先頭に来る位置に置く）
+[lay layer=mes kinsoku_sol='か']
+あいうえおかきくけこさしすせそ[l]
+
+[er]
+; bura=trueでぶら下げ禁則の自前計算に切り替わる（Chromiumでも効くのが本移植の主目的）。
+;	既定のkinsoku_solへ戻し、bura=trueとの違いだけを見る
+[lay layer=mes kinsoku_sol='' bura=true]
+あいうえお。かきくけこさしすせそ[l]
+
+[er]
+; [clear_lay]はkinsoku_*/buraを変更しない（見た目は再設定が要るのでwidth等だけ書き直す）
+[clear_lay layer=mes page=fore]
+[lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
+あいうえお。かきくけこさしすせそ[s]

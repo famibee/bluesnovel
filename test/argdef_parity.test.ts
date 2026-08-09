@@ -77,6 +77,10 @@ const A_CSS_DEF: {[attr: string]: string} = {
 const A_ELSEWHERE: {[attr: string]: string} = {
 	vague	: '[trans]。既定は src/ts/Trans.ts の VAGUE_DEF（0.04）が持つ（純粋関数側に置いたため）',
 	count	: '[jump]/[call]の既読カウント。#argBool相当を使わず、タグごとに既定を分けて解釈している',
+	// [lay]は「書かれた属性だけ積む」流儀なのでエンジン入口に既定を書かない。
+	//	既定falseはTxtLayer.tsx側（bura ?? false相当。ぶら下げ禁則アルゴリズムを使うか否か）が持つ。
+	//	**同名の禁則文字集合kinsoku_buraとは別物**（そちらの既定はsrc/ts/HyphenationのDEF_KINSOKU）
+	bura	: '[lay]。既定falseはTxtLayer.tsx側が持つ（bura ?? false）',
 };
 
 // **本家にはあるが、そのタグ・その属性が未対応のもの**。docs/tag.html・todo.md と重複するが、
