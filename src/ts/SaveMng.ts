@@ -17,7 +17,6 @@
 
 import type {T_H_Areas} from '../sn/Areas';
 import type {T_VAL_D} from './VarStore';
-import store from '../sn/localStore';
 
 
 // しおり1件（本家 T_Mark）。本家は hPages にpixiのレイヤ状態を入れるが、
@@ -45,28 +44,28 @@ function creData(): T_DATA4VARI {return {sys: {}, mark: {}, kidoku: {}, storage:
 
 const EXT = '.swpd';	// 本家と同じ拡張子（SKYNovel Web Play Data）
 
+// 永続化の輸送層（SysBase/SysAppが実装。ブラウザ版はlocalStorage、アプリ版はelectron-store）。
+//	SaveMngはこの2メソッドだけを使い、保存先の実体もキー形式も知らない
+export type T_SaveStore = {
+	storeLoad(ns: string): Promise<T_DATA4VARI | undefined>;
+	storeFlush(ns: string, data: T_DATA4VARI): void;
+};
+
 
 export class SaveMng {
 	#data = creData();
 	get data() {return this.#data}
 
-	// ns は prj.json の save_ns。本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式にしてあるので、
-	//	同じプロジェクトなら本家が書いたデータをそのまま読める
-	constructor(private readonly ns: string) {}
-	#key(kind: 'sys' | 'mark' | 'kidoku' | 'storage') {return `skynovel.${this.ns} - ${kind}`}
+	// ns は prj.json の save_ns
+	constructor(private readonly sys: T_SaveStore, private readonly ns: string) {}
 
 	// 起動時の読み込み。**戻り値は「初回起動か」**（本家 SysWeb.initVal() の const.sn.isFirstBoot）。
 	//	壊れていたら初期状態から始める（読めないデータのせいでゲームが起動しないのが一番困る）
-	load(): boolean {
-		const sys = store.get(this.#key('sys'));
-		if (sys === undefined) {this.#data = creData(); return true}
+	async load(): Promise<boolean> {
+		const d = await this.sys.storeLoad(this.ns);
+		if (! d) {this.#data = creData(); return true}
 
-		this.#data = {
-			sys		: sys as T_DATA4VARI['sys'],
-			mark	: (store.get(this.#key('mark')) ?? {}) as T_DATA4VARI['mark'],
-			kidoku	: (store.get(this.#key('kidoku')) ?? {}) as T_DATA4VARI['kidoku'],
-			storage	: (store.get(this.#key('storage')) ?? {}) as T_DATA4VARI['storage'],
-		};
+		this.#data = d;
 		return false;
 	}
 
@@ -88,10 +87,7 @@ export class SaveMng {
 	#tid: ReturnType<typeof setTimeout> | undefined;
 	#rsv = false;
 	#write() {
-		store.set(this.#key('sys'), this.#data.sys);
-		store.set(this.#key('mark'), this.#data.mark);
-		store.set(this.#key('kidoku'), this.#data.kidoku);
-		store.set(this.#key('storage'), this.#data.storage);
+		this.sys.storeFlush(this.ns, this.#data);
 	}
 
 	// ===== userdata:/ の中身（[snapshot fn='userdata:/…']が置くサムネイル等） =====

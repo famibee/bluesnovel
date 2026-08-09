@@ -15,6 +15,8 @@
 import {expect, test} from '@playwright/test';
 import {gotoSn, mesStr, pressKey, traceText, waitIdle} from './snPage';
 
+const NS = 'bluesnovel_e2e_sys';	// prj_sys/prj.json の save_ns
+
 test.beforeEach(async ({page})=> {await gotoSn(page, 'sys')});
 
 test('[title]がブラウザタブのタイトルになる', async ({page})=> {
@@ -90,4 +92,23 @@ test('const.sn.key.*は修飾キーの「今の」押下状態を映す', async 
 	// altは押していないのでfalse、ctrlはtrue
 	expect(await traceText(page)).toContain('key:false/true');
 	await page.keyboard.up('Control');
+});
+
+test('ウインドウ移動・リサイズ通知（sn_win_inf）がsys:const.sn.nativeWindow.*へ残る', async ({page})=> {
+	// アプリ版はappMain_cmn #window()→IPC 'save_win_inf'→app.tsがdocumentへ中継する
+	// （本テストはブラウザ版なのでElectronは無く、その中継の受け側だけを直接叩く）
+	await page.evaluate(()=> document.dispatchEvent(
+		new CustomEvent('sn_win_inf', {detail: {x: 12, y: 34, w: 800, h: 600}})));
+
+	// 書き込みは最短500ms間隔にまとめられる（SaveMng.flush()）ので、pollで待つ
+	await expect.poll(async ()=> {
+		const raw = await page.evaluate(k=> localStorage.getItem(k), `skynovel.${NS} - sys`);
+		return raw && (JSON.parse(raw) as {[k: string]: unknown})['const.sn.nativeWindow.x'];
+	}).toBe(12);
+
+	const sys = JSON.parse((await page.evaluate(k=> localStorage.getItem(k),
+		`skynovel.${NS} - sys`))!) as {[k: string]: unknown};
+	expect(sys['const.sn.nativeWindow.y']).toBe(34);
+	expect(sys['const.sn.nativeWindow.w']).toBe(800);
+	expect(sys['const.sn.nativeWindow.h']).toBe(600);
 });

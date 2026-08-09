@@ -1189,6 +1189,14 @@ function bt({ arg: e, inited: t }) {
 		};
 	}), u(() => {
 		let e = (e) => {
+			let { x: t, y: n, w: r, h: i } = e.detail;
+			a.setWinInf(t, n, r, i);
+		};
+		return document.addEventListener("sn_win_inf", e), () => {
+			document.removeEventListener("sn_win_inf", e);
+		};
+	}), u(() => {
+		let e = (e) => {
 			e.preventDefault(), !Ct && (a.cancelAuto(), a.fireEvent(St(e) + "rightclick"));
 		};
 		return document.addEventListener("contextmenu", e), () => {

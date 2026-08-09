@@ -19,7 +19,8 @@ export type {TArg};
 
 import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
-import type {T_CAPTURE_RECT, T_IpcEvents, T_IpcRendererEvent} from './preload';
+import type {TAG_WINDOW, T_CAPTURE_RECT, T_IpcEvents, T_IpcRendererEvent} from './preload';
+import type {T_DATA4VARI} from './ts/SaveMng';
 
 import {IpcEmitter, IpcListener} from './IpcRenderer';
 
@@ -46,14 +47,28 @@ export class SysApp extends SysBase {
 		//	ブラウザ版に無い経路なので、documentへ流し直してMain.tsxの予約と同じ扱いにする
 		this.#ipc.on('fire', (_e, key)=> document.dispatchEvent(
 			new KeyboardEvent('keydown', {key, bubbles: true})));
+		// ウインドウの移動・リサイズが確定した通知（appMain_cmn #window()）。
+		//	同じくdocumentへ流し直し、Main.tsxがscrMng.setWinInf()でsys:へ書き戻す
+		this.#ipc.on('save_win_inf', (_e, inf)=> document.dispatchEvent(
+			new CustomEvent('sn_win_inf', {detail: inf})));
 
 		await super.loaded(hPlg, arg);	// Config生成・React初期表示（cfg.oCfgはこの後で使える）
 
-		// **ここでウインドウが出る**。位置・大きさは prj.json の window（＝ステージ実寸）で、
-		//	c=trueは「デスクトップ中央へ」。本家は保存済みのsys:から復元するが、
-		//	こちらのsys:はScriptMng（SaveMng）の中なのでこの時点ではまだ読めない
+		// **ここでウインドウが出る**。位置・大きさは前回終了時のsys:（無ければ prj.json の
+		//	window＝ステージ実寸で中央）。ScriptMng（SaveMng）はまだ通していないので、
+		//	storeLoad()を直接呼んで覗く。壊れていても既定（中央）へ逃げるだけでよい
 		const {width, height} = this.cfg.oCfg.window;
-		await this.#em.invoke('inited', this.cfg.oCfg, {c: true, x: 0, y: 0, w: width, h: height});
+		let tagW: TAG_WINDOW = {c: true, x: 0, y: 0, w: width, h: height};
+		try {
+			const d = await this.storeLoad(this.cfg.oCfg.save_ns);
+			const x = d?.sys['const.sn.nativeWindow.x'];
+			const y = d?.sys['const.sn.nativeWindow.y'];
+			const w = d?.sys['const.sn.nativeWindow.w'];
+			const h = d?.sys['const.sn.nativeWindow.h'];
+			if (typeof x === 'number' && typeof y === 'number' && typeof w === 'number' && typeof h === 'number')
+				tagW = {c: false, x, y, w, h};
+		} catch { /* 読めなければ既定（中央）のまま */ }
+		await this.#em.invoke('inited', this.cfg.oCfg, tagW);
 	}
 
 	// ===== アプリ版だけが持つ振る舞い（SysBaseの既定＝no-opを上書き）=====
@@ -68,6 +83,21 @@ export class SysApp extends SysBase {
 
 	override capturePage(rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string) {
 		return this.#em.invoke('capturePage', rect, outW, outH, mime);
+	}
+
+	// しおり・sys:の永続化先をelectron-store（userDataフォルダのJSON）へ。SysBaseの既定は
+	//	localStorageで、アプリを消すと消えてしまうため（todo.md）。sys/mark/kidoku/storageを
+	//	分けず**1つのJSONブロックとしてまるごと**保存する（appMain_cmn.tsの`flush`ハンドラが
+	//	store全体を置き換える作りに合わせた。ブラウザ版の4キー分割はSysWeb側の互換用途なので触らない）
+	override async storeLoad(ns: string): Promise<T_DATA4VARI | undefined> {
+		await this.#em.invoke('Store', {name: ns});
+		if (await this.#em.invoke('Store_isEmpty')) return undefined;
+
+		const d = await this.#em.invoke('Store_get');
+		return {sys: d.sys ?? {}, mark: d.mark ?? {}, kidoku: d.kidoku ?? {}, storage: d.storage ?? {}};
+	}
+	override storeFlush(_ns: string, data: T_DATA4VARI) {
+		void this.#em.invoke('flush', data);
 	}
 
 }

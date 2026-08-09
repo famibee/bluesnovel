@@ -252,6 +252,25 @@
   - `[snapshot]`のtodo.md該当行を削除（HTMLフレームが写らない件は引き続きweb版側の制約として残る）
   - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト（1520件）はいずれもパス。`tmp_blues`（`electron-vite build`→Playwright `_electron`で操作）での実機確認も実施：設定画面（`[add_frame]`のHTMLフレーム）を開いた状態で`[snapshot]`（`main.sn`の`P`キー割り当て）を実行し、保存されたPNGにフレームの中身が写ることを確認した
 
+- [x] **アプリ（Electron）版：ウインドウ位置・大きさの復元**（2026-08-09）
+  - 受け口（`appMain_cmn`の`#inited()`/`#window()`）は既に`{c, x, y, w, h}`を受けて動く作りだったので、主処理側は無改修。手を入れたのはレンダラ側の両端
+  - **起動時の復元**：`app.ts`の`loaded()`は`inited`invokeより前の時点ではまだ`ScriptMng`（`SaveMng`）を通していない（`scrMng`はSysBase.loadedのクロージャの中）。そこで`app.ts`が直接`new SaveMng(cfg.oCfg.save_ns)`で同じlocalStorageを覗き、`sys:const.sn.nativeWindow.*`の4値が揃っていれば`{c: false, x, y, w, h}`で`inited`する。無い（初回起動・壊れている）ときは従来どおり`{c: true, …}`＝ステージ実寸で中央
+  - **移動・リサイズ確定時の保存**：`appMain_cmn`は動きが止まるたび主処理からIPC`save_win_inf`を送るが、レンダラ側で受け手が無く捨てられていた。`app.ts`が受けて`document`へ`CustomEvent('sn_win_inf')`として中継し（`fire`＝メニューキーの中継と同じパターン）、`Main.tsx`がそれを拾って新設の`ScriptMng.setWinInf(x, y, w, h)`を呼ぶ。`sys:const.sn.nativeWindow.*`へ`setValNochk`で書いてから**即`#flushSys()`**する（停止点まで待つとその前に閉じられた場合に失われるため。`[save]`/`[export]`と同じ「即flush」枠）
+  - `ScriptMng`と`Main.tsx`はブラウザ版・アプリ版共通のコードなので、この2つの変更はブラウザ版（`SysWeb`）でも読み込まれる。ただし`'sn_win_inf'`を実際に発火させるのは`app.ts`（Electron専用）だけなので、ブラウザ版では単に発火しないだけで挙動に影響は無い
+  - テスト：`test/e2e/sys.e2e.ts`に1件追加。Electronの`BrowserWindow`実体はPlaywright（ブラウザ版）からは操作できないため、`document.dispatchEvent(new CustomEvent('sn_win_inf', …))`で中継の受け側だけを直接叩き、`localStorage`の`sys`キーへ4値とも反映されることを確認。型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト1520件・E2E193件（前回比+1）はいずれもパス
+  - `todo.md`の該当行（アプリ版の残り＞ウインドウ位置・大きさの復元）を削除
+
+- [x] **アプリ（Electron）版：しおり・sys:の保存先をelectron-storeへ**（2026-08-09）
+  - 今までブラウザ版と同じlocalStorage（`SaveMng`）のままで、アプリをアンインストールすると消えてしまっていた（`todo.md`）。`appMain_cmn.ts`に`Store`/`Store_isEmpty`/`Store_get`/`flush`のIPCハンドラは以前から用意されていたが、レンダラ側から一度も呼ばれていない死んだ配線だったので、今回それを繋いだ
+  - **設計方針**：`SaveMng`が持つ「メモリキャッシュ＋500msデバウンスflush」という構造はそのまま活かし、**永続化の輸送層だけ差し替えられる**ようにした。`SaveMng`はもう`localStorage`も`electron-store`も知らない——`storeLoad(ns)`/`storeFlush(ns, data)`という2メソッドの新しい型`T_SaveStore`に委譲するだけになった（`SaveMng.ts`から`../sn/localStore`への依存を削除）
+  - `SysBase`に`storeLoad`/`storeFlush`の**既定実装**（今までの4キーlocalStorage形式をそのまま移設。本家と互換のキー形式なので触っていない）を追加し、`close()`/`window()`/`capturePage()`と同じ「既定はno-op/ブラウザ動作、`SysApp`が上書き」パターンに揃えた。`SysApp`（`app.ts`）は`storeLoad`/`storeFlush`をIPC（`Store`/`Store_isEmpty`/`Store_get`/`flush`）経由のelectron-store実装で上書きする
+  - electron-store側は`sys`/`mark`/`kidoku`/`storage`を分けず、**`T_DATA4VARI`を1つのJSONブロックとしてまるごと**保存する（`flush`ハンドラが`st.store = o`で丸ごと置き換える既存の作りに合わせた。ブラウザ版の4キー分割はSysWeb・本家互換用途なのでそのまま）。保存先はelectron-storeの既定（`userData`直下）で、`todo.md`が触れていた`userdata/storage/`という本家の実ファイル配置とは揃えていない（他に何もそのパスへ書いていないため、揃える実益が無いと判断）
+  - **非同期化の影響範囲は最小限**：electron-store通信は必然的に非同期（IPC invoke）なので`SaveMng.load()`を`async`化したが、`flush()`（書き込み）はそれ以外の呼び出し元と同じく「待たずに投げる」ままにした——electron-storeへの書き込みIPCも待たずに`void`で投げるだけで、同期API（`getMark`/`setMark`/`getFile`/`putFile`等）は一切変えていない。`load()`のawaitが要る呼び出し元は`ScriptMng#loadSaveData`1箇所だけで、そこは元々`async #load()`の中なので影響が連鎖しなかった
+  - `ScriptMng`のコンストラクタでは`#saveMng`フィールド初期化子が`this.sys`（コンストラクタのparameter property）を参照するとTS2729（使用前初期化）になったため、フィールド宣言から初期値を外しコンストラクタ本体でローカル引数`sys`を使って代入する形にした
+  - テスト：`test/SaveMng.test.ts`を`storeLoad`/`storeFlush`の最小インメモリ偽物（`T_SaveStore`実装）に差し替え（実`SysBase`は`window`参照を持つ副作用がありbunテストでは読み込めないため）。localStorageの実キー形式を検証していた`flush_writesUpstreamCompatibleKeys`は削除——同じ内容は`save.e2e.ts`（`- mark`/`- kidoku`キー）と`sys.e2e.ts`（`- sys`キー、前項で追加）が実ブラウザ経由で既に見ている。単体テスト1520件→1519件（1件削除・全体は変わらず1件減）、型チェック（`tsc --noEmit`／`-p test/e2e`）・E2E193件はいずれもパス
+  - **electron-store経由の実IPC往復は未検証**：`tmp_blues`を`electron-vite build`しPlaywrightの`_electron`で起動を試みたが、このサンドボックス環境にディスプレイが無くElectronのGUIプロセスが起動できず（`Process failed to launch!`）確認できなかった。ロジック自体は`appMain_cmn.ts`の既存ハンドラをそのまま呼ぶだけで新規処理は無いが、実機（`npm run app`等）での動作確認は別途必要
+  - `todo.md`の該当行（アプリ版の残り＞electron-store化）を削除
+
 - [ ]
 
 

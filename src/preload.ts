@@ -7,6 +7,7 @@
 
 import type {T_HINFO} from './appMain_cmn';
 import type {T_CFG} from './sn/ConfigBase';
+import type {T_DATA4VARI} from './ts/SaveMng';
 
 import type {MessageBoxOptions, MessageBoxReturnValue, OpenDialogOptions, OpenDialogReturnValue} from 'electron/renderer';
 import type {readFile} from 'fs-extra';
@@ -75,12 +76,10 @@ export	type	T_IpcEvents	= {
 	capturePage	: (rect: T_CAPTURE_RECT, outW: number, outH: number, mime: string)=> string;
 	navigate_to	: (url: string)=> void;
 
-	Store	: (o: object)=> void;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	flush	: (o: any)=> void;
+	Store	: (o: {name: string})=> void;
+	flush	: (o: T_DATA4VARI)=> void;
 	Store_isEmpty	: ()=> boolean;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	Store_get		: ()=> any;
+	Store_get		: ()=> T_DATA4VARI;
 
 	zip		: (inp: string, out: string)=> void;
 	unzip	: (inp: string, out: string)=> void;

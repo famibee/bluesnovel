@@ -7,6 +7,8 @@
 
 import type {T_HPlugin, T_SysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import { T_Config, T_SysRoots } from './ConfigBase';
+import type {T_DATA4VARI} from '../ts/SaveMng';
+import store from './localStore';
 
 
 // React Developer Toolsのインストールを推されるコンソールメッセージを消す
@@ -77,6 +79,30 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	readonly hash = (_str: string)=> '';
 
 	async appendFile(_path: string, _data: string) { /* SysApp/SysWebが上書き（本家 SysBase.ts:583） */ }
+
+
+	// ===== しおり・sys:の永続化（SaveMng.tsが呼ぶ。本家 data/flush()/initVal() 相当） =====
+	//	既定はlocalStorage（本家 SysWeb と同じ「skynovel.《ns》 - 《種別》」形式のキー4本。
+	//	同じプロジェクトなら本家が書いたデータをそのまま読める）。SysAppがelectron-storeへ上書きする
+	async storeLoad(ns: string): Promise<T_DATA4VARI | undefined> {
+		const key = (kind: string)=> `skynovel.${ns} - ${kind}`;
+		const sys = store.get(key('sys'));
+		if (sys === undefined) return undefined;
+
+		return {
+			sys		: sys as T_DATA4VARI['sys'],
+			mark	: (store.get(key('mark')) ?? {}) as T_DATA4VARI['mark'],
+			kidoku	: (store.get(key('kidoku')) ?? {}) as T_DATA4VARI['kidoku'],
+			storage	: (store.get(key('storage')) ?? {}) as T_DATA4VARI['storage'],
+		};
+	}
+	storeFlush(ns: string, data: T_DATA4VARI) {
+		const key = (kind: string)=> `skynovel.${ns} - ${kind}`;
+		store.set(key('sys'), data.sys);
+		store.set(key('mark'), data.mark);
+		store.set(key('kidoku'), data.kidoku);
+		store.set(key('storage'), data.storage);
+	}
 
 
 	// ===== アプリ（Electron）版だけが持つ振る舞い =====

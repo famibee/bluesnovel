@@ -98,6 +98,18 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		};
 	});
 
+	// ウインドウの移動・リサイズが確定した通知（アプリ版のみ。app.tsが主処理からのIPCを
+	//	documentのCustomEventへdispatchし直す。'fire'キー押下と同じ中継パターン）。
+	//	sys:const.sn.nativeWindow.*へ書き戻して次回起動時の位置復元に使う
+	useEffectOnce(()=> {
+		const onWinInf = (e: Event)=> {
+			const {x, y, w, h} = (e as CustomEvent<{x: number; y: number; w: number; h: number}>).detail;
+			scrMng.setWinInf(x, y, w, h);
+		};
+		document.addEventListener('sn_win_inf', onWinInf);
+		return ()=> {document.removeEventListener('sn_win_inf', onWinInf)};
+	});
+
 	// 右クリック（本家 EventMng.ts:145）。**contextmenuイベントで拾う**のは、
 	//	clickイベントでは右ボタンが来ないため。予約名は修飾キー＋'rightclick'で、
 	//	テンプレはこれで枠（アルバム・設定・履歴・確認ダイアログ）を閉じる。

@@ -35,6 +35,7 @@ export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
 
 	constructor(private readonly sys: SysBase) {
+		this.#saveMng = new SaveMng(sys, '');	// sys（parameter property）を参照するのでフィールド初期化子には書けない
 		this.#spnDbg = document.createElement('span');
 		this.#spnDbg.hidden = true;
 		this.#spnDbg.textContent = '';
@@ -109,7 +110,7 @@ export class ScriptMng {
 				this.#sndMng.setVol(buf, savevol * Number(v));
 			});
 			engine.defSetTrigger('sys:sn.sound.movie_volume', ()=> this.#applyMovieVolume());
-			this.#loadSaveData(engine);
+			await this.#loadSaveData(engine);
 			// プロジェクト同梱フォントを`@font-face`で使えるようにする（本家 TxtLayer.ts:97）。
 			//	シナリオ側に読み込みタグは無く、path.jsonにあるフォントは全部登録される
 			addFontFaces(this.sys.cfg);
@@ -251,15 +252,16 @@ export class ScriptMng {
 	}
 
 	// ===== セーブ層（しおり・sys:・既読の永続化。SaveMng.ts） =====
-	//	保存先はlocalStorageで、キーはprj.jsonのsave_nsで分ける。**器はSaveMngが持ち、
-	//	中身の出し入れはここが仲介する**（エンジンはlocalStorageを知らない決まりのため）
-	#saveMng	= new SaveMng('');
+	//	保存先はブラウザ版がlocalStorage、アプリ版がelectron-store（sys.storeLoad/storeFlush）。
+	//	キーはprj.jsonのsave_nsで分ける。**器はSaveMngが持ち、中身の出し入れはここが仲介する**
+	//	（エンジンは永続化の手段を知らない決まりのため）
+	#saveMng	: SaveMng;
 	#isFirstBoot= true;
 
 	// 起動時：保存済みのsys:と既読をエンジンへ流し込む（本家 SysWeb.initVal()）
-	#loadSaveData(engine: ScriptEngine) {
-		this.#saveMng = new SaveMng(this.sys.cfg.oCfg.save_ns);
-		try {this.#isFirstBoot = this.#saveMng.load()}
+	async #loadSaveData(engine: ScriptEngine) {
+		this.#saveMng = new SaveMng(this.sys, this.sys.cfg.oCfg.save_ns);
+		try {this.#isFirstBoot = await this.#saveMng.load()}
 		catch (e) {
 			// 壊れたデータで起動できなくなるのが一番困るので、知らせて初期状態から始める
 			this.myTrace(`セーブデータが壊れています。初期状態で起動します ${String(e)}`, 'E');
@@ -272,6 +274,18 @@ export class ScriptMng {
 		// 本家 SysBase.init() と同じく**毎回**入れ直す（SysBase.ts:152）。
 		//	[import]で「別のゲームのデータ」を弾く目印なので、[clearsysvar]で消えたままだと困る
 		engine.setValNochk('sys:const.sn.cfg.ns', this.sys.cfg.oCfg.save_ns);
+		this.#flushSys();
+	}
+	// ウインドウの移動・リサイズが確定した通知（appMain_cmn #window()→app.tsのIPC経由）。
+	//	停止点まで待つとその前に閉じられた場合に失われるので、ここは即flushする
+	setWinInf(x: number, y: number, w: number, h: number) {
+		const engine = this.#engine;
+		if (! engine) return;
+
+		engine.setValNochk('sys:const.sn.nativeWindow.x', x);
+		engine.setValNochk('sys:const.sn.nativeWindow.y', y);
+		engine.setValNochk('sys:const.sn.nativeWindow.w', w);
+		engine.setValNochk('sys:const.sn.nativeWindow.h', h);
 		this.#flushSys();
 	}
 	// sys:と既読を書き戻して保存（SaveMng側で500msにまとめられる）。

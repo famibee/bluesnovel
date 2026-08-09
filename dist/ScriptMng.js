@@ -3475,26 +3475,8 @@ function ge(e, t) {
 	n.href = t, n.download = e, n.click();
 }
 //#endregion
-//#region src/sn/localStore.ts
-var Q = {
-	get(e) {
-		let t = localStorage.getItem(e);
-		if (t != null) try {
-			return JSON.parse(t);
-		} catch {
-			return;
-		}
-	},
-	set(e, t) {
-		localStorage.setItem(e, JSON.stringify(t));
-	},
-	remove(e) {
-		localStorage.removeItem(e);
-	}
-};
-//#endregion
 //#region src/ts/SaveMng.ts
-function $() {
+function Q() {
 	return {
 		sys: {},
 		mark: {},
@@ -3502,40 +3484,33 @@ function $() {
 		storage: {}
 	};
 }
-var _e = ".swpd", ve = class {
+var $ = ".swpd", _e = class {
+	sys;
 	ns;
-	#e = $();
+	#e = Q();
 	get data() {
 		return this.#e;
 	}
-	constructor(e) {
-		this.ns = e;
+	constructor(e, t) {
+		this.sys = e, this.ns = t;
 	}
-	#t(e) {
-		return `skynovel.${this.ns} - ${e}`;
-	}
-	load() {
-		let e = Q.get(this.#t("sys"));
-		return e === void 0 ? (this.#e = $(), !0) : (this.#e = {
-			sys: e,
-			mark: Q.get(this.#t("mark")) ?? {},
-			kidoku: Q.get(this.#t("kidoku")) ?? {},
-			storage: Q.get(this.#t("storage")) ?? {}
-		}, !1);
+	async load() {
+		let e = await this.sys.storeLoad(this.ns);
+		return e ? (this.#e = e, !1) : (this.#e = Q(), !0);
 	}
 	flush() {
-		if (this.#n) {
-			this.#r = !0;
+		if (this.#t) {
+			this.#n = !0;
 			return;
 		}
-		this.#i(), this.#n = setTimeout(() => {
-			this.#n = void 0, this.#r && (this.#r = !1, this.flush());
+		this.#r(), this.#t = setTimeout(() => {
+			this.#t = void 0, this.#n && (this.#n = !1, this.flush());
 		}, 500);
 	}
-	#n;
-	#r = !1;
-	#i() {
-		Q.set(this.#t("sys"), this.#e.sys), Q.set(this.#t("mark"), this.#e.mark), Q.set(this.#t("kidoku"), this.#e.kidoku), Q.set(this.#t("storage"), this.#e.storage);
+	#t;
+	#n = !1;
+	#r() {
+		this.sys.storeFlush(this.ns, this.#e);
 	}
 	getFile(e) {
 		return this.#e.storage[e];
@@ -3565,12 +3540,12 @@ var _e = ".swpd", ve = class {
 	}
 	export() {
 		let e = new Blob([JSON.stringify(this.#e)], { type: "text/json" }), t = URL.createObjectURL(e), n = document.createElement("a");
-		n.href = t, n.download = `no_crypto_${this.ns}${ye()}${_e}`, n.click(), URL.revokeObjectURL(t);
+		n.href = t, n.download = `no_crypto_${this.ns}${ve()}${$}`, n.click(), URL.revokeObjectURL(t);
 	}
 	async import() {
 		let e = await new Promise((e, t) => {
 			let n = document.createElement("input");
-			n.type = "file", n.accept = `${_e}, text/plain`, n.onchange = () => {
+			n.type = "file", n.accept = `${$}, text/plain`, n.onchange = () => {
 				let r = n.files?.[0];
 				r ? e(r) : t(/* @__PURE__ */ Error("ファイル選択に失敗しました"));
 			}, n.click();
@@ -3579,27 +3554,27 @@ var _e = ".swpd", ve = class {
 		return t.storage ??= {}, this.#e = t, this.flush(), t;
 	}
 };
-function ye() {
+function ve() {
 	let e = /* @__PURE__ */ new Date(), t = (e) => String(e).padStart(2, "0");
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
 //#region src/ts/Font.ts
-function be(e) {
+function ye(e) {
 	return e.matchPath(".+", g.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
 	font-family: ${JSON.stringify(t)};
 	src: url(${JSON.stringify(e.searchPath(t, g.FONT))});
 }`).join("\n");
 }
-function xe(e, t = document) {
-	let n = be(e);
+function be(e, t = document) {
+	let n = ye(e);
 	if (!n) return;
 	let r = t.createElement("style");
 	r.dataset.sn = "font", r.textContent = n, t.head.appendChild(r);
 }
 //#endregion
 //#region src/ts/SndBuf.ts
-var Se = 999e3, Ce = class {
+var xe = 999e3, Se = class {
 	ctx;
 	src;
 	opt;
@@ -3655,7 +3630,7 @@ var Se = 999e3, Ce = class {
 	set volume(e) {
 		this.gn.gain.value = e;
 	}
-}, we = {
+}, Ce = {
 	mp3: "audio/mpeg",
 	mpeg: "audio/mpeg",
 	opus: "audio/ogg; codecs=\"opus\"",
@@ -3670,7 +3645,7 @@ var Se = 999e3, Ce = class {
 	webm: "audio/webm; codecs=\"vorbis\"",
 	dolby: "audio/mp4; codecs=\"ec-3\"",
 	flac: "audio/flac"
-}, Te = class {
+}, we = class {
 	trace;
 	constructor(e) {
 		this.trace = e;
@@ -3700,7 +3675,7 @@ var Se = 999e3, Ce = class {
 	}
 	codecs() {
 		let e = document.createElement("audio"), t = {};
-		for (let [n, r] of Object.entries(we)) t[n] = e.canPlayType(r) !== "";
+		for (let [n, r] of Object.entries(Ce)) t[n] = e.canPlayType(r) !== "";
 		return JSON.stringify(t);
 	}
 	#r = /* @__PURE__ */ new Map();
@@ -3721,7 +3696,7 @@ var Se = 999e3, Ce = class {
 		let i = this.#a[e];
 		if (i && !i.destroyed && i.src === t) return;
 		this.stop(e);
-		let { ctx: a, gn: o } = this.#n(), s = new Ce(a, o, e, t, n);
+		let { ctx: a, gn: o } = this.#n(), s = new Se(a, o, e, t, n);
 		this.#a[e] = s, s.onEnd = () => {
 			let e = s.buf;
 			this.#a[e] === s && delete this.#a[e];
@@ -3764,11 +3739,11 @@ var Se = 999e3, Ce = class {
 	cancelWaitEnd(e) {
 		delete this.#o[e];
 	}
-}, Ee = class e {
+}, Te = class e {
 	sys;
 	#e;
 	constructor(e) {
-		this.sys = e, this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
+		this.sys = e, this.#p = new _e(e, ""), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
 			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Re(e), this.#t.log = (e) => this.#Be(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
@@ -3801,7 +3776,7 @@ var Se = 999e3, Ce = class {
 			}), e.defSetTriggerSoundVol((t, n) => {
 				let r = Number(e.getVal(`save:const.sn.sound.${t}.volume`) ?? 1);
 				this.#C.setVol(t, r * Number(n));
-			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#T()), this.#h(e), xe(this.sys.cfg);
+			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#T()), await this.#h(e), be(this.sys.cfg);
 		}
 		this.go = () => this.#O(), this.$trgNext();
 	}
@@ -3879,16 +3854,20 @@ var Se = 999e3, Ce = class {
 		}
 		this.#A = !1, this.#O();
 	}
-	#p = new ve("");
+	#p;
 	#m = !0;
-	#h(e) {
-		this.#p = new ve(this.sys.cfg.oCfg.save_ns);
+	async #h(e) {
+		this.#p = new _e(this.sys, this.sys.cfg.oCfg.save_ns);
 		try {
-			this.#m = this.#p.load();
+			this.#m = await this.#p.load();
 		} catch (e) {
 			this.myTrace(`セーブデータが壊れています。初期状態で起動します ${String(e)}`, "E"), this.#m = !0;
 		}
 		this.#m || (e.setSys(this.#p.data.sys), e.setKidoku(this.#p.data.kidoku)), e.setValNochk("sys:const.sn.cfg.ns", this.sys.cfg.oCfg.save_ns), this.#g();
+	}
+	setWinInf(e, t, n, r) {
+		let i = this.#r;
+		i && (i.setValNochk("sys:const.sn.nativeWindow.x", e), i.setValNochk("sys:const.sn.nativeWindow.y", t), i.setValNochk("sys:const.sn.nativeWindow.w", n), i.setValNochk("sys:const.sn.nativeWindow.h", r), this.#g());
 	}
 	#g() {
 		let e = this.#r;
@@ -3922,7 +3901,7 @@ var Se = 999e3, Ce = class {
 	attachFrameBox(e) {
 		this.#S.attachBox(e);
 	}
-	#C = new Te((e, t) => this.myTrace(e, t));
+	#C = new we((e, t) => this.myTrace(e, t));
 	unlockAudio() {
 		this.#C.unlock();
 	}
@@ -3940,7 +3919,7 @@ var Se = 999e3, Ce = class {
 			speed: 1,
 			pan: 0,
 			start_ms: 0,
-			end_ms: Se,
+			end_ms: xe,
 			ret_ms: 0
 		}).catch(this.#i);
 	}
@@ -4921,6 +4900,6 @@ var Se = 999e3, Ce = class {
 	};
 };
 //#endregion
-export { Ee as ScriptMng };
+export { Te as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map
