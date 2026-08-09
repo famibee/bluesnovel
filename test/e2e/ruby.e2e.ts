@@ -31,6 +31,22 @@ test('`漢字《かんじ》`が<ruby>で組まれ、平文にはルビが入ら
 	expect(await aRuby(page)).toEqual(['漢字:かんじ']);
 });
 
+test('ルビ付き文字spanは<rt>の高さぶんmargin-block-startを持つ（1つ前の行/列へ食い込まないため）', async ({page})=> {
+	// <rt>はline box計算の外側に固定量ではみ出すCSSの<ruby>の制約（line-heightでは吸収できない）。
+	//	親のinline-block spanへ実測したrt高さをmargin-block-startとして足すことで、
+	//	詰めて表示しても1つ前の行/列に重ならないようにしている（TxtLayer.tsx）
+	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
+		el=> {
+			const parent = el.parentElement!;
+			const rt = el.querySelector('rt')!;
+			return {
+				marginTop: parseFloat(getComputedStyle(parent).marginTop),
+				rtHeight: rt.getBoundingClientRect().height,
+			};
+		});
+	expect(marginTop).toBeCloseTo(rtHeight, 0);
+});
+
 test('`｜親文字《ルビ》`も同じく組まれる（親文字の範囲を明示する記法）', async ({page})=> {
 	await pressKey(page, 'Space');
 

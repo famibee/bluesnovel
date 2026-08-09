@@ -224,6 +224,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		cache.push(...newSpans);
 		el.appendChild(frag);
 
+		// ルビの<rt>はline box計算の外側に固定量ではみ出し、詰めて表示すると1つ前の行と
+		//	重なりうる（CSSの<ruby>任せの制約。本家TxtStage.tsも同じHTML/<ruby>で組むが対応なし）。
+		//	margin-block-startではみ出し分を占有領域に含め、隣の行を侵食しないようにする
+		//	（block-startは横書きで上端・縦書きvertical-rlで右端になり、どちらの書字方向でも
+		//	「1つ前の行」側を指す）
+		newSpans.forEach(s=> {
+			const rt = s.querySelector('rt');
+			if (! rt) return;
+			s.style.marginBlockStart = `${String(rt.getBoundingClientRect().height)}px`;
+		});
+
 		// GSAPが変形を当てる前（＝計測が祖先transformで汚染されない唯一の安全点）に禁則を掛ける
 		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
 

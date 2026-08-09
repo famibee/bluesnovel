@@ -10219,7 +10219,10 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			let t = document.createElement("span");
 			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, y, ae, le, N)), l.appendChild(t), t;
 		});
-		if (se.current = [...se.current, ...s], i.push(...u), e.appendChild(l), wu(e, i, se.current, ue, d ?? !1, de()), P || V) {
+		if (se.current = [...se.current, ...s], i.push(...u), e.appendChild(l), u.forEach((e) => {
+			let t = e.querySelector("rt");
+			t && (e.style.marginBlockStart = `${String(t.getBoundingClientRect().height)}px`);
+		}), wu(e, i, se.current, ue, d ?? !1, de()), P || V) {
 			R.set(u, xu), te(!1);
 			return;
 		}

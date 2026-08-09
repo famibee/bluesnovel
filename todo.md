@@ -20,7 +20,8 @@
 - [ ] **`[lay b_pic=…]`の残り**：枠画像に合わせた文字表示領域の自動サイズ調整（本家`setMySize()`）。`[lay width=/height=]`自体が未実装なのが前提として要る。テンプレは`style=`でwidth/heightを明示するので実害は出ていない。`b_left`/`b_top`は調査の結果、本家`#drawBack()`が一切読んでおらず**実質未配線**と判明（実プロジェクトのシナリオ（`tmp_esm_uc/doc/prj/theme/title.sn`）が指定していても本家上で効いていない）ので、bluesnovel側でも対応不要と判断
 - [ ] **トゥイーンの残り**：`width`/`height`（レイヤ属性側に無い。`[lay width=/height=]`自体が未実装なのが前提）・`render=`（pixi前提なので保留）
 - [ ] **文字組みの残り**
-  - [ ] ルビ付き行の行間が広がる（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
+  - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
+        ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。`ruby-position`等の詰めは縦書き・`max_row`と合わせて
   - [ ] 縦書き時の行数・余白が本家と完全一致ではない（`padding`の解釈差）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも

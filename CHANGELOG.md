@@ -370,6 +370,27 @@
   - テスト：`test/ScriptEngine_txt.test.ts`・`test/Log.test.ts`・`test/ScriptEngine_trans.test.ts`・`test/ScriptEngine_save.test.ts`に追加。E2Eは`test/e2e/ruby.e2e.ts`（別レイヤ・裏ページへ実際に描かれること）と`test/e2e/trans.e2e.ts`（`[er]`を挟まない`[trans]`で前の場面の文が復活しない回帰テスト。`test/e2e/app/prj_trans/main.sn`にシーン追加）に1件ずつ追加
   - ユニットテスト1618件→1632件
 
+- [x] **ルビ付き文字が1つ前の行/列に食い込む問題への対応**（2026-08-09）
+  - `todo.md`「文字組みの残り」の1件目。禁則処理のため各文字を`display: inline-block`の`<span>`で
+    個別にラップしている（`TxtLayer.tsx`）ため、外側の`line-height`をいくら指定しても効かないと
+    実機検証で判明した：`<ruby>`の`<rt>`はブラウザのline box計算で**line-heightの外側に固定量で
+    追加される**仕様で、`inline-block`要素は自身の実高さ（`<rt>`込み）でしか行に寄与しない。
+    本家`TxtLayer.ts:272`が既定に`line-height: 1.5;`を持つのを試したが無関係（bluesnovelへ足しても
+    行間は1px も変わらなかった）
+  - 本家`TxtStage.ts`もpixi.js上に同じ`<span class="sn_ch">`＋`<ruby>`のHTML DOM要素を重ねて
+    `getBoundingClientRect()`で計測する方式（`#htmTxt`）で、`gjqy`（ディセンダーの深い文字）用の
+    補正`#lh_half`はあるがルビ用の補正は無い＝**本家もこの問題を未対応のまま抱えている**と判明。
+    「本家に揃える」対応ではなく、bluesnovel独自の追加対応と割り切った
+  - 対応：ルビ付き文字のspanへ`margin-block-start`（実測した`<rt>`の高さ）を足す
+    （`TxtLayer.tsx`、`el.appendChild(frag)`直後・`applyKinsoku()`より前）。`margin-block-start`は
+    横書きで`margin-top`・縦書き`vertical-rl`で`margin-right`に対応し、どちらの書字方向でも
+    「1つ前の行/列」側を指すため、縦書きでも列を跨いで正しい方向に効く（`test/e2e/app/prj_argdef/`
+    の縦書きシーンで実機確認。禁則処理の折返し判定はインライン方向の座標だけを見るため無関係）
+  - **行間そのものが揃うわけではない**（ルビ行だけ広がるのは変わらない）。ルビが上の行/列に
+    重ならないよう安全マージンを確保する対応であり、`ruby-position`等の詰めは引き続き
+    `todo.md`に残す
+  - `test/e2e/ruby.e2e.ts`に1件追加（`marginBlockStart`が実測`<rt>`高さと一致することを確認）
+
 - [ ]
 
 
