@@ -26,7 +26,10 @@ const H_CODEC_MIME: {[ext: string]: string} = {
 };
 
 export class SndMng {
-	constructor(private readonly trace: (txt: string, lvl?: 'D' | 'W' | 'F' | 'E' | 'I' | 'ET') => void) {}
+	constructor(
+		private readonly trace: (txt: string, lvl?: 'D' | 'W' | 'F' | 'E' | 'I' | 'ET') => void,
+		private readonly fetch: (url: string, init?: RequestInit)=> Promise<Response>,
+	) {}
 
 	#ctx?: AudioContext;
 	#gnMaster?: GainNode;
@@ -67,7 +70,7 @@ export class SndMng {
 		let p = this.#hAB.get(src);
 		if (! p) {
 			const {ctx} = this.#getCtx();
-			p = fetch(src)
+			p = this.fetch(src)
 				.then(r => {
 					if (! r.ok) throw `fetch失敗 ${String(r.status)} ${r.statusText}`;
 					return r.arrayBuffer();

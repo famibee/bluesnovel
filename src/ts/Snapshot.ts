@@ -128,6 +128,8 @@ async function inlineImgs(root: HTMLElement) {
 		catch {im.remove()}
 	}));
 }
+// sys.fetch は通さない：ここで読むのは既に画面へ出ている<img>のsrcで、暗号化構成でも
+//	その時点で復号済みのBlob/data URLになっている（二重復号を避ける）
 async function toDataUri(url: string): Promise<string> {
 	const res = await fetch(url);
 	if (! res.ok) throw `画像が取得できません url:${url}`;

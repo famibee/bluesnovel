@@ -30,21 +30,23 @@ var n = "skynovel", r = class {
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
 			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
-			import("./ScriptMng.js")
-		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: r }, { ScriptMng: i }]) => {
-			let a = await r.generate(this);
-			this.setMain(a), document.body.style.backgroundColor = String(a.oCfg.init.bg_color);
-			let o = document.getElementById(n);
-			if (o) {
-				let e = o.cloneNode(!0);
+			import("./ScriptMng.js"),
+			import("./Sprite.js").then((e) => e.t)
+		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: r }, { ScriptMng: i }, { setFetch: a }]) => {
+			a((e, t) => this.fetch(e, t));
+			let o = await r.generate(this);
+			this.setMain(o), document.body.style.backgroundColor = String(o.oCfg.init.bg_color);
+			let s = document.getElementById(n);
+			if (s) {
+				let e = s.cloneNode(!0);
 				e.id = n;
-			} else o = document.createElement("div"), o.id = n, document.body.appendChild(o);
-			let s = new i(this);
-			t(e(o), {
-				heStage: o,
+			} else s = document.createElement("div"), s.id = n, document.body.appendChild(s);
+			let c = new i(this);
+			t(e(s), {
+				heStage: s,
 				sys: this,
-				scrMng: s
-			}, () => queueMicrotask(() => s.load("main")));
+				scrMng: c
+			}, () => queueMicrotask(() => c.load("main")));
 		});
 	}
 	cfg;
@@ -61,6 +63,7 @@ var n = "skynovel", r = class {
 		return this.$path_userdata;
 	}
 	dec = (e, t) => Promise.resolve(t);
+	fetch = (e, t) => fetch(e, t);
 	hash = (e) => "";
 	async appendFile(e, t) {}
 	async storeLoad(e) {

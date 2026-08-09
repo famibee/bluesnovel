@@ -1,13 +1,15 @@
-import { BrowserWindow as e, app as t, dialog as n, ipcMain as r, screen as i, shell as a } from "electron";
-import o from "fs-extra";
-import s from "electron-store";
-import c from "adm-zip";
+import { BrowserWindow as e, app as t, dialog as n, ipcMain as r, net as i, protocol as a, screen as o, shell as s } from "electron";
+import c from "fs-extra";
+import l from "electron-store";
+import u from "adm-zip";
+import { pathToFileURL as d } from "node:url";
+import { resolve as f } from "node:path";
 //#region src/appMain_cmn.ts
-var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remove: m, writeFile: h, readFile: g, ensureDir: _ } = o, v = class e {
+var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remove: v, writeFile: y, readFile: b, ensureDir: x } = c, S = class e {
 	bw;
 	version;
 	static init(t) {
-		e.#e = t, s.initRenderer();
+		e.#e = t, l.initRenderer();
 	}
 	static #e;
 	#t;
@@ -40,24 +42,24 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 				ok: n.ok,
 				ab: await n.arrayBuffer()
 			};
-		}), i.handle("existsSync", (e, t) => f(t)), i.handle("copy", (e, t, n) => u(t, n)), i.handle("remove", (e, t) => m(t)), i.handle("ensureFile", (e, t) => d(t)), i.handle("readFile", (e, t, n) => g(t, n)), i.handle("writeFile", (e, t, n, r) => h(t, n, r)), i.handle("appendFile", (e, t, n) => l(t, n).catch((e) => console.error(e))), i.handle("outputFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), i.handle("win_close", () => t.close()), i.handle("win_setTitle", (e, n) => t.setTitle(n)), i.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), i.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), i.handle("capturePage", async (e, n, r, i, a) => {
+		}), i.handle("existsSync", (e, t) => g(t)), i.handle("copy", (e, t, n) => m(t, n)), i.handle("remove", (e, t) => v(t)), i.handle("ensureFile", (e, t) => h(t)), i.handle("readFile", (e, t, n) => b(t, n)), i.handle("writeFile", (e, t, n, r) => y(t, n, r)), i.handle("appendFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), i.handle("outputFile", (e, t, n) => _(t, n).catch((e) => console.error(e))), i.handle("win_close", () => t.close()), i.handle("win_setTitle", (e, n) => t.setTitle(n)), i.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), i.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), i.handle("capturePage", async (e, n, r, i, a) => {
 			let o = (await t.webContents.capturePage(n)).resize({
 				width: r,
 				height: i,
 				quality: "best"
 			});
 			return a === "image/jpeg" ? `data:image/jpeg;base64,${o.toJPEG(80).toString("base64")}` : o.toDataURL();
-		}), i.handle("navigate_to", (e, t) => a.openExternal(t));
-		let o;
+		}), i.handle("navigate_to", (e, t) => s.openExternal(t));
+		let a;
 		i.handle("Store", (e, t) => {
-			o = new s(t);
+			a = new l(t);
 		}), i.handle("flush", (e, t) => {
-			o.store = t;
-		}), i.handle("Store_isEmpty", () => o.size === 0), i.handle("Store_get", () => o.store), i.handle("zip", async (e, t, n) => {
-			let r = new c();
+			a.store = t;
+		}), i.handle("Store_isEmpty", () => a.size === 0), i.handle("Store_get", () => a.store), i.handle("zip", async (e, t, n) => {
+			let r = new u();
 			r.addLocalFolder(t), await r.writeZipPromise(n);
 		}), i.handle("unzip", async (e, t, n) => {
-			await m(n), await _(n), new c(t).extractAllTo(n, !0);
+			await v(n), await x(n), new u(t).extractAllTo(n, !0);
 		}), i.handle("isSimpleFullScreen", () => t.simpleFullScreen), this.#t ? (i.handle("setSimpleFullScreen", (e, n) => {
 			this.#f = () => {}, t.setSimpleFullScreen(n), n || (t.setPosition(this.#r, this.#i), t.setContentSize(this.#a, this.#o)), this.#f = () => this.#p();
 		}), t.on("enter-full-screen", () => {
@@ -83,7 +85,7 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 	#c = 0;
 	#l = () => this.bw.webContents.closeDevTools();
 	#u() {
-		let e = i.getCursorScreenPoint(), t = i.getDisplayNearestPoint(e);
+		let e = o.getCursorScreenPoint(), t = o.getDisplayNearestPoint(e);
 		this.#d = t.workAreaSize;
 	}
 	#d;
@@ -121,7 +123,7 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 	sendShutdown() {}
 	sendSaveWinInf(e) {}
 	openDevTools = () => {};
-}, y = class {
+}, C = class {
 	#e = [];
 	#t = [];
 	on(e, t) {
@@ -133,15 +135,32 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 	dispose() {
 		this.#e.forEach((e) => r.removeAllListeners(e)), this.#e = [], this.#t.forEach((e) => r.removeHandler(e)), this.#t = [];
 	}
-}, b = class {
+}, w = class {
 	send(e, t, ...n) {
 		e.send(t, ...n);
 	}
-}, x = class t extends v {
+}, T = class t extends S {
+	static registerScheme(e = "app") {
+		a.registerSchemesAsPrivileged([{
+			scheme: e,
+			privileges: {
+				standard: !0,
+				secure: !0,
+				supportFetchAPI: !0,
+				stream: !0
+			}
+		}]);
+	}
+	static handleScheme(e, t = "app") {
+		a.handle(t, (t) => {
+			let { pathname: n } = new URL(t.url), r = f(e, decodeURIComponent(n).replace(/^\/+/, ""));
+			return r !== e && !r.startsWith(e + "/") ? new Response("Forbidden", { status: 403 }) : i.fetch(d(r).toString());
+		});
+	}
 	static initRenderer(n, r) {
 		let i, a = () => {};
 		try {
-			v.init(new y()), i = new e({
+			S.init(new C()), i = new e({
 				show: !1,
 				minWidth: 300,
 				minHeight: 300,
@@ -159,7 +178,7 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 		}
 		return i;
 	}
-	#e = new b();
+	#e = new w();
 	sendShutdown() {
 		this.#e.send(this.bw.webContents, "shutdown");
 	}
@@ -168,6 +187,6 @@ var { appendFile: l, copy: u, ensureFile: d, existsSync: f, outputFile: p, remov
 	}
 };
 //#endregion
-export { x as appMain };
+export { T as appMain };
 
 //# sourceMappingURL=appMain.js.map

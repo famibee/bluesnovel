@@ -41,7 +41,12 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			import('../components/Main'),
 			import('./Config'),
 			import('../ts/ScriptMng'),
-		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}])=> {
+			import('../ts/Sprite'),
+		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch}])=> {
+			// GrpLayer/TxtLayer（Reactコンポーネント）はsysを持たないので、アニメpngシートの
+			//	.json取得だけモジュールレベルで注入する（Sprite.ts参照）
+			setFetch((url, init)=> this.fetch(url, init));
+
 			// React 初期表示
 			const cfg = await Config.generate(this);
 			this.setMain(cfg);
@@ -76,6 +81,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	get path_userdata() {return this.$path_userdata}
 
 	readonly dec = (_ext: string, tx: string)=> Promise.resolve(tx);
+	readonly fetch = (url: string, init?: RequestInit)=> fetch(url, init);
 	readonly hash = (_str: string)=> '';
 
 	async appendFile(_path: string, _data: string) { /* SysApp/SysWebが上書き（本家 SysBase.ts:583） */ }

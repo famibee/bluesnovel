@@ -353,13 +353,13 @@ export class ScriptMng {
 
 	// HTMLフレーム（[add_frame]系）。レイヤと違いストアには載せず、ここが抱える（FrameMng.ts参照）。
 	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる
-	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext));
+	readonly #frmMng = new FrameMng((fn, ext)=> this.sys.cfg.searchPath(fn, ext), (u, init)=> this.sys.fetch(u, init));
 	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
 
 	// 音声層（ts/SndMng.ts）。DOM/WebAudioを直接触るのはScriptMngから見てここだけ。
 	//	myTraceはクラスフィールドとしてこれより後ろで定義されている（フィールド初期化は宣言順）ので、
 	//	直接渡さず呼び出し時に引くラッパーにする（束縛時点ではまだ未初期化のため）
-	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl));
+	readonly #sndMng = new SndMng((txt, lvl)=> this.myTrace(txt, lvl), (u, init)=> this.sys.fetch(u, init));
 	// ブラウザの自動再生ポリシー対策。初回のクリック・キー入力から呼ぶ（Main.tsx参照）
 	unlockAudio() {this.#sndMng.unlock()}
 	// 自動再生ブロック中か（GrpLayerが[lay fn=movie]の<video>を初期muted状態にするかの判定に使う。
@@ -1150,7 +1150,7 @@ export class ScriptMng {
 	// [loadplugin]：cssを読んで<style>としてページへ足す（本家 LayerMng.ts:416 #loadplugin()）。
 	//	本家同様パス解決（path.json）は通さず、書かれたURLをそのままfetchする
 	async #loadPlugin(fn: string) {
-		const res = await fetch(fn);
+		const res = await this.sys.fetch(fn);
 		if (! res.ok) throw `cssが取得できません fn:${fn}`;
 
 		const st = document.createElement('style');
@@ -1614,7 +1614,7 @@ export class ScriptMng {
 	async #fetchScript(fn: string): Promise<string> {
 		try {
 			const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
-			const res = await fetch(path);
+			const res = await this.sys.fetch(path);
 			if (! res.ok) throw Error(res.statusText);
 			return await res.text();
 		} catch (e) {

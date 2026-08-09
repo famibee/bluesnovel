@@ -39,7 +39,10 @@ export type T_FRM_VALS = {[name: string]: string | number | boolean};
 
 
 export class FrameMng {
-	constructor(private readonly searchPath: T_SEARCHPATH) { /* empty */ }
+	constructor(
+		private readonly searchPath: T_SEARCHPATH,
+		private readonly fetch: (url: string, init?: RequestInit)=> Promise<Response>,
+	) { /* empty */ }
 
 	// フレームを載せる箱。Stage.tsxがステージ（拡縮される内側の箱）の中に置いてくれる。
 	//	Reactは「自分が作った子」しか面倒を見ないので、JSXで子を持たない空divへ
@@ -84,7 +87,7 @@ export class FrameMng {
 		const box = this.#box ?? await this.#pBox;
 
 		const url = this.searchPath(src, SEARCH_PATH_ARG_EXT.HTML);
-		const res = await fetch(url);
+		const res = await this.fetch(url);
 		if (! res.ok) throw `[add_frame] HTMLの読込に失敗しました src:${src} ${res.statusText}`;
 		const html = FrameMng.#resolveUrls(await res.text(), url);
 
@@ -286,11 +289,11 @@ export class FrameMng {
 	//	（＝アルバムで絵がリンク切れになっていた）。
 	//	`./_album_miken.jpg`のような枠自身の相対ファイルもsearchPathが拾える
 	//	（ファイル名＋拡張子で引ける形なので）。
-	//	絶対URL・ルート絶対・data:はそのまま通し、サーチパスに無ければ
-	//	従来どおりディレクトリ前置へ落とす（枠に同梱しただけでpath.jsonに載らない画像のため）
+	//	絶対URL（任意スキーム。app:/file:含む）・ルート絶対・data:はそのまま通し、サーチパスに
+	//	無ければ従来どおりディレクトリ前置へ落とす（枠に同梱しただけでpath.jsonに載らない画像のため）
 	#srcOf(dir: string, ds: string): string {
 		if (! ds) return '';
-		if (/^(?:https?:|\/|data:)/.test(ds)) return ds;
+		if (/^(?:[a-z][a-z\d+\-.]*:|\/)/i.test(ds)) return ds;
 		try {return this.searchPath(ds, SEARCH_PATH_ARG_EXT.SP_GSM)}
 		catch {return dir + ds.replace(/^\.\//, '')}
 	}

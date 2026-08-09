@@ -57,12 +57,17 @@ export function parseSheet(json: unknown, img: string): T_SHEET | undefined {
 	};
 }
 
+// GrpLayer/TxtLayerはsysを持たない（Reactコンポーネント）ので、SysBase.loaded()から
+//	一度だけ注入する。既定は素のfetch（テストや未注入時のフォールバック）
+let snFetch: (url: string, init?: RequestInit)=> Promise<Response> = (url, init)=> fetch(url, init);
+export function setFetch(f: typeof snFetch) {snFetch = f}
+
 // .jsonのURLからシートを読む。**同じシートを何度も取りに行かないようここで覚える**
 //	（表裏ページ・複数レイヤが同じ画像を使う。モジュールレベルに置くのは FocusMng と同じ形）
 const hSheet: {[jsonSrc: string]: Promise<T_SHEET | undefined>} = Object.create(null);
 
 export function loadSheet(jsonSrc: string): Promise<T_SHEET | undefined> {
-	return hSheet[jsonSrc] ??= fetch(jsonSrc)
+	return hSheet[jsonSrc] ??= snFetch(jsonSrc)
 		.then(async r=> {
 			if (! r.ok) throw `${String(r.status)} ${r.statusText}`;
 			return r.json() as Promise<unknown>;

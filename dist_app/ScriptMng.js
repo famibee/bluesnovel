@@ -3228,8 +3228,9 @@ var oe = class {
 	}
 }, X = class e {
 	searchPath;
-	constructor(e) {
-		this.searchPath = e;
+	fetch;
+	constructor(e, t) {
+		this.searchPath = e, this.fetch = t;
 	}
 	#e;
 	#t;
@@ -3261,7 +3262,7 @@ var oe = class {
 	}
 	async add(t, n, r) {
 		if (this.#r[t]) throw `[add_frame] frame【${t}】はすでにあります`;
-		let i = this.#e ?? await this.#n, o = this.searchPath(n, g.HTML), s = await fetch(o);
+		let i = this.#e ?? await this.#n, o = this.searchPath(n, g.HTML), s = await this.fetch(o);
 		if (!s.ok) throw `[add_frame] HTMLの読込に失敗しました src:${n} ${s.statusText}`;
 		let c = e.#m(await s.text(), o), l = document.createElement("iframe");
 		l.id = t, l.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(l), this.#r[t] = l, this.#i[t] = !1, this.#l(l, this.#a[t] = {
@@ -3383,7 +3384,7 @@ var oe = class {
 	}
 	#f(e, t) {
 		if (!t) return "";
-		if (/^(?:https?:|\/|data:)/.test(t)) return t;
+		if (/^(?:[a-z][a-z\d+\-.]*:|\/)/i.test(t)) return t;
 		try {
 			return this.searchPath(t, g.SP_GSM);
 		} catch {
@@ -3647,8 +3648,9 @@ var xe = 999e3, Se = class {
 	flac: "audio/flac"
 }, we = class {
 	trace;
-	constructor(e) {
-		this.trace = e;
+	fetch;
+	constructor(e, t) {
+		this.trace = e, this.fetch = t;
 	}
 	#e;
 	#t;
@@ -3683,7 +3685,7 @@ var xe = 999e3, Se = class {
 		let t = this.#r.get(e);
 		if (!t) {
 			let { ctx: n } = this.#n();
-			t = fetch(e).then((e) => {
+			t = this.fetch(e).then((e) => {
 				if (!e.ok) throw `fetch失敗 ${String(e.status)} ${e.statusText}`;
 				return e.arrayBuffer();
 			}).then((e) => n.decodeAudioData(e)), t.catch(() => this.#r.delete(e)), this.#r.set(e, t);
@@ -3897,11 +3899,11 @@ var xe = 999e3, Se = class {
 	jumpToLabelAndGo(e, t, n = "", r) {
 		r !== void 0 && (this.#r?.setValNochk("tmp:sn.eventArg", r), this.#r?.setValNochk("tmp:sn.eventLabel", e)), this.#D(e, t, n).catch(this.#i);
 	}
-	#S = new X((e, t) => this.sys.cfg.searchPath(e, t));
+	#S = new X((e, t) => this.sys.cfg.searchPath(e, t), (e, t) => this.sys.fetch(e, t));
 	attachFrameBox(e) {
 		this.#S.attachBox(e);
 	}
-	#C = new we((e, t) => this.myTrace(e, t));
+	#C = new we((e, t) => this.myTrace(e, t), (e, t) => this.sys.fetch(e, t));
 	unlockAudio() {
 		this.#C.unlock();
 	}
@@ -4455,7 +4457,7 @@ var xe = 999e3, Se = class {
 		this.#A = !1, this.#O();
 	}
 	async #Oe(e) {
-		let t = await fetch(e);
+		let t = await this.sys.fetch(e);
 		if (!t.ok) throw `cssが取得できません fn:${e}`;
 		let n = document.createElement("style");
 		n.textContent = await t.text(), document.head.appendChild(n);
@@ -4850,7 +4852,7 @@ var xe = 999e3, Se = class {
 	}
 	async #Le(e) {
 		try {
-			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await fetch(t);
+			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await this.sys.fetch(t);
 			if (!n.ok) throw Error(n.statusText);
 			return await n.text();
 		} catch (t) {

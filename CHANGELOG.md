@@ -271,6 +271,15 @@
   - **electron-store経由の実IPC往復は未検証**：`tmp_blues`を`electron-vite build`しPlaywrightの`_electron`で起動を試みたが、このサンドボックス環境にディスプレイが無くElectronのGUIプロセスが起動できず（`Process failed to launch!`）確認できなかった。ロジック自体は`appMain_cmn.ts`の既存ハンドラをそのまま呼ぶだけで新規処理は無いが、実機（`npm run app`等）での動作確認は別途必要
   - `todo.md`の該当行（アプリ版の残り＞electron-store化）を削除
 
+- [x] **パッケージ版（Electron）のアセット読み込み**（2026-08-09）
+  - テンプレ`tmp_blues`は本番時`w.loadFile(…)`でレンダラを開くため、ページのオリジンが`file://`（asar内）になる。Chromiumの`fetch()`は`file:`スキームを受け付けないので、**`prj.json`/`path.json`の読み込みが即座に失敗しパッケージ版は起動すらしない**状態だった。`electron-vite dev`（`http://localhost:5173`）でしか動作確認していなかったのはこのため
+  - 既存の`appMain_cmn.ts`の`fetch`/`fetchAb` IPCハンドラ（`=== vite-electron 用コード ===`とコメントされたもの）は中身がNodeの`fetch`（undici）で、こちらも`file:`未対応のため目的に使えなかった
+  - 対応は2層。**1. `app://`カスタムプロトコル**（根本解決）：`appMain`に`registerScheme()`（`app`の`ready`前、`protocol.registerSchemesAsPrivileged()`で`standard`/`secure`/`supportFetchAPI`を持つスキームとして登録）と`handleScheme(dirRenderer)`（`ready`後、`protocol.handle()`でリクエストパスを`dirRenderer`配下へ解決し`net.fetch()`で返す。パストラバーサル対策として解決後のパスが`dirRenderer`配下かを検証）を追加。オリジンがhttp相当になるので、`fetch`だけでなく`@font-face`・`<iframe srcdoc>`の相対解決・`index.html`のCSP `default-src 'self'`もdevと同じ挙動になる。テンプレ側（`tmp_blues/src/main/main.ts`）は`registerScheme()`をトップレベルで呼び、`loadFile`を`loadURL('app://bundle/index.html')`に変更
+  - **2. `SysBase.fetch`フック**（土台）：本家`skynovel_esm/src/sn/SysBase.ts:96`と同じ形で`readonly fetch = (url, init)=> fetch(url, init)`を追加し、`T_SysRoots`にもシグネチャを追加。戻り値が生の`Response`なので、既存の`.text()`/`.json()`/`.arrayBuffer()`/`.statusText`がそのまま通り、直呼びしていた`Config.ts`/`ConfigBase.ts`（2箇所）/`ScriptMng.ts`（`[loadplugin]`・シナリオ読込）を`sys.fetch(…)`経由に、`FrameMng`/`SndMng`はコンストラクタへ第2引数で受け取る形に置換。`Sprite.ts`（アニメpngシートの`.json`）だけはReactコンポーネント3箇所から呼ばれ`sys`が届かないため、モジュールレベルの差し替え口（`setFetch()`）を`SysBase.loaded()`から一度だけ注入する形にした。`SysApp`では`fetch`をoverrideしない（`app://`で素の`fetch`が動くため、`T_FETCH`という`Response`でない型のIPCへ寄せる必要が無い）。今すぐの用途は無いが、`todo.md`の**暗号化アセット**対応時にここへ復号処理を差し込む土台になる
+  - 通さなかった箇所：`Snapshot.ts`の`toDataUri()`は既に画面に出ている`<img>`のsrc（暗号化構成でも復号済みのBlob/data URL）を読むだけなので、二重復号を避けるため素の`fetch`のまま残した
+  - ついでに`FrameMng.ts#srcOf()`の絶対URL判定（`/^(?:https?:|\/|data:)/`）に`app:`が無く、フレームHTML内の完全修飾URLが誤って`searchPath()`へ流れる穴があったので、任意スキームを見る形（`/^(?:[a-z][a-z\d+\-.]*:|\/)/i`）へ広げた
+  - 型チェック（`tsc --noEmit`／`-p test/e2e`）・単体テスト1519件はいずれもパス。**実機（`tmp_blues`での`npm run app_bld`→`out/`起動、`npm run pkg:mac`）は未検証**（サンドボックスにディスプレイが無くGUI起動不可）。特に音声（`fetch`＋`decodeAudioData`）・`@font-face`・`[add_frame]`のiframeとその中の画像は要確認（`todo.md`へ）
+
 - [ ]
 
 

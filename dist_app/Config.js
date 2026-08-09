@@ -63,7 +63,7 @@ var i = class {
 			...this.oCfg.debug,
 			...e.debug
 		}, this.oCfg.debuger_token = e.debuger_token;
-		let t = this.sys.arg.cur + "path.json", n = await fetch(t);
+		let t = this.sys.arg.cur + "path.json", n = await this.sys.fetch(t);
 		if (!n.ok) throw Error(n.statusText);
 		let r = await n.text(), i = JSON.parse(await this.sys.dec(t, r));
 		for (let [e, t] of Object.entries(i)) {
@@ -78,7 +78,7 @@ var i = class {
 				continue;
 			}
 			if (!n.endsWith(":id")) continue;
-			let i = r.slice(r.lastIndexOf("/") + 1), o = t[n.slice(0, -10)] ?? "", s = await (await fetch(o)).text();
+			let i = r.slice(r.lastIndexOf("/") + 1), o = t[n.slice(0, -10)] ?? "", s = await (await this.sys.fetch(o)).text();
 			if (i !== this.sys.hash(s)) throw `ファイル改竄エラーです fn:${o}`;
 		}
 	}
@@ -151,7 +151,7 @@ var i = class {
 }, a = "userdata:/", o = "downloads:/", s = class e extends i {
 	sys;
 	static async generate(t) {
-		let n = new e(t), r = t.arg.cur + "prj.json", i = await fetch(r);
+		let n = new e(t), r = t.arg.cur + "prj.json", i = await t.fetch(r);
 		if (!i.ok) throw Error(i.statusText);
 		let a = await t.dec(r, await i.text());
 		return await n.load(JSON.parse(a)), n;

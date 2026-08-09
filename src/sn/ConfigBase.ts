@@ -129,6 +129,7 @@ export type T_SysRoots = {
 	// decAB(ab: ArrayBuffer): Promise<HTMLImageElement | HTMLVideoElement | ArrayBuffer>;
 
 	arg: T_HSysBaseArg;
+	fetch(url: string, init?: RequestInit): Promise<Response>;
 	hash(str: string): string;
 }
 export type T_HSysBaseArg = {
@@ -168,7 +169,7 @@ export class ConfigBase implements T_Config {
 
 		// path.json ロード
 		const fn = this.sys.arg.cur +'path.json';
-		const res = await fetch(fn);
+		const res = await this.sys.fetch(fn);
 		if (! res.ok) throw Error(res.statusText);
 
 		const src = await res.text();
@@ -193,7 +194,7 @@ export class ConfigBase implements T_Config {
 
 				const hp = (<string>pp).slice((<string>pp).lastIndexOf('/') +1);
 				const fn = hExts[ext.slice(0, -10)] ?? '';
-				const res = await fetch(fn);
+				const res = await this.sys.fetch(fn);
 				const src = await res.text();
 				const hf = this.sys.hash(src);
 				if (hp !== hf) throw `ファイル改竄エラーです fn:${fn}`;

@@ -17,7 +17,7 @@ export class Config extends ConfigBase {
 	static	async	generate(sys: SysBase) {
 		const c = new Config(sys);
 		const fn = sys.arg.cur +'prj.json';
-		const res = await fetch(fn);
+		const res = await sys.fetch(fn);
 		if (! res.ok) throw Error(res.statusText);
 
 		const dec = await sys.dec(fn, await res.text());
