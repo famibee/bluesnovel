@@ -25,12 +25,12 @@ const LAYS = '[add_lay layer=base class=grp][add_lay layer=0 class=grp][add_lay 
 it('layPage_defaultsToFore', ()=> {
 	// 本家 Pages.argChk_page(hArg, 'fore')。[lay]の既定は表ページ
 	expect(acts(`${LAYS}[lay layer=base fn=bg][s]`).find(v=> v.t === 'chgPic'))
-		.toEqual({t: 'chgPic', nm: 'base', page: 'fore', fn: 'bg', aFace: []});
+		.toEqual({t: 'chgPic', nm: 'base', page: 'fore', fn: 'bg'});
 });
 
 it('layPage_back', ()=> {
 	expect(acts(`${LAYS}[lay layer=base fn=bg page=back][s]`).find(v=> v.t === 'chgPic'))
-		.toEqual({t: 'chgPic', nm: 'base', page: 'back', fn: 'bg', aFace: []});
+		.toEqual({t: 'chgPic', nm: 'base', page: 'back', fn: 'bg'});
 });
 
 it('layPage_appliesToBAlphaToo', ()=> {
@@ -213,8 +213,8 @@ it('scenario_titleSnLikeSequence', ()=> {
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'addLay', cls: 'grp', nm: '0'},
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
-		{t: 'chgPic', nm: 'base', page: 'back', fn: 'title', aFace: []},
-		{t: 'chgPic', nm: '0', page: 'back', fn: 'logo', aFace: []},
+		{t: 'chgPic', nm: 'base', page: 'back', fn: 'title'},
+		{t: 'chgPic', nm: '0', page: 'back', fn: 'logo'},
 		{t: 'trans', aLayNm: ['base', '0', 'mes'], time: 0},
 		{t: 'waitTrans', canskip: true},
 	]);

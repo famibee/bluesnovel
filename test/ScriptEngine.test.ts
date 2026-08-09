@@ -76,12 +76,12 @@ it('step_stopsAtL', ()=> {
 it('step_chgPic', ()=> {
 	// stop.nmは「待ち中の文字レイヤ（#curTxtLayer）」であり、[add_lay]でgrpレイヤを追加しても
 	// [current]しない限り既定値'mes'のまま変わらない仕様（ScriptEngine.ts:57, #curTxtLayer）。
-	// face未指定時はaFaceは空配列になる。
+	// face未指定時はaFaceキー自体を積まない＝直前のfaceを維持する（本家 GrpLayer.ts:76-85）。
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=GRP][lay layer=base pic=yun_1184][s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
-		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184', aFace: []},
+		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184'},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -141,6 +141,29 @@ it('step_lay_faceUndefinedNameThrows', ()=> {
 	expect(()=> new ScriptEngine('t1', '[lay fn=base face=nothing][s]').step()).toThrow();
 });
 
+it('step_lay_faceOmitted_noAFaceKey', ()=> {
+	// face属性省略時はaFaceキー自体を積まない（本家：fnは毎回明示、faceは省略すると直前を維持）。
+	// [lay fn=...]だけ（face無指定）を2回続けても、2回目のchgPicにaFaceキーは出ない
+	const se = new ScriptEngine('t1', '[add_lay layer=0 class=grp][lay layer=0 fn=a][lay layer=0 fn=b][s]');
+	const a = se.step();
+	const aChgPic = a.filter(v=> v.t === 'chgPic');
+	expect(aChgPic).toEqual([
+		{t: 'chgPic', nm: '0', page: 'fore', fn: 'a'},
+		{t: 'chgPic', nm: '0', page: 'fore', fn: 'b'},
+	]);
+	expect(aChgPic.some(v=> 'aFace' in v)).toBe(false);
+});
+
+it('step_lay_faceEmptyString_clearsExplicitly', ()=> {
+	// face=""は「明示的にクリア」の指定なので、aFace: []を積む（キー省略とは区別する）
+	const se = new ScriptEngine('t1', `${'[add_lay layer=0 class=grp][add_face name=f1 dx=1 dy=1]'}[lay layer=0 fn=a face=f1][lay layer=0 fn=a face=''][s]`);
+	const a = se.step();
+	const aChgPic = a.filter(v=> v.t === 'chgPic');
+	expect(aChgPic[0]?.t === 'chgPic' ? aChgPic[0].aFace : undefined)
+		.toEqual([{fn: 'f1', dx: 1, dy: 1, blendmode: 'normal'}]);
+	expect(aChgPic[1]?.t === 'chgPic' ? aChgPic[1].aFace : undefined).toEqual([]);
+});
+
 it('step_lay_bAlpha', ()=> {
 	// [lay layer=mes b_alpha=0.8] で文字レイヤ背景の不透明度を指定できる。pic/fnとは無関係に単独でもchgBAlphaアクションが積まれる
 	const se = new ScriptEngine('t1', '[lay layer=mes b_alpha=0.8][s]');
@@ -157,7 +180,7 @@ it('step_lay_bAlpha_withPic_bothActionsPushed', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
-		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184', aFace: []},
+		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184'},
 		{t: 'chgBAlpha', nm: 'base', page: 'fore', b_alpha: 0.5},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);

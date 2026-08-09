@@ -103,7 +103,7 @@ export type T_MARK_STY = {x?: number; y?: number; width?: number; height?: numbe
 
 export type T_ENGINE_ACTION =
 	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
-	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。無指定時は空配列
+	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace?: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。face属性省略時はundefined＝直前のfaceを維持（本家 GrpLayer.ts:76-85）。face=""で明示的にクリア
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
 	| {t: 'chgBackClear'; nm: string; page: T_PAGE}	// [lay back_clear=true]。文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す（本家 TxtLayer.ts:376-385）。他のb_*属性とは同時指定しない（本家も早期returnで排他）
@@ -1111,17 +1111,23 @@ export class ScriptEngine {
 			// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
 			const picFn = args.fn || args.pic;
 			if (picFn) {
-				const aFace: T_FACE[] = [];
-				if (args.face) {
-					// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
-					for (const nm of args.face.split(',')) {
-						if (! nm) throw '[lay] face属性に空要素が含まれています';
-						const f = this.#hFace[nm];
-						if (! f) throw `[lay] face【${nm}】は[add_face]で未定義です`;
-						aFace.push(f);
+				const o: Extract<T_ENGINE_ACTION, {t: 'chgPic'}> = {t: 'chgPic', nm: args.layer ?? '', page, fn: picFn};
+				// face属性省略時はaFaceを積まない＝直前のfaceを維持（本家：fnは毎回明示、faceは省略可）。
+				//	face=""は明示的なクリア指定なので空配列を積む
+				if (args.face !== undefined) {
+					const aFace: T_FACE[] = [];
+					if (args.face) {
+						// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
+						for (const nm of args.face.split(',')) {
+							if (! nm) throw '[lay] face属性に空要素が含まれています';
+							const f = this.#hFace[nm];
+							if (! f) throw `[lay] face【${nm}】は[add_face]で未定義です`;
+							aFace.push(f);
+						}
 					}
+					o.aFace = aFace;
 				}
-				aAct.push({t: 'chgPic', nm: args.layer ?? '', page, fn: picFn, aFace});
+				aAct.push(o);
 			}
 
 			// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す

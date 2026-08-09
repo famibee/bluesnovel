@@ -1666,20 +1666,23 @@ var re = class {
 			case "lay": {
 				let e = t.argPage(i, "fore"), n = i.fn || i.pic;
 				if (n) {
-					let t = [];
-					if (i.face) for (let e of i.face.split(",")) {
-						if (!e) throw "[lay] face属性に空要素が含まれています";
-						let n = this.#C[e];
-						if (!n) throw `[lay] face【${e}】は[add_face]で未定義です`;
-						t.push(n);
-					}
-					a.push({
+					let t = {
 						t: "chgPic",
 						nm: i.layer ?? "",
 						page: e,
-						fn: n,
-						aFace: t
-					});
+						fn: n
+					};
+					if (i.face !== void 0) {
+						let e = [];
+						if (i.face) for (let t of i.face.split(",")) {
+							if (!t) throw "[lay] face属性に空要素が含まれています";
+							let n = this.#C[t];
+							if (!n) throw `[lay] face【${t}】は[add_face]で未定義です`;
+							e.push(n);
+						}
+						t.aFace = e;
+					}
+					a.push(t);
 				}
 				if (i.back_clear !== void 0) i.back_clear === "true" && a.push({
 					t: "chgBackClear",
@@ -3971,7 +3974,7 @@ var ye = 999e3, be = class {
 				});
 				break;
 			case "chgPic": {
-				let t = this.#Re("lay", e.fn), n = t.endsWith(".json"), r = /\.(?:mp4|webm)$/i.test(t), i = e.aFace.map((e) => ({
+				let t = this.#Re("lay", e.fn), n = t.endsWith(".json"), r = /\.(?:mp4|webm)$/i.test(t), i = e.aFace?.map((e) => ({
 					...e,
 					src: this.#Re("add_face", e.fn)
 				}));
@@ -3983,7 +3986,7 @@ var ye = 999e3, be = class {
 						src: t,
 						isSheet: n,
 						isMovie: r,
-						aFace: i
+						...i && { aFace: i }
 					});
 					break;
 				}
@@ -3995,16 +3998,16 @@ var ye = 999e3, be = class {
 					src: "",
 					isSheet: n,
 					isMovie: r,
-					aFace: i.map((e) => ({
+					...i && { aFace: i.map((e) => ({
 						...e,
 						src: ""
-					}))
+					})) }
 				});
 				let s = (e) => {
 					let t = this.#He.get(e);
 					return t && this.#He.delete(e), t ?? this.#Be(e);
 				};
-				Promise.all([s(t), ...i.map((e) => s(e.src))]).then(([t, ...s]) => {
+				Promise.all([s(t), ...i?.map((e) => s(e.src)) ?? []]).then(([t, ...s]) => {
 					this.#Ve.get(a) === o && this.$fncs.chgPic({
 						nm: e.nm,
 						page: e.page,
@@ -4012,10 +4015,10 @@ var ye = 999e3, be = class {
 						src: t,
 						isSheet: n,
 						isMovie: r,
-						aFace: i.map((e, t) => ({
+						...i && { aFace: i.map((e, t) => ({
 							...e,
 							src: s[t] ?? ""
-						}))
+						})) }
 					});
 				});
 				break;

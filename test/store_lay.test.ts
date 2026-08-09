@@ -425,3 +425,29 @@ it('clearTxtLay_ボタンも消す', ()=> {
 	const e = useStore.getState().aPage[0].find(v=> v.nm === 'mes')!;
 	expect(e.cls === 'txt' && e.aBtn).toEqual([]);
 });
+
+
+// ============ chgPic：aFace省略時は直前の値を維持（本家 GrpLayer.ts:76-85） ============
+
+it('chgPic_aFaceOmitted_keepsPreviousFace', ()=> {
+	const face = [{fn: 'f1', src: '/f1.png', dx: 1, dy: 2, blendmode: 'normal'}];
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: face});
+
+	// fnを再指定してもaFace省略なら、直前のfaceがそのまま残る（本家：fnは毎回明示、faceは省略可）
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa2', src: '/pa2.png', isSheet: false, isMovie: false});
+
+	const e = useStore.getState().aPage[0].find(v=> v.nm === 'a');
+	expect(e?.cls === 'grp' ? e.fn : undefined).toBe('pa2');
+	expect(e?.cls === 'grp' ? e.aFace : undefined).toEqual(face);
+});
+
+it('chgPic_aFaceEmptyArray_clearsFaceExplicitly', ()=> {
+	const face = [{fn: 'f1', src: '/f1.png', dx: 1, dy: 2, blendmode: 'normal'}];
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: face});
+
+	// aFace: []（face=""相当）は明示的なクリアなので、省略時とは違い実際に消える
+	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: []});
+
+	const e = useStore.getState().aPage[0].find(v=> v.nm === 'a');
+	expect(e?.cls === 'grp' ? e.aFace : undefined).toEqual([]);
+});

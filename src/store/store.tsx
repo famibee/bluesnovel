@@ -150,7 +150,7 @@ export type T_CHGPIC = {
 	//	確定させてここへ渡す。fnは拡張子なしの論理名（例："anime"）のこともあるためfnからは判定できない
 	isSheet	: boolean;
 	isMovie	: boolean;
-	aFace	: T_FACE_SRC[];	// [lay face=...]で重ねる差分絵（重なり順＝配列順）
+	aFace?	: T_FACE_SRC[];	// [lay face=...]で重ねる差分絵（重なり順＝配列順）。undefined＝face属性省略、直前の値を維持
 }
 // [lay b_alpha=/b_alpha_isfixed=]：文字レイヤ背景の不透明度。値域は0.0（透明）～1.0（不透過）。
 //	背景のみを透過させ、文字は透過しない（レイヤ全体の透過度ではない）。
@@ -379,7 +379,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		e.src = src;
 		e.isSheet = isSheet;
 		e.isMovie = isMovie;
-		e.aFace = aFace;	// [lay face=...]の差分合成情報も同時に更新（未指定時は空配列）
+		if (aFace !== undefined) e.aFace = aFace;	// [lay face=...]省略時（undefined）は直前のfaceを維持
 		return putPage(s, idx, aLay);
 	}),
 	chgBAlpha	: ({nm, page, b_alpha, isFixed}: T_CHGBALPHA)=> set(s=> {

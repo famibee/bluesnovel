@@ -556,6 +556,41 @@
     `autoskip`）・単体テスト1648件・型チェックとも回帰なし
   - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
 
+- [x] **`test/e2e/pic.e2e.ts`のflakyテストを修正**（2026-08-10）
+  - 原因：`GrpLayer.tsx`は`<img src={src}>`を貼るだけで読み込み完了を待たず、`waitIdle()`も
+    文字送り演出の完了しか見ておらず`<img>`のネットワーク読み込み完了は保証していなかった。
+    そのため稀に`naturalWidth`をロード完了前に0で読んで落ちていた（`git stash`で戻しても
+    再現する既存のflakyだった）
+  - `pic.e2e.ts`の`imgs()`ヘルパーを、対象の`<img>`全部が`complete`になる（`load`/`error`
+    イベント待ち）までasync待ってから値を返す形に修正。製品コード（`GrpLayer.tsx`）側は
+    変更不要と判断した
+  - 5回連続実行・E2E全体（213件）・単体テスト（1648件）・型チェックとも回帰なし
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
+- [x] **`[lay face=...]`省略時に直前のfaceを維持するよう修正**（2026-08-10）
+  - todo.mdは「faceのみ指定して直前のfnを維持する」対応が要ると書いていたが、本家
+    `skynovel_esm/docs/tag.html:682`・`GrpLayer.ts:59-91`を確認すると実態は逆で、
+    **fnは毎回明示が前提（省略時は何もしない）、faceは省略すると直前の値を維持する**仕様
+    だった。bluesnovelは`face`未指定時に常に`aFace: []`で上書きしており、`fn`を再指定する
+    だけでfaceが消えていた
+  - `T_ENGINE_ACTION`の`'chgPic'`・`T_CHGPIC`の`aFace`をoptionalにし、`[lay]`の`face`属性が
+    未指定（`undefined`）ならアクション・ストア更新のどちらでも`aFace`キー自体を素通りさせて
+    直前の値を残す形にした。`face=""`は「明示的なクリア」として区別し、これまで通り空配列で
+    上書きする（`ScriptEngine.ts`の`'lay'`ケース、`store.tsx`の`chgPic`、`ScriptMng.ts`の
+    `#applyAction`のcrypto分岐3箇所）
+  - `exactOptionalPropertyTypes: true`のもとでは`{aFace: undefined}`は型エラーになるため、
+    `...(aFace && {aFace})`の形でキーごと省略する必要があった
+  - `test/e2e/app/prj_pic/main.sn`が旧仕様（face省略で自動クリア）を前提に書かれていたため、
+    2箇所に`face=''`を追加して新仕様に合わせた（fnだけ差し替えて前のfaceを引きずらないように
+    明示クリア）
+  - 新規テスト：`ScriptEngine.test.ts`に2件（face省略でaFaceキーが出ないこと／face=""で
+    明示クリアされること）、`store_lay.test.ts`に2件（chgPic側でも同じ振る舞い）。
+    単体テスト1648件→1652件、E2E 213件は回帰なし、型チェックも通過
+  - Moveableでのface位置調整（`todo.md`にあった「dx/dyが拡縮に追随しない」件）は、デザイン
+    モード自体が無効化中（`ENA_DESIGN_MODE=false`）で調整結果の書き戻し先も無いため見送り、
+    `todo.md`の「デザインモードは無効化中」項目の子タスクへ統合した
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
 - [ ]
 
 

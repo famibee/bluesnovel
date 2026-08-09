@@ -1368,9 +1368,13 @@ export class ScriptMng {
 			//	Blob URLに化けて拡張子情報を失うため、どちらでも判定できるのはこのタイミングだけ
 			const isSheet = src.endsWith('.json');
 			const isMovie = /\.(?:mp4|webm)$/i.test(src);
-			const aFace = act.aFace.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}));
+			// act.aFaceがundefined＝[lay face=...]省略。ストア側でも省略扱いとし、
+			//	パス解決自体をスキップして直前のfaceをそのまま残す
+			const aFace = act.aFace?.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}));
+			// exactOptionalPropertyTypes: true のため、undefinedの時はaFaceキー自体を省略する
+			//	（chgPicはaFaceキー無しなら直前の値を維持する）
 			if (! this.sys.crypto) {
-				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src, isSheet, isMovie, aFace});
+				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src, isSheet, isMovie, ...(aFace && {aFace})});
 				break;
 			}
 
@@ -1383,17 +1387,17 @@ export class ScriptMng {
 			const seq = (this.#picReqSeq.get(key) ?? 0) + 1;
 			this.#picReqSeq.set(key, seq);
 			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '', isSheet, isMovie,
-				aFace: aFace.map(f=> ({...f, src: ''}))});
+				...(aFace && {aFace: aFace.map(f=> ({...f, src: ''}))})});
 			const takePreloaded = (u: string)=> {
 				const p = this.#picPreloadCache.get(u);
 				if (p) this.#picPreloadCache.delete(u);	// 使い終わったら捨てる（無制限に溜めない）
 				return p ?? this.#decryptPic(u);
 			};
-			void Promise.all([takePreloaded(src), ...aFace.map(f=> takePreloaded(f.src))])
+			void Promise.all([takePreloaded(src), ...(aFace?.map(f=> takePreloaded(f.src)) ?? [])])
 			.then(([dSrc, ...aFaceSrc])=> {
 				if (this.#picReqSeq.get(key) !== seq) return;	// 追い越された
 				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc, isSheet, isMovie,
-					aFace: aFace.map((f, i)=> ({...f, src: aFaceSrc[i] ?? ''}))});
+					...(aFace && {aFace: aFace.map((f, i)=> ({...f, src: aFaceSrc[i] ?? ''}))})});
 			});
 			break;
 		}

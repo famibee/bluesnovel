@@ -16,8 +16,10 @@
 [lay layer=base fn=bg face=face_a]
 さぶん[p]
 
-; サーチパスに無い画像。エラーは出るが画面は落ちない
-[lay layer=base fn=nai_gazou]
+; サーチパスに無い画像。エラーは出るが画面は落ちない。
+;	face=''で前段のface_aを明示的にクリア（face省略時は直前のfaceを維持する仕様のため。
+;	本家 GrpLayer.ts:76-85＝fnは毎回明示、faceは省略可＝省略時は直前を維持）
+[lay layer=base fn=nai_gazou face='']
 みつからない[p]
 
 ; 合成モード。[lay]・[add_face]・[button]の3つとも本家の4種だけを受けてCSSの値へ直す
@@ -27,8 +29,8 @@
 ごうせい[p]
 
 ; 画像の拡縮（[lay width=/height=]）。bg.pngの自然サイズ(40x30)を80x60へ拡大する。
-;	fn再指定でaFaceは空配列に戻る（差分絵は消える）
-[lay layer=base fn=bg width=80 height=60]
+;	face=''で前段のface_mを明示的にクリア（省略時は維持されるため）
+[lay layer=base fn=bg width=80 height=60 face='']
 かくだい[s]
 
 *here

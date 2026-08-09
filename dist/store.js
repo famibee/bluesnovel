@@ -763,7 +763,7 @@ var ee = q()((e, t) => ({
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, src: i, isSheet: a, isMovie: o, aFace: s }) => e((e) => {
 		let { idx: c, aLay: l } = X(e, n), u = $(l, t, "grp");
-		return u.fn = r, u.src = i, u.isSheet = a, u.isMovie = o, u.aFace = s, Z(e, c, l);
+		return u.fn = r, u.src = i, u.isSheet = a, u.isMovie = o, s !== void 0 && (u.aFace = s), Z(e, c, l);
 	}),
 	chgBAlpha: ({ nm: t, page: n, b_alpha: r, isFixed: i }) => e((e) => {
 		let { idx: a, aLay: o } = X(e, n), s = $(o, t, "txt");

@@ -364,7 +364,7 @@ it('blendmode_addFaceUsesSameTable', ()=> {
 	// [add_face]も同じ変換を通す（以前はCSSの値を素通ししていた）
 	const a = acts(`${LAYS}[add_face name=f1 fn=f1 blendmode=add][lay layer=base fn=bg face=f1][s]`);
 	const chg = a.find(v=> v.t === 'chgPic');
-	expect(chg?.t === 'chgPic' ? chg.aFace[0]?.blendmode : '').toBe('plus-lighter');
+	expect(chg?.t === 'chgPic' ? chg.aFace?.[0]?.blendmode : '').toBe('plus-lighter');
 });
 
 it('blendmode_addFaceUnsupportedThrows', ()=> {

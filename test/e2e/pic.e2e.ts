@@ -16,11 +16,20 @@ import {SEL_FORE, gotoSn, mesStr, pressKey, snap, traceText} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'pic')});
 
-// 表ページの画像レイヤが実際に読み込んだ<img>（表示サイズ＝自然サイズ）
+// 表ページの画像レイヤが実際に読み込んだ<img>（表示サイズ＝自然サイズ）。
+//	waitIdle()は文字送りの完了しか見ておらず<img>のネットワーク読み込み完了までは
+//	保証しないため（GrpLayerはonLoadを待たずsrcを張るだけ）、ここでロード完了を
+//	待ってからnaturalWidth/Heightを読む（さもないと稀に0のまま読んでflakyになる）
 const imgs = (page: import('@playwright/test').Page)=> page.evaluate(
-	()=> [...document.querySelectorAll<HTMLImageElement>('#skynovel [data-page="fore"] img')]
-		.map(e=> ({src: e.getAttribute('src') ?? '', w: e.naturalWidth, h: e.naturalHeight,
-			left: e.style.left, top: e.style.top})));
+	async ()=> {
+		const els = [...document.querySelectorAll<HTMLImageElement>('#skynovel [data-page="fore"] img')];
+		await Promise.all(els.map(e=> e.complete ? Promise.resolve() : new Promise<void>(re=> {
+			e.addEventListener('load', ()=> {re()}, {once: true});
+			e.addEventListener('error', ()=> {re()}, {once: true});
+		})));
+		return els.map(e=> ({src: e.getAttribute('src') ?? '', w: e.naturalWidth, h: e.naturalHeight,
+			left: e.style.left, top: e.style.top}));
+	});
 
 test('[lay fn=…]がpath.json経由で解決され、画像が表示される', async ({page})=> {
 	expect(await mesStr(page)).toBe('はいけい');
