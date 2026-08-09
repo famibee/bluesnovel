@@ -98,6 +98,14 @@ export async function waitIdle(page: Page) {
 		()=> ! (globalThis as any).__sn.store.getState().isTyping,
 		undefined, {timeout: 15_000},
 	);
+	// isAutoPending：オート読み・既読スキップは文字送り演出の完了後にresumeタイマーを
+	//	仕込む（ScriptMng#scheduleResume）ので、isTypingがfalseになった直後もまだ次の停止点へ
+	//	進む予定が残っていることがある。それを見ずに操作すると、まだ動いている自動進行を
+	//	cancelAuto()で踏み潰してしまう（手前の停止点に足止めされたまま先へ進めなくなる）
+	await page.waitForFunction(
+		()=> ! (globalThis as any).__sn.isAutoPending(),
+		undefined, {timeout: 15_000},
+	);
 }
 
 // ストアの現在状態を取得（関数プロパティを含めるとシリアライズできないので必要な値だけ抜く）

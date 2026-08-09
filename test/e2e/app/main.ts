@@ -38,7 +38,10 @@ AudioContext.prototype.createGain = function(this: AudioContext) {
 	return origCreateGain.call(this);
 };
 
-(globalThis as any).__sn = {store: useStore, gsap, gainNodeCount: ()=> gainNodeCount};
-
 const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')} : {};
-new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto, dip: ''});
+const sys = new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto, dip: ''});
+
+// isAutoPending: オート読み・既読スキップが次の停止点へ本当に落ち着いたか（waitIdle参照）。
+//	scrMngはloaded()完了後にしか生えないので都度sys.scrMngを引き直す（キャッシュしない）
+(globalThis as any).__sn = {store: useStore, gsap, gainNodeCount: ()=> gainNodeCount,
+	isAutoPending: ()=> sys.scrMng?.isAutoPending ?? false};

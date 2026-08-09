@@ -8,6 +8,7 @@
 import type {T_HPlugin, T_SysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import { T_Config, T_SysRoots } from './ConfigBase';
 import type {T_DATA4VARI_TRANSPORT} from '../ts/SaveMng';
+import type {ScriptMng} from '../ts/ScriptMng';
 import store from './localStore';
 
 
@@ -76,6 +77,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 				document.body.appendChild(he);
 			}
 			const scrMng = new ScriptMng(this);
+			this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
 			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
 		});
 	}
@@ -85,6 +87,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	setMain(cfg: T_Config) {
 		this.cfg = cfg;
 	}
+	scrMng?: ScriptMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
 	protected async run() {}
 
 

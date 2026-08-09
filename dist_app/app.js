@@ -58,7 +58,7 @@ var i = "skynovel", a = class {
 				e.id = i;
 			} else c = document.createElement("div"), c.id = i, document.body.appendChild(c);
 			let l = new r(this);
-			t(e(c), {
+			this.scrMng = l, t(e(c), {
 				heStage: c,
 				sys: this,
 				scrMng: l
@@ -69,6 +69,7 @@ var i = "skynovel", a = class {
 	setMain(e) {
 		this.cfg = e;
 	}
+	scrMng;
 	async run() {}
 	$path_downloads = "";
 	get path_downloads() {

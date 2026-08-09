@@ -527,20 +527,45 @@ export class ScriptMng {
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
 	#resumeTimer: ReturnType<typeof setTimeout> | undefined;
+	// 文字送り演出（GSAP）が終わるまで足止め中のresume指示（本家 Reading.ts はl()/p()の
+	//	待ち時間カウントを文字送り完了後に開始する。ここで同じ挙動にする。演出が待ち時間より
+	//	長いと、演出の途中でオート/スキップが次へ進んでしまう問題への対応）
+	#pendingResume: {mode: 'auto' | 'skip'; msec: number} | undefined;
 	#scheduleResume(mode: 'auto' | 'skip', msec: number) {
 		clearTimeout(this.#resumeTimer);
+		this.#pendingResume = undefined;
 		// スキップ中は文字送り演出を省く合図をストアへ立てておく（TxtLayerが瞬時表示にする）
 		this.$fncs.setSkipping(mode === 'skip');
+		if (this.$fncs.isTyping()) {this.#pendingResume = {mode, msec}; return}
+		this.#startResumeTimer(mode, msec);
+	}
+	#startResumeTimer(mode: 'auto' | 'skip', msec: number) {
 		this.#resumeTimer = setTimeout(()=> {
+			this.#resumeTimer = undefined;	// isAutoPending用。発火後もIDが残ると足止め判定が終わらない
 			if (mode === 'skip') this.$fncs.requestSkip();	// 進行前に現在の演出を瞬時完了させる
 			this.#goSafe();
 		}, msec);
+	}
+	// 文字送り演出の完了通知（Main.tsxがisTypingのfalse化を検知して呼ぶ）。
+	//	足止め中のresume指示があれば、ここでようやくタイマーを仕込む
+	onTypingDone() {
+		if (! this.#pendingResume) return;
+		const {mode, msec} = this.#pendingResume;
+		this.#pendingResume = undefined;
+		this.#startResumeTimer(mode, msec);
+	}
+	// オート読み・既読スキップの自動進行が「まだ確定していない」か（文字送り演出の完了待ち、
+	//	またはresumeタイマーが動いている間）。E2Eがクリック操作の前に、次の停止点へ本当に
+	//	落ち着いたことを確認するために覗く（window.__sn経由。本体のロジックからは使わない）
+	get isAutoPending(): boolean {
+		return this.#pendingResume !== undefined || this.#resumeTimer !== undefined;
 	}
 	// オート読み・既読スキップの中断（本家 ReadingState.cancelAutoSkip 相当）。
 	//	仕込んだタイマーを解除し、エンジン側の3フラグも倒す。手動操作から呼ばれる
 	cancelAuto() {
 		clearTimeout(this.#resumeTimer);
 		this.#resumeTimer = undefined;
+		this.#pendingResume = undefined;
 		this.$fncs?.setSkipping(false);
 		this.#engine?.cancelAutoSkip();
 	}

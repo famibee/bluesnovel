@@ -524,6 +524,21 @@
     回帰なし確認済み）
   - `package.json`から`parsimmon`・`@types/parsimmon`を`bun remove`で除去
 
+- [x] **オート読みの待ち時間カウントを文字送り演出の完了後から開始するよう修正**（2026-08-10）
+  - 従来は`[l]`/`[p]`の停止点に達した時点（`ScriptMng#scheduleResume()`が呼ばれた瞬間）からタイマーを
+    仕込んでいた。だが文字送り演出（GSAP、`TxtLayer.tsx`）は非同期に進んでいるため、演出が待ち時間
+    より長い設定だと**演出の途中でオート読み・既読スキップが次へ進んでしまう**不具合があった
+    （本家`Reading.ts`のl()/p()は演出完了後からカウントする）
+  - `ScriptMng`に`#pendingResume`を新設。`#scheduleResume()`は`$fncs.isTyping()`が`true`なら
+    タイマーを仕込まずここへ退避し、新設の`onTypingDone()`（文字送り完了の通知を受けて呼ばれる）で
+    ようやく`#startResumeTimer()`する形に分けた。`cancelAuto()`でも一緒に破棄する
+  - `T_INIT_FNCS`（`store.tsx`）へ`isTyping: ()=> boolean`を追加。ストアの`isTyping`はboolean値その
+    ものなので、そのままPickすると`attachTsx`実行時点のスナップショットで固まってしまう。
+    `Main.tsx`側で`isTypingRef`（useRefで都度更新）を挟み、関数越しに最新値を読ませることで解決
+  - 完了通知は`Main.tsx`の`useEffect(()=> {if (! isTyping) scrMng.onTypingDone()}, [isTyping])`。
+    `isTyping`は画面全体で1つのストア値（複数`TxtLayer`が共有）なので、この1本の監視で足りる
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化。単体テスト1648件・型チェックとも回帰なし
+
 - [ ]
 
 

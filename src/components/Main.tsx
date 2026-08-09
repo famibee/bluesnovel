@@ -10,7 +10,7 @@ import type {ScriptMng} from '../ts/ScriptMng';
 import type {T_HTag} from '../sn/Grammar';
 
 import {useStore} from '../store/store';
-import {lazy, Suspense} from 'react';
+import {lazy, Suspense, useEffect, useRef} from 'react';
 import {useEffectOnce, useKey, useTitle} from 'react-use';
 import type {Root} from 'react-dom/client';
 
@@ -62,6 +62,10 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const setStyPaging = useStore(s=> s.setStyPaging);	// [page style=…]（読み戻り中の本文の見た目）
 	const isReadBack = useStore(s=> s.isReadBack);		// 読み戻り中か（PageLog.isPaging）
 	const isTyping = useStore(s=> s.isTyping);
+	// attachTsxはマウント時に一度きりなので、fncsへ渡す関数はrefごしに最新値を読む
+	//	（オート読み・既読スキップの待ち時間カウント開始を文字送り演出の完了まで遅らせるため）
+	const isTypingRef = useRef(isTyping);
+	isTypingRef.current = isTyping;
 	const requestSkip = useStore(s=> s.requestSkip);
 	const setWait = useStore(s=> s.setWait);
 	const setSkipping = useStore(s=> s.setSkipping);
@@ -73,13 +77,20 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging, isTyping: ()=> isTypingRef.current}, hTag);
 
 		inited();
 
 		heStage.addEventListener('ev_next', procNext as EventListenerOrEventListenerObject);
 		return ()=> heStage.removeEventListener('ev_next', procNext);
 	});
+
+	// 文字送り演出の完了（isTypingがfalseに変わった瞬間）をScriptMngへ知らせる。
+	//	オート読み・既読スキップが演出中に足止めしていた場合、ここでようやく待ち時間カウントを始める
+	//	（本家 Reading.ts はl()/p()の待ち時間を文字送り完了後から数える）
+	useEffect(()=> {
+		if (! isTyping) scrMng.onTypingDone();
+	}, [isTyping, scrMng]);
 
 	// 組み込み変数 const.sn.key.*（修飾キー等の**今の**押下状態。本家 EventMng.ts:348 の #hDownKeys）。
 	//	下の useKey は読み進め・[event]発火が本業で、離した所までは見ないので別に張る。
