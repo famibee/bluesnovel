@@ -591,6 +591,46 @@
     `todo.md`の「デザインモードは無効化中」項目の子タスクへ統合した
   - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
 
+- [x] **全画面時の見た目（中央寄せ）を確認**（2026-08-10）
+  - `test/e2e/sys.e2e.ts`に自動テストは既にあった（`document.fullscreenElement`の`position:fixed`・
+    中心座標一致を検証）が、todo.mdの項目は「実機で見た目を見る」ことが趣旨だったため、
+    `playwright-cli`スキルでE2E用devサーバー（vite:5199、`test/e2e/app/index.html?prj=sys`）を
+    立てて`[toggle_full_screen key=w]`を実際にキー押下で発火させ、スクリーンショットと
+    `getBoundingClientRect()`の両方で見た。横長ビューポート（1600×900）ではステージ本体
+    （1200×900）が左右200pxずつの余白で中央に、縦長ビューポート（900×1600）では
+    （900×675）が上下462.5pxずつの余白で中央に来ており、`Stage.tsx:146-167`のflexレターボックス
+    実装が両方向とも仕様通り対称に効いていることを確認できた
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
+- [x] **文字送りの速さを確認**（2026-08-10）
+  - `sys:sn.tagCh.msecWait`（既定10ms、1文字あたりの出現開始の遅れ）と`[ch_in_style]`の
+    組み込みdefault（`wait=500`・`x='=0.3'`・`ease-out`、`ChStyle.ts:28-33`）が実際のブラウザで
+    仕様通り効いているかを、`test/e2e/chstyle.e2e.ts`と同じ手法（`gsap.globalTimeline.pause()`で
+    凍結し`globalTimeline.time()`を手で進めて時刻ごとの`opacity`/`transform`を読む）で数値確認した
+  - `test/e2e/app/prj_chstyle/main.sn`の「おち」（`in_style=nothing`→組み込みdefaultへフォール
+    バックする場面）で0〜500msを100ms刻みに追うと、t=0でopacity 0・x=14.4pxから、t=500では
+    opacity≈1・x≈0まで滑らかに収束し、立ち上がりが速く後半ほど緩やかになるease-outのカーブに
+    なっていた。同時刻での1文字目・2文字目のopacity差（例：t=100で0.3276と0.2944）から
+    `msecWait`によるわずかな出現タイミングのずれ（stagger）も機能していることを確認できた
+  - **`tmp_blues`実機での体感確認はまだ**（今回見たのはE2Eフィクスチャ`prj_chstyle`）。
+    `todo.md`の項目はそちらを残す
+
+- [x] **`sys:`変数の未接続分を洗い出し、`docs/dev.html`のマーク不整合を修正**（2026-08-10）
+  - `todo.md`の「sys:変数は読み書きも保存もできるが、その値を使う機能が無いものが多い」項目を
+    実コードで確認した。`const.sn.nativeWindow.*`は`app.ts:67-78`（起動時のウインドウ位置復元）・
+    `ScriptMng.ts:300-303`（IPC経由の位置確定→sys:への書き戻し）・`ScriptEngine.ts:1997-2025`
+    （`[window]`タグ）で、`const.sn.aPageLog`も`PageLog.ts`で、それぞれ**既に接続済み**だった。
+    `docs/dev.html`側のマークが🟡のまま更新されていなかっただけなので🟢へ修正した
+    （ブラウザ版の`nativeWindow.*`がno-opなのは本家`SysWeb.ts`も同じ設計で、意図通り）
+  - `sys:sn.tagCh.canskip`（クリック等でのテキストスキップ可否）だけは本家skynovel_esmを確認しても
+    未接続だった：変数としては定義済み（`CmnInterface.ts`）だが、実際のクリックスキップ処理
+    （`TxtLayer.ts:816-818`の`click()`）はこの値を見ずに無条件でスキップし、`msecWait`等の兄弟
+    変数のような起動時キャッシュへの読み込み（`Variable.ts:126-132`）も本家に無い。**本家自体が
+    未接続**なので、bluesnovel側だけ先行して繋ぐのは移植の範囲を超えると判断し見送り、`todo.md`の
+    「凍結」セクションへ理由付きで記録した
+  - `todo.md`「組み込み変数の残り」の`sys:`変数項目を解消（`const.sn.lay[N].width/.height`の
+    実寸対応のみ残す）
+
 - [ ]
 
 

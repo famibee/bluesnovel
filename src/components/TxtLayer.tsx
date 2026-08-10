@@ -419,7 +419,6 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const noBox = bAlpha === 0 || (str.length === 0 && b_color === undefined && ! b_src);
 	const styTxt = css`
 		padding: 1em 1.5em;
-		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
@@ -443,7 +442,16 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		}` : ''}
 
 		font-size: xxx-large;
-		top: 48%;
+		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
+			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
+			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
+			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
+			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた。
+			上のmarginを消したのも同じ理由：`margin: 2em 0`が残っていると、top:0を明示しても
+			上下96px（2em、font-size: xxx-largeぶん）ぶん箱がステージからはみ出し、b_picが
+			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
+			本家にも対応する概念が無い試作期の置き土産だった） */
+		top: 0;
 		width: 70%;
 		white-space: pre-wrap;
 		color: inherit;

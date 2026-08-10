@@ -747,13 +747,13 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 	例えば「&sys:TextLayer.Back.Alpha」はテキストウインドウの背景の濃度を変更できます。
 
 <table><tr><th>変数名</th><th>初期値</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>🟡 sys:const.sn.aPageLog</td><td>'[]'</td><td>文字列</td><td>
+<tr><td>🟢 sys:const.sn.aPageLog</td><td>'[]'</td><td>文字列</td><td>
 	ページ遷移用情報（JSON文字列）。<b>bluesnovel</b>：<code>[{fn, idx, place}, …]</code>＝<b>位置だけ</b>を出す（本家はしおりごと出すが、読む用途が「何ページ分あるか」しかないため）
 </td></tr>
-<tr><td>🟡 sys:const.sn.nativeWindow.x</td><td>0</td><td>実数；横座標</td><td rowspan="2">アプリウインドウの座標。画面左上を(0, 0)とする座標。[<a href="tag.html#window" target="_blank" rel="noopener">window</a>]で変更できる</td></tr>
-<tr><td>🟡 sys:const.sn.nativeWindow.y</td><td>0</td><td>実数；縦座標</td></tr>
-<tr><td>🟡 sys:const.sn.nativeWindow.w</td><td>設定での横幅</td><td>実数；横幅</td><td rowspan="2">アプリウインドウの縦横幅。[<a href="tag.html#window" target="_blank" rel="noopener">window</a>]で変更できる</td></tr>
-<tr><td>🟡 sys:const.sn.nativeWindow.h</td><td>設定での縦幅</td><td>実数；縦幅</td></tr>
+<tr><td>🟢 sys:const.sn.nativeWindow.x</td><td>0</td><td>実数；横座標</td><td rowspan="2">アプリウインドウの座標。画面左上を(0, 0)とする座標。[<a href="tag.html#window" target="_blank" rel="noopener">window</a>]で変更できる。<b>bluesnovel</b>：ブラウザ版はネイティブウインドウが無いため常にno-op（本家も同様）</td></tr>
+<tr><td>🟢 sys:const.sn.nativeWindow.y</td><td>0</td><td>実数；縦座標</td></tr>
+<tr><td>🟢 sys:const.sn.nativeWindow.w</td><td>設定での横幅</td><td>実数；横幅</td><td rowspan="2">アプリウインドウの縦横幅。[<a href="tag.html#window" target="_blank" rel="noopener">window</a>]で変更できる</td></tr>
+<tr><td>🟢 sys:const.sn.nativeWindow.h</td><td>設定での縦幅</td><td>実数；縦幅</td></tr>
 <tr><td>🟢 sys:const.sn.save.place</td><td>1</td><td>1〜</td><td>次のセーブplaceを示す</td></tr>
 <tr><td>🟢 sys:const.sn.sound.BGM.volume</td><td rowspan="4">1</td><td rowspan="4">0.0〜1.0</td><td>BGMの基準音量（buf="BGM"の効果音）<br/>[<a href="tag.html#volume" target="_blank" rel="noopener">volume</a>]で変更できる</td></tr>
 <tr><td>🟢 sys:const.sn.sound.SE.volume</td><td>効果音の基準音量（buf="SE"の効果音）<br/>[<a href="tag.html#volume" target="_blank" rel="noopener">volume</a>]で変更できる</td></tr>

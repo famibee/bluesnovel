@@ -10332,7 +10332,6 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		${M ? "" : "pointer-events: none;"}
 	`, { r: Re, g: ze, b: Be } = ku(b), Ve = p((e) => e.backAlpha), He = x * (S ? 1 : Ve), Ue = He === 0 || a.length === 0 && b === void 0 && !C, We = gu`
 		padding: 1em 1.5em;
-		margin: 2em 0;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
@@ -10356,7 +10355,12 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		}` : ""}
 
 		font-size: xxx-large;
-		top: 48%;
+		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
+			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
+			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
+			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
+			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた */
+		top: 0;
 		width: 70%;
 		white-space: pre-wrap;
 		color: inherit;
