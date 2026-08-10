@@ -102,16 +102,17 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 	if (o.alpha !== undefined) sty.opacity = o.alpha;
 
 	// 変形：回転・拡縮に加え、上記フィット倍率(fit)を掛ける（fitはwidth指定時のみ1以外になる）。
-	//	フィットは中央基準で効かせる（本家 align:'center' 相当）。fitを使わない時は本家pivot（既定左上）を原点に。
+	//	原点は常に本家pivot（既定左上）。本家はfitに相当するpixi Text.width/heightのスケールも
+	//	Textオブジェクト自身のローカル原点（既定0,0＝左上）基準で、ボタンコンテナの回転もそのpivot
+	//	（既定0,0＝Textの左上と一致）基準なので、fit有無で原点を変える理由が無い（Button.ts:85,123-153）。
+	//	以前centerにしていたのは誤りで、縦書き（rotation=90）のボタンを並べた時に本家と違う位置へ
+	//	ズレて重なる不具合になっていた
 	const sx = (o.scale_x ?? 1) * fit.x;
 	const sy = (o.scale_y ?? 1) * fit.y;
-	const fitting = fit.x !== 1 || fit.y !== 1;
 	if (o.rotation !== undefined || o.scale_x !== undefined || o.scale_y !== undefined
-	 || o.pivot_x !== undefined || o.pivot_y !== undefined || fitting) {
+	 || o.pivot_x !== undefined || o.pivot_y !== undefined || fit.x !== 1 || fit.y !== 1) {
 		sty.transform = `rotate(${String(o.rotation ?? 0)}deg) scale(${String(sx)}, ${String(sy)})`;
-		sty.transformOrigin = fitting
-			? 'center'
-			: `${String(o.pivot_x ?? 0)}px ${String(o.pivot_y ?? 0)}px`;
+		sty.transformOrigin = `${String(o.pivot_x ?? 0)}px ${String(o.pivot_y ?? 0)}px`;
 	}
 	if (o.blendmode !== undefined) sty.mixBlendMode = o.blendmode as CSSProperties['mixBlendMode'];
 	// enabled=false：本家は文字を灰色にしてイベントも受けない（Button.ts の fill と evtMng.button）
@@ -261,16 +262,26 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 		if (! el) {setFit({x: 1, y: 1}); return}
 		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
 
-		const {w: bw, h: bh} = btnBoxSize(sty, natPic, natBPic);
-		const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
-		el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
-		const natW = el.offsetWidth, natH = el.offsetHeight;
-		el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
-
-		setFit({
-			x: natW > 0 ? bw / natW : 1,
-			y: natH > 0 ? bh / natH : 1,
-		});
+		const measure = ()=> {
+			const {w: bw, h: bh} = btnBoxSize(sty, natPic, natBPic);
+			const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
+			el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
+			const natW = el.offsetWidth, natH = el.offsetHeight;
+			el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
+			// 親の文字レイヤが[sys_menu visible=false]等でdisplay:noneの間に測ると0のまま
+			//	（display:noneの要素はレイアウトされずoffsetWidth/Heightが常に0）。
+			//	一度でも実測できたらそれで確定してよいので監視を打ち切る（測定中のwidth一時変更
+			//	自体もResizeObserverの対象になるため、放置すると余分な再測定が続く）
+			if (natW > 0 && natH > 0) ro.disconnect();
+			setFit({
+				x: natW > 0 ? bw / natW : 1,
+				y: natH > 0 ? bh / natH : 1,
+			});
+		};
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		measure();
+		return ()=> ro.disconnect();
 	}, [text, sty?.width, sty?.height, sty?.pic, natBPic]);
 
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）。

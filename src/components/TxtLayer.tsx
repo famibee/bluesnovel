@@ -447,7 +447,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
 			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
 			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた。
-			上のmarginを消したのも同じ理由：`margin: 2em 0`が残っていると、top:0を明示しても
+			上のmarginを消したのも同じ理由：margin: 2em 0が残っていると、top:0を明示しても
 			上下96px（2em、font-size: xxx-largeぶん）ぶん箱がステージからはみ出し、b_picが
 			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
 			本家にも対応する概念が無い試作期の置き土産だった） */

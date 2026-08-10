@@ -631,6 +631,23 @@
   - `todo.md`「組み込み変数の残り」の`sys:`変数項目を解消（`const.sn.lay[N].width/.height`の
     実寸対応のみ残す）
 
+- [x] **縦書きシステムメニュー（`[button rotation=90]`）が隣同士で重なる不具合と、`tmp_blues`実機で見つかった付随の2件を修正**（2026-08-10）
+  - **本題（重なり）の原因は2つ重なっていた**：
+    1. `BtnLayer.tsx`の`styBtnArg()`が、文字を箱サイズへ収める`fit`（実測スケール）が効く時だけ`transformOrigin`を`center`に強制していた。本家`Button.ts`は`fit`相当（pixiの`Text.width/height`セッター）もボタンコンテナの`rotation`も、どちらもpivot（既定0,0＝左上）基準で、原点を分ける理由が無い。`center`基準にしていたせいで縦書き（`rotation=90`）のボタン列全体が本家と違う位置へシフトし、上下のボタンが重なって見えていた。常にpivot基準（既定0,0）へ統一
+    2. `fit`の実測（`useLayoutEffect`内で一時的に`width:auto`にして`offsetWidth`を測る処理）が、**文字レイヤが`[sys_menu visible=false]`等で`display:none`の間に実行されると`offsetWidth`が常に0を返し**、`fit`が`{x:1,y:1}`（＝無補正）のまま固定されていた。依存配列に表示状態が入っていないため、後で`visible=true`になっても再計算されない。結果、「クイックセーブ」等の長いラベルが箱（`width=100px`）に収まらず未縮小のまま隣のボタン領域へはみ出し、これが実際の「重なって読めない」の主因だった。`ResizeObserver`で要素を監視し、`display:none`が解けてレイアウトされた瞬間（`offsetWidth`が0から実測値に変わった瞬間）に測り直すよう修正。一度有効な値が取れたら`disconnect()`して余分な再計算は打ち切る
+    - `tmp_blues`実機（`npm run web`、Playwright操作）で、修正前は`getBoundingClientRect()`上は隙間なく接する程度だったが実際には文字が長いボタンが隣へはみ出して見えており、修正後は`getComputedStyle().transform`に実測どおりのスケール成分（0.48〜1.11倍、ラベルの文字数に応じて）が入ることを確認
+  - **付随して見つけた新規バグ（本題の実機確認中に遭遇）**：
+    - `save:const.sn.mesLayer`が一度も初期化されておらず、本文中に**Space／Deleteキー（「字を隠す」のショートカット）を押すだけで即座に「内部エラー 存在しないレイヤ　です」で本文が完全停止する**不具合があった。`ScriptEngine.ts`の`#curTxtLayer`（既定`'mes'`）は`[current]`タグ実行時だけ`save:const.sn.mesLayer`へ書き込まれる作りで、新規プレイでは一度も書き込まれない。`theme/_hidetext.sn`（字を隠す機能）が`[lay layer=&save:const.sn.mesLayer …]`とこの変数を直接参照しており、未定義だと`&`式評価が`'undefined'`を返して**`layer`属性ごと丸ごと省略**され（`#resolveTag()`の仕様）、最終的に空文字列のレイヤ名で`store.tsx`の`chgLay`が例外を投げていた。コンストラクタで`save:const.sn.mesLayer`の初期値を`#curTxtLayer`に合わせておくよう修正
+    - 直近コミットで`TxtLayer.tsx`のCSSコメント内（emotionの`css`テンプレートリテラルの中）にバッククォート（`` `margin: 2em 0` ``）が混入し、外側のテンプレートリテラルを途中終端させてビルド自体が失敗していた。`bun --watch src/build.ts --watch`が起動したまま何時間も再ビルドに失敗し続けていたと見られる（dist/が古いまま固定されていた）。バッククォートを除去して解消
+  - 単体テスト1652件・E2E（`button.e2e.ts`16件・`btnpic.e2e.ts`5件）とも green
+
+- [x] **`tmp_blues`と`tmp_esm_uc`（本家）を並べて実機比較し、ステージのレターボックス位置がズレる不具合を発見・修正**（2026-08-10）
+  - タイトル画面・本文とも、本家は右側だけに黒帯（ステージ左寄せ）なのに対しbluesnovelは左右均等（中央寄せ）になっていた。原因は`Stage.tsx`が`react-use`の`useFullscreen`フックの戻り値をそのまま「実際に全画面になったか」として使っていたこと。このフックは内部で`screenfull.request()`（＝`element.requestFullscreen()`）を呼ぶが、**Promiseの成否を待たずに即座に`true`を返す**実装になっている
+  - `main.sn`（`&s = const.sn.config.window.height > const.sn.screenResolutionY || … ; [toggle_full_screen cond='! const.sn.displayState && s']`）に「画面解像度よりプロジェクトのウインドウ設定が大きければ起動時に自動で全画面化する」仕様があり、これは**ページ読込直後のユーザー操作を伴わない自動発火**になる。ブラウザは`requestFullscreen()`をユーザー操作起因でない呼び出しとして拒否する（`NotAllowedError: API can only be initiated by a user gesture`）が、`useFullscreen`はこの失敗を見ておらず`isFullscreen`はtrueのまま固定され、`Stage.tsx`が全画面用のレイアウト（`display:flex; align-items:center; justify-content:center`で中央寄せ）へ切り替えてしまっていた
+  - 本家`SysWeb.ts:138`は`document.addEventListener('fullscreenchange', …)`で**実際にブラウザが全画面になったかどうか**を見て`isFullScr`を判定しており、失敗時はfalseのまま＝通常のcvsResize()（左寄せ）を保つ。bluesnovel側も同じ判定基準に合わせ、`useFullscreen`はリクエストの発行・Escでの解除検知にだけ使い、実際にレイアウトへ反映する`isFullscreen`は`document.fullscreenElement`の`fullscreenchange`監視で別途持つよう`Stage.tsx`を修正
+  - 実際の画面解像度（この開発機のブラウザで1280×720）がプロジェクト設定のウインドウ高さ（1024×768のtmp_blues/tmp_esm_uc、768>720）より大きい環境では**実プレイでも起動直後に同じ事故が起きる**ため、テスト用の特殊条件ではなく実害のあるバグだった
+  - `bun test`1652件・E2E（`stage.e2e.ts`4件・`sys.e2e.ts`7件、うち「全画面のときステージは画面の中央へ寄る」はキーボード起因＝ユーザー操作扱いのrequestFullscreenなので引き続きgreen）で確認。起動時自動発火（ユーザー操作なし）のケース自体のE2E化は見送った（既存`prj_sys`フィクスチャへ影響なく追加する設計に手間がかかるため）
+
 - [ ]
 
 

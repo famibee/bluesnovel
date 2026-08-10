@@ -1,0 +1,48 @@
+export declare function setEscape(ce: string): void;
+export type T_LNK = {
+    label: string;
+    fn: string;
+    call: boolean;
+    arg: string;
+    url?: string;
+    sh?: string;
+    sc?: string;
+    rsh?: string;
+    rsc?: string;
+    hint?: string;
+    hs?: string;
+    ho?: string;
+    clickse?: string;
+    clicksebuf?: string;
+    enterse?: string;
+    entersebuf?: string;
+    leavese?: string;
+    leavesebuf?: string;
+};
+export type T_CH = {
+    c: string;
+    r?: string;
+    ra?: T_R_ALIGN;
+    s?: string;
+    rs?: string;
+    tcy?: true;
+    lnk?: T_LNK;
+    pic?: string;
+    src?: string;
+    gw?: number;
+    gh?: number;
+    gx?: number;
+    gy?: number;
+    cis?: string;
+    cos?: string;
+    w?: number;
+};
+export declare function splitCh(raw: string): T_CH[];
+export declare function plainOf(aCh: readonly T_CH[]): string;
+export declare function plainTxt(raw: string): string;
+export declare const A_R_ALIGN: readonly ["start", "left", "center", "right", "justify", "121", "even", "1ruby"];
+export type T_R_ALIGN = typeof A_R_ALIGN[number];
+export declare function splitRubyAlign(r: string): {
+    ra?: T_R_ALIGN;
+    ruby: string;
+};

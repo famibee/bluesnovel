@@ -634,6 +634,13 @@ export class ScriptEngine {
 		// スタックの深さ（本家 CmnInterface.ts:346-347）。デバッグ・入れ子の見張り用
 		this.#val.defBuiltin('const.sn.aIfStk.length', ()=> this.#aIfStk.length);
 		this.#val.defBuiltin('const.sn.vctCallStk.length', ()=> this.#aCallStk.length);
+
+		// save:const.sn.mesLayerの初期値を#curTxtLayerに合わせておく。[current]タグ（1084行目）が
+		//	一度も実行されないうちにシナリオが`&save:const.sn.mesLayer`を参照すると
+		//	（例：本家準拠の[hidetext]相当が既定文字レイヤを掴む処理）、変数が未定義のまま
+		//	式評価が'undefined'を返し、[lay layer=&save:const.sn.mesLayer]のlayer属性が
+		//	丸ごと消えて「存在しないレイヤ」例外になる事故があったため
+		this.#val.set('save:const.sn.mesLayer', this.#curTxtLayer);
 	}
 	#isFullScr = false;
 	setFullScr(b: boolean) {this.#isFullScr = b}

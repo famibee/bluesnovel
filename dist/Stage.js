@@ -10038,8 +10038,8 @@ function yu(e, t, n, r) {
 		t > 0 && (i.width = `${String(t)}px`), a > 0 && (i.height = `${String(a)}px`), e.pic || (i.fontSize = `${String(a)}px`, i.lineHeight = 1, i.padding = 0), i.boxSizing = "border-box";
 	}
 	e.pic && e.src ? (i.backgroundImage = `url("${e.src}")`, i.backgroundSize = "300% 100%", i.backgroundRepeat = "no-repeat") : e.b_pic && e.b_src && (i.backgroundImage = `url("${e.b_src}")`, i.backgroundPosition = "center", i.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (i.opacity = e.alpha);
-	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y, s = t.x !== 1 || t.y !== 1;
-	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || s) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = s ? "center" : `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
+	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y;
+	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || t.x !== 1 || t.y !== 1) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
 }
 function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o }) {
 	let s = gu`
@@ -10148,13 +10148,16 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o 
 			});
 			return;
 		}
-		let { w: t, h: n } = vu(i, v, x), r = e.style.width, a = e.style.transform, o = e.style.whiteSpace;
-		e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
-		let s = e.offsetWidth, c = e.offsetHeight;
-		e.style.width = r, e.style.transform = a, e.style.whiteSpace = o, g({
-			x: s > 0 ? t / s : 1,
-			y: c > 0 ? n / c : 1
-		});
+		let t = () => {
+			let { w: t, h: r } = vu(i, v, x), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
+			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
+			let c = e.offsetWidth, l = e.offsetHeight;
+			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), g({
+				x: c > 0 ? t / c : 1,
+				y: l > 0 ? r / l : 1
+			});
+		}, n = new ResizeObserver(t);
+		return n.observe(e), t(), () => n.disconnect();
 	}, [
 		e,
 		i?.width,
@@ -10359,7 +10362,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
 			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
 			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
-			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた */
+			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた。
+			上のmarginを消したのも同じ理由：margin: 2em 0が残っていると、top:0を明示しても
+			上下96px（2em、font-size: xxx-largeぶん）ぶん箱がステージからはみ出し、b_picが
+			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
+			本家にも対応する概念が無い試作期の置き土産だった） */
 		top: 0;
 		width: 70%;
 		white-space: pre-wrap;
@@ -10707,8 +10714,13 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: P } = Pu(A), { stageW: F, stageH: I } = a, L = (0, z.useRef)(null), ee = p((e) => e.fullScr), B = p((e) => e.setFullScr), V = p((e) => e.toggleFullScr), re = ne((0, z.useRef)(e), ee, { onClose: () => B(!1) });
+	let { cvsScale: P } = Pu(A), { stageW: F, stageH: I } = a, L = (0, z.useRef)(null), ee = p((e) => e.fullScr), B = p((e) => e.setFullScr), V = p((e) => e.toggleFullScr);
+	ne((0, z.useRef)(e), ee, { onClose: () => B(!1) });
+	let [re, H] = (0, z.useState)(() => !!document.fullscreenElement);
 	(0, z.useEffect)(() => {
+		let e = () => H(!!document.fullscreenElement);
+		return document.addEventListener("fullscreenchange", e), () => document.removeEventListener("fullscreenchange", e);
+	}, []), (0, z.useEffect)(() => {
 		n.setFullScr(re);
 	}, [re]), (0, z.useLayoutEffect)(() => {
 		re ? (e.style.width = "", e.style.height = "", e.style.display = "flex", e.style.alignItems = "center", e.style.justifyContent = "center", e.style.backgroundColor = "black") : (e.style.width = `${String(F * P)}px`, e.style.height = `${String(I * P)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
@@ -10718,7 +10730,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 		I,
 		re
 	]);
-	let H = gu`
+	let W = gu`
 		position: relative;
 		width: ${F}px;
 		height: ${I}px;
@@ -10735,18 +10747,18 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 			原点を中心にするのは、flexが**拡縮前の実寸**で中央に置くため（左上原点だと右下へ伸びる） */
 		transform-origin: ${re ? "center" : "left top"};
 		transform: scale(${String(P)});
-	`, W = gu`position: absolute; top: 0; left: 0;`, ae = gu`
+	`, ae = gu`position: absolute; top: 0; left: 0;`, oe = gu`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, oe = gu`
+	`, se = gu`
 		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
 		background-color: black;
-	`, se = gu`
+	`, ce = gu`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -10766,9 +10778,9 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, ce = (0, z.useRef)(null);
+	`, le = (0, z.useRef)(null);
 	ie(() => {
-		n.attachFrameBox(ce.current), n.attachStageBox(L.current);
+		n.attachFrameBox(le.current), n.attachStageBox(L.current);
 	}), ie(() => {
 		let e = L.current;
 		e.addEventListener("mousedown", () => _());
@@ -10777,25 +10789,25 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [le, ue] = te(!1);
+	let [ue, de] = te(!1);
 	U((e) => {
-		e.stopPropagation(), k(), !l() && (ue(), N(!le));
+		e.stopPropagation(), k(), !l() && (de(), N(!ue));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
 	});
-	let de = (() => {
+	let fe = (() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of u) for (let n of t) if (n.aFlt) for (let t of s(n.aFlt)) e.set(v(t), t);
 		return [...e.values()];
-	})(), fe = (() => {
+	})(), pe = (() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of u) for (let n of t) if (n.aFlt) for (let t of o(n.aFlt)) e.set(f(t), t);
 		return [...e.values()];
-	})(), pe = { cmn: {
+	})(), me = { cmn: {
 		sys: t,
-		styChild: W,
-		isDesignMode: le,
+		styChild: ae,
+		isDesignMode: ue,
 		sty4Moveable: {
 			maxWidth: "auto",
 			maxHeight: "auto",
@@ -10805,7 +10817,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 		}
 	} };
 	return /* @__PURE__ */ w("div", {
-		css: H,
+		css: W,
 		onClick: r,
 		ref: L,
 		children: [
@@ -10844,12 +10856,12 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 					})
 				})] })
 			}),
-			de.length > 0 && /* @__PURE__ */ j("svg", {
+			fe.length > 0 && /* @__PURE__ */ j("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ j("defs", { children: de.map((e) => /* @__PURE__ */ j("filter", {
+				children: /* @__PURE__ */ j("defs", { children: fe.map((e) => /* @__PURE__ */ j("filter", {
 					id: v(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
@@ -10862,30 +10874,30 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 					})
 				}, v(e))) })
 			}),
-			fe.length > 0 && /* @__PURE__ */ j("svg", {
+			pe.length > 0 && /* @__PURE__ */ j("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ j("defs", { children: fe.map((e) => /* @__PURE__ */ j("filter", {
+				children: /* @__PURE__ */ j("defs", { children: pe.map((e) => /* @__PURE__ */ j("filter", {
 					id: f(e),
 					children: /* @__PURE__ */ j("feGaussianBlur", { stdDeviation: d(e) })
 				}, f(e))) })
 			}),
-			le && /* @__PURE__ */ w(D, { children: [
+			ue && /* @__PURE__ */ w(D, { children: [
 				/* @__PURE__ */ j("button", {
 					onClick: () => V(),
-					css: se,
+					css: ce,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ j("button", {
 					onClick: () => {},
-					css: se,
+					css: ce,
 					children: "Back"
 				}),
 				/* @__PURE__ */ j("button", {
 					onClick: () => {},
-					css: se,
+					css: ce,
 					children: "Prev"
 				})
 			] }),
@@ -10895,7 +10907,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 				return /* @__PURE__ */ j("div", {
 					ref: S[t],
 					"data-page": t === m ? "fore" : "back",
-					css: oe,
+					css: se,
 					style: {
 						zIndex: +(t === m),
 						visibility: t === m || g ? "visible" : "hidden",
@@ -10904,11 +10916,11 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 					},
 					children: r.map((e) => {
 						let r = {
-							...pe.cmn.sty4Moveable,
+							...me.cmn.sty4Moveable,
 							...h(e)
 						};
 						return e.cls === "grp" ? /* @__PURE__ */ j(ou, {
-							cmn: pe.cmn,
+							cmn: me.cmn,
 							sty: r,
 							nm: e.nm,
 							fn: e.fn,
@@ -10919,7 +10931,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 							getVideoVol: () => n.getMovieVolume(),
 							needClick2Play: () => n.needClick2Play()
 						}, e.nm) : /* @__PURE__ */ j(Su, {
-							cmn: pe.cmn,
+							cmn: me.cmn,
 							sty: r,
 							nm: e.nm,
 							isFore: t === m,
@@ -10953,8 +10965,8 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 				}, t);
 			}),
 			/* @__PURE__ */ j("div", {
-				ref: ce,
-				css: ae
+				ref: le,
+				css: oe
 			})
 		]
 	});

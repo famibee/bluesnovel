@@ -136,7 +136,21 @@ export default function Stage({
 	//	全画面にすると倍率が丸ごと消えて等倍のまま画面いっぱいに引き伸ばされる（実測で確認）。
 	//	外側を全画面にすれば、その中で内箱は普通にtransform:scaleできる
 	const outerRef = useRef<HTMLElement>(heStage);
-	const isFullscreen = useFullscreen(outerRef, fullScr, {onClose: ()=> setFullScr(false)});
+	useFullscreen(outerRef, fullScr, {onClose: ()=> setFullScr(false)});	// リクエストの発行・Escでの解除検知に使うだけで、戻り値（＝実際に切り替わったか）は使わない
+	// react-useのuseFullscreenは screenfull.request() の成否を待たずに即trueを返す。
+	//	[toggle_full_screen]はページ読込直後（main.snの起動時、ウインドウ設定が画面解像度より
+	//	大きい場合）にユーザー操作なしで自動発火することがあり、そのrequestFullscreen()はブラウザに
+	//	拒否される（"API can only be initiated by a user gesture"）。それでもuseFullscreenの戻り値は
+	//	trueのままになり、実際は全画面になっていないのにレイアウトだけ全画面用（中央寄せ）へ
+	//	切り替わってレターボックス位置が本家とズレる事故になっていた。実際に切り替わったかは
+	//	document.fullscreenElement の変化でしか確定しないので、そちらを別途見る
+	//	（本家 SysWeb.ts:138 の fullscreenchange 監視と同じ判定基準）
+	const [isFullscreen, setIsFullscreenActual] = useState(()=> Boolean(document.fullscreenElement));
+	useEffect(()=> {
+		const onChange = ()=> setIsFullscreenActual(Boolean(document.fullscreenElement));
+		document.addEventListener('fullscreenchange', onChange);
+		return ()=> document.removeEventListener('fullscreenchange', onChange);
+	}, []);
 	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
 
 	// 外側の <div id="skynovel"> にも、拡縮後の実寸を持たせる。
