@@ -8,9 +8,10 @@
 ## 続き（次回セッションはここから）
 
 2026-08-10セッションで「fullscreen時のレターボックス位置」修正、「`tmp_blues`/`tmp_esm_uc`表示
-差異の網羅確認テスト化」（`test/e2e/uc.e2e.ts`）、「`s_right`/`s_bottom`が効かない不具合」の修正が
-完了（詳細はCHANGELOG.md）。次に手を付けるものは特に決まっていない。「タグ・変数の残り」または
-「挙動の詰め・実機確認」から任意に選んでよい。
+差異の網羅確認テスト化」（`test/e2e/uc.e2e.ts`）、「`s_right`/`s_bottom`が効かない不具合」の修正、
+「フィルターの本家実機比較」とそこで見つかった`hue`属性名バグ・`contrast`/`grayscale`の数式
+不一致の修正が完了（詳細はCHANGELOG.md）。次に手を付けるものは特に決まっていない。
+「タグ・変数の残り」または「挙動の詰め・実機確認」から任意に選んでよい。
 
 ## 進め方
 
@@ -31,8 +32,8 @@
         本当に直すには全行の行送りをルビ想定の高さで最初から均一に確保する設計が要り、
         「行」を扱う基盤が無い現状では`max_row`実装と同時にやるのが筋（詳細はセッション
         2026-08-10のCHANGELOG.md参照）
-- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（CSSの`filter`が9種、SVGの`feColorMatrix`が12種。`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
-  - [ ] ギャラリーの`filter`サンプルと実機で見比べ、色の出方が本家と揃っているか確認（pixiはシェーダ、こちらはSVGフィルタなので端の丸めが違いうる）
+- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
+  - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（本家と同じ行列のはずだが原因未特定。優先度低）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
 - [ ] **`[set_focus]`の残り**：ゲームパッド対応（本家`FocusMng`の`range`のstepUp/Down、テキストのカーソル移動、ラジオボタンの選択移動）。ゲームパッド入力そのものが未着手なので同時に

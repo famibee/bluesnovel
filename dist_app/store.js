@@ -25,14 +25,86 @@ function o(e, t, n) {
 var s = {
 	blur: (e) => `blur(${String(o(e, "strength", 8))}px)`,
 	brightness: (e) => `brightness(${String(o(e, "b", .5))})`,
-	contrast: (e) => `contrast(${String(o(e, "amount", .5))})`,
-	grayscale: (e) => `grayscale(${String(o(e, "scale", .5))})`,
 	black_and_white: () => "grayscale(1)",
 	negative: () => "invert(1)",
 	saturate: (e) => `saturate(${String(1 + o(e, "amount", .5))})`,
-	hue: (e) => `hue-rotate(${String(o(e, "rotation", 0))}deg)`,
 	sepia: () => "sepia(1)"
 }, c = ["noise"], l = {
+	grayscale: (e) => {
+		let t = o(e, "scale", .5);
+		return [
+			t,
+			t,
+			t,
+			0,
+			0,
+			t,
+			t,
+			t,
+			0,
+			0,
+			t,
+			t,
+			t,
+			0,
+			0,
+			0,
+			0,
+			0,
+			1,
+			0
+		];
+	},
+	contrast: (e) => {
+		let t = o(e, "amount", .5) + 1, n = -.5 * (t - 1);
+		return [
+			t,
+			0,
+			0,
+			0,
+			n,
+			0,
+			t,
+			0,
+			0,
+			n,
+			0,
+			0,
+			t,
+			0,
+			n,
+			0,
+			0,
+			0,
+			1,
+			0
+		];
+	},
+	hue: (e) => {
+		let t = o(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), i = 1 / 3, a = Math.sqrt(i);
+		return [
+			n + (1 - n) * i,
+			i * (1 - n) - a * r,
+			i * (1 - n) + a * r,
+			0,
+			0,
+			i * (1 - n) + a * r,
+			n + i * (1 - n),
+			i * (1 - n) - a * r,
+			0,
+			0,
+			i * (1 - n) - a * r,
+			i * (1 - n) + a * r,
+			n + i * (1 - n),
+			0,
+			0,
+			0,
+			0,
+			0,
+			1,
+			0
+		];
+	},
 	to_bgr: () => [
 		0,
 		0,

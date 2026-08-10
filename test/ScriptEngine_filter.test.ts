@@ -8,7 +8,9 @@
 // フィルター（[add_filter]/[clear_filter]/[enable_filter]・[lay filter=…]）。
 //	本家 LayerMng.ts:836 #add_filter() ＋ Layer.ts:101 bldFilters()。
 //	**表示アーキテクチャ変更の影響が一番大きい所**：本家はpixiのフィルター22種だが、
-//	bluesnovelはCSSのfilterプロパティなので素で書ける9種のみ（src/ts/Filter.ts参照）
+//	bluesnovelはCSSのfilterプロパティなので、CSSの同名関数とpixiで数式が一致するものだけ
+//	素で書く（blur/brightness/black_and_white/negative/saturate/sepia）。hue/contrast/
+//	grayscaleはCSSと数式が違うため他のプリセットと同じくfeColorMatrix行き（src/ts/Filter.ts参照）
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import {bldFilter, fltId, matsOf, styFilter, blurId, blurValues, blursOf, blendmodeOf} from '../src/ts/Filter';
@@ -23,17 +25,53 @@ function acts(src: string): T_ENGINE_ACTION[] {return new ScriptEngine('t1', `${
 // ============ Filter.ts（純粋部分） ============
 
 it('bldFilter_cssNative', ()=> {
-	// 既定値は本家（Layer.ts hBldFilter）に合わせてある
+	// 既定値は本家（Layer.ts hBldFilter）に合わせてある。CSSの同名関数と数式が一致するものだけ
 	expect(bldFilter({filter: 'blur'}).css).toBe('blur(8px)');
 	expect(bldFilter({filter: 'blur', strength: '3'}).css).toBe('blur(3px)');
 	expect(bldFilter({filter: 'brightness'}).css).toBe('brightness(0.5)');
 	expect(bldFilter({filter: 'brightness', b: '0.2'}).css).toBe('brightness(0.2)');
-	expect(bldFilter({filter: 'contrast', amount: '0.8'}).css).toBe('contrast(0.8)');
-	expect(bldFilter({filter: 'grayscale', scale: '1'}).css).toBe('grayscale(1)');
 	expect(bldFilter({filter: 'black_and_white'}).css).toBe('grayscale(1)');
 	expect(bldFilter({filter: 'negative'}).css).toBe('invert(1)');
-	expect(bldFilter({filter: 'hue', rotation: '90'}).css).toBe('hue-rotate(90deg)');
 	expect(bldFilter({filter: 'sepia'}).css).toBe('sepia(1)');
+});
+
+it('bldFilter_grayscaleはCSSと数式が違うのでfeColorMatrix行き', ()=> {
+	// pixi greyscale(scale)は(R+G+B)*scaleを全チャンネルへ＝常に無彩色になる行列
+	expect(bldFilter({filter: 'grayscale', scale: '1'}).mat).toEqual([
+		1, 1, 1, 0, 0,
+		1, 1, 1, 0, 0,
+		1, 1, 1, 0, 0,
+		0, 0, 0, 1, 0]);
+	// 既定値は本家どおり0.5
+	expect(bldFilter({filter: 'grayscale'}).mat).toEqual([
+		0.5, 0.5, 0.5, 0, 0,
+		0.5, 0.5, 0.5, 0, 0,
+		0.5, 0.5, 0.5, 0, 0,
+		0, 0, 0, 1, 0]);
+});
+
+it('bldFilter_contrastはCSSと数式が違うのでfeColorMatrix行き', ()=> {
+	// pixi contrast(amount)は v=amount+1・o=-0.5*(v-1)。既定amount=0.5→v=1.5
+	const m = bldFilter({filter: 'contrast'}).mat!;
+	expect(m[0]).toBe(1.5);
+	expect(m[4]).toBeCloseTo(-0.25, 10);
+});
+
+it('bldFilter_hueは属性名f_rotation（本家どおり）で既定90度', ()=> {
+	// f_rotation=0なら恒等行列（回転なし）
+	expect(bldFilter({filter: 'hue', f_rotation: '0'}).mat).toEqual([
+		1, 0, 0, 0, 0,
+		0, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0]);
+	// 既定は90度（0だと変化が分かりづらいため。本家Layer.ts:235）。恒等行列にならない
+	expect(bldFilter({filter: 'hue'}).mat).not.toEqual([
+		1, 0, 0, 0, 0,
+		0, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0]);
+	// rotation（誤った旧属性名）は無視され、既定のf_rotation=90が使われる
+	expect(bldFilter({filter: 'hue', rotation: '45'}).mat).toEqual(bldFilter({filter: 'hue'}).mat);
 });
 
 it('bldFilter_saturate', ()=> {

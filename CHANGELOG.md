@@ -678,6 +678,23 @@
   - `bunx tsc --noEmit --incremental false`・`bun test`（1658件green）・`bun run test:e2e`（全216件、対象の`argdef.e2e.ts`含め全green）で確認。全体E2E実行中に`trans.e2e.ts`の1件が並列実行下でflakyに落ちたが、単独実行では通ることを確認済み（本修正とは無関係）
   - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
 
+- [x] **`[add_filter]`フィルターの色再現確認：本家galleryの`filter`サンプルと実機比較**（2026-08-10）
+  - `todo.md`「フィルターの残り」の確認作業。`sn_gallery`の`filter`サンプル（pixi版、電車内`bg_0.jpg`が背景）を本家として、bluesnovel側に同じ画像・同じ21種のフィルタ（`noise`以外）を適用する一時プロジェクト（`test/e2e/app/prj_filtercmp/`、確認後削除）を作り、playwright-cliで両方のスクリーンショットを撮って座席部分の色を数値・目視の両方で比較した
+  - `black_and_white`/`blur`/`brightness`/`browni`/`color_matrix`/`kodachrome`/`lsd`/`negative`/`night`/`polaroid`/`saturate`/`sepia`/`technicolor`/`tint`/`to_bgr`/`vintage`の16種は本家と近い結果（RGB各成分の差はおおむね±10以内）。`predator`/`color_tone`はやや差があるが方向性は合っている（原因未特定）
+  - 一方、以下2件は本家と結果が明確に食い違うバグと判明。詳細は`todo.md`「フィルターの残り」へ追記した：
+    - `hue`の属性名が本家`f_rotation`（`skynovel_esm/src/sn/Layer.ts:235`、既定90度）なのに`Filter.ts`は`rotation`（既定0度）を見ており、本家シナリオの`f_rotation=`指定が黙って無視される
+    - `contrast`/`grayscale`はpixiの`ColorMatrixFilter`とCSSの同名`filter`関数とで数式が違うため、既定値の数値だけ本家に合わせても結果が別物になる（`contrast`は既定値0.5が本家では強調方向・CSSでは減衰方向で正反対、`grayscale`は本家が常に完全な無彩色になるのに対しCSSは色が残る）
+  - 比較手順（座標クリック、CORS対応の一時HTTPサーバーでcanvas合成して数値・画像比較）は再利用性が低いため回帰テストへは残さず、一時ファイルは確認後に削除した
+
+- [x] **フィルター`hue`/`contrast`/`grayscale`を本家と同じ数式へ修正**（2026-08-10）
+  - 直前の実機比較で見つかった2件のバグを修正。3つともCSSの同名`filter`関数を素で使うのをやめ、他の色成分フィルタと同じくpixiの`ColorMatrixFilter`と同じ行列をSVGの`feColorMatrix`へ流し込む形（`H_MAT`）へ移した（`src/ts/Filter.ts`）
+  - `hue`：属性名を`rotation`→本家どおり`f_rotation`に修正、既定値も本家`Layer.ts:235`どおり90度に修正（0度だと変化が分かりづらいための値）。行列はpixiの近似式（重み1/3のRGBキューブ回転）をそのまま実装
+  - `contrast`：`v=amount+1`・`o=-0.5*(v-1)`というpixiの式で行列を組む（既定`amount=0.5`→`v=1.5`・強調方向。CSSの`contrast()`をそのまま使うと減衰方向になり正反対だった）
+  - `grayscale`：`(R+G+B)*scale`を全チャンネルへ書く行列（既定`scale=0.5`で暗めの完全な無彩色になる。CSSの`grayscale()`は色が残ってしまい別物だった）
+  - CSS側に残るのは数式が一致する6種（`blur`/`brightness`/`black_and_white`/`negative`/`saturate`/`sepia`）のみになった。`Filter.ts`冒頭コメントと`test/ScriptEngine_filter.test.ts`（`hue`/`contrast`/`grayscale`のテストを`.mat`ベースへ書き換え、新規3件追加）、`docs/tag.html`の`hue`既定値（0→90）を合わせて更新
+  - `bunx tsc --noEmit --incremental false`・`bun test`（1661件green）・`bunx playwright test -c test/e2e filter.e2e.ts lay.e2e.ts`（20件green）で確認
+  - `todo.md`「フィルターの残り」の該当2項目を消化。`predator`/`color_tone`の色味の差は原因未特定のまま残置
+
 - [ ]
 
 

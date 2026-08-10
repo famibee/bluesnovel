@@ -15,10 +15,23 @@ import {argBlendmode} from './Blendmode';
 //	**ここが表示アーキテクチャ変更の影響を一番受けている場所**。本家のフィルターは
 //	pixiのBlurFilter/NoiseFilter/ColorMatrixFilterで、22種のうち大半はColorMatrixFilterの
 //	プリセット（browni・kodachrome・lsd…）だが、bluesnovelはDOM＝CSSのfilterプロパティなので
-//	素で書けるのはCSSにある9種。**残りはnoise以外すべてColorMatrixFilterのプリセット**なので、
-//	pixiと同じ5x4行列をSVGの`feColorMatrix`へ流し込んで同じ絵を出す
+//	素で書けるのはCSSにある関数のうち**pixiと数式が一致するもの**（blur/brightness/
+//	black_and_white/negative/sepia。既定値だけでなく式そのものが同じかを個別に確認済み）。
+//	**hue/contrast/grayscaleはCSSの同名関数とパラメータの意味が違う**（後述）ため、
+//	他のプリセットと同じくSVGの`feColorMatrix`へ回す。
+//	pixiと同じ5x4行列をSVGの`feColorMatrix`へ流し込めば同じ絵が出せる
 //	（pixiの`m[0..19]`とSVGの`values`は**並びが同じ**＝そのまま写せる）。
 //	`<filter>`要素そのものはStage.tsxが出す（DOMを触るのはあちらの仕事）。
+//
+//	hue/contrast/grayscaleをCSSの同名関数に**素で渡してはいけない**理由（2026-08-10、本家
+//	galleryとの実機比較で発覚）：
+//	・`contrast`：pixiは`v=amount+1`（既定`amount=0.5`→1.5倍・強調方向）。CSSの`contrast()`は
+//	  引数がそのまま強度倍率（既定0.5→0.5倍・減衰方向）で**正反対の効き**になる
+//	・`grayscale`：pixiの`greyscale(scale)`は`(R+G+B)*scale`を全チャンネルへ書く行列＝常に
+//	  完全な無彩色になる。CSSの`grayscale(scale)`は元色とグレースケールをscale比率でブレンド
+//	  するだけで色が残る。**別のパラメータ**として扱われている
+//	・`hue`：数式自体（回転行列の重み）が違ったうえ、**属性名も違った**（本家は`f_rotation`、
+//	  こちらは`rotation`を見ていたため本家シナリオの指定が黙って無視されていた）
 //
 //	pixi側との相違が2つ:
 //	・**`multiply`属性は無視する**。pixiでは「今の行列に掛ける」意味だが、こちらはフィルターを
@@ -55,13 +68,10 @@ const H_BLD: {[nm: string]: (args: {[k: string]: string})=> string} = {
 	//	無指定時のみ通る）。strength（本家の既定8）をそのまま半径pxとして使う
 	blur			: a=> `blur(${String(num(a, 'strength', 8))}px)`,
 	brightness		: a=> `brightness(${String(num(a, 'b', 0.5))})`,
-	contrast		: a=> `contrast(${String(num(a, 'amount', 0.5))})`,
-	grayscale		: a=> `grayscale(${String(num(a, 'scale', 0.5))})`,
 	black_and_white	: ()=> 'grayscale(1)',
 	negative		: ()=> 'invert(1)',
 	// pixiのsaturate(amount)は「1を基準にamountぶん増やす」。CSSも1が等倍なので足して渡す
 	saturate		: a=> `saturate(${String(1 + num(a, 'amount', 0.5))})`,
-	hue				: a=> `hue-rotate(${String(num(a, 'rotation', 0))}deg)`,
 	sepia			: ()=> 'sepia(1)',
 };
 
@@ -72,6 +82,48 @@ const A_FLT_NOT_YET = ['noise'];
 //	@pixi/filter-color-matrix から写した）。**オフセット列（5列目）は0〜1に揃えてある**
 //	＝pixiが0〜255で書いているもの（technicolor/kodachrome/browni/vintage）は255で割った値
 const H_MAT: {[nm: string]: (args: {[k: string]: string})=> number[]} = {
+	// グレースケール。CSSの同名関数とは意味が違う（ファイル冒頭コメント参照）。
+	//	本家の属性名・既定値どおり scale
+	grayscale	: a=> {
+		const s = num(a, 'scale', 0.5);
+		return [
+			s, s, s, 0, 0,
+			s, s, s, 0, 0,
+			s, s, s, 0, 0,
+			0, 0, 0, 1, 0];
+	},
+	// コントラスト。CSSの同名関数とは意味が違う（ファイル冒頭コメント参照）。
+	//	本家の属性名・既定値どおり amount
+	contrast	: a=> {
+		const v = num(a, 'amount', 0.5) + 1;
+		const o = -0.5 * (v - 1);
+		return [
+			v, 0, 0, 0, o,
+			0, v, 0, 0, o,
+			0, 0, v, 0, o,
+			0, 0, 0, 1, 0];
+	},
+	// 色相回転。属性名は本家どおり f_rotation（度単位、既定90＝0だと変化が分かりづらいため）。
+	//	pixiの近似行列（重み1/3のRGBキューブ回転）をそのまま組む
+	hue			: a=> {
+		const rot = num(a, 'f_rotation', 90) / 180 * Math.PI;
+		const cosR = Math.cos(rot), sinR = Math.sin(rot);
+		const w = 1 / 3, sqrW = Math.sqrt(w);
+		const a00 = cosR + (1 - cosR) * w;
+		const a01 = w * (1 - cosR) - sqrW * sinR;
+		const a02 = w * (1 - cosR) + sqrW * sinR;
+		const a10 = w * (1 - cosR) + sqrW * sinR;
+		const a11 = cosR + w * (1 - cosR);
+		const a12 = w * (1 - cosR) - sqrW * sinR;
+		const a20 = w * (1 - cosR) - sqrW * sinR;
+		const a21 = w * (1 - cosR) + sqrW * sinR;
+		const a22 = cosR + w * (1 - cosR);
+		return [
+			a00, a01, a02, 0, 0,
+			a10, a11, a12, 0, 0,
+			a20, a21, a22, 0, 0,
+			0, 0, 0, 1, 0];
+	},
 	// 赤→青・青→赤
 	to_bgr		: ()=> [
 		0, 0, 1, 0, 0,
