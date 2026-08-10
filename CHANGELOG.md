@@ -671,6 +671,13 @@
   - `bunx tsc --noEmit -p test/e2e`・`bun run test:e2e`（uc.e2e.ts 2件green）・全E2E実行で巻き添えなしを確認。ただし全E2E実行中に**本タスクと無関係の既存不具合**を発見：`argdef.e2e.ts`「s_right/s_bottomはステージの右端・下端からの距離」が`git stash`で当セッションの変更を全部外しても同じ値（期待20、実際760）で落ちる。原因未調査のため`todo.md`へ記録した
   - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
 
+- [x] **`s_right`/`s_bottom`が効かない不具合を修正**（2026-08-10）
+  - 前回セッションの`uc.e2e.ts`作業中に発見した`argdef.e2e.ts`「s_right/s_bottomはステージの右端・下端からの距離」の失敗を調査。原因は`Stage.tsx`の`styChild`（`css\`position: absolute; top: 0; left: 0;\``、全レイヤ共通のemotion CSSクラス）が常に`left: 0; top: 0`を固定しており、`s_right`/`s_bottom`指定時に`styLay()`（`Lay.ts`）が`right`/`bottom`だけをインラインstyleへ書いて`left`/`top`を書かずにいたため、クラス側の`left: 0`が残ったまま`right`と共存する形になっていたこと
+  - CSSの絶対配置は`left`・`right`・`width`が全部指定された場合（over-constrained）、`direction: ltr`では`left`+`width`を優先し`right`は無視する仕様。そのため`right: 20px`を指定しても無視され、要素は`left: 0`のまま（自然幅ぶんだけ右にずれた位置）に描画されていた（実測760 = ステージ幅800 - 画像自然幅40と一致し、`right`指定が黙って無効化されていたことが裏付けられた）
+  - `styLay()`で`s_right`/`s_bottom`を書くときに`left`/`top`を明示的に`'auto'`で打ち消すよう修正（`Lay.ts`）。`sty`はGrpLayer（`styDiv0`）・TxtLayer本体（`styBox`）どちらもこの1関数の戻り値をスプレッドしているため、修正箇所は1箇所で足りた。`[button]`（`BtnLayer.tsx`の`styBtnArg`）は同じ`s_right`/`s_bottom`ロジックを持つが`styChild`クラスを使わない独立要素のため対象外（元から問題なし）
+  - `bunx tsc --noEmit --incremental false`・`bun test`（1658件green）・`bun run test:e2e`（全216件、対象の`argdef.e2e.ts`含め全green）で確認。全体E2E実行中に`trans.e2e.ts`の1件が並列実行下でflakyに落ちたが、単独実行では通ることを確認済み（本修正とは無関係）
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
 - [ ]
 
 

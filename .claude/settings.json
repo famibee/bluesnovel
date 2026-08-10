@@ -1,19 +1,19 @@
 {
   "permissions": {
     "allow": [
+      "Bash(bun -e ' *)",
+      "Bash(bun x *)",
+      "Bash(bunx vite *)",
       "Bash(gh repo *)",
+      "Bash(git log *)",
       "Bash(git mv *)",
+      "Bash(grep -v *)",
       "Bash(mv ARCHITECTURE.md .claude/docs/ARCHITECTURE.md)",
       "Bash(mv PITFALLS.md .claude/docs/PITFALLS.md)",
       "Bash(mv TESTING.md .claude/docs/TESTING.md)",
-      "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)",
-      "Bash(grep -v \"\\\\.ts$\\\\|\\\\.html$\")",
-      "Bash(git log *)",
-      "Bash(python3 *)",
-      "Bash(bun x *)",
       "Bash(npx playwright *)",
-      "Bash(bunx vite *)",
-      "Bash(bun -e ' *)"
+      "Bash(python3 *)",
+      "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)"
     ],
     "additionalDirectories": [
       "/Users/ugai/Documents/MacHD2/_Famibee/SKYNovel/bluesnovel/src/components",

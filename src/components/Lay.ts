@@ -83,11 +83,18 @@ export type T_LAY_IDX = T_LAY_STY & {
 //	（原点は左上＝本家pixiのpivot既定と揃える）
 export function styLay(l: T_LAY_STY): CSSProperties {
 	const sty: CSSProperties = {};
-	// 横位置：left（＋center/rightの寄せ）か、ステージ右端からのs_rightか（本家も else if で排他）
-	if (l.s_right !== undefined) sty.right = `${String(l.s_right)}px`;
-	else if (l.left !== undefined) sty.left = `${String(l.left)}px`;
-	if (l.s_bottom !== undefined) sty.bottom = `${String(l.s_bottom)}px`;
-	else if (l.top !== undefined) sty.top = `${String(l.top)}px`;
+	// 横位置：left（＋center/rightの寄せ）か、ステージ右端からのs_rightか（本家も else if で排他）。
+	//	styChild（Stage.tsx）がクラスCSSで left: 0; top: 0; を固定しているため、s_right/s_bottom側では
+	//	leftを明示的に'auto'で打ち消す必要がある。さもないと left:0（クラス）と right:20px（インライン）
+	//	が両方効いてしまい、絶対配置はleft+widthを優先してrightを無視する（＝s_rightが効かなくなる）
+	if (l.s_right !== undefined) {
+		sty.right = `${String(l.s_right)}px`;
+		sty.left = 'auto';
+	} else if (l.left !== undefined) sty.left = `${String(l.left)}px`;
+	if (l.s_bottom !== undefined) {
+		sty.bottom = `${String(l.s_bottom)}px`;
+		sty.top = 'auto';
+	} else if (l.top !== undefined) sty.top = `${String(l.top)}px`;
 	// 寄せは独立translateプロパティで。transformと別なので回転・拡縮と混ざらない
 	if (l.align_x !== undefined || l.align_y !== undefined) {
 		const tx = l.align_x === 'center' ? '-50%' : l.align_x === 'right' ? '-100%' : '0';
