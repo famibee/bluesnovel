@@ -100,8 +100,15 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		noticeDrag();
 		style.transform = transform;
 	}
+	// div0はposition:absoluteかつwidth未指定（[lay width=]の明示が無い）とき、CSSのshrink-to-fit
+	//	計算に落ちる。available width（containing blockの右端までの残り幅）が画像の自然幅より
+	//	狭いと、そこまで縮小されてしまう——[lay center=/right=/pos=]でステージ幅の半分を超える
+	//	立ち絵をcontaining blockの端寄りへ配置すると顕在化する（例：pos=&pos.l1cでF_1024aFullが
+	//	1/3程度に縮んで表示された）。max-contentで常に内容の自然幅を使わせ、sty.widthの明示
+	//	（後勝ち）があればそちらを優先する
+	const styDiv0: CSSProperties = {width: 'max-content', ...sty};
 	return <>
-		<div css={styChild} ref={div0} data-lay={nm} style={sty} onMouseDown={e=> onMouseDown(e)}>
+		<div css={styChild} ref={div0} data-lay={nm} style={styDiv0} onMouseDown={e=> onMouseDown(e)}>
 			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 				（Reactがページ全体再ダウンロードの可能性を警告するため）。
 				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}

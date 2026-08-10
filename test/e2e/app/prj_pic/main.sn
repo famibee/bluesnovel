@@ -31,7 +31,14 @@
 ; 画像の拡縮（[lay width=/height=]）。bg.pngの自然サイズ(40x30)を80x60へ拡大する。
 ;	face=''で前段のface_mを明示的にクリア（省略時は維持されるため）
 [lay layer=base fn=bg width=80 height=60 face='']
-かくだい[s]
+かくだい[p]
+
+; pos（立ち絵配置のショートカット）。containing block右端に近い位置（pos=r）へ
+;	widthを明示しない大きな画像を置いても、自然サイズのまま表示されること
+;	（div0がposition:absolute×width autoだとCSSのshrink-to-fitに落ちて縮む不具合があった）
+[add_lay layer=base2 class=grp]
+[lay layer=base2 fn=wide pos=r]
+はばひろ[s]
 
 *here
 とんだ[s]

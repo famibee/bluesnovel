@@ -42,17 +42,26 @@
       `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
       （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
       2026-08-10参照）。残っているのは実アセット・実際の読書体感としての確認
-- [ ] **`tmp_blues`と`tmp_esm_uc`（本家）の表示差異の網羅確認**：2026-08-10のセッションで冒頭数場面
-      （タイトル〜最初の本文）だけ比較し、ステージのレターボックス位置ズレ（`requestFullscreen`失敗の
-      誤判定）と縦書きシステムメニューの重なりの2件を発見・修正済み（詳細はCHANGELOG.md参照）。
-      本文は数十ページ規模で`[l]`/`[p]`停止点が多数あり、全編の網羅確認はまだ。進めるなら
-      `[grp]`呼び出し直後（場面転換）を軸に広くサンプリングするのが効率的。frame関係
-      （`[add_frame]`）は同一アーキテクチャなので対象外、音声も比較対象
-  - [ ] できればこの一連をテスト化する。ただしテンプレ全体をエンジンテスト部に持ち込むとサイズが
-        巨大すぎるので、独立した単独テストとし、実行のたびに最新テンプレをDLして後始末する形で
-        実現する（`test/e2e/`とは別枠。`tmp_blues`/`tmp_esm_uc`は兄弟チェックアウト前提で
-        `test/uc_goal.test.ts`同様に無ければskip、が妥当か）
-        またはエッセンスからテストプロジェクトを作成しe2eテスト。
+- [ ] **fullscreen時のレターボックス位置が本家と違う**：2026-08-10のセッションで`tmp_blues`と
+      `tmp_esm_uc`（本家）をfullscreen状態で並べて実機比較した結果判明。本家は`document.body`を
+      fullscreen化するだけでcenter dockのロジックを持たず実際には左上固定のまま
+      （`SysBase.cvsResize()`の`ofsLeft4elm += (w-cvsWidth)/2`はマウス座標変換用のオフセットで、
+      見た目のDOM配置には反映されない）。bluesnovelの`Stage.tsx`は`isFullscreen`のとき
+      `#skynovel`を明示的に`display:flex;align-items:center;justify-content:center`で中央寄せ
+      しており、本家と異なる。`test/e2e/sys.e2e.ts`の「全画面のときステージは画面の中央へ寄る」は
+      外側のfullscreen要素自体（`#skynovel`、画面いっぱいに広がるので中心は当然画面中央になる）を
+      見ているだけで、内側`heStage`のcenter dock自体は検証していないので、修正してもこのテストは
+      壊れないはず。修正するなら`Stage.tsx`の`useLayoutEffect`内`isFullscreen`分岐の
+      `alignItems/justifyContent`指定を外し、常に左上固定（`transform-origin: left top`も
+      `isFullscreen`分岐をやめて固定）にする形になる
+  - [ ] `tmp_blues`と`tmp_esm_uc`（本家）の表示差異の網羅確認をテスト化する。2026-08-10のセッションで
+        `ss_000.sn`（113行、`[grp]`場面転換10箇所）を通しで比較し、`[lay pos=]`未実装と
+        GrpLayerの画像縮小バグ（詳細はCHANGELOG.md参照）以外は本家と一致することを確認済み。
+        ただしテンプレ全体をエンジンテスト部に持ち込むとサイズが巨大すぎるので、独立した単独
+        テストとし、実行のたびに最新テンプレをDLして後始末する形で実現する（`test/e2e/`とは
+        別枠。`tmp_blues`/`tmp_esm_uc`は兄弟チェックアウト前提で`test/uc_goal.test.ts`同様に
+        無ければskip、が妥当か）またはエッセンスからテストプロジェクトを作成しe2eテスト。
+        frame関係（`[add_frame]`）は同一アーキテクチャなので対象外、音声も比較対象
 
 ## アセット・基盤
 

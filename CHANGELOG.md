@@ -648,6 +648,14 @@
   - 実際の画面解像度（この開発機のブラウザで1280×720）がプロジェクト設定のウインドウ高さ（1024×768のtmp_blues/tmp_esm_uc、768>720）より大きい環境では**実プレイでも起動直後に同じ事故が起きる**ため、テスト用の特殊条件ではなく実害のあるバグだった
   - `bun test`1652件・E2E（`stage.e2e.ts`4件・`sys.e2e.ts`7件、うち「全画面のときステージは画面の中央へ寄る」はキーボード起因＝ユーザー操作扱いのrequestFullscreenなので引き続きgreen）で確認。起動時自動発火（ユーザー操作なし）のケース自体のE2E化は見送った（既存`prj_sys`フィクスチャへ影響なく追加する設計に手間がかかるため）
 
+- [x] **`tmp_blues`と`tmp_esm_uc`（本家）の表示差異の網羅確認を完走、`[lay pos=]`未実装とGrpLayerの画像縮小バグを発見・修正**（2026-08-10）
+  - 前回セッションで残っていた「本文の全編比較」を`ss_000.sn`（113行、`[grp]`場面転換10箇所）通しで実施。両者をPlaywrightで並べて進め、各場面転換ごとにスクリーンショットを比較した
+  - **本題（`pos`属性が丸ごと未実装だった）**：23行目`[fg fn=F_1024aFull pos=&pos.l1c]`の立ち絵が、本家は顔まで見えるのにbluesnovelでは体の一部しか見えていなかった。原因は本家の`Layer.setXYByPos()`（`[lay]`/`[fg]`/`[grp l0=/pos0=]`が使う`pos`属性。X中心をc/l/r/数値で指定し、Yは常に画像下端をステージ下端へ自動接地する立ち絵配置のショートカット）がbluesnovelの`ScriptEngine.ts`に一切実装されていなかったこと。`docs/tag.html`の属性表には元から載っていた（対応済みの体裁）が実装コードが存在せず、黙って無視されていた。既存の`left`/`center`/`right`/`bottom`の仕組みへ変換する形で実装（`c`→`center=stageW/2`、`l`→`left=0`、`r`→`right=stageW`、数値→`center=数値`、Yは常に`bottom=stageH`。`pos=stay`は位置を変えない）。単体テスト（`test/ScriptEngine_lay.test.ts`）を追加、`docs/tag.html`の説明文にも`pos`を追記
+  - **副産物（GrpLayerの画像縮小バグ）**：`pos`修正後も実機で本家と構図が一致せず調査したところ、`GrpLayer.tsx`のdiv0（画像レイヤの箱）が`position:absolute`かつ`width`未指定のとき、CSSの**shrink-to-fit幅計算**に落ちて「containing blockの右端までの残り幅」に縮小されてしまう不具合を発見した。実プロジェクトの`index.html`が持つ「モダンCSSリセット」（`img,picture{max-width:100%}`）と組み合わさると、中の`<img>`もそれに追随して縮む。`[lay center=/right=/pos=]`でステージ幅の半分を超える立ち絵をcontaining blockの端寄りへ配置すると顕在化する（今回のケースでは`[fg pos=&pos.l1c]`のx=672、containing block幅1024に対し残り352pxしかなく、834px幅の画像が352pxまで縮んでいた）。div0に`width: max-content`を追加し、`sty.width`の明示があればそちらを優先する形で解消。E2E（`pic.e2e.ts`）に600×400の専用フィクスチャ画像（`wide.png`）を足し、`page.addStyleTag`でCSSリセットを再現した回帰テストを追加（修正前のコードに戻すと幅が`0px`まで縮むことを確認済み）
+  - **fullscreen時のレターボックス位置も本家と違うことが判明**（同日先行の「レターボックス位置ズレ」修正で「全画面時は中央寄せ」とした前提を、本家の実機で検証した結果）：本家は`document.body`をfullscreen化するだけでcenter dockのロジックを持たず、実際には左上固定のまま（`SysBase.cvsResize()`の`ofsLeft4elm += (w-cvsWidth)/2`はマウス座標変換用のオフセットで、見た目のDOM配置には反映されない）。bluesnovelは`#skynovel`を明示的に`display:flex;align-items:center;justify-content:center`で中央寄せしており、本家と異なる。修正は挙動変更のリスクがあるため今回は見送り、`todo.md`へ記録した
+  - `ss_000.sn`の残り9箇所の場面転換（39/47/53/78/86/98/108行目の`[grp]`、57/82行目の`[fg]`）はいずれも本家と一致することを確認。frame関係・音声は対象外（既存方針どおり）
+  - `bun test`1658件・`bunx tsc --noEmit`・E2E（`pic.e2e.ts`/`lay.e2e.ts`/`grp.e2e.ts`/`anime.e2e.ts`/`filter.e2e.ts`/`trans.e2e.ts`/`btnpic.e2e.ts`/`button.e2e.ts`）green
+
 - [ ]
 
 

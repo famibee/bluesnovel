@@ -12,7 +12,7 @@
 //	出来上がったURLを描くだけ。ここではその結果と、解決失敗時の振る舞いを見る。
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pressKey, snap, traceText} from './snPage';
+import {SEL_FORE, gotoSn, grpBoxStyle, mesStr, pressKey, snap, traceText} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'pic')});
 
@@ -95,4 +95,24 @@ test('[lay width=/height=]で画像の表示サイズが拡縮される（本家
 		el=> ({w: getComputedStyle(el).width, h: getComputedStyle(el).height}));
 	expect(box.w).toBe('80px');
 	expect(box.h).toBe('60px');
+});
+
+test('[lay pos=r]で大きな画像をcontaining block右端へ寄せても自然サイズのまま表示される', async ({page})=> {
+	// 実プロジェクト（tmp_blues等）のindex.htmlが持つ「モダンCSSリセット」
+	//	（img,picture{max-width:100%}）を再現：div0（画像レイヤの箱）が
+	//	position:absolute×width autoのまま**containing block右端に寄る**と、
+	//	CSSのshrink-to-fit計算で「そこから右端までの残り幅」に幅が制限されてしまい、
+	//	中のimgもmax-width:100%でそれに追随して縮んで見えるバグがあった
+	//	（GrpLayer.tsx div0にwidth:max-contentを足して解消。実機tmp_blues/tmp_esm_ucの
+	//	比較で発見：[fg pos=&pos.l1c]の立ち絵が本家は顔まで見えるのに、こちらは
+	//	体の一部しか見えていなかった）
+	await page.addStyleTag({content: 'img,picture{max-width:100%;display:block}'});
+
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('はばひろ');
+
+	// wide.pngは600x400、ステージは800x600。pos=rはleft=800(stageW)・align_x='right'になり、
+	//	containing block右端までの残り幅は0——修正前はここまで縮んでいた
+	expect(await grpBoxStyle(page, 'width', 'base2')).toBe('600px');
+	expect(await grpBoxStyle(page, 'height', 'base2')).toBe('400px');
 });

@@ -9859,12 +9859,15 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 		..."height" in n ? { height: "100%" } : {}
 	}, _ = (0, z.useRef)(null), v = (e, t) => {
 		u(), e.transform = t;
+	}, y = {
+		width: "max-content",
+		...n
 	};
 	return /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("div", {
 		css: e,
 		ref: _,
 		"data-lay": r,
-		style: n,
+		style: y,
 		onMouseDown: (e) => f(e),
 		children: [
 			p && /* @__PURE__ */ j("div", { className: F(p) }),

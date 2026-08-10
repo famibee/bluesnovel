@@ -1173,30 +1173,48 @@ export class ScriptEngine {
 			const sty: T_LAY_STY_ARG = {};
 			if (args.visible !== undefined) sty.visible = args.visible !== 'false';
 			if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
-			// 横位置は left / center / right / s_right の**排他**（本家 Layer.ts:513-532 の else if）。
-			//	center・rightは「指定値から表示物の幅を引く」＝寄せ。実寸はエンジンが知らないので
-			//	寄せの種類だけを渡し、CSSの独立translateプロパティで表現する（Lay.ts styLay）
-			if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
-			else if (args.center !== undefined) {
-				sty.left = this.#argPos('lay', 'left', args.center);
-				sty.align_x = 'center';
-			}
-			else if (args.right !== undefined) {
-				sty.left = this.#argPos('lay', 'left', args.right);
-				sty.align_x = 'right';
-			}
-			else if (args.s_right !== undefined) sty.s_right = this.#argPos('lay', 'left', args.s_right);
-			// 縦位置も同じ並び（top / middle / bottom / s_bottom）
-			if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
-			else if (args.middle !== undefined) {
-				sty.top = this.#argPos('lay', 'top', args.middle);
-				sty.align_y = 'middle';
-			}
-			else if (args.bottom !== undefined) {
-				sty.top = this.#argPos('lay', 'top', args.bottom);
+			// pos：立ち絵配置のショートカット（本家 Layer.setXYByPos()）。left/center/right/…系より
+			//	優先する（本家は`if (hArg.pos) {setXYByPos(); return}`と早期returnし他の位置属性を
+			//	見ない）。c/l/r/数値でX中心を指定し、Yは常に画像下端をステージ下端へ接地させる
+			//	（本家は`ret.y = stageH - b_height`で計算するが、実寸を知らないこちらは
+			//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない
+			if (args.pos !== undefined && args.pos !== 'stay') {
+				const p = args.pos;
+				const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
+				const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
+				if (p === '' || p === 'c') {sty.left = stageW /2; sty.align_x = 'center'}
+				else if (p === 'l') sty.left = 0;
+				else if (p === 'r') {sty.left = stageW; sty.align_x = 'right'}
+				else {sty.left = ScriptEngine.#argNum('lay', 'pos', p); sty.align_x = 'center'}
+				sty.top = stageH;
 				sty.align_y = 'bottom';
 			}
-			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
+			else {
+				// 横位置は left / center / right / s_right の**排他**（本家 Layer.ts:513-532 の else if）。
+				//	center・rightは「指定値から表示物の幅を引く」＝寄せ。実寸はエンジンが知らないので
+				//	寄せの種類だけを渡し、CSSの独立translateプロパティで表現する（Lay.ts styLay）
+				if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
+				else if (args.center !== undefined) {
+					sty.left = this.#argPos('lay', 'left', args.center);
+					sty.align_x = 'center';
+				}
+				else if (args.right !== undefined) {
+					sty.left = this.#argPos('lay', 'left', args.right);
+					sty.align_x = 'right';
+				}
+				else if (args.s_right !== undefined) sty.s_right = this.#argPos('lay', 'left', args.s_right);
+				// 縦位置も同じ並び（top / middle / bottom / s_bottom）
+				if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
+				else if (args.middle !== undefined) {
+					sty.top = this.#argPos('lay', 'top', args.middle);
+					sty.align_y = 'middle';
+				}
+				else if (args.bottom !== undefined) {
+					sty.top = this.#argPos('lay', 'top', args.bottom);
+					sty.align_y = 'bottom';
+				}
+				else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
+			}
 			// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
 			//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
 			//	**独立した2つのif**：片方だけの指定でも成立させる（本家の潰れバグは踏襲しない）

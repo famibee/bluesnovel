@@ -451,6 +451,50 @@ it('layAlign_ratioWorksToo', ()=> {
 });
 
 
+// ============ pos（立ち絵配置のショートカット。本家 Layer.setXYByPos()） ============
+//	X中心はc/l/r/数値で指定し、Yは常に画像下端をステージ下端へ接地させる
+//	（実寸を知らないのでbottom=stageH・align_y='bottom'の組で表す）
+
+it('layPos_omittedOrC_isCenterBottom', ()=> {
+	expect(styOfWin('[lay layer=base pos=c]'))
+		.toEqual({left: 512, align_x: 'center', top: 768, align_y: 'bottom'});
+	// posだけ書いて値を空にする書き方も'c'と同じ扱い（本家 `!pos || pos === 'c'`）
+	expect(styOfWin("[lay layer=base pos='']"))
+		.toEqual({left: 512, align_x: 'center', top: 768, align_y: 'bottom'});
+});
+
+it('layPos_l_isLeftEdgeBottom', ()=> {
+	// 'l'は画像の左端がステージ左端(0)に接する＝寄せ無しのleft=0と同じ絵になる
+	expect(styOfWin('[lay layer=base pos=l]'))
+		.toEqual({left: 0, top: 768, align_y: 'bottom'});
+});
+
+it('layPos_r_isRightEdgeBottom', ()=> {
+	// 'r'は画像の右端がステージ右端に接する＝right=stageWと同じ絵になる
+	expect(styOfWin('[lay layer=base pos=r]'))
+		.toEqual({left: 1024, align_x: 'right', top: 768, align_y: 'bottom'});
+});
+
+it('layPos_number_isCenterAtThatXBottom', ()=> {
+	// 数値は画像の中心x座標そのもの（本家 `c = int(pos)`）
+	expect(styOfWin('[lay layer=base pos=300]'))
+		.toEqual({left: 300, align_x: 'center', top: 768, align_y: 'bottom'});
+});
+
+it('layPos_winsOverLeftCenterRightTopEtc', ()=> {
+	// 本家は`if (hArg.pos) {setXYByPos(); return}`と早期returnし、他の位置属性は一切見ない
+	const sty = styOfWin('[lay layer=base pos=l left=10 center=500 right=900 top=1 middle=2 bottom=3 s_right=4 s_bottom=5]');
+	expect(sty).toEqual({left: 0, top: 768, align_y: 'bottom'});
+});
+
+it('layPos_stay_doesNotTouchPosition', ()=> {
+	// pos=stayは位置を変えない（他に見た目属性が無ければchgLay自体が積まれない）
+	expect(styOf('[lay layer=base pos=stay]')).toBeUndefined();
+	// 他の見た目属性と併用しても位置系（left/top/align_*）は一切出ない
+	expect(styOfWin('[lay layer=base pos=stay alpha=0.5]')).toEqual({alpha: 0.5});
+});
+
+
 // ============ [button]の中央寄せ・右端合わせ（本家 Layer.ts:513-552 の isButton 分岐。
 //	実際は3箇所とも isButton=false 固定で未配線だったデッドコードだが、仕様として掘り起こした） ============
 
