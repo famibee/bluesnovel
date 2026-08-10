@@ -1,37 +1,155 @@
 import { r as e } from "./rolldown-runtime.js";
 import { o as t } from "./CmnLib.js";
 import { t as n } from "./react.js";
-//#region src/ts/Blendmode.ts
-var r = /* @__PURE__ */ e(n(), 1), i = {
+var r = new class e {
+	#e = [];
+	#t = -1;
+	static #n(e) {
+		if (e.disabled || e.getClientRects().length === 0) return !1;
+		try {
+			for (let t = e.ownerDocument.defaultView; t && t !== t.parent;) {
+				let e = t.frameElement;
+				if (!e) break;
+				if (e.getClientRects().length === 0) return !1;
+				t = e.ownerDocument.defaultView;
+			}
+		} catch {}
+		return !0;
+	}
+	#r = /* @__PURE__ */ new Map();
+	#i(e) {
+		this.#r.get(e)?.(), this.#r.delete(e);
+	}
+	add(t) {
+		if (this.#e.includes(t)) return;
+		let n = () => {
+			this.#t = this.#e.indexOf(t);
+		};
+		t.addEventListener("focus", n);
+		let r = () => {
+			t.removeEventListener("focus", n);
+		}, i = e.#a(t);
+		if (i) {
+			let a = e.#o(t, i);
+			r = () => {
+				t.removeEventListener("focus", n), a();
+			};
+		}
+		this.#r.set(t, r), this.#e.push(t);
+	}
+	static #a(t) {
+		let n = t;
+		switch (n.type ?? "") {
+			case "checkbox": return () => {
+				n.checked = !n.checked;
+			};
+			case "":
+				if (t.querySelectorAll("input[type]").length > 0) return (n) => e.#s(t, n.key);
+				break;
+			case "range": return (e) => {
+				e.isTrusted || (e.key === "ArrowUp" ? n.stepUp() : n.stepDown(), n.dispatchEvent(new InputEvent("input", { bubbles: !0 })));
+			};
+			case "text":
+			case "textarea": return (e) => {
+				if (e.isTrusted) return;
+				let t = (n.selectionStart ?? 0) + (e.key === "ArrowUp" ? -1 : 1);
+				t < 0 && (t = 0), n.setSelectionRange(t, t);
+			};
+		}
+		if (t.localName === "button" || t.localName === "a") return (e) => {
+			e.isTrusted || e.key !== "Enter" || t.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
+		};
+	}
+	static #o(e, t) {
+		let n = (e) => {
+			(e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter") && (e.stopPropagation(), t(e));
+		};
+		return e.addEventListener("keydown", n), () => {
+			e.removeEventListener("keydown", n);
+		};
+	}
+	static #s(e, t) {
+		let n = e.querySelectorAll("input[type]"), r = n.length;
+		for (let e = 0; e < r; ++e) if (n[e].checked) {
+			n[(e + r + (t === "ArrowUp" ? -1 : 1)) % r].checked = !0;
+			break;
+		}
+	}
+	remove(e) {
+		let t = this.#e.indexOf(e);
+		t < 0 || (this.#i(e), this.#e.splice(t, 1), this.#e.length === 0 ? this.#t = -1 : t <= this.#t && --this.#t);
+	}
+	clear() {
+		for (let e of this.#e) this.#i(e);
+		this.#e = [], this.#t = -1;
+	}
+	isFocus(e) {
+		return this.#t >= 0 && this.#e[this.#t] === e;
+	}
+	get length() {
+		return this.#e.length;
+	}
+	get idx() {
+		return this.#t;
+	}
+	getFocus() {
+		if (this.#t < 0) return null;
+		let t = this.#e[this.#t];
+		return e.#n(t) ? t : null;
+	}
+	next() {
+		this.#c(1);
+	}
+	prev() {
+		this.#c(-1);
+	}
+	#c(t) {
+		let n = this.#e.length;
+		if (n === 0) return;
+		let r = this.#t + t;
+		r >= n ? r = 0 : r < 0 && (r = n - 1);
+		for (let i = 0; i < n; ++i) {
+			let a = ((r + t * i) % n + n) % n, o = this.#e[a];
+			if (e.#n(o)) {
+				this.#t = a, o.focus();
+				return;
+			}
+		}
+		this.#t = -1;
+	}
+	blur() {
+		this.#e[this.#t]?.blur(), this.#t = -1, document.activeElement?.blur(), globalThis.focus();
+	}
+}(), i = /* @__PURE__ */ e(n(), 1), a = {
 	normal: "normal",
 	add: "plus-lighter",
 	multiply: "multiply",
 	screen: "screen"
 };
-function a(e) {
-	let t = i[e];
+function o(e) {
+	let t = a[e];
 	if (!t) throw `${e} はサポートされない blendmode です`;
 	return t;
 }
 //#endregion
 //#region src/ts/Filter.ts
-function o(e, t, n) {
+function s(e, t, n) {
 	let r = e[t];
 	if (r === void 0) return n;
 	let i = r.startsWith("0x") ? parseInt(r.slice(2), 16) : Number(r);
 	if (!Number.isFinite(i)) throw `[add_filter] ${t}の値が不正です：${r}`;
 	return i;
 }
-var s = {
-	blur: (e) => `blur(${String(o(e, "strength", 8))}px)`,
-	brightness: (e) => `brightness(${String(o(e, "b", .5))})`,
+var c = {
+	blur: (e) => `blur(${String(s(e, "strength", 8))}px)`,
+	brightness: (e) => `brightness(${String(s(e, "b", .5))})`,
 	black_and_white: () => "grayscale(1)",
 	negative: () => "invert(1)",
-	saturate: (e) => `saturate(${String(1 + o(e, "amount", .5))})`,
+	saturate: (e) => `saturate(${String(1 + s(e, "amount", .5))})`,
 	sepia: () => "sepia(1)"
-}, c = ["noise"], l = {
+}, l = ["noise"], u = {
 	grayscale: (e) => {
-		let t = o(e, "scale", .5);
+		let t = s(e, "scale", .5);
 		return [
 			t,
 			t,
@@ -56,7 +174,7 @@ var s = {
 		];
 	},
 	contrast: (e) => {
-		let t = o(e, "amount", .5) + 1, n = -.5 * (t - 1);
+		let t = s(e, "amount", .5) + 1, n = -.5 * (t - 1);
 		return [
 			t,
 			0,
@@ -81,7 +199,7 @@ var s = {
 		];
 	},
 	hue: (e) => {
-		let t = o(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), i = 1 / 3, a = Math.sqrt(i);
+		let t = s(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), i = 1 / 3, a = Math.sqrt(i);
 		return [
 			n + (1 - n) * i,
 			i * (1 - n) - a * r,
@@ -260,7 +378,7 @@ var s = {
 		0
 	],
 	tint: (e) => {
-		let t = o(e, "f_color", 8947848);
+		let t = s(e, "f_color", 8947848);
 		return [
 			(t >> 16 & 255) / 255,
 			0,
@@ -285,7 +403,7 @@ var s = {
 		];
 	},
 	night: (e) => {
-		let t = o(e, "intensity", .5);
+		let t = s(e, "intensity", .5);
 		return [
 			t * -2,
 			-t,
@@ -310,7 +428,7 @@ var s = {
 		];
 	},
 	predator: (e) => {
-		let t = o(e, "amount", .5);
+		let t = s(e, "amount", .5);
 		return [
 			11.224130630493164 * t,
 			-4.794486999511719 * t,
@@ -335,7 +453,7 @@ var s = {
 		];
 	},
 	color_tone: (e) => {
-		let t = o(e, "desaturation", .5), n = o(e, "toned", .5), r = o(e, "light_color", 16770432), i = o(e, "dark_color", 16770432), a = (r >> 16 & 255) / 255, s = (r >> 8 & 255) / 255, c = (r & 255) / 255, l = (i >> 16 & 255) / 255, u = (i >> 8 & 255) / 255, d = (i & 255) / 255;
+		let t = s(e, "desaturation", .5), n = s(e, "toned", .5), r = s(e, "light_color", 16770432), i = s(e, "dark_color", 16770432), a = (r >> 16 & 255) / 255, o = (r >> 8 & 255) / 255, c = (r & 255) / 255, l = (i >> 16 & 255) / 255, u = (i >> 8 & 255) / 255, d = (i & 255) / 255;
 		return [
 			.3,
 			.59,
@@ -343,7 +461,7 @@ var s = {
 			0,
 			0,
 			a,
-			s,
+			o,
 			c,
 			t,
 			0,
@@ -353,7 +471,7 @@ var s = {
 			n,
 			0,
 			a - l,
-			s - u,
+			o - u,
 			c - d,
 			0,
 			0
@@ -368,75 +486,75 @@ var s = {
 			return e;
 		}
 		return [
-			o(e, "rtor", 1),
-			o(e, "gtor", 0),
-			o(e, "btor", 0),
-			o(e, "ator", 0),
-			o(e, "pr", 0),
-			o(e, "rtog", 0),
-			o(e, "gtog", 1),
-			o(e, "btog", 0),
-			o(e, "atog", 0),
-			o(e, "pg", 0),
-			o(e, "rtob", 0),
-			o(e, "gtob", 0),
-			o(e, "btob", 1),
-			o(e, "atob", 0),
-			o(e, "pb", 0),
-			o(e, "rtoa", 0),
-			o(e, "gtoa", 0),
-			o(e, "btoa", 0),
-			o(e, "atoa", 1),
-			o(e, "pa", 0)
+			s(e, "rtor", 1),
+			s(e, "gtor", 0),
+			s(e, "btor", 0),
+			s(e, "ator", 0),
+			s(e, "pr", 0),
+			s(e, "rtog", 0),
+			s(e, "gtog", 1),
+			s(e, "btog", 0),
+			s(e, "atog", 0),
+			s(e, "pg", 0),
+			s(e, "rtob", 0),
+			s(e, "gtob", 0),
+			s(e, "btob", 1),
+			s(e, "atob", 0),
+			s(e, "pb", 0),
+			s(e, "rtoa", 0),
+			s(e, "gtoa", 0),
+			s(e, "btoa", 0),
+			s(e, "atoa", 1),
+			s(e, "pa", 0)
 		];
 	}
 };
-function u(e) {
+function d(e) {
 	let t = 0, n = e.join(",");
 	for (let e = 0; e < n.length; ++e) t = Math.imul(t, 31) + n.charCodeAt(e) | 0;
 	return `sn_cm_${(t >>> 0).toString(36)}`;
 }
-var d = (e) => e.join(" ");
-function f([e, t]) {
+var f = (e) => e.join(" ");
+function p([e, t]) {
 	return `sn_gb_${String(e)}_${String(t)}`;
 }
-var p = ([e, t]) => `${String(e)} ${String(t)}`;
-function m(e) {
-	let { filter: n = "" } = e, r = e.blendmode === void 0 ? void 0 : a(e.blendmode), i = (e.enable_filter ?? "true") !== "false";
+var m = ([e, t]) => `${String(e)} ${String(t)}`;
+function h(e) {
+	let { filter: n = "" } = e, r = e.blendmode === void 0 ? void 0 : o(e.blendmode), i = (e.enable_filter ?? "true") !== "false";
 	if (n === "blur" && (e.blur_x !== void 0 || e.blur_y !== void 0)) {
-		let n = [t(o(e, "blur_x", 2)), t(o(e, "blur_y", 2))];
+		let n = [t(s(e, "blur_x", 2)), t(s(e, "blur_y", 2))];
 		return {
-			css: `url(#${f(n)})`,
+			css: `url(#${p(n)})`,
 			enabled: i,
 			blurXY: n,
 			...r === void 0 ? {} : { blendmode: r }
 		};
 	}
-	let d = l[n];
-	if (d) {
-		let t = d(e);
+	let a = u[n];
+	if (a) {
+		let t = a(e);
 		return {
-			css: `url(#${u(t)})`,
+			css: `url(#${d(t)})`,
 			enabled: i,
 			mat: t,
 			...r === void 0 ? {} : { blendmode: r }
 		};
 	}
-	let p = s[n];
-	if (!p) throw c.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
+	let f = c[n];
+	if (!f) throw l.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
-		css: p(e),
+		css: f(e),
 		enabled: i,
 		...r === void 0 ? {} : { blendmode: r }
 	};
 }
-function h(e) {
+function g(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function g(e) {
+function _(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function _(e) {
+function ee(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
@@ -468,7 +586,7 @@ var y = [
 function b(e) {
 	let t = {};
 	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left)}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top)}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : _(e.aFlt));
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : ee(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
 		let n = v(e.aFlt);
 		n && (t.filter = n);
@@ -753,8 +871,8 @@ var R = class {
 	return a;
 }, U = ((e) => e ? H(e) : H), W = (e) => e;
 function G(e, t = W) {
-	let n = r.useSyncExternalStore(e.subscribe, r.useCallback(() => t(e.getState()), [e, t]), r.useCallback(() => t(e.getInitialState()), [e, t]));
-	return r.useDebugValue(n), n;
+	let n = i.useSyncExternalStore(e.subscribe, i.useCallback(() => t(e.getState()), [e, t]), i.useCallback(() => t(e.getInitialState()), [e, t]));
+	return i.useDebugValue(n), n;
 }
 var K = (e) => {
 	let t = U(e), n = (e) => G(t, e);
@@ -793,7 +911,7 @@ function $(e, t, n) {
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var ee = q()((e, t) => ({
+var te = q()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
@@ -1032,6 +1150,6 @@ var ee = q()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { g as _, V as a, h as b, M as c, w as d, S as f, p as g, f as h, B as i, k as l, m, ee as n, R as o, b as p, z as r, T as s, Y as t, C as u, u as v, a as x, d as y };
+export { r as S, _, V as a, g as b, M as c, w as d, S as f, m as g, p as h, B as i, k as l, h as m, te as n, R as o, b as p, z as r, T as s, Y as t, C as u, d as v, o as x, f as y };
 
 //# sourceMappingURL=store.js.map

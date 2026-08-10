@@ -43,6 +43,13 @@
 [event global=true call=true key=escape label=*fcs arg=null]
 ふぉーかす[l]
 
+; ゲームパッド対応（FocusMng種別ごとのキー処理）の確認用：range/text/radio/checkboxを
+;	フォーカスの輪へ追加する。**[p]（下のえをだした）より前**に置くこと：[p]は「次の進行時に
+;	現在レイヤをクリア」する仕様で、その「次の進行」は[set_focus to=…]を呼ぶ[event]
+;	（ArrowRight等）でも起きるため、[p]の後ろに続けるとテキストが消えてしまう
+[set_focus add='dom=yesno:#range1,#text1,#radio_grp,#chk1']
+ぱっど[l]
+
 ; フレーム内の<img data-src=…>の解決（本家 FrameMng.ts:154 → #loadPic2Img）。
 ;	**まずプロジェクトのパス解決（path.json）へ通す**。テンプレのアルバムは解放済み項目の
 ;	data-srcに`F_kuchimoto`のような拡張子なしのアセット名を書くので、枠のディレクトリを
@@ -50,7 +57,8 @@
 [let_frame id=yesno var_name=draw_pics function=true]
 えをだした[p]
 
-; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）
+; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）。
+;	range1等もフレーム内なので#ok/#closeと同じく輪から飛ばされる
 [frame id=yesno visible=false]
 かくした[s]
 

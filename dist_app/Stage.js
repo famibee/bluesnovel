@@ -1,16 +1,16 @@
 import { r as e, t } from "./rolldown-runtime.js";
 import { n, o as r, t as i } from "./CmnLib.js";
 import { t as a } from "./react.js";
-import { _ as o, b as s, c, d as l, f as u, g as d, h as f, n as p, o as m, p as h, s as g, u as _, v, y } from "./store.js";
-import { a as b, c as x, d as S, f as C, i as w, l as T, m as E, n as D, o as O, onLong as k, p as A, r as j, s as M, setDesignMode as N, u as P } from "./Main.js";
-import { n as F, r as I } from "./Sprite.js";
-import { n as L, t as R } from "./gsap.js";
+import { S as o, _ as s, b as c, c as l, d as u, f as d, g as f, h as p, n as m, o as h, p as g, s as _, u as v, v as y, y as b } from "./store.js";
+import { a as x, c as S, d as C, f as w, i as T, l as E, m as D, n as O, o as k, onLong as A, p as j, r as M, s as N, setDesignMode as P, u as F } from "./Main.js";
+import { n as I, r as L } from "./Sprite.js";
+import { t as R } from "./gsap.js";
 //#region node_modules/react-use/esm/useToggle.js
 var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
 }, te = function(e) {
 	return (0, z.useReducer)(ee, e);
-}, B = S ? z.useLayoutEffect : z.useEffect, V = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
+}, B = C ? z.useLayoutEffect : z.useEffect, V = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
 	(function() {
 		var e = typeof window < "u" && window.document !== void 0 ? window.document : {}, n = t !== void 0 && t.exports, r = (function() {
 			for (var t, n = [
@@ -130,11 +130,11 @@ var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 	})();
 })))()), ne = function(e, t, n) {
 	n === void 0 && (n = {});
-	var r = n.video, i = n.onClose, a = i === void 0 ? C : i, o = (0, z.useState)(t), s = o[0], c = o[1];
+	var r = n.video, i = n.onClose, a = i === void 0 ? w : i, o = (0, z.useState)(t), s = o[0], c = o[1];
 	return B(function() {
 		if (t && e.current) {
 			var n = function() {
-				r?.current && A(r.current, "webkitendfullscreen", n), a();
+				r?.current && j(r.current, "webkitendfullscreen", n), a();
 			}, i = function() {
 				if (V.default.isEnabled) {
 					var e = V.default.isFullscreen;
@@ -148,12 +148,12 @@ var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 					a(e), c(!1);
 				}
 				V.default.on("change", i);
-			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), E(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
+			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), D(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
 			return function() {
 				if (c(!1), V.default.isEnabled) try {
 					V.default.off("change", i), V.default.exit();
 				} catch {}
-				else r && r.current && r.current.webkitExitFullscreen && (A(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
+				else r && r.current && r.current.webkitExitFullscreen && (j(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
 			};
 		}
 	}, [
@@ -167,7 +167,7 @@ var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 	re(e) && e.touches.length < 2 && e.preventDefault && e.preventDefault();
 }, U = function(e, t) {
 	var n = t === void 0 ? {} : t, r = n.isPreventDefault, i = r === void 0 || r, a = n.delay, o = a === void 0 ? 300 : a, s = (0, z.useRef)(), c = (0, z.useRef)(), l = (0, z.useCallback)(function(t) {
-		i && t.target && (E(t.target, "touchend", H, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
+		i && t.target && (D(t.target, "touchend", H, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
 			return e(t);
 		}, o);
 	}, [
@@ -175,7 +175,7 @@ var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 		o,
 		i
 	]), u = (0, z.useCallback)(function() {
-		s.current && clearTimeout(s.current), i && c.current && A(c.current, "touchend", H);
+		s.current && clearTimeout(s.current), i && c.current && j(c.current, "touchend", H);
 	}, [i]);
 	return {
 		onMouseDown: function(e) {
@@ -189,7 +189,7 @@ var z = /* @__PURE__ */ e(a()), ee = function(e, t) {
 		onTouchEnd: u
 	};
 }, ie = function(e) {
-	P(function() {
+	F(function() {
 		e();
 	});
 };
@@ -9835,7 +9835,7 @@ var au = /* @__PURE__ */ function(e) {
 }(z.PureComponent));
 //#endregion
 //#region src/components/GrpLayer.tsx
-function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, getVideoVol: l, needClick2Play: d }) {
+function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, getVideoVol: l, needClick2Play: u }) {
 	let f = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
 	}, [p, m] = (0, z.useState)(void 0);
@@ -9845,33 +9845,33 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 			return;
 		}
 		let e = !0;
-		return I(a).then((t) => {
+		return L(a).then((t) => {
 			e && m(t);
 		}), () => {
 			e = !1;
 		};
 	}, [a, o]);
 	let h = (e) => {
-		e && (e.volume = l(), e.muted = d());
+		e && (e.volume = l(), e.muted = u());
 	}, g = {
 		display: "block",
 		..."width" in n ? { width: "100%" } : {},
 		..."height" in n ? { height: "100%" } : {}
 	}, _ = (0, z.useRef)(null), v = (e, t) => {
-		u(), e.transform = t;
+		d(), e.transform = t;
 	}, y = {
 		width: "max-content",
 		...n
 	};
-	return /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("div", {
+	return /* @__PURE__ */ T(O, { children: [/* @__PURE__ */ T("div", {
 		css: e,
 		ref: _,
 		"data-lay": r,
 		style: y,
 		onMouseDown: (e) => f(e),
 		children: [
-			p && /* @__PURE__ */ j("div", { className: F(p) }),
-			a && s && /* @__PURE__ */ j("video", {
+			p && /* @__PURE__ */ M("div", { className: I(p) }),
+			a && s && /* @__PURE__ */ M("video", {
 				ref: h,
 				src: a,
 				autoPlay: !0,
@@ -9879,11 +9879,11 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 				"data-fn": i,
 				style: g
 			}),
-			a && !o && !s && /* @__PURE__ */ j("img", {
+			a && !o && !s && /* @__PURE__ */ M("img", {
 				src: a,
 				style: g
 			}),
-			c.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ j("img", {
+			c.map(({ fn: e, src: t, dx: n, dy: r, blendmode: i }, a) => t ? /* @__PURE__ */ M("img", {
 				src: t,
 				style: {
 					position: "absolute",
@@ -9893,7 +9893,7 @@ function ou({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 				}
 			}, `${e}_${String(a)}`) : null)
 		]
-	}), t && /* @__PURE__ */ j(au, {
+	}), t && /* @__PURE__ */ M(au, {
 		target: _,
 		draggable: !0,
 		throttleDrag: 1,
@@ -9998,12 +9998,12 @@ var pu = "position: fixed; background-color: #3c3225; color: white; padding: 4px
 		this.#e && (this.#e.hidden = !0);
 	}
 }();
-T();
+E();
 var hu = function(e, t) {
 	var n = arguments;
-	if (t == null || !M.call(t, "css")) return z.createElement.apply(void 0, n);
+	if (t == null || !N.call(t, "css")) return z.createElement.apply(void 0, n);
 	var r = n.length, i = Array(r);
-	i[0] = b, i[1] = O(e, t);
+	i[0] = x, i[1] = k(e, t);
 	for (var a = 2; a < r; a++) i[a] = n[a];
 	return z.createElement.apply(null, i);
 };
@@ -10012,7 +10012,7 @@ var hu = function(e, t) {
 	t ||= e.JSX ||= {};
 })(hu ||= {});
 function gu() {
-	return x([...arguments]);
+	return S([...arguments]);
 }
 //#endregion
 //#region src/components/BtnLayer.tsx
@@ -10044,8 +10044,8 @@ function yu(e, t, n, r) {
 	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y;
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || t.x !== 1 || t.y !== 1) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
 }
-function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o }) {
-	let s = gu`
+function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: s }) {
+	let c = gu`
 		position: relative;
 		z-index: 2;
 
@@ -10053,7 +10053,7 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o 
 		box-sizing: border-box;
 		margin: 0.3em;
 		padding: 5px;
-		font-family: ${p((e) => e.btnFont)};
+		font-family: ${m((e) => e.btnFont)};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
 			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */
@@ -10084,78 +10084,78 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o 
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
 		${i?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
-	`, c = (e, t) => {
+	`, l = (e, t) => {
 		if (i?.enabled === !1) return;
 		let n = i?.[e];
-		n && o(n, i?.[t] ?? "SYS");
-	}, l = (e) => {
-		e.stopPropagation(), mu.hide(), c("clickse", "clicksebuf"), a(t, n ?? !1, r);
-	}, u = () => {
-		i?.hint && mu.show(m.current, i.hint, i.hint_style, i.hint_opt);
+		n && s(n, i?.[t] ?? "SYS");
+	}, u = (e) => {
+		e.stopPropagation(), mu.hide(), l("clickse", "clicksebuf"), a(t, n ?? !1, r);
 	}, d = () => {
-		u(), c("enterse", "entersebuf");
+		i?.hint && mu.show(h.current, i.hint, i.hint_style, i.hint_opt);
 	}, f = () => {
-		mu.hide(), c("leavese", "leavesebuf");
-	}, m = (0, z.useRef)(null);
+		d(), l("enterse", "entersebuf");
+	}, p = () => {
+		mu.hide(), l("leavese", "leavesebuf");
+	}, h = (0, z.useRef)(null);
 	(0, z.useEffect)(() => {
-		let e = m.current;
-		if (e) return L.add(e), () => L.remove(e);
+		let e = h.current;
+		if (e) return o.add(e), () => o.remove(e);
 	}, []);
-	let [h, g] = (0, z.useState)({
+	let [g, _] = (0, z.useState)({
 		x: 1,
 		y: 1
-	}), _ = i?.pic ? i.src ?? "" : "", [v, y] = (0, z.useState)(null);
+	}), v = i?.pic ? i.src ?? "" : "", [y, b] = (0, z.useState)(null);
 	(0, z.useEffect)(() => {
-		if (!_) {
-			y(null);
+		if (!v) {
+			b(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && y({
+			e && b({
 				w: t.naturalWidth / 3,
 				h: t.naturalHeight
 			});
-		}, t.src = _, () => {
+		}, t.src = v, () => {
 			e = !1;
 		};
-	}, [_]);
-	let b = i?.b_pic ? i.b_src ?? "" : "", [x, S] = (0, z.useState)(null);
+	}, [v]);
+	let x = i?.b_pic ? i.b_src ?? "" : "", [S, C] = (0, z.useState)(null);
 	return (0, z.useEffect)(() => {
-		if (!b) {
-			S(null);
+		if (!x) {
+			C(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && S({
+			e && C({
 				w: t.naturalWidth,
 				h: t.naturalHeight
 			});
-		}, t.src = b, () => {
+		}, t.src = x, () => {
 			e = !1;
 		};
-	}, [b]), (0, z.useLayoutEffect)(() => {
-		let e = m.current;
+	}, [x]), (0, z.useLayoutEffect)(() => {
+		let e = h.current;
 		if (!e) {
-			g({
+			_({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		if (i?.pic) {
-			g({
+			_({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		let t = () => {
-			let { w: t, h: r } = vu(i, v, x), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
+			let { w: t, h: r } = vu(i, y, S), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
 			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
 			let c = e.offsetWidth, l = e.offsetHeight;
-			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), g({
+			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), _({
 				x: c > 0 ? t / c : 1,
 				y: l > 0 ? r / l : 1
 			});
@@ -10166,19 +10166,19 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: o 
 		i?.width,
 		i?.height,
 		i?.pic,
-		x
-	]), /* @__PURE__ */ j("span", {
-		css: s,
-		style: i ? yu(i, h, v, x) : void 0,
-		ref: m,
+		S
+	]), /* @__PURE__ */ M("span", {
+		css: c,
+		style: i ? yu(i, g, y, S) : void 0,
+		ref: h,
 		tabIndex: 0,
-		onClick: l,
+		onClick: u,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), c("clickse", "clicksebuf"), a(t, n ?? !1, r));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l("clickse", "clicksebuf"), a(t, n ?? !1, r));
 		},
-		onMouseEnter: d,
-		onMouseLeave: f,
-		onFocus: u,
+		onMouseEnter: f,
+		onMouseLeave: p,
+		onFocus: d,
 		onBlur: () => mu.hide(),
 		children: e
 	});
@@ -10193,8 +10193,8 @@ var xu = {
 	scaleY: 1,
 	rotation: 0
 };
-function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, str: a, aCh: o, ffs: s, noffs: l, bura: d, kinsoku_sol: f, kinsoku_eol: h, kinsoku_dns: _, kinsoku_bura: v, r_align: y, b_color: b, b_alpha: x, b_alpha_isfixed: S, b_src: C, styTxt: T, pl: E, pr: O, pt: k, pb: A, enabled: M, aBtn: N, in_style: P, onActivate: L, onNavigate: ee, onSe: te }) {
-	let B = p((e) => e.isReadBack), V = p((e) => e.styPaging), ne = p((e) => e.isTyping), re = p((e) => e.setIsTyping), H = p((e) => e.skipReq), U = p((e) => e.skipping), ie = p((e) => e.wait), W = p((e) => e.hChIn), ae = p((e) => e.chWait), oe = p((e) => e.autowc), [se, ce] = (0, z.useState)(null);
+function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, str: a, aCh: o, ffs: s, noffs: c, bura: u, kinsoku_sol: f, kinsoku_eol: p, kinsoku_dns: g, kinsoku_bura: v, r_align: y, b_color: b, b_alpha: x, b_alpha_isfixed: S, b_src: C, styTxt: w, pl: E, pr: D, pt: k, pb: A, enabled: j, aBtn: N, in_style: P, onActivate: F, onNavigate: ee, onSe: te }) {
+	let B = m((e) => e.isReadBack), V = m((e) => e.styPaging), ne = m((e) => e.isTyping), re = m((e) => e.setIsTyping), H = m((e) => e.skipReq), U = m((e) => e.skipping), ie = m((e) => e.wait), W = m((e) => e.hChIn), ae = m((e) => e.chWait), oe = m((e) => e.autowc), [se, ce] = (0, z.useState)(null);
 	(0, z.useEffect)(() => {
 		if (!C) {
 			ce(null);
@@ -10217,7 +10217,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			..."height" in n ? {} : { height: `${String(se.h)}px` }
 		} : n,
 		...E === void 0 ? {} : { paddingLeft: `${String(E)}px` },
-		...O === void 0 ? {} : { paddingRight: `${String(O)}px` },
+		...D === void 0 ? {} : { paddingRight: `${String(D)}px` },
 		...k === void 0 ? {} : { paddingTop: `${String(k)}px` },
 		...A === void 0 ? {} : { paddingBottom: `${String(A)}px` }
 	}, ue = (0, z.useRef)(null), de = (0, z.useRef)(null), fe = (e) => {
@@ -10225,16 +10225,16 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			ee(e.url);
 			return;
 		}
-		L(e.label, e.call, e.fn, e.arg);
-	}, pe = (0, z.useRef)([]), me = (0, z.useRef)([]), he = (0, z.useRef)(null), ge = (0, z.useCallback)((e) => s ? RegExp(`[　${l ?? ""}]`).test(e) ? "" : s : "", [s, l]), _e = (0, z.useMemo)(() => new m({
+		F(e.label, e.call, e.fn, e.arg);
+	}, pe = (0, z.useRef)([]), me = (0, z.useRef)([]), he = (0, z.useRef)(null), ge = (0, z.useCallback)((e) => s ? RegExp(`[　${c ?? ""}]`).test(e) ? "" : s : "", [s, c]), _e = (0, z.useMemo)(() => new h({
 		sol: f,
-		eol: h,
-		dns: _,
+		eol: p,
+		dns: g,
 		bura: v
 	}), [
 		f,
-		h,
-		_,
+		p,
+		g,
 		v
 	]), ve = () => !!ue.current && globalThis.getComputedStyle(ue.current).writingMode.startsWith("vertical");
 	(0, z.useLayoutEffect)(() => {
@@ -10248,28 +10248,28 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < a;) e.appendChild(i[e.childNodes.length]);
 		if (a > 0 && R.set(i.slice(0, a), xu), o.length <= i.length) {
-			wu(e, i, me.current, _e, d ?? !1, ve()), re(!1);
+			wu(e, i, me.current, _e, u ?? !1, ve()), re(!1);
 			return;
 		}
-		let s = o.slice(i.length), l = document.createDocumentFragment(), u = s.map((e) => {
+		let s = o.slice(i.length), c = document.createDocumentFragment(), d = s.map((e) => {
 			let t = document.createElement("span");
-			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, y, fe, ge, te)), l.appendChild(t), t;
+			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, y, fe, ge, te)), c.appendChild(t), t;
 		});
-		if (me.current = [...me.current, ...s], i.push(...u), e.appendChild(l), u.forEach((e) => {
+		if (me.current = [...me.current, ...s], i.push(...d), e.appendChild(c), d.forEach((e) => {
 			let t = e.querySelector("rt");
 			t && (e.style.marginBlockStart = `${String(t.getBoundingClientRect().height)}px`);
-		}), wu(e, i, me.current, _e, d ?? !1, ve()), B || U) {
-			R.set(u, xu), re(!1);
+		}), wu(e, i, me.current, _e, u ?? !1, ve()), B || U) {
+			R.set(d, xu), re(!1);
 			return;
 		}
 		let f = R.timeline({ onComplete: () => re(!1) }), p = 0, m = 0;
-		if (u.forEach((e, t) => {
-			let n = s[t], r = W[n.cis ?? P ?? "default"] ?? g, i = n.w ?? (oe.enabled ? oe.h[n.c.at(0) ?? ""] ?? 0 : ae);
+		if (d.forEach((e, t) => {
+			let n = s[t], r = W[n.cis ?? P ?? "default"] ?? _, i = n.w ?? (oe.enabled ? oe.h[n.c.at(0) ?? ""] ?? 0 : ae);
 			if (r.join && (p += i / 1e3), r.wait <= 0) {
 				R.set(e, xu);
 				return;
 			}
-			let { from: a, to: o } = c(r);
+			let { from: a, to: o } = l(r);
 			f.fromTo(e, a, o, r.join ? p : 0), ++m;
 		}), m === 0) {
 			f.kill(), re(!1);
@@ -10284,7 +10284,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		W,
 		ae,
 		oe,
-		d,
+		u,
 		_e,
 		y
 	]), (0, z.useEffect)(() => {
@@ -10297,7 +10297,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			return;
 		}
 		let e = !0;
-		return I(ye).then((t) => {
+		return L(ye).then((t) => {
 			e && Se(t);
 		}), () => {
 			e = !1;
@@ -10307,7 +10307,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 	(0, z.useLayoutEffect)(() => {
 		let e = ue.current;
 		Te(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
-	}, [T, n]);
+	}, [w, n]);
 	let Ee = gu`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
@@ -10328,15 +10328,15 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
-		${M ? "" : "pointer-events: none;"}
+		${j ? "" : "pointer-events: none;"}
 	`, { display: ke, opacity: Ae, mixBlendMode: je, filter: Me } = n, Ne = {
 		...ke === void 0 ? {} : { display: ke },
 		...Ae === void 0 ? {} : { opacity: Ae },
 		...je === void 0 ? {} : { mixBlendMode: je },
 		...Me === void 0 ? {} : { filter: Me }
 	}, Pe = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Fe = N.filter((e) => !Pe(e)), Ie = N.filter(Pe), Le = gu`
-		${M ? "" : "pointer-events: none;"}
-	`, { r: Re, g: ze, b: Be } = ku(b), Ve = p((e) => e.backAlpha), He = x * (S ? 1 : Ve), Ue = He === 0 || a.length === 0 && b === void 0 && !C, We = gu`
+		${j ? "" : "pointer-events: none;"}
+	`, { r: Re, g: ze, b: Be } = ku(b), Ve = m((e) => e.backAlpha), He = x * (S ? 1 : Ve), Ue = He === 0 || a.length === 0 && b === void 0 && !C, We = gu`
 		padding: 1em 1.5em;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
@@ -10378,10 +10378,10 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
 			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
 			クリックはステージへ抜けるので、読み進め自体は止まらない */
-		${M ? "" : "pointer-events: none;"}
+		${j ? "" : "pointer-events: none;"}
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
-		${T ?? ""}
+		${w ?? ""}
 
 		/* 読み戻り中の見た目（[page style=…]。既定は本家 INI_STYPAGE と同じ黄色＋黒フチ）。
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
@@ -10445,18 +10445,18 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 	`, [Ke, qe] = (0, z.useState)("");
 	(0, z.useEffect)(() => qe(a), [a]);
 	let Je = (0, z.useRef)(null), Ye = (e, t) => {
-		u(), e.transform = t;
+		d(), e.transform = t;
 	};
-	return /* @__PURE__ */ w(D, { children: [
-		/* @__PURE__ */ w("span", {
+	return /* @__PURE__ */ T(O, { children: [
+		/* @__PURE__ */ T("span", {
 			css: [e, We],
 			ref: ue,
 			"data-lay": r,
 			style: le,
-			children: [/* @__PURE__ */ j("span", { ref: de }), Ce && /* @__PURE__ */ j("span", {
+			children: [/* @__PURE__ */ M("span", { ref: de }), Ce && /* @__PURE__ */ M("span", {
 				css: Ee,
 				style: De,
-				children: xe ? /* @__PURE__ */ j("span", { className: F(xe) }) : ye && !be ? /* @__PURE__ */ j("img", {
+				children: xe ? /* @__PURE__ */ M("span", { className: I(xe) }) : ye && !be ? /* @__PURE__ */ M("img", {
 					src: ye,
 					style: {
 						verticalAlign: "text-bottom",
@@ -10468,35 +10468,35 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				}) : ie.kind === "l" ? "🩷" : "✅"
 			})]
 		}),
-		Fe.length > 0 && /* @__PURE__ */ j("span", {
+		Fe.length > 0 && /* @__PURE__ */ M("span", {
 			css: [e, Oe],
 			"data-lay": r,
 			style: Ne,
-			children: Fe.map((e) => /* @__PURE__ */ j(bu, {
+			children: Fe.map((e) => /* @__PURE__ */ M(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: L,
+				onActivate: F,
 				onSe: te
 			}, e.nm))
 		}),
-		Ie.length > 0 && /* @__PURE__ */ j("span", {
+		Ie.length > 0 && /* @__PURE__ */ M("span", {
 			css: [e, Le],
 			"data-lay": r,
 			style: Ne,
-			children: Ie.map((e) => /* @__PURE__ */ j(bu, {
+			children: Ie.map((e) => /* @__PURE__ */ M(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
-				onActivate: L,
+				onActivate: F,
 				onSe: te
 			}, e.nm))
 		}),
-		t && /* @__PURE__ */ j(au, {
+		t && /* @__PURE__ */ M(au, {
 			target: ue,
 			draggable: !0,
 			throttleDrag: 1,
@@ -10517,15 +10517,15 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				Ye(e, n), e.transformOrigin = t;
 			}
 		}),
-		t && /* @__PURE__ */ w(D, { children: [/* @__PURE__ */ w("label", {
+		t && /* @__PURE__ */ T(O, { children: [/* @__PURE__ */ T("label", {
 			css: Ge,
 			ref: Je,
-			children: ["テキスト入力", /* @__PURE__ */ j("textarea", {
+			children: ["テキスト入力", /* @__PURE__ */ M("textarea", {
 				rows: 3,
 				value: Ke,
 				onChange: (e) => qe(e.target.value)
 			})]
-		}), /* @__PURE__ */ j(au, {
+		}), /* @__PURE__ */ M(au, {
 			target: Je,
 			origin: !1,
 			draggable: !0,
@@ -10611,8 +10611,8 @@ function Du(e, t, n) {
 		e.style.backgroundImage = `url(${JSON.stringify(t)})`, e.style.backgroundRepeat = "no-repeat", e.style.backgroundSize = "contain";
 		return;
 	}
-	I(t).then((t) => {
-		t && e.classList.add(F(t));
+	L(t).then((t) => {
+		t && e.classList.add(I(t));
 	});
 }
 function Ou(e, t, n, r, i, a, o) {
@@ -10654,42 +10654,42 @@ function Mu(e, t = Au) {
 }
 //#endregion
 //#region src/components/Stage.tsx
-function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: c }) {
-	let u = p((e) => e.aPage), m = p((e) => e.foreIdx), g = p((e) => e.trans), b = (0, z.useRef)(null), x = (0, z.useRef)(null), S = [b, x], C = (0, z.useRef)(null), T = (0, z.useRef)(null);
+function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
+	let l = m((e) => e.aPage), d = m((e) => e.foreIdx), h = m((e) => e.trans), _ = (0, z.useRef)(null), x = (0, z.useRef)(null), S = [_, x], C = (0, z.useRef)(null), w = (0, z.useRef)(null);
 	(0, z.useEffect)(() => {
-		if (C.current?.kill(), C.current = null, !g) {
-			R.set([b.current, x.current].filter((e) => e !== null), { opacity: 1 });
+		if (C.current?.kill(), C.current = null, !h) {
+			R.set([_.current, x.current].filter((e) => e !== null), { opacity: 1 });
 			return;
 		}
-		let e = S[m].current;
+		let e = S[d].current;
 		if (!e) return;
-		if (!g.ruleSrc) {
+		if (!h.ruleSrc) {
 			C.current = R.to(e, {
 				opacity: 0,
-				duration: g.time / 1e3,
+				duration: h.time / 1e3,
 				ease: "none"
 			});
 			return;
 		}
 		let t = (e) => {
-			let t = T.current;
+			let t = w.current;
 			if (!t) return;
-			let { slope: n, intercept: r } = Mu(e, g.vague);
+			let { slope: n, intercept: r } = Mu(e, h.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
 		let n = { tick: 0 };
 		C.current = R.to(n, {
 			tick: 1,
-			duration: g.time / 1e3,
+			duration: h.time / 1e3,
 			ease: "none",
 			onUpdate: () => t(n.tick)
 		});
-	}, [g]);
-	let E = p((e) => e.quake), O = (0, z.useRef)(null);
+	}, [h]);
+	let E = m((e) => e.quake), D = (0, z.useRef)(null);
 	(0, z.useEffect)(() => {
-		O.current?.kill(), O.current = null;
-		let e = [b.current, x.current].filter((e) => e !== null);
+		D.current?.kill(), D.current = null;
+		let e = [_.current, x.current].filter((e) => e !== null);
 		if (!E) {
 			R.set(e, {
 				x: 0,
@@ -10698,7 +10698,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			return;
 		}
 		let { hmax: t, vmax: n } = E;
-		O.current = R.to({ v: 0 }, {
+		D.current = R.to({ v: 0 }, {
 			v: 1,
 			duration: 3600,
 			ease: "none",
@@ -10710,14 +10710,14 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			}
 		});
 	}, [E]);
-	let [A, M] = (0, z.useState)(Fu());
+	let [k, j] = (0, z.useState)(Fu());
 	ie(() => {
 		function e() {
-			M(Fu());
+			j(Fu());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: P } = Pu(A), { stageW: F, stageH: I } = i, L = (0, z.useRef)(null), ee = p((e) => e.fullScr), B = p((e) => e.setFullScr), V = p((e) => e.toggleFullScr);
+	let { cvsScale: N } = Pu(k), { stageW: F, stageH: I } = i, L = (0, z.useRef)(null), ee = m((e) => e.fullScr), B = m((e) => e.setFullScr), V = m((e) => e.toggleFullScr);
 	ne((0, z.useRef)(e), ee, { onClose: () => B(!1) });
 	let [re, H] = (0, z.useState)(() => !!document.fullscreenElement);
 	(0, z.useEffect)(() => {
@@ -10726,9 +10726,9 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 	}, []), (0, z.useEffect)(() => {
 		n.setFullScr(re);
 	}, [re]), (0, z.useLayoutEffect)(() => {
-		re ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * P)}px`, e.style.height = `${String(I * P)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
+		re ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * N)}px`, e.style.height = `${String(I * N)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
 	}, [
-		P,
+		N,
 		F,
 		I,
 		re
@@ -10748,7 +10748,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
 			上のuseLayoutEffectのコメント参照） */
 		transform-origin: left top;
-		transform: scale(${String(P)});
+		transform: scale(${String(N)});
 	`, ae = gu`position: absolute; top: 0; left: 0;`, oe = gu`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
@@ -10785,26 +10785,26 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		n.attachFrameBox(le.current), n.attachStageBox(L.current);
 	}), ie(() => {
 		let e = L.current;
-		e.addEventListener("mousedown", () => _());
+		e.addEventListener("mousedown", () => v());
 		let t = (e) => {
-			e.preventDefault(), e.deltaY < 0 ? c() : a();
+			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
 	let [ue, de] = te(!1);
 	U((e) => {
-		e.stopPropagation(), k(), !l() && (de(), N(!ue));
+		e.stopPropagation(), A(), !u() && (de(), P(!ue));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
 	});
 	let fe = (() => {
 		let e = /* @__PURE__ */ new Map();
-		for (let t of u) for (let n of t) if (n.aFlt) for (let t of s(n.aFlt)) e.set(v(t), t);
+		for (let t of l) for (let n of t) if (n.aFlt) for (let t of c(n.aFlt)) e.set(y(t), t);
 		return [...e.values()];
 	})(), pe = (() => {
 		let e = /* @__PURE__ */ new Map();
-		for (let t of u) for (let n of t) if (n.aFlt) for (let t of o(n.aFlt)) e.set(f(t), t);
+		for (let t of l) for (let n of t) if (n.aFlt) for (let t of s(n.aFlt)) e.set(p(t), t);
 		return [...e.values()];
 	})(), me = { cmn: {
 		sys: t,
@@ -10818,37 +10818,37 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			transform: "translate(0px, 0px) rotate(0deg)"
 		}
 	} };
-	return /* @__PURE__ */ w("div", {
+	return /* @__PURE__ */ T("div", {
 		css: W,
 		onClick: r,
 		ref: L,
 		children: [
-			g?.ruleSrc && /* @__PURE__ */ j("svg", {
+			h?.ruleSrc && /* @__PURE__ */ M("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ w("defs", { children: [/* @__PURE__ */ w("filter", {
+				children: /* @__PURE__ */ T("defs", { children: [/* @__PURE__ */ T("filter", {
 					id: "sn_rule_flt",
 					colorInterpolationFilters: "sRGB",
-					children: [/* @__PURE__ */ j("feColorMatrix", {
+					children: [/* @__PURE__ */ M("feColorMatrix", {
 						type: "matrix",
 						values: "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"
-					}), /* @__PURE__ */ j("feComponentTransfer", { children: /* @__PURE__ */ j("feFuncA", {
-						ref: T,
+					}), /* @__PURE__ */ M("feComponentTransfer", { children: /* @__PURE__ */ M("feFuncA", {
+						ref: w,
 						type: "linear",
 						slope: "1",
 						intercept: "0"
 					}) })]
-				}), /* @__PURE__ */ j("mask", {
+				}), /* @__PURE__ */ M("mask", {
 					id: "sn_rule_msk",
 					maskUnits: "userSpaceOnUse",
 					x: "0",
 					y: "0",
 					width: F,
 					height: I,
-					children: /* @__PURE__ */ j("image", {
-						href: g.ruleSrc,
+					children: /* @__PURE__ */ M("image", {
+						href: h.ruleSrc,
 						x: "0",
 						y: "0",
 						width: F,
@@ -10858,70 +10858,70 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					})
 				})] })
 			}),
-			fe.length > 0 && /* @__PURE__ */ j("svg", {
+			fe.length > 0 && /* @__PURE__ */ M("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ j("defs", { children: fe.map((e) => /* @__PURE__ */ j("filter", {
-					id: v(e),
+				children: /* @__PURE__ */ M("defs", { children: fe.map((e) => /* @__PURE__ */ M("filter", {
+					id: y(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
 					y: "0",
 					width: "100%",
 					height: "100%",
-					children: /* @__PURE__ */ j("feColorMatrix", {
+					children: /* @__PURE__ */ M("feColorMatrix", {
 						type: "matrix",
-						values: y(e)
+						values: b(e)
 					})
-				}, v(e))) })
+				}, y(e))) })
 			}),
-			pe.length > 0 && /* @__PURE__ */ j("svg", {
+			pe.length > 0 && /* @__PURE__ */ M("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ j("defs", { children: pe.map((e) => /* @__PURE__ */ j("filter", {
-					id: f(e),
-					children: /* @__PURE__ */ j("feGaussianBlur", { stdDeviation: d(e) })
-				}, f(e))) })
+				children: /* @__PURE__ */ M("defs", { children: pe.map((e) => /* @__PURE__ */ M("filter", {
+					id: p(e),
+					children: /* @__PURE__ */ M("feGaussianBlur", { stdDeviation: f(e) })
+				}, p(e))) })
 			}),
-			ue && /* @__PURE__ */ w(D, { children: [
-				/* @__PURE__ */ j("button", {
+			ue && /* @__PURE__ */ T(O, { children: [
+				/* @__PURE__ */ M("button", {
 					onClick: () => V(),
 					css: ce,
 					children: "FullScr"
 				}),
-				/* @__PURE__ */ j("button", {
+				/* @__PURE__ */ M("button", {
 					onClick: () => {},
 					css: ce,
 					children: "Back"
 				}),
-				/* @__PURE__ */ j("button", {
+				/* @__PURE__ */ M("button", {
 					onClick: () => {},
 					css: ce,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ j("span", { children: re }),
-			u.map((e, t) => {
-				let r = g?.aLayNm && t !== m ? e.map((e) => g.aLayNm.includes(e.nm) ? e : u[m].find((t) => t.nm === e.nm) ?? e) : e;
-				return /* @__PURE__ */ j("div", {
+			/* @__PURE__ */ M("span", { children: re }),
+			l.map((e, t) => {
+				let r = h?.aLayNm && t !== d ? e.map((e) => h.aLayNm.includes(e.nm) ? e : l[d].find((t) => t.nm === e.nm) ?? e) : e;
+				return /* @__PURE__ */ M("div", {
 					ref: S[t],
-					"data-page": t === m ? "fore" : "back",
+					"data-page": t === d ? "fore" : "back",
 					css: se,
 					style: {
-						zIndex: +(t === m),
-						visibility: t === m || g ? "visible" : "hidden",
-						pointerEvents: t === m ? "auto" : "none",
-						...g?.ruleSrc && t === m ? { mask: "url(#sn_rule_msk)" } : {}
+						zIndex: +(t === d),
+						visibility: t === d || h ? "visible" : "hidden",
+						pointerEvents: t === d ? "auto" : "none",
+						...h?.ruleSrc && t === d ? { mask: "url(#sn_rule_msk)" } : {}
 					},
 					children: r.map((e) => {
 						let r = {
 							...me.cmn.sty4Moveable,
-							...h(e)
+							...g(e)
 						};
-						return e.cls === "grp" ? /* @__PURE__ */ j(ou, {
+						return e.cls === "grp" ? /* @__PURE__ */ M(ou, {
 							cmn: me.cmn,
 							sty: r,
 							nm: e.nm,
@@ -10932,11 +10932,11 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 							aFace: e.aFace,
 							getVideoVol: () => n.getMovieVolume(),
 							needClick2Play: () => n.needClick2Play()
-						}, e.nm) : /* @__PURE__ */ j(Su, {
+						}, e.nm) : /* @__PURE__ */ M(Su, {
 							cmn: me.cmn,
 							sty: r,
 							nm: e.nm,
-							isFore: t === m,
+							isFore: t === d,
 							str: e.str,
 							aCh: e.aCh,
 							ffs: e.ffs,
@@ -10966,7 +10966,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					})
 				}, t);
 			}),
-			/* @__PURE__ */ j("div", {
+			/* @__PURE__ */ M("div", {
 				ref: le,
 				css: oe
 			})

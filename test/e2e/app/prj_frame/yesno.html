@@ -15,6 +15,17 @@
 	<!-- data-*は[event key='dom=…']の発火時に sn.event.domdata.* へ入る（本家 EventMng.ts:591） -->
 	<button id="ok" data-sel="yes" data-num="7">OK</button>
 	<button id="close">CLOSE</button>
+	<!-- ゲームパッド対応（FocusMng種別ごとのキー処理）のE2E確認用。合成keydown（ArrowUp/Down）で動かす -->
+	<input id="range1" type="range" min="0" max="10" value="5">
+	<input id="text1" type="text" value="abcde">
+	<!-- ラジオ群はFocusMngが「子にinput[type]を複数持つ要素」で判定するため、まとめる親が要る。
+		fieldsetは使わない：HTMLFieldSetElement.typeが常に"fieldset"を返すため、
+		FocusMngのtype判定（inp.type ?? ''）がcase ''に落ちずラジオとして認識できない -->
+	<div id="radio_grp" tabindex="0">
+		<label><input type="radio" name="rg1" id="radio1" checked> A</label>
+		<label><input type="radio" name="rg1" id="radio2"> B</label>
+	</div>
+	<input id="chk1" type="checkbox">
 	<!-- フレーム内の画像は data-src に書き、sn_repRes() が渡す関数で実URLへ直す（本家と同じ約束）。
 		asset_pic は path.json に載る**拡張子なしのアセット名**、
 		frame_local.png は path.json に載らない枠同梱ファイル -->

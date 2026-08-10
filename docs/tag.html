@@ -181,7 +181,7 @@
 		<li class="mb1"><a href="#rec_r">🟢 [rec_r] 履歴改行</a></li>
 		<li class="mb1"><a href="#reset_rec">🟢 [reset_rec] 履歴リセット</a></li>
 		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
-		<li class="mb1"><a href="#set_focus">🟡 [set_focus] フォーカス移動</a></li>
+		<li class="mb1"><a href="#set_focus">🟢 [set_focus] フォーカス移動</a></li>
 		<li class="mb1"><a href="#span">🟡 [span] インラインスタイル設定</a></li>
 		<li class="mb1"><a href="#tcy">🟡 [tcy] 縦中横を表示する</a></li>
 	</ul>
@@ -1556,7 +1556,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	<b>HTMLフレームの中の要素とステージ上のボタンが同じ輪に並ぶ</b>。<br/>
 	[<a href="#frame">frame</a>]<code>visible=false</code>で隠したフレームの中は飛ばす
 	（フレームの文書は自分が隠れていることを知らないので、親側のiframeまで遡って確かめている）。<br/>
-	未対応：ゲームパッド操作（本家 FocusMng のrange操作・カーソル移動・ラジオボタン選択）。</p>
+	ゲームパッド操作にも対応：本家と同じくスティック・ボタンを合成KeyboardEventへ変換して
+	既存のキーボード経路（フォーカス中の要素、無ければ全体）へ流し込む方式。フォーカス中の
+	要素の種類ごとに、<code>range</code>のつまみ移動・<code>text</code>/<code>textarea</code>の
+	カーソル移動・ラジオボタン群の選択移動・チェックボックスのトグルを矢印キーで行う（本家
+	FocusMngの移植。ただし<code>[button]</code>はspan要素でReactの<code>onKeyDown</code>が
+	Enter/Spaceを既に処理しているため、ここではリスナを張らない＝本家との相違点）。
+	ゲームパッド本体の入力取得は本家の<code>gamepad.js</code>ライブラリ（型未同梱）を使わず、
+	素のGamepad API + <code>requestAnimationFrame</code>で自前実装している。</p>
 
 </p>
 <h2 id="span" class="w-heading">[span]インラインスタイル設定</h2>

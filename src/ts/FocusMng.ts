@@ -64,8 +64,79 @@ export class FocusMng {
 		// 輪の外から（クリックやTabで）フォーカスが移った時も現在位置を合わせておく
 		const fnc = ()=> {this.#idx = this.#aEl.indexOf(el)};
 		el.addEventListener('focus', fnc);
-		this.#hOff.set(el, ()=> {el.removeEventListener('focus', fnc)});
+		let off = ()=> {el.removeEventListener('focus', fnc)};
+
+		// 要素の種類ごとの矢印キー操作（本家 FocusMng.ts:64-101 の移植）。
+		//	該当しない要素（[button]のspanなど）にはリスナを張らない。
+		//	bluesnovelの[button]は既にReactのonKeyDownでEnter/Spaceを処理しており、
+		//	ここで全要素にkeydownを張ってstopImmediatePropagation()すると
+		//	Reactのイベント委譲より先に止めて壊してしまうため（本家との相違点）
+		const fncKey = FocusMng.#keyHandlerOf(el);
+		if (fncKey) {
+			const offKey = FocusMng.#addKey(el, fncKey);
+			off = ()=> {el.removeEventListener('focus', fnc); offKey()};
+		}
+
+		this.#hOff.set(el, off);
 		this.#aEl.push(el);
+	}
+	// 要素に応じた矢印キーハンドラを返す。対象外ならundefined
+	static #keyHandlerOf(el: HTMLElement): ((e: KeyboardEvent)=> void) | undefined {
+		const inp = el as HTMLInputElement;
+		switch (inp.type ?? '') {
+		case 'checkbox':
+			return ()=> {inp.checked = ! inp.checked};
+		case '':
+			// 子にinput[type]を複数持つ要素はラジオ群として扱う
+			if (el.querySelectorAll('input[type]').length > 0) {
+				return e=> FocusMng.#radioNext(el, e.key);
+			}
+			break;
+		case 'range':
+			return e=> {
+				if (e.isTrusted) return;	// ゲームパッド（合成イベント）のみ処理
+				if (e.key === 'ArrowUp') inp.stepUp(); else inp.stepDown();
+				inp.dispatchEvent(new InputEvent('input', {bubbles: true}));
+			};
+		case 'text':
+		case 'textarea':
+			return e=> {
+				if (e.isTrusted) return;	// ゲームパッド（合成イベント）のみ処理
+				let cur = (inp.selectionStart ?? 0) + (e.key === 'ArrowUp' ? -1 : 1);
+				if (cur < 0) cur = 0;
+				inp.setSelectionRange(cur, cur);
+			};
+		}
+		if (el.localName === 'button' || el.localName === 'a') {
+			return e=> {
+				if (e.isTrusted || e.key !== 'Enter') return;	// ゲームパッド（合成イベント）のみ処理
+				el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+			};
+		}
+		return undefined;
+	}
+	static #addKey(el: HTMLElement, fnc: (e: KeyboardEvent)=> void) {
+		const onKey = (e: KeyboardEvent)=> {
+			if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Enter') return;
+
+			// フレーム内で押した矢印キーがFrameMngの中継経由で親へ抜け、
+			//	読み進めに使われてしまわないよう止める（本家のstopImmediatePropagation()相当）
+			e.stopPropagation();
+			fnc(e);
+		};
+		el.addEventListener('keydown', onKey);
+		return ()=> {el.removeEventListener('keydown', onKey)};
+	}
+	// ラジオ群の選択を前後に回す（本家 FocusMng.ts:117-126 の #radio_next）
+	static #radioNext(el: HTMLElement, key: string) {
+		const op = el.querySelectorAll('input[type]');
+		const len = op.length;
+		for (let i = 0; i < len; ++i) {
+			if (! (op[i] as HTMLInputElement).checked) continue;
+
+			(op[(i + len + (key === 'ArrowUp' ? -1 : 1)) % len] as HTMLInputElement).checked = true;
+			break;
+		}
 	}
 	remove(el: HTMLElement) {
 		const i = this.#aEl.indexOf(el);
@@ -84,6 +155,12 @@ export class FocusMng {
 	isFocus(el: HTMLElement) {return this.#idx >= 0 && this.#aEl[this.#idx] === el}
 	get length() {return this.#aEl.length}
 	get idx() {return this.#idx}
+	// 今フォーカスしている要素（GamepadMngが合成イベントのdispatch先を選ぶのに使う。本家 getFocus()）
+	getFocus(): HTMLElement | null {
+		if (this.#idx < 0) return null;
+		const el = this.#aEl[this.#idx]!;
+		return FocusMng.#canFocus(el) ? el : null;
+	}
 
 	next() {this.#move(1)}
 	prev() {this.#move(-1)}

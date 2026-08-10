@@ -9,6 +9,8 @@ import type {SysBase} from '../sn/SysBase';
 import type {ScriptMng} from '../ts/ScriptMng';
 import type {T_HTag} from '../sn/Grammar';
 
+import {GamepadMng} from '../ts/GamepadMng';
+
 import {useStore} from '../store/store';
 import {lazy, Suspense, useEffect, useRef} from 'react';
 import {useEffectOnce, useKey, useTitle} from 'react-use';
@@ -107,6 +109,14 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 			document.removeEventListener('keyup', up);
 			globalThis.removeEventListener('blur', blur);
 		};
+	});
+
+	// ゲームパッド（本家 EventMng.ts:255-321）。start/stopをuseEffectOnceのクリーンアップで
+	//	確実に対にする（GamepadMng.tsに書いた通り、rAFの停止漏れが本家での既知の落とし穴）
+	useEffectOnce(()=> {
+		const gamepadMng = new GamepadMng(scrMng);
+		gamepadMng.start();
+		return ()=> {gamepadMng.stop()};
 	});
 
 	// ウインドウの移動・リサイズが確定した通知（アプリ版のみ。app.tsが主処理からのIPCを

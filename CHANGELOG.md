@@ -695,6 +695,16 @@
   - `bunx tsc --noEmit --incremental false`・`bun test`（1661件green）・`bunx playwright test -c test/e2e filter.e2e.ts lay.e2e.ts`（20件green）で確認
   - `todo.md`「フィルターの残り」の該当2項目を消化。`predator`/`color_tone`の色味の差は原因未特定のまま残置
 
+- [x] **`[set_focus]`のゲームパッド対応**（2026-08-10）
+  - `todo.md`「タグ・変数の残り」の項目。足りなかったのは2つ：(1) フォーカス中の要素の種類ごとのキー操作（本家`FocusMng`の`range`/`text`/ラジオ/チェックボックス）、(2) ゲームパッド入力そのもの（未着手）
+  - 本家（`EventMng.ts:255-321`）はゲームパッドのスティック・ボタンを合成`KeyboardEvent`へ変換して既存のキーボード経路へ流し込む設計。新しい入力系統を作らずに済むためこれを踏襲した
+  - `src/ts/FocusMng.ts`の`add()`に要素種別ごとの矢印キー処理を追加（本家`FocusMng.ts:64-101`の移植）：`checkbox`はトグル、子に`input[type]`を複数持つ要素はラジオ群として選択を前後に回す、`range`/`text`/`textarea`は`e.isTrusted`ガード（実キーボードはブラウザ標準動作に任せ、合成イベント＝ゲームパッド由来のときだけ手動でstepUp/Down・カーソル移動——二重処理を避けるため）。**本家をそのまま写せなかった点**：本家は全要素に`keydown`を張り`stopImmediatePropagation()`するが、bluesnovelの`[button]`はspan要素で既にReactの`onKeyDown`がEnter/Spaceを処理しているため、同じことをするとReactのイベント委譲より先に止めて壊れる。対処として、該当しない要素（`[button]`のspanなど）にはリスナを張らない設計にした
+  - ゲームパッド入力層は新規`src/ts/GamepadMng.ts`。本家の`gamepad.js`ライブラリ（型未同梱、rAFループの停止漏れ・`window`の`'error'`リスナ解除漏れという既知の落とし穴を引き継ぐ）は使わず、素のGamepad API + `requestAnimationFrame`で自前実装（音声をhowlerでなく自前Web Audio層にしたのと同じ判断）。スティック軸は3x3表（斜め無視）で矢印キーへ、ボタンは偶数→Enter・奇数→`middleclick`。軸→キー名の変換は純関数`axisToKey()`として切り出し、単体テスト（`test/GamepadMng.test.ts`）で検証。`Main.tsx`の`useEffectOnce`でstart/stopを対にして起動（既存の修飾キー登録と同じパターン）。役目を終えた`src/sn/gamepad.js.d.ts`は削除
+  - E2E（`test/e2e/focus.e2e.ts`）は合成`KeyboardEvent`（`isTrusted:false`）でFocusMng側の処理を駆動して検証（ゲームパッド実機なしで確認可能）。フィクスチャ`test/e2e/app/prj_frame/yesno.html`にrange/text/radio/checkboxを追加。**ハマった点**：(1) ラジオ群を束ねる要素に`fieldset`を使ったところ`HTMLFieldSetElement.type`が常に`"fieldset"`を返す仕様のせいで`switch (inp.type ?? '')`の`case ''`に落ちず判定漏れ——`div`に変更して解決。(2) `[p]`は「次の進行時に現在レイヤをクリア」する仕様で、その「次の進行」は`[set_focus to=…]`を呼ぶ`[event]`（矢印キー等）でも発動するため、`[p]`の直後にテキストを続けるとゲームパッド操作でクリアされてしまう——新シーンは`[p]`より前（`[l]`の直後）に配置して回避。合わせて`test/e2e/frame.e2e.ts`のシーケンス依存テストも本文の積み上がり方の変化に追随させた
+  - `docs/tag.html`の`[set_focus]`を🟡→🟢、未対応の記載をゲームパッド対応の説明へ更新
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1665件green）・`bun run test:e2e`（227件green）で確認
+  - `todo.md`「タグ・変数の残り」の当該項目を消化。ゲームパッド実機でのポーリング自体の確認は別途必要なため「挙動の詰め・実機確認」へ1行残した
+
 - [ ]
 
 
