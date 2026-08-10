@@ -30,6 +30,8 @@ export type T_LAY_SNAP = {
 	alpha?	: number;
 	left?	: number;
 	top?	: number;
+	align_x?: 'center' | 'right';	// [lay pos=/center=/right=]の寄せ（本体の実寸はCSS側translateで引く）
+	align_y?: 'middle' | 'bottom';
 	rotation?: number;
 	scale_x?: number;
 	scale_y?: number;
@@ -46,7 +48,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'crypto' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'kinsoku' | 'lay' | 'log' | 'movie' | 'multi' | 'page' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'tsy' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'crypto' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'kinsoku' | 'lay' | 'log' | 'movie' | 'multi' | 'page' | 'pic' | 'quake' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'tsy' | 'uc' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

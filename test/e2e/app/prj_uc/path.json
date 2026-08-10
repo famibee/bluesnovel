@@ -1,4 +1,13 @@
 {
 	"main": {":cnt": 1, "sn": "main.sn"},
-	"title": {":cnt": 1, "jpg": "bg/title.jpg"}
+	"title": {":cnt": 1, "jpg": "bg/title.jpg"},
+	"white": {":cnt": 1, "png": "bg/white.png"},
+	"black": {":cnt": 1, "png": "bg/black.png"},
+	"yun_a": {":cnt": 1, "png": "bg/yun_a.png"},
+	"F_1024aFull": {":cnt": 1, "png": "image/F_1024aFull.png"},
+	"F_1024a": {":cnt": 1, "png": "image/F_1024a.png"},
+	"F_1024b": {":cnt": 1, "png": "image/F_1024b.png"},
+	"F_kuchimoto": {":cnt": 1, "png": "image/F_kuchimoto.png"},
+	"kagero": {":cnt": 1, "png": "image/kagero.png"},
+	"r_uzumaki": {":cnt": 1, "png": "rule/r_uzumaki.png"}
 }

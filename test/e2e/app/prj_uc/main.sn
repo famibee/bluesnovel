@@ -10,6 +10,7 @@
 
 ; --- 背景（base レイヤ。title.jpg は 1024x768 でステージ全面） ---
 [add_lay layer=base class=grp]
+[add_lay layer=0 class=grp]
 [lay layer=base fn=title left=0 top=0]
 
 ; --- タイトルボタン4つ（mes レイヤ） ---
@@ -24,6 +25,107 @@
 [button page=fore nm=btn_config text=' 設 定 ' left=650 top=360 width=90 height=30 label=*noop]
 [s]
 
-; デモなのでボタンを押しても何もしない（同じ画面に留まる）
+; 本編相当（下）へそのまま流れ込む。ボタンは押されても*noopから続けて同じ場所へ来るだけ
+;	（クリック操作自体はこのフィクスチャの対象外。実装したらここでラベルを分ける）
 *noop
-[s]
+
+; ============================================================
+; ここから本編相当（tmp_blues/tmp_esm_uc の script/ss_000.sn の場面転換をエッセンス化）。
+;	マクロは使わず、実テンプレのマクロが展開する core タグ列を直接書く
+;	（test/e2e/app/prj_grp・prj_pic と同じ方針。[macro]自体はエンジンで動くが、
+;	E2Eフィクスチャでは「何が起きているか」を直接読めるようこの形に揃えている）。
+;	展開元：[grp]は tmp_blues/doc/prj/script/sub.sn:569-624、[fg]/[img]は
+;	tmp_blues/doc/prj/theme/ext_fg.sn:13-46、[txt_lay_v_*]は同sub.sn:165-260。
+;	本文は短縮し、レイヤ配置の検証に絞る（文字組み自体は ruby.e2e.ts/kinsoku.e2e.ts の担当）
+; ============================================================
+
+; --- 立ち絵配置位置定数（sub.sn:14-18。「桜の樹の下には」専用の値） ---
+&pos.vleft_disp_x = 40 + 280
+&pos.vleft_disp_w = const.sn.config.window.width - pos.vleft_disp_x
+&pos.l1c = pos.vleft_disp_x + pos.vleft_disp_w * (1/2)
+
+; --- [txt_lay_v_center fcol=black]相当（sub.sn:209-235。v_leftをl=366で呼ぶだけ） ---
+[lay layer=mes page=back left=366 top=0
+	style="color: black; writing-mode: vertical-rl; width: 310px; height: 768px;"]
+
+; --- [grp bg=white time=2000 sys_menu=false b_alpha=0]相当（l0省略＝layer0はクリア） ---
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=300]
+[wt]
+[er]
+[lay layer=base page=back fn=white visible=true]
+[clear_lay layer=0 page=back]
+[lay layer=0 page=back visible=false]
+[trans layer=base,0 time=2000]
+[wt]
+[lay layer=mes page=back visible=true b_alpha=0]
+[trans layer=mes time=300]
+[wt]
+いち。[l]
+
+; --- [txt_lay_v_left]相当（sub.sn:165-201。b_pic=wafuu1は素材が無いので省略） ---
+[lay layer=mes page=back left=40 top=0
+	style="color: black; writing-mode: vertical-rl; width: 310px; height: 768px;"]
+
+; --- [grp l0=F_kuchimoto rule=r_uzumaki]相当（bg省略＝baseは維持、ルール画像ワイプ） ---
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=300]
+[wt]
+[er]
+[lay layer=0 fn=F_kuchimoto page=back visible=true]
+[trans layer=base,0 time=1000 rule=r_uzumaki]
+[wt]
+[lay layer=mes page=back visible=true]
+[trans layer=mes time=300]
+[wt]
+に。[l]
+
+; --- [fg fn=F_1024aFull layer=0 pos=&pos.l1c]相当（ext_fg.sn:13-46）
+;	★[lay pos=]未実装バグの回帰点。containing block右端(1024)までの残りは352pxしかなく
+;	画像本来の幅834pxより狭いので、GrpLayerのshrink-to-fit対策込みで検証する ---
+[lay layer=0 fn=F_1024aFull page=back visible=true pos=&pos.l1c]
+[trans layer=0 time=500]
+[wt]
+さん。[l]
+
+; --- [grp bg=black l0=F_1024a pos0=&pos.l1c]相当 ---
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=300]
+[wt]
+[er]
+[lay layer=base page=back fn=black visible=true]
+[lay layer=0 fn=F_1024a page=back visible=true pos=&pos.l1c]
+[trans layer=base,0 time=1000]
+[wt]
+[lay layer=mes page=back visible=true]
+[trans layer=mes time=300]
+[wt]
+よん。[l]
+
+; --- [txt_lay_v_center_wide]相当（sub.sn:237-260。中央寄せで幅を広げる） ---
+[lay layer=mes page=back left=180 top=0
+	style="color: black; writing-mode: vertical-rl; width: 664px; height: 768px;"]
+
+; --- [grp bg=yun_a time=2000]相当（l0省略＝layer0はクリア。本家[grp]はl0の有無に関わらず
+;	毎回[img layer=0 ...]を呼ぶため、前段のfg立ち絵はここで消える仕様） ---
+[lay layer=mes page=back visible=false]
+[trans layer=mes time=300]
+[wt]
+[er]
+[lay layer=base page=back fn=yun_a visible=true]
+[clear_lay layer=0 page=back]
+[lay layer=0 page=back visible=false]
+[trans layer=base,0 time=2000]
+[wt]
+[lay layer=mes page=back visible=true]
+[trans layer=mes time=300]
+[wt]
+ご。[l]
+
+; --- [fg fn=kagero layer=0 left='&(const.sn.config.window.width -640)/2'
+;	top='&(const.sn.config.window.height -400)/2']相当（ss_000.sn:57）。
+;	★posでなくleft/top式評価の経路（[lay]の属性内&式評価は本編と共通） ---
+[lay layer=0 fn=kagero page=back visible=true left='&(const.sn.config.window.width -640)/2' top='&(const.sn.config.window.height -400)/2']
+[trans layer=0 time=500]
+[wt]
+ろく。[s]

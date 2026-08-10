@@ -656,6 +656,21 @@
   - `ss_000.sn`の残り9箇所の場面転換（39/47/53/78/86/98/108行目の`[grp]`、57/82行目の`[fg]`）はいずれも本家と一致することを確認。frame関係・音声は対象外（既存方針どおり）
   - `bun test`1658件・`bunx tsc --noEmit`・E2E（`pic.e2e.ts`/`lay.e2e.ts`/`grp.e2e.ts`/`anime.e2e.ts`/`filter.e2e.ts`/`trans.e2e.ts`/`btnpic.e2e.ts`/`button.e2e.ts`）green
 
+- [x] **fullscreen時のレターボックス位置が本家とズレる不具合を修正**（2026-08-10）
+  - 前回セッションで「本家は`document.body`をfullscreen化するだけでcenter dockのロジックを持たず、実際には左上固定のまま」と判明していた件（`SysBase.cvsResize()`の`ofsLeft4elm += (w-cvsWidth)/2`はマウス座標変換用のオフセットで、見た目のDOM配置には反映されない）。bluesnovelの`Stage.tsx`は`isFullscreen`のとき`#skynovel`を`display:flex;align-items:center;justify-content:center`で明示的に中央寄せしており、本家と異なっていた
+  - `Stage.tsx`の`useLayoutEffect`内`isFullscreen`分岐から`alignItems`/`justifyContent`/`display:flex`の中央寄せ指定を除去し、常に左上固定に統一。`transform-origin`も`isFullscreen`分岐をやめ、常に`left top`固定にした
+  - `test/e2e/sys.e2e.ts`の「全画面のときステージは画面の中央へ寄る」は外側のfullscreen要素自体（`#skynovel`、画面いっぱいに広がるので中心は当然画面中央になる）を見ているだけで、内側`heStage`のcenter dock自体は検証していなかったため、この修正では壊れない見込み（型チェック・テストの実行はユーザー側の常時watchに委ねた）
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化。子項目だった「表示差異の網羅確認をテスト化する」は独立のタスクとして残置（同項目を参照）
+
+- [x] **`tmp_blues`/`tmp_esm_uc`表示差異の網羅確認をテスト化**（2026-08-10）
+  - 前回セッションの目視比較（`ss_000.sn`を両エンジンで並べて実行し確認）を再現手段の無いまま終わらせず、回帰テストとして固定した。方針は2点：(1) 本家は実行時に立てない**ゴールデン方式**——本家はpixiのcanvas描画・bluesnovelはDOM描画でフォントラスタライズが原理的に異なりピクセル比較が破綻するうえ、本家に`window.__sn`相当の状態公開が無く外部からレイヤ状態を読む手段も無い。(2) 実テンプレ（65MB・フォント52MB込み・兄弟チェックアウト依存）は直接使わず**エッセンス抽出**——`ss_000.sn`の表示に効く要素だけを最小フィクスチャへ再現する
+  - 既存の作りかけフィクスチャ`test/e2e/app/prj_uc/`（タイトル画面のみ）を拡張し、`script/sub.sn`（`[grp]`）・`theme/ext_fg.sn`（`[fg]`/`[img]`）・`sub.sn`（`[txt_lay_v_*]`）が実際に展開するcoreタグ列を直接書く形で本編相当（場面転換6箇所）を追加した。`[macro]`タグ自体は使わない——既存の`prj_grp`/`prj_pic`が同じ理由（「テンプレの◯◯マクロ相当をエンジンに通して採ったアクション列そのままの形で最小再現」）で同じ方針を採っており、それに揃えた。画像は絵柄不要のため寸法だけ実テンプレに合わせた単色PNG（`test/e2e/app/mkPrjUc.ts`が生成。外部ライブラリを増やしたくないので最小のPNGエンコーダを自前で書いた）
+  - `test/e2e/uc.e2e.ts`（新規）。前回発見した2件のバグの実際の値をそのまま回帰点にした：`[fg fn=F_1024aFull pos=&pos.l1c]`でのstore側`left`/`align_x`/`top`/`align_y`（`pos.l1c=672`は実テンプレの式そのまま）と、GrpLayerのshrink-to-fit回帰（containing block右端までの残り352pxに対し画像本来の幅834px、`page.addStyleTag`で実プロジェクトの`img,picture{max-width:100%}`リセットを再現。`pic.e2e.ts`の同種テストと同じ理由）
+  - **ハマった点**：タイトル画面の`[s]`はSpaceキー等の汎用「読み進め」に反応しない完全停止で、ボタンクリック（`[jump]`相当）でしか抜けられない（本家も同じ設計）。最初`pressKeyToWaitMark()`で素通りしようとして15秒タイムアウトで無反応にハマった。原因はエンジン側でなくテスト側の思い込みで、`page.getByText('最初から').click()`に直してから解決。また`[fg]`は`[grp]`と違い`[er]`を打たないため、本文が停止点をまたいで蓄積することも失念しており、最初`toBe()`で単発文字列を期待して落ちた（`toBe('に。さん。')`のように蓄積後の文字列で修正）
+  - 意図的なデグレ（`[lay]`の`pos`処理を一時的に無効化）でテストが正しく落ちることを確認してから元に戻した
+  - `bunx tsc --noEmit -p test/e2e`・`bun run test:e2e`（uc.e2e.ts 2件green）・全E2E実行で巻き添えなしを確認。ただし全E2E実行中に**本タスクと無関係の既存不具合**を発見：`argdef.e2e.ts`「s_right/s_bottomはステージの右端・下端からの距離」が`git stash`で当セッションの変更を全部外しても同じ値（期待20、実際760）で落ちる。原因未調査のため`todo.md`へ記録した
+  - `todo.md`「挙動の詰め・実機確認」の当該項目を消化
+
 - [ ]
 
 

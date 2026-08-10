@@ -18,7 +18,11 @@ spec もフィクスチャアプリも `playwright.config.ts` も `tsconfig.json
 - `test/e2e/app/` は自己完結フィクスチャ。`?prj=…` でシナリオを選ぶ（`SysBase.loaded()` が常に
   `main` という名前のスクリプトを読むため）。追加は `prj_<name>/` ＋ `snPage.ts` の `T_PRJ` メンバ。
   バイナリは極力置かないが `prj_pic/` だけは実 PNG を持つ（`naturalWidth` は未ロード時 0 なので
-  実ファイルでないと経路を検証できない）。**`src/` にテスト専用フックは足さない**方針:
+  実ファイルでないと経路を検証できない）。`prj_uc/` も実 PNG を持つが、こちらは実テンプレ
+  （`tmp_blues`/`tmp_esm_uc`）の `script/ss_000.sn` の表示経路をエッセンス化したもので、
+  絵柄は不要でも `[lay pos=]` の座標計算に効く**実寸だけ**を実テンプレの画像に合わせてある
+  （`test/e2e/app/mkPrjUc.ts` が単色PNGとして生成。詳細は `uc.e2e.ts` 冒頭のコメント）。
+  **`src/` にテスト専用フックは足さない**方針:
   `test/e2e/app/main.ts` が `window.__sn` を公開し、デバッグ表示は id でなく `body > span` で拾う。
 - ファイルを跨ぐシナリオは `pressKey()` でなく **`pressKeyToWaitMark()`** で進める。スクリプト fetch
   の最中に store も DOM も `isTyping` も落ち着いて見える瞬間があり、`waitIdle()` が本物の停止点と

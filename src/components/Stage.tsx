@@ -159,14 +159,14 @@ export default function Stage({
 	//	overflow:hidden は内側にも掛けるが、拡縮の丸め誤差でのはみ出しを止めるため両方に置く
 	useLayoutEffect(()=> {
 		if (isFullscreen) {
-			// 全画面中は**ブラウザのUAスタイルが全画面要素を画面いっぱい（100%）にする**ので、
-			//	こちらで実寸を書かない。内箱をflexで中央へ寄せるだけにする
-			//	（本家 SysBase.cvsResize() の「中央へ寄せる」と同じ絵）
+			// 本家 SysBase.cvsResize() は「中央へ寄せる」ロジックを持たず、fullscreen化しても
+			//	内箱は左上固定のまま（ofsLeft4elm += (w-cvsWidth)/2 はマウス座標変換用の
+			//	オフセットで、見た目のDOM配置には反映されない）。合わせて中央寄せをやめる
 			heStage.style.width		= '';
 			heStage.style.height	= '';
-			heStage.style.display	= 'flex';
-			heStage.style.alignItems	= 'center';
-			heStage.style.justifyContent= 'center';
+			heStage.style.display	= '';
+			heStage.style.alignItems	= '';
+			heStage.style.justifyContent= '';
 			heStage.style.backgroundColor= 'black';	// 余白（レターボックス）を黒に
 		}
 		else {
@@ -196,10 +196,9 @@ export default function Stage({
 			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
-		/* 全画面（[toggle_full_screen]）のときは**画面の中央へ寄せる**（本家 SysBase.cvsResize()）。
-			中央寄せは外側（#skynovel）のflexに任せ、ここは拡縮だけを持つ。
-			原点を中心にするのは、flexが**拡縮前の実寸**で中央に置くため（左上原点だと右下へ伸びる） */
-		transform-origin: ${isFullscreen ? 'center' : 'left top'};
+		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
+			上のuseLayoutEffectのコメント参照） */
+		transform-origin: left top;
 		transform: scale(${String(cvsScale)});
 	`;
 	const styChild = css`position: absolute; top: 0; left: 0;`;

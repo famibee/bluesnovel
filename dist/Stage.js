@@ -10726,7 +10726,7 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 	}, []), (0, z.useEffect)(() => {
 		n.setFullScr(re);
 	}, [re]), (0, z.useLayoutEffect)(() => {
-		re ? (e.style.width = "", e.style.height = "", e.style.display = "flex", e.style.alignItems = "center", e.style.justifyContent = "center", e.style.backgroundColor = "black") : (e.style.width = `${String(F * P)}px`, e.style.height = `${String(I * P)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
+		re ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * P)}px`, e.style.height = `${String(I * P)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
 	}, [
 		P,
 		F,
@@ -10745,10 +10745,9 @@ function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: i, next:
 			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
-		/* 全画面（[toggle_full_screen]）のときは**画面の中央へ寄せる**（本家 SysBase.cvsResize()）。
-			中央寄せは外側（#skynovel）のflexに任せ、ここは拡縮だけを持つ。
-			原点を中心にするのは、flexが**拡縮前の実寸**で中央に置くため（左上原点だと右下へ伸びる） */
-		transform-origin: ${re ? "center" : "left top"};
+		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
+			上のuseLayoutEffectのコメント参照） */
+		transform-origin: left top;
 		transform: scale(${String(P)});
 	`, ae = gu`position: absolute; top: 0; left: 0;`, oe = gu`
 		position: absolute; top: 0; left: 0;
