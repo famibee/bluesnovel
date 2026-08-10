@@ -1,0 +1,29 @@
+; E2E用シナリオ（resize.e2e.ts が使用）。目的は、ウインドウサイズ・全画面切替のたびに
+;	個々のレイヤ（背景／前景／ボタン／ヒント）の見た目位置・サイズが正しく追従するかの検証
+;	（ステージ外枠の実寸だけを見る stage.e2e.ts とは別の関心）。
+;	window は実テンプレ（tmp_blues/tmp_esm_uc）と同寸の1024x768（prj.json参照）。
+;	画像アセットは使わず、[lay width=/height=]の明示だけで背景・前景の箱を作る
+;	（実寸の検証には箱のCSSサイズで足り、絵柄までは不要なため。prj_lay/main.snと同じ方針）
+[add_lay layer=base class=grp]
+[add_lay layer=fg class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 背景：ステージ全面
+[lay layer=base left=0 top=0 width=1024 height=768]
+; 前景：立ち絵相当の箱（画面左寄り）
+[lay layer=fg left=200 top=168 width=300 height=600]
+; ボタン置き場（背景が透けて見えるよう窓は透明・枠なし）
+[lay layer=mes b_alpha=0 style="border:none"]
+
+[toggle_full_screen key=w]
+[button page=fore nm=btn_a text="ボタンA" left=250 top=360 width=90 height=30 label=*noop]
+[button page=fore nm=btn_hint text="ヒント" left=650 top=360 width=90 height=30 label=*noop hint="せつめい"]
+[s]
+
+*noop
+; 本編相当。前景を反対側へ動かしてから[l]で止め、「レイヤ変更後・本文表示中」の
+;	ウインドウリサイズにも追従することを確認できるようにする
+[lay layer=fg left=524 top=168]
+すすんだ[l]
+おしまい[s]
