@@ -749,6 +749,15 @@
   - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（234件green。`trans.e2e.ts`の1件は並列実行時のみ再現するタイマー系の既知フレークで、単独実行では通ることを確認済み・今回の変更とは無関係）
   - `todo.md`「続き」の該当項目を消化
 
+- [x] **不具合修正：`[l]`/`[p]`待ち中に右クリックメニュー等（`[event]`/`[button]`のcall=true予約）へ一時的に割り込むと本文が消え、待ちマークだけが文字レイヤ右上に残る**（2026-08-11）
+  - 報告時の症状は「本文冒頭`[plc visible=false]`停止中に右クリックメニュー→【字を隠す】で消去→復帰すると、クリック待ちアニメの表示位置が文字レイヤ右上に移動する」。まず本家`skynovel_esm/src/sn/LayerMng.ts:159-169`を確認したところ、`breakLine`/`breakPage`の入口で`delete hArg.visible`しており**本家でも`[l]`/`[p]`の`visible`属性は最初から無視され常に表示**と判明（`docs/tag.html`にも既にその旨の記載あり）。よって「非表示のはずが実は常時表示されている」だけで、`visible`属性自体の配線は今回のバグと無関係・対応不要と判断（本家互換を維持）
+  - `playwright-cli`で`tmp_blues`実機を操作し再現したところ、実際には**メニューを開いた時点で既に本文（`aCh`）が空になっていた**。原因は`ScriptEngine.step()`冒頭の`clearOnResume`処理（`[p]`の次へ読み進める際に現在レイヤを先にクリアする仕組み。試作の改ページ挙動）。`[event global=true call=true key=rightclick label=*escape]`（`_submenu.sn`、右クリックメニューを開くための予約）のような**call予約による一時的な割り込みも`ScriptMng.#jumpToLabelAndGo`→`engine.step()`を経由する**ため、`[p]`待ち中に発火すると、まだ「[p]の次へ進む」つもりが無いのに`clearOnResume`が無条件に消費され、本文が誤ってクリアされていた
+  - 修正：`callToLabel()`/`callToScript()`（`[event]`/`[button]`の`call=true`予約専用の外部呼び出し経路。本文中の`[call]`やマクロ呼び出しは対象外）実行時に`clearOnResume`を`false`へ凍結する`freezeClearOnResume`引数（既定`true`）を追加。`[load fn= label=]`（しおり復元後に指定ラベルをコールする、本家と同じ仕様）だけは一時的な割り込みではなく通常のcallと同じ挙動が要るため`false`で呼ぶ
+  - `[return]`で`[p]`の位置まで戻ってきた場合、**`clearOnResume`は意図的に復元しない**——`[p]`タグ自体が再実行されることで自然に`true`へ戻る設計（既存テスト`ScriptEngine.test.ts`の`callToLabel_returnsToWaitingStop_notNext`等が検証している、「`[return]`で`[l]`/`[p]`/`[s]`位置へ戻り、タグの再実行で自然に停止する」という既存の仕組みそのもの）。最初は「`[return]`で`step()`のwhileループを打ち切る」修正も試みたが、これは上記の既存テストが壊れることで判明した誤りで撤回した（別ファイルをまたぐ`[return]`は`loadScript`アクション経由で`switchScript`実行後に**別のstep()呼び出し**として`[p]`が再実行されるため、もし`clearOnResume`を復元してしまうと、その新しいstep()呼び出しの冒頭で`[p]`再実行より先にクリアが発動してしまうと判明したため、復元自体をしないのが正しい設計だった）
+  - `playwright-cli`で`tmp_blues`実機（`localhost:5175`）に接続し、修正前は「メニューを開いた時点で`aCh`が23→0」「字を隠す→復帰後も本文が戻らず待ちマークだけ右上に残る」ことを、修正後は「メニューの開閉を経ても本文が保持され、正しい位置に復帰し、その後のクリックでも正常に読み進む」ことを確認
+  - `bunx tsc --noEmit --incremental false`・`bun test`（1666件green）で確認
+  - `todo.md`「続き」の該当項目を消化
+
 - [ ]
 
 

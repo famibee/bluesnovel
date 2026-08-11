@@ -1442,13 +1442,13 @@ var re = class {
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
 		this.#_ = t;
 	}
-	callToLabel(e) {
-		let t = this.#g.label2idx(e);
-		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
-		this.#X(--this.#_), this.#_ = t;
+	callToLabel(e, t = !0) {
+		let n = this.#g.label2idx(e);
+		if (n === void 0) throw `[button] ラベル【${e}】が見つかりません`;
+		this.#X(--this.#_), t && (this.#S = !1), this.#_ = n;
 	}
-	callToScript(e, t = "") {
-		this.#X(--this.#_), this.switchScript(e, t);
+	callToScript(e, t = "", n = !0) {
+		this.#X(--this.#_), n && (this.#S = !1), this.switchScript(e, t);
 	}
 	nowScrIdx() {
 		let e = this.#P[0];
@@ -3862,7 +3862,7 @@ var ye = 999e3, be = class {
 			if (e.t === "load" && e.label) {
 				t.switchScript(a, "", i);
 				let n = e.fn && e.fn !== r ? await this.#b(e.fn) : a;
-				t.callToScript(n, e.label);
+				t.callToScript(n, e.label, !1);
 			} else t.switchScript(a, "", i);
 		} catch (t) {
 			this.#j = !1, this.myTrace(`[${e.t === "reloadScript" ? "reload_script" : "load"}] ${String(t)}`, "ET");

@@ -1181,7 +1181,7 @@ export class ScriptMng {
 			if (act.t === 'load' && act.label) {
 				engine.switchScript(scr, '', idx);
 				const scrCall = act.fn && act.fn !== fn ? await this.#getScript(act.fn) : scr;
-				engine.callToScript(scrCall, act.label);
+				engine.callToScript(scrCall, act.label, false);	// 通常のcallと同じ挙動が要る（[event]/[button]のcall予約とは違い一時的な割り込みではない）
 			}
 			else engine.switchScript(scr, '', idx);
 		} catch (e) {

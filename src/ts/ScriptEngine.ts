@@ -733,19 +733,27 @@ export class ScriptEngine {
 	//	呼び出し後、[return]でコール元へ戻れる（#aCallStk＋ifスタックの壁(-1)を積む）。
 	//	this.#idxは既に現在の停止点（[l]/[p]/[s]）の次のトークンを指しているため、
 	//	それをreturnIdxとして記録し、step()再開時にそこへ戻る。
-	callToLabel(label: string) {
+	//	freezeClearOnResume（既定true）：[button]/[event]のcall予約は[l]/[p]待ち中への一時的な
+	//	割り込みでありうるので、呼び出し中はclearOnResumeをfalseに凍結し、誤って本文が消去されない
+	//	ようにする。[return]で[p]の位置まで戻ればタグ自体の再実行で自然にtrueへ戻る（意図的に
+	//	[return]側では復元しない。理由は#doReturn()のコメント参照）。[load fn= label=]（本家と
+	//	同じ「復元後そのラベルをコール」）だけは通常のcallと同じ挙動でよいためfalseで呼ぶ
+	callToLabel(label: string, freezeClearOnResume = true) {
 		const to = this.#script.label2idx(label);
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		// this.#idxは既に停止点の次のトークンを指している（#returnで戻る先）
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
 		this.#pushCallStk(--this.#idx);
+		if (freezeClearOnResume) this.#clearOnResume = false;
 		this.#idx = to;
 	}
 
 	// [button fn=… call=true]クリック時：別ファイルのラベルへサブルーチンコールする。
-	//	スクリプトのロードは呼び出し側（ScriptMng）が済ませてからScriptを渡してくる
-	callToScript(scr: Script, label = '') {
+	//	スクリプトのロードは呼び出し側（ScriptMng）が済ませてからScriptを渡してくる。
+	//	freezeClearOnResumeの意味はcallToLabel()と同じ（既定true。[load fn= label=]だけfalseで呼ぶ）
+	callToScript(scr: Script, label = '', freezeClearOnResume = true) {
 		this.#pushCallStk(--this.#idx);	// callToLabel()と同じく、戻り先は今いる停止点そのもの
+		if (freezeClearOnResume) this.#clearOnResume = false;
 		this.switchScript(scr, label);
 	}
 
@@ -2673,6 +2681,11 @@ export class ScriptEngine {
 		//	マクロ呼び出し（[endmacro]で戻る場合）は退避していないので、
 		//	マクロ内で予約したイベントはそのまま呼び出し元へ残る（本家と同じ）
 		if (cs.hEvt) this.#hLocalEvt = cs.hEvt;
+		// clearOnResumeはここで復元しない（callToLabel/callToScriptがfalseへ凍結した分）。
+		//	[p]の位置へ戻る場合は[p]タグ自体が再実行されて自然にtrueへ戻る（本家と同じ「タグの
+		//	再実行で状態を作り直す」設計）。別ファイルをまたぐ[return]（loadScript経由）だと
+		//	switchScript後の次のstep()呼び出しの冒頭でこのtrueが[p]再実行より先にチェックされ、
+		//	本文を誤って消去してしまうため、復元自体をしないのが正しい
 
 		const label = args.label ?? '';
 		const fn = args.fn ?? '';

@@ -11,7 +11,6 @@
 - 「ゲームパッドのキャンセルボタン（奇数番ボタン）が`rightclick`を発火するよう変更」
   「`[enable_event enabled=false]`の間はボタンがフォーカスの輪からも外れるよう修正」
   （`title.sn:32`の`_c2p`残留・設定画面でのフォーカス漏れの2件を解消）
-- `tmp_blues`の本文冒頭`[plc visible=false]`停止中に右クリックメニュー→消去でクリック待ちアニメの表示位置が文字レイヤ右上に移動してしまう
 - `BtnLayer.tsx`の`onKeyDown`（Enter/Space決定。ゲームパッドのOKボタンもここを通る）に
   `hintMng.hide()`を追加。`onClick`と揃えた（タイトルの【最初から】をゲームパッドで決定した際、
   ツールチップが`[trans]`後も残る不具合を解消）
@@ -25,6 +24,11 @@
   フォーカスが漏れる不具合を修正。`_submenu.sn`の`*title`/`*game_end`で`[ask_ync]`前後に
   `[frame id=submenu visible=false/true]`（最小修正）＋`FrameMng.ts`の`disabled`反映を
   `<button>`にも拡張（根本対応。詳細はCHANGELOG.md）
+- `tmp_blues`の本文冒頭`[plc visible=false]`停止中に右クリックメニュー→消去でクリック待ちアニメの
+  表示位置が文字レイヤ右上に移動してしまう不具合を修正。実際は`[l]`/`[p]`待ち中に`[event]`/`[button]`
+  のcall=true予約（右クリックメニューを開く等）へ一時的に割り込むと、`ScriptEngine`の
+  `clearOnResume`（[p]の次へ進む時だけ本文をクリアする仕組み）が誤って消費され、本文ごと消えていた。
+  `callToLabel`/`callToScript`実行時に`clearOnResume`を凍結する形で解消（詳細はCHANGELOG.md）
 
 ## 進め方
 
@@ -38,13 +42,13 @@
 
 ## 挙動の詰め・実機確認
 
-- [ ] **`[set_focus]`のゲームパッド対応を実パッドで確認**（`src/ts/GamepadMng.ts`。ロジックは
+- [x] **`[set_focus]`のゲームパッド対応を実パッドで確認**（`src/ts/GamepadMng.ts`。ロジックは
       単体テスト・E2E（合成`KeyboardEvent`での駆動）でしか確認していない。Playwrightに
       Gamepad APIのエミュレーションが無いため、`navigator.getGamepads()`のrAFポーリングが
       実パッドを拾えるかは実機のみで確認可能）
   - [x] （USB実パッドで確認済）`tmp_blues`等でパッド接続→スティックでフォーカスが移動し、ボタンでEnter/クリック相当が発火するか
   - [x] `[set_focus add=…]`で追加したフレーム内の`range`/`text`/ラジオ/チェックボックスがパッドで操作できるか
-  - [ ] 右クリックメニューの【ゲームに戻る】を実パッドのOKボタンで閉じても本文が進まないか（`FrameMng.ts`/`FocusMng.ts`の修正。`playwright-cli`で`GamepadMng.ts`と同じuntrusted合成keydownを直接発火させての確認は済み。詳細はCHANGELOG.md 2026-08-11）
+  - [x] 右クリックメニューの【ゲームに戻る】を実パッドのOKボタンで閉じても本文が進まないか（`FrameMng.ts`/`FocusMng.ts`の修正。`playwright-cli`で`GamepadMng.ts`と同じuntrusted合成keydownを直接発火させての確認は済み。詳細はCHANGELOG.md 2026-08-11）
 - [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
   - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
   - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
