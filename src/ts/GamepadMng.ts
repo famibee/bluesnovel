@@ -23,10 +23,18 @@ const AXIS_KEY_TABLE: readonly string[] = [
 	'',			'ArrowDown',	'',			// 左下・下・右下
 ];
 const DEAD_ZONE = 0.3;
+// 一度方向が確定した後、ニュートラルへ戻ったと判定するしきい値（DEAD_ZONEより緩める）。
+//	アナログスティックの値はDEAD_ZONE境界ちょうどで微小に揺れることがあり、単一のしきい値だと
+//	その揺れのたびに'ArrowRight'等が連続で再送され、[set_focus to=next]がフォーカスの輪を
+//	コマ送りで巡回してしまう（todo.md「パッドの移動ではクリック待ち記号の後ろに一瞬なにかが
+//	表示されちらつく」の原因。playwright-cliで合成keydownを間隔を詰めて連投し、フォーカス矩形が
+//	輪を一周してしまうことを実機で確認済み）。ENTER/EXITの2段しきい値でヒステリシスを持たせ、
+//	境界付近の揺れが同じキーの再送に繋がらないようにする
+const EXIT_ZONE = 0.2;
 
-export function axisToKey(x: number, y: number): string {
-	const qx = Math.abs(x) < DEAD_ZONE ? 0 : Math.sign(x);
-	const qy = Math.abs(y) < DEAD_ZONE ? 0 : Math.sign(y);
+export function axisToKey(x: number, y: number, zone = DEAD_ZONE): string {
+	const qx = Math.abs(x) < zone ? 0 : Math.sign(x);
+	const qy = Math.abs(y) < zone ? 0 : Math.sign(y);
 	return AXIS_KEY_TABLE[(qy + 1) * 3 + (qx + 1)] ?? '';
 }
 
@@ -78,8 +86,10 @@ export class GamepadMng {
 	}
 
 	#pollAxis(gp: Gamepad) {
-		const key = axisToKey(gp.axes[0] ?? 0, gp.axes[1] ?? 0);
 		const prev = this.#hAxisKey.get(gp.index) ?? '';
+		// 既に方向が確定している間はEXIT_ZONE（緩め）で判定し、境界での揺れによる
+		//	キー再送（＝フォーカスの輪を余計に進めてしまう）を防ぐ（上のEXIT_ZONE参照）
+		const key = axisToKey(gp.axes[0] ?? 0, gp.axes[1] ?? 0, prev ? EXIT_ZONE : DEAD_ZONE);
 		if (key === prev) return;
 		this.#hAxisKey.set(gp.index, key);
 		if (! key) return;

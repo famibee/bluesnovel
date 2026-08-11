@@ -39,6 +39,13 @@ it('斜め入力は無視する（本家と同じ）', ()=> {
 	expect(axisToKey(-1, -1)).toBe('');
 });
 
+// GamepadMng#pollAxis()が方向確定後に渡す緩めのzone（ヒステリシス）。デッドゾーン境界での
+//	微小な揺れによる'ArrowRight'等の連続再送（＝フォーカスの輪が余計に進む）を防ぐための引数
+it('zone引数でしきい値を変えられる（ヒステリシスで方向維持を判定するため）', ()=> {
+	expect(axisToKey(0.25, 0, 0.2)).toBe('ArrowRight');
+	expect(axisToKey(0.25, 0, 0.3)).toBe('');
+});
+
 // 合成KeyboardEventのcodeもkeyと同じ値にする（回帰テスト）。
 //	`new KeyboardEvent(…, {key})`だけだとcodeは空文字のままで、Main.tsxの読み進め判定
 //	（switch (e.code)）が拾えず、フォーカス無し状態でのゲームパッドOKボタンが
