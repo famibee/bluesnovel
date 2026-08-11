@@ -4,21 +4,27 @@ import { o as n } from "./CmnLib.js";
 var r = new class e {
 	#e = [];
 	#t = -1;
-	static #n(e) {
-		if (e.disabled || e.getClientRects().length === 0 || !e.checkVisibility({ checkVisibilityCSS: !0 })) return !1;
+	static #n(t) {
+		if (t.disabled || t.getClientRects().length === 0 || !t.checkVisibility({ checkVisibilityCSS: !0 })) return !1;
 		try {
-			for (let t = e.ownerDocument.defaultView; t && t !== t.parent;) {
-				let e = t.frameElement;
-				if (!e) break;
-				if (e.getClientRects().length === 0) return !1;
-				t = e.ownerDocument.defaultView;
+			for (let n = t.ownerDocument.defaultView; n && n !== n.parent;) {
+				let t = n.frameElement;
+				if (!t) break;
+				if (t.getClientRects().length === 0 || e.#r(t)) return !1;
+				n = t.ownerDocument.defaultView;
 			}
 		} catch {}
 		return !0;
 	}
-	#r = /* @__PURE__ */ new Map();
-	#i(e) {
-		this.#r.get(e)?.(), this.#r.delete(e);
+	static #r(e) {
+		let t = e.getBoundingClientRect();
+		if (t.width === 0 || t.height === 0) return !1;
+		let n = e.ownerDocument.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
+		return n !== null && n !== e;
+	}
+	#i = /* @__PURE__ */ new Map();
+	#a(e) {
+		this.#i.get(e)?.(), this.#i.delete(e);
 	}
 	add(t) {
 		if (this.#e.includes(t)) return;
@@ -28,23 +34,23 @@ var r = new class e {
 		t.addEventListener("focus", n);
 		let r = () => {
 			t.removeEventListener("focus", n);
-		}, i = e.#a(t);
+		}, i = e.#o(t);
 		if (i) {
-			let a = e.#o(t, i);
+			let a = e.#s(t, i);
 			r = () => {
 				t.removeEventListener("focus", n), a();
 			};
 		}
-		this.#r.set(t, r), this.#e.push(t);
+		this.#i.set(t, r), this.#e.push(t);
 	}
-	static #a(t) {
+	static #o(t) {
 		let n = t;
 		switch (n.type ?? "") {
 			case "checkbox": return () => {
 				n.checked = !n.checked;
 			};
 			case "":
-				if (t.querySelectorAll("input[type]").length > 0) return (n) => e.#s(t, n.key);
+				if (t.querySelectorAll("input[type]").length > 0) return (n) => e.#c(t, n.key);
 				break;
 			case "range": return (e) => {
 				e.isTrusted || (e.key === "ArrowUp" ? n.stepUp() : n.stepDown(), n.dispatchEvent(new InputEvent("input", { bubbles: !0 })));
@@ -60,7 +66,7 @@ var r = new class e {
 			e.isTrusted || e.key !== "Enter" || t.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
 		};
 	}
-	static #o(e, t) {
+	static #s(e, t) {
 		let n = (e) => {
 			(e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter") && (e.stopPropagation(), t(e));
 		};
@@ -68,7 +74,7 @@ var r = new class e {
 			e.removeEventListener("keydown", n);
 		};
 	}
-	static #s(e, t) {
+	static #c(e, t) {
 		let n = e.querySelectorAll("input[type]"), r = n.length;
 		for (let e = 0; e < r; ++e) if (n[e].checked) {
 			n[(e + r + (t === "ArrowUp" ? -1 : 1)) % r].checked = !0;
@@ -77,10 +83,10 @@ var r = new class e {
 	}
 	remove(e) {
 		let t = this.#e.indexOf(e);
-		t < 0 || (this.#i(e), this.#e.splice(t, 1), this.#e.length === 0 ? this.#t = -1 : t <= this.#t && --this.#t);
+		t < 0 || (this.#a(e), this.#e.splice(t, 1), this.#e.length === 0 ? this.#t = -1 : t <= this.#t && --this.#t);
 	}
 	clear() {
-		for (let e of this.#e) this.#i(e);
+		for (let e of this.#e) this.#a(e);
 		this.#e = [], this.#t = -1;
 	}
 	isFocus(e) {
@@ -98,12 +104,12 @@ var r = new class e {
 		return e.#n(t) ? t : null;
 	}
 	next() {
-		this.#c(1);
+		this.#l(1);
 	}
 	prev() {
-		this.#c(-1);
+		this.#l(-1);
 	}
-	#c(t) {
+	#l(t) {
 		let n = this.#e.length;
 		if (n === 0) return;
 		let r = this.#t + t;

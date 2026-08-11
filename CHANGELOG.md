@@ -739,6 +739,16 @@
   - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bunx playwright test -c test/e2e frame.e2e.ts`（9件green）で確認
   - `todo.md`「次回：右クリックメニュー→【タイトルに戻る】の確認ダイアログがモーダルになっていない」を消化
 
+- [x] **前項の「最小修正」を`doc/prj/`を一切触らないエンジン側だけの対応に作り直した**（2026-08-11）
+  - 前回の「最小修正」（`_submenu.sn`の`*title`/`*game_end`に`[frame id=submenu visible=false/true]`を追加）は、`doc/prj/`配下の変更は厳禁というルールに反していた。加えて`visible=false`はフレーム全体を消すため、確認ダイアログと無関係な右クリックメニュー項目まで一緒に見えなくなる副作用があった（実機で発覚）。`tmp_blues`側の`_submenu.sn`・`prj.json`（無関係に混入していた`debug.devtool=true`も含む）を`git checkout`で完全に元へ戻した
+  - 本家`skynovel_esm/src/sn/FocusMng.ts`を確認したが、pixiベースでフレーム（iframe）の概念自体が無く、重なり判定はボタンごとの`on()`述語に個別に委ねる設計。bluesnovel独自のDOM/iframeアーキテクチャ向けに考えるしかないと判断した
+  - `FocusMng.ts`の`#canFocus()`が要素→親フレームと遡るループに`#isOccluded()`を追加：フレームの中心点で`elementFromPoint()`を呼び、そこに立っているのが自分自身のフレーム要素でなければ「別の要素（z-indexで前面に重なった別フレーム等）に覆われている」と判定して弾く。iframeは中の要素を貫通せずそれ自身が1つの当たり判定を持つ（`elementFromPoint`はiframeの境界を越えない）性質を利用した
+  - これにより、`[ask_ync]`のようなモーダル的なフレームを`float=true`で前面に出すだけで、シナリオ側が`[frame disabled=]`を明示的に呼ばなくても背後のフレームは自動でフォーカスの輪から外れる。`_submenu.sn`／`_yesno.sn`など`doc/prj/`配下は一切変更不要になった
+  - `test/e2e/app/prj_frame/main.sn`に、同じiframeを2枚重ねて`float=true`で前面に出す`cover`フレームのシーンを追加。`test/e2e/frame.e2e.ts`に新規1件（覆う前は輪に届く→覆われている間は届かない・b1/b2だけを回る→隠すと再び届く、を確認）。修正前の`FocusMng.ts`に戻すと実際に`#ok`へフォーカスが漏れて落ちることを確認済み
+  - 追加したシーンが`むこうにした`/`もどした`の直後（`[frame visible=false]`の手前）に入ったことで、同じフィクスチャを共有する`test/e2e/focus.e2e.ts`の「隠したフレームの中の要素はフォーカスの輪から飛ばされる」が新しい停止点を素通りできず失敗するようになった。実際には前回セッションの`[frame disabled=]`往復シーン追加時点で既に同じ理由で壊れていたのを`bun run test:e2e`のフルスイート実行で発見した（個別ファイル実行では気付けなかった）。両方のシーンを素通りするよう`focus.e2e.ts`側のステップ列を更新して解消
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（234件green。`trans.e2e.ts`の1件は並列実行時のみ再現するタイマー系の既知フレークで、単独実行では通ることを確認済み・今回の変更とは無関係）
+  - `todo.md`「続き」の該当項目を消化
+
 - [ ]
 
 

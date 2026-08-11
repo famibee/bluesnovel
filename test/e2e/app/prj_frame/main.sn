@@ -64,6 +64,15 @@
 [frame id=yesno disabled=false]
 もどした[p]
 
+; 別のフレームがz-indexで前面に重なって覆っている間は、[frame disabled=]を明示しなくても
+;	自動でフォーカスの輪から外れる（[ask_ync]のようなモーダルの裏へフォーカスが漏れない
+;	ようにする自動占有方式。FocusMng.ts #isOccluded() 参照）
+[add_frame id=cover src=yesno visible=false width=400 height=200]
+[frame id=cover visible=true float=true]
+おおった[p]
+[frame id=cover visible=false]
+はずした[p]
+
 ; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）。
 ;	range1等もフレーム内なので#ok/#closeと同じく輪から飛ばされる
 [frame id=yesno visible=false]

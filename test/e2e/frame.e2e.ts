@@ -144,6 +144,51 @@ test('[frame disabled=true]で<button>もdisabledになる', async ({page})=> {
 	expect(await closeDisabled()).toBe(false);
 });
 
+test('別フレームに前面から覆われている間、[frame disabled=]無しでも自動でフォーカスの輪から外れる', async ({page})=> {
+	await seeText(page, 'よみこんだ');
+	for (const t of ['ひょうじ', 'とれた', 'うごかした', 'ふぉーかす', 'ふぉーかすぱっど',
+	'ふぉーかすぱっどえをだした', 'むこうにした', 'もどした']) {
+		await advance(page, t);
+	}
+
+	const frmActiveId = ()=> page.evaluate(
+		()=> (document.getElementById('yesno') as HTMLIFrameElement)
+			.contentDocument?.activeElement?.id || null);
+	const activeText = ()=> page.evaluate(()=> document.activeElement?.textContent ?? null);
+
+	await waitIdle(page);
+
+	// 覆われる前：輪はyesnoフレーム内の要素にも届く
+	let reached = false;
+	for (let i = 0; i < 8 && ! reached; ++i) {
+		await page.keyboard.press('ArrowRight');
+		if (await frmActiveId() === 'close') reached = true;
+	}
+	expect(reached).toBe(true);
+	await page.keyboard.press('Escape');	// フォーカスを外す：残したままSpaceを押すとボタンの
+		// ネイティブなクリック（keyup発火）に食われ、読み進めのSpaceとして働かない
+
+	await advance(page, 'おおった');	// coverフレームがyesnoの手前(float=true)に重なる
+	await waitIdle(page);
+
+	// 覆われている間：8回動かしてもyesnoフレーム内には一度も入らず、b1/b2だけを回る
+	for (let i = 0; i < 8; ++i) {
+		await page.keyboard.press('ArrowRight');
+		expect(await frmActiveId()).toBeNull();
+		expect(await activeText()).toMatch(/^ボタン[12]$/);
+	}
+	await page.keyboard.press('Escape');
+
+	await advance(page, 'はずした');	// coverを隠すと再びyesno側へ届くようになる
+	await waitIdle(page);
+	reached = false;
+	for (let i = 0; i < 8 && ! reached; ++i) {
+		await page.keyboard.press('ArrowRight');
+		if (await frmActiveId() === 'close') reached = true;
+	}
+	expect(reached).toBe(true);
+});
+
 test('フレーム内の<img data-src=…>はプロジェクトのパス解決を通る', async ({page})=> {
 	// 本家 FrameMng.ts:154 →#loadPic2Img() は data-src を searchPath() へ通す。
 	//	テンプレのアルバムは解放済み項目に`F_kuchimoto`のような**拡張子なしのアセット名**を

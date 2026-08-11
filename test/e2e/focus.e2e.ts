@@ -190,6 +190,11 @@ test('隠したフレームの中の要素はフォーカスの輪から飛ば�
 	await toPadScene(page);	// [set_focus add=…]でrange1等も輪へ足された状態
 	await pressKey(page, 'Space');	// 画像の解決を確かめるページ（[let_frame draw_pics]）
 	await seeText(page, 'ふぉーかすぱっどえをだした');	// [l]なので本文は続けて出る
+	// [frame disabled=…]／別フレームで覆うテスト用のページを素通りして[frame visible=false]へ
+	for (const t of ['むこうにした', 'もどした', 'おおった', 'はずした']) {
+		await pressKey(page, 'Space');
+		await seeText(page, t);
+	}
 	await pressKey(page, 'Space');	// [frame visible=false]のページへ（[p]でレイヤがクリアされる）
 	await seeText(page, 'かくした');
 

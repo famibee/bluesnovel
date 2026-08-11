@@ -44,12 +44,26 @@ export class FocusMng {
 				const fe = w.frameElement as HTMLElement | null;
 				if (! fe) break;
 				if (fe.getClientRects().length === 0) return false;
+				// 別のフレームがz-indexで前面に重なって表示されている（[ask_ync]等のモーダル的な
+				//	フレーム）間は、裏のフレームへフォーカスが漏れないようにする。[frame disabled=]を
+				//	シナリオ側が明示的に呼ばなくても、前面のフレームを出しただけで自動的に効く
+				if (FocusMng.#isOccluded(fe)) return false;
 
 				w = fe.ownerDocument.defaultView;
 			}
 		}
 		catch {/* 別originのフレームは辿れない。その時は中の要素の見え方だけで判断する */}
 		return true;
+	}
+	// フレーム要素feの中心点で最前面に表示されているのが自分自身か（＝他のフレーム等に
+	//	覆われていないか）。elementFromPointは要素を貫通せず、iframeはそれ自身が1つの要素として
+	//	当たり判定を持つため、z-indexで上に重なる別要素があればそれが返る
+	static #isOccluded(fe: HTMLElement): boolean {
+		const r = fe.getBoundingClientRect();
+		if (r.width === 0 || r.height === 0) return false;
+		const top = fe.ownerDocument.elementFromPoint(
+			r.left + r.width / 2, r.top + r.height / 2);
+		return top !== null && top !== fe;
 	}
 
 	// add()で張った'focus'リスナの解除関数。
