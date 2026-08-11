@@ -378,12 +378,27 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	`tabIndex={0}`を持つため、区別が要る場所は`:not([data-wait-focus])`で除く
 	//	（test/e2e/btnpic.e2e.ts・pic.e2e.ts参照）
 	const waitRef = useRef<HTMLSpanElement>(null);
+	// [event key=ArrowLeft/Right]（[set_focus to=prev/next]）はcall予約のため、[return]後に
+	//	同じ[l]/[p]待ちが#runStep()で再処理され、store.waitが一旦null→再設定される
+	//	（ScriptMng.ts #runStep()の「前回の待ちマーカーをまずクリア」処理）。これにより
+	//	このプロキシspan自体が unmount→remount され、フォーカスしていたDOM要素が消えて
+	//	document.bodyへフォーカスが抜けてしまう（todo.md「ArrowRightが起点位置によって
+	//	稀にフォーカスを見失う」不具合の実体）。unmount直前に自分がフォーカス中だったかを
+	//	覚えておき、remountされた新しい要素へフォーカスを引き継ぐ
+	const wasFocusedRef = useRef(false);
 	useEffect(()=> {
 		const el = waitRef.current;
 		if (! el || ! canFocusWait) return;
 
 		focusMng.add(el);
-		return ()=> focusMng.remove(el);
+		if (wasFocusedRef.current) {
+			wasFocusedRef.current = false;
+			el.focus();
+		}
+		return ()=> {
+			wasFocusedRef.current = focusMng.isFocus(el);
+			focusMng.remove(el);
+		};
 	}, [canFocusWait]);
 	// Enter/Spaceでの決定＝本文クリックと同じ扱いにする。BtnLayer.tsxのonKeyDownと同じ理由で
 	//	stopPropagation()が要る：しないとMain.tsxのdocument直下Enterハンドラ（「何もフォーカスして

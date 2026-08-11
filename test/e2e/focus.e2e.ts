@@ -107,6 +107,31 @@ test('[l]待ちマーカーへフォーカスしてEnterで読み進められる
 	expect(await focused(page)).toBe('(none)');
 });
 
+// todo.md「ArrowRight（focusMng.next()）が起点位置によって稀にフォーカスを見失う」不具合の
+//	再現・解消確認。[l]待ちマーカーへフォーカスした状態は、輪の外から見ると「本文がまだ読み進め
+//	可能」という状態のままなので、[event key=ArrowLeft/Right]（call予約）を押すたびに同じ[l]が
+//	#runStep()で再処理され、store.waitがnull→再設定されてマーカー自身のDOM要素が作り直される
+//	（TxtLayer.tsx参照）。この時マーカーへフォーカスしたまま別要素へ移動→戻ってくると、
+//	作り直された新しい要素へフォーカスが追随できず(none)へ落ちていた
+test('[l]待ちマーカーから移動して戻ってきてもフォーカスを見失わない', async ({page})=> {
+	await toFocusScene(page);
+
+	// 末尾（[l]待ちマーカー）へ一手で移動
+	await page.keyboard.press('ArrowLeft');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+
+	// 隣（ボタン2）へ離れて、また戻る
+	await page.keyboard.press('ArrowLeft');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+
+	// マーカー上での足踏み（前後移動を挟まず同じ場所への再訪）でも見失わない
+	await page.keyboard.press('ArrowLeft');
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+});
+
 test('[set_focus to=null]でフォーカスが外れる', async ({page})=> {
 	await toFocusScene(page);
 	await page.keyboard.press('ArrowRight');

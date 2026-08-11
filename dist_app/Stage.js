@@ -10324,30 +10324,32 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			FocusMng.#canFocus()のgetClientRects()判定に落ちてフォーカスできなくなるため、
 			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
 		${!Te && W?.width === void 0 && W?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
-	`, Ae = (0, z.useRef)(null);
+	`, Ae = (0, z.useRef)(null), je = (0, z.useRef)(!1);
 	(0, z.useEffect)(() => {
 		let e = Ae.current;
-		if (!(!e || !Ee)) return o.add(e), () => o.remove(e);
+		if (!(!e || !Ee)) return o.add(e), je.current && (je.current = !1, e.focus()), () => {
+			je.current = o.isFocus(e), o.remove(e);
+		};
 	}, [Ee]);
-	let je = (e) => {
+	let Me = (e) => {
 		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), Ae.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
-	}, Me = {
+	}, Ne = {
 		...W?.width === void 0 ? {} : { width: `${String(W.width)}px` },
 		...W?.height === void 0 ? {} : { height: `${String(W.height)}px` },
 		...W?.x !== void 0 || W?.y !== void 0 ? { translate: `${String(W?.x ?? 0)}px ${String(W?.y ?? 0)}px` } : {}
-	}, Ne = gu`
+	}, Pe = gu`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
 		${N ? "" : "pointer-events: none;"}
-	`, { display: Pe, opacity: Fe, mixBlendMode: Ie, filter: Le } = n, Re = {
-		...Pe === void 0 ? {} : { display: Pe },
-		...Fe === void 0 ? {} : { opacity: Fe },
-		...Ie === void 0 ? {} : { mixBlendMode: Ie },
-		...Le === void 0 ? {} : { filter: Le }
-	}, ze = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Be = P.filter((e) => !ze(e)), Ve = P.filter(ze), He = gu`
+	`, { display: Fe, opacity: Ie, mixBlendMode: Le, filter: Re } = n, ze = {
+		...Fe === void 0 ? {} : { display: Fe },
+		...Ie === void 0 ? {} : { opacity: Ie },
+		...Le === void 0 ? {} : { mixBlendMode: Le },
+		...Re === void 0 ? {} : { filter: Re }
+	}, Be = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Ve = P.filter((e) => !Be(e)), He = P.filter(Be), Ue = gu`
 		${N ? "" : "pointer-events: none;"}
-	`, { r: Ue, g: We, b: Ge } = ku(x), Ke = m((e) => e.backAlpha), qe = S * (C ? 1 : Ke), Je = qe === 0 || a.length === 0 && x === void 0 && !w, Ye = gu`
+	`, { r: We, g: Ge, b: Ke } = ku(x), qe = m((e) => e.backAlpha), Je = S * (C ? 1 : qe), Ye = Je === 0 || a.length === 0 && x === void 0 && !w, Xe = gu`
 		padding: 1em 1.5em;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
@@ -10356,8 +10358,8 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${Je || w ? "transparent" : `rgba(${Ue}, ${We}, ${Ge}, ${qe})`};
-		border: ${Je || w ? "none" : "dotted 6px #ffa500"};
+		background-color: ${Ye || w ? "transparent" : `rgba(${We}, ${Ge}, ${Ke}, ${Je})`};
+		border: ${Ye || w ? "none" : "dotted 6px #ffa500"};
 		${w ? `
 		&::before {
 			content: '';
@@ -10366,7 +10368,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			background-image: url(${JSON.stringify(w)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${qe};
+			opacity: ${Je};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10398,7 +10400,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
 		${V ? ne : ""}
-	`, Xe = gu`
+	`, Ze = gu`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10453,24 +10455,24 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				border-color: #ff9900;
 			}
 		}
-	`, [Ze, Qe] = (0, z.useState)("");
-	(0, z.useEffect)(() => Qe(a), [a]);
-	let $e = (0, z.useRef)(null), et = (e, t) => {
+	`, [Qe, $e] = (0, z.useState)("");
+	(0, z.useEffect)(() => $e(a), [a]);
+	let et = (0, z.useRef)(null), tt = (e, t) => {
 		d(), e.transform = t;
 	};
 	return /* @__PURE__ */ T(O, { children: [
 		/* @__PURE__ */ T("span", {
-			css: [e, Ye],
+			css: [e, Xe],
 			ref: de,
 			"data-lay": r,
 			style: ue,
 			children: [/* @__PURE__ */ M("span", { ref: fe }), we && /* @__PURE__ */ M("span", {
 				ref: Ae,
 				css: ke,
-				style: Me,
+				style: Ne,
 				...Ee ? {
 					tabIndex: 0,
-					onKeyDown: je,
+					onKeyDown: Me,
 					"data-wait-focus": !0
 				} : {},
 				children: Te ? Se ? /* @__PURE__ */ M("span", { className: I(Se) }) : be && !xe ? /* @__PURE__ */ M("img", {
@@ -10485,11 +10487,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				}) : W.kind === "l" ? "🩷" : "✅" : null
 			})]
 		}),
-		Be.length > 0 && /* @__PURE__ */ M("span", {
-			css: [e, Ne],
+		Ve.length > 0 && /* @__PURE__ */ M("span", {
+			css: [e, Pe],
 			"data-lay": r,
-			style: Re,
-			children: Be.map((e) => /* @__PURE__ */ M(bu, {
+			style: ze,
+			children: Ve.map((e) => /* @__PURE__ */ M(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10500,11 +10502,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				onSe: B
 			}, e.nm))
 		}),
-		Ve.length > 0 && /* @__PURE__ */ M("span", {
-			css: [e, He],
+		He.length > 0 && /* @__PURE__ */ M("span", {
+			css: [e, Ue],
 			"data-lay": r,
-			style: Re,
-			children: Ve.map((e) => /* @__PURE__ */ M(bu, {
+			style: ze,
+			children: He.map((e) => /* @__PURE__ */ M(bu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10519,37 +10521,37 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			target: de,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => et(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => tt(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				et(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				tt(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => et(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => tt(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				et(e, n), e.transformOrigin = t;
+				tt(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ T(O, { children: [/* @__PURE__ */ T("label", {
-			css: Xe,
-			ref: $e,
+			css: Ze,
+			ref: et,
 			children: ["テキスト入力", /* @__PURE__ */ M("textarea", {
 				rows: 3,
-				value: Ze,
-				onChange: (e) => Qe(e.target.value)
+				value: Qe,
+				onChange: (e) => $e(e.target.value)
 			})]
 		}), /* @__PURE__ */ M(au, {
-			target: $e,
+			target: et,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => et(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => tt(e, t),
 			preventDefault: !1
 		})] })
 	] });

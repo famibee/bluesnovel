@@ -772,9 +772,16 @@
   - 確認中に副産物として気付いた点：`ArrowRight`（`focusMng.next()`）が起点位置によって稀にフォーカスを見失う（`(none)`に落ちる）挙動があった。`Tab`（ブラウザネイティブ）や`ArrowLeft`（`focusMng.prev()`）では発生せず、`fireEvent`/`ScriptEngine.beginEvent`/`FocusMng.#move()`という**今回の変更が一切触れていない既存経路**の話で、同じ機構を合成`KeyboardEvent`で検証しているE2E（`focus.e2e.ts`ほか）でも再現しない。`playwright-cli`からの高速連続キー送信特有のタイミング起因の可能性が高いが確定はできておらず、`todo.md`へ別項目として残した（今回の不具合修正そのものとは無関係と判断し、このセッションでは深追いしていない）
   - `todo.md`「挙動の詰め・実機確認」の該当項目を消化。副産物の`ArrowRight`の件は新規項目として`todo.md`に残した
 
+- [x] **不具合修正：`ArrowRight`/`ArrowLeft`で`[l]`/`[p]`待ちマーカーへフォーカスした状態が、起点位置によって`(none)`へ落ちる**（2026-08-11）
+  - 前回セッションで「稀に・タイミング起因の可能性」として`todo.md`へ送った副産物件を`playwright-cli`で`tmp_blues`実機に接続して再調査。実際は**タイミングでなく決定的な構造バグ**で、起点が「`[l]`待ちマーカー自身にフォーカスしている状態」の時に限り、`ArrowRight`・`ArrowLeft`どちらでも100%再現した（前回「`ArrowLeft`では発生せず」としたのは検証不足だったと判明）
+  - 根本原因：`main.sn`の`[event global=true call=true key=ArrowLeft/Right label=*set_focus arg=prev/next]`は`call=true`（`ScriptEngine.callToLabel()`）。`[return]`の戻り先は**今いる`[l]`/`[p]`待ちのタグ位置そのもの**（`ScriptEngine.ts:741-749`のコメント通りの意図的な設計）なので、`#runStep()`（`ScriptMng.ts:1031`）のループが戻ってきた直後にもう一度同じ`[l]`/`[p]`を処理し直す。このループは毎周先頭で`this.$fncs.setWait(null)`（`ScriptMng.ts:1046`）を無条件に呼んでから`case 'stop':`で`setWait({...})`を呼び直す（`ScriptMng.ts:1718`）ため、`store.wait`がnull→新オブジェクトへ2段階で変わり、`TxtLayer.tsx`の待ちマーカー`<span>`（`wantWaitEl && <span ref={waitRef} .../>`、`TxtLayer.tsx:582`）が**同じ位置のまま作り直される**（DOM要素としては別物になる）。フォーカスしていたのがこの要素自身だった場合、新しい要素へは誰も`.focus()`しないため`document.activeElement`が`<body>`へ落ちる。輪の外から見て「別要素へ移動した後また戻ってくる」ケースが再現しなかったのは、そのケースでは`FocusMng.#move()`が新しい要素でなく別の（作り直されない）要素を指すため
+  - 修正：`TxtLayer.tsx`の待ちマーカー登録用`useEffect`に`wasFocusedRef`を追加。アンマウント時に`focusMng.isFocus(el)`（＝自分がフォーカスされたまま消えるのか）を記録しておき、次にマウントする新しい要素の`useEffect`でそれが立っていれば`el.focus()`する。`FocusMng`・`ScriptEngine`・`ScriptMng`側（`[return]`の戻り先や`setWait`呼び出しのタイミング）は意図した設計のため触らず、症状側（フォーカス追随）だけをTxtLayer.tsxローカルに閉じて直した
+  - `test/e2e/focus.e2e.ts`に新規1件（`[l]`待ちマーカーから隣要素へ離れてまた戻ってくる、および足踏みしてもフォーカスを見失わないことを確認）。輪の要素数が5（`[button]`2件＋フレーム内2件＋マーカー）ある既存のE2Eシナリオでは、`playwright-cli`実機で確認した「輪の要素数が1（ゲーム開始直後の最初の`[l]`）」の条件を再現できず、この新規テストは修正前のコードでも通ってしまう（＝この特定条件のE2E化は見送り、実機確認で担保）
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（`focus`単体・直列実行で新規含め全green。フルスイートでは`waitev.e2e.ts`の既存別バグ3件＋並列実行時のみの既知フレーク数件が出るが、`git stash`で今回の変更前に戻しても同じ3件が同じ内容で落ちることを確認済み＝今回の変更と無関係）
+  - `playwright-cli`で`tmp_blues`実機（`localhost:5173`）に接続し確認：ゲーム開始直後の最初の`[l]`待ちマーカーへフォーカスした状態から`ArrowRight`/`ArrowLeft`を交互に10回連続で押しても`document.activeElement`が待ちマーカーのまま保持されること（修正前は1回目から毎回`<body>`へ落ちていた）、続けて`Enter`で正しく読み進められることを確認
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
 - [ ]
-
-
 
 
 
