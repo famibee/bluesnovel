@@ -101,7 +101,10 @@ type T_STATE = {
 	skipping	: boolean;		// 既読スキップ実行中か。trueの間はTxtLayerが文字送り演出を省いて瞬時表示する
 	setSkipping	: (b: boolean)=> void;
 
-	wait		: T_WAIT;		// 現在[l]/[p]待ち中のレイヤと種別（[s]はマーカーなし=null）
+	// 現在[l]/[p]/[waitclick]待ち中のレイヤと種別（[s]はnullのまま＝完全停止でフォーカス対象にもしない）。
+	//	[waitclick]もkindを持つのは、マーカー表示ではなくTxtLayerのフォーカス対象登録（本文へ
+	//	キーボード／ゲームパッドで戻れるようにする）にwait.nm===nmの判定を使い回すため
+	wait		: T_WAIT;
 	setWait		: (w: T_WAIT)=> void;
 
 	// sys:TextLayer.Back.Alpha（設定画面の「バック不透明度」）。**全文字レイヤ共通の掛け率**で、
@@ -117,7 +120,7 @@ type T_STATE = {
 }
 // [l]/[p]の待ちマーク。srcは`breakline`/`breakpage`という名の画像が
 //	プロジェクトにあれば、その解決済みURL（本家 LayerMng.ts:159。無ければ試作の絵文字）
-export type T_WAIT = {nm: string; kind: 'l' | 'p'; src?: string;
+export type T_WAIT = {nm: string; kind: 'l' | 'p' | 'waitclick'; src?: string;
 	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。
 	//	x/yは「本文の流れの中での位置からのずらし」（本家も待ちマーク用コンテナ内の相対座標）
 	x?: number; y?: number; width?: number; height?: number} | null;

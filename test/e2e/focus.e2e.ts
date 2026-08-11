@@ -12,6 +12,10 @@
 //	・[event key='dom=…'] の最初の1件（#ok / #close）
 //	・[set_focus add='dom=…']（#close。既に居るので重複登録されない）
 //	・[button]（表示中ずっと。ボタン1 / ボタン2）
+//	これに加え、bluesnovel独自の4経路目として[l]待ちマーカー自身も輪に入る（todo.md「本文で
+//	左右キーでシステムボタンにフォーカスが移った後、本文に戻れず読み進められなくなる」対策）。
+//	'ふぉーかす[l]'の停止中はこのシナリオに breakline/breakpage 画像が無いので絵文字🩷になり、
+//	focused()の表示は`btn:🩷`（iframe/HTML要素ではないのでbtn:分岐に落ちる）
 
 import {expect, test, type Page} from '@playwright/test';
 import {gotoSn, mesStr, pressKey, waitIdle} from './snPage';
@@ -51,7 +55,7 @@ test('[set_focus to=next]が輪を順に巡る', async ({page})=> {
 	await toFocusScene(page);
 	expect(await focused(page)).toBe('(none)');
 
-	// 登録順：[event]の#ok → [event]の#close → [button]ボタン1 → ボタン2
+	// 登録順：[event]の#ok → [event]の#close → [button]ボタン1 → ボタン2 → [l]待ちマーカー自身
 	await page.keyboard.press('ArrowRight');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('frm:ok');
 
@@ -64,6 +68,9 @@ test('[set_focus to=next]が輪を順に巡る', async ({page})=> {
 	await page.keyboard.press('ArrowRight');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
 
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+
 	// 一周して先頭へ戻る
 	await page.keyboard.press('ArrowRight');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('frm:ok');
@@ -72,12 +79,32 @@ test('[set_focus to=next]が輪を順に巡る', async ({page})=> {
 test('[set_focus to=prev]は逆順に巡る', async ({page})=> {
 	await toFocusScene(page);
 
-	// 誰も選んでいない状態からのprevは末尾へ
+	// 誰も選んでいない状態からのprevは末尾（[l]待ちマーカー）へ
+	await page.keyboard.press('ArrowLeft');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+
 	await page.keyboard.press('ArrowLeft');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
 
 	await page.keyboard.press('ArrowLeft');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン1');
+});
+
+// todo.md「本文で左右キーでシステムボタンにフォーカスが移った後、本文に戻れず読み進められなく
+//	なる」不具合の再現・解消確認。ボタン群を通り越して[l]待ちマーカー自身へフォーカスし、
+//	そこでEnterを押すと（本文クリックと同じ経路で）読み進められることを確かめる
+test('[l]待ちマーカーへフォーカスしてEnterで読み進められる', async ({page})=> {
+	await toFocusScene(page);
+
+	// 末尾（[l]待ちマーカー）へ一手で移動
+	await page.keyboard.press('ArrowLeft');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+
+	await page.keyboard.press('Enter');
+	// [l]なのでクリアされず積み増し。次の[l]（'ぱっど'）まで進む
+	await seeText(page, 'ふぉーかすぱっど');
+	// フォーカスが外れ、Enterでの読み進めが二重処理されていない（1行分だけ進んでいる）ことも兼ねて確認
+	expect(await focused(page)).toBe('(none)');
 });
 
 test('[set_focus to=null]でフォーカスが外れる', async ({page})=> {

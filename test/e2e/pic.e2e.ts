@@ -78,8 +78,10 @@ test('blendmodeは[lay]・[add_face]・[button]のどれもmix-blend-modeにな�
 	expect(await mbm(`${SEL_FORE} div[data-lay="base"]`)).toBe('screen');
 	// [add_face blendmode=multiply]は差分絵の<img>へ（本家の4種以外は弾くようになった）
 	expect(await mbm(`${SEL_FORE} div[data-lay="base"] img:nth-of-type(2)`)).toBe('multiply');
-	// [button blendmode=add]はCSSに同名が無いのでplus-lighter（加算合成）
-	expect(await mbm(`${SEL_FORE} span[data-lay="mes"] span[tabindex]`)).toBe('plus-lighter');
+	// [button blendmode=add]はCSSに同名が無いのでplus-lighter（加算合成）。
+	//	[l]/[p]/[waitclick]待ちマーカーのフォーカス用プロキシ（TxtLayer.tsx。todo.md対応）も
+	//	同じtabindexを持つので`data-wait-focus`で除く
+	expect(await mbm(`${SEL_FORE} span[data-lay="mes"] span[tabindex]:not([data-wait-focus])`)).toBe('plus-lighter');
 });
 
 test('[lay width=/height=]で画像の表示サイズが拡縮される（本家pixiのSprite.width/height相当）', async ({page})=> {

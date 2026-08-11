@@ -41,8 +41,10 @@ async function centerColor(page: Page, loc: Locator): Promise<[number, number, n
 function near(a: [number, number, number], b: [number, number, number]) {
 	for (let i = 0; i < 3; ++i) expect(Math.abs(a[i]! - b[i]!)).toBeLessThan(24);
 }
-// 表ページのボタン（span）をn番目で拾う
-const btn = (page: Page, i: number)=> page.locator(`${SEL_FORE} span[tabindex="0"]`).nth(i);
+// 表ページのボタン（span）をn番目で拾う。[l]/[p]/[waitclick]待ちマーカーもフォーカス対応の
+//	プロキシとして同じtabindex="0"を持つ（TxtLayer.tsx。todo.md対応）ため、
+//	`data-wait-focus`で除いて[button]だけに絞る
+const btn = (page: Page, i: number)=> page.locator(`${SEL_FORE} span[tabindex="0"]:not([data-wait-focus])`).nth(i);
 // 箱の大きさは**ステージ座標で**測る。boundingBox()はステージのtransform:scaleが掛かった
 //	画面上の実寸を返すので、シナリオに書いた数値と直接は比べられない。
 //	**絵の実寸が入るのは画像を読み終えてから**（BtnLayerがImageで測る）なので、

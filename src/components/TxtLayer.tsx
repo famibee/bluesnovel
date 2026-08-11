@@ -13,10 +13,11 @@ import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
 import {hintMng} from '../ts/Hint';
 import {CmnLib} from '../sn/CmnLib';
+import {focusMng} from '../ts/FocusMng';
 import BtnLayer from './BtnLayer';
 
 import {css} from '@emotion/react';
-import {type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {type CSSProperties, type KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
 import gsap from 'gsap';
 
@@ -332,10 +333,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		return ()=> {alive = false};
 	}, [waitSrc, isWaitSheet]);
 
-	// [l]/[p]待ち中マーカー（🩷/✅）。[s]はマーカーなし。読み戻り中は非表示
+	// [l]/[p]/[waitclick]待ち中（🩷/✅、または見た目に出ないフォーカス専用のプロキシ）。
+	//	[s]は対象外（wait自体がnullのまま＝完全停止でユーザー操作では進めない）。読み戻り中は非表示
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
 	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
-	const showWait = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
+	const wantWaitEl = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
+	// マーカー画像/絵文字を実際に描くのは[l]/[p]だけ（[waitclick]は本家どおりマーカーなし）
+	const showWaitMark = wantWaitEl && wait!.kind !== 'waitclick';
+	// フォーカスの輪へ登録するか（todo.md「本文で左右キーでシステムボタンにフォーカスが移った後、
+	//	本文に戻れず読み進められなくなる」不具合対応）。[enable_event enabled=false]の間は
+	//	クリックも受けないレイヤなので、BtnLayer.tsxと同じ理由でフォーカス対象からも外す
+	const canFocusWait = wantWaitEl && enabled;
 	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。[lay style=…]でしか変わらないので
 	//	そのCSS文字列とインラインstyleが変わったときだけ測り直す
 	const [isTate, setIsTate] = useState(false);
@@ -355,7 +363,40 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
 			置いているため、向きが本文と食い違うと目立つ */
 		${isTate ? 'rotate: -90deg;' : ''}
+		/* [waitclick]用プロキシは中身が空（マーカーなし）。中身が無いinline-blockは0x0になり
+			FocusMng.#canFocus()のgetClientRects()判定に落ちてフォーカスできなくなるため、
+			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
+		${! showWaitMark && wait?.width === undefined && wait?.height === undefined
+			? 'min-inline-size: 1em; min-block-size: 1em;' : ''}
 	`;
+	// [l]/[p]/[waitclick]待ち中のプロキシ要素をフォーカスの輪へ出し入れする（todo.md対応）。
+	//	BtnLayer.tsxの登録パターン（focusMng.add/remove）を踏襲。矢印キーでシステムボタン側から
+	//	ここへ戻って来られるようにするのが目的で、輪から出ている間（本文が進む・裏へ回る等）は
+	//	自動的に外れる。
+	//	`data-wait-focus`は[button]（BtnLayer.tsx）のspanと見分けるための目印：
+	//	E2Eの一部が`span[tabindex]`だけで[button]を拾っており、このプロキシも同じ
+	//	`tabIndex={0}`を持つため、区別が要る場所は`:not([data-wait-focus])`で除く
+	//	（test/e2e/btnpic.e2e.ts・pic.e2e.ts参照）
+	const waitRef = useRef<HTMLSpanElement>(null);
+	useEffect(()=> {
+		const el = waitRef.current;
+		if (! el || ! canFocusWait) return;
+
+		focusMng.add(el);
+		return ()=> focusMng.remove(el);
+	}, [canFocusWait]);
+	// Enter/Spaceでの決定＝本文クリックと同じ扱いにする。BtnLayer.tsxのonKeyDownと同じ理由で
+	//	stopPropagation()が要る：しないとMain.tsxのdocument直下Enterハンドラ（「何もフォーカスして
+	//	いない」前提で読み進める経路）まで二重に届き、1回のEnterで2行分進んでしまう。
+	//	clickイベントを合成発火して[link]と同じ経路（Stage.tsxルートdivのonClick）へ委譲することで、
+	//	読み進めロジック自体は本文クリックのものをそのまま再利用する
+	const onWaitKeyDown = (e: KeyboardEvent<HTMLSpanElement>)=> {
+		if (e.key !== 'Enter' && e.key !== ' ') return;
+
+		e.stopPropagation();
+		e.preventDefault();
+		waitRef.current?.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+	};
 	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。**書かれた時だけ**当てる。
 	//	省略時は本文の流れの中の位置・文字サイズなり（本家の既定もフォントサイズなので同じ絵）。
 	//	x/yは**ずらし**なので translate で表す——行の高さや隣の文字の位置を動かさないため
@@ -538,9 +579,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	return <>
 		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={styBox}>
 			<span ref={charsRef}></span>
-			{showWait && <span css={styWaitMark} style={styWaitPos}>{
+			{wantWaitEl && <span ref={waitRef} css={styWaitMark} style={styWaitPos}
+				{...canFocusWait ? {tabIndex: 0, onKeyDown: onWaitKeyDown, 'data-wait-focus': true} : {}}>{
+				! showWaitMark ? null
 				// プロジェクトに`breakline`/`breakpage`があればそれを、無ければ試作の絵文字を出す
-				waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
+				: waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
 				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom',
 					...wait!.width !== undefined || wait!.height !== undefined
 						? {width: '100%', height: '100%'} : {}}}/>

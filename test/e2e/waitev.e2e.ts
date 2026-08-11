@@ -114,8 +114,10 @@ test('[waitclick]はクリックで進み、[s]はクリックでは進まない
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('まった');
 	await waitIdle(page);	// **本文が出揃っても文字送りは続いている**。ここで待たないと次のキーが瞬時完了に食われる
 
-	// [waitclick]：待ちマーカーは出ないが、クリックで進む
-	expect((await snap(page)).wait).toBeNull();
+	// [waitclick]：待ちマーカー（見た目）は出ないが、クリックで進む。
+	//	store.waitはnullではない：[l]/[p]と同じくTxtLayerが「本文へフォーカスで戻れる
+	//	見えないプロキシ要素」を輪へ登録する入り口として使い回している（todo.md対応）
+	expect((await snap(page)).wait).toEqual({nm: 'mes', kind: 'waitclick'});
 	await page.keyboard.press('Space');
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('まったとまった');

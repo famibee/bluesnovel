@@ -12,7 +12,7 @@
 
 import type {Page} from '@playwright/test';
 
-export type T_WAIT = {nm: string; kind: 'l' | 'p'} | null;
+export type T_WAIT = {nm: string; kind: 'l' | 'p' | 'waitclick'} | null;
 export type T_BTN_SNAP = {nm: string; text: string; label: string; call?: boolean; fn?: string};
 export type T_LAY_SNAP = {
 	cls		: 'grp' | 'txt';

@@ -171,11 +171,13 @@ test('別フレームに前面から覆われている間、[frame disabled=]無
 	await advance(page, 'おおった');	// coverフレームがyesnoの手前(float=true)に重なる
 	await waitIdle(page);
 
-	// 覆われている間：8回動かしてもyesnoフレーム内には一度も入らず、b1/b2だけを回る
+	// 覆われている間：8回動かしてもyesnoフレーム内には一度も入らず、b1/b2と
+	//	現在の[p]待ちマーカー自身（bluesnovel独自の4経路目。todo.md対応。breakline/breakpage
+	//	画像が無いこのシナリオでは絵文字✅）だけを回る
 	for (let i = 0; i < 8; ++i) {
 		await page.keyboard.press('ArrowRight');
 		expect(await frmActiveId()).toBeNull();
-		expect(await activeText()).toMatch(/^ボタン[12]$/);
+		expect(await activeText()).toMatch(/^(ボタン[12]|✅)$/);
 	}
 	await page.keyboard.press('Escape');
 

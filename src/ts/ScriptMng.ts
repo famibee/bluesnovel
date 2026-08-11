@@ -1708,9 +1708,13 @@ export class ScriptMng {
 			if (ps) this.#pageLog.push(ps.fn, ps.idx, ps.mark, ps.clearOnResume);
 			this.#pageReplaying = false;	// 演じ直しはここで完了。以降はisPagingの実値どおりに戻す
 			this.#applyPaging();
-			// [l]/[p]待ち中マーカー表示（[s]/[waitclick]はマーカーなし＝上のsetWait(null)のままにする）
-			if (act.kind === 'l' || act.kind === 'p') {
-				const src = this.#srcBreak(act.kind);
+			// [l]/[p]待ち中マーカー表示（[s]はマーカーなし＝上のsetWait(null)のままにする）。
+			//	[waitclick]もマーカーは出さないが、setWaitは呼ぶ：TxtLayerがwait.nm===nmで
+			//	「今読み進め可能な停止中か」を判定し、本文へのフォーカス対象（見た目には出ない
+			//	プロキシ要素）を輪へ登録する入り口として使い回すため（todo.md「本文にフォーカスが
+			//	戻らず読み進められなくなる」不具合対応）
+			if (act.kind === 'l' || act.kind === 'p' || act.kind === 'waitclick') {
+				const src = act.kind === 'waitclick' ? undefined : this.#srcBreak(act.kind);
 				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {}), ...act.mark});
 			}
 			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる

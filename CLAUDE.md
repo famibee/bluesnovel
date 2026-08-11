@@ -83,29 +83,27 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 ## 規約
 
 - コメントとコミットメッセージは**日本語**。周囲のコメント密度に合わせる（このコードベースは特に本家との相違について厚く書Co-Authored-By署名は不要く）。
-- git add / git commit はユーザーが行う。作業完了時は最後にコミットメッセージ案を提示する
-  （実際のcommitは実行しない。ユーザーがそのまま使うか手直しするかを選べるように）。
-- **TODO は `.ts`/`.tsx` で `//TODO: ` の形ちょうど**（`//` の前に空白なし、コロンの後に 1 個）。
-  VSCode 拡張 *Todo+* がこの prefix しか拾わない。
-- **`todo.md`** がルートの作業計画（*Todo+* のチェックボックス形式、ほぼ優先度順）。セッション開始
-  時に読む。**終わった項目は `todo.md` に残さず `CHANGELOG.md` へ移す**。`CHANGELOG.md` 末尾付近の
-  単独の `- [ ]` マーカの位置に `- [x] …` ブロックを書き、後ろに空行 1 つ、**マーカはそのまま残す**
-  （次回も同じ手順で追記できるように）。同じ作業で `todo.md` からは消す。
+- git add / git commit はユーザーが行う。作業完了時は最後にコミットメッセージ案を提示。
+  - 実際のcommitは実行しない。ユーザーがそのまま使うか手直しするか判断。
+- **TODO は `.ts`/`.tsx` で `//TODO: ` の形で**（`//` の前に空白なし、コロンの後に 1 個）。
+  - VSCode 拡張 *Todo+* がこの prefix しか拾わない。
+- **`todo.md`** がルートの作業計画（*Todo+* のチェックボックス形式、ほぼ優先度順）。
+  - セッション開始時に読む。続きの作業、などがあればy/n確認してから着手。
+  - **終わった項目は `todo.md` に残さず `CHANGELOG.md` へ移す**。
+  - `CHANGELOG.md` 末尾付近の単独の `- [ ]` マーカの位置に `- [x] …` ブロックを書き、後ろに空行 1 つ、**マーカはそのまま残す**（次回も同じ手順で追記できるように）。同じ作業で `todo.md` からは消す。
 - **属性の既定値は 1 箇所**（エンジン入口の `case` か CSS、どちらか。両方には書かない）。判定基準・
   台帳は [ARCHITECTURE.md#属性の既定値](.claude/docs/ARCHITECTURE.md#属性の既定値) と
   `test/argdef_parity.test.ts`。
-- **strict TypeScript**（`tsconfig.json` 参照。`noUncheckedIndexedAccess` 等）。未使用引数は `_`
-  前置で許可（`noUnusedLocals`/`Parameters`）。
-- **serena MCP はこのプロジェクトでハングした実績がある**（タイムアウトを返しつつ処理は実行された
-  ことも）。まず軽い呼び出し（`get_current_config`）で生死を見る。タイムアウト後は再実行の前に
-  状態を確認する。シンボル系ツールは `activate_project`（`bluesnovel`）が先に要る。
+- **strict TypeScript**（`tsconfig.json` 参照。`noUncheckedIndexedAccess` 等）。未使用引数は `_`前置で許可（`noUnusedLocals`/`Parameters`）。
+- **serena MCP はこのプロジェクトでハングした実績がある**（タイムアウトを返しつつ処理は実行されたことも）。
+  - まず軽い呼び出し（`get_current_config`）で生死を見る。
+  - タイムアウト後は再実行の前に状態を確認する。
+  - シンボル系ツールは `activate_project`（`bluesnovel`）が先に要る。
 - リリースは `semantic-release` ＋ conventionalcommits プリセット。
 
 ## 参考資料
 
-- タグ仕様の正典は本家 `../skynovel_esm/src/sn/Grammar.ts`（`T_HTag` 型）と各 `hTag.<name>`
-  （`../skynovel_esm/src/sn/*.ts`）。サンプルは
-  [SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery)（機能別）と `../tmp_esm_uc/doc/prj/`
+- タグ仕様の正典は本家 `../skynovel_esm/src/sn/Grammar.ts`（`T_HTag` 型）と各 `hTag.<name>`（`../skynovel_esm/src/sn/*.ts`）。
+  - サンプルは [SKYNovel_gallery](https://github.com/famibee/SKYNovel_gallery)（機能別）と `../tmp_esm_uc/doc/prj/`
   （フルゲーム、本家形式）。詳細は [ARCHITECTURE.md#参考資料](.claude/docs/ARCHITECTURE.md#参考資料)。
-- **`test/uc_goal.test.ts`** がプロジェクトの到達目標（フルサンプルを `main.sn`→`title.sn` の `[s]`
-  までエンジンだけで走らせる）。兄弟チェックアウトが無ければ skip。タグを足したら走らせること。
+- **`test/uc_goal.test.ts`** がプロジェクトの到達目標（フルサンプルを `main.sn`→`title.sn` の `[s]`までエンジンだけで走らせる）。兄弟チェックアウトが無ければ skip。タグを足したら走らせること。

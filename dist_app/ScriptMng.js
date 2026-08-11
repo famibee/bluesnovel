@@ -4319,8 +4319,8 @@ var ye = 999e3, be = class {
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
-				if (this.#l = void 0, t && this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#d = !1, this.#f(), e.kind === "l" || e.kind === "p") {
-					let t = this.#Le(e.kind);
+				if (this.#l = void 0, t && this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#d = !1, this.#f(), e.kind === "l" || e.kind === "p" || e.kind === "waitclick") {
+					let t = e.kind === "waitclick" ? void 0 : this.#Le(e.kind);
 					this.$fncs.setWait({
 						nm: e.nm,
 						kind: e.kind,

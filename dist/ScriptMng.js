@@ -4445,8 +4445,8 @@ var Ce = 999e3, we = class {
 			case "loadScript": break;
 			case "stop": {
 				let e = this.#l;
-				if (this.#l = void 0, e && this.#c.push(e.fn, e.idx, e.mark, e.clearOnResume), this.#d = !1, this.#f(), t.kind === "l" || t.kind === "p") {
-					let e = this.#Le(t.kind);
+				if (this.#l = void 0, e && this.#c.push(e.fn, e.idx, e.mark, e.clearOnResume), this.#d = !1, this.#f(), t.kind === "l" || t.kind === "p" || t.kind === "waitclick") {
+					let e = t.kind === "waitclick" ? void 0 : this.#Le(t.kind);
 					this.$fncs.setWait({
 						nm: t.nm,
 						kind: t.kind,

@@ -758,6 +758,20 @@
   - `bunx tsc --noEmit --incremental false`・`bun test`（1666件green）で確認
   - `todo.md`「続き」の該当項目を消化
 
+- [x] **不具合修正：本文で左右キーでシステムボタンにフォーカスが移った後、本文へ戻れず読み進められなくなる**（2026-08-11）
+  - `todo.md`「挙動の詰め・実機確認」の残り1項目。矢印キーでシステムボタン（既読/オート/スキップ等の`mes_sysmenu`）へフォーカスが移ると、フォーカスの輪（`FocusMng.ts`）にはシステムボタンしか登録されておらず、輪の外（フォーカス無し＝本文読み進め可能な状態）へ戻る経路が無かった。唯一の回復手段は右クリックメニューの開閉（`[set_focus to=null]`が明示的に呼ばれる経路）だけ、という設計上の穴。本家`skynovel_esm`の`FocusMng.ts`/`main.sn`にも同じ構造・同じ`[event key=ArrowLeft/Right]`予約があり、bluesnovel固有のリグレッションではなく本家から継承した穴と確認した
+  - 修正方針：`[l]`/`[p]`待ち中のクリック待ち記号（`TxtLayer.tsx`の待ちマーカー）自体をフォーカスの輪へ加える（本家に無いbluesnovel独自の4経路目）。フォーカスが乗った状態でEnter/Spaceを押すと`click`イベントを合成発火して本文クリックと同じ経路（`Stage.tsx`ルートdivの`onClick`）へ委譲し、読み進めロジック自体は再利用する
+  - `[waitclick]`（マーカー非表示のクリック待ち）もカバーする必要があると判断した——マーカー表示専用フラグ（旧`showWait`）は`[waitclick]`では常にfalseになるため、それだけを条件にすると`[waitclick]`中は今回直したい不具合と同じ状態が残ってしまう。`store.tsx`の`T_WAIT.kind`へ`'waitclick'`を追加し、`ScriptMng.ts`の`case 'stop':`で`[waitclick]`でも`setWait()`を呼ぶよう変更（`src`は付けずマーカー自体は出さない）。`TxtLayer.tsx`側は「マーカーを描くか」（`showWaitMark`、`[l]`/`[p]`のみ）と「フォーカス登録するか」（`canFocusWait`、`[l]`/`[p]`/`[waitclick]`かつ`enabled`）を別フラグに分離した。`[waitclick]`では見た目に出ないプロキシ要素になるため、`getClientRects()`が0にならないよう`width`/`height`未指定時は`min-inline-size`/`min-block-size: 1em`のCSSで最小の当たり判定を確保
+  - Enter/Space処理で`e.stopPropagation()`が必須（`BtnLayer.tsx`と同じ理由）：しないと`Main.tsx`のdocument直下Enterハンドラ（「何もフォーカスしていない」前提で読み進める経路）まで二重に届き、1回のEnterで2行分進んでしまう
+  - フォーカスの輪へ新しいメンバー種別が増えたことで、既存のE2Eが2件想定外に壊れた（`focus.e2e.ts`の巡回テスト2件、輪の要素数が変わったため）：新メンバーを織り込んで期待値を更新。加えて`[l]`/`[p]`/`[waitclick]`のプロキシが`tabIndex={0}`を持つため、`span[tabindex]`だけで`[button]`を拾っていた既存E2E（`btnpic.e2e.ts`・`pic.e2e.ts`）とセレクタが衝突していたのを発見・修正：プロキシに`data-wait-focus`マーカーを付け、該当セレクタを`:not([data-wait-focus])`で絞った
+  - `waitev.e2e.ts`の「`[waitclick]`後は`store.wait`が`null`のまま」という既存アサーションも、設計変更（`[waitclick]`でも`setWait`を呼ぶ）に合わせて更新。同ファイルの別3件（`[enable_event enabled=false]`中に`x`キーで`*c2plike`へジャンプすると`clearOnResume`が効かず前ページの文字が残る）は`git stash`でこの変更前のコードに戻しても同じ結果になることを確認した**既存の別バグ**で、今回のスコープ外として手を付けていない
+  - `docs/tag.html`の`[set_focus]`欄へ、本家に無い4経路目としてこの挙動を追記
+  - `test/e2e/focus.e2e.ts`に新規1件（`[l]`待ちマーカーへ矢印キーで移動しEnterで読み進められることを確認。修正前のコードに戻すと実際に落ちることを確認済み）。E2E 234件→235件
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（前述の既存の別バグ3件と、並列実行時のみ再現する既知フレーク数件を除き全green。`git stash`で今回の変更前に戻して同条件で再実行し、フレーク・別バグとも今回の変更と無関係と確認済み）
+  - `playwright-cli`で`tmp_blues`実機（`localhost:5173`）に接続し確認：ゲーム開始直後の最初の`[l]`待ちで`Tab`を押すと新設のフォーカスプロキシ（`data-wait-focus`属性・アニメpngマーカーを持つ）へ実際にフォーカスが移り、続けて`Enter`を押すと本文が正しく次の行（「桜の樹の下に──は屍体が埋まつてゐる！」→「これは信じていいことなんだよ。…」）へ1行分だけ進むことを確認した
+  - 確認中に副産物として気付いた点：`ArrowRight`（`focusMng.next()`）が起点位置によって稀にフォーカスを見失う（`(none)`に落ちる）挙動があった。`Tab`（ブラウザネイティブ）や`ArrowLeft`（`focusMng.prev()`）では発生せず、`fireEvent`/`ScriptEngine.beginEvent`/`FocusMng.#move()`という**今回の変更が一切触れていない既存経路**の話で、同じ機構を合成`KeyboardEvent`で検証しているE2E（`focus.e2e.ts`ほか）でも再現しない。`playwright-cli`からの高速連続キー送信特有のタイミング起因の可能性が高いが確定はできておらず、`todo.md`へ別項目として残した（今回の不具合修正そのものとは無関係と判断し、このセッションでは深追いしていない）
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化。副産物の`ArrowRight`の件は新規項目として`todo.md`に残した
+
 - [ ]
 
 

@@ -1552,7 +1552,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>to</code>（<code>null</code>／<code>next</code>／<code>prev</code>）・
 	<code>add</code>／<code>del</code>（<code>'dom=フレームid:セレクタ'</code>書式）・<code>need_err</code>に対応。
 	輪へ入るのは本家と同じ3経路（表示中の[<a href="#button">button</a>]／
-	[<a href="#event">event</a>]<code>key='dom=…'</code>の最初の1件／<code>[set_focus add=…]</code>）で、
+	[<a href="#event">event</a>]<code>key='dom=…'</code>の最初の1件／<code>[set_focus add=…]</code>）に加え、
+	<b>bluesnovel独自の4経路目</b>として[<a href="#l">l</a>]/[<a href="#p">p</a>]/
+	[<a href="#waitclick">waitclick</a>]の待ち中も見た目には出ないプロキシ要素として輪に加わる
+	（本家はサポートしない。矢印キーでシステムボタンへフォーカスが移った後、本文へ戻って
+	読み進められなくなる不具合の対策。[<a href="#s">s</a>]の完全停止は対象外）。
 	<b>HTMLフレームの中の要素とステージ上のボタンが同じ輪に並ぶ</b>。<br/>
 	[<a href="#frame">frame</a>]<code>visible=false</code>で隠したフレームの中は飛ばす
 	（フレームの文書は自分が隠れていることを知らないので、親側のiframeまで遡って確かめている）。<br/>
