@@ -368,6 +368,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
 		${! showWaitMark && wait?.width === undefined && wait?.height === undefined
 			? 'min-inline-size: 1em; min-block-size: 1em;' : ''}
+		/* マウスクリックのネイティブなtabIndexフォーカスではブラウザ既定の矩形を出さない
+			（todo.md「格好悪い」対応）。ゲームパッド／矢印キーでの移動は分かりやすさのため出したい
+			ので、キー操作由来のときだけ立つdata-focus-ring（FocusMng.ts）がある時に限り出す */
+		outline: none;
+		&[data-focus-ring]:focus {
+			outline: 2px solid Highlight;
+			outline-offset: 2px;
+		}
 	`;
 	// [l]/[p]/[waitclick]待ち中のプロキシ要素をフォーカスの輪へ出し入れする（todo.md対応）。
 	//	BtnLayer.tsxの登録パターン（focusMng.add/remove）を踏襲。矢印キーでシステムボタン側から

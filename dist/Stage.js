@@ -10324,6 +10324,14 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			FocusMng.#canFocus()のgetClientRects()判定に落ちてフォーカスできなくなるため、
 			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
 		${!Te && W?.width === void 0 && W?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
+		/* マウスクリックのネイティブなtabIndexフォーカスではブラウザ既定の矩形を出さない
+			（todo.md「格好悪い」対応）。ゲームパッド／矢印キーでの移動は分かりやすさのため出したい
+			ので、キー操作由来のときだけ立つdata-focus-ring（FocusMng.ts）がある時に限り出す */
+		outline: none;
+		&[data-focus-ring]:focus {
+			outline: 2px solid Highlight;
+			outline-offset: 2px;
+		}
 	`, Ae = (0, z.useRef)(null), je = (0, z.useRef)(!1);
 	(0, z.useEffect)(() => {
 		let e = Ae.current;

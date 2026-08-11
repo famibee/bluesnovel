@@ -16,6 +16,28 @@
 - サブエージェント
 	- Claude Code には Explore・Plan・general-purpose といった組み込みのサブエージェントが用意されています。自分でカスタムサブエージェントを作ることも可能
 
+- [x] **ゲームパッドのスティック軸判定ヒステリシス（`GamepadMng.ts`）を実パッドで動作確認**（2026-08-11）
+  - ロジック修正・シミュレーションでの効果確認は同日の別エントリ（`## 2026/08/08`セクション内）で完了済み。実パッドでの最終確認だけが残っていたが、ユーザーが実機で確認済みと回答したため完了扱いとした
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
+- [x] **マウスクリックでも待ちマーカー（`[l]`/`[p]`）にフォーカス矩形が出て格好悪い件を修正**（2026-08-11）
+  - `FocusMng.ts`にキーボード/ゲームパッド操作かマウス操作かを判別する`modality`を追加（`globalThis`の
+    `keydown`/`pointerdown`をcapture段で見る。`document`だと`GamepadMng.ts`がフォーカス中要素の
+    無い時`globalThis`へdispatchするケースを取りこぼすため`window`側で拾う）。輪の要素へ`focus`
+    イベントが飛んだ瞬間にこれを見て、キー操作由来のときだけ`data-focus-ring`属性を立てる
+  - `TxtLayer.tsx`の`styWaitMark`に`outline: none`＋`&[data-focus-ring]:focus`だけアウトラインを
+    出すCSSを追加。マウスのネイティブなtabIndexフォーカス（クリック起因、JSから`.focus()`を呼ばない
+    分）では出ず、`FocusMng`が`el.focus()`する経路（矢印キー・ゲームパッドの合成keydown）では出る
+  - `:focus-visible`への単純置換は見送った：Chromiumは`span`等の汎用要素に対してクリックでも
+    `:focus-visible`をtrueにするヒューリスティックがあり、ゲームパッド由来の合成イベント
+    （`isTrusted:false`）も入力モダリティ判定の対象外になりうるため、アプリ側で経路を明示的に
+    区別する既存の設計（`isTrusted`分岐と同じ思想）に揃えた
+  - 実機確認は`playwright-cli`で`prj=basic`（マウスクリック→`outlineStyle: none`）と`prj=frame`の
+    `ふぉーかす`シーン（矢印キー→`outlineStyle: solid`）の両方で確認。既存`focus.e2e.ts`全10件もパス
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
+- [ ]
+
 
 ## 2026/08/02
 
@@ -791,10 +813,9 @@
   - **実パッドでの最終確認は未了**（`Gamepad API`のエミュレーションがPlaywrightに無いため、`#pollAxis()`のポーリングそのものは実機でしか検証できない。ロジック上の欠陥修正とシミュレーションでの効果確認に留まる）。`todo.md`「挙動の詰め・実機確認」へ確認項目を追加した
   - `todo.md`の該当項目を消化
 
-- [ ]
-
-
-
+- [x] **不具合修正：タイトルの【最初から】をゲームパッドで決定した際、ツールチップが`[trans]`後も残る**（2026-08-11）
+  - 右クリックメニューのゲームパッド調査（`488c5cc`コミット）で見つけた副産物。`BtnLayer.tsx`の`onClick`は`hintMng.hide()`で決定と同時にツールチップを消しているが、`onKeyDown`（Enter／Space決定。ゲームパッドのOKボタンもここを通る）には無かった非対称が原因
+  - `onKeyDown`に`onClick`と同じ`hintMng.hide()`を追加して揃えた（コード自体は`488c5cc`で対応済みだったが、当時のCHANGELOG追記から漏れていたため`todo.md`棚卸し時に追記）
 
 - 画像やスクリプト・htmlフレームなどの復号化対応（暗号化は拡張機能が担当）
 

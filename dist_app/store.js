@@ -1,7 +1,14 @@
 import { r as e } from "./rolldown-runtime.js";
 import { o as t } from "./CmnLib.js";
 import { t as n } from "./react.js";
-var r = new class e {
+//#region src/ts/FocusMng.ts
+var r = "mouse";
+globalThis.addEventListener("keydown", () => {
+	r = "keyboard";
+}, { capture: !0 }), globalThis.addEventListener("pointerdown", () => {
+	r = "mouse";
+}, { capture: !0 });
+var i = new class e {
 	#e = [];
 	#t = -1;
 	static #n(t) {
@@ -29,19 +36,19 @@ var r = new class e {
 	add(t) {
 		if (this.#e.includes(t)) return;
 		let n = () => {
-			this.#t = this.#e.indexOf(t);
+			this.#t = this.#e.indexOf(t), r === "keyboard" ? t.dataset.focusRing = "true" : delete t.dataset.focusRing;
 		};
 		t.addEventListener("focus", n);
-		let r = () => {
+		let i = () => {
 			t.removeEventListener("focus", n);
-		}, i = e.#o(t);
-		if (i) {
-			let a = e.#s(t, i);
-			r = () => {
-				t.removeEventListener("focus", n), a();
+		}, a = e.#o(t);
+		if (a) {
+			let r = e.#s(t, a);
+			i = () => {
+				t.removeEventListener("focus", n), r();
 			};
 		}
-		this.#i.set(t, r), this.#e.push(t);
+		this.#i.set(t, i), this.#e.push(t);
 	}
 	static #o(t) {
 		let n = t;
@@ -126,36 +133,36 @@ var r = new class e {
 	blur() {
 		this.#e[this.#t]?.blur(), this.#t = -1, document.activeElement?.blur(), globalThis.focus();
 	}
-}(), i = /* @__PURE__ */ e(n(), 1), a = {
+}(), a = /* @__PURE__ */ e(n(), 1), o = {
 	normal: "normal",
 	add: "plus-lighter",
 	multiply: "multiply",
 	screen: "screen"
 };
-function o(e) {
-	let t = a[e];
+function s(e) {
+	let t = o[e];
 	if (!t) throw `${e} はサポートされない blendmode です`;
 	return t;
 }
 //#endregion
 //#region src/ts/Filter.ts
-function s(e, t, n) {
+function c(e, t, n) {
 	let r = e[t];
 	if (r === void 0) return n;
 	let i = r.startsWith("0x") ? parseInt(r.slice(2), 16) : Number(r);
 	if (!Number.isFinite(i)) throw `[add_filter] ${t}の値が不正です：${r}`;
 	return i;
 }
-var c = {
-	blur: (e) => `blur(${String(s(e, "strength", 8))}px)`,
-	brightness: (e) => `brightness(${String(s(e, "b", .5))})`,
+var l = {
+	blur: (e) => `blur(${String(c(e, "strength", 8))}px)`,
+	brightness: (e) => `brightness(${String(c(e, "b", .5))})`,
 	black_and_white: () => "grayscale(1)",
 	negative: () => "invert(1)",
-	saturate: (e) => `saturate(${String(1 + s(e, "amount", .5))})`,
+	saturate: (e) => `saturate(${String(1 + c(e, "amount", .5))})`,
 	sepia: () => "sepia(1)"
-}, l = ["noise"], u = {
+}, u = ["noise"], d = {
 	grayscale: (e) => {
-		let t = s(e, "scale", .5);
+		let t = c(e, "scale", .5);
 		return [
 			t,
 			t,
@@ -180,7 +187,7 @@ var c = {
 		];
 	},
 	contrast: (e) => {
-		let t = s(e, "amount", .5) + 1, n = -.5 * (t - 1);
+		let t = c(e, "amount", .5) + 1, n = -.5 * (t - 1);
 		return [
 			t,
 			0,
@@ -205,7 +212,7 @@ var c = {
 		];
 	},
 	hue: (e) => {
-		let t = s(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), i = 1 / 3, a = Math.sqrt(i);
+		let t = c(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), i = 1 / 3, a = Math.sqrt(i);
 		return [
 			n + (1 - n) * i,
 			i * (1 - n) - a * r,
@@ -384,7 +391,7 @@ var c = {
 		0
 	],
 	tint: (e) => {
-		let t = s(e, "f_color", 8947848);
+		let t = c(e, "f_color", 8947848);
 		return [
 			(t >> 16 & 255) / 255,
 			0,
@@ -409,7 +416,7 @@ var c = {
 		];
 	},
 	night: (e) => {
-		let t = s(e, "intensity", .5);
+		let t = c(e, "intensity", .5);
 		return [
 			t * -2,
 			-t,
@@ -434,7 +441,7 @@ var c = {
 		];
 	},
 	predator: (e) => {
-		let t = s(e, "amount", .5);
+		let t = c(e, "amount", .5);
 		return [
 			11.224130630493164 * t,
 			-4.794486999511719 * t,
@@ -459,7 +466,7 @@ var c = {
 		];
 	},
 	color_tone: (e) => {
-		let t = s(e, "desaturation", .5), n = s(e, "toned", .5), r = s(e, "light_color", 16770432), i = s(e, "dark_color", 16770432), a = (r >> 16 & 255) / 255, o = (r >> 8 & 255) / 255, c = (r & 255) / 255, l = (i >> 16 & 255) / 255, u = (i >> 8 & 255) / 255, d = (i & 255) / 255;
+		let t = c(e, "desaturation", .5), n = c(e, "toned", .5), r = c(e, "light_color", 16770432), i = c(e, "dark_color", 16770432), a = (r >> 16 & 255) / 255, o = (r >> 8 & 255) / 255, s = (r & 255) / 255, l = (i >> 16 & 255) / 255, u = (i >> 8 & 255) / 255, d = (i & 255) / 255;
 		return [
 			.3,
 			.59,
@@ -468,7 +475,7 @@ var c = {
 			0,
 			a,
 			o,
-			c,
+			s,
 			t,
 			0,
 			l,
@@ -478,7 +485,7 @@ var c = {
 			0,
 			a - l,
 			o - u,
-			c - d,
+			s - d,
 			0,
 			0
 		];
@@ -492,85 +499,85 @@ var c = {
 			return e;
 		}
 		return [
-			s(e, "rtor", 1),
-			s(e, "gtor", 0),
-			s(e, "btor", 0),
-			s(e, "ator", 0),
-			s(e, "pr", 0),
-			s(e, "rtog", 0),
-			s(e, "gtog", 1),
-			s(e, "btog", 0),
-			s(e, "atog", 0),
-			s(e, "pg", 0),
-			s(e, "rtob", 0),
-			s(e, "gtob", 0),
-			s(e, "btob", 1),
-			s(e, "atob", 0),
-			s(e, "pb", 0),
-			s(e, "rtoa", 0),
-			s(e, "gtoa", 0),
-			s(e, "btoa", 0),
-			s(e, "atoa", 1),
-			s(e, "pa", 0)
+			c(e, "rtor", 1),
+			c(e, "gtor", 0),
+			c(e, "btor", 0),
+			c(e, "ator", 0),
+			c(e, "pr", 0),
+			c(e, "rtog", 0),
+			c(e, "gtog", 1),
+			c(e, "btog", 0),
+			c(e, "atog", 0),
+			c(e, "pg", 0),
+			c(e, "rtob", 0),
+			c(e, "gtob", 0),
+			c(e, "btob", 1),
+			c(e, "atob", 0),
+			c(e, "pb", 0),
+			c(e, "rtoa", 0),
+			c(e, "gtoa", 0),
+			c(e, "btoa", 0),
+			c(e, "atoa", 1),
+			c(e, "pa", 0)
 		];
 	}
 };
-function d(e) {
+function f(e) {
 	let t = 0, n = e.join(",");
 	for (let e = 0; e < n.length; ++e) t = Math.imul(t, 31) + n.charCodeAt(e) | 0;
 	return `sn_cm_${(t >>> 0).toString(36)}`;
 }
-var f = (e) => e.join(" ");
-function p([e, t]) {
+var p = (e) => e.join(" ");
+function m([e, t]) {
 	return `sn_gb_${String(e)}_${String(t)}`;
 }
-var m = ([e, t]) => `${String(e)} ${String(t)}`;
-function h(e) {
-	let { filter: n = "" } = e, r = e.blendmode === void 0 ? void 0 : o(e.blendmode), i = (e.enable_filter ?? "true") !== "false";
+var h = ([e, t]) => `${String(e)} ${String(t)}`;
+function g(e) {
+	let { filter: n = "" } = e, r = e.blendmode === void 0 ? void 0 : s(e.blendmode), i = (e.enable_filter ?? "true") !== "false";
 	if (n === "blur" && (e.blur_x !== void 0 || e.blur_y !== void 0)) {
-		let n = [t(s(e, "blur_x", 2)), t(s(e, "blur_y", 2))];
+		let n = [t(c(e, "blur_x", 2)), t(c(e, "blur_y", 2))];
 		return {
-			css: `url(#${p(n)})`,
+			css: `url(#${m(n)})`,
 			enabled: i,
 			blurXY: n,
 			...r === void 0 ? {} : { blendmode: r }
 		};
 	}
-	let a = u[n];
+	let a = d[n];
 	if (a) {
 		let t = a(e);
 		return {
-			css: `url(#${d(t)})`,
+			css: `url(#${f(t)})`,
 			enabled: i,
 			mat: t,
 			...r === void 0 ? {} : { blendmode: r }
 		};
 	}
-	let f = c[n];
-	if (!f) throw l.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
+	let o = l[n];
+	if (!o) throw u.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
-		css: f(e),
+		css: o(e),
 		enabled: i,
 		...r === void 0 ? {} : { blendmode: r }
 	};
 }
-function g(e) {
+function ee(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
 function _(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function ee(e) {
+function v(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function v(e) {
+function y(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var y = [
+var b = [
 	"visible",
 	"alpha",
 	"left",
@@ -589,21 +596,21 @@ var y = [
 	"blendmode",
 	"aFlt"
 ];
-function b(e) {
+function x(e) {
 	let t = {};
 	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left)}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top)}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : ee(e.aFlt));
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : v(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = v(e.aFlt);
+		let n = y(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-var x = !1, S = () => {
-	x = !0;
-}, C = () => {
-	x = !1;
-}, w = () => x, T = {
+var S = !1, C = () => {
+	S = !0;
+}, w = () => {
+	S = !1;
+}, T = () => S, E = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -613,7 +620,7 @@ var x = !1, S = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, E = {
+}, D = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -623,26 +630,26 @@ var x = !1, S = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, D = /[{\s.,*]/, O = (e, t, n, r) => {
+}, O = /[{\s.,*]/, k = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function k(e, t, n) {
+function te(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (D.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (O.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: O(e, "wait", t.wait, 500),
-			alpha: O(e, "alpha", t.alpha, 0),
+			wait: k(e, "wait", t.wait, 500),
+			alpha: k(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: O(e, "scale_x", t.scale_x, 1),
-			scale_y: O(e, "scale_y", t.scale_y, 1),
-			rotate: O(e, "rotate", t.rotate, 0),
+			scale_x: k(e, "scale_x", t.scale_x, 1),
+			scale_y: k(e, "scale_y", t.scale_y, 1),
+			rotate: k(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
@@ -877,8 +884,8 @@ var R = class {
 	return a;
 }, U = ((e) => e ? H(e) : H), W = (e) => e;
 function G(e, t = W) {
-	let n = i.useSyncExternalStore(e.subscribe, i.useCallback(() => t(e.getState()), [e, t]), i.useCallback(() => t(e.getInitialState()), [e, t]));
-	return i.useDebugValue(n), n;
+	let n = a.useSyncExternalStore(e.subscribe, a.useCallback(() => t(e.getState()), [e, t]), a.useCallback(() => t(e.getInitialState()), [e, t]));
+	return a.useDebugValue(n), n;
 }
 var K = (e) => {
 	let t = U(e), n = (e) => G(t, e);
@@ -917,14 +924,14 @@ function $(e, t, n) {
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var te = q()((e, t) => ({
+var ne = q()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
 	aPage: [[], []],
 	foreIdx: 0,
-	hChIn: { default: T },
-	hChOut: { default: E },
+	hChIn: { default: E },
+	hChOut: { default: D },
 	defChStyle: ({ kind: t, nm: n, sty: r }) => e((e) => t === "in" ? { hChIn: {
 		...e.hChIn,
 		[n]: r
@@ -983,7 +990,7 @@ var te = q()((e, t) => ({
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
 		if (!i) throw `存在しないレイヤ ${e} です`;
 		let a = {};
-		for (let e of y) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
+		for (let e of b) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
 		return a;
 	},
 	getPages: () => {
@@ -1020,7 +1027,7 @@ var te = q()((e, t) => ({
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
-			for (let t of y) t !== "visible" && delete e[t];
+			for (let t of b) t !== "visible" && delete e[t];
 			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, i = (e) => {
 			if (!t) {
@@ -1156,6 +1163,6 @@ var te = q()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { r as S, _, V as a, g as b, M as c, w as d, S as f, m as g, p as h, B as i, k as l, h as m, te as n, R as o, b as p, z as r, T as s, Y as t, C as u, d as v, o as x, f as y };
+export { i as S, _, V as a, ee as b, M as c, T as d, C as f, h as g, m as h, B as i, te as l, g as m, ne as n, R as o, x as p, z as r, E as s, Y as t, w as u, f as v, s as x, p as y };
 
 //# sourceMappingURL=store.js.map

@@ -18,6 +18,19 @@
 //	Reactのツリーからも（BtnLayer）DOM側からも（ScriptMng）触るため。
 //	Lay.tsのドラッグ通知と同じ流儀
 
+// 直近の入力がキーボード（ゲームパッド含む）かマウスか。輪の要素へfocusイベントが飛んで来た瞬間に
+//	これを見て、キー操作由来のときだけ`data-focus-ring`を立てる（todo.md「マウスクリックでも
+//	待ちマーカーにフォーカス矩形が出て格好悪い」対応。ゲームパワードはブラウザ既定の
+//	フォーカスリングと同じ扱いのままでよい、という要望）。マウスのネイティブなtabIndexフォーカス
+//	（JSから`.focus()`を呼ばない、クリックしただけで乗る分）はここで弾く。
+//	ゲームパッドはGamepadMng.tsが`isTrusted:false`の合成KeyboardEventを飛ばすため`isTrusted`
+//	では判別できず、keydown/pointerdownという**イベント種別**で見分ける。
+//	`globalThis`のcapture段で拾うのは、GamepadMng.tsがフォーカス中要素が無い時`globalThis`へ
+//	dispatchすることがあり（`window`はdocumentの祖先だが逆はなく、documentで張ると取りこぼす）
+let modality: 'mouse' | 'keyboard' = 'mouse';
+globalThis.addEventListener('keydown', ()=> {modality = 'keyboard'}, {capture: true});
+globalThis.addEventListener('pointerdown', ()=> {modality = 'mouse'}, {capture: true});
+
 export class FocusMng {
 	#aEl	: HTMLElement[] = [];
 	#idx	= -1;
@@ -82,8 +95,13 @@ export class FocusMng {
 	add(el: HTMLElement) {
 		if (this.#aEl.includes(el)) return;	// 重複チェック（本家と同じ）
 
-		// 輪の外から（クリックやTabで）フォーカスが移った時も現在位置を合わせておく
-		const fnc = ()=> {this.#idx = this.#aEl.indexOf(el)};
+		// 輪の外から（クリックやTabで）フォーカスが移った時も現在位置を合わせておく。
+		//	`data-focus-ring`はキー操作由来のフォーカスだけ立てる目印（TxtLayer.tsxのstyWaitMarkが見る）
+		const fnc = ()=> {
+			this.#idx = this.#aEl.indexOf(el);
+			if (modality === 'keyboard') el.dataset.focusRing = 'true';
+			else delete el.dataset.focusRing;
+		};
 		el.addEventListener('focus', fnc);
 		let off = ()=> {el.removeEventListener('focus', fnc)};
 
