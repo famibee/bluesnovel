@@ -705,6 +705,20 @@
   - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1665件green）・`bun run test:e2e`（227件green）で確認
   - `todo.md`「タグ・変数の残り」の当該項目を消化。ゲームパッド実機でのポーリング自体の確認は別途必要なため「挙動の詰め・実機確認」へ1行残した
 
+- [x] **ゲームパッドのキャンセルボタン対応と`[enable_event]`のフォーカス漏れ修正**（2026-08-11）
+  - `todo.md`「`[set_focus]`のゲームパッド対応を実パッドで確認」の残り2項目。マウス右クリック相当の機能要望と、`[enable_event]`の状態をフォーカス管理が見ていない疑いの2件
+  - **ゲームパッドの奇数番ボタン**：`src/ts/GamepadMng.ts`は本家`EventMng.ts:306-316`の移植で奇数ボタンから`'middleclick'`を発火していたが、`tmp_blues`/`tmp_esm_uc`どちらのテンプレも枠（アルバム・設定・履歴・確認ダイアログ）の「閉じる」は`[event key=rightclick]`にしか予約しておらず、`middleclick`はどこからも予約されていなかった＝実質何も起きなかった。マウス右クリックのできない環境（十字+ABの最小I/Fでのプレイ等、寝たきり障害者のかたのプレイも想定）でもキャンセル操作が効くよう、本家から意図的に外れて`rightclick`を発火するよう変更（`GamepadMng.ts#onButtonDown`）
+  - **`[enable_event enabled=false]`のフォーカス漏れ**：`TxtLayer.tsx`は`enabled=false`の間`pointer-events: none`でマウスクリックを止めるだけで、`BtnLayer.tsx`の`focusMng.add()`は`enabled`を見ずに常時登録していた。このため無効化中でもキーボード／ゲームパッドのフォーカスは輪に残り、Enterで押せてしまっていた（実例：`tmp_blues/doc/prj/theme/title.sn:32`のクリック待ちオーバーレイ`mes_c2p`表示中でもタイトルボタンにフォーカスできてしまい、`*c2p`の`[waitclick]`待ちを迂回してしまう結果`_c2p`が残ったまま消えない不具合／設定画面表示中でもタイトルボタンにフォーカスできてしまう不具合）。`BtnLayer`に層側の`enabled`（`[enable_event]`）とボタン自身の`enabled`（`[button enabled=]`）のANDを`isEnabled`として持たせ、`focusMng.add/remove`をマウント／アンマウントだけでなく`isEnabled`の変化でも出し入れするようにした。`onClick`/`onKeyDown`にも`isEnabled`ガードを追加（ネイティブフォーカスが無効化前から残っているケースの保険）。`tabIndex`も`isEnabled`に連動
+  - `test/e2e/app/prj_wait/main.sn`に`[set_focus]`の矢印キー予約を追加、`test/e2e/waitev.e2e.ts`に新規2件（無効化中はフォーカスの輪から外れる／再有効化でフォーカス経由でも押せる）。修正前のコードに戻して新規テストが実際に落ちることを確認済み
+  - ここまでを`tmp_blues`実機（`vite`でブラウザ起動、`playwright-cli`スキルで操作）で確認してもらったところ、追加で2件見つかった：
+  - **裏ページの重複ボタンがフォーカスの輪に残っていた**：タイトル画面で見えているボタンは4つなのに、矢印キーで巡ると8箇所止まる感触があるという報告。実機で調べると、`aPage`のもう片面（裏ページ。`[button]`は既定`page=back`で組んでから`[trans]`が表へ出す本家流儀）に同じ4ボタンが`visibility: hidden`のまま重なって残っていた（`[trans]`を挟んだ場面転換や、`ext_lang`経由で`*redraw`が2回走る初回起動時などに、旧表ページの内容がそのまま新しい裏ページへ回るため）。`FocusMng.#canFocus()`の非表示判定は`getClientRects().length===0`だけで、これは`display:none`は弾けても**`visibility:hidden`は非0のまま返る**ため素通りしていた。`el.checkVisibility({checkVisibilityCSS: true})`を追加して弾く（`checkVisibility()`は既定で`visibility`プロパティを見ないオプション仕様なので明示指定が要る。一度`checkVisibilityCSS`無しで入れて実機確認したところ変化が無く、原因を突き止めて追加した）
+  - **`[waitclick]`中、何もフォーカスしていないとEnter（ゲームパッドのOKボタン）で進めない**：`_c2p`（クリック待ちオーバーレイ）から進められないという報告。調べると実際のクリック／物理Spaceキーでは問題なく進めており（`prj_wait`に`*c2p`と同じ形の再現シナリオを追加して確認）、本当の原因は別にあった——本家`Reading.fire()`は予約の無い`'enter'`でも`em instanceof Container`（＝特定のUI部品ではなくステージ自体にフォーカスがある状態）ならクリック相当を発火する（`EventMng.ts:435`）のに対し、`Main.tsx`の`useKey`は`Space`/`ArrowDown`/`PageDown`/`PageUp`しか読み進めキーとして扱っておらず`Enter`が無かった。`switch (e.code)`へ`case 'Enter':`をSpaceと同じ扱いで追加した（フォーカス中の`[button]`・フレーム内部品は自前でEnterを処理し`stopPropagation()`するので、ここまで来る時点で「何もフォーカスしていない」ことが確定しており競合しない）
+  - ↑だけでは直っていない、という再報告を受けてさらに追った。原因は`GamepadMng.ts`の`#dispatchKey()`：`new KeyboardEvent('keydown', {key})`と`key`しか渡しておらず、**`code`は`key`から自動導出されず空文字のまま**になる。実キーボードのEnterは`e.code`が自動で`'Enter'`になるので気付けなかったが（`page.keyboard.press('Enter')`で確認したE2Eテストも同じ理由で偽陰性になっていた）、合成イベント側は`switch (e.code)`の`case 'Enter':`に一度も一致していなかった。`axisToKey()`と同じ流儀でinit生成を`keyEventInit()`として純関数に切り出し、`code`も`key`と同じ値を渡すようにした（このモジュールが送る`ArrowUp/Down/Left/Right`・`Enter`はどれも無修飾なら`key`と`code`が同じ文字列になる規格なので単純に揃えるだけでよい）
+  - 2件目の追加で`test/e2e/sys.e2e.ts`の既存テスト「修飾キー無しのEnterでは...は引けない」が想定と逆になった（Enterが読み進めキーになったため）。本来の主眼（`alt+enter`のような修飾キー付き予約が無修飾のEnterでは引けないこと）は残しつつ、期待値と説明を新しい挙動に合わせて更新
+  - `test/e2e/app/prj_wait/main.sn`に`*c2p`と同じ形（`[enable_event enabled=false]`中の`[waitclick]`）の再現シナリオを追加、`test/e2e/waitev.e2e.ts`に新規3件（クリックで進む／実キーボードのEnterで進む／`GamepadMng`と同じ形の合成KeyboardEventのEnterで進む）、`test/GamepadMng.test.ts`に`keyEventInit()`の回帰テストを追加。いずれも修正前のコードに戻して実際に落ちることを確認済み
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（全232件green）で確認。`tmp_blues`実機でも矢印キー4回で正しく一周することを確認済み
+  - `todo.md`「`[set_focus]`のゲームパッド対応を実パッドで確認」の該当2項目を消化。今回の追加2件も含め、ロジックはE2E（合成`KeyboardEvent`）と`tmp_blues`実機のブラウザ確認で見ており、実パッドでの最終確認は別途要る
+
 - [ ]
 
 

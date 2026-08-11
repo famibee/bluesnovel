@@ -10044,8 +10044,8 @@ function yu(e, t, n, r) {
 	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y;
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || t.x !== 1 || t.y !== 1) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
 }
-function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: s }) {
-	let c = gu`
+function bu({ text: e, label: t, call: n, fn: r, sty: i, enabled: a, onActivate: s, onSe: c }) {
+	let l = a && i?.enabled !== !1, u = gu`
 		position: relative;
 		z-index: 2;
 
@@ -10084,78 +10084,78 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: s 
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
 		${i?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
-	`, l = (e, t) => {
-		if (i?.enabled === !1) return;
+	`, d = (e, t) => {
+		if (!l) return;
 		let n = i?.[e];
-		n && s(n, i?.[t] ?? "SYS");
-	}, u = (e) => {
-		e.stopPropagation(), mu.hide(), l("clickse", "clicksebuf"), a(t, n ?? !1, r);
-	}, d = () => {
-		i?.hint && mu.show(h.current, i.hint, i.hint_style, i.hint_opt);
-	}, f = () => {
-		d(), l("enterse", "entersebuf");
+		n && c(n, i?.[t] ?? "SYS");
+	}, f = (e) => {
+		e.stopPropagation(), l && (mu.hide(), d("clickse", "clicksebuf"), s(t, n ?? !1, r));
 	}, p = () => {
-		mu.hide(), l("leavese", "leavesebuf");
-	}, h = (0, z.useRef)(null);
+		i?.hint && mu.show(_.current, i.hint, i.hint_style, i.hint_opt);
+	}, h = () => {
+		p(), d("enterse", "entersebuf");
+	}, g = () => {
+		mu.hide(), d("leavese", "leavesebuf");
+	}, _ = (0, z.useRef)(null);
 	(0, z.useEffect)(() => {
-		let e = h.current;
-		if (e) return o.add(e), () => o.remove(e);
-	}, []);
-	let [g, _] = (0, z.useState)({
+		let e = _.current;
+		if (!(!e || !l)) return o.add(e), () => o.remove(e);
+	}, [l]);
+	let [v, y] = (0, z.useState)({
 		x: 1,
 		y: 1
-	}), v = i?.pic ? i.src ?? "" : "", [y, b] = (0, z.useState)(null);
+	}), b = i?.pic ? i.src ?? "" : "", [x, S] = (0, z.useState)(null);
 	(0, z.useEffect)(() => {
-		if (!v) {
-			b(null);
+		if (!b) {
+			S(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && b({
+			e && S({
 				w: t.naturalWidth / 3,
 				h: t.naturalHeight
 			});
-		}, t.src = v, () => {
+		}, t.src = b, () => {
 			e = !1;
 		};
-	}, [v]);
-	let x = i?.b_pic ? i.b_src ?? "" : "", [S, C] = (0, z.useState)(null);
+	}, [b]);
+	let C = i?.b_pic ? i.b_src ?? "" : "", [w, T] = (0, z.useState)(null);
 	return (0, z.useEffect)(() => {
-		if (!x) {
-			C(null);
+		if (!C) {
+			T(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && C({
+			e && T({
 				w: t.naturalWidth,
 				h: t.naturalHeight
 			});
-		}, t.src = x, () => {
+		}, t.src = C, () => {
 			e = !1;
 		};
-	}, [x]), (0, z.useLayoutEffect)(() => {
-		let e = h.current;
+	}, [C]), (0, z.useLayoutEffect)(() => {
+		let e = _.current;
 		if (!e) {
-			_({
+			y({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		if (i?.pic) {
-			_({
+			y({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		let t = () => {
-			let { w: t, h: r } = vu(i, y, S), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
+			let { w: t, h: r } = vu(i, x, w), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
 			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
 			let c = e.offsetWidth, l = e.offsetHeight;
-			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), _({
+			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), y({
 				x: c > 0 ? t / c : 1,
 				y: l > 0 ? r / l : 1
 			});
@@ -10166,19 +10166,19 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, onActivate: a, onSe: s 
 		i?.width,
 		i?.height,
 		i?.pic,
-		S
+		w
 	]), /* @__PURE__ */ M("span", {
-		css: c,
-		style: i ? yu(i, g, y, S) : void 0,
-		ref: h,
-		tabIndex: 0,
-		onClick: u,
+		css: u,
+		style: i ? yu(i, v, x, w) : void 0,
+		ref: _,
+		tabIndex: l ? 0 : -1,
+		onClick: f,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l("clickse", "clicksebuf"), a(t, n ?? !1, r));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l && (d("clickse", "clicksebuf"), s(t, n ?? !1, r)));
 		},
-		onMouseEnter: f,
-		onMouseLeave: p,
-		onFocus: d,
+		onMouseEnter: h,
+		onMouseLeave: g,
+		onFocus: p,
 		onBlur: () => mu.hide(),
 		children: e
 	});
@@ -10478,6 +10478,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
+				enabled: j,
 				onActivate: F,
 				onSe: te
 			}, e.nm))
@@ -10492,6 +10493,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				sty: e.sty,
+				enabled: j,
 				onActivate: F,
 				onSe: te
 			}, e.nm))

@@ -7,11 +7,11 @@
 
 ## 続き（次回セッションはここから）
 
-2026-08-10セッションで「fullscreen時のレターボックス位置」修正、「`tmp_blues`/`tmp_esm_uc`表示
-差異の網羅確認テスト化」（`test/e2e/uc.e2e.ts`）、「`s_right`/`s_bottom`が効かない不具合」の修正、
-「フィルターの本家実機比較」とそこで見つかった`hue`属性名バグ・`contrast`/`grayscale`の数式
-不一致の修正が完了（詳細はCHANGELOG.md）。次に手を付けるものは特に決まっていない。
-「タグ・変数の残り」または「挙動の詰め・実機確認」から任意に選んでよい。
+2026-08-11セッションで「ゲームパッドのキャンセルボタン（奇数番ボタン）が`rightclick`を発火する
+よう変更」「`[enable_event enabled=false]`の間はボタンがフォーカスの輪からも外れるよう修正
+（`title.sn:32`の`_c2p`残留・設定画面でのフォーカス漏れの2件を解消）」が完了（詳細はCHANGELOG.md）。
+次に手を付けるものは特に決まっていない。「タグ・変数の残り」または「挙動の詰め・実機確認」から
+任意に選んでよい。
 
 ## 進め方
 
@@ -22,6 +22,23 @@
 実装が要るのはその中身のタグのみ。`[notice]` はプロジェクト側プラグインなので対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 ギャラリー（<https://github.com/famibee/SKYNovel_gallery>）の `public/prj/<機能>/` が機能ごとの仕様。
+
+## 挙動の詰め・実機確認
+
+- [ ] **`[set_focus]`のゲームパッド対応を実パッドで確認**（`src/ts/GamepadMng.ts`。ロジックは
+      単体テスト・E2E（合成`KeyboardEvent`での駆動）でしか確認していない。Playwrightに
+      Gamepad APIのエミュレーションが無いため、`navigator.getGamepads()`のrAFポーリングが
+      実パッドを拾えるかは実機のみで確認可能）
+  - [x] （USB実パッドで確認済）`tmp_blues`等でパッド接続→スティックでフォーカスが移動し、ボタンでEnter/クリック相当が発火するか
+  - [x] `[set_focus add=…]`で追加したフレーム内の`range`/`text`/ラジオ/チェックボックスがパッドで操作できるか
+- [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
+  - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
+  - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
+  - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
+- [ ] 文字送りの速さを`tmp_blues`実機（実アセット）で体感確認。`sys:sn.tagCh.msecWait`（既定10ms）・
+      `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
+      （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
+      2026-08-10参照）。残っているのは実アセット・実際の読書体感としての確認
 
 ## タグ・変数の残り
 
@@ -37,30 +54,6 @@
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
 - [ ] `max_row`（最大行数を超えたら自動改ページ）・`break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
-- [ ] `[link]`の残り：`onenter`/`onleave`（本家はラベルをコールし`[return]`で戻る仕様。素朴に`[button call=true]`と同じ経路（`callToLabel`→通常のstep実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまうバグになる——`[return]`後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを`[return]`まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する必要があり、`[button]`と共通の中規模な追加実装になる。`global`は対応済み（受理はするが効果を持たない扱いで決着。理由はdocs/tag.htmlの`[link]`欄）
-
-## 挙動の詰め・実機確認
-
-- [ ] **`[set_focus]`のゲームパッド対応を実パッドで確認**（`src/ts/GamepadMng.ts`。ロジックは
-      単体テスト・E2E（合成`KeyboardEvent`での駆動）でしか確認していない。Playwrightに
-      Gamepad APIのエミュレーションが無いため、`navigator.getGamepads()`のrAFポーリングが
-      実パッドを拾えるかは実機のみで確認可能）
-  - [x] （USB実パッドで確認済）`tmp_blues`等でパッド接続→スティックでフォーカスが移動し、ボタンでEnter/クリック相当が発火するか
-  - [ ] マウス右クリック（主にキャンセル・右クリックメニュー用）に相当する機能が欲しい。例えば閉じるボタンまで移動してOKで戻るのは面倒、Cancelボタンですぐ戻れる。ゲームパッドのOKボタンが奇数番号？　でCancelが偶数のイメージ。
-    - ファミコンの「十字+AB」な最小限数のI/F。寝たきり障害者のかたのプレイなど、特殊なスイッチ型ゲームパッドでもプレイできる
-  - [ ] [enable_event]の状態を見ていないのでは
-    - [ ] doc/prj/theme/title.sn:32 [lay layer=mes_c2p b_pic=_c2p 〜] 表示中でもタイトルボタンにフォーカスが移り押せてしまう。frame画面に入って戻ると _c2p が残っていて消えない
-    - [ ] 設定画面に入ったのに、タイトルボタンにフォーカスが移せてしまう
-  - [ ] 
-  - [ ] `[set_focus add=…]`で追加したフレーム内の`range`/`text`/ラジオ/チェックボックスがパッドで操作できるか
-- [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
-  - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
-  - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
-  - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
-- [ ] 文字送りの速さを`tmp_blues`実機（実アセット）で体感確認。`sys:sn.tagCh.msecWait`（既定10ms）・
-      `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
-      （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
-      2026-08-10参照）。残っているのは実アセット・実際の読書体感としての確認
 
 ## アセット・基盤
 
@@ -72,16 +65,22 @@
   - **`CHANGELOG.md`の手動運用（todo.md完了項目を日付見出し＋経緯付きで移す）とrelease-pleaseの自動書き換えが衝突する**ため、着手前に運用を決める必要あり（自動生成を別ファイルに逃がすか、手動運用をやめるか）
   - GitHub App作成・`RELEASE_APP_CLIENT_ID`/`RELEASE_APP_PRIVATE_KEY`登録・npm側Trusted Publishing設定はGitHub/npmjs.org管理画面での作業が要る（エージェント側では完結しない）
 
-## 保留・優先度低
+## 優先度低
 
-- [ ] `[dump_script]`（本家はVSCode拡張との連携）：sn_extension（VSCode拡張）は公開停止中で、
-      再申請できるのは8月下旬（8/25頃）。それまで拡張機能側に手を入れられないため、連携先が
-      無い状態での実装は着手しない
 - [ ] `render=`トゥイーン（pixi前提なので保留）
+  -> 【絵を合成してから不透明度を適用するように（半透明時に差分境界が見えなくなる）】のが要求仕様であり、pixiは関係ない
+    https://famibee.github.io/skynovel_esm/tag.html#trans
 - [ ] 縦書き時の行数・余白が本家と完全一致ではない：`[lay pl=/pr=/pt=/pb=]`は配線済みになったが、本家のborder-box解釈までは揃えていない（`content-box`のまま。理由はCHANGELOG.md参照）。厳密な行数一致はブラウザの自動折返しと本家のRange計測ベース折返しの差もあり達成が難しく、実用上の近似止まりでよい
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
 - [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
+
+## 保留
+
+- [ ] `[dump_script]`（本家はVSCode拡張との連携）：sn_extension（VSCode拡張）は公開停止中で、
+      再申請できるのは8月下旬（8/25頃）。それまで拡張機能側に手を入れられないため、連携先が
+      無い状態での実装は着手しない
+- [ ] `[link]`の残り：`onenter`/`onleave`（本家はラベルをコールし`[return]`で戻る仕様。素朴に`[button call=true]`と同じ経路（`callToLabel`→通常のstep実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまうバグになる——`[return]`後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを`[return]`まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する必要があり、`[button]`と共通の中規模な追加実装になる。`global`は対応済み（受理はするが効果を持たない扱いで決着。理由はdocs/tag.htmlの`[link]`欄）
 - [ ] **デザインモードは無効化中**（`Stage.tsx`の`ENA_DESIGN_MODE = false`）。長押しで入れてしまうが、中で触れるのはレイヤの位置・サイズだけで、触った結果をシナリオへ書き戻す先が無い。本家機能の大部分（音声・履歴・文字演出）が揃い、「調整→保存」の行き先を決めてから戻す
   - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）。再設計時、Moveableリサイズで差分画像（face）の`dx`/`dy`が絶対px指定のため拡大縮小に追随しない問題（`GrpLayer.tsx`）も併せて直す（書き戻し先が無いため今は保留。2026-08-10調査）
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）

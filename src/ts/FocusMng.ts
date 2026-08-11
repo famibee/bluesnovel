@@ -27,6 +27,13 @@ export class FocusMng {
 	static #canFocus(el: HTMLElement): boolean {
 		if ((el as HTMLInputElement).disabled) return false;
 		if (el.getClientRects().length === 0) return false;
+		// **`getClientRects()`は`visibility: hidden`でも非0を返す**（レイアウト自体はされているため）。
+		//	裏ページ（`aPage`のもう片面。[trans]前後で表と入れ替わる）は`visibility: hidden`で隠しており、
+		//	表と同じボタンが同じ位置に重なって存在するため、これが無いと表裏で二重にフォーカスの輪へ
+		//	入ってしまう（実機で「ボタン4つのはずが8箇所フォーカスできる」不具合として発覚）。
+		//	**`checkVisibility()`は既定では`visibility`プロパティを見ない**（`checkVisibilityCSS`が
+		//	既定false）ため明示的に指定する
+		if (! el.checkVisibility({checkVisibilityCSS: true})) return false;
 
 		// **フレーム（iframe）の中の要素は、外側が隠れていても中は見えているつもりになる**。
 		//	その文書は自分が入れ子になっていることを知らないので、getClientRects()が普通に返る。

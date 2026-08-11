@@ -12,10 +12,16 @@
 //	・[wait]がその間シナリオを止め、クリックで打ち切れる
 //	・[waitclick]はクリックで進み、[s]はクリックでは進まない
 
-import {expect, test} from '@playwright/test';
+import {expect, test, type Page} from '@playwright/test';
 import {gotoSn, mesStr, snap, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'wait')});
+
+// 今フォーカスされているボタンの文字（focus.e2e.tsのfocused()と同じ流儀。フレームは使わないシナリオなので単純化）
+const focused = (page: Page)=> page.evaluate(()=> {
+	const a = document.activeElement;
+	return a && a !== document.body ? `btn:${a.textContent ?? ''}` : '(none)';
+});
 
 test('[enable_event enabled=false]の間はボタンがクリックを受けない', async ({page})=> {
 	expect(await mesStr(page)).toBe('むこうりんく');
@@ -45,6 +51,30 @@ test('[enable_event enabled=true]に戻すとボタンが効く', async ({page})
 	expect((await snap(page)).aLay.find(l=> l.nm === 'mes')?.enabled).toBe(true);
 
 	await page.getByText('ボタン').click();
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('おされた');
+});
+
+// [set_focus]の輪。[enable_event enabled=false]の間はクリックだけでなく
+//	ゲームパッド／キーボードのフォーカスも受けないことの確認（実例：タイトル画面の
+//	クリック待ちオーバーレイ表示中でもタイトルボタンにフォーカスできてしまっていた不具合）
+test('[enable_event enabled=false]の間はボタンがフォーカスの輪から外れる', async ({page})=> {
+	expect(await mesStr(page)).toBe('むこうりんく');
+
+	await page.keyboard.press('ArrowRight');
+	await page.waitForTimeout(100);
+	expect(await focused(page)).toBe('(none)');	// 輪に居るのはボタン1つだけなので、外れていれば誰も選ばれない
+});
+
+test('[enable_event enabled=true]に戻すとフォーカスの輪へ戻り、Enterで押せる', async ({page})=> {
+	await page.keyboard.press('Space');
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('ゆうこう');
+
+	await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン');
+
+	await page.keyboard.press('Enter');
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('おされた');
 });
@@ -112,4 +142,44 @@ test('[s]で止まっていても[button]の予約は動かせる', async ({page
 	await page.getByText('ボタン').click();
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('おされた');
+});
+
+// title.snの*c2p（クリック待ちオーバーレイ）と同じ形：[enable_event enabled=false]の最中に
+//	[waitclick]で止まる。クリックで進めなくなっていないか（実際の不具合報告を受けた確認）
+test('[enable_event enabled=false]の最中の[waitclick]もクリックで進む', async ({page})=> {
+	await page.keyboard.press('x');
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('くりっくまち');
+	expect((await snap(page)).aLay.find(l=> l.nm === 'mes')?.enabled).toBe(false);
+
+	await page.mouse.click(400, 300);	// ボタンの外＝ステージの地の部分をクリック
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('かいじょ');
+});
+
+test('[enable_event enabled=false]の最中でも、何もフォーカスしていなければ実キーボードのEnterで進む', async ({page})=> {
+	await page.keyboard.press('x');
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('くりっくまち');
+
+	await page.keyboard.press('Enter');
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('かいじょ');
+});
+
+// ゲームパッドのOKボタン（GamepadMng#dispatchKeyが送る合成KeyboardEvent）を直接模して確認。
+//	実際の不具合報告：クリック待ち画面をゲームパッドで進められない。原因は`new KeyboardEvent(…,
+//	{key: 'Enter'})`だけでは`code`が空文字のままで、Main.tsxの読み進め判定（switch (e.code)）が
+//	拾えなかったこと（`page.keyboard.press()`はOS相当の実イベントなので`code`が自動で正しく付き、
+//	この不具合を検出できない＝上のテストとは別に、GamepadMngと同じ形の合成イベントで確認が要る）
+test('[enable_event enabled=false]の最中でも、何もフォーカスしていなければ合成KeyboardEvent（ゲームパッド由来）のEnterで進む', async ({page})=> {
+	await page.keyboard.press('x');
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('くりっくまち');
+
+	await page.evaluate(()=> {
+		globalThis.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', code: 'Enter', bubbles: true}));
+	});
+	await waitIdle(page);
+	expect(await mesStr(page)).toBe('かいじょ');
 });

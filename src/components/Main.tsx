@@ -174,6 +174,15 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		if (scrMng.fireEvent(key)) {e.stopPropagation(); e.preventDefault(); return}
 
 		switch (e.code) {
+			// Enter：本家 Reading.fire() は`em instanceof Container`（＝特定のUI部品ではなく
+			//	ステージ自体にフォーカスがある状態）のときEnterでクリック相当を発火する
+			//	（EventMng.ts:435）。bluesnovelでは「何もフォーカスしていない」がその状態に当たる。
+			//	フォーカス中の要素（[button]・フレーム内の部品）はそれぞれ自前でEnterを処理し
+			//	stopPropagation()するので、ここまで来る時点で「何もフォーカスしていない」が確定する。
+			//	ゲームパッドのOKボタン（GamepadMng）は合成KeyboardEvent('Enter')を投げるだけで
+			//	新しい経路は持たないため、ここに拾い口が無いと「何にもフォーカスしていない間は
+			//	OKボタンで読み進められない」状態になる（実機報告：クリック待ち画面から進めない）
+			case 'Enter':
 			case 'Space':
 			case 'ArrowDown':
 			case 'PageDown':	e.stopPropagation(); e.preventDefault(); next();	break;

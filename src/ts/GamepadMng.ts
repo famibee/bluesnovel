@@ -30,6 +30,15 @@ export function axisToKey(x: number, y: number): string {
 	return AXIS_KEY_TABLE[(qy + 1) * 3 + (qx + 1)] ?? '';
 }
 
+// 合成KeyboardEvent用のinit。**`code`も`key`と同じ値にする**：`new KeyboardEvent(…, {key})`だけだと
+//	`code`は空文字のまま（`key`から自動導出はされない）。Main.tsxの読み進め判定（Space/Enter等）は
+//	`e.code`を見るため、`code`が空だとフォーカス無し状態でのゲームパッドOKボタンが読み進めに繋がらない
+//	（このモジュールが送る'ArrowUp/Down/Left/Right'・'Enter'はどれも無修飾なら`key`と`code`が
+//	同じ文字列になる規格なので、単純に同じ値を渡せばよい）
+export function keyEventInit(key: string): KeyboardEventInit {
+	return {key, code: key, bubbles: true};
+}
+
 export class GamepadMng {
 	readonly #scrMng: ScriptMng;
 	#raf = -1;
@@ -65,7 +74,7 @@ export class GamepadMng {
 	// フォーカス中の要素（無ければグローバル）へ合成KeyboardEventを送る（本家 EventMng.ts:297-299,312-313）
 	#dispatchKey(key: string) {
 		const el = focusMng.getFocus();
-		(el ?? globalThis).dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true}));
+		(el ?? globalThis).dispatchEvent(new KeyboardEvent('keydown', keyEventInit(key)));
 	}
 
 	#pollAxis(gp: Gamepad) {
@@ -88,10 +97,14 @@ export class GamepadMng {
 			if (cur[i] && ! prev[i]) this.#onButtonDown(i);
 		}
 	}
-	// 偶数ボタン→Enter、奇数ボタン→middleclick（本家 EventMng.ts:306-316）
+	// 偶数ボタン→Enter（OK）、奇数ボタン→rightclick（Cancel。本家 EventMng.ts:306-316は
+	//	奇数ボタンをmiddleclickにするが、テンプレのメニュー・確認ダイアログの「閉じる」は
+	//	いずれも[event key=rightclick]で予約されており、middleclickはどこからも予約されて
+	//	いない。マウス右クリックのできない環境（十字+ABの最小I/Fでのプレイ等）でも
+	//	キャンセル操作が効くよう、bluesnovelでは意図的にrightclickへ変更する）
 	#onButtonDown(i: number) {
 		this.#scrMng.cancelAuto();
 		if (i % 2 === 0) this.#dispatchKey('Enter');
-		else this.#scrMng.fireEvent('middleclick');
+		else this.#scrMng.fireEvent('rightclick');
 	}
 }

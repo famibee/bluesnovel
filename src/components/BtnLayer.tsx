@@ -22,6 +22,7 @@ type T_BTNARG = {
 	call	: boolean;
 	fn		: string;
 	sty?	: T_BTN_STY | undefined;
+	enabled	: boolean;	// 親の文字レイヤの[enable_event enabled=]。falseの間はクリックもキー操作も受けない
 	onActivate: (label: string, call: boolean, fn: string)=> void;
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
@@ -127,7 +128,9 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}: T_BTNARG) {
+export default function BtnLayer({text, label, call, fn, sty, enabled, onActivate, onSe}: T_BTNARG) {
+	// 実効的な有効・無効：層側（[enable_event]）とボタン自身（[button enabled=]）のANDを取る
+	const isEnabled = enabled && sty?.enabled !== false;
 	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
 	//	ストアへ写しているのはScriptMngで、ステージ既定フォント（Stage.tsx）とは別に差し替えられる
 	const btnFont = useStore(s=> s.btnFont);
@@ -187,13 +190,14 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 	//	（本家 Button.ts:101 の `if (this.#o.enabled) evtMng.button(...)` でリスナー自体が張られない
 	//	のと同じ結果を、こちらは呼び出しの手前でガードして揃えている）
 	const playSe = (fnKey: 'clickse' | 'enterse' | 'leavese', bufKey: 'clicksebuf' | 'entersebuf' | 'leavesebuf')=> {
-		if (sty?.enabled === false) return;
+		if (! isEnabled) return;
 		const se = sty?.[fnKey];
 		if (se) onSe(se, sty?.[bufKey] ?? 'SYS');
 	};
 
 	const onClick = (e: MouseEvent)=> {
 		e.stopPropagation();	// 親(Stage)のonClick(=読み進め)へ伝播させないのがポイント
+		if (! isEnabled) return;
 		hintMng.hide();			// 本家もpointerdownで消す（EventMng.ts:424）
 		playSe('clickse', 'clicksebuf');
 		onActivate(label, call ?? false, fn);
@@ -212,15 +216,19 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 
 	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
 	//	ゲーム内ボタンをFocusMngへ入れているのに対応）。表示されている間だけ輪に居ればよいので、
-	//	マウント／アンマウントで出し入れする。spanなのでtabIndexを付けないとfocus()が効かない
+	//	マウント／アンマウントで出し入れする。spanなのでtabIndexを付けないとfocus()が効かない。
+	//	isEnabledの変化でも出し入れする：[enable_event enabled=false]の間はクリックを受けない
+	//	（TxtLayer.tsxのpointer-events:none）のに、フォーカスの輪には残ったままだと
+	//	ゲームパッド・キーボードのEnterだけは素通りしてしまうため（実例：タイトル画面の
+	//	クリック待ちオーバーレイ表示中でもタイトルボタンにフォーカスできてしまう不具合）
 	const ref = useRef<HTMLSpanElement>(null);
 	useEffect(()=> {
 		const el = ref.current;
-		if (! el) return;
+		if (! el || ! isEnabled) return;
 
 		focusMng.add(el);
 		return ()=> focusMng.remove(el);
-	}, []);
+	}, [isEnabled]);
 
 	// [button width=（height=）]指定時、文字を箱ちょうどに収める倍率を**実測**する（本家 pixi
 	//	Text.width/height 相当。CSSに文字フィットが無いための代替）。幅制約と変形を一時的に外して
@@ -291,13 +299,14 @@ export default function BtnLayer({text, label, call, fn, sty, onActivate, onSe}:
 
 		e.stopPropagation();
 		e.preventDefault();
+		if (! isEnabled) return;
 		playSe('clickse', 'clicksebuf');
 		onActivate(label, call ?? false, fn);
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
 	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic, natBPic) : undefined} ref={ref}
-		tabIndex={0} onClick={onClick} onKeyDown={onKeyDown}
+		tabIndex={isEnabled ? 0 : -1} onClick={onClick} onKeyDown={onKeyDown}
 		onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
 		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;
 }

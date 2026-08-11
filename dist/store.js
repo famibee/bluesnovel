@@ -5,7 +5,7 @@ var r = new class e {
 	#e = [];
 	#t = -1;
 	static #n(e) {
-		if (e.disabled || e.getClientRects().length === 0) return !1;
+		if (e.disabled || e.getClientRects().length === 0 || !e.checkVisibility({ checkVisibilityCSS: !0 })) return !1;
 		try {
 			for (let t = e.ownerDocument.defaultView; t && t !== t.parent;) {
 				let e = t.frameElement;

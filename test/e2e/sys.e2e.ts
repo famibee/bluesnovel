@@ -45,12 +45,14 @@ test('[toggle_full_screen key=…]で予約したキーが全画面要求を切�
 	expect(await mesStr(page)).toBe('はじめ');
 });
 
-test('修飾キー無しのEnterでは[event key=alt+enter]は引けない', async ({page})=> {
-	// キー名が'enter'にしかならないので予約に当たらない。
-	//	Enterは読み進めキー（Space/ArrowDown/PageDown）でもないので、何も起きない
+test('修飾キー無しのEnterでは[event key=alt+enter]は引けず、読み進めキーとして働く', async ({page})=> {
+	// キー名が'enter'にしかならないので[event key=alt+enter]の予約には当たらない。
+	//	Enterは何もフォーカスしていない間はSpace/ArrowDown/PageDownと同じ読み進めキーとして働く
+	//	（本家 Reading.fire() の`em instanceof Container`→クリック相当と同じ動き。ゲームパッドの
+	//	OKボタンがフォーカス無しの状態で読み進められるようにするため。Main.tsx参照）
 	await page.keyboard.press('Enter');
 	await waitIdle(page);
-	expect(await mesStr(page)).toBe('はじめ');
+	expect(await mesStr(page)).toBe('はじめかえた');
 });
 
 test('alt+enterは[event]の予約を発火する', async ({page})=> {
