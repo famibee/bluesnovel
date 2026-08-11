@@ -2840,7 +2840,7 @@ var oe = class {
 		let c = s[0].type || "", l = c === "checkbox" || c === "range" ? ["input"] : c === "text" || c === "textarea" ? ["input", "change"] : ["click", "keydown"], u = [];
 		for (let e of s) for (let t of l) {
 			let n = (n) => {
-				this.getDisabled(a) || (t !== "keydown" || n.key === "Enter") && i(e);
+				this.getDisabled(a) || (t !== "keydown" || n.key === "Enter") && (t === "keydown" && (n.stopImmediatePropagation(), n.preventDefault()), i(e));
 			};
 			e.addEventListener(t, n), u.push({
 				el: e,

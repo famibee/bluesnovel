@@ -10174,7 +10174,7 @@ function bu({ text: e, label: t, call: n, fn: r, sty: i, enabled: a, onActivate:
 		tabIndex: l ? 0 : -1,
 		onClick: f,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l && (d("clickse", "clicksebuf"), s(t, n ?? !1, r)));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l && (mu.hide(), d("clickse", "clicksebuf"), s(t, n ?? !1, r)));
 		},
 		onMouseEnter: h,
 		onMouseLeave: g,

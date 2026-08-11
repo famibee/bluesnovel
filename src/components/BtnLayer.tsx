@@ -300,6 +300,7 @@ export default function BtnLayer({text, label, call, fn, sty, enabled, onActivat
 		e.stopPropagation();
 		e.preventDefault();
 		if (! isEnabled) return;
+		hintMng.hide();			// onClickと同様、決定と同時にヒントも消す（ゲームパッドOKはここを通る）
 		playSe('clickse', 'clicksebuf');
 		onActivate(label, call ?? false, fn);
 	};

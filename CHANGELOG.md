@@ -719,6 +719,17 @@
   - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bun run test:e2e`（全232件green）で確認。`tmp_blues`実機でも矢印キー4回で正しく一周することを確認済み
   - `todo.md`「`[set_focus]`のゲームパッド対応を実パッドで確認」の該当2項目を消化。今回の追加2件も含め、ロジックはE2E（合成`KeyboardEvent`）と`tmp_blues`実機のブラウザ確認で見ており、実パッドでの最終確認は別途要る
 
+- [x] **不具合修正：右クリックメニューを【ゲームに戻る】（決定操作）で閉じると本文が1行余計に進む**（2026-08-11）
+  - 前回セッションで「`[return]`後に`#runStep()`のループが止まらない」という見立てを立てたが、ユーザーの実機ゲームパッド確認で「キャンセルボタン（`rightclick`）で閉じる分には進まない、【ゲームに戻る】をOKボタン（決定）で選んだ時だけ進む」という新情報が得られ、見立てが崩れた。両者とも同じ`*cancel`ラベル・同じ`[return]`を通るため、原因は`[return]`側ではなく決定入力そのものにあると分かった
+  - 実際の原因は`FrameMng.ts`の`resvDom()`（`[event key='dom=…']`予約。`_submenu.sn`の【ゲームに戻る】等はこの経路で、`[button]`タグではない）：要素の`click`/`keydown`(Enter)を拾って`[event]`を発火するだけで`stopPropagation()`していなかった。一方`[button]`タグ側の`BtnLayer.tsx`の`onKeyDown`はきちんと`stopPropagation()`/`preventDefault()`しており、非対称だった
+  - この非対称のせいで、【ゲームに戻る】要素上のEnter keydownは`*cancel`への`[event]`発火後もbubbleし続け、`FrameMng.ts`のフレーム内keydown中継（`f.contentDocument`のkeydownを親documentへ再dispatchする箇所）経由で親`Main.tsx`の`useKey`まで届く。届いた側は「フォーカス中の要素は自前でEnterを処理し`stopPropagation()`する」前提（`Main.tsx`のコメント参照）で読み進めの`next()`を呼んでいた——これが1行分の余計な読み進めの正体。ゲームパッドのキャンセルボタンは`*retry`のスクリプト側ローカル予約（`GamepadMng.ts`→`scrMng.fireEvent('rightclick')`）を直接通るだけでDOM keydownが絡まないため、この二重発火が起きなかった
+  - `resvDom()`の`keydown`（Enter）ハンドラに`e.stopPropagation()`/`e.preventDefault()`を追加し、`BtnLayer.tsx`と同じ扱いに揃えた（`click`は元々iframe境界を越えて親へbubbleしないため対象外）
+  - `playwright-cli`で`tmp_blues`実機（`localhost:5173`）に接続し確認：修正前のコードへ一時的に戻すと、【ゲームに戻る】へフォーカスしEnterで閉じた際に「本文が1行進む」よりも重い症状として`シナリオ解析エラー fn:_submenu [return] 呼び出し元がありません`（同一Enterが二重処理され呼び出しスタックが壊れる）が再現した。修正後は同じ手順でエラーなく閉じ、閉じる前後で本文テキストが完全一致することを確認
+  - ここまではキーボードの実Enter（`page.keyboard.press`、`e.isTrusted:true`）で検証しており、それで十分と考えていたが、**ユーザーに実パッドのOKボタンで確認してもらったところ再発**。原因がもう一段深いところにあると分かった：`GamepadMng.ts#dispatchKey()`は`focusMng.getFocus()`が返す要素へ`el.dispatchEvent(new KeyboardEvent(...))`で**untrustedな**合成keydownを送る。この要素には`resvDom`のほかに`FocusMng.ts#keyHandlerOf()`（`button`/`a`要素向け）も`keydown`リスナを持っており、こちらは`e.isTrusted===false`の時だけ「本物のEnterなら自動で起きるはずのclick」を模倣して**新しい合成`click`イベントをelへ再dispatch**する。この新しい`click`を`resvDom`自身の`click`リスナが拾って`fire(el)`をもう一度実行してしまい、`*cancel`が2回走っていた（実キーボードのEnterは`isTrusted:true`なので`FocusMng`側が早期returnし影響しない＝ここまでの検証で見えなかった）
+  - `stopPropagation()`では同一要素上の別リスナ（`FocusMng`側）の実行までは止まらない。`ScriptMng.ts`の`'resvDomEvent'`アクションが`resvDom()`（＝このリスナ登録）の後に`focusMng.add()`（＝`FocusMng`側のリスナ登録）を呼ぶ順序を利用し、`resvDom()`側を`e.stopImmediatePropagation()`に変更。同一要素・同一イベントに対する後続リスナの実行そのものを止めることで、`FocusMng`側の合成click再dispatchが起きないようにした
+  - `playwright-cli`で`el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', code:'Enter', bubbles:true}))`（`GamepadMng`と同じuntrusted dispatch）を直接発火させて再検証：`stopPropagation()`版はこの手順で本文1行分の先読みが再現し（テスト手法が実機の不具合を正しく捉えられることも同時に確認）、`stopImmediatePropagation()`版ではエラーなく閉じ本文テキストが完全一致することを確認
+  - ゲームパッドの合成イベント経路を`playwright-cli`から直接駆動して確認できたため、実パッドそのものでの最終確認は簡略化できるはずだが、念のため`todo.md`に1行残す
+
 - [ ]
 
 

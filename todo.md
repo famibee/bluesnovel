@@ -7,11 +7,49 @@
 
 ## 続き（次回セッションはここから）
 
-2026-08-11セッションで「ゲームパッドのキャンセルボタン（奇数番ボタン）が`rightclick`を発火する
-よう変更」「`[enable_event enabled=false]`の間はボタンがフォーカスの輪からも外れるよう修正
-（`title.sn:32`の`_c2p`残留・設定画面でのフォーカス漏れの2件を解消）」が完了（詳細はCHANGELOG.md）。
-次に手を付けるものは特に決まっていない。「タグ・変数の残り」または「挙動の詰め・実機確認」から
-任意に選んでよい。
+2026-08-11セッションで以下が完了（詳細はCHANGELOG.md）：
+- 「ゲームパッドのキャンセルボタン（奇数番ボタン）が`rightclick`を発火するよう変更」
+  「`[enable_event enabled=false]`の間はボタンがフォーカスの輪からも外れるよう修正」
+  （`title.sn:32`の`_c2p`残留・設定画面でのフォーカス漏れの2件を解消）
+- `tmp_blues`の本文冒頭`[plc visible=false]`停止中に右クリックメニュー→消去でクリック待ちアニメの表示位置が文字レイヤ右上に移動してしまう
+- `BtnLayer.tsx`の`onKeyDown`（Enter/Space決定。ゲームパッドのOKボタンもここを通る）に
+  `hintMng.hide()`を追加。`onClick`と揃えた（タイトルの【最初から】をゲームパッドで決定した際、
+  ツールチップが`[trans]`後も残る不具合を解消）
+- 右クリックメニュー→【ゲームに戻る】を決定操作（クリック／ゲームパッドOK相当のEnter）で
+  閉じると本文が1行余計に進む不具合を修正。ユーザーの実パッド確認で1次修正
+  （`stopPropagation()`）では再発することが分かり、`FrameMng.ts`の`resvDom()`と
+  `FocusMng.ts`が同一要素へ二重にリスナを持つ構造まで掘り下げて`stopImmediatePropagation()`
+  へ修正。`playwright-cli`から`GamepadMng.ts`と同じuntrusted合成keydownを直接発火させて
+  修正前後の再現・解消を確認済み（詳細はCHANGELOG.md）
+
+### 次回：右クリックメニュー→【タイトルに戻る】の確認ダイアログがモーダルになっていない
+
+ユーザー報告：右クリックメニューで【タイトルに戻る】を選ぶと【タイトルに戻りますか？】の確認
+ダイアログ（`_yesno.sn`の`ask_ync`マクロ）が出るが、**その裏で右クリックメニュー本体
+（`_submenu.sn`のiframe）のボタンにも引き続きフォーカスが移ってしまう**。
+
+調査済みの原因（`tmp_blues/doc/prj/frames/_yesno.sn:41-42`・`_submenu.sn`を確認）：
+- `ask_ync`マクロの`[enable_event enabled=false layer=mes_sysmenu]`が無効化しているのは
+  **常設のクイックメニューバー**（`mes_sysmenu`レイヤ、`[button]`タグ製、`BtnLayer.tsx`の
+  `isEnabled`機構を通る）であって、右クリックメニュー本体とは別物。右クリックメニューは
+  `_submenu.sn`のiframe内DOM要素（`resvDom`経由で`focusMng`に登録）なので、この
+  `[enable_event layer=…]`の対象外
+- `_submenu.sn`の`*title`（`*game_end`も同様）は`[ask_ync]`を呼ぶ前にsubmenuフレーム自体を
+  隠す・無効化する処理を一切していない（`*save`/`*load`/`*config`等は`[call label=*exit]`で
+  先にフレームを隠すが、`*title`/`*game_end`は「いいえ」なら`*retry`へ戻ってメニューを
+  開いたままにする設計のため、隠さずに`[ask_ync]`を呼んでいる）
+- 仮に`[frame id=submenu disabled=true]`を呼んでも、`FrameMng.ts:187`の`disabled`反映は
+  `<input>`/`<select>`にしか`.disabled`を立てず`<button>`は対象外。`FocusMng.#canFocus()`も
+  `getDisabled()`を見ていないため、disabledにしてもボタンはフォーカスの輪に残り続ける
+  （クリックは`resvDom`側の`getDisabled`ガードで無効化されるが、フォーカス移動は防げない）
+
+ユーザーへ提示した修正案（未着手・要選択）：
+- [ ] `_submenu.sn`の`*title`/`*game_end`で`[ask_ync]`前にsubmenuフレームを
+      `[frame id=submenu visible=false]`、「いいえ」分岐で`[frame id=submenu visible=true]`へ
+      戻す（表示ごと隠すのでフォーカスも`checkVisibility()`経由で自然に外れる。最小修正）
+- [ ] 加えて`FrameMng.ts`の`disabled`反映をbutton要素にも拡張し、`FocusMng.#canFocus()`が
+      `getDisabled()`も見るようにする一般化（`[frame disabled=true]`が今後も同種の
+      フォーカス漏れを起こさないための根本対応。上のsubmenu非表示と合わせるか単独でも可）
 
 ## 進め方
 
@@ -31,6 +69,7 @@
       実パッドを拾えるかは実機のみで確認可能）
   - [x] （USB実パッドで確認済）`tmp_blues`等でパッド接続→スティックでフォーカスが移動し、ボタンでEnter/クリック相当が発火するか
   - [x] `[set_focus add=…]`で追加したフレーム内の`range`/`text`/ラジオ/チェックボックスがパッドで操作できるか
+  - [ ] 右クリックメニューの【ゲームに戻る】を実パッドのOKボタンで閉じても本文が進まないか（`FrameMng.ts`/`FocusMng.ts`の修正。`playwright-cli`で`GamepadMng.ts`と同じuntrusted合成keydownを直接発火させての確認は済み。詳細はCHANGELOG.md 2026-08-11）
 - [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
   - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
   - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）

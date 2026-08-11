@@ -267,6 +267,20 @@ export class FrameMng {
 			const fnc: EventListener = e=> {
 				if (this.getDisabled(id)) return;	// [frame disabled=true]の間は反応しない
 				if (ev === 'keydown' && (e as KeyboardEvent).key !== 'Enter') return;
+				// stopImmediatePropagation()にする理由は2つ。ScriptMng#applyAction 'resvDomEvent'は
+				//	この関数（el.addEventListener）の後にfocusMng.add(el)する順序なので、同じelの
+				//	同じ'keydown'に対してこちらが先に呼ばれる：
+				//	1. stopPropagationだけだと、ここで処理したEnterがフレームdocument内をbubbleし
+				//	   続け、上のkeydown中継（フレーム内keydownを親documentへ再dispatchする箇所）
+				//	   経由で親Main.tsxのuseKeyまで届く。届いた側は「フォーカス中の要素は自前で
+				//	   処理しstopPropagation()する」前提（Main.tsx参照）で読み進めのnext()を呼ぶ
+				//	2. 同一要素の他リスナはstopPropagationでは止まらない。FocusMng.#keyHandlerOf は
+				//	   button/a要素かつe.isTrusted===false（ゲームパッド由来の合成イベント）の時、
+				//	   「本物のEnterなら自動で起きるclick」を模倣してelへ合成clickを**再dispatch**
+				//	   する。これがこの関数のclickリスナに拾われ、fire(el)がもう一度走ってしまう
+				//	   （実キーボードのEnterはisTrusted:trueなのでFocusMng側が早期returnし影響しない。
+				//	   ゲームパッド実機でのみ「メニューを閉じる処理が2回走る」形で表面化していた）
+				if (ev === 'keydown') {e.stopImmediatePropagation(); e.preventDefault()}
 				fire(el);	// 発火した要素を渡す（本家 EventMng.ts:591 の data-* 取り出しのため）
 			};
 			el.addEventListener(ev, fnc);
