@@ -186,8 +186,10 @@ export class FrameMng {
 		if (disabled !== undefined) {
 			this.#hDisabled[id] = disabled;
 			const b = f.contentDocument?.body;
-			if (b) for (const e of [...b.querySelectorAll('input'), ...b.querySelectorAll('select')]) {
-				e.disabled = disabled;
+			// button要素も対象（[frame disabled=true]でフォーカスの輪から外すため。FocusMng.#canFocus()
+			//	参照。inputだけだと[button]相当のUI（右クリックメニュー等）が無効化されずフォーカスに残る）
+			if (b) for (const e of b.querySelectorAll('input, select, button')) {
+				(e as HTMLInputElement | HTMLSelectElement | HTMLButtonElement).disabled = disabled;
 			}
 		}
 

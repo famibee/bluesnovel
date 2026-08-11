@@ -57,6 +57,13 @@
 [let_frame id=yesno var_name=draw_pics function=true]
 えをだした[p]
 
+; [frame disabled=true]：<input>/<select>だけでなく<button>もdisabledになる
+;	（右クリックメニューのボタンがdisabled中もフォーカスの輪に残る不具合の再発防止）
+[frame id=yesno disabled=true]
+むこうにした[p]
+[frame id=yesno disabled=false]
+もどした[p]
+
 ; フレームを隠すと、その中の要素は輪から飛ばされる（[frame visible=false]）。
 ;	range1等もフレーム内なので#ok/#closeと同じく輪から飛ばされる
 [frame id=yesno visible=false]

@@ -2801,7 +2801,7 @@ var re = class {
 		if (r !== void 0) {
 			this.#i[e] = r;
 			let t = i.contentDocument?.body;
-			if (t) for (let e of [...t.querySelectorAll("input"), ...t.querySelectorAll("select")]) e.disabled = r;
+			if (t) for (let e of t.querySelectorAll("input, select, button")) e.disabled = r;
 		}
 		let a = `const.sn.frm.${e}`, o = {};
 		for (let [e, n] of Object.entries(t)) o[`${a}.${e}`] = n;

@@ -128,6 +128,22 @@ test(`[event key='dom=…']はセレクタの大小文字を保つ（#close）`,
 	await seeText(page, 'きゃんせる');
 });
 
+test('[frame disabled=true]で<button>もdisabledになる', async ({page})=> {
+	await seeText(page, 'よみこんだ');
+	for (const t of ['ひょうじ', 'とれた', 'うごかした', 'ふぉーかす', 'ふぉーかすぱっど', 'ふぉーかすぱっどえをだした']) {
+		await advance(page, t);
+	}
+
+	const closeDisabled = ()=> page.frameLocator('#yesno').locator('#close').isDisabled();
+	expect(await closeDisabled()).toBe(false);
+
+	await advance(page, 'むこうにした');
+	expect(await closeDisabled()).toBe(true);
+
+	await advance(page, 'もどした');
+	expect(await closeDisabled()).toBe(false);
+});
+
 test('フレーム内の<img data-src=…>はプロジェクトのパス解決を通る', async ({page})=> {
 	// 本家 FrameMng.ts:154 →#loadPic2Img() は data-src を searchPath() へ通す。
 	//	テンプレのアルバムは解放済み項目に`F_kuchimoto`のような**拡張子なしのアセット名**を

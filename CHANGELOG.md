@@ -730,6 +730,15 @@
   - `playwright-cli`で`el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', code:'Enter', bubbles:true}))`（`GamepadMng`と同じuntrusted dispatch）を直接発火させて再検証：`stopPropagation()`版はこの手順で本文1行分の先読みが再現し（テスト手法が実機の不具合を正しく捉えられることも同時に確認）、`stopImmediatePropagation()`版ではエラーなく閉じ本文テキストが完全一致することを確認
   - ゲームパッドの合成イベント経路を`playwright-cli`から直接駆動して確認できたため、実パッドそのものでの最終確認は簡略化できるはずだが、念のため`todo.md`に1行残す
 
+- [x] **不具合修正：右クリックメニュー→【タイトルに戻る】／【ゲーム終了】の確認ダイアログの裏でメニュー本体にフォーカスが漏れる**（2026-08-11）
+  - `_submenu.sn`の`ask_ync`マクロが無効化するのは常設のクイックメニューバー（`mes_sysmenu`レイヤ）だけで、右クリックメニュー本体（`_submenu.sn`のiframe、`resvDom`経由で`focusMng`に登録）は対象外。`*title`/`*game_end`は`[ask_ync]`を呼ぶ前にメニュー自体を隠す・無効化する処理を一切していなかった（他のラベルは`[call label=*exit]`で先に隠すが、この2つは「いいえ」なら`*retry`でメニューを開いたまま戻る設計のため隠さず呼んでいた）
+  - **最小修正**：`tmp_blues/doc/prj/frames/_submenu.sn`の`*title`/`*game_end`で`[ask_ync]`前に`[frame id=submenu visible=false]`、「いいえ」分岐（`_yesno=='n'`）で`[frame id=submenu visible=true]`してから`*retry`へ。`visible=false`で隠せば`FocusMng.#canFocus()`の`checkVisibility()`判定経由でフォーカスの輪から自然に外れる
+  - **根本対応**：仮に`[frame disabled=true]`で無効化する場合に備え、`FrameMng.ts`の`frame()`の`disabled`反映（`<input>`/`<select>`にしか`.disabled`を立てていなかった）へ`<button>`も追加。`FocusMng.#canFocus()`は元々`el.disabled`（DOM標準プロパティ）を見ており、`HTMLButtonElement`も`disabled`プロパティを持つため、反映さえ揃えれば別途`getDisabled()`を参照する変更は不要だった（着手前の見立てでは両方直す必要があると考えていたが、実際は反映漏れ1箇所の修正で足りた）
+  - `test/e2e/app/prj_frame/main.sn`に`[frame disabled=true/false]`の往復シーンを追加、`test/e2e/frame.e2e.ts`に新規1件（`<button>`の`disabled`プロパティが反映・解除されることを確認）
+  - `playwright-cli`で`tmp_blues`実機（`localhost:5173`）に接続し、【タイトルに戻る】【ゲーム終了】の両方で確認ダイアログ表示中に`submenu`側`<button>`の`checkVisibility()`が`false`（＝フォーカス不可）になること、「いいえ」でメニューが正しく再表示されること、「はい」で実際にタイトルへ戻れることを確認
+  - `bunx tsc --noEmit --incremental false`・`bunx tsc --noEmit -p test/e2e`・`bun test`（1666件green）・`bunx playwright test -c test/e2e frame.e2e.ts`（9件green）で確認
+  - `todo.md`「次回：右クリックメニュー→【タイトルに戻る】の確認ダイアログがモーダルになっていない」を消化
+
 - [ ]
 
 

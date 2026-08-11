@@ -21,35 +21,10 @@
   `FocusMng.ts`が同一要素へ二重にリスナを持つ構造まで掘り下げて`stopImmediatePropagation()`
   へ修正。`playwright-cli`から`GamepadMng.ts`と同じuntrusted合成keydownを直接発火させて
   修正前後の再現・解消を確認済み（詳細はCHANGELOG.md）
-
-### 次回：右クリックメニュー→【タイトルに戻る】の確認ダイアログがモーダルになっていない
-
-ユーザー報告：右クリックメニューで【タイトルに戻る】を選ぶと【タイトルに戻りますか？】の確認
-ダイアログ（`_yesno.sn`の`ask_ync`マクロ）が出るが、**その裏で右クリックメニュー本体
-（`_submenu.sn`のiframe）のボタンにも引き続きフォーカスが移ってしまう**。
-
-調査済みの原因（`tmp_blues/doc/prj/frames/_yesno.sn:41-42`・`_submenu.sn`を確認）：
-- `ask_ync`マクロの`[enable_event enabled=false layer=mes_sysmenu]`が無効化しているのは
-  **常設のクイックメニューバー**（`mes_sysmenu`レイヤ、`[button]`タグ製、`BtnLayer.tsx`の
-  `isEnabled`機構を通る）であって、右クリックメニュー本体とは別物。右クリックメニューは
-  `_submenu.sn`のiframe内DOM要素（`resvDom`経由で`focusMng`に登録）なので、この
-  `[enable_event layer=…]`の対象外
-- `_submenu.sn`の`*title`（`*game_end`も同様）は`[ask_ync]`を呼ぶ前にsubmenuフレーム自体を
-  隠す・無効化する処理を一切していない（`*save`/`*load`/`*config`等は`[call label=*exit]`で
-  先にフレームを隠すが、`*title`/`*game_end`は「いいえ」なら`*retry`へ戻ってメニューを
-  開いたままにする設計のため、隠さずに`[ask_ync]`を呼んでいる）
-- 仮に`[frame id=submenu disabled=true]`を呼んでも、`FrameMng.ts:187`の`disabled`反映は
-  `<input>`/`<select>`にしか`.disabled`を立てず`<button>`は対象外。`FocusMng.#canFocus()`も
-  `getDisabled()`を見ていないため、disabledにしてもボタンはフォーカスの輪に残り続ける
-  （クリックは`resvDom`側の`getDisabled`ガードで無効化されるが、フォーカス移動は防げない）
-
-ユーザーへ提示した修正案（未着手・要選択）：
-- [ ] `_submenu.sn`の`*title`/`*game_end`で`[ask_ync]`前にsubmenuフレームを
-      `[frame id=submenu visible=false]`、「いいえ」分岐で`[frame id=submenu visible=true]`へ
-      戻す（表示ごと隠すのでフォーカスも`checkVisibility()`経由で自然に外れる。最小修正）
-- [ ] 加えて`FrameMng.ts`の`disabled`反映をbutton要素にも拡張し、`FocusMng.#canFocus()`が
-      `getDisabled()`も見るようにする一般化（`[frame disabled=true]`が今後も同種の
-      フォーカス漏れを起こさないための根本対応。上のsubmenu非表示と合わせるか単独でも可）
+- 右クリックメニュー→【タイトルに戻る】／【ゲーム終了】の確認ダイアログの裏でメニュー本体に
+  フォーカスが漏れる不具合を修正。`_submenu.sn`の`*title`/`*game_end`で`[ask_ync]`前後に
+  `[frame id=submenu visible=false/true]`（最小修正）＋`FrameMng.ts`の`disabled`反映を
+  `<button>`にも拡張（根本対応。詳細はCHANGELOG.md）
 
 ## 進め方
 
