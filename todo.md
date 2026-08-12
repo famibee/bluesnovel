@@ -21,9 +21,9 @@
   - [x] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
   - [x] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
   - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
-    - electron-builder でエラーになるようである。"file:../bluesnovel"参照が原因に見えるので、npmリリースするまで確認出来ないだろうか。
-    - 最新 electron-builder 26.15.3(bun outdated 表示。https://github.com/electron-userland/electron-builder では 26.15.7) を使ってないのは、2015/11/3頃 electron-builder が beta版を正規ルートでリリースしており更新でそれをインストールしてしまい、パッケージビルドできなくなっていため、その対応で拡張機能に win/mac 版パッケージビルド時に electron-builder@26.0.15 をインストールするようにさせているため。いずれは拡張機能側も更新が必要だが。
-    - 以下ログ（一部加工）
+    - [ ] electron-builder でエラーになるようである。"file:../bluesnovel"参照が原因に見えるので、npmリリースするまで確認出来ないだろうか。
+      - 最新 electron-builder 26.15.3(bun outdated 表示。https://github.com/electron-userland/electron-builder では 26.15.7) を使ってないのは、2015/11/3頃 electron-builder が beta版を正規ルートでリリースしており更新でそれをインストールしてしまい、パッケージビルドできなくなっていため、その対応で拡張機能に win/mac 版パッケージビルド時に electron-builder@26.0.15 をインストールするようにさせているため。いずれは拡張機能側も更新が必要だが。
+      - 以下ログ（一部加工）
 ```
 ✓ built in 362ms
   • electron-builder  version=26.0.15 os=24.6.0
@@ -50,7 +50,6 @@
 ## タグ・変数の残り
 
 - [ ] **文字組みの残り**
-  - [ ] doc/prj/script/ss_000.sn:24 【　どうして俺が〜】ページの改行具合が本家と違う
   - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
         ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。対称に配分するCSS調整では治らない
         （前後どちらかに寄せて配分しても「ルビ行だけ行送りが違う」不揃いさ自体は消えない）。
@@ -78,7 +77,7 @@
 - [ ] `render=`トゥイーン（pixi前提なので保留）
   -> 【絵を合成してから不透明度を適用するように（半透明時に差分境界が見えなくなる）】のが要求仕様であり、pixiは関係ない
     https://famibee.github.io/skynovel_esm/tag.html#trans
-- [ ] 縦書き時の行数・余白が本家と完全一致ではない：`[lay pl=/pr=/pt=/pb=]`は配線済みになったが、本家のborder-box解釈までは揃えていない（`content-box`のまま。理由はCHANGELOG.md参照）。厳密な行数一致はブラウザの自動折返しと本家のRange計測ベース折返しの差もあり達成が難しく、実用上の近似止まりでよい
+- [ ] 縦書き時の行数・余白が本家と完全一致ではない：`[lay pl=/pr=/pt=/pb=]`は配線済みになったが、本家のborder-box解釈までは揃えていない（`content-box`のまま。理由はCHANGELOG.md参照）。厳密な行数一致はブラウザの自動折返しと本家のRange計測ベース折返しの差もあり達成が難しく、実用上の近似止まりでよい（実例：`ss_000.sn:24`の折返しが3列目で1文字ぶんズレる件を実機比較で確認済み、詳細はCHANGELOG.md 2026-08-12参照）
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
 - [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
