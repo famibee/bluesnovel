@@ -126,6 +126,18 @@
     `[x]`化されたが、その時点ではCHANGELOG.mdへの反映が漏れていたため今回移動）
   - `todo.md`「挙動の詰め・実機確認」の該当2項目を削除
 
+- [x] **組み込み変数`const.sn.lay[N].<fore|back>.width/.height`：画像レイヤ（grp）の未指定時を実寸化**（2026-08-12）
+  - 本家調査（`GrpLayer.ts:88-108`）で画像/動画レイヤのwidth/heightは`fn`にロードされた自然サイズ
+    （ロード前は0）と判明。bluesnovelも同じ形で実装：`src/ts/Sprite.ts`にsrcキーの自然サイズ
+    キャッシュ（`setNatSize`/`getNatSize`、既存の`hSheet`と同じパターン）を追加し、`GrpLayer.tsx`の
+    `<img>` onLoad・`<video>` onLoadedMetadata・アニメpngシートのロード完了で書き込む
+  - `src/ts/ScriptMng.ts`の`const.sn.lay` getterは画像レイヤ時このキャッシュを引き、未読込なら0を
+    返すよう変更（storeは汚さない、`#rectOfStageBox`と同じ遅延評価パターン）
+  - 文字レイヤ（txt）は本家も実測ではなくstyle明示値（既定`stageW`/`stageH`px）と判明したが、
+    bluesnovelのCSS既定は`width: 70%`＋heightは可変で単純対応しないため今回は対象外、`todo.md`に残す
+  - `docs/dev.html`のwidth/height説明文を更新
+  - `todo.md`「組み込み変数の残り」の画像レイヤ分を解消（文字レイヤ分は残す）
+
 - [ ]
 
 

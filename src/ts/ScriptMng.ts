@@ -26,6 +26,7 @@ import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
 import {SndMng} from './SndMng';
 import {MAX_END_MS} from './SndBuf';
 import {decryptPicUrl} from './Crypto';
+import {getNatSize} from './Sprite';
 
 import gsap from 'gsap';
 
@@ -178,21 +179,23 @@ export class ScriptMng {
 		//	  `[add_lay layer=0 cond=!const.sn.lay.0]`の重複防止や`*max_lay_lp`が効く。
 		//	・詳細：`const.sn.lay[N].<fore|back>.visible/.alpha/.x/.y/.width`。立ち絵[fg2]のGCが使う。
 		//	  visible/alpha/x/y は T_LAY_STY の実値（本家の座標名は x/y。left/top の別名で両方返す）。
-		//	  **width/heightは[lay width=/height=]で明示していればその値。未指定はストアに実寸が
-		//	  無いので「表示物があるか（grp=画像src有り／txt=文字かボタン有り）」を1/0で代用**
-		//	  （GCは width>0 判定に使う）
+		//	  **width/heightは[lay width=/height=]で明示していればその値**。未指定時：
+		//	  画像レイヤ（grp）は`Sprite.ts`のsrcキー自然サイズキャッシュ（本家GrpLayer.ts:88-108相当。
+		//	  GrpLayer.tsxのimg onLoad/video onLoadedMetadata/シートロードで書く。ロード前は0＝本家と同じ）、
+		//	  文字レイヤ（txt）はストアに実寸が無いため引き続き「表示物があるか」を1/0で代用（GCはwidth>0判定に使う）
 		engine.defBuiltin('const.sn.lay', ()=> {
 			const {fore, back} = this.$fncs.getPages();
 			const attrs = (l: (typeof fore)[number] | undefined)=> {
 				if (! l) return undefined;
 				const has = l.cls === 'grp' ? Boolean(l.src) : l.str.length > 0 || l.aBtn.length > 0;
+				const natSize = l.cls === 'grp' ? getNatSize(l.src) : undefined;
 				const x = l.left ?? 0, y = l.top ?? 0;
 				return {
 					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）
 					alpha	: l.alpha ?? 1,
 					x, y, left: x, top: y,	// 本家は x/y。left/top の別名としても引けるように両方持たせる
-					width	: l.width ?? (has ? 1 : 0),
-					height	: l.height ?? (has ? 1 : 0),
+					width	: l.width ?? (l.cls === 'grp' ? (natSize?.w ?? 0) : (has ? 1 : 0)),
+					height	: l.height ?? (l.cls === 'grp' ? (natSize?.h ?? 0) : (has ? 1 : 0)),
 				};
 			};
 			const hLay: {[nm: string]: {fore: unknown; back: unknown}} = {};

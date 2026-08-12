@@ -94,6 +94,14 @@ export function sheetImgSrc(jsonSrc: string, json: unknown): string {
 }
 
 
+// 画像/動画/アニメpngシートの自然サイズ。`[lay width=/height=]`未指定時の
+//	`const.sn.lay[N].<fore|back>.width/.height`（本家 GrpLayer.ts:88-108相当）に使う。
+//	srcキーで覚えるのは上のhSheetと同じ形（表裏ページ・複数レイヤが同じ画像を使うため）。
+//	書き込みはGrpLayer.tsx側（img onLoad/video onLoadedMetadata/シートロード完了）が行う
+const hNatSize: {[src: string]: {w: number; h: number}} = Object.create(null);
+export function setNatSize(src: string, w: number, h: number) {hNatSize[src] = {w, h}}
+export function getNatSize(src: string): {w: number; h: number} | undefined {return hNatSize[src]}
+
 // 再生用CSSを<head>へ入れ、当てるクラス名を返す。**シートごとに1回だけ**作って使い回す。
 //	emotionのcssではなく素のクラスにしてあるのは、Reactの外で組み立てるDOM
 //	（TxtLayerの本文＝[graph]や[l]/[p]の待ちマーク）からも同じ物を当てたいため。

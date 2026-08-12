@@ -47,7 +47,12 @@
         SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
         これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
 - [ ] **組み込み変数の残り**
-  - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
+  - [ ] `const.sn.lay[N].<fore|back>.width/.height`：文字レイヤ（txt）は依然「表示物の有無」を1/0で
+        代用中（`src/ts/ScriptMng.ts:184-201`）。画像レイヤ（grp）分は実寸化済み（2026-08-12、
+        CHANGELOG.md参照）。本家調査で文字レイヤも実測ではなく`style`文字列の明示値（既定`stageW`px/
+        `stageH`px）と判明したが、bluesnovelは既定がCSS側`width: 70%`（`TxtLayer.tsx:519`）でheightは
+        可変のため、本家と同じ単純対応が付かない。着手するなら既定値の近似方針から要検討
+    - 次回着手するなら画像レイヤ側から（設計は上記で固まっている）。文字レイヤは現状の1/0代用のまま据え置き
 - [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
 
 ## アセット・基盤

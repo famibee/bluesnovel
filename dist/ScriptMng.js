@@ -1,17 +1,17 @@
 import { S as e, a as t, i as n, l as r, m as i, r as a, t as o, x as s } from "./store.js";
 import { a as c, i as l, o as u, r as d, t as f } from "./CmnLib.js";
-import { t as p } from "./Crypto.js";
-import { t as m } from "./gsap.js";
-import { PROTOCOL_USERDATA as h, t as g } from "./Config.js";
+import { o as p, r as m } from "./Sprite.js";
+import { t as h } from "./gsap.js";
+import { PROTOCOL_USERDATA as g, t as _ } from "./Config.js";
 //#region src/sn/AnalyzeTagArg.ts
-function _(e, t, n = 0, r = 0, i = 0) {
+function v(e, t, n = 0, r = 0, i = 0) {
 	let a = e.slice(0, t).split("\n"), o = a.length;
 	return {
 		ln: r + o - 1,
 		ch: o < 2 ? i + 1 + n + t : a.at(-1)?.length ?? 0
 	};
 }
-var v = class {
+var y = class {
 	#e = /;[^\n]*|(?<key>[^\s="'#|;]+)(?:\s|;[^\n]*\n)*=(?:\s|;[^\n]*\n)*(?:(?<val>[^\s"'#|;]+)|(["'#])(?<val2>.*?)\3)(?:\|(?:(?<def>[^\s"'#;]+)|(["'#])(?<def2>.*?)\6))?|(?<literal>[^\s;]+)/g;
 	parse(e) {
 		this.#t = {}, this.#n = !1;
@@ -33,7 +33,7 @@ var v = class {
 			let { key: c, val: l, val2: u = "", literal: d } = e;
 			if (d) {
 				if (d.endsWith("=")) {
-					let e = d.length - 1, { ch: s } = _(a, o + e, t, n, r);
+					let e = d.length - 1, { ch: s } = v(a, o + e, t, n, r);
 					i[d.slice(0, -1)] = {
 						k_ln: n,
 						k_ch: s - e,
@@ -45,7 +45,7 @@ var v = class {
 				continue;
 			}
 			if (!c) continue;
-			let { ln: f, ch: p } = _(a, o, t, n, r), { ln: m, ch: h } = _(a, o + s.lastIndexOf(l ?? u) - +!l, t, n, r);
+			let { ln: f, ch: p } = v(a, o, t, n, r), { ln: m, ch: h } = v(a, o + s.lastIndexOf(l ?? u) - +!l, t, n, r);
 			i[c] = {
 				k_ln: f,
 				k_ch: p,
@@ -64,14 +64,14 @@ var v = class {
 	get isKomeParam() {
 		return this.#n;
 	}
-}, y = /(?<name>[^\s;\]]+)/;
-function b(e) {
-	let t = y.exec(e.slice(1, -1))?.groups;
+}, b = /(?<name>[^\s;\]]+)/;
+function x(e) {
+	let t = b.exec(e.slice(1, -1))?.groups;
 	if (!t) throw `タグ記述【${e}】異常です(タグ解析)`;
 	let n = t.name;
 	return [n, e.slice(1 + n.length, -1)];
 }
-function ee(e) {
+function S(e) {
 	let t = e.replaceAll("==", "＝").replaceAll("!=", "≠").split("="), n = t.length;
 	if (n < 2 || n > 3) throw "「&計算」書式では「=」指定が一つか二つ必要です";
 	let [r, i, a] = t;
@@ -82,7 +82,7 @@ function ee(e) {
 		...n === 3 ? { cast: a.trim() } : {}
 	};
 }
-var x = class {
+var C = class {
 	cfg;
 	constructor(e) {
 		this.cfg = e, this.setEscape("");
@@ -150,14 +150,14 @@ var x = class {
 			for (let t = e.len - 1; t >= 0; --t) {
 				let n = e.aToken[t];
 				if (!this.#o.test(n)) continue;
-				let [r, i] = b(n);
+				let [r, i] = x(n);
 				this.#l.parse(i);
 				let a = this.#l.hPrm.fn;
 				if (!a) continue;
 				let { val: o } = a;
 				if (!o.endsWith("*")) continue;
 				e.aToken.splice(t, 1, "	", "; " + n), e.aLNum.splice(t, 1, NaN, NaN);
-				let s = r === "loadplugin" ? g.CSS : g.SN, c = this.cfg.matchPath("^" + o.slice(0, -1) + ".*", s);
+				let s = r === "loadplugin" ? _.CSS : _.SN, c = this.cfg.matchPath("^" + o.slice(0, -1) + ".*", s);
 				for (let r of c) {
 					let i = n.replace(this.#s, "fn=" + decodeURIComponent(l(r[s])));
 					e.aToken.splice(t, 0, i), e.aLNum.splice(t, 0, NaN);
@@ -166,7 +166,7 @@ var x = class {
 			e.len = e.aToken.length;
 		}
 	}
-	#l = new v();
+	#l = new y();
 	testTagLetml(e) {
 		return /^\[let_ml\s/.test(e);
 	}
@@ -197,7 +197,7 @@ var x = class {
 };
 //#endregion
 //#region src/sn/CmnInterface.ts
-function te() {
+function w() {
 	return {
 		"const.sn.cfg.ns": "",
 		"const.sn.aPageLog": "[]",
@@ -227,7 +227,7 @@ function te() {
 }
 //#endregion
 //#region src/ts/VarStore.ts
-var S = { save: "game" }, C = class e {
+var T = { save: "game" }, E = class e {
 	#e = Object.create(null);
 	#t = Object.create(null);
 	#n = /* @__PURE__ */ new Set();
@@ -237,7 +237,7 @@ var S = { save: "game" }, C = class e {
 		this.#a();
 	}
 	#a() {
-		for (let [e, t] of Object.entries(te())) this.#e[`sys.${e}`] = typeof t == "function" ? 1 : t;
+		for (let [e, t] of Object.entries(w())) this.#e[`sys.${e}`] = typeof t == "function" ? 1 : t;
 	}
 	defBuiltin(e, t) {
 		this.#t[e] = t;
@@ -255,7 +255,7 @@ var S = { save: "game" }, C = class e {
 		if (!n) throw `変数名が不正です：${t}`;
 		let r = n[1] ?? "tmp";
 		return {
-			ns: S[r] ?? r,
+			ns: T[r] ?? r,
 			key: e.#o(n[2]),
 			atStr: !!n[3]
 		};
@@ -396,7 +396,7 @@ var S = { save: "game" }, C = class e {
 	#l(e) {
 		for (let t of Object.keys(this.#e)) t.startsWith(e) && (delete this.#e[t], this.#n.delete(t));
 	}
-}, w = /\[[^\]]+\]/g, T = {
+}, D = /\[[^\]]+\]/g, ee = {
 	"**": {
 		bp: 13,
 		right: !0
@@ -431,7 +431,7 @@ var S = { save: "game" }, C = class e {
 		bp: 1,
 		right: !0
 	}
-}, ne = class {
+}, te = class {
 	val;
 	#e;
 	#t;
@@ -575,7 +575,7 @@ var S = { save: "game" }, C = class e {
 		}, s = (e) => {
 			let t = o();
 			for (;;) {
-				let i = r(), a = i && T[i.t];
+				let i = r(), a = i && ee[i.t];
 				if (!a || a.bp < e) break;
 				++n;
 				let o = s(a.right ? a.bp : a.bp + 1);
@@ -591,7 +591,7 @@ var S = { save: "game" }, C = class e {
 		return c;
 	}
 	#a(e) {
-		let t = e.replaceAll(w, (e) => "." + String(this.parse(e.slice(1, -1)))), n = this.val.get(t);
+		let t = e.replaceAll(D, (e) => "." + String(this.parse(e.slice(1, -1)))), n = this.val.get(t);
 		return n == null ? ["!str!", n] : typeof n == "boolean" ? ["!bool!", n] : Object.prototype.toString.call(n) === "[object String]" ? ["!str!", String(n)] : ["!num!", Number(n)];
 	}
 	parse(e) {
@@ -697,7 +697,7 @@ var S = { save: "game" }, C = class e {
 		return e == null ? e : String(e).replaceAll(this.#l, (e) => String(e.startsWith("$") ? this.val.get(e.slice(1)) : this.parse(e.slice(2, -1))));
 	}
 	getValAmpersand = (e) => e.startsWith("&") ? String(this.parse(e.slice(1))) : e;
-}, E = class {
+}, O = class {
 	fn;
 	grm;
 	#e;
@@ -708,7 +708,7 @@ var S = { save: "game" }, C = class e {
 		return this.#e.aLNum;
 	}
 	#t = Object.create(null);
-	constructor(e, t, n = new x()) {
+	constructor(e, t, n = new C()) {
 		this.fn = e, this.grm = n, this.#e = n.resolveScript(t), this.#n();
 	}
 	#n() {
@@ -734,7 +734,7 @@ var S = { save: "game" }, C = class e {
 	defC2M(e, t, n, r) {
 		this.grm[e](t, n, this.#e, r), this.#n();
 	}
-}, D = class e {
+}, k = class e {
 	static #e = "ヽ";
 	static setting(t) {
 		t.sesame && (e.#e = t.sesame);
@@ -790,7 +790,7 @@ var S = { save: "game" }, C = class e {
 		let a = n.split(" "), o = a.length, s = o > i ? o : i;
 		for (let e = 0; e < s; ++e) this.#t(e < i ? r[e] : "", e < o ? decodeURIComponent(a[e]) : "");
 	}
-}, O = class e {
+}, A = class e {
 	#e = {};
 	clear() {
 		this.#e = {};
@@ -842,7 +842,7 @@ var S = { save: "game" }, C = class e {
 		for (let t of Object.keys(this.#e).map((e) => parseInt(e)).sort((e, t) => e - t)) e += t === this.#e[t] ? "," + String(t) : "," + String(t) + "~" + String(this.#e[String(t)]);
 		return e;
 	}
-}, k = [
+}, j = [
 	"alpha",
 	"left",
 	"top",
@@ -853,7 +853,7 @@ var S = { save: "game" }, C = class e {
 	"scale_y",
 	"pivot_x",
 	"pivot_y"
-], A = [
+], M = [
 	"alpha",
 	"x",
 	"y",
@@ -862,7 +862,7 @@ var S = { save: "game" }, C = class e {
 	"scale_x",
 	"scale_y",
 	"rotate"
-], re = {
+], N = {
 	alpha: 1,
 	left: 0,
 	top: 0,
@@ -872,7 +872,7 @@ var S = { save: "game" }, C = class e {
 	pivot_x: 0,
 	pivot_y: 0
 };
-function j(e, t, n = k) {
+function P(e, t, n = j) {
 	let r = {}, i = (t, n) => {
 		if (!n) return;
 		let i = n.startsWith("="), a = i ? n.slice(1) : n;
@@ -892,10 +892,10 @@ function j(e, t, n = k) {
 	for (let e of n) i(e, t[e]);
 	return n.includes("left") && (t.left === void 0 && i("left", t.x), t.top === void 0 && i("top", t.y)), r;
 }
-var M = /\(\s*(?:(?<x>[-=\d.]+)|(['"])(?<x2>.*?)\2)?(?:\s*,\s*(?:(?<y>[-=\d.]+)|(['"])(?<y2>.*?)\5)?(?:\s*,\s*(?:(?<o>[-=\d.]+)|(['"])(?<o2>.*?)\8))?)?|(?<json>\{[^{}]*})/g;
-function N(e, t, n = k) {
+var ne = /\(\s*(?:(?<x>[-=\d.]+)|(['"])(?<x2>.*?)\2)?(?:\s*,\s*(?:(?<y>[-=\d.]+)|(['"])(?<y2>.*?)\5)?(?:\s*,\s*(?:(?<o>[-=\d.]+)|(['"])(?<o2>.*?)\8))?)?|(?<json>\{[^{}]*})/g;
+function re(e, t, n = j) {
 	let r = [];
-	for (let { groups: i } of t.matchAll(M)) {
+	for (let { groups: i } of t.matchAll(ne)) {
 		let { x: t, x2: a, y: o, y2: s, o: c, o2: l, json: u } = i, d = {};
 		if (u) {
 			let t;
@@ -913,11 +913,11 @@ function N(e, t, n = k) {
 			let r = c ?? l;
 			r && (d.alpha = r);
 		}
-		r.push(j(e, d, n));
+		r.push(P(e, d, n));
 	}
 	return r;
 }
-var P = {
+var ie = {
 	Quadratic: "power1",
 	Cubic: "power2",
 	Quartic: "power3",
@@ -928,7 +928,7 @@ var P = {
 	Elastic: "elastic",
 	Back: "back",
 	Bounce: "bounce"
-}, ie = {
+}, ae = {
 	In: "in",
 	Out: "out",
 	InOut: "inOut"
@@ -937,7 +937,7 @@ function F(e) {
 	if (!e) return "none";
 	let [t = "", n = ""] = e.split(".");
 	if (t === "Linear") return "none";
-	let r = P[t], i = ie[n];
+	let r = ie[t], i = ae[n];
 	if (!r || !i) throw `異常なease指定です：${e}`;
 	return `${r}.${i}`;
 }
@@ -950,7 +950,7 @@ function I(e, t) {
 //#endregion
 //#region src/ts/Txt.ts
 function L(e) {
-	D.setEscape(e);
+	k.setEscape(e);
 }
 L("");
 var R = [
@@ -1005,7 +1005,7 @@ function V(e) {
 			...h === void 0 ? {} : { cos: h },
 			...g === void 0 ? {} : { w: g }
 		});
-	}, d = new D();
+	}, d = new k();
 	return d.init((e, d) => {
 		let f = d ? B(d) : void 0;
 		if (!f) {
@@ -1103,9 +1103,9 @@ function G(e) {
 //#region src/ts/Log.ts
 var K = 64, q = (e) => e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"), J = (e) => q(e).replaceAll("'", "&#39;");
 function Y(e) {
-	return ae(V(e));
+	return oe(V(e));
 }
-function ae(e) {
+function oe(e) {
 	let t = "";
 	for (let n of e) {
 		if (n.c === "\n") {
@@ -1117,7 +1117,7 @@ function ae(e) {
 	}
 	return t;
 }
-var oe = class {
+var se = class {
 	maxLen;
 	#e = [];
 	#t = "";
@@ -1160,10 +1160,10 @@ var oe = class {
 		}
 		this.#t = "", this.#n = {};
 	}
-}, se = class e {
-	static #e = new v();
+}, ce = class e {
+	static #e = new y();
 	static parseTag(t) {
-		let [n, r] = b(t);
+		let [n, r] = x(t);
 		e.#e.parse(r);
 		let i = {};
 		for (let [t, n] of Object.entries(e.#e.hPrm)) i[t] = n.val;
@@ -1173,7 +1173,7 @@ var oe = class {
 		};
 	}
 	#t(t) {
-		let [n, r] = b(t), i = e.#e;
+		let [n, r] = x(t), i = e.#e;
 		i.parse(r);
 		let a = i.hPrm, o = a.cond?.val;
 		if (o !== void 0) {
@@ -1289,7 +1289,7 @@ var oe = class {
 		return n.b_color !== void 0 && (r.b_color = n.b_color), r;
 	}
 	static #m(e, t, n) {
-		let r = t.path ? N(e, t.path, n) : void 0;
+		let r = t.path ? re(e, t.path, n) : void 0;
 		return {
 			...r?.length ? { aPath: r } : {},
 			...t.chain ? { chain: t.chain } : {}
@@ -1332,9 +1332,9 @@ var oe = class {
 	resetVolMulTalking() {
 		this.#D = 1;
 	}
-	#O = new C();
-	#k = new ne(this.#O);
-	#A = new oe(() => {
+	#O = new E();
+	#k = new te(this.#O);
+	#A = new se(() => {
 		let e = Number(this.#O.get("tmp:const.sn.config.log.max_len"));
 		return Number.isFinite(e) && e > 0 ? e : 64;
 	});
@@ -1367,7 +1367,7 @@ var oe = class {
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#g = e instanceof E ? e : new E(e, t), this.#O.defBuiltin("const.sn.scriptFn", () => this.fn), this.#O.defBuiltin("const.sn.isKidoku", () => this.#R), this.#O.defBuiltin("const.sn.displayState", () => this.#V), this.#O.defBuiltin("const.Date.getDateStr", () => d()), this.#O.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#O.defBuiltin("const.sn.last_page_plain_text", () => U(this.#y[this.#v] ?? "")), this.#O.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#O.defBuiltin("const.sn.log.json", () => this.#A.json()), this.#O.defBuiltin("const.sn.key.alternate", () => this.#H.Alt === !0), this.#O.defBuiltin("const.sn.key.command", () => this.#H.Meta === !0), this.#O.defBuiltin("const.sn.key.control", () => this.#H.Control === !0), this.#O.defBuiltin("const.sn.key.end", () => this.#H.End === !0), this.#O.defBuiltin("const.sn.key.escape", () => this.#H.Escape === !0), this.#O.defBuiltin("const.sn.key.back", () => !1), this.#O.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#O.defBuiltin("const.sn.aIfStk.length", () => this.#N.length), this.#O.defBuiltin("const.sn.vctCallStk.length", () => this.#P.length), this.#O.set("save:const.sn.mesLayer", this.#v);
+		this.#g = e instanceof O ? e : new O(e, t), this.#O.defBuiltin("const.sn.scriptFn", () => this.fn), this.#O.defBuiltin("const.sn.isKidoku", () => this.#R), this.#O.defBuiltin("const.sn.displayState", () => this.#V), this.#O.defBuiltin("const.Date.getDateStr", () => d()), this.#O.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#O.defBuiltin("const.sn.last_page_plain_text", () => U(this.#y[this.#v] ?? "")), this.#O.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#O.defBuiltin("const.sn.log.json", () => this.#A.json()), this.#O.defBuiltin("const.sn.key.alternate", () => this.#H.Alt === !0), this.#O.defBuiltin("const.sn.key.command", () => this.#H.Meta === !0), this.#O.defBuiltin("const.sn.key.control", () => this.#H.Control === !0), this.#O.defBuiltin("const.sn.key.end", () => this.#H.End === !0), this.#O.defBuiltin("const.sn.key.escape", () => this.#H.Escape === !0), this.#O.defBuiltin("const.sn.key.back", () => !1), this.#O.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#O.defBuiltin("const.sn.aIfStk.length", () => this.#N.length), this.#O.defBuiltin("const.sn.vctCallStk.length", () => this.#P.length), this.#O.set("save:const.sn.mesLayer", this.#v);
 	}
 	#V = !1;
 	setFullScr(e) {
@@ -1492,7 +1492,7 @@ var oe = class {
 		return this.#R;
 	}
 	#U() {
-		let e = this.#L[this.fn] ??= new O();
+		let e = this.#L[this.fn] ??= new A();
 		if (this.#P.length > 0) {
 			e.record(this.#_);
 			return;
@@ -1510,7 +1510,7 @@ var oe = class {
 	setKidoku(e) {
 		for (let e in this.#L) delete this.#L[e];
 		this.#R = !1;
-		for (let [t, n] of Object.entries(e)) this.#L[t] = O.from(n);
+		for (let [t, n] of Object.entries(e)) this.#L[t] = A.from(n);
 	}
 	clearKidoku() {
 		for (let e of Object.values(this.#L)) e.clear();
@@ -1631,7 +1631,7 @@ var oe = class {
 		return e;
 	}
 	#Z(e) {
-		let { name: t, text: n, cast: r } = ee(e.slice(1));
+		let { name: t, text: n, cast: r } = S(e.slice(1));
 		this.#O.set(this.#k.getValAmpersand(t.trim()), this.#k.parse(n), r ?? "");
 	}
 	#Q(t, n, o) {
@@ -1714,7 +1714,7 @@ var oe = class {
 					let t = n.pos, r = Number(this.#O.get("tmp:const.sn.config.window.width")), i = Number(this.#O.get("tmp:const.sn.config.window.height"));
 					t === "" || t === "c" ? (a.left = r / 2, a.align_x = "center") : t === "l" ? a.left = 0 : t === "r" ? (a.left = r, a.align_x = "right") : (a.left = e.#n("lay", "pos", t), a.align_x = "center"), a.top = i, a.align_y = "bottom";
 				} else n.left === void 0 ? n.center === void 0 ? n.right === void 0 ? n.s_right !== void 0 && (a.s_right = this.#r("lay", "left", n.s_right)) : (a.left = this.#r("lay", "left", n.right), a.align_x = "right") : (a.left = this.#r("lay", "left", n.center), a.align_x = "center") : a.left = this.#r("lay", "left", n.left), n.top === void 0 ? n.middle === void 0 ? n.bottom === void 0 ? n.s_bottom !== void 0 && (a.s_bottom = this.#r("lay", "top", n.s_bottom)) : (a.top = this.#r("lay", "top", n.bottom), a.align_y = "bottom") : (a.top = this.#r("lay", "top", n.middle), a.align_y = "middle") : a.top = this.#r("lay", "top", n.top);
-				if (n.width !== void 0 && (a.width = e.#n("lay", "width", n.width)), n.height !== void 0 && (a.height = e.#n("lay", "height", n.height)), n.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", n.rotation)), n.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", n.scale_x)), n.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", n.scale_y)), n.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", n.pivot_x)), n.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", n.pivot_y)), n.blendmode !== void 0 && (a.blendmode = s(n.blendmode)), n.b_color !== void 0 && n.back_clear !== "true" && (a.b_color = e.#n("lay", "b_color", n.b_color)), n.style !== void 0 && (a.style = n.style), n.pl !== void 0 && (a.pl = e.#n("lay", "pl", n.pl)), n.pr !== void 0 && (a.pr = e.#n("lay", "pr", n.pr)), n.pt !== void 0 && (a.pt = e.#n("lay", "pt", n.pt)), n.pb !== void 0 && (a.pb = e.#n("lay", "pb", n.pb)), n.ffs !== void 0 && (a.ffs = n.ffs), n.noffs !== void 0 && (a.noffs = n.noffs), n.bura !== void 0 && (a.bura = n.bura !== "false"), n.kinsoku_sol !== void 0 && (a.kinsoku_sol = n.kinsoku_sol), n.kinsoku_eol !== void 0 && (a.kinsoku_eol = n.kinsoku_eol), n.kinsoku_dns !== void 0 && (a.kinsoku_dns = n.kinsoku_dns), n.kinsoku_bura !== void 0 && (a.kinsoku_bura = n.kinsoku_bura), D.setting(n), n.r_align !== void 0) {
+				if (n.width !== void 0 && (a.width = e.#n("lay", "width", n.width)), n.height !== void 0 && (a.height = e.#n("lay", "height", n.height)), n.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", n.rotation)), n.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", n.scale_x)), n.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", n.scale_y)), n.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", n.pivot_x)), n.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", n.pivot_y)), n.blendmode !== void 0 && (a.blendmode = s(n.blendmode)), n.b_color !== void 0 && n.back_clear !== "true" && (a.b_color = e.#n("lay", "b_color", n.b_color)), n.style !== void 0 && (a.style = n.style), n.pl !== void 0 && (a.pl = e.#n("lay", "pl", n.pl)), n.pr !== void 0 && (a.pr = e.#n("lay", "pr", n.pr)), n.pt !== void 0 && (a.pt = e.#n("lay", "pt", n.pt)), n.pb !== void 0 && (a.pb = e.#n("lay", "pb", n.pb)), n.ffs !== void 0 && (a.ffs = n.ffs), n.noffs !== void 0 && (a.noffs = n.noffs), n.bura !== void 0 && (a.bura = n.bura !== "false"), n.kinsoku_sol !== void 0 && (a.kinsoku_sol = n.kinsoku_sol), n.kinsoku_eol !== void 0 && (a.kinsoku_eol = n.kinsoku_eol), n.kinsoku_dns !== void 0 && (a.kinsoku_dns = n.kinsoku_dns), n.kinsoku_bura !== void 0 && (a.kinsoku_bura = n.kinsoku_bura), k.setting(n), n.r_align !== void 0) {
 					if (!W.includes(n.r_align)) throw `[lay] r_alignの値が不正です：${n.r_align}`;
 					a.r_align = n.r_align;
 				}
@@ -1840,7 +1840,7 @@ var oe = class {
 					ease: F(n.ease),
 					repeat: c > 0 ? c - 1 : -1,
 					yoyo: (n.yoyo ?? "false") !== "false",
-					hTo: j("tsy", n),
+					hTo: P("tsy", n),
 					backlay: (n.backlay ?? "false") !== "false",
 					...e.#m("tsy", n)
 				}), "skip";
@@ -1859,8 +1859,8 @@ var oe = class {
 					ease: F(n.ease),
 					repeat: i > 0 ? i - 1 : -1,
 					yoyo: (n.yoyo ?? "false") !== "false",
-					hTo: j("tsy_frame", n, A),
-					...e.#m("tsy_frame", n, A)
+					hTo: P("tsy_frame", n, M),
+					...e.#m("tsy_frame", n, M)
 				}), "skip";
 			}
 			case "wait_tsy": return o.push({
@@ -2697,7 +2697,7 @@ var oe = class {
 	#se() {
 		this.#A.pagebreak();
 	}
-}, ce = class e {
+}, le = class e {
 	searchPath;
 	fetch;
 	dec;
@@ -2736,7 +2736,7 @@ var oe = class {
 	}
 	async add(t, n, r) {
 		if (this.#r[t]) throw `[add_frame] frame【${t}】はすでにあります`;
-		let i = this.#e ?? await this.#n, a = this.searchPath(n, g.HTML), o = await this.fetch(a);
+		let i = this.#e ?? await this.#n, a = this.searchPath(n, _.HTML), o = await this.fetch(a);
 		if (!o.ok) throw `[add_frame] HTMLの読込に失敗しました src:${n} ${o.statusText}`;
 		let s = e.#m(await this.dec(a, await o.text()), a), c = document.createElement("iframe");
 		c.id = t, c.style.cssText = "position: absolute; border: 0; overflow: hidden; pointer-events: auto;", i.appendChild(c), this.#r[t] = c, this.#i[t] = !1, this.#l(c, this.#a[t] = {
@@ -2862,7 +2862,7 @@ var oe = class {
 		if (!t) return "";
 		if (/^(?:[a-z][a-z\d+\-.]*:|\/)/i.test(t)) return t;
 		try {
-			let e = this.searchPath(t, g.SP_GSM);
+			let e = this.searchPath(t, _.SP_GSM);
 			return await p(e, this.crypto, this.fetch, this.decAB);
 		} catch {
 			return e + t.replace(/^\.\//, "");
@@ -2873,35 +2873,35 @@ var oe = class {
 		let r = e.#d(n);
 		return t.replaceAll(e.#p, (e, t, n) => n.startsWith("../") ? r + e.slice(3) : e.replace("./", "").replace(t, t + r));
 	}
-}, le = /* @__PURE__ */ new Set([
+}, ue = /* @__PURE__ */ new Set([
 	"IFRAME",
 	"SCRIPT",
 	"CANVAS",
 	"VIDEO"
 ]);
-function X(e) {
+function de(e) {
 	return /\.jpe?g$/i.test(e) ? "image/jpeg" : "image/png";
 }
-function ue(e) {
+function fe(e) {
 	let t = d("-", "_", ""), n = /\.\w+$/.exec(e);
 	return n ? e.slice(0, n.index) + t + n[0] : `${e}${t}.png`;
 }
-function de(e) {
+function pe(e) {
 	let t = (e >>> 24) / 255;
 	return `rgba(${String(e >> 16 & 255)}, ${String(e >> 8 & 255)}, ${String(e & 255)}, ${String(t)})`;
 }
-async function fe(e) {
+async function me(e) {
 	let t = e.el.cloneNode(!0);
-	t.style.transform = "none", t.style.width = `${String(e.sw)}px`, t.style.height = `${String(e.sh)}px`, pe(t, e.page, e.aLayNm), await me(t);
-	let n = new XMLSerializer().serializeToString(t), r = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${ge()}</style>${n}</div></foreignObject></svg>`, i = await _e(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(r)}`), a = document.createElement("canvas");
+	t.style.transform = "none", t.style.width = `${String(e.sw)}px`, t.style.height = `${String(e.sh)}px`, he(t, e.page, e.aLayNm), await ge(t);
+	let n = new XMLSerializer().serializeToString(t), r = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${ve()}</style>${n}</div></foreignObject></svg>`, i = await ye(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(r)}`), a = document.createElement("canvas");
 	a.width = e.width, a.height = e.height;
 	let o = a.getContext("2d");
 	if (!o) throw "canvasの2Dコンテキストが取れません";
 	return o.imageSmoothingEnabled = e.smoothing, o.fillStyle = e.bgColor, o.fillRect(0, 0, e.width, e.height), o.drawImage(i, 0, 0, e.width, e.height), a.toDataURL(e.mime);
 }
-function pe(e, t, n) {
+function he(e, t, n) {
 	for (let r of [...e.querySelectorAll("*")]) {
-		if (le.has(r.tagName)) {
+		if (ue.has(r.tagName)) {
 			r.remove();
 			continue;
 		}
@@ -2915,18 +2915,18 @@ function pe(e, t, n) {
 		i !== void 0 && n && !n.includes(i) && r.remove();
 	}
 }
-async function me(e) {
+async function ge(e) {
 	let t = [...e.querySelectorAll("img")];
 	await Promise.all(t.map(async (e) => {
 		let { src: t } = e;
 		if (!(!t || t.startsWith("data:"))) try {
-			e.setAttribute("src", await he(t));
+			e.setAttribute("src", await _e(t));
 		} catch {
 			e.remove();
 		}
 	}));
 }
-async function he(e) {
+async function _e(e) {
 	let t = await fetch(e);
 	if (!t.ok) throw `画像が取得できません url:${e}`;
 	let n = await t.blob();
@@ -2935,26 +2935,26 @@ async function he(e) {
 		i.onload = () => t(String(i.result)), i.onerror = () => r(/* @__PURE__ */ Error(`画像が読めません url:${e}`)), i.readAsDataURL(n);
 	});
 }
-function ge() {
+function ve() {
 	let e = [];
 	for (let t of [...document.styleSheets]) try {
 		for (let n of [...t.cssRules]) e.push(n.cssText);
 	} catch {}
 	return e.join("\n");
 }
-function _e(e) {
+function ye(e) {
 	return new Promise((t, n) => {
 		let r = new Image();
 		r.onload = () => t(r), r.onerror = () => n(/* @__PURE__ */ Error("スナップショットの画像化に失敗しました")), r.src = e;
 	});
 }
-function ve(e, t) {
+function be(e, t) {
 	let n = document.createElement("a");
 	n.href = t, n.download = e, n.click();
 }
 //#endregion
 //#region src/ts/SaveMng.ts
-function Z() {
+function X() {
 	return {
 		sys: {},
 		mark: {},
@@ -2962,14 +2962,14 @@ function Z() {
 		storage: {}
 	};
 }
-var Q = ".swpd";
-async function ye(e, t) {
+var Z = ".swpd";
+async function xe(e, t) {
 	return t === void 0 ? void 0 : typeof t == "string" ? JSON.parse(await e("json", t)) : t;
 }
-var $ = class {
+var Q = class {
 	sys;
 	ns;
-	#e = Z();
+	#e = X();
 	get data() {
 		return this.#e;
 	}
@@ -2978,16 +2978,16 @@ var $ = class {
 	}
 	async load() {
 		let e = await this.sys.storeLoad(this.ns);
-		if (!e) return this.#e = Z(), !0;
+		if (!e) return this.#e = X(), !0;
 		try {
 			this.#e = this.sys.crypto ? await this.#t(e) : e;
 		} catch {
-			return this.#e = Z(), !0;
+			return this.#e = X(), !0;
 		}
 		return !1;
 	}
 	async #t(e) {
-		let t = (e) => ye(this.sys.dec, e);
+		let t = (e) => xe(this.sys.dec, e);
 		return {
 			sys: await t(e.sys),
 			mark: await t(e.mark),
@@ -3055,12 +3055,12 @@ var $ = class {
 	}
 	async export() {
 		let { crypto: e, enc: t } = this.sys, n = JSON.stringify(this.#e), r = new Blob([e ? await t(n) : n], { type: "text/json" }), i = URL.createObjectURL(r), a = document.createElement("a");
-		a.href = i, a.download = `${e ? "" : "no_crypto_"}${this.ns}${be()}${Q}`, a.click(), URL.revokeObjectURL(i);
+		a.href = i, a.download = `${e ? "" : "no_crypto_"}${this.ns}${Se()}${Z}`, a.click(), URL.revokeObjectURL(i);
 	}
 	async import() {
 		let e = await (await new Promise((e, t) => {
 			let n = document.createElement("input");
-			n.type = "file", n.accept = `${Q}, text/plain`, n.onchange = () => {
+			n.type = "file", n.accept = `${Z}, text/plain`, n.onchange = () => {
 				let r = n.files?.[0];
 				r ? e(r) : t(/* @__PURE__ */ Error("ファイル選択に失敗しました"));
 			}, n.click();
@@ -3075,27 +3075,27 @@ var $ = class {
 		return t.storage ??= {}, this.#e = t, this.flush(), t;
 	}
 };
-function be() {
+function Se() {
 	let e = /* @__PURE__ */ new Date(), t = (e) => String(e).padStart(2, "0");
 	return `${String(e.getFullYear())}-${t(e.getMonth() + 1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}-${t(e.getSeconds())}`;
 }
 //#endregion
 //#region src/ts/Font.ts
-function xe(e) {
-	return e.matchPath(".+", g.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
+function Ce(e) {
+	return e.matchPath(".+", _.FONT).flatMap((e) => Object.values(e)).filter((e) => typeof e == "string").map((t) => `@font-face {
 	font-family: ${JSON.stringify(t)};
-	src: url(${JSON.stringify(e.searchPath(t, g.FONT))});
+	src: url(${JSON.stringify(e.searchPath(t, _.FONT))});
 }`).join("\n");
 }
-function Se(e, t = document) {
-	let n = xe(e);
+function $(e, t = document) {
+	let n = Ce(e);
 	if (!n) return;
 	let r = t.createElement("style");
 	r.dataset.sn = "font", r.textContent = n, t.head.appendChild(r);
 }
 //#endregion
 //#region src/ts/SndBuf.ts
-var Ce = 999e3, we = class {
+var we = 999e3, Te = class {
 	ctx;
 	src;
 	opt;
@@ -3151,7 +3151,7 @@ var Ce = 999e3, we = class {
 	set volume(e) {
 		this.gn.gain.value = e;
 	}
-}, Te = {
+}, Ee = {
 	mp3: "audio/mpeg",
 	mpeg: "audio/mpeg",
 	opus: "audio/ogg; codecs=\"opus\"",
@@ -3166,7 +3166,7 @@ var Ce = 999e3, we = class {
 	webm: "audio/webm; codecs=\"vorbis\"",
 	dolby: "audio/mp4; codecs=\"ec-3\"",
 	flac: "audio/flac"
-}, Ee = class {
+}, De = class {
 	trace;
 	fetch;
 	decAB;
@@ -3198,7 +3198,7 @@ var Ce = 999e3, we = class {
 	}
 	codecs() {
 		let e = document.createElement("audio"), t = {};
-		for (let [n, r] of Object.entries(Te)) t[n] = e.canPlayType(r) !== "";
+		for (let [n, r] of Object.entries(Ee)) t[n] = e.canPlayType(r) !== "";
 		return JSON.stringify(t);
 	}
 	#r = /* @__PURE__ */ new Map();
@@ -3219,7 +3219,7 @@ var Ce = 999e3, we = class {
 		let i = this.#a[e];
 		if (i && !i.destroyed && i.src === t) return;
 		this.stop(e);
-		let { ctx: a, gn: o } = this.#n(), s = new we(a, o, e, t, n);
+		let { ctx: a, gn: o } = this.#n(), s = new Te(a, o, e, t, n);
 		this.#a[e] = s, s.onEnd = () => {
 			let e = s.buf;
 			this.#a[e] === s && delete this.#a[e];
@@ -3262,11 +3262,11 @@ var Ce = 999e3, we = class {
 	cancelWaitEnd(e) {
 		delete this.#o[e];
 	}
-}, De = class r {
+}, Oe = class r {
 	sys;
 	#e;
 	constructor(e) {
-		this.sys = e, this.#m = new $(e, ""), this.#C = new ce((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
+		this.sys = e, this.#m = new Q(e, ""), this.#C = new le((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
 			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Ke(e), this.#t.log = (e) => this.#Je(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
@@ -3293,13 +3293,13 @@ var Ce = 999e3, we = class {
 		let t = await this.#b(e);
 		if (this.#r) this.#r.switchScript(t);
 		else {
-			let e = this.#r = new se(t);
+			let e = this.#r = new ce(t);
 			this.#s(e), e.defSetTrigger("sys:sn.sound.global_volume", (e) => {
 				this.#w.setGlobalVol(Number(e)), this.#E();
 			}), e.defSetTriggerSoundVol((t, n) => {
 				let r = Number(e.getVal(`save:const.sn.sound.${t}.volume`) ?? 1);
 				this.#w.setVol(t, r * Number(n));
-			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#E()), await this.#g(e), Se(this.sys.cfg);
+			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#E()), await this.#g(e), $(this.sys.cfg);
 		}
 		this.go = () => this.#k(), this.$trgNext();
 	}
@@ -3330,16 +3330,16 @@ var Ce = 999e3, we = class {
 		e.defBuiltin("const.sn.lay", () => {
 			let { fore: e, back: t } = this.$fncs.getPages(), n = (e) => {
 				if (!e) return;
-				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0, n = e.left ?? 0, r = e.top ?? 0;
+				let t = e.cls === "grp" ? !!e.src : e.str.length > 0 || e.aBtn.length > 0, n = e.cls === "grp" ? m(e.src) : void 0, r = e.left ?? 0, i = e.top ?? 0;
 				return {
 					visible: e.visible !== !1,
 					alpha: e.alpha ?? 1,
-					x: n,
-					y: r,
-					left: n,
-					top: r,
-					width: e.width ?? +!!t,
-					height: e.height ?? +!!t
+					x: r,
+					y: i,
+					left: r,
+					top: i,
+					width: e.width ?? (e.cls === "grp" ? n?.w ?? 0 : +!!t),
+					height: e.height ?? (e.cls === "grp" ? n?.h ?? 0 : +!!t)
 				};
 			}, r = {};
 			for (let i of e) r[i.nm] = {
@@ -3381,7 +3381,7 @@ var Ce = 999e3, we = class {
 	#m;
 	#h = !0;
 	async #g(e) {
-		this.#m = new $(this.sys, this.sys.cfg.oCfg.save_ns);
+		this.#m = new Q(this.sys, this.sys.cfg.oCfg.save_ns);
 		try {
 			this.#h = await this.#m.load();
 		} catch (e) {
@@ -3406,12 +3406,12 @@ var Ce = 999e3, we = class {
 	}
 	#y;
 	async #b(e) {
-		return this.#n[e] ??= new E(e, await this.#Ge(e), this.#S());
+		return this.#n[e] ??= new O(e, await this.#Ge(e), this.#S());
 	}
 	#x;
 	#S() {
 		if (this.#x) return this.#x;
-		let e = this.#x = new x(this.sys.cfg);
+		let e = this.#x = new C(this.sys.cfg);
 		return e.setEscape(this.sys.cfg.oCfg.init.escape), L(this.sys.cfg.oCfg.init.escape), e;
 	}
 	go() {}
@@ -3425,7 +3425,7 @@ var Ce = 999e3, we = class {
 	attachFrameBox(e) {
 		this.#C.attachBox(e);
 	}
-	#w = new Ee((e, t) => this.myTrace(e, t), (e, t) => this.sys.fetch(e, t), (e) => this.sys.decAB(e));
+	#w = new De((e, t) => this.myTrace(e, t), (e, t) => this.sys.fetch(e, t), (e) => this.sys.decAB(e));
 	unlockAudio() {
 		this.#w.unlock();
 	}
@@ -3443,7 +3443,7 @@ var Ce = 999e3, we = class {
 			speed: 1,
 			pan: 0,
 			start_ms: 0,
-			end_ms: Ce,
+			end_ms: we,
 			ret_ms: 0
 		}).catch(this.#i);
 	}
@@ -3611,7 +3611,7 @@ var Ce = 999e3, we = class {
 	#$;
 	#ee(e) {
 		let t = this.$fncs.getLaySty(e.nm, e.page), { from: n, aTo: i, aPrp: a } = r.#ne(e, (e) => {
-			let n = t[e] ?? re[e];
+			let n = t[e] ?? N[e];
 			if (n === void 0) throw `[tsy] ${e} は [lay ${e}=…] で寸法を明示したレイヤにしか使えません`;
 			return n;
 		});
@@ -3676,7 +3676,7 @@ var Ce = 999e3, we = class {
 			o(), this.#ie(e.tw_nm);
 		}, u;
 		if (n.length > 1) {
-			let e = m.timeline({
+			let e = h.timeline({
 				paused: c,
 				onComplete: l
 			});
@@ -3685,7 +3685,7 @@ var Ce = 999e3, we = class {
 				...s
 			});
 			u = e;
-		} else u = m.to(t, {
+		} else u = h.to(t, {
 			...n[0],
 			...s,
 			paused: c,
@@ -3794,7 +3794,7 @@ var Ce = 999e3, we = class {
 			t(), this.#ge(e.buf);
 			return;
 		}
-		let r = m.to(n.gain, {
+		let r = h.to(n.gain, {
 			value: e.volume,
 			duration: e.msec / 1e3,
 			delay: e.delay / 1e3,
@@ -4013,19 +4013,19 @@ var Ce = 999e3, we = class {
 	async #Ne(e) {
 		let t = this.#T;
 		if (!t) throw "ステージがまだ表示されていません";
-		let n = e.fn.startsWith(h), r = n ? e.fn : ue(e.fn || "snapshot"), i = X(r), { stageW: a, stageH: o } = f, s = e.width || a, c = e.height || o, l = (e.aLayNm === null && e.page === "fore" && e.b_color === void 0 ? await this.sys.capturePage(this.#Pe(t), s, c, i) : "") || await fe({
+		let n = e.fn.startsWith(g), r = n ? e.fn : fe(e.fn || "snapshot"), i = de(r), { stageW: a, stageH: o } = f, s = e.width || a, c = e.height || o, l = (e.aLayNm === null && e.page === "fore" && e.b_color === void 0 ? await this.sys.capturePage(this.#Pe(t), s, c, i) : "") || await me({
 			el: t,
 			sw: a,
 			sh: o,
 			width: s,
 			height: c,
-			bgColor: e.b_color === void 0 ? "black" : de(e.b_color),
+			bgColor: e.b_color === void 0 ? "black" : pe(e.b_color),
 			page: e.page,
 			aLayNm: e.aLayNm,
 			mime: i,
 			smoothing: e.smoothing
 		});
-		n ? this.#m.putFile(r, l) : ve(r, l);
+		n ? this.#m.putFile(r, l) : be(r, l);
 	}
 	#Pe(e) {
 		let t = e.getBoundingClientRect();
@@ -4042,13 +4042,13 @@ var Ce = 999e3, we = class {
 	#Ie = Object.create(null);
 	#Le(e) {
 		let t = e === "l" ? "breakline" : "breakpage";
-		return this.#Ie[e] ??= this.sys.cfg.matchPath(`^${t}$`, g.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, g.SP_GSM) : "";
+		return this.#Ie[e] ??= this.sys.cfg.matchPath(`^${t}$`, _.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, _.SP_GSM) : "";
 	}
 	#Re(e, t) {
 		if (!t) return "";
 		if (t.startsWith("userdata:/")) return this.#m.getFile(t) || (this.myTrace(`[${e}] 保存された画像がありません fn:${t}`, "E"), "");
 		try {
-			return this.sys.cfg.searchPath(t, g.SP_GSM);
+			return this.sys.cfg.searchPath(t, _.SP_GSM);
 		} catch (n) {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
@@ -4056,7 +4056,7 @@ var Ce = 999e3, we = class {
 	#ze(e, t) {
 		if (!t) return "";
 		try {
-			return this.sys.cfg.searchPath(t, g.SOUND);
+			return this.sys.cfg.searchPath(t, _.SOUND);
 		} catch (n) {
 			return this.myTrace(`[${e}] 音声ファイルが見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
@@ -4071,7 +4071,7 @@ var Ce = 999e3, we = class {
 		if (e) for (let t of new Set(e.peekUpcomingPicFn())) {
 			let e;
 			try {
-				e = this.sys.cfg.searchPath(t, g.SP_GSM);
+				e = this.sys.cfg.searchPath(t, _.SP_GSM);
 			} catch {
 				continue;
 			}
@@ -4461,7 +4461,7 @@ var Ce = 999e3, we = class {
 	}
 	async #Ge(e) {
 		try {
-			let t = this.sys.cfg.searchPath(e, g.SCRIPT), n = await this.sys.fetch(t);
+			let t = this.sys.cfg.searchPath(e, _.SCRIPT), n = await this.sys.fetch(t);
 			if (!n.ok) throw Error(n.statusText);
 			return await this.sys.dec(t, await n.text());
 		} catch (t) {
@@ -4511,6 +4511,6 @@ var Ce = 999e3, we = class {
 	};
 };
 //#endregion
-export { De as ScriptMng };
+export { Oe as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

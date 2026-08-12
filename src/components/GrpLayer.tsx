@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
-import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
+import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET} from '../ts/Sprite';
 
 import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
@@ -72,7 +72,11 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		if (! isSheet || ! src) {setSheet(undefined); return}
 
 		let alive = true;
-		void loadSheet(src).then(v=> {if (alive) setSheet(v)});
+		void loadSheet(src).then(v=> {
+			if (! alive) return;
+			setSheet(v);
+			if (v) setNatSize(src, v.fw, v.fh);	// const.sn.lay[N].…width/height用（本家GrpLayer.ts相当）
+		});
 		return ()=> {alive = false};
 	}, [src, isSheet]);
 
@@ -113,8 +117,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 				（Reactがページ全体再ダウンロードの可能性を警告するため）。
 				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
 			{sheet && <div className={aniSpriteClass(sheet)}/>}
-			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}/>}
-			{src && ! isSheet && ! isMovie && <img src={src} style={styFit}/>}
+			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
+				onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
+			{src && ! isSheet && ! isMovie && <img src={src} style={styFit}
+				onLoad={e=> {setNatSize(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}}/>}
 			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
 				if (! faceSrc) return null;
 				return <img

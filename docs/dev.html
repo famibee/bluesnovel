@@ -848,8 +848,8 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🟢 const.sn.last_page_text</td><td>''</td><td>文字列</td><td>そのページの履歴テキスト（《》文法もそのまま）<br/>bluesnovel：既定文字レイヤの蓄積文字列そのもの</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）</td><td>true</td><td>true、false</td><td>レイヤが[add_lay]され存在するか</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.alpha</td><td>0.0〜1.0</td><td>0.0〜1.0；透過度</td><td>レイヤの不透明度</td></tr>
-<tr><td>🟡 const.sn.lay.（レイヤ名）.（foreかback）.width</td><td>1</td><td>1〜</td><td>レイヤの横幅。ただし文字レイヤの場合は1、画像レイヤの場合、画像読込後でないと0</td></tr>
-<tr><td>🟡 const.sn.lay.（レイヤ名）.（foreかback）.height</td><td>1</td><td>1〜</td><td>レイヤの縦幅。ただし文字レイヤの場合は1、画像レイヤの場合、画像読込後でないと0</td></tr>
+<tr><td>🟡 const.sn.lay.（レイヤ名）.（foreかback）.width</td><td>1</td><td>1〜</td><td>[lay width=]明示時はその値。未指定時：画像レイヤは読み込んだ画像/動画の自然サイズ（読込前は0）、文字レイヤは表示物の有無を1/0で代用</td></tr>
+<tr><td>🟡 const.sn.lay.（レイヤ名）.（foreかback）.height</td><td>1</td><td>1〜</td><td>[lay height=]明示時はその値。未指定時：画像レイヤは読み込んだ画像/動画の自然サイズ（読込前は0）、文字レイヤは表示物の有無を1/0で代用</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.visible</td><td>true</td><td>true、false</td><td>レイヤが表示されているか。visible属性の値を返す</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.x</td><td>0</td><td>実数；横座標</td><td rowspan="2">レイヤの座標。画面左上を(0, 0)とする座標。leftやtopでないことに注意</td></tr>
 <tr><td>🟢 const.sn.lay.（レイヤ名）.（foreかback）.y</td><td>0</td><td>実数；縦座標</td></tr>
