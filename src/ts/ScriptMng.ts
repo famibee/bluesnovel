@@ -285,6 +285,11 @@ export class ScriptMng {
 		if (! this.#isFirstBoot) {
 			engine.setSys(this.#saveMng.data.sys);
 			engine.setKidoku(this.#saveMng.data.kidoku);
+			// setSys()はVarStore.setNs()で直書きするだけで代入トリガを通らないため、
+			//	全体音量（SndMngのマスターGainNode）はここで明示的に同期しないと
+			//	既定値1のまま残ってしまう（buf別音量は再生時にgetValし直すので自己修復する）
+			this.#sndMng.setGlobalVol(Number(engine.getVal('sys:sn.sound.global_volume') ?? 1));
+			this.#applyMovieVolume();
 		}
 		// 本家 SysBase.init() と同じく**毎回**入れ直す（SysBase.ts:152）。
 		//	[import]で「別のゲームのデータ」を弾く目印なので、[clearsysvar]で消えたままだと困る

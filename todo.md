@@ -20,7 +20,6 @@
 - [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
   - [x] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
   - [x] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
-  - [ ] 音量「全体的」を変更し再起動すると、表示には反映されているが実際の音量には反映されていない。未確認だが他の「BGMのみ」「音声のみ」なども疑わしいのでチェック。
   - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
     - electron-builder でエラーになるようである。"file:../bluesnovel"参照が原因に見えるので、npmリリースするまで確認出来ないだろうか。
     - 最新 electron-builder 26.15.3(bun outdated 表示。https://github.com/electron-userland/electron-builder では 26.15.7) を使ってないのは、2015/11/3頃 electron-builder が beta版を正規ルートでリリースしており更新でそれをインストールしてしまい、パッケージビルドできなくなっていため、その対応で拡張機能に win/mac 版パッケージビルド時に electron-builder@26.0.15 をインストールするようにさせているため。いずれは拡張機能側も更新が必要だが。

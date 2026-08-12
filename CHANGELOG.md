@@ -61,6 +61,24 @@
     ため、`[stopbgm]`と`[if]`の間に`[wait time=0]`を挟んで一旦停止点を作る必要があった）
   - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
 
+- [x] **音量「全体的」を変更して再起動すると、表示（設定画面）には反映されているが実際の音量には反映されない不具合を修正**（2026-08-12）
+  - 原因：`ScriptMng.ts`の`#loadSaveData()`は起動時に`engine.setSys(this.#saveMng.data.sys)`
+    （`VarStore.setNs('sys', …)`）で保存済みsys:を丸ごと復元するが、`setNs()`は`this.#h`へ直書き
+    するだけで代入トリガ（`engine.defSetTrigger('sys:sn.sound.global_volume', …)`）を経由しない。
+    このトリガが`SndMng`のマスター`GainNode`（`#gnMaster`、初回生成時`gain.value`は既定の`1`）に
+    書き込む唯一の経路のため、復元されたsys:の値自体は正しくても、再起動直後のマスターゲインは
+    常に`1`のまま残っていた（設定画面のUIは`getVal()`で読むので正しい値に見える）
+  - buf別音量（BGM/SE/VOICE等）は再生開始時（`#playSnd`、`ScriptMng.ts:395`）に毎回`getVal()`で
+    計算し直す設計のため、この不具合の対象外（新規に鳴らす音は再起動後も正しい音量で鳴る）。
+    ムービー音量も`GrpLayer.tsx`が`<video>`マウント時に毎回`getMovieVolume()`を読み直すため対象外
+  - `#loadSaveData()`の`engine.setSys()`直後に`this.#sndMng.setGlobalVol(…)`と
+    `this.#applyMovieVolume()`を明示的に呼んで同期する形で修正（マスター`GainNode`という
+    「都度読み直さない持続状態」に依存するのはこの一系統だけだったため、汎用的な
+    `VarStore.setNs()`側でのトリガ発火（`[load]`等他経路にも影響する）ではなく最小差分で対応）
+  - 単体テスト（`bun test`、1667件）・型チェックとも回帰なし。実際の音量反映は実機（Electron）での
+    確認が要る（todo.mdの実機確認項目に残る他の音量チェックと合わせて実施）
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
 - [ ]
 
 

@@ -3387,7 +3387,7 @@ var Ce = 999e3, we = class {
 		} catch (e) {
 			this.myTrace(`セーブデータが壊れています。初期状態で起動します ${String(e)}`, "E"), this.#h = !0;
 		}
-		this.#h || (e.setSys(this.#m.data.sys), e.setKidoku(this.#m.data.kidoku)), e.setValNochk("sys:const.sn.cfg.ns", this.sys.cfg.oCfg.save_ns), this.#_();
+		this.#h || (e.setSys(this.#m.data.sys), e.setKidoku(this.#m.data.kidoku), this.#w.setGlobalVol(Number(e.getVal("sys:sn.sound.global_volume") ?? 1)), this.#E()), e.setValNochk("sys:const.sn.cfg.ns", this.sys.cfg.oCfg.save_ns), this.#_();
 	}
 	setWinInf(e, t, n, r) {
 		let i = this.#r;
