@@ -11,6 +11,9 @@
 //	・[playse]（join=true既定）がデコード完了まで、[ws]が再生終了まで進行を止めること
 //	・[playse join=false]は投げっぱなしで即座に進むこと
 //	・[fadebgm]は待たず、[wb]がフェード完了まで進行を止めること
+//	・再生開始でtmp:const.sn.sound.<buf>.playingがtrueになり、[stopbgm]でfalseに戻ること（回帰：
+//	　trueにする経路が欠けていて常にfalse評価のままだった＝[bgm]マクロ等「同じ曲が再生中なら
+//	　鳴らし直さない」判定が効かず、フレーム画面から戻るたびBGMが頭出しされ直す不具合の原因）
 //	・デコード完了前に[stopse]してもハングしない・エラーにならないこと（回帰：
 //	　skynovel_esm調査で見つかった状態機械の不備と同族の「待ちが解決されず詰む」系のバグを
 //	　この設計（1バッファ=1インスタンス、停止=破棄）が構造的に防げているかの確認）
@@ -57,6 +60,21 @@ test('[fadebgm]は待たず、[wb]がフェード完了（0.6秒）まで進行�
 	expect(Date.now() - t0).toBeGreaterThanOrEqual(500);
 });
 
+test('[playbgm]は再生中tmp:playingがtrueになり、[stopbgm]でfalseに戻る（回帰）', async ({page})=> {
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('さいせいしゅうりょう');
+	await waitIdle(page);
+	await pressKey(page, 'Space');
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('ふぇーどしゅうりょう');
+	await waitIdle(page);
+
+	await pressKey(page, 'Space');	// [if exp=const.sn.sound.BGM.playing]
+	expect(await mesStr(page)).toBe('さいせいちゅう');
+
+	await pressKey(page, 'Space');	// [stopbgm][if exp=const.sn.sound.BGM.playing]
+	expect(await mesStr(page)).toBe('ていし');
+});
+
 // 前3シーンを1回の操作列で通過する（以降のテストの前提合わせ）
 async function toStoppedScene(page: import('@playwright/test').Page) {
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('さいせいしゅうりょう');
@@ -65,6 +83,9 @@ async function toStoppedScene(page: import('@playwright/test').Page) {
 	await page.keyboard.press('Space');
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('ふぇーどしゅうりょう');
 	await waitIdle(page);
+	await pressKey(page, 'Space');	// さいせいちゅう
+	await pressKey(page, 'Space');	// ていし（[stopbgm]済み）
+	expect(await mesStr(page)).toBe('ていし');
 }
 
 test('デコード完了前に[stopse]してもハングせずエラーにもならない（回帰）', async ({page})=> {

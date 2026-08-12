@@ -824,6 +824,11 @@ export class ScriptMng {
 		const src = this.#searchSnd(tag, act.fn);
 		if (! src) return;	// 見つからない場合は#searchSndが既にmyTraceで知らせている
 
+		// falseは自然終了/明示停止のonStopで倒すが、trueはここでしか書ける場所が無い
+		//	（[bgm]マクロ等が「同じ曲が再生中なら鳴らし直さない」判定に使うsub.sn参照）。
+		//	欠けていたため、フレーム画面から戻るたびBGMが頭出しされ直す不具合になっていた
+		this.#engine?.setValNochk(`tmp:const.sn.sound.${act.buf}.playing`, true);
+
 		// onStopには**終了時点のバッファ名**が渡される（[xchgbuf]で入れ替わっていることがあるため、
 		//	呼び出し時のact.bufをそのまま使わない。SndMng.play()参照）
 		await this.#sndMng.play(act.buf, src, act, nowBuf=> {

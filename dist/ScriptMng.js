@@ -3719,9 +3719,9 @@ var Ce = 999e3, we = class {
 	}
 	async #se(e) {
 		let t = e.buf === "BGM" ? "playbgm" : "playse", n = this.#ze(t, e.fn);
-		n && await this.#w.play(e.buf, n, e, (e) => {
+		n && (this.#r?.setValNochk(`tmp:const.sn.sound.${e.buf}.playing`, !0), await this.#w.play(e.buf, n, e, (e) => {
 			this.#r?.setValNochk(`tmp:const.sn.sound.${e}.playing`, !1), e === "VOICE" && this.#ce();
-		});
+		}));
 	}
 	#ce() {
 		let e = this.#r;

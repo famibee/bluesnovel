@@ -32,7 +32,14 @@
 [fadebgm volume=0.05 time=600]
 [wb]
 ふぇーどしゅうりょう[p]
+
+; 回帰：再生開始でtmp:const.sn.sound.<buf>.playingがtrueになり、停止でfalseに戻ること。
+;	falseへ倒す経路（自然終了・明示停止のonStop）はあったが、trueにする経路が無く常にfalse
+;	評価のままだった（[bgm]マクロ等「同じ曲が再生中なら鳴らし直さない」判定が効かなくなる不具合）
+[if exp=const.sn.sound.BGM.playing]さいせいちゅう[else]ていし[endif][p]
 [stopbgm]
+[wait time=0]
+[if exp=const.sn.sound.BGM.playing]さいせいちゅう[else]ていし[endif][p]
 
 ; 回帰：デコード完了前に[stopse]してもハングしない（join=falseで投げっぱなしにした直後に止める）
 [playse fn=bgm loop=true join=false]

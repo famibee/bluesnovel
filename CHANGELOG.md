@@ -42,6 +42,25 @@
   - `test/e2e/app/prj_frame/yesno.html`にbutton/aでないフォーカス可能div（`#thumb1`）を追加し、`test/e2e/focus.e2e.ts`に実キーボード・ゲームパッド双方でEnterがクリック相当になることを確認するテストを追加（`test/e2e/frame.e2e.ts`含め既存e2e・単体テスト・型チェックは回帰なし）
   - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
 
+- [x] **タイトル画面でフレーム画面から戻ったときにBGMが最初からの再生になる不具合を修正**（2026-08-12）
+  - 原因：`tmp:const.sn.sound.<buf>.playing`は自然終了・明示停止で`false`に倒す経路（`ScriptMng.ts`
+    `#playSnd`のonStopコールバック）はあったが、再生開始時に`true`にする経路が丸ごと欠けていた
+    （コード上のコメント自体は「エンジン側では書かない、ScriptMngが後で倒す」という設計意図を
+    示していたが、ScriptMng側の`true`書き込みが実装されないまま残っていた）
+  - この変数は`tmp_blues/doc/prj/script/sub.sn`の`[bgm]`マクロが「同じ曲が再生中なら鳴らし直さない」
+    判定（`[return cond='save:const.sn.sound.BGM.fn == mp:fn && const.sn.sound.BGM.playing']`）に
+    使っており、常に`false`評価になるため毎回`[xchgbuf]`経由のクロスフェード分岐（新規`SndBuf`生成）
+    に落ちていた。`theme/title.sn`の`*load`/`*album`/`*config`はいずれも`frames/`配下（`_archive.sn`
+    等＝「フレーム画面」）を`[call]`した後`[return label=*redraw]`し、そこで毎回`[bgm]`を呼び直す
+    構成のため、フレーム画面から戻るたびBGMが頭出しされ直して聞こえていた
+  - `ScriptMng.ts`の`#playSnd`で、`SndMng.play()`を呼ぶ直前に`tmp:const.sn.sound.<buf>.playing`を
+    `true`にする1行を追加。停止側（`false`化）と対にした
+  - `test/e2e/app/prj_snd/main.sn`／`test/e2e/snd.e2e.ts`に回帰テストを追加（再生中は`true`、
+    `[stopbgm]`後は`false`になることを確認。`[if]`の条件評価はエンジンの`step()`内で同期的に行われ、
+    直前の`[stopbgm]`の副作用（ScriptMngの`#applyAction()`経由）は次のstep()呼び出しまで反映されない
+    ため、`[stopbgm]`と`[if]`の間に`[wait time=0]`を挟んで一旦停止点を作る必要があった）
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
 - [ ]
 
 
