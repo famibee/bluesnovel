@@ -94,6 +94,38 @@
   - 個別事象として`todo.md`に残すより、優先度低の既知制約（縦書き時の行数・余白差）へ集約する方が
     実情に合うため、該当項目を削除しそちらの記述へ実例として合流させた
 
+- [x] **`electron-builder`のパッケージビルドが`unable to copy, file is symlinked outside the package`で失敗する件を調査**（2026-08-12）
+  - `tmp_blues/package.json`は`@famibee/bluesnovel`を`file:../bluesnovel`（ローカルパス依存）で参照。
+    bunはこの形の依存を**ファイル単位のシンボリックリンク**として展開する（`node_modules/@famibee/
+    bluesnovel`配下の`.DS_Store`まで個別にリンクされていることを確認）。エラー元の
+    `node_modules/@famibee/bluesnovel/node_modules/@babel/generator/LICENSE`も同様にリンクで、実体
+    （realpath）は`tmp_blues`パッケージの外＝兄弟ディレクトリの`bluesnovel/node_modules/…`を指していた。
+    `electron-builder`のasarパッカーは「リンクの実体がパッケージ境界の外にある」ファイルのコピーを
+    zip-slip対策で拒否する仕様のため、そこで落ちていた
+  - **npm公開を待たなくても検証できることを確認**：`bun pm pack`で`bluesnovel`をtarball化し、
+    `tmp_blues`の依存を一時的に`file:<tarballの絶対パス>`へ差し替えて`bun install`し直したところ、
+    `node_modules/@famibee/bluesnovel`は実ファイルのコピー（シンボリックリンクなし、`@babel/generator`
+    等のdevDependency由来ネストも無し＝`bun pm pack`は`package.json`の公開物だけを含む）になった。
+    この状態で`npm run app_bld`→`bunx electron-builder -m --x64`を実行したところ**正常に`.dmg`まで
+    生成され、症状は再現しなかった**。原因の切り分けが取れたので確認後は`tmp_blues/package.json`・
+    `bun.lock`・`node_modules`を元の`file:../bluesnovel`参照へ復元済み（生成物の`.dmg`も削除）
+  - 結論：`tmp_blues`側の`electron-builder`設定や`bluesnovel`側のパッケージ内容に不具合は無く、
+    **ローカル開発時特有の`file:`依存のリンク構造が原因**。実際にnpm公開されたパッケージはレジストリの
+    tarballを実体展開したものになるため、公開後は自然に解消する見込み。公開前にどうしても
+    パッケージビルドを検証したい場合は今回と同じ`bun pm pack`→tarball参照への一時差し替えで代用できる
+  - `todo.md`「アプリ（Electron）版の…実機で確認」の`electron-builder`エラーに関するサブ項目を解消。
+    パッケージ版を実機で開いて`app://bundle/…`が読めるかの確認自体は引き続き残る（GUI環境が要るため
+    このセッションでは未着手）
+
+- [x] **アプリ（Electron）版：ウインドウ位置復元・electron-store化（しおり・sys:・既読の読み書き）を実機で確認**（2026-08-12）
+  - 実装自体は2026-08-09（本CHANGELOG該当日エントリ参照）。当時はサンドボックス環境にディスプレイが
+    無くGUI起動できず「実機（`npm run app`）での動作確認は別途必要」と保留にしていた
+  - `npm run app`起動→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くこと、および
+    Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・
+    既読が正しく読み書きされることをユーザーが実機で確認済み（コミット`8571349`でtodo.mdの該当項目が
+    `[x]`化されたが、その時点ではCHANGELOG.mdへの反映が漏れていたため今回移動）
+  - `todo.md`「挙動の詰め・実機確認」の該当2項目を削除
+
 - [ ]
 
 

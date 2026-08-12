@@ -17,31 +17,8 @@
 
 ## 挙動の詰め・実機確認
 
-- [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
-  - [x] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
-  - [x] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
-  - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
-    - [ ] electron-builder でエラーになるようである。"file:../bluesnovel"参照が原因に見えるので、npmリリースするまで確認出来ないだろうか。
-      - 最新 electron-builder 26.15.3(bun outdated 表示。https://github.com/electron-userland/electron-builder では 26.15.7) を使ってないのは、2015/11/3頃 electron-builder が beta版を正規ルートでリリースしており更新でそれをインストールしてしまい、パッケージビルドできなくなっていため、その対応で拡張機能に win/mac 版パッケージビルド時に electron-builder@26.0.15 をインストールするようにさせているため。いずれは拡張機能側も更新が必要だが。
-      - 以下ログ（一部加工）
-```
-✓ built in 362ms
-  • electron-builder  version=26.0.15 os=24.6.0
-  • loaded configuration  file=package.json ("build" field)
-  • writing effective config  file=build/package/builder-effective-config.yaml
-  • executing @electron/rebuild  electronVersion=43.3.0 arch=x64 buildFromSource=false appDir=./
-  • installing native dependencies  arch=x64
-  • completed installing native dependencies
-  • packaging       platform=darwin arch=x64 electron=43.3.0 appOutDir=build/package/mac
-  • downloading     url=https://github.com/electron/electron/releases/download/v43.3.0/electron-v43.3.0-darwin-x64.zip size=124 MB parts=8
-  • downloaded      url=https://github.com/electron/electron/releases/download/v43.3.0/electron-v43.3.0-darwin-x64.zip duration=2.031s
-(node:6849) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-  ⨯ unable to copy, file is symlinked outside the package  source=node_modules/@famibee/bluesnovel/node_modules/@babel/generator/LICENSE realPathFile=bluesnovel/node_modules/@babel/generator/LICENSE
-  ⨯ Cannot copy file (LICENSE) symlinked to file (LICENSE) outside the package as that violates asar security integrity  failedTask=build stackTrace=Error: Cannot copy file (LICENSE) symlinked to file (LICENSE) outside the package as that violates asar security integrity
-
- *  ターミナル プロセス "/bin/zsh '-l', '-c', 'cd "tmp_blues" && bun add -d electron-builder@26.0.15 && bun run app_bld && bunx electron-builder -m --x64'" が終了コード 1 で終了しました。
-```
+- [ ] **アプリ（Electron）版の`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない。ウインドウ位置復元・electron-store化は実機確認済み＝CHANGELOG.md 2026-08-12参照）
+  - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）。electron-builderのビルド自体（`unable to copy, file is symlinked outside the package`エラー）は原因判明・解消確認済み（`tmp_blues`の`file:../bluesnovel`ローカル依存によるシンボリックリンクが原因で、npm公開後は自然に解消する見込み。詳細はCHANGELOG.md 2026-08-12参照）。残るのはパッケージ版を実機で開いての動作確認のみ
 - [ ] 文字送りの速さを`tmp_blues`実機（実アセット）で体感確認。`sys:sn.tagCh.msecWait`（既定10ms）・
       `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
       （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
@@ -60,7 +37,15 @@
         ……という目算だったが、`max_row`は本家でも死んでいる属性と判明したため凍結行き＝
         道連れの実装機会も無い。詳細はセッション2026-08-10・2026-08-12のCHANGELOG.md参照）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
-  - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（本家と同じ行列のはずだが原因未特定。優先度低）
+  - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（優先度低）。2026-08-12に行列自体を
+        再確認：`src/ts/Filter.ts`の数値は`@pixi/filter-color-matrix`の`predator()`/`colorTone()`と
+        完全一致し、本家`Layer.ts`側の呼び出しも両方とも`multiply`既定`false`（＝オフセット列の
+        `/255`変換は本家側もしていない）で揃っている。`Stage.tsx`の`colorInterpolationFilters="sRGB"`
+        も設定済みで既定`linearRGB`への取り違えでもなく、素材画像のICCプロファイルも埋め込み無し／
+        標準sRGBのみで色管理差という線も弱い。矛盾しない残りの可能性はpixiのGLSLシェーダが行う
+        アルファのun-premultiply/premultiply（`c.a>0`時`c.rgb/=c.a`→行列適用→`rgb*=result.a`）と
+        SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
+        これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
 - [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
