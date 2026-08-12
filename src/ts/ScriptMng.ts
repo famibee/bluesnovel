@@ -32,6 +32,14 @@ import gsap from 'gsap';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
+// 文字レイヤの[lay style="width: …px; height: …px;"]からpx数値を拾う
+//	（本家 TxtStage.ts:259-260 の `parseFloat(s.width)` 相当。CSSStyleDeclarationは持ち出さず
+//	正規表現で軽量に済ませる。%等px以外の単位は対象外＝undefinedのまま）
+function styNum(style: string | undefined, prop: 'width' | 'height'): number | undefined {
+	const m = style?.match(new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([\\d.]+)px`, 'i'));
+	return m ? Number(m[1]) : undefined;
+}
+
 
 export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
@@ -182,20 +190,22 @@ export class ScriptMng {
 		//	  **width/heightは[lay width=/height=]で明示していればその値**。未指定時：
 		//	  画像レイヤ（grp）は`Sprite.ts`のsrcキー自然サイズキャッシュ（本家GrpLayer.ts:88-108相当。
 		//	  GrpLayer.tsxのimg onLoad/video onLoadedMetadata/シートロードで書く。ロード前は0＝本家と同じ）、
-		//	  文字レイヤ（txt）はストアに実寸が無いため引き続き「表示物があるか」を1/0で代用（GCはwidth>0判定に使う）
+		//	  文字レイヤ（txt）は[lay style="width:/height:"]の明示値（本家TxtStage.ts:259-260相当。
+		//	  styNum参照）、それも無ければ本家の既定（stageW/stageH）に倣うが、bluesnovelの実際のCSS既定は
+		//	  `width: 70%`（TxtLayer.tsx:519）でheightは可変なので、widthは`stageW*0.7`で実描画に寄せ、
+		//	  heightは対応するCSS既定が無いためstageHをそのまま採用（近似）
 		engine.defBuiltin('const.sn.lay', ()=> {
 			const {fore, back} = this.$fncs.getPages();
 			const attrs = (l: (typeof fore)[number] | undefined)=> {
 				if (! l) return undefined;
-				const has = l.cls === 'grp' ? Boolean(l.src) : l.str.length > 0 || l.aBtn.length > 0;
 				const natSize = l.cls === 'grp' ? getNatSize(l.src) : undefined;
 				const x = l.left ?? 0, y = l.top ?? 0;
 				return {
 					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）
 					alpha	: l.alpha ?? 1,
 					x, y, left: x, top: y,	// 本家は x/y。left/top の別名としても引けるように両方持たせる
-					width	: l.width ?? (l.cls === 'grp' ? (natSize?.w ?? 0) : (has ? 1 : 0)),
-					height	: l.height ?? (l.cls === 'grp' ? (natSize?.h ?? 0) : (has ? 1 : 0)),
+					width	: l.width ?? (l.cls === 'grp' ? (natSize?.w ?? 0) : (styNum(l.style, 'width') ?? CmnLib.stageW * 0.7)),
+					height	: l.height ?? (l.cls === 'grp' ? (natSize?.h ?? 0) : (styNum(l.style, 'height') ?? CmnLib.stageH)),
 				};
 			};
 			const hLay: {[nm: string]: {fore: unknown; back: unknown}} = {};

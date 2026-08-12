@@ -126,17 +126,23 @@
     `[x]`化されたが、その時点ではCHANGELOG.mdへの反映が漏れていたため今回移動）
   - `todo.md`「挙動の詰め・実機確認」の該当2項目を削除
 
-- [x] **組み込み変数`const.sn.lay[N].<fore|back>.width/.height`：画像レイヤ（grp）の未指定時を実寸化**（2026-08-12）
+- [x] **組み込み変数`const.sn.lay[N].<fore|back>.width/.height`の未指定時を画像・文字レイヤとも改善**（2026-08-12）
   - 本家調査（`GrpLayer.ts:88-108`）で画像/動画レイヤのwidth/heightは`fn`にロードされた自然サイズ
     （ロード前は0）と判明。bluesnovelも同じ形で実装：`src/ts/Sprite.ts`にsrcキーの自然サイズ
     キャッシュ（`setNatSize`/`getNatSize`、既存の`hSheet`と同じパターン）を追加し、`GrpLayer.tsx`の
     `<img>` onLoad・`<video>` onLoadedMetadata・アニメpngシートのロード完了で書き込む
-  - `src/ts/ScriptMng.ts`の`const.sn.lay` getterは画像レイヤ時このキャッシュを引き、未読込なら0を
-    返すよう変更（storeは汚さない、`#rectOfStageBox`と同じ遅延評価パターン）
-  - 文字レイヤ（txt）は本家も実測ではなくstyle明示値（既定`stageW`/`stageH`px）と判明したが、
-    bluesnovelのCSS既定は`width: 70%`＋heightは可変で単純対応しないため今回は対象外、`todo.md`に残す
+  - 文字レイヤ（txt）も本家調査（`TxtStage.ts:259-260`）で実測ではなく`[lay style=]`のCSS文字列から
+    `parseFloat`した明示値（既定`stageW`/`stageH`px）と判明。bluesnovelは`src/ts/ScriptMng.ts`に
+    正規表現で`width:/height:`のpx値を拾う`styNum()`を追加し、同様に明示値を返せるようにした
+  - `[lay style=]`にも明示が無い最終フォールバックは、本家の`stageW`/`stageH`既定に倣いつつ
+    bluesnovelの実際のCSS既定（`width: 70%`、`TxtLayer.tsx:519`。heightは可変）に寄せて
+    `CmnLib.stageW*0.7`／`CmnLib.stageH`を返す（heightはCSS既定が無いため近似）。
+    立ち絵GC（`ext_fg`/`ext_fg2.sn`）のwidth>0判定は画像レイヤにしか使われておらず無関係と確認済み
+  - `src/ts/ScriptMng.ts`の`const.sn.lay` getterは、画像レイヤは自然サイズキャッシュ→未読込0、
+    文字レイヤは`[lay width=/height=]`→`styNum()`→`stageW*0.7`/`stageH`、という優先順に変更
+    （storeは汚さない、`#rectOfStageBox`と同じ遅延評価パターン。「表示物の有無」1/0代用は解消）
   - `docs/dev.html`のwidth/height説明文を更新
-  - `todo.md`「組み込み変数の残り」の画像レイヤ分を解消（文字レイヤ分は残す）
+  - `todo.md`「組み込み変数の残り」を解消
 
 - [ ]
 
