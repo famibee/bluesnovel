@@ -53,14 +53,17 @@
   - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
         ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。対称に配分するCSS調整では治らない
         （前後どちらかに寄せて配分しても「ルビ行だけ行送りが違う」不揃いさ自体は消えない）。
-        本当に直すには全行の行送りをルビ想定の高さで最初から均一に確保する設計が要り、
-        「行」を扱う基盤が無い現状では`max_row`実装と同時にやるのが筋（詳細はセッション
-        2026-08-10のCHANGELOG.md参照）
+        全spanへ一律でルビ想定の余白を強制すれば行間は揃うことを実機確認済み（2026-08-12、
+        `test/e2e/app/prj_ruby`をPlaywrightで強制折返しさせ比較）だが、それだとルビの無い
+        地の文の行間まで常時間延びするだけなので不採用と判断。「ルビがある行だけ」を判別して
+        広げるには「行」を扱う基盤が要り、現状では実装できない（`max_row`と同時実装できれば
+        ……という目算だったが、`max_row`は本家でも死んでいる属性と判明したため凍結行き＝
+        道連れの実装機会も無い。詳細はセッション2026-08-10・2026-08-12のCHANGELOG.md参照）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（本家と同じ行列のはずだが原因未特定。優先度低）
 - [ ] **組み込み変数の残り**
   - [ ] `const.sn.lay[N].<fore|back>.width/.height`は`[lay width=/height=]`で明示したレイヤはその値を返すが、未指定レイヤは依然「表示物の有無」を1/0で代用中。実寸そのものが要る用途が出たら描画側から集める設計に
-- [ ] `max_row`（最大行数を超えたら自動改ページ）・`break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
+- [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
 
 ## アセット・基盤
 
@@ -95,6 +98,12 @@
 
 ## 凍結
 
+- [ ] `max_row`（最大行数を超えたら自動改ページ）：本家`skynovel_esm`でも`Grammar.ts`に
+      `max_row?: string`の型定義があるだけで、`TxtLayer.ts`/`TxtStage.ts`のどちらでも消費して
+      おらず、受理はするが黙って無視される死んだ属性と判明（2026-08-12調査。`docs/tag.html`にも
+      記載無し、`test/argdef_parity.test.ts`にも既定値の記載無し）。`sys:sn.tagCh.canskip`と
+      同じ構図で、本家自体が未接続のため bluesnovel 側で先行実装するのは移植の範囲を超えるとして
+      見送り
 - [ ] `[ch_out_style]`の適用（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
 - [ ] `[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
 - [ ] `[quake]`の`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
