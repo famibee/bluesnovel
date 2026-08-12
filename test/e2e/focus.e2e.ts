@@ -238,6 +238,37 @@ test('ゲームパッド由来のEnterでラジオ・チェックボックスが
 	await expect.poll(()=> radioChecked('chk1'), {timeout: 5_000}).toBe(true);
 });
 
+// todo.md「ゲームパッドでセーブ画面には行けるが、未使用サムネイルを押してセーブができない」の
+//	再現・解消確認。セーブ／ロード画面のサムネイルはbutton/aでなくclickリスナ付きのdivなので、
+//	FocusMng.#keyHandlerOf()がbutton/a限定だった間はEnter→click変換が効かなかった
+//	（フレーム内div = #thumb1 で再現。実キーボードも同様に効かなかったため両方確認する）
+test('フレーム内div（button/aでない要素）もEnterでクリック相当が起きる', async ({page})=> {
+	await toPadScene(page);
+	// 登録順：#ok, #close, ボタン1, ボタン2, range1, text1, radio_grp, chk1, thumb1
+	for (let i = 0; i < 9; ++i) await page.keyboard.press('ArrowRight');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('frm:thumb1');
+
+	const thumbText = ()=> page.evaluate(()=> {
+		const f = document.querySelector('iframe') as HTMLIFrameElement | null;
+		return f?.contentDocument?.getElementById('thumb1')?.textContent ?? '';
+	});
+	expect(await thumbText()).toBe('THUMB');
+
+	// 実キーボード（isTrusted:true）。button/aと違いブラウザがEnterで自動clickしてくれないため、
+	//	button/a向けの`isTrusted`早期returnとは別枠でFocusMng側が変換する
+	await page.keyboard.press('Enter');
+	await expect.poll(thumbText, {timeout: 5_000}).toBe('clicked');
+
+	// リセットしてゲームパッド由来（合成イベント）も確認
+	await page.evaluate(()=> {
+		const f = document.querySelector('iframe') as HTMLIFrameElement | null;
+		const el = f?.contentDocument?.getElementById('thumb1');
+		if (el) el.textContent = 'THUMB';
+	});
+	await dispatchKey(page, 'Enter');
+	await expect.poll(thumbText, {timeout: 5_000}).toBe('clicked');
+});
+
 test('隠したフレームの中の要素はフォーカスの輪から飛ばされる', async ({page})=> {
 	await toPadScene(page);	// [set_focus add=…]でrange1等も輪へ足された状態
 	await pressKey(page, 'Space');	// 画像の解決を確かめるページ（[let_frame draw_pics]）

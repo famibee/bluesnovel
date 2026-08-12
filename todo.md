@@ -17,13 +17,33 @@
 
 ## 挙動の詰め・実機確認
 
-- [ ] 左ボタンでのフォーカス移動は順番通りだが、右ボタンだと本文フォーカスから先に進まない。キーボードの矢印キーでも再現
-  - 端的な再現方法。右ボタン一回で本文からシステムボタンへ。左ボタン一回で本文、この状態で右ボタン一回を押しても、さっきフォーカスが移った先のボタンへ移動しない
-  - ↑の調査で分かったこと：`[l]`/`[p]`待ちマーカーは`ArrowRight`/`ArrowLeft`を押すたび（自分がフォーカス対象か否かに関わらず、まだ同じ`[l]`/`[p]`で止まっている間ずっと）`FocusMng`の輪から`remove()`→`add()`され直しており、`add()`は常に`#aEl`の**末尾**へ積む（`FocusMng.ts:102`）。マーカーが輪の途中にいる構成だと、キーを押すたびに輪の並び順が崩れていく可能性がある。今回のフォーカス消失修正（CHANGELOG.md 2026-08-11参照）とは別に、この「並び順が動く」こと自体が本件の原因になっていないか、次回はここから疑う
+- [ ] タイトル画面でフレーム画面から戻ったときにBGMが最初からの再生になる不具合、再発
 - [ ] **アプリ（Electron）版のウインドウ位置復元・electron-store化・`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない）
-  - [ ] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
-  - [ ] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
+  - [x] `tmp_blues`等で`npm run app`起動（dev、`app://`登録が邪魔していないか）→ウインドウを動かして閉じる→再起動して同じ位置・大きさで開くか
+  - [x] Electronの`userData`直下に`<save_ns>.json`（electron-storeのファイル）が作られ、しおり・sys:・既読が正しく読み書きされるか（`[save]`/`[load]`一式）
+  - [ ] 音量「全体的」を変更し再起動すると、表示には反映されているが実際の音量には反映されていない。未確認だが他の「BGMのみ」「音声のみ」なども疑わしいのでチェック。
   - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）
+    - electron-builder でエラーになるようである。"file:../bluesnovel"参照が原因に見えるので、npmリリースするまで確認出来ないだろうか。
+    - 最新 electron-builder 26.15.3(bun outdated 表示。https://github.com/electron-userland/electron-builder では 26.15.7) を使ってないのは、2015/11/3頃 electron-builder が beta版を正規ルートでリリースしており更新でそれをインストールしてしまい、パッケージビルドできなくなっていため、その対応で拡張機能に win/mac 版パッケージビルド時に electron-builder@26.0.15 をインストールするようにさせているため。いずれは拡張機能側も更新が必要だが。
+    - 以下ログ（一部加工）
+```
+✓ built in 362ms
+  • electron-builder  version=26.0.15 os=24.6.0
+  • loaded configuration  file=package.json ("build" field)
+  • writing effective config  file=build/package/builder-effective-config.yaml
+  • executing @electron/rebuild  electronVersion=43.3.0 arch=x64 buildFromSource=false appDir=./
+  • installing native dependencies  arch=x64
+  • completed installing native dependencies
+  • packaging       platform=darwin arch=x64 electron=43.3.0 appOutDir=build/package/mac
+  • downloading     url=https://github.com/electron/electron/releases/download/v43.3.0/electron-v43.3.0-darwin-x64.zip size=124 MB parts=8
+  • downloaded      url=https://github.com/electron/electron/releases/download/v43.3.0/electron-v43.3.0-darwin-x64.zip duration=2.031s
+(node:6849) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  ⨯ unable to copy, file is symlinked outside the package  source=node_modules/@famibee/bluesnovel/node_modules/@babel/generator/LICENSE realPathFile=bluesnovel/node_modules/@babel/generator/LICENSE
+  ⨯ Cannot copy file (LICENSE) symlinked to file (LICENSE) outside the package as that violates asar security integrity  failedTask=build stackTrace=Error: Cannot copy file (LICENSE) symlinked to file (LICENSE) outside the package as that violates asar security integrity
+
+ *  ターミナル プロセス "/bin/zsh '-l', '-c', 'cd "tmp_blues" && bun add -d electron-builder@26.0.15 && bun run app_bld && bunx electron-builder -m --x64'" が終了コード 1 で終了しました。
+```
 - [ ] 文字送りの速さを`tmp_blues`実機（実アセット）で体感確認。`sys:sn.tagCh.msecWait`（既定10ms）・
       `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
       （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
@@ -32,6 +52,7 @@
 ## タグ・変数の残り
 
 - [ ] **文字組みの残り**
+  - [ ] doc/prj/script/ss_000.sn:24 【　どうして俺が〜】ページの改行具合が本家と違う
   - [ ] ルビ付き行が1つ前の行/列に重なる問題は`margin-block-start`補正で解消したが、行間そのものは
         ルビ行だけ広がったまま（CSSの`<ruby>`任せ）。対称に配分するCSS調整では治らない
         （前後どちらかに寄せて配分しても「ルビ行だけ行送りが違う」不揃いさ自体は消えない）。

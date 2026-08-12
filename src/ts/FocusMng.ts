@@ -106,7 +106,7 @@ export class FocusMng {
 		let off = ()=> {el.removeEventListener('focus', fnc)};
 
 		// 要素の種類ごとの矢印キー操作（本家 FocusMng.ts:64-101 の移植）。
-		//	該当しない要素（[button]のspanなど）にはリスナを張らない。
+		//	該当しない要素（[button]/[l][p]待ちマーカーのspanなど）にはリスナを張らない。
 		//	bluesnovelの[button]は既にReactのonKeyDownでEnter/Spaceを処理しており、
 		//	ここで全要素にkeydownを張ってstopImmediatePropagation()すると
 		//	Reactのイベント委譲より先に止めて壊してしまうため（本家との相違点）
@@ -148,7 +148,22 @@ export class FocusMng {
 		}
 		if (el.localName === 'button' || el.localName === 'a') {
 			return e=> {
-				if (e.isTrusted || e.key !== 'Enter') return;	// ゲームパッド（合成イベント）のみ処理
+				if (e.isTrusted || e.key !== 'Enter') return;	// ゲームパッド（合成イベント）のみ処理。実キーボードはブラウザ既定で自動click
+				el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+			};
+		}
+		// **フレーム（iframe）内の任意タグ**（`[event key='dom=…']`/`[set_focus add='dom=…']`で
+		//	束ねた、作者のHTML任せの要素。上のswitchで拾えなかった時点でinput/textarea等ではない
+		//	ので「クリックで何か起きる」前提の要素とみなせる）もEnter→click変換の対象にする。
+		//	button/aと違い、div等はブラウザがEnterで自動clickしてくれない（tabindexを付けても
+		//	native挙動にはならない）ため、実キーボード（isTrusted:true）も変換が要る
+		//	（本家との相違点：本家は本編領域全体が唯一のHTML文書でpixiのボタン中心のため、
+		//	この「作者のHTML内の任意タグ」というケース自体が無かった）。
+		//	[button]/待ちマーカーのspanはmain document側にいるのでここでは対象にならない
+		//	（Reactが自前でEnter/Spaceを処理するため、当たると二重処理になる）
+		if (el.ownerDocument !== document) {
+			return e=> {
+				if (e.key !== 'Enter') return;
 				el.dispatchEvent(new MouseEvent('click', {bubbles: true}));
 			};
 		}

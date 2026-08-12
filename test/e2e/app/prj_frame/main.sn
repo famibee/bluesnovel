@@ -47,7 +47,7 @@
 ;	フォーカスの輪へ追加する。**[p]（下のえをだした）より前**に置くこと：[p]は「次の進行時に
 ;	現在レイヤをクリア」する仕様で、その「次の進行」は[set_focus to=…]を呼ぶ[event]
 ;	（ArrowRight等）でも起きるため、[p]の後ろに続けるとテキストが消えてしまう
-[set_focus add='dom=yesno:#range1,#text1,#radio_grp,#chk1']
+[set_focus add='dom=yesno:#range1,#text1,#radio_grp,#chk1,#thumb1']
 ぱっど[l]
 
 ; フレーム内の<img data-src=…>の解決（本家 FrameMng.ts:154 → #loadPic2Img）。

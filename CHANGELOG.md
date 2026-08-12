@@ -36,6 +36,12 @@
     `ふぉーかす`シーン（矢印キー→`outlineStyle: solid`）の両方で確認。既存`focus.e2e.ts`全10件もパス
   - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
 
+- [x] **ゲームパッドで未使用サムネイルからのセーブ／ロードができない不具合を修正**（2026-08-12）
+  - 原因：セーブ／ロード画面のサムネイル（`tmp_blues/doc/prj/frames/_archive.htm`の`.hover-overlay` div）は`button`/`a`でなくclickリスナ付きのdiv。`[set_focus add='dom=archive:.hover-overlay']`でフォーカスの輪には入るが、`FocusMng.#keyHandlerOf()`（`src/ts/FocusMng.ts`）がEnter→click変換の対象をbutton/a限定にしていたため、フォーカスが乗っていてもゲームパッド（合成`keydown Enter`）はもちろん実キーボードのEnterでも反応しなかった（マウスクリックだけが動いていた）
+  - `#keyHandlerOf()`に「フレーム（iframe）内の任意タグ（`el.ownerDocument !== document`）」の分岐を追加。button/aは実キーボードならブラウザ既定で自動clickされるため`isTrusted`のときは変換をスキップする設計のままだが、divはブラウザがEnterで自動clickしないため、この新分岐だけは実キーボード・ゲームパッド（合成イベント）の両方でEnter→click変換する。`[button]`/`[l]`/`[p]`待ちマーカーのspan（main document側、Reactが自前でEnter/Spaceを処理）は`ownerDocument === document`のため対象外のまま
+  - `test/e2e/app/prj_frame/yesno.html`にbutton/aでないフォーカス可能div（`#thumb1`）を追加し、`test/e2e/focus.e2e.ts`に実キーボード・ゲームパッド双方でEnterがクリック相当になることを確認するテストを追加（`test/e2e/frame.e2e.ts`含め既存e2e・単体テスト・型チェックは回帰なし）
+  - `todo.md`「挙動の詰め・実機確認」の該当項目を消化
+
 - [ ]
 
 

@@ -26,6 +26,11 @@
 		<label><input type="radio" name="rg1" id="radio2"> B</label>
 	</div>
 	<input id="chk1" type="checkbox">
+	<!-- セーブ／ロード画面のサムネイル（button/aでなくclickリスナ付きdiv）を模した要素。
+		本家に無いbluesnovel独自ケース（作者のHTML任せの任意タグをフォーカスの輪へ足す）で、
+		ゲームパッドのOKボタンがEnter→click変換されずに反応しなかった不具合の再現用
+		（todo.md「ゲームパッドでセーブ画面には行けるが…セーブができない」対応） -->
+	<div id="thumb1" tabindex="0">THUMB</div>
 	<!-- フレーム内の画像は data-src に書き、sn_repRes() が渡す関数で実URLへ直す（本家と同じ約束）。
 		asset_pic は path.json に載る**拡張子なしのアセット名**、
 		frame_local.png は path.json に載らない枠同梱ファイル -->
@@ -52,6 +57,10 @@
 		++val_cnt;
 		return 'ctrl:' + val_dic;
 	};
+
+	document.getElementById('thumb1').addEventListener('click', function() {
+		this.textContent = 'clicked';
+	});
 </script>
 </body>
 </html>

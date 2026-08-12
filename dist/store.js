@@ -72,6 +72,9 @@ var i = new class e {
 		if (t.localName === "button" || t.localName === "a") return (e) => {
 			e.isTrusted || e.key !== "Enter" || t.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
 		};
+		if (t.ownerDocument !== document) return (e) => {
+			e.key === "Enter" && t.dispatchEvent(new MouseEvent("click", { bubbles: !0 }));
+		};
 	}
 	static #s(e, t) {
 		let n = (e) => {
