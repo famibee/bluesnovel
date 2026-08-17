@@ -144,6 +144,20 @@
   - `docs/dev.html`のwidth/height説明文を更新
   - `todo.md`「組み込み変数の残り」を解消
 
+- [x] **`[tsy render=]`トゥイーンの差分合成境界対策は元から不要と判明**（2026-08-17）
+  - 本家調査（`GrpLayer.ts:111-159`の`renderStart`/`renderEnd`）で、`render=true`のときだけ対象
+    レイヤの子要素（基本画像＋`face`差分画像群）を一旦`RenderTexture`へ不透明合成してから透過を
+    掛ける仕組みと判明（重ねたまま個別に透過すると差分画像の境界が二重に透けるため）。CSSの
+    `isolation: isolate`で同じ効果が得られると考え`GrpLayer.tsx`のdiv0へ一旦追加したが、
+    `playwright-cli`で青(bg)×赤(face)をalpha=0.5合成した実ピクセル値を比較したところ、
+    `isolation: isolate`の有無で結果が完全に一致した（どちらも理論値どおり`(0,0,128)`/`(128,0,0)`）。
+    CSSの`opacity`は1未満のとき仕様上それ自体が新しいスタッキングコンテキストを作り、子孫を
+    先にグループとして不透明合成してから透過を掛けるため、`div0`へ`alpha`を一括で`opacity`適用
+    しているbluesnovelの既存実装は、pixiのRenderTexture焼き込みと同じ効果を最初から自然に
+    持っていたと判明。追加した`isolation: isolate`は撤回し、`Lay.ts`の`styLay()`（`opacity`適用
+    箇所）に知見をコメントで残した
+  - `todo.md`「優先度低」の該当項目（`render=`トゥイーン）を、対応不要と分かったため解消
+
 - [ ]
 
 

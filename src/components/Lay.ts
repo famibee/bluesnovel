@@ -101,6 +101,12 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 		const ty = l.align_y === 'middle' ? '-50%' : l.align_y === 'bottom' ? '-100%' : '0';
 		sty.translate = `${tx} ${ty}`;
 	}
+	// opacity<1はCSS仕様上それ自体が新しいスタッキングコンテキストを作り、子孫（GrpLayerなら
+	//	face差分合成の各<img>）を先にグループとして不透明合成してから、まとめて透過を適用する。
+	//	本家の[tsy render=]（子要素群をRenderTextureへ焼いてから透過し、差分画像の境界が
+	//	二重に透けるのを防ぐ）と同じ効果がここで自然に得られるため、isolation: isolateの追加は
+	//	不要と実機のピクセル値比較で確認済み（2026-08-17。alpha=0.5でのbg/face重なり色が
+	//	isolationの有無で一致した）
 	if (l.alpha !== undefined) sty.opacity = l.alpha;
 	// レイヤの寸法。**独立した2つのif**（片方だけの指定でも成立）。GrpLayerは箱の大きさとして、
 	//	TxtLayerは文字表示領域の大きさとして使う（styChild/styTxtのwidth既定=70%を上書きする）
