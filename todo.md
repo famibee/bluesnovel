@@ -40,8 +40,6 @@
 
 ## アセット・基盤
 
-- [ ] `tmp_blues/doc/prj/`の実アセットで通す（`prj.json`/`path.json`はそのまま使えるはず。最近`src/main/main.ts`に本家との相違が生じたため要確認）
-  - [ ] タイトル画面→「最初から」ボタン（`theme/title.sn`の`*start`→`[jump fn=ss_000]`）→本文開始→ゲーム内メニューから「タイトルに戻る」（`frames/_submenu.sn`の`*title`→`[jump fn=title]`）でタイトルに戻ってこられるか、実機で一連の実行テスト
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（2026-08-10調査、詳細はCHANGELOG.md参照）：
   - `skynovel_esm`は`semantic-release`から**`release-please`へ移行済み**（`.github/workflows/release-please.yml`+`publish.yml`、`release-please-config.json`、npm Trusted Publishing/OIDC）。本CLAUDE.mdの「semantic-release＋conventionalcommits」の記述は古い
   - bluesnovelの`package.json`にはsemantic-release用の`release`設定と`@semantic-release/changelog`/`@semantic-release/git`だけが中途半端に残存（本体`semantic-release`パッケージは無い）。release-please化するなら要削除

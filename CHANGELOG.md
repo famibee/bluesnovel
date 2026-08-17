@@ -158,6 +158,11 @@
     箇所）に知見をコメントで残した
   - `todo.md`「優先度低」の該当項目（`render=`トゥイーン）を、対応不要と分かったため解消
 
+- [x] **`tmp_blues/doc/prj/`の実アセットで一連の実行テストを実施**（2026-08-17）
+  - `tmp_blues`（`@famibee/bluesnovel`は`file:../bluesnovel`依存で、`node_modules`配下は本リポジトリの`dist/`を指すファイル単位シンボリックリンクのため常に最新のビルド成果物を参照する）で`vite`devサーバーを起動し、`playwright-cli`で実機確認：タイトル画面→「最初から」ボタン（`theme/title.sn`の`*start`→`[jump fn=ss_000]`）→本文開始（`ss_000.sn`「桜の樹の下には」冒頭）→ESCキーでサブメニュー表示（`frames/_submenu.sn`）→「タイトルに戻る」（`*title`→`[jump fn=title]`）→確認ダイアログ「了解」→タイトル画面へ復帰、の一連の遷移が問題なく通ることを確認。`prj.json`/`path.json`もそのまま読み込めており、DevTools Consoleにエラー・警告は0件
+  - Electron版（`app://`パッケージ）の実機確認はサンドボックス環境にディスプレイが無く別途要対応のため、`todo.md`にはその項目のみ残した
+  - `todo.md`「アセット・基盤」の該当項目を消化
+
 - [ ]
 
 
