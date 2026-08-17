@@ -10574,32 +10574,41 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 	] });
 }
 function Cu(e) {
-	let t = [], n = [];
-	return e.forEach((r, i) => {
-		let a = i > 0 && e[i - 1].c === "\n";
-		t.push({
-			ch: r.c.at(0) ?? "",
-			...a ? { afterBr: !0 } : {}
-		}), n.push(i), r.r !== void 0 && (t.push({
-			ch: r.r.at(0) ?? "",
+	let t = [], n = [], r = [];
+	return e.forEach((i, a) => {
+		let o = a > 0 && e[a - 1].c === "\n", s = Array.from(i.c);
+		s.forEach((e, i) => {
+			t.push({
+				ch: e,
+				...o && i === 0 ? { afterBr: !0 } : {}
+			}), n.push(a), r.push(s.length > 1 ? i : -1);
+		}), i.r !== void 0 && (t.push({
+			ch: i.r.at(0) ?? "",
 			rt: !0
-		}), n.push(i));
-	}), {
+		}), n.push(a), r.push(-1));
+	}), t.length > 0 && (t.push({ ch: " " }), n.push(-1), r.push(-1)), {
 		kc: t,
-		idx: n
+		idx: n,
+		sub: r
 	};
 }
 function wu(e, t, n, r, i, a) {
-	let { kc: o, idx: s } = Cu(n);
+	let { kc: o, idx: s, sub: c } = Cu(n);
 	if (o.length < 2) return;
-	let c = 2;
-	for (let n = 0; n <= o.length; ++n) {
-		let n = o.map((e, n) => {
-			let r = t[s[n]].getBoundingClientRect();
-			return a ? r.top : r.left;
-		}), l = r.scan(o, n, i, c);
-		if (!l) break;
-		e.insertBefore(document.createElement("br"), t[s[l.ins]]), c = l.resumeAt;
+	let l = document.createElement("span");
+	l.style.display = "inline-block", l.textContent = " ", e.appendChild(l);
+	try {
+		let n = 2;
+		for (let u = 0; u <= o.length; ++u) {
+			let u = o.map((e, n) => {
+				let r = s[n], i = r < 0 ? l : t[r], o = c[n], u = (o < 0 ? i : i.firstElementChild?.children[o] ?? i).getBoundingClientRect();
+				return a ? u.top : u.left;
+			}), d = r.scan(o, u, i, n);
+			if (!d) break;
+			e.insertBefore(document.createElement("br"), t[s[d.ins]]), n = d.resumeAt;
+		}
+	} finally {
+		l.remove();
 	}
 }
 function Tu(e, t, n) {
@@ -10630,19 +10639,26 @@ function Eu({ c: e, r: t, ra: n, s: r, rs: i, tcy: a, lnk: o, src: s, gw: c, gh:
 	let v = document.createElement(t === void 0 ? "span" : "ruby");
 	r && (v.style.cssText = r), _ && (v.style.fontFeatureSettings = _);
 	let y = a ? document.createElement("span") : v;
-	a && (y.style.textCombineUpright = "all", v.appendChild(y)), y.appendChild(g(e)), s && (Du(y, s, {
+	a && (y.style.textCombineUpright = "all", v.appendChild(y));
+	let b = Array.from(e);
+	if (t !== void 0 && !a && !s && b.length > 1) for (let e of b) {
+		let t = document.createElement("span");
+		t.appendChild(g(e)), y.appendChild(t);
+	}
+	else y.appendChild(g(e));
+	s && (Du(y, s, {
 		...c === void 0 ? {} : { gw: c },
 		...l === void 0 ? {} : { gh: l },
 		...u === void 0 ? {} : { gx: u },
 		...d === void 0 ? {} : { gy: d }
 	}), y !== v && v.appendChild(y));
-	let b;
+	let x;
 	if (t !== void 0) {
-		b = document.createElement("rt");
+		x = document.createElement("rt");
 		let r = n ?? f;
-		b.style.cssText = (r ? Tu(e, t, r) : "") + (i ?? ""), b.textContent = t, v.appendChild(b);
+		x.style.cssText = (r ? Tu(e, t, r) : "") + (i ?? ""), x.textContent = t, v.appendChild(x);
 	}
-	return o && Ou(v, o, r ?? "", b, i ?? "", p, h), v;
+	return o && Ou(v, o, r ?? "", x, i ?? "", p, h), v;
 }
 function Du(e, t, n) {
 	if ((n.gw !== void 0 || n.gh !== void 0) && (e.style.display = "inline-block", e.style.verticalAlign = "text-bottom", n.gw !== void 0 && (e.style.width = `${String(n.gw)}px`), n.gh !== void 0 && (e.style.height = `${String(n.gh)}px`)), (n.gx !== void 0 || n.gy !== void 0) && (e.style.translate = `${String(n.gx ?? 0)}px ${String(n.gy ?? 0)}px`), !t.endsWith(".json")) {

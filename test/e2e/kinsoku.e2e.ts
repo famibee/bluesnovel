@@ -78,6 +78,23 @@ test('実データ回帰：ss_000.sn:24の「──」対（分割禁止）が<b
 	expect(row[i + 1]).toBe('─');	// '─'の対が隣接（間に<br>が無い＝分断されていない）
 });
 
+test('実データ回帰：複数文字ルビの親文字2文字目も禁則判定に含まれる（2026-08-17修正）', async ({page})=> {
+	// mkKinCh()が複数文字ルビの親文字を先頭1文字（.at(0)）に丸めていたため、2文字目以降が
+	//	禁則判定から丸ごと欠落していた。「え─《てすと》」の2文字目'─'が、直後の単独'─'との
+	//	分割禁止ペアとして正しく認識され、対が<br>で分断されないことを確認する
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	const row = await domRow(page);
+	// 「え─《てすと》」は1つの表示単位（外側span）としてまとまるので、その1要素のtextContentが
+	//	「え─てすと」になる（親文字＋ルビが連結される。domRowはouter span単位でしか見ないため）
+	expect(row.filter(v=> v !== '<br>')).toEqual(['あ', 'い', 'う', 'え─てすと', '─', 'お', 'か', 'き', 'く', 'け', 'こ']);
+	const i = row.indexOf('え─てすと');
+	expect(row[i + 1]).toBe('─');	// 対が隣接（間に<br>が無い＝分断されていない）
+});
+
 test('文字spanは[r]以外すべてinline-block（ブラウザ標準の行分割・禁則を無効化するため）', async ({page})=> {
 	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
 		aEl=> aEl.map(el=> getComputedStyle(el).display)))

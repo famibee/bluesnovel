@@ -38,4 +38,13 @@
 ;	環境依存になるため、kinsoku.e2e.ts側では「対が<br>で分断されない」不変条件だけを見る）
 [clear_lay layer=mes page=fore]
 [lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
-来るのか──お前は[s]
+来るのか──お前は[l]
+
+[er]
+; 複数文字ルビの親文字が禁則判定から漏れていた回帰（2026-08-17発見・修正）。
+;	分割禁止文字'─'の対「──」の一方が複数文字ルビ親文字の2文字目にあっても、
+;	対が<br>で分断されないことを確認する。修正前はmkKinCh()が親文字の2文字目以降を
+;	kc配列に積んでおらず（.at(0)で先頭1文字のみ）、'─'として認識されないため対が分断されていた
+[clear_lay layer=mes page=fore]
+[lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
+あいう｜え─《てすと》─おかきくけこ[s]

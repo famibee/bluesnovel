@@ -19,3 +19,6 @@ blob-report/
 
 # 手動確認用スクリーンショットの置き場所（コミット対象外）
 /test/.ss/
+
+# 縦書きグリフ描画不具合の調査用フィクスチャ（tmp_blues実フォントをローカルにのみ配置。46MBあるため非コミット）
+/test/e2e/app/prj_vertglyph/script/ipamjm.ttf

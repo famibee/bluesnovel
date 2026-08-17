@@ -686,44 +686,86 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 // T_CH（表示単位。ルビ付きは親文字＋ルビで1要素）→ 禁則処理用の判定単位列。
 //	本家は親文字・ルビが別々の1文字ずつDOM要素として並ぶが、bluesnovelは1要素にまとまっているので、
-//	ここで「親文字1要素＋ルビ1要素」の2要素へ展開する（Hyphenation.ts冒頭コメント参照）。
-//	idxはkc[j]が対応するaCh（＝spansRef.current）の添字。ルビはその親文字と同じ外側spanを指す
-function mkKinCh(aCh: readonly T_CH[]): {kc: T_KIN_CH[]; idx: number[]} {
+//	ここで「親文字N要素＋ルビ1要素」（Nは親文字の文字数。通常1、複数文字ルビの親文字のみN）へ
+//	展開する（Hyphenation.ts冒頭コメント参照）。親文字を1文字に丸めると、複数文字ルビ
+//	（例：安全｜剃刀《かみそり》）の2文字目以降が禁則判定から丸ごと抜け落ち、本家と折返し位置が
+//	ズレる不具合になっていた（2026-08-17調査）
+//	idxは通常kc[j]が対応するaCh（＝spansRef.current）の添字。ルビはその親文字と同じ外側spanを
+//	指す。末尾の番兵要素（下記）だけは-1＝cacheでなくapplyKinsoku側が渡すsentinel要素そのものを
+//	測れという印を兼ねる。subは複数文字ルビの親文字内での文字位置（0開始）。単一文字（親文字・
+//	ルビとも常にこちら）と番兵は-1＝外側spanそのものを測ればよい印
+function mkKinCh(aCh: readonly T_CH[]): {kc: T_KIN_CH[]; idx: number[]; sub: number[]} {
 	const kc: T_KIN_CH[] = [];
 	const idx: number[] = [];
+	const sub: number[] = [];
 	aCh.forEach((ch, i)=> {
 		const afterBr = i > 0 && aCh[i -1]!.c === '\n';
-		kc.push({ch: ch.c.at(0) ?? '', ...(afterBr ? {afterBr: true as const} : {})});
-		idx.push(i);
+		const chars = Array.from(ch.c);
+		chars.forEach((c1, ci)=> {
+			kc.push({ch: c1, ...(afterBr && ci === 0 ? {afterBr: true as const} : {})});
+			idx.push(i);
+			sub.push(chars.length > 1 ? ci : -1);
+		});
 		if (ch.r !== undefined) {
 			kc.push({ch: ch.r.at(0) ?? '', rt: true});
 			idx.push(i);
+			sub.push(-1);
 		}
 	});
-	return {kc, idx};
+	// 末尾の番兵（本家 TxtStage.ts:313 #SPAN_LAST の移植）。表示中の最後の1文字は「次に何か
+	//	置いたら列からはみ出すか」を測る後続要素がまだ無く、はみ出す側の判定（scan()の
+	//	sl_xy <= x）に一度もかからないままになる。そのため複数文字ルビ等で禁則の巻き戻しが
+	//	要らなかった列（本ケースの安全｜剃刀《かみそり》を含む列）で、本来ならまだ入るはずの
+	//	無い最後の1〜2文字が押し出されず、本家より詰め込みすぎる不具合になっていた
+	//	（2026-08-18 ss_000.sn:24 縦書き改行位置ズレ調査で特定）。
+	//	本家は&emsp;の実DOM要素を毎回末尾へ足して測るので、こちらも同じ役を持つ要素を
+	//	applyKinsoku側で用意し、ここではそれを指す番兵エントリだけ足す（idx=-1で識別）
+	if (kc.length > 0) {
+		kc.push({ch: ' '});
+		idx.push(-1);
+		sub.push(-1);
+	}
+	return {kc, idx, sub};
 }
 
 // 禁則処理（本家 TxtStage.ts:184-283 hyph() のDOM計測・`<br>`挿入ループ）。
 //	表示単位spanの矩形で折り返しを検出する（inline-block化により表示単位は内部で
-//	折り返さない原子的な箱になるため、本家のRange一文字ずつの計測は不要）。
+//	折り返さない原子的な箱になるため、本家のRange一文字ずつの計測は不要。ただし複数文字ルビの
+//	親文字だけはelCh()が内部に1文字ずつのspanを作るので、そちらを測る＝subで判別）。
 //	1つ`<br>`を挿すたびに後続文字の位置が変わるので、違反が無くなるまで測り直しながら繰り返す
 function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aCh: readonly T_CH[],
 	kin: Kinsoku, bura: boolean, tategaki: boolean): void {
-	const {kc, idx} = mkKinCh(aCh);
+	const {kc, idx, sub} = mkKinCh(aCh);
 	if (kc.length < 2) return;
 
-	let i = 2;
-	for (let guard = 0; guard <= kc.length; ++guard) {
-		const xy = kc.map((_, j)=> {
-			const r = cache[idx[j]!]!.getBoundingClientRect();
-			return tategaki ? r.top : r.left;
-		});
+	// mkKinCh()の末尾番兵（idx=-1）を測るための使い捨てDOM要素。本家 #SPAN_LAST と同じ役割
+	//	（最後の1文字にも「次に置いたらはみ出すか」の判定材料を与える）。測定後は必ず取り除き、
+	//	文字出現演出やcache/childNodes数の前提（呼び出し元）には一切関与させない
+	const sentinel = document.createElement('span');
+	sentinel.style.display = 'inline-block';
+	sentinel.textContent = ' ';
+	el.appendChild(sentinel);
 
-		const found = kin.scan(kc, xy, bura, i);
-		if (! found) break;
+	try {
+		let i = 2;
+		for (let guard = 0; guard <= kc.length; ++guard) {
+			const xy = kc.map((_, j)=> {
+				const ix = idx[j]!;
+				const outer = ix < 0 ? sentinel : cache[ix]!;
+				const si = sub[j]!;
+				const target = si < 0 ? outer : (outer.firstElementChild?.children[si] as HTMLElement | undefined) ?? outer;
+				const r = target.getBoundingClientRect();
+				return tategaki ? r.top : r.left;
+			});
 
-		el.insertBefore(document.createElement('br'), cache[idx[found.ins]!]!);
-		i = found.resumeAt;
+			const found = kin.scan(kc, xy, bura, i);
+			if (! found) break;
+
+			el.insertBefore(document.createElement('br'), cache[idx[found.ins]!]!);
+			i = found.resumeAt;
+		}
+	} finally {
+		sentinel.remove();
 	}
 }
 
@@ -776,7 +818,19 @@ function elCh({c, r, ra, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, r_align: T
 		base.style.textCombineUpright = 'all';
 		el.appendChild(base);
 	}
-	base.appendChild(txt(c));
+	// ルビの親文字が複数文字にまたがる場合（例：安全｜剃刀《かみそり》）、禁則処理
+	//	（Hyphenation側）が文字ごとに位置を測れるよう、1文字ずつ個別spanへ分ける
+	//	（本家 TxtLayer.ts:742-746 #tagCh_sub()と同じ発想。表示・文字送り演出は
+	//	表示単位＝elCh呼び出し元のouter span単位のまま変えない＝ここは禁則計測専用の追加構造）
+	const chars = Array.from(c);
+	if (r !== undefined && ! tcy && ! src && chars.length > 1) {
+		for (const c1 of chars) {
+			const sp = document.createElement('span');
+			sp.appendChild(txt(c1));
+			base.appendChild(sp);
+		}
+	}
+	else base.appendChild(txt(c));
 	// [graph]のインライン画像。**全角空白1つぶんの場所を占め、そこへ画像を敷く**
 	//	（本家も`&emsp;`を置いてそこへ画像を重ねる）。文字を残すので平文とも食い違わない
 	if (src) {

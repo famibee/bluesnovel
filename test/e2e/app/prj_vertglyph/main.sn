@@ -1,0 +1,10 @@
+; E2E用シナリオ（vertglyph-repro.e2e.ts が使用、投機的な調査専用・未コミット予定）
+;	縦書きグリフ描画不具合（実機tmp_bluesで発見、CHANGELOG.md 2026-08-17参照）の
+;	「フォント読み込みレース」仮説を検証する。tmp_blues実テンプレのtxt_lay_v_leftマクロと
+;	同じCSS（writing-mode: vertical-rl; width: 310px; font-family: ipamjm; font-size: 24px;
+;	line-height: 1.5;）を使い、同じ禁則ペア文字（'─'の対、kinsoku_dns既定）を含む本文を流す。
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[lay layer=mes style='writing-mode: vertical-rl; width: 310px; height: 768px; padding-left: 26px; padding-right: 36px; padding-top: 30px; padding-bottom: 30px; font-family: ipamjm; font-size: 24px; line-height: 1.5;']
+
+　どうして俺が毎晩家へ帰つて来る道で、俺の部屋の数ある道具のうちの、選りに選つてちつぽけな薄つぺらいもの、安全剃刀の刃なんぞが、千里眼のやうに思ひ浮んで来るのか──お前はそれがわからないと云つたが──そして俺にもやはりそれがわからないのだが──それもこれもやつぱり同じやうなことにちがひない。[s]
