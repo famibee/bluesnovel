@@ -62,6 +62,22 @@ test('[clear_lay]はkinsoku_*/buraを変更しない', async ({page})=> {
 	expect(afterClear).toEqual(beforeClear);
 });
 
+test('実データ回帰：ss_000.sn:24の「──」対（分割禁止）が<br>で分断されない', async ({page})=> {
+	// tmp_esm_uc doc/prj/script/ss_000.sn:24「…思ひ浮んで来るのか──お前はそれが…」の一部。
+	//	本家dumpHtm（skynovel_esm TxtStage.ts debug.dumpHtm）の実出力で確認した禁則結果は
+	//	分割禁止文字'─'の対を割らず必ず同じ行へ揃える、というもの。
+	//	折り返し位置そのもの（monospaceでの実測px）は環境依存なので固定せず、
+	//	「'─'の対の間に<br>が挟まらない」という禁則の不変条件だけを見る
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	const row = await domRow(page);
+	expect(row.filter(v=> v !== '<br>')).toEqual(['来', 'る', 'の', 'か', '─', '─', 'お', '前', 'は']);	// 文字の並び自体は保たれる
+	const i = row.indexOf('─');
+	expect(row[i + 1]).toBe('─');	// '─'の対が隣接（間に<br>が無い＝分断されていない）
+});
+
 test('文字spanは[r]以外すべてinline-block（ブラウザ標準の行分割・禁則を無効化するため）', async ({page})=> {
 	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
 		aEl=> aEl.map(el=> getComputedStyle(el).display)))

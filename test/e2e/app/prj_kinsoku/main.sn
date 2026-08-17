@@ -28,4 +28,14 @@
 ; [clear_lay]はkinsoku_*/buraを変更しない（見た目は再設定が要るのでwidth等だけ書き直す）
 [clear_lay layer=mes page=fore]
 [lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
-あいうえお。かきくけこさしすせそ[s]
+あいうえお。かきくけこさしすせそ[l]
+
+[er]
+; 実データ回帰（tmp_esm_uc doc/prj/script/ss_000.sn:24「…思ひ浮んで来るのか──お前は
+;	それが…」の一部。本家dumpHtm（TxtStage.ts debug.dumpHtm）で確認した禁則結果は
+;	分割禁止文字'─'の対「──」を割らず必ず同じ行へ揃えて送る、というもの。
+;	折り返し位置そのもの（何文字目で折り返すか）はwidth:5emでのmonospace実測px次第で
+;	環境依存になるため、kinsoku.e2e.ts側では「対が<br>で分断されない」不変条件だけを見る）
+[clear_lay layer=mes page=fore]
+[lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
+来るのか──お前は[s]
