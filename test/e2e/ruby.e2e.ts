@@ -34,14 +34,17 @@ test('`漢字《かんじ》`が<ruby>で組まれ、平文にはルビが入ら
 test('ルビ付き文字spanは<rt>の高さぶんmargin-block-startを持つ（1つ前の行/列へ食い込まないため）', async ({page})=> {
 	// <rt>はline box計算の外側に固定量ではみ出すCSSの<ruby>の制約（line-heightでは吸収できない）。
 	//	親のinline-block spanへ実測したrt高さをmargin-block-startとして足すことで、
-	//	詰めて表示しても1つ前の行/列に重ならないようにしている（TxtLayer.tsx）
+	//	詰めて表示しても1つ前の行/列に重ならないようにしている（TxtLayer.tsx）。
+	//	**比較にはoffsetHeightを使う**（getBoundingClientRect()は祖先のtransform: scale(cvsScale)
+	//	を含んだ値になり、cvsScale!==1のウインドウでは一致しない——marginBlockStart自体も
+	//	offsetHeightで設定しているため、比較も同じ基準に揃える必要がある）
 	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
 		el=> {
 			const parent = el.parentElement!;
 			const rt = el.querySelector('rt')!;
 			return {
 				marginTop: parseFloat(getComputedStyle(parent).marginTop),
-				rtHeight: rt.getBoundingClientRect().height,
+				rtHeight: rt.offsetHeight,
 			};
 		});
 	expect(marginTop).toBeCloseTo(rtHeight, 0);

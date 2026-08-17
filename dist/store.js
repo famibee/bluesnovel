@@ -564,23 +564,23 @@ function g(e) {
 		...r === void 0 ? {} : { blendmode: r }
 	};
 }
-function ee(e) {
+function _(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function _(e) {
+function ee(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function v(e) {
+function te(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function y(e) {
+function v(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var b = [
+var y = [
 	"visible",
 	"alpha",
 	"left",
@@ -599,21 +599,21 @@ var b = [
 	"blendmode",
 	"aFlt"
 ];
-function x(e) {
+function b(e) {
 	let t = {};
 	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left)}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top)}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : v(e.aFlt));
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : te(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = y(e.aFlt);
+		let n = v(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-var S = !1, C = () => {
-	S = !0;
-}, w = () => {
-	S = !1;
-}, T = () => S, E = {
+var x = !1, S = () => {
+	x = !0;
+}, C = () => {
+	x = !1;
+}, w = () => x, T = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -623,7 +623,7 @@ var S = !1, C = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, D = {
+}, E = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -633,64 +633,53 @@ var S = !1, C = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, O = /[{\s.,*]/, k = (e, t, n, r) => {
+}, D = /[{\s.,*]/, O = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function te(e, t, n) {
+function ne(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (O.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (D.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: k(e, "wait", t.wait, 500),
-			alpha: k(e, "alpha", t.alpha, 0),
+			wait: O(e, "wait", t.wait, 500),
+			alpha: O(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: k(e, "scale_x", t.scale_x, 1),
-			scale_y: k(e, "scale_y", t.scale_y, 1),
-			rotate: k(e, "rotate", t.rotate, 0),
+			scale_x: O(e, "scale_x", t.scale_x, 1),
+			scale_y: O(e, "scale_y", t.scale_y, 1),
+			rotate: O(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function A(e) {
+function k(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
+var A = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
 function j(e) {
-	switch (e.trim()) {
-		case "linear": return "none";
-		case "ease-in": return "power1.in";
-		case "ease-in-out": return "power1.inOut";
-		case "ease": return "power1.inOut";
-		case "ease-out": return "power1.out";
-		default: return "power1.out";
-	}
+	let t = e.trim();
+	return A.test(t) ? t : "ease-out";
 }
 function M(e) {
 	return {
-		from: {
+		keyframes: [{
 			opacity: e.alpha,
-			x: A(e.x),
-			y: A(e.y),
-			scaleX: e.scale_x,
-			scaleY: e.scale_y,
-			rotation: e.rotate
-		},
-		to: {
+			transform: `translate(${k(e.x)}, ${k(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+		}, {
 			opacity: 1,
-			x: 0,
-			y: 0,
-			scaleX: 1,
-			scaleY: 1,
-			rotation: 0,
-			duration: e.wait / 1e3,
-			ease: j(e.ease)
+			transform: "none"
+		}],
+		options: {
+			duration: e.wait,
+			easing: j(e.ease),
+			fill: "backwards"
 		}
 	};
 }
@@ -927,14 +916,14 @@ function $(e, t, n) {
 	if (r.cls !== n) throw `${t} は${n === "grp" ? "画像" : "文字"}レイヤではありません`;
 	return r;
 }
-var ne = q()((e, t) => ({
+var re = q()((e, t) => ({
 	txt: "",
 	addTxt: (t) => e((e) => ({ txt: e.txt + t })),
 	clearTxt: () => e(() => ({ txt: "" })),
 	aPage: [[], []],
 	foreIdx: 0,
-	hChIn: { default: E },
-	hChOut: { default: D },
+	hChIn: { default: T },
+	hChOut: { default: E },
 	defChStyle: ({ kind: t, nm: n, sty: r }) => e((e) => t === "in" ? { hChIn: {
 		...e.hChIn,
 		[n]: r
@@ -993,7 +982,7 @@ var ne = q()((e, t) => ({
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
 		if (!i) throw `存在しないレイヤ ${e} です`;
 		let a = {};
-		for (let e of b) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
+		for (let e of y) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
 		return a;
 	},
 	getPages: () => {
@@ -1030,7 +1019,7 @@ var ne = q()((e, t) => ({
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
-			for (let t of b) t !== "visible" && delete e[t];
+			for (let t of y) t !== "visible" && delete e[t];
 			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, i = (e) => {
 			if (!t) {
@@ -1166,6 +1155,6 @@ var ne = q()((e, t) => ({
 	setWait: (t) => e(() => ({ wait: t }))
 }));
 //#endregion
-export { i as S, _, V as a, ee as b, M as c, T as d, C as f, h as g, m as h, B as i, te as l, g as m, ne as n, R as o, x as p, z as r, E as s, Y as t, w as u, f as v, s as x, p as y };
+export { i as S, ee as _, V as a, _ as b, M as c, w as d, S as f, h as g, m as h, B as i, ne as l, g as m, re as n, R as o, b as p, z as r, T as s, Y as t, C as u, f as v, s as x, p as y };
 
 //# sourceMappingURL=store.js.map

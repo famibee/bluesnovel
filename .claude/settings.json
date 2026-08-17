@@ -8,9 +8,6 @@
       "Bash(git log *)",
       "Bash(git mv *)",
       "Bash(grep -v *)",
-      "Bash(mv ARCHITECTURE.md .claude/docs/ARCHITECTURE.md)",
-      "Bash(mv PITFALLS.md .claude/docs/PITFALLS.md)",
-      "Bash(mv TESTING.md .claude/docs/TESTING.md)",
       "Bash(npx playwright *)",
       "Bash(python3 *)",
       "Read(//Users/ugai/Documents/MacHD2/SKYNovel/bluesnovel/**)"

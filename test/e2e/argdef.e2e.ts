@@ -22,8 +22,9 @@ import {SEL_FORE, gotoSn, pressKey} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'argdef')});
 
-// 「変形なし」の算出値。デザインモードのMoveable用の下地（Stage.tsx sty4Moveable）が
-//	恒等変換を書くので、未指定でも 'none' にはならない
+// 「変形なし」の算出値。デザインモード無効中（既定）はMoveable用の下地（Stage.tsx sty4Moveable）も
+//	空になったので 'none'。配列のまま残すのは、デザインモード有効時（sty4Moveableが恒等変換を
+//	書く）との両対応を崩さないため
 const IDENTITY = ['none', 'matrix(1, 0, 0, 1, 0, 0)'];
 
 // レイヤ1枚分の実寸とステージ枠。ステージは窓に合わせて transform: scale されるので、

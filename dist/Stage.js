@@ -10,7 +10,7 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 	return typeof t == "boolean" ? t : !e;
 }, V = function(e) {
 	return (0, B.useReducer)(ee, e);
-}, te = C ? B.useLayoutEffect : B.useEffect, ne = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
+}, te = C ? B.useLayoutEffect : B.useEffect, H = /* @__PURE__ */ e((/* @__PURE__ */ t(((e, t) => {
 	(function() {
 		var e = typeof window < "u" && window.document !== void 0 ? window.document : {}, n = t !== void 0 && t.exports, r = (function() {
 			for (var t, n = [
@@ -128,7 +128,7 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 			}
 		}), n ? t.exports = a : window.screenfull = a;
 	})();
-})))()), re = function(e, t, n) {
+})))()), ne = function(e, t, n) {
 	n === void 0 && (n = {});
 	var r = n.video, i = n.onClose, a = i === void 0 ? w : i, o = (0, B.useState)(t), s = o[0], c = o[1];
 	return te(function() {
@@ -136,22 +136,22 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 			var n = function() {
 				r?.current && j(r.current, "webkitendfullscreen", n), a();
 			}, i = function() {
-				if (ne.default.isEnabled) {
-					var e = ne.default.isFullscreen;
+				if (H.default.isEnabled) {
+					var e = H.default.isFullscreen;
 					c(e), e || a();
 				}
 			};
-			if (ne.default.isEnabled) {
+			if (H.default.isEnabled) {
 				try {
-					ne.default.request(e.current), c(!0);
+					H.default.request(e.current), c(!0);
 				} catch (e) {
 					a(e), c(!1);
 				}
-				ne.default.on("change", i);
+				H.default.on("change", i);
 			} else r && r.current && r.current.webkitEnterFullscreen ? (r.current.webkitEnterFullscreen(), D(r.current, "webkitendfullscreen", n), c(!0)) : (a(), c(!1));
 			return function() {
-				if (c(!1), ne.default.isEnabled) try {
-					ne.default.off("change", i), ne.default.exit();
+				if (c(!1), H.default.isEnabled) try {
+					H.default.off("change", i), H.default.exit();
 				} catch {}
 				else r && r.current && r.current.webkitExitFullscreen && (j(r.current, "webkitendfullscreen", n), r.current.webkitExitFullscreen());
 			};
@@ -161,13 +161,13 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 		r,
 		e
 	]), s;
-}, H = function(e) {
-	return "touches" in e;
 }, U = function(e) {
-	H(e) && e.touches.length < 2 && e.preventDefault && e.preventDefault();
-}, ie = function(e, t) {
+	return "touches" in e;
+}, W = function(e) {
+	U(e) && e.touches.length < 2 && e.preventDefault && e.preventDefault();
+}, re = function(e, t) {
 	var n = t === void 0 ? {} : t, r = n.isPreventDefault, i = r === void 0 || r, a = n.delay, o = a === void 0 ? 300 : a, s = (0, B.useRef)(), c = (0, B.useRef)(), l = (0, B.useCallback)(function(t) {
-		i && t.target && (D(t.target, "touchend", U, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
+		i && t.target && (D(t.target, "touchend", W, { passive: !1 }), c.current = t.target), s.current = setTimeout(function() {
 			return e(t);
 		}, o);
 	}, [
@@ -175,7 +175,7 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 		o,
 		i
 	]), u = (0, B.useCallback)(function() {
-		s.current && clearTimeout(s.current), i && c.current && j(c.current, "touchend", U);
+		s.current && clearTimeout(s.current), i && c.current && j(c.current, "touchend", W);
 	}, [i]);
 	return {
 		onMouseDown: function(e) {
@@ -188,7 +188,7 @@ var B = /* @__PURE__ */ e(n()), ee = function(e, t) {
 		onMouseLeave: u,
 		onTouchEnd: u
 	};
-}, W = function(e) {
+}, ie = function(e) {
 	F(function() {
 		e();
 	});
@@ -2919,14 +2919,14 @@ function Wi(e, t, n) {
 			var V = bs(r, t, !1, !0, g), te = V.offsetZoom;
 			if (S = V.offsetParent, C = V.isEnd, w = V.isStatic, h *= te, (V.isCustomElement || te !== 1) && w) z -= S.offsetLeft, B -= S.offsetTop;
 			else if ((Hr || Vr) && V.parentSlotElement) {
-				for (var ne = S, re = 0, H = 0; ne && Hi(ne);) re += ne.offsetLeft, H += ne.offsetTop, ne = ne.offsetParent;
-				z -= re, B -= H;
+				for (var H = S, ne = 0, U = 0; H && Hi(H);) ne += H.offsetLeft, U += H.offsetTop, H = H.offsetParent;
+				z -= ne, B -= U;
 			}
 		}
 		if (Pr && !Ur && N && !P && w && (_ === "relative" || _ === "static") && (z -= S.offsetLeft, B -= S.offsetTop, o ||= C), y) N && k.hasTransform && (D = S.clientLeft, O = S.clientTop);
 		else if (N && m !== S && (T = S.clientLeft, E = S.clientTop), N && S === a) {
-			var U = Ss(r, !1);
-			z += U[0], B += U[1];
+			var W = Ss(r, !1);
+			z += W[0], B += W[1];
 		}
 		if (i.push({
 			type: "target",
@@ -2941,11 +2941,11 @@ function Wi(e, t, n) {
 			target: r,
 			matrix: ms(ln(b), l, F)
 		})), N) {
-			var ie = r === e, W = ie ? 0 : r.scrollLeft, ae = ie ? 0 : r.scrollTop;
+			var re = r === e, ie = re ? 0 : r.scrollLeft, ae = re ? 0 : r.scrollTop;
 			i.push({
 				type: "offset",
 				target: r,
-				matrix: an([z - W + T - D, B - ae + E - O], l)
+				matrix: an([z - ie + T - D, B - ae + E - O], l)
 			});
 		} else i.push({
 			type: "offset",
@@ -4160,14 +4160,14 @@ var vo = {
 				vt(I, Jr), vt(F, Jr), b || (!S && !C && (I[0] = G(I[0], y), F[0] = G(F[0], y)), !w && !T && (I[1] = G(I[1], y), F[1] = G(F[1], y)));
 				var L = K(F, g), R = K(I, g), z = K(R, m), B = K(L, h);
 				n.prevDist = R, n.prevBeforeDist = L, n.passDelta = z, n.passDist = R;
-				var ee = n.left + L[0], V = n.top + L[1], te = n.right - L[0], ne = n.bottom - L[1], re = li(n, `translate(${I[0]}px, ${I[1]}px)`, `translate(${R[0]}px, ${R[1]}px)`);
-				if (Di(t, re), e.state.dragInfo.dist = r ? [0, 0] : R, !(!r && !v && z.every(function(e) {
+				var ee = n.left + L[0], V = n.top + L[1], te = n.right - L[0], H = n.bottom - L[1], ne = li(n, `translate(${I[0]}px, ${I[1]}px)`, `translate(${R[0]}px, ${R[1]}px)`);
+				if (Di(t, ne), e.state.dragInfo.dist = r ? [0, 0] : R, !(!r && !v && z.every(function(e) {
 					return !e;
 				}) && B.some(function(e) {
 					return !e;
 				}))) {
-					var H = e.state, U = H.width, ie = H.height, W = Z(e, t, q({
-						transform: re,
+					var U = e.state, W = U.width, re = U.height, ie = Z(e, t, q({
+						transform: ne,
 						dist: R,
 						delta: z,
 						translate: I,
@@ -4177,12 +4177,12 @@ var vo = {
 						left: ee,
 						top: V,
 						right: te,
-						bottom: ne,
-						width: U,
-						height: ie,
+						bottom: H,
+						width: W,
+						height: re,
 						isPinch: a
-					}, $s({ transform: re }, t)));
-					return !r && Q(e, "onDrag", W), W;
+					}, $s({ transform: ne }, t)));
+					return !r && Q(e, "onDrag", ie), ie;
 				}
 			}
 		}
@@ -4375,48 +4375,48 @@ var So = _c("resizable"), Co = {
 		var N = zs(e.props, "resizable"), P = N.resizeFormat, F = N.throttleResize, I = F === void 0 ? +!i : F, L = N.parentMoveable, R = N.keepRatioFinally, z = r.direction, B = z, ee = 0, V = 0;
 		!z[0] && !z[1] && (B = [1, 1]);
 		var te = S && (o ?? N.keepRatio) || !1;
-		function ne() {
+		function H() {
 			var e = r.fixedDirection, n = Tc(B, te, r, t);
 			ee = n.distWidth, V = n.distHeight;
 			var i = B[0] - e[0] || te ? Math.max(C + ee, Jr) : C, a = B[1] - e[1] || te ? Math.max(w + V, Jr) : w;
 			return te && C && w && (T ? a = i / S : i = a * S), [i, a];
 		}
-		var re = J(ne(), 2), H = re[0], U = re[1];
+		var ne = J(H(), 2), U = ne[0], W = ne[1];
 		f || (r.setFixedDirection(r.fixedDirection), Q(e, "onBeforeResize", Z(e, t, {
 			startFixedDirection: r.startFixedDirection,
 			startFixedPosition: r.startFixedPosition,
 			setFixedDirection: function(e) {
 				var t;
-				return r.setFixedDirection(e), t = J(ne(), 2), H = t[0], U = t[1], [H, U];
+				return r.setFixedDirection(e), t = J(H(), 2), U = t[0], W = t[1], [U, W];
 			},
 			setFixedPosition: function(e) {
 				var t;
-				return r.setFixedPosition(e), t = J(ne(), 2), H = t[0], U = t[1], [H, U];
+				return r.setFixedPosition(e), t = J(H(), 2), U = t[0], W = t[1], [U, W];
 			},
-			boundingWidth: H,
-			boundingHeight: U,
+			boundingWidth: U,
+			boundingHeight: W,
 			setSize: function(e) {
 				var t = J(e, 2);
-				H = t[0], U = t[1];
+				U = t[0], W = t[1];
 			}
 		}, !0)));
-		var ie = s;
-		s || (ie = !i && a ? Bi(e, [0, 0]) : r.fixedPosition);
-		var W = [0, 0];
-		a || (W = is(e, H, U, z, ie, !l && u, r)), c && (!c[0] && (W[0] = 0), !c[1] && (W[1] = 0));
+		var re = s;
+		s || (re = !i && a ? Bi(e, [0, 0]) : r.fixedPosition);
+		var ie = [0, 0];
+		a || (ie = is(e, U, W, z, re, !l && u, r)), c && (!c[0] && (ie[0] = 0), !c[1] && (ie[1] = 0));
 		function ae() {
 			var e;
-			P && (e = J(P([H, U]), 2), H = e[0], U = e[1]), H = G(H, I), U = G(U, I);
+			P && (e = J(P([U, W]), 2), U = e[0], W = e[1]), U = G(U, I), W = G(W, I);
 		}
 		if (te) {
-			B[0] && B[1] && W[0] && W[1] && ($(W[0]) > $(W[1]) ? W[1] = 0 : W[0] = 0);
-			var oe = !W[0] && !W[1];
-			oe && ae(), B[0] && !B[1] || W[0] && !W[1] || oe && T ? (H += W[0], U = H / S) : (!B[0] && B[1] || !W[0] && W[1] || oe && !T) && (U += W[1], H = U * S);
-		} else H += W[0], U += W[1], H = Math.max(0, H), U = Math.max(0, U);
-		n = J(dt([H, U], b, x, te ? S : !1), 2), H = n[0], U = n[1], ae(), te && (d || R) && (T ? U = H / S : H = U * S), ee = H - C, V = U - w;
+			B[0] && B[1] && ie[0] && ie[1] && ($(ie[0]) > $(ie[1]) ? ie[1] = 0 : ie[0] = 0);
+			var oe = !ie[0] && !ie[1];
+			oe && ae(), B[0] && !B[1] || ie[0] && !ie[1] || oe && T ? (U += ie[0], W = U / S) : (!B[0] && B[1] || !ie[0] && ie[1] || oe && !T) && (W += ie[1], U = W * S);
+		} else U += ie[0], W += ie[1], U = Math.max(0, U), W = Math.max(0, W);
+		n = J(dt([U, W], b, x, te ? S : !1), 2), U = n[0], W = n[1], ae(), te && (d || R) && (T ? W = U / S : U = W * S), ee = U - C, V = W - w;
 		var se = [ee - v, V - y];
 		r.prevWidth = ee, r.prevHeight = V;
-		var ce = zi(e, H, U, ie, h, r);
+		var ce = zi(e, U, W, re, h, r);
 		if (!(!L && se.every(function(e) {
 			return !e;
 		}) && ce.every(function(e) {
@@ -4425,11 +4425,11 @@ var So = _c("resizable"), Co = {
 			var le = vo.drag(e, ni(t, e.state, ce, !!a, !1, "draggable")), ue = le.transform, de = g + ee, fe = _ + V, pe = Z(e, t, q({
 				width: de,
 				height: fe,
-				offsetWidth: Math.round(H),
-				offsetHeight: Math.round(U),
+				offsetWidth: Math.round(U),
+				offsetHeight: Math.round(W),
 				startRatio: S,
-				boundingWidth: H,
-				boundingHeight: U,
+				boundingWidth: U,
+				boundingHeight: W,
 				direction: z,
 				dist: [ee, V],
 				delta: se,
@@ -4796,15 +4796,15 @@ var Ao = {
 				f && (a.fixedPosition = Ni(e, a.targetAllTransform, a.fixedDirection, a.fixedOffset, a));
 				var B = Ri(e, O, a), ee = K(Wt(d || [0, 0], B), a.prevInverseDist || [0, 0]);
 				a.prevInverseDist = B, a.requestValue = null;
-				var V = Mi(e, z, ee, u, t), te = V, ne = _t([I, L], g.startAbsoluteOrigin) - g.startDist, re = void 0;
+				var V = Mi(e, z, ee, u, t), te = V, H = _t([I, L], g.startAbsoluteOrigin) - g.startDist, ne = void 0;
 				if (a.resolveAble === "resizable") {
-					var H = Co.dragControl(e, q(q({}, ni(t, e.state, [t.deltaX, t.deltaY], !!u, !1, "resizable")), {
+					var U = Co.dragControl(e, q(q({}, ni(t, e.state, [t.deltaX, t.deltaY], !!u, !1, "resizable")), {
 						resolveMatrix: !0,
-						parentDistance: ne
+						parentDistance: H
 					}));
-					H && (re = H, te = ec(te, H, t));
+					U && (ne = U, te = ec(te, U, t));
 				}
-				var U = Z(e, t, q(q({
+				var W = Z(e, t, q(q({
 					delta: D,
 					dist: O,
 					rotate: k,
@@ -4818,9 +4818,9 @@ var Ao = {
 					absoluteRotate: M,
 					absoluteRotation: M,
 					isPinch: !!u,
-					resize: re
+					resize: ne
 				}, V), te));
-				return Q(e, "onRotate", U), U;
+				return Q(e, "onRotate", W), W;
 			}
 		}
 	},
@@ -6667,11 +6667,11 @@ var Pc = Or("pinchable", {
 		});
 		var R = Mc(2, function(e) {
 			return u[e] ? O[e] / u[e] : O[e];
-		}), z = `scale(${O.join(", ")})`, B = `scale(${E.join(", ")})`, ee = li(n, B, z), V = !h[0] || !h[1], te = Fi(e, V ? B : z, n.fixedDirection, k, n.fixedOffset, n, V), ne = M ? te : K(te, n.prevInverseDist || [0, 0]);
-		if (n.prevDist = O, n.prevInverseDist = te, E[0] === u[0] && E[1] === u[1] && ne.every(function(e) {
+		}), z = `scale(${O.join(", ")})`, B = `scale(${E.join(", ")})`, ee = li(n, B, z), V = !h[0] || !h[1], te = Fi(e, V ? B : z, n.fixedDirection, k, n.fixedOffset, n, V), H = M ? te : K(te, n.prevInverseDist || [0, 0]);
+		if (n.prevDist = O, n.prevInverseDist = te, E[0] === u[0] && E[1] === u[1] && H.every(function(e) {
 			return !e;
 		}) && !b && !M) return !1;
-		var re = Z(e, t, q({
+		var ne = Z(e, t, q({
 			offsetWidth: f,
 			offsetHeight: p,
 			direction: d,
@@ -6679,8 +6679,8 @@ var Pc = Or("pinchable", {
 			dist: O,
 			delta: R,
 			isPinch: !!a
-		}, Mi(e, ee, ne, a, t)));
-		return Q(e, "onScale", re), re;
+		}, Mi(e, ee, H, a, t)));
+		return Q(e, "onScale", ne), ne;
 	},
 	dragControlEnd: function(e, t) {
 		var n = t.datas;
@@ -7496,16 +7496,16 @@ function gl(e, t, n, r, i) {
 				};
 			}
 			if (y === "inset") {
-				var w = Ze(x || "0 0 0 0"), F = w.indexOf("round"), I = (F > -1 ? w.slice(0, F) : w).length, L = w.slice(I + 1), R = J(w.slice(0, I), 4), z = R[0], B = R[1], ee = B === void 0 ? z : B, V = R[2], te = V === void 0 ? z : V, ne = R[3], re = ne === void 0 ? ee : ne, H = J([z, te].map(function(e) {
+				var w = Ze(x || "0 0 0 0"), F = w.indexOf("round"), I = (F > -1 ? w.slice(0, F) : w).length, L = w.slice(I + 1), R = J(w.slice(0, I), 4), z = R[0], B = R[1], ee = B === void 0 ? z : B, V = R[2], te = V === void 0 ? z : V, H = R[3], ne = H === void 0 ? ee : H, U = J([z, te].map(function(e) {
 					return ct(e, n);
-				}), 2), U = H[0], ie = H[1], W = J([re, ee].map(function(e) {
+				}), 2), W = U[0], re = U[1], ie = J([ne, ee].map(function(e) {
 					return ct(e, t);
-				}), 2), ae = W[0], oe = W[1], se = t - oe, ce = n - ie, le = sl(L, se - ae, ce - U, ae, U), T = Y(Y([], J(ml(U, se, ce, ae)), !1), J(le), !1);
+				}), 2), ae = ie[0], oe = ie[1], se = t - oe, ce = n - re, le = sl(L, se - ae, ce - W, ae, W), T = Y(Y([], J(ml(W, se, ce, ae)), !1), J(le), !1);
 				return {
 					type: "inset",
 					clipText: m,
 					poses: T,
-					top: U,
+					top: W,
 					left: ae,
 					right: se,
 					bottom: ce,
@@ -7518,14 +7518,14 @@ function gl(e, t, n, r, i) {
 				C = ",";
 				var ue = J(w.map(function(e) {
 					return et(e).value;
-				}), 4), de = ue[0], oe = ue[1], ie = ue[2], ae = ue[3], T = ml(de, oe, ie, ae);
+				}), 4), de = ue[0], oe = ue[1], re = ue[2], ae = ue[3], T = ml(de, oe, re, ae);
 				return {
 					type: "rect",
 					clipText: m,
 					poses: T,
 					top: de,
 					right: oe,
-					bottom: ie,
+					bottom: re,
 					left: ae,
 					values: w,
 					splitter: C
@@ -7675,8 +7675,8 @@ var bl = {
 			var N = C.left, P = C.top, F = C.radiusX, I = C.radiusY, L = J(K(ks(f, [N, P], w), ks(f, [0, 0], w)), 2), R = L[0], z = L[1], B = "none";
 			if (!a) {
 				for (var ee = Math.max(10, F / 5, I / 5), V = [], te = 0; te <= ee; ++te) {
-					var ne = Math.PI * 2 / ee * te;
-					V.push([F + (F - o) * Math.cos(ne), I + (I - o) * Math.sin(ne)]);
+					var H = Math.PI * 2 / ee * te;
+					V.push([F + (F - o) * Math.cos(H), I + (I - o) * Math.sin(H)]);
 				}
 				V.push([F, -2]), V.push([-2, -2]), V.push([-2, I * 2 + 2]), V.push([F * 2 + 2, I * 2 + 2]), V.push([F * 2 + 2, -2]), V.push([F, -2]), B = `polygon(${V.map(function(e) {
 					return `${e[0]}px ${e[1]}px`;
@@ -7694,23 +7694,23 @@ var bl = {
 			}));
 		}
 		if (a) {
-			var re = js(Y([
+			var ne = js(Y([
 				g,
 				_,
 				v,
 				y
-			], J(E), !1)), H = re.width, U = re.height, ie = re.left, W = re.top;
+			], J(E), !1)), U = ne.width, W = ne.height, re = ne.left, ie = ne.top;
 			if (j || k || A) {
 				var V = A ? E.slice(0, 8) : E;
 				D.push(t.createElement("div", {
 					key: "clipArea",
 					className: X("clip-area", "snap-control"),
 					style: {
-						width: `${H}px`,
-						height: `${U}px`,
-						transform: `translate(${ie}px, ${W}px)`,
+						width: `${U}px`,
+						height: `${W}px`,
+						transform: `translate(${re}px, ${ie}px)`,
 						clipPath: `polygon(${V.map(function(e) {
-							return `${e[0] - ie}px ${e[1] - W}px`;
+							return `${e[0] - re}px ${e[1] - ie}px`;
 						}).join(", ")})`
 					}
 				}));
@@ -7778,60 +7778,60 @@ var bl = {
 		x.snapBoundInfos = null;
 		var L = p.type === "circle", R = p.type === "ellipse";
 		if (L || R) {
-			var z = js(F), B = $(z.bottom - z.top), ee = $(R ? z.right - z.left : B), V = F[0][1] + B, te = F[0][0] - ee, ne = F[0][0] + ee;
-			L && (I.push([ne, z.bottom]), j.push([1, 0])), I.push([z.left, V]), j.push([0, 1]), I.push([te, z.bottom]), j.push([1, 0]);
+			var z = js(F), B = $(z.bottom - z.top), ee = $(R ? z.right - z.left : B), V = F[0][1] + B, te = F[0][0] - ee, H = F[0][0] + ee;
+			L && (I.push([H, z.bottom]), j.push([1, 0])), I.push([z.left, V]), j.push([0, 1]), I.push([te, z.bottom]), j.push([1, 0]);
 		}
-		var re = Ko((m.clipHorizontalGuidelines || []).map(function(e) {
+		var ne = Ko((m.clipHorizontalGuidelines || []).map(function(e) {
 			return ct(`${e}`, C);
 		}), (m.clipVerticalGuidelines || []).map(function(e) {
 			return ct(`${e}`, S);
-		}), S, C), H = [], U = [];
-		if (L || R) H = [I[4][0], I[2][0]], U = [I[1][1], I[3][1]];
+		}), S, C), U = [], W = [];
+		if (L || R) U = [I[4][0], I[2][0]], W = [I[1][1], I[3][1]];
 		else if (A) {
-			var ie = [
+			var re = [
 				I[0],
 				I[2],
 				I[4],
 				I[6]
-			], W = [
+			], ie = [
 				j[0],
 				j[2],
 				j[4],
 				j[6]
 			];
-			H = ie.filter(function(e, t) {
-				return W[t][0];
+			U = re.filter(function(e, t) {
+				return ie[t][0];
 			}).map(function(e) {
 				return e[0];
-			}), U = ie.filter(function(e, t) {
-				return W[t][1];
+			}), W = re.filter(function(e, t) {
+				return ie[t][1];
 			}).map(function(e) {
 				return e[1];
 			});
-		} else H = I.filter(function(e, t) {
+		} else U = I.filter(function(e, t) {
 			return j[t][0];
 		}).map(function(e) {
 			return e[0];
-		}), U = I.filter(function(e, t) {
+		}), W = I.filter(function(e, t) {
 			return j[t][1];
 		}).map(function(e) {
 			return e[1];
 		});
-		var ae = [0, 0], oe = fo(re, m.clipTargetBounds && {
+		var ae = [0, 0], oe = fo(ne, m.clipTargetBounds && {
 			left: 0,
 			top: 0,
 			right: S,
 			bottom: C
-		}, H, U, 5, 5), se = oe.horizontal, ce = oe.vertical, le = se.offset, ue = ce.offset;
+		}, U, W, 5, 5), se = oe.horizontal, ce = oe.vertical, le = se.offset, ue = ce.offset;
 		if (se.isBound && (ae[1] += le), ce.isBound && (ae[0] += ue), (R || L) && j[0][0] === 0 && j[0][1] === 0) {
 			var z = js(F), de = z.bottom - z.top, fe = R ? z.right - z.left : de, pe = ce.isBound ? $(ue) : ce.snapIndex === 0 ? -ue : ue, me = se.isBound ? $(le) : se.snapIndex === 0 ? -le : le;
 			fe -= pe, de -= me, L && (de = Va(ce, se) > 0 ? de : fe, fe = de);
 			var he = I[0];
 			I[1][1] = he[1] - de, I[2][0] = he[0] + fe, I[3][1] = he[1] + de, I[4][0] = he[0] - fe;
 		} else if (A && h && l) {
-			var ge = J(hl(E), 2), _e = ge[0], ve = ge[1], ye = _e && ve ? _e / ve : 0, be = E[f].direction || "", xe = I[1][1], V = I[5][1], te = I[7][0], ne = I[3][0];
-			$(le) <= $(ue) ? le = jc(le) * $(ue) / ye : ue = jc(ue) * $(le) * ye, be.indexOf("w") > -1 ? te -= ue : be.indexOf("e") > -1 ? ne -= ue : (te += ue / 2, ne -= ue / 2), be.indexOf("n") > -1 ? xe -= le : be.indexOf("s") > -1 ? V -= le : (xe += le / 2, V -= le / 2);
-			var Se = ml(xe, ne, V, te);
+			var ge = J(hl(E), 2), _e = ge[0], ve = ge[1], ye = _e && ve ? _e / ve : 0, be = E[f].direction || "", xe = I[1][1], V = I[5][1], te = I[7][0], H = I[3][0];
+			$(le) <= $(ue) ? le = jc(le) * $(ue) / ye : ue = jc(ue) * $(le) * ye, be.indexOf("w") > -1 ? te -= ue : be.indexOf("e") > -1 ? H -= ue : (te += ue / 2, H -= ue / 2), be.indexOf("n") > -1 ? xe -= le : be.indexOf("s") > -1 ? V -= le : (xe += le / 2, V -= le / 2);
+			var Se = ml(xe, H, V, te);
 			I.forEach(function(e, t) {
 				var n = J(Se[t].pos, 2);
 				e[0] = n[0], e[1] = n[1];
@@ -7841,30 +7841,30 @@ var bl = {
 			n[0] && (e[0] -= ue), n[1] && (e[1] -= le);
 		});
 		var Ce = pl(e, p, F), we = `${T}(${Ce.join(D)})`;
-		if (x.clipPathState = we, L || R) H = [I[4][0], I[2][0]], U = [I[1][1], I[3][1]];
+		if (x.clipPathState = we, L || R) U = [I[4][0], I[2][0]], W = [I[1][1], I[3][1]];
 		else if (A) {
-			var ie = [
+			var re = [
 				I[0],
 				I[2],
 				I[4],
 				I[6]
 			];
-			H = ie.map(function(e) {
+			U = re.map(function(e) {
 				return e[0];
-			}), U = ie.map(function(e) {
+			}), W = re.map(function(e) {
 				return e[1];
 			});
-		} else H = I.map(function(e) {
+		} else U = I.map(function(e) {
 			return e[0];
-		}), U = I.map(function(e) {
+		}), W = I.map(function(e) {
 			return e[1];
 		});
-		if (x.snapBoundInfos = fo(re, m.clipTargetBounds && {
+		if (x.snapBoundInfos = fo(ne, m.clipTargetBounds && {
 			left: 0,
 			top: 0,
 			right: S,
 			bottom: C
-		}, H, U, 1, 1), v) {
+		}, U, W, 1, 1), v) {
 			var Te = x.is3d, Ee = x.allMatrix, De = Te ? 4 : 3, Oe = ae;
 			s && (Oe = [b[0] + ae[0] - y[0], b[1] + ae[1] - y[1]]), v.deltaOffset = Ut(Ee, [
 				Oe[0],
@@ -10191,24 +10191,16 @@ function xu({ text: e, label: t, call: n, fn: i, sty: a, enabled: o, onActivate:
 }
 //#endregion
 //#region src/components/TxtLayer.tsx
-var Su = {
-	opacity: 1,
-	x: 0,
-	y: 0,
-	scaleX: 1,
-	scaleY: 1,
-	rotation: 0
-};
-function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, str: s, aCh: l, ffs: u, noffs: p, bura: h, kinsoku_sol: g, kinsoku_eol: _, kinsoku_dns: v, kinsoku_bura: y, r_align: b, b_color: x, b_alpha: S, b_alpha_isfixed: C, b_src: w, styTxt: E, pl: D, pr: k, pt: A, pb: j, enabled: N, aBtn: P, in_style: F, onActivate: I, onNavigate: ee, onSe: V }) {
-	let te = d((e) => e.isReadBack), ne = d((e) => e.styPaging), re = d((e) => e.isTyping), H = d((e) => e.setIsTyping), U = d((e) => e.skipReq), ie = d((e) => e.skipping), W = d((e) => e.wait), ae = d((e) => e.hChIn), oe = d((e) => e.chWait), se = d((e) => e.autowc), [ce, le] = (0, B.useState)(null);
+function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, str: s, aCh: l, ffs: u, noffs: p, bura: h, kinsoku_sol: g, kinsoku_eol: _, kinsoku_dns: v, kinsoku_bura: y, r_align: b, b_color: x, b_alpha: S, b_alpha_isfixed: C, b_src: w, styTxt: E, pl: D, pr: k, pt: A, pb: j, enabled: N, aBtn: P, in_style: F, onActivate: I, onNavigate: z, onSe: ee }) {
+	let V = d((e) => e.isReadBack), te = d((e) => e.styPaging), H = d((e) => e.isTyping), ne = d((e) => e.setIsTyping), U = d((e) => e.skipReq), W = d((e) => e.skipping), re = d((e) => e.wait), ie = d((e) => e.hChIn), ae = d((e) => e.chWait), oe = d((e) => e.autowc), [se, ce] = (0, B.useState)(null);
 	(0, B.useEffect)(() => {
 		if (!w) {
-			le(null);
+			ce(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && le({
+			e && ce({
 				w: t.naturalWidth,
 				h: t.naturalHeight
 			});
@@ -10216,23 +10208,23 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			e = !1;
 		};
 	}, [w]);
-	let ue = {
-		...ce && (!("width" in n) || !("height" in n)) ? {
+	let le = {
+		...se && (!("width" in n) || !("height" in n)) ? {
 			...n,
-			..."width" in n ? {} : { width: `${String(ce.w)}px` },
-			..."height" in n ? {} : { height: `${String(ce.h)}px` }
+			..."width" in n ? {} : { width: `${String(se.w)}px` },
+			..."height" in n ? {} : { height: `${String(se.h)}px` }
 		} : n,
 		...D === void 0 ? {} : { paddingLeft: `${String(D)}px` },
 		...k === void 0 ? {} : { paddingRight: `${String(k)}px` },
 		...A === void 0 ? {} : { paddingTop: `${String(A)}px` },
 		...j === void 0 ? {} : { paddingBottom: `${String(j)}px` }
-	}, de = (0, B.useRef)(null), fe = (0, B.useRef)(null), pe = (e) => {
+	}, ue = (0, B.useRef)(null), de = (0, B.useRef)(null), fe = (e) => {
 		if (e.url) {
-			ee(e.url);
+			z(e.url);
 			return;
 		}
 		I(e.label, e.call, e.fn, e.arg);
-	}, me = (0, B.useRef)([]), he = (0, B.useRef)([]), ge = (0, B.useRef)(null), _e = (0, B.useCallback)((e) => u ? RegExp(`[　${p ?? ""}]`).test(e) ? "" : u : "", [u, p]), ve = (0, B.useMemo)(() => new f({
+	}, pe = (0, B.useRef)([]), me = (0, B.useRef)([]), he = (0, B.useRef)([]), ge = (0, B.useRef)(0), _e = (0, B.useCallback)((e) => u ? RegExp(`[　${p ?? ""}]`).test(e) ? "" : u : "", [u, p]), ve = (0, B.useMemo)(() => new f({
 		sol: g,
 		eol: _,
 		dns: v,
@@ -10242,61 +10234,65 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		_,
 		v,
 		y
-	]), ye = () => !!de.current && globalThis.getComputedStyle(de.current).writingMode.startsWith("vertical");
+	]), ye = () => !!ue.current && globalThis.getComputedStyle(ue.current).writingMode.startsWith("vertical");
 	(0, B.useLayoutEffect)(() => {
-		let e = fe.current;
+		let e = de.current;
 		if (!e) return;
-		ge.current?.kill();
-		let t = he.current, n = Math.min(t.length, l.length), r = 0;
+		++ge.current;
+		for (let e of he.current) e.cancel();
+		he.current = [];
+		let t = me.current, n = Math.min(t.length, l.length), r = 0;
 		for (; r < n && t[r].c === l[r].c && t[r].r === l[r].r && t[r].s === l[r].s && t[r].rs === l[r].rs;) ++r;
-		r < n && (me.current = [], he.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
-		let i = me.current, a = Math.min(l.length, i.length);
+		r < n && (pe.current = [], me.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
+		let i = pe.current, a = Math.min(l.length, i.length);
 		for (; e.childNodes.length > a;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < a;) e.appendChild(i[e.childNodes.length]);
-		if (a > 0 && z.set(i.slice(0, a), Su), l.length <= i.length) {
-			Tu(e, i, he.current, ve, h ?? !1, ye()), H(!1);
+		if (l.length <= i.length) {
+			wu(e, i, me.current, ve, h ?? !1, ye()), ne(!1);
 			return;
 		}
 		let s = l.slice(i.length), c = document.createDocumentFragment(), u = s.map((e) => {
 			let t = document.createElement("span");
-			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Du(e, b, pe, _e, V)), c.appendChild(t), t;
+			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, b, fe, _e, ee)), c.appendChild(t), t;
 		});
-		if (he.current = [...he.current, ...s], i.push(...u), e.appendChild(c), u.forEach((e) => {
+		if (me.current = [...me.current, ...s], i.push(...u), e.appendChild(c), u.forEach((e) => {
 			let t = e.querySelector("rt");
-			t && (e.style.marginBlockStart = `${String(t.getBoundingClientRect().height)}px`);
-		}), Tu(e, i, he.current, ve, h ?? !1, ye()), te || ie) {
-			z.set(u, Su), H(!1);
+			t && (e.style.marginBlockStart = `${String(t.offsetHeight)}px`);
+		}), wu(e, i, me.current, ve, h ?? !1, ye()), V || W) {
+			ne(!1);
 			return;
 		}
-		let d = z.timeline({ onComplete: () => H(!1) }), f = 0, p = 0;
+		let d = ge.current, f = 0, p = [];
 		if (u.forEach((e, t) => {
-			let n = s[t], r = ae[n.cis ?? F ?? "default"] ?? m, i = n.w ?? (se.enabled ? se.h[n.c.at(0) ?? ""] ?? 0 : oe);
-			if (r.join && (f += i / 1e3), r.wait <= 0) {
-				z.set(e, Su);
-				return;
-			}
-			let { from: a, to: c } = o(r);
-			d.fromTo(e, a, c, r.join ? f : 0), ++p;
-		}), p === 0) {
-			d.kill(), H(!1);
+			let n = s[t], r = ie[n.cis ?? F ?? "default"] ?? m, i = n.w ?? (oe.enabled ? oe.h[n.c.at(0) ?? ""] ?? 0 : ae);
+			if (r.join && (f += i / 1e3), r.wait <= 0) return;
+			let { keyframes: a, options: c } = o(r);
+			p.push(e.animate(a, {
+				...c,
+				delay: (r.join ? f : 0) * 1e3
+			}));
+		}), p.length === 0) {
+			ne(!1);
 			return;
 		}
-		H(!0), ge.current = d;
+		he.current = p, ne(!0), Promise.allSettled(p.map((e) => e.finished)).then(() => {
+			ge.current === d && ne(!1);
+		});
 	}, [
 		l,
-		te,
+		V,
 		_e,
 		F,
+		ie,
 		ae,
 		oe,
-		se,
 		h,
 		ve,
 		b
 	]), (0, B.useEffect)(() => {
-		ge.current && ge.current.progress() < 1 && ge.current.progress(1);
+		for (let e of he.current) e.playState !== "finished" && e.finish();
 	}, [U]);
-	let be = W?.src ?? "", xe = be.endsWith(".json"), [Se, Ce] = (0, B.useState)(void 0);
+	let be = re?.src ?? "", xe = be.endsWith(".json"), [Se, Ce] = (0, B.useState)(void 0);
 	(0, B.useEffect)(() => {
 		if (!xe) {
 			Ce(void 0);
@@ -10309,9 +10305,9 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			e = !1;
 		};
 	}, [be, xe]);
-	let we = a && !te && !re && W !== null && W.nm === i, Te = we && W.kind !== "waitclick", Ee = we && N, [De, Oe] = (0, B.useState)(!1);
+	let we = a && !V && !H && re !== null && re.nm === i, Te = we && re.kind !== "waitclick", Ee = we && N, [De, Oe] = (0, B.useState)(!1);
 	(0, B.useLayoutEffect)(() => {
-		let e = de.current;
+		let e = ue.current;
 		Oe(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
 	}, [E, n]);
 	let ke = _u`
@@ -10329,7 +10325,7 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		/* [waitclick]用プロキシは中身が空（マーカーなし）。中身が無いinline-blockは0x0になり
 			FocusMng.#canFocus()のgetClientRects()判定に落ちてフォーカスできなくなるため、
 			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
-		${!Te && W?.width === void 0 && W?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
+		${!Te && re?.width === void 0 && re?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
 		/* マウスクリックのネイティブなtabIndexフォーカスではブラウザ既定の矩形を出さない
 			（todo.md「格好悪い」対応）。ゲームパッド／矢印キーでの移動は分かりやすさのため出したい
 			ので、キー操作由来のときだけ立つdata-focus-ring（FocusMng.ts）がある時に限り出す */
@@ -10348,9 +10344,9 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 	let Me = (e) => {
 		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), Ae.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
 	}, Ne = {
-		...W?.width === void 0 ? {} : { width: `${String(W.width)}px` },
-		...W?.height === void 0 ? {} : { height: `${String(W.height)}px` },
-		...W?.x !== void 0 || W?.y !== void 0 ? { translate: `${String(W?.x ?? 0)}px ${String(W?.y ?? 0)}px` } : {}
+		...re?.width === void 0 ? {} : { width: `${String(re.width)}px` },
+		...re?.height === void 0 ? {} : { height: `${String(re.height)}px` },
+		...re?.x !== void 0 || re?.y !== void 0 ? { translate: `${String(re?.x ?? 0)}px ${String(re?.y ?? 0)}px` } : {}
 	}, Pe = _u`
 		display: flex;
 		flex-wrap: wrap;
@@ -10363,7 +10359,14 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		...Re === void 0 ? {} : { filter: Re }
 	}, Be = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Ve = P.filter((e) => !Be(e)), He = P.filter(Be), Ue = _u`
 		${N ? "" : "pointer-events: none;"}
-	`, { r: We, g: Ge, b: Ke } = Au(x), qe = d((e) => e.backAlpha), Je = S * (C ? 1 : qe), Ye = Je === 0 || s.length === 0 && x === void 0 && !w, Xe = _u`
+	`, { r: We, g: Ge, b: Ke } = ku(x), qe = d((e) => e.backAlpha), Je = S * (C ? 1 : qe), Ye = Je === 0 || s.length === 0 && x === void 0 && !w, Xe = _u`
+		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
+			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
+			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
+			sty4Moveableをデザインモード時のみに限定した際にこれが失われ、b_picの背景画像が
+			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
+			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
+		isolation: isolate;
 		padding: 1em 1.5em;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
@@ -10413,7 +10416,7 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		/* 読み戻り中の見た目（[page style=…]。既定は本家 INI_STYPAGE と同じ黄色＋黒フチ）。
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
-		${te ? ne : ""}
+		${V ? te : ""}
 	`, Ze = _u`
 		position: absolute;
 		z-index: 1;
@@ -10477,10 +10480,10 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 	return /* @__PURE__ */ T(O, { children: [
 		/* @__PURE__ */ T("span", {
 			css: [e, Xe],
-			ref: de,
+			ref: ue,
 			"data-lay": i,
-			style: ue,
-			children: [/* @__PURE__ */ M("span", { ref: fe }), we && /* @__PURE__ */ M("span", {
+			style: le,
+			children: [/* @__PURE__ */ M("span", { ref: de }), we && /* @__PURE__ */ M("span", {
 				ref: Ae,
 				css: ke,
 				style: Ne,
@@ -10493,12 +10496,12 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 					src: be,
 					style: {
 						verticalAlign: "text-bottom",
-						...W.width !== void 0 || W.height !== void 0 ? {
+						...re.width !== void 0 || re.height !== void 0 ? {
 							width: "100%",
 							height: "100%"
 						} : {}
 					}
-				}) : W.kind === "l" ? "🩷" : "✅" : null
+				}) : re.kind === "l" ? "🩷" : "✅" : null
 			})]
 		}),
 		Ve.length > 0 && /* @__PURE__ */ M("span", {
@@ -10513,7 +10516,7 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 				sty: e.sty,
 				enabled: N,
 				onActivate: I,
-				onSe: V
+				onSe: ee
 			}, e.nm))
 		}),
 		He.length > 0 && /* @__PURE__ */ M("span", {
@@ -10528,11 +10531,11 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 				sty: e.sty,
 				enabled: N,
 				onActivate: I,
-				onSe: V
+				onSe: ee
 			}, e.nm))
 		}),
 		t && /* @__PURE__ */ M(ou, {
-			target: de,
+			target: ue,
 			draggable: !0,
 			throttleDrag: 1,
 			onDrag: ({ target: { style: e }, transform: t }) => tt(e, t),
@@ -10570,7 +10573,7 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		})] })
 	] });
 }
-function wu(e) {
+function Cu(e) {
 	let t = [], n = [];
 	return e.forEach((r, i) => {
 		let a = i > 0 && e[i - 1].c === "\n";
@@ -10586,8 +10589,8 @@ function wu(e) {
 		idx: n
 	};
 }
-function Tu(e, t, n, r, i, a) {
-	let { kc: o, idx: s } = wu(n);
+function wu(e, t, n, r, i, a) {
+	let { kc: o, idx: s } = Cu(n);
 	if (o.length < 2) return;
 	let c = 2;
 	for (let n = 0; n <= o.length; ++n) {
@@ -10599,7 +10602,7 @@ function Tu(e, t, n, r, i, a) {
 		e.insertBefore(document.createElement("br"), t[s[l.ins]]), c = l.resumeAt;
 	}
 }
-function Eu(e, t, n) {
+function Tu(e, t, n) {
 	let r = e.length * 2;
 	if (r - t.length < 0) return `text-align: ${n};`;
 	if (b.isFirefox) switch (n) {
@@ -10621,13 +10624,13 @@ function Eu(e, t, n) {
 		default: return `text-align: ${n};`;
 	}
 }
-function Du({ c: e, r: t, ra: n, s: r, rs: i, tcy: a, lnk: o, src: s, gw: c, gh: l, gx: u, gy: d }, f, p, m, h) {
+function Eu({ c: e, r: t, ra: n, s: r, rs: i, tcy: a, lnk: o, src: s, gw: c, gh: l, gx: u, gy: d }, f, p, m, h) {
 	let g = (e) => document.createTextNode(e === " " ? "\xA0" : e), _ = m(e);
 	if (t === void 0 && !r && !a && !o && !_ && !s) return g(e);
 	let v = document.createElement(t === void 0 ? "span" : "ruby");
 	r && (v.style.cssText = r), _ && (v.style.fontFeatureSettings = _);
 	let y = a ? document.createElement("span") : v;
-	a && (y.style.textCombineUpright = "all", v.appendChild(y)), y.appendChild(g(e)), s && (Ou(y, s, {
+	a && (y.style.textCombineUpright = "all", v.appendChild(y)), y.appendChild(g(e)), s && (Du(y, s, {
 		...c === void 0 ? {} : { gw: c },
 		...l === void 0 ? {} : { gh: l },
 		...u === void 0 ? {} : { gx: u },
@@ -10637,11 +10640,11 @@ function Du({ c: e, r: t, ra: n, s: r, rs: i, tcy: a, lnk: o, src: s, gw: c, gh:
 	if (t !== void 0) {
 		b = document.createElement("rt");
 		let r = n ?? f;
-		b.style.cssText = (r ? Eu(e, t, r) : "") + (i ?? ""), b.textContent = t, v.appendChild(b);
+		b.style.cssText = (r ? Tu(e, t, r) : "") + (i ?? ""), b.textContent = t, v.appendChild(b);
 	}
-	return o && ku(v, o, r ?? "", b, i ?? "", p, h), v;
+	return o && Ou(v, o, r ?? "", b, i ?? "", p, h), v;
 }
-function Ou(e, t, n) {
+function Du(e, t, n) {
 	if ((n.gw !== void 0 || n.gh !== void 0) && (e.style.display = "inline-block", e.style.verticalAlign = "text-bottom", n.gw !== void 0 && (e.style.width = `${String(n.gw)}px`), n.gh !== void 0 && (e.style.height = `${String(n.gh)}px`)), (n.gx !== void 0 || n.gy !== void 0) && (e.style.translate = `${String(n.gx ?? 0)}px ${String(n.gy ?? 0)}px`), !t.endsWith(".json")) {
 		e.style.backgroundImage = `url(${JSON.stringify(t)})`, e.style.backgroundRepeat = "no-repeat", e.style.backgroundSize = "contain";
 		return;
@@ -10650,7 +10653,7 @@ function Ou(e, t, n) {
 		t && e.classList.add(R(t));
 	});
 }
-function ku(e, t, n, r, i, a, o) {
+function Ou(e, t, n, r, i, a, o) {
 	if (e.style.cursor = "pointer", e.addEventListener("click", (e) => {
 		e.stopPropagation(), hu.hide(), t.clickse && o(t.clickse, t.clicksebuf ?? "SYS"), a(t);
 	}), e.addEventListener("mouseenter", () => {
@@ -10666,7 +10669,7 @@ function ku(e, t, n, r, i, a, o) {
 		}), e.addEventListener("mouseup", a), e.addEventListener("mouseleave", a);
 	}
 }
-function Au(e) {
+function ku(e) {
 	return e === void 0 ? {
 		r: 127,
 		g: 255,
@@ -10679,9 +10682,9 @@ function Au(e) {
 }
 //#endregion
 //#region src/ts/Trans.ts
-var ju = .04, Mu = 1e6;
-function Nu(e, t = ju) {
-	let n = t > 0 ? Math.min(1 / (2 * t), Mu) : Mu;
+var Au = .04, ju = 1e6;
+function Mu(e, t = Au) {
+	let n = t > 0 ? Math.min(1 / (2 * t), ju) : ju;
 	return {
 		slope: n,
 		intercept: .5 - n * e
@@ -10689,7 +10692,7 @@ function Nu(e, t = ju) {
 }
 //#endregion
 //#region src/components/Stage.tsx
-function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next: c }) {
+function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next: c }) {
 	let f = d((e) => e.aPage), m = d((e) => e.foreIdx), v = d((e) => e.trans), y = (0, B.useRef)(null), x = (0, B.useRef)(null), S = [y, x], C = (0, B.useRef)(null), w = (0, B.useRef)(null);
 	(0, B.useEffect)(() => {
 		if (C.current?.kill(), C.current = null, !v) {
@@ -10709,7 +10712,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 		let t = (e) => {
 			let t = w.current;
 			if (!t) return;
-			let { slope: n, intercept: r } = Nu(e, v.vague);
+			let { slope: n, intercept: r } = Mu(e, v.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
@@ -10745,30 +10748,30 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 			}
 		});
 	}, [E]);
-	let [k, j] = (0, B.useState)(Iu());
-	W(() => {
+	let [k, j] = (0, B.useState)(Fu());
+	ie(() => {
 		function e() {
-			j(Iu());
+			j(Fu());
 		}
 		return globalThis.addEventListener("resize", e), () => globalThis.removeEventListener("resize", e);
 	});
-	let { cvsScale: N } = Fu(k), { stageW: F, stageH: I } = b, L = (0, B.useRef)(null), R = d((e) => e.fullScr), ee = d((e) => e.setFullScr), te = d((e) => e.toggleFullScr);
-	re((0, B.useRef)(e), R, { onClose: () => ee(!1) });
-	let [ne, H] = (0, B.useState)(() => !!document.fullscreenElement);
+	let { cvsScale: N } = Pu(k), { stageW: F, stageH: I } = b, L = (0, B.useRef)(null), R = d((e) => e.fullScr), ee = d((e) => e.setFullScr), te = d((e) => e.toggleFullScr);
+	ne((0, B.useRef)(e), R, { onClose: () => ee(!1) });
+	let [H, U] = (0, B.useState)(() => !!document.fullscreenElement);
 	(0, B.useEffect)(() => {
-		let e = () => H(!!document.fullscreenElement);
+		let e = () => U(!!document.fullscreenElement);
 		return document.addEventListener("fullscreenchange", e), () => document.removeEventListener("fullscreenchange", e);
 	}, []), (0, B.useEffect)(() => {
-		n.setFullScr(ne);
-	}, [ne]), (0, B.useLayoutEffect)(() => {
-		ne ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * N)}px`, e.style.height = `${String(I * N)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
+		n.setFullScr(H);
+	}, [H]), (0, B.useLayoutEffect)(() => {
+		H ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * N)}px`, e.style.height = `${String(I * N)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
 	}, [
 		N,
 		F,
 		I,
-		ne
+		H
 	]);
-	let U = _u`
+	let W = _u`
 		position: relative;
 		width: ${F}px;
 		height: ${I}px;
@@ -10816,9 +10819,9 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 			background: #27acd9;
 		}
 	`, le = (0, B.useRef)(null);
-	W(() => {
+	ie(() => {
 		n.attachFrameBox(le.current), n.attachStageBox(L.current);
-	}), W(() => {
+	}), ie(() => {
 		let e = L.current;
 		e.addEventListener("mousedown", () => h());
 		let t = (e) => {
@@ -10827,7 +10830,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
 	let [ue, de] = V(!1);
-	ie((e) => {
+	re((e) => {
 		e.stopPropagation(), A(), !s() && (de(), P(!ue));
 	}, {
 		isPreventDefault: !0,
@@ -10845,16 +10848,16 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 		sys: t,
 		styChild: ae,
 		isDesignMode: ue,
-		sty4Moveable: {
+		sty4Moveable: ue ? {
 			maxWidth: "auto",
 			maxHeight: "auto",
 			minWidth: "auto",
 			minHeight: "auto",
 			transform: "translate(0px, 0px) rotate(0deg)"
-		}
+		} : {}
 	} };
 	return /* @__PURE__ */ T("div", {
-		css: U,
+		css: W,
 		onClick: r,
 		ref: L,
 		children: [
@@ -10938,7 +10941,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ M("span", { children: ne }),
+			/* @__PURE__ */ M("span", { children: H }),
 			f.map((e, t) => {
 				let r = v?.aLayNm && t !== m ? e.map((e) => v.aLayNm.includes(e.nm) ? e : f[m].find((t) => t.nm === e.nm) ?? e) : e;
 				return /* @__PURE__ */ M("div", {
@@ -10967,7 +10970,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 							aFace: e.aFace,
 							getVideoVol: () => n.getMovieVolume(),
 							needClick2Play: () => n.needClick2Play()
-						}, e.nm) : /* @__PURE__ */ M(Cu, {
+						}, e.nm) : /* @__PURE__ */ M(Su, {
 							cmn: me.cmn,
 							sty: r,
 							nm: e.nm,
@@ -11008,7 +11011,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: o, next:
 		]
 	});
 }
-function Fu({ width: e, height: t }) {
+function Pu({ width: e, height: t }) {
 	let n = 0, r = 0, i = 1;
 	return v(b.hDip, "expanding", !0) || b.stageW > e || b.stageH > t ? (b.stageW / b.stageH <= e / t ? (r = t, n = y(b.stageW / b.stageH * t)) : (n = e, r = y(b.stageH / b.stageW * e)), i = n / b.stageW) : (n = b.stageW, r = b.stageH, i = 1), {
 		cvsScale: i,
@@ -11016,7 +11019,7 @@ function Fu({ width: e, height: t }) {
 		cvsHeight: r
 	};
 }
-function Iu() {
+function Fu() {
 	let { innerWidth: e, innerHeight: t } = globalThis;
 	return {
 		width: e,
@@ -11024,6 +11027,6 @@ function Iu() {
 	};
 }
 //#endregion
-export { Pu as default };
+export { Nu as default };
 
 //# sourceMappingURL=Stage.js.map

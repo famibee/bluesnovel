@@ -9,9 +9,15 @@
 //	本家 TxtStage.ts:610/643（属性の読み取り）と TxtLayer.ts:148/173（CSSの組み立て）。
 //
 //	**本家はCSSの`@keyframes`を文字列で組み立ててスタイルシートへ挿す**。bluesnovelは
-//	文字送りを既にGSAPで回している（TxtLayer.tsx）ので、同じ値をGSAPのtweenへ翻訳する。
-//	2つの仕組みを併走させるとスキップ（`progress(1)`で終端へ飛ばす）が効かなくなるため。
-//	`Tsy.ts`が`[tsy]`に対してやっているのと同じ立ち位置。
+//	Web Animations API（`Element.animate()`）で同じ値をキーフレームへ翻訳する（TxtLayer.tsx）。
+//	以前はGSAPを使っていたが、GSAPの既定`force3D:"auto"`がアニメ中だけ`transform: matrix3d(...)`
+//	を書き込み、Chromiumのレイヤ昇格/降格をアニメのたびに引き起こしていたことが、縦書き＋Webフォント
+//	環境でのグリフ描画欠落（todo.md「縦書きで禁則により送られた文字の2文字目グリフが描画されない
+//	ことがある不具合」）の最有力容疑と判明。GSAPを採用する技術的必然性も無かった（本家のスキップ
+//	`skynovel_esm/src/sn/TxtStage.ts:590-597 skipChIn()`はクラスの一括差し替えのみで完結しており
+//	JSトゥイーンエンジンを要していない）ため、ブラウザ標準のWeb Animations APIへ置き換えた。
+//	`Tsy.ts`が`[tsy]`に対してやっているのとは違い、こちらはGSAP自体を経由しない
+//	（`[tsy]`/`[trans]`/`[quake]`はレイヤ単位の変形でGSAPを引き続き使う）。
 
 export type T_CH_STYLE = {
 	wait	: number;	// アニメ時間（ミリ秒）。0で瞬時
@@ -37,8 +43,9 @@ export const CH_OUT_DEF: T_CH_STYLE = {
 };
 
 // 演出名に使えない文字（本家 TxtStage.ts:601 #REG_NG_CHSTYLE_NAME_CHR）。
-//	本家はCSSのクラス名・keyframes名にそのまま埋めるので制限がある。こちらはGSAPなので
-//	技術的には何でも通るが、シナリオの互換のために同じ検査を残す
+//	本家はCSSのクラス名・keyframes名にそのまま埋めるので制限がある。こちらは名前をCSSへ
+//	埋め込まない（値をJSオブジェクトとして持つだけ）ので技術的には何でも通るが、
+//	シナリオの互換のために同じ検査を残す
 const REG_NG_CH_STYLE_NM = /[{\s.,*]/;
 
 const num = (tag: string, nm: string, v: string | undefined, def: number): number=> {
@@ -83,41 +90,36 @@ export function chStylePos(v: string): string {
 	return rel ? `${n}em` : `${n}px`;
 }
 
-// CSSのanimation-timing-function → GSAPのease名。
-//	**厳密には曲線が一致しない**（CSSの`ease-out`は cubic-bezier(0,0,.58,1)、
-//	GSAPの`power1.out`は二次のイージング）が、文字送りの数百ミリ秒では見分けが付かない。
-//	`cubic-bezier()`や`steps()`はGSAPの追加プラグインが要るので既定へ倒す
+// CSSのanimation-timing-function → Web Animations APIの`easing`（CSSの<easing-function>構文を
+//	そのまま受け取れる。GSAP版と違い`cubic-bezier()`/`steps()`も素通しできる）。
+//	`el.animate()`は構文的に無効な値を渡すと同期的にTypeErrorを投げる（CSSの`var()`のように
+//	無効値を初期値へ黙って落とす寛容さが無い）ため、シナリオ作者が壊れた値を書いても
+//	throwさせないよう、ここで妥当なCSS easing構文かを検査してから通す。
+//	`CSS.supports()`は使わない——`bun test`にDOM/CSSグローバルが無く単体テストできなくなるため
+//	（Hyphenation.ts:9の「DOM非参照が契約」と同じ考え方）
+const REG_CSS_EASE = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
 export function chStyleEase(ease: string): string {
-	switch (ease.trim()) {
-		case 'linear':		return 'none';
-		case 'ease-in':		return 'power1.in';
-		case 'ease-in-out':	return 'power1.inOut';
-		case 'ease':		return 'power1.inOut';
-		case 'ease-out':	return 'power1.out';
-		default:			return 'power1.out';
-	}
+	const v = ease.trim();
+	return REG_CSS_EASE.test(v) ? v : 'ease-out';
 }
 
-// 出現演出 → GSAPの`fromTo`の引数。**fromが定義の値、toが素の表示状態**
-//	（本家のkeyframesも`from`に定義値・`to`に`opacity:1; transform:none`を置く）
-export function chInTween(sty: T_CH_STYLE): {
-	from: {opacity: number; x: string; y: string; scaleX: number; scaleY: number; rotation: number};
-	to	: {opacity: number; x: number; y: number; scaleX: number; scaleY: number; rotation: number;
-		duration: number; ease: string};
-} {
+// 出現演出 → Web Animations APIの`el.animate(keyframes, options)`の引数。
+//	**fromキーフレームが定義の値、toが素の表示状態**（本家のkeyframesも`from`に定義値・
+//	`to`に`opacity:1; transform:none`を置く）。toはCSSの初期値と完全に一致するので、
+//	`options.fill: 'backwards'`と組み合わせると後始末が要らない（TxtLayer.tsx参照）：
+//	delay中/実行中はfromの見た目を保ち、自然終了時・.cancel()時は効果が外れて素のDOM既定値
+//	（=to）へ自動的に戻る
+export function chStyleAnim(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: KeyframeAnimationOptions} {
 	return {
-		from: {
-			opacity	: sty.alpha,
-			x		: chStylePos(sty.x),
-			y		: chStylePos(sty.y),
-			scaleX	: sty.scale_x,
-			scaleY	: sty.scale_y,
-			rotation: sty.rotate,
-		},
-		to: {
-			opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0,
-			duration: sty.wait / 1000,
-			ease	: chStyleEase(sty.ease),
-		},
+		keyframes: [
+			{
+				opacity: sty.alpha,
+				transform: `translate(${chStylePos(sty.x)}, ${chStylePos(sty.y)}) `
+					+ `scale(${String(sty.scale_x)}, ${String(sty.scale_y)}) rotate(${String(sty.rotate)}deg)`,
+			},
+			{opacity: 1, transform: 'none'},
+		],
+		// durationはWeb Animations APIの慣例どおりミリ秒（GSAP版は秒への変換が要ったが不要になった）
+		options: {duration: sty.wait, easing: chStyleEase(sty.ease), fill: 'backwards'},
 	};
 }

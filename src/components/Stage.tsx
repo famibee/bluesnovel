@@ -301,13 +301,18 @@ export default function Stage({
 		return [...h.values()];
 	})();
 
-	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: {
+	// isDesignMode=falseの間は空にする。Moveable自体もisDesignMode時だけ条件レンダーなので
+	//	（GrpLayer.tsx/TxtLayer.tsx）、無効中はこの下地が要らない。恒等transformを常時全レイヤへ
+	//	書いていると、ステージのscale(cvsScale)（非整数）の下で余分なペイントレイヤを持ち続けることになり、
+	//	縦書き＋Webフォントの環境でグリフのラスタライズ欠落に繋がりうる（ENA_DESIGN_MODE=falseの現状は
+	//	デザインモードへ入れないため、これは常時無駄になっていた）
+	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: isDesignMode ? {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
 		minWidth	: 'auto',
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
-	}}};
+	} : {}}};
 	return <div css={styStage} onClick={onClick} {...ENA_DESIGN_MODE ?longPressEvent :{}} ref={stageRef}>
 		{/* ルール画像ワイプ（[trans rule=…]）のマスク。本家のフラグメントシェーダの置き換えで、
 			・feColorMatrix：ルール画像の**赤チャンネル**をアルファへ移し、RGBは白に固定する

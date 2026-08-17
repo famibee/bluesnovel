@@ -169,3 +169,55 @@ skynovel_esm 調査で判明）。bluesnovel は howler を積まず、Web Audio
   `GainNode` へ適用するだけで、二重に掛け算しない。`sys:sn.sound.global_volume` だけは
   `VarStore.defSetTrigger()`（本家の「代入トリガ関数」相当）で即時反映する専用経路を持つ——
   `buf` が動的なため per-buf の基準音量には同じ仕組みを使っていない（`[volume]` タグ経由のみ）。
+
+## 文字出現演出：GSAPでなくWeb Animations API、終端＝ブラウザの既定値
+
+`[ch_in_style]`の実演出（`TxtLayer.tsx`／純粋部分は`src/ts/ChStyle.ts`）は元GSAPだったが、
+GSAP既定の`force3D:"auto"`がアニメ中だけ`transform: matrix3d(...)`を書き込み、Chromiumのレイヤ
+昇格/降格をアニメのたびに引き起こしていたことが、縦書き＋Webフォント環境でのグリフ描画欠落
+（`CHANGELOG.md` 2026-08-17）の最有力容疑と判明したため、ブラウザ標準の`Element.animate()`へ
+置き換えた。本家もCSSアニメ（クラス着脱）で完結しておりJSトゥイーンエンジンを要していない
+（`skynovel_esm/src/sn/TxtStage.ts:590-597 skipChIn()`）。GSAP自体は`[tsy]`/`[trans]`/`[quake]`/
+音声フェードに引き続き使う——文字出現演出だけが対象。
+
+- **`[ch_in_style]`の`to`は常にCSSの初期値（`opacity:1, transform:none`）と一致する設計**。
+  `options.fill: 'backwards'`と組み合わせると、delay中/実行中は`from`の見た目を保ち、自然終了時・
+  `.cancel()`時は効果が外れて素のDOM既定値へ**自動的に**戻る。この性質のおかげで「終端を明示的に
+  確定させる」処理（GSAP版の`CH_END`定数＋`clearProps`）が丸ごと不要になった。`to`の値をこの前提
+  から変える場合（消去演出`[ch_out_style]`を実装するときなど）は、素の既定値と一致しなくなるので
+  `fill:'both'`＋`commitStyles()`＋`.cancel()`の組み合わせが要る点に注意。
+- **完了検知の世代ガードが必要**：GSAPの`.kill()`は`onComplete`を発火**しない**ため、旧タイムライン
+  をkillしてから新タイムラインを作るだけで完了通知の混線を避けられていた。Web Animations APIの
+  `Animation.finished`は`.cancel()`されると**reject**するが、`Promise.allSettled()`で拾うと
+  （未処理rejectionにはならないものの）**resolve自体は起きる**。つまり「古いバッチをキャンセルした
+  直後の完了ハンドラ」が「新しいバッチが動き出した後」に呼ばれ、`isTyping`を誤って下ろす競合が
+  起こりうる。`TxtLayer.tsx`は`useLayoutEffect`実行のたびに世代カウンタ（`genRef`）を進め、完了
+  ハンドラは自分の世代がまだ最新かを確認してから`setIsTyping(false)`する。
+- **easingはCSSの`<easing-function>`構文をそのまま渡せる**（GSAP版が持っていたCSS名→GSAPのease名
+  変換テーブルは不要になり、`cubic-bezier()`/`steps()`も使えるようになった）。ただし
+  `el.animate()`は構文的に無効なeasingを渡すと同期的に`TypeError`を投げる（CSSの`var()`のような
+  「無効なら初期値へ黙って落とす」寛容さが無い）ため、`ChStyle.ts`の`chStyleEase()`が正規表現で
+  妥当性を検査し、無効なら`'ease-out'`へ倒す。`CSS.supports()`は使わない——`bun test`にDOM/CSS
+  グローバルが無く単体テストできなくなるため（`Hyphenation.ts:9`の「DOM非参照が契約」と同じ考え方）。
+- **E2Eの「アニメを止めて手で時刻を進める」ヘルパにグローバルな凍結APIが無い**：GSAPは
+  `globalTimeline.pause()`で「今後作られるトゥイーンも含めてまとめて凍結」できたが、
+  `document.getAnimations()`は**呼び出し時点で存在するAnimationしか返さない**。そのため
+  `test/e2e/chstyle.e2e.ts`の`freeze()`は**キー押下の直後**（Animationが生成された後）に呼ぶ
+  必要がある。ReactのuseLayoutEffectはDOM更新と同じ同期区間でコミットされるためAnimationは
+  生成済みのはずだが、`page.evaluate()`の往復ぶん数msは既に進行してしまう（既存アサーションは
+  数十ms単位の余裕を持つ緩い比較なので実害は無い見込み。GSAP版に対する正確性の退行として記録）。
+
+## `z-index: -1`は明示的なスタッキングコンテキストが要る（`transform`の副作用に頼らない）
+
+`TxtLayer.tsx`の`[lay b_pic=…]`背景画像は`&::before`に`z-index: -1`を当てて本文の背後へ敷く
+（`styTxt`）。この`-1`が効くのは**親要素が自分自身のスタッキングコンテキストを持っているとき**
+だけで、持っていなければ`::before`は親の外（もっと祖先側のコンテキスト）まで沈み、他レイヤの
+背後に回り込んで消える。一度これで実際の回帰を起こした：`Stage.tsx`の`sty4Moveable`（デザイン
+モード用の下地）が全レイヤへ常時恒等`transform`を書いていたため、**`transform`はどんな値でも
+新しいスタッキングコンテキストを作る**という副作用で偶然コンテキストが確保されており、
+気付かれていなかった。`sty4Moveable`をデザインモード時のみに限定した際にこの副作用が消え、
+背景画像が立ち絵の背後へ回り込んで見えなくなった。直したのは`styTxt`へ`isolation: isolate`を
+明示的に追加すること——`isolation: isolate`は「新しいスタッキングコンテキストを作る」以外の
+視覚的副作用を持たないプロパティで、`transform`のような偶然の依存を残さない。**負のz-indexを
+使う箇所を増やすときは、対象要素が意図してスタッキングコンテキストを持っているか（`isolation`/
+`position`+`z-index`/`opacity<1`/`transform`等のどれかを明示しているか）を必ず確認すること**。

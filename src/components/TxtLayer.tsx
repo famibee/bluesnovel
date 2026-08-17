@@ -7,7 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
-import {CH_IN_DEF, chInTween} from '../ts/ChStyle';
+import {CH_IN_DEF, chStyleAnim} from '../ts/ChStyle';
 import {Kinsoku, type T_KIN_CH} from '../ts/Hyphenation';
 import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
@@ -19,7 +19,6 @@ import BtnLayer from './BtnLayer';
 import {css} from '@emotion/react';
 import {type CSSProperties, type KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import Moveable from 'react-moveable';
-import gsap from 'gsap';
 
 
 // [button]タグで文字レイヤ（UIコンテナ）に乗せるボタンで1件分のデータ
@@ -111,9 +110,6 @@ type T_TXTARG = T_LAY_CMN & {
 	onNavigate: (url: string)=> void;	// [link url=…]
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
-// 文字出現演出のアニメ終端＝**素の表示状態**。[ch_in_style]がどんな値から始めても必ずここへ落とす。
-//	キル時の中途半端な状態を確定させるのにも使う（本家のkeyframesの`to`が`transform: none`なのと同じ）
-const CH_END = {opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0};
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
@@ -187,7 +183,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// 既にアニメ表示済みの文字を再アニメせず瞬時表示できる（バグ修正: 2026-07-20）。
 	const spansRef = useRef<HTMLSpanElement[]>([]);
 	const chRef = useRef<T_CH[]>([]);	// 上のspanに対応する表示単位（前方一致の判定用）
-	const tlRef = useRef<gsap.core.Timeline | null>(null);
+	const animsRef = useRef<Animation[]>([]);
+	// バッチ世代。.cancel()されたAnimationの.finishedはrejectするが、Promise.allSettledで
+	//	拾うと（未処理rejectionにはならないが）resolve自体はしてしまう。「古いバッチをキャンセルした
+	//	直後の完了ハンドラ」が「新しいバッチが動き出した後」に呼ばれてisTypingを誤って下ろす競合を
+	//	防ぐため、実行のたびに世代を進め、完了ハンドラは自分の世代がまだ最新かを確認する
+	const genRef = useRef(0);
 
 	// 文字詰め（本家 TxtLayer.ts:480 #fncFFSStyle）。**1文字ずつ当てる**必要があるのは
 	//	noffsで「この文字だけ詰めない」と外せる仕様のため（全角空白は本家も常に除く）
@@ -208,7 +209,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const el = charsRef.current;
 		if (! el) return;
 
-		tlRef.current?.kill();
+		++genRef.current;
+		for (const a of animsRef.current) a.cancel();
+		animsRef.current = [];
 
 		// 本当のページクリア（aChとキャッシュが互いに前方一致しない＝別内容）の場合のみ作り直す
 		const cacheCh = chRef.current;
@@ -233,7 +236,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		//	・読み戻りから戻る（aChがキャッシュ済み長へ復帰）：非表示にしていた分を瞬時に復帰
 		while (el.childNodes.length > target) el.removeChild(el.lastChild!);
 		while (el.childNodes.length < target) el.appendChild(cache[el.childNodes.length]!);
-		if (target > 0) gsap.set(cache.slice(0, target), CH_END);	// キル時の中途半端な状態を確定させる
+		// キル時の中途半端な状態の確定は不要：上でcancel()した時点で素のDOM既定値
+		//	（opacity:1, transform:none）へ戻っており、それが演出の終端そのものと一致するため
+		//	（ChStyle.ts chStyleAnim()のコメント参照）
 
 		if (aCh.length <= cache.length) {
 			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要。
@@ -267,27 +272,32 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		newSpans.forEach(s=> {
 			const rt = s.querySelector('rt');
 			if (! rt) return;
-			s.style.marginBlockStart = `${String(rt.getBoundingClientRect().height)}px`;
+			// offsetHeightは要素自身にも祖先にもtransformの影響を受けないレイアウト値。
+			//	getBoundingClientRect().heightだと祖先のtransform: scale(cvsScale)（Stage.tsx）を
+			//	含んだ値になり、cvsScale!==1（ウインドウ実寸依存の非整数）のときmarginがcvsScale倍
+			//	ズレる実バグだった（リサイズ時に再計算もされないため一度ズレると直らない）
+			s.style.marginBlockStart = `${String(rt.offsetHeight)}px`;
 		});
 
-		// GSAPが変形を当てる前（＝計測が祖先transformで汚染されない唯一の安全点）に禁則を掛ける
+		// 計測が祖先/自身のtransformで汚染されないうちに禁則を掛ける（Web Animations APIの
+		//	Animationはまだ1つも作っていない＝この時点でnewSpansは全て素のDOM既定値のまま）
 		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
 
 		if (isReadBack || skipping) {
-			// 読み戻り中／既読スキップ中：staggerを使わず瞬時にアニメ終端状態へ
-			gsap.set(newSpans, CH_END);
+			// 読み戻り中／既読スキップ中：新規spanは最初から素の表示状態（＝演出の終端と同じ）
+			//	なので、staggerを使わず瞬時に見せるのにAnimationを作る必要すら無い
 			setIsTyping(false);
 			return;
 		}
 
-		// 文字出現演出。**1文字ずつ別のtweenを積む**（本家が文字ごとに`animation-delay`を
-		//	書くのと同じ形）。1本のtweenへstaggerを掛ける書き方では、
+		// 文字出現演出。**1文字ずつ別のAnimationを作る**（本家が文字ごとに`animation-delay`を
+		//	書くのと同じ形）。1本のAnimationへstaggerを掛ける書き方では、
 		//	・文字ごとに演出が違う（[span ch_in_style=…]）
 		//	・文字ごとに待ちが違う（[autowc]、[ch wait=…]）
-		//	のどちらも表せない。timelineの位置（秒）でその2つを表現する
-		const tl = gsap.timeline({onComplete: ()=> setIsTyping(false)});
+		//	のどちらも表せない。個々のAnimationのdelay（秒→ms）でその2つを表現する
+		const gen = genRef.current;
 		let pos = 0;	// 本家の #cumDelay（TxtLayer.ts:775）。ここまでに積んだ待ちの合計
-		let n = 0;		// 実際に積んだtweenの数
+		const anims: Animation[] = [];
 		newSpans.forEach((el, i)=> {
 			const ch = added[i]!;
 			// 演出は [span]/[ch] の指定 → レイヤの指定 → 組み込みの`default` の順に落ちる
@@ -297,27 +307,30 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			const w = ch.w ?? (autowc.enabled ? autowc.h[ch.c.at(0) ?? ''] ?? 0 : chWait);
 			if (chSty.join) pos += w / 1000;	// 本家も使う前に足す
 
-			if (chSty.wait <= 0) {gsap.set(el, CH_END); return}	// wait=0は瞬時
+			// wait=0は瞬時：Animationを作らなくても素のDOM既定値がそのまま演出の終端と一致する
+			if (chSty.wait <= 0) return;
 
-			const {from, to} = chInTween(chSty);
+			const {keyframes, options} = chStyleAnim(chSty);
 			// join=falseの文字は待たずに動き出す（本家は animation-delay を 0ms に潰す）
-			tl.fromTo(el, from, to, chSty.join ? pos : 0);
-			++n;
+			anims.push(el.animate(keyframes, {...options, delay: (chSty.join ? pos : 0) * 1000}));
 		});
-		if (n === 0) {	// 全部が瞬時＝待つものが無い（空のtimelineはonCompleteの時期が読めない）
-			tl.kill();
+		if (anims.length === 0) {	// 全部が瞬時＝待つものが無い
 			setIsTyping(false);
 			return;
 		}
 
+		animsRef.current = anims;
 		setIsTyping(true);
-		tlRef.current = tl;
+		void Promise.allSettled(anims.map(a=> a.finished)).then(()=> {
+			// 自分より新しいバッチが動き出していたら、この完了通知は無視する（上のgenRefのコメント参照）
+			if (genRef.current === gen) setIsTyping(false);
+		});
 	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
-	//	（progress(1)によりtimelineのonCompleteが発火し、setIsTyping(false)も自動で呼ばれる）
+	//	（.finish()でPromise.allSettledが解決し、setIsTyping(false)も自動で呼ばれる）
 	useEffect(()=> {
-		if (tlRef.current && tlRef.current.progress() < 1) tlRef.current.progress(1);
+		for (const a of animsRef.current) if (a.playState !== 'finished') a.finish();
 	}, [skipReq]);
 
 	// [l]/[p]待ち中マーカーの画像（`breakline`/`breakpage`がプロジェクトにあるとき。ScriptMngが解決）。
@@ -482,6 +495,13 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	まさにその形（b_colorは書くが透過度0）で、全画面の文字レイヤが点線矩形として見えていた
 	const noBox = bAlpha === 0 || (str.length === 0 && b_color === undefined && ! b_src);
 	const styTxt = css`
+		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
+			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
+			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
+			sty4Moveableをデザインモード時のみに限定した際にこれが失われ、b_picの背景画像が
+			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
+			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
+		isolation: isolate;
 		padding: 1em 1.5em;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない

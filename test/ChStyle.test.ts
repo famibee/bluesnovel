@@ -10,9 +10,10 @@
 //	TxtLayer.ts:148/173（CSSの組み立て）。
 //
 //	**本家はCSSの`@keyframes`を組み立ててスタイルシートへ挿す**が、こちらは同じ値を
-//	GSAPのtweenへ翻訳する（src/ts/ChStyle.ts）。実際に文字が動く様子はE2E側。
+//	Web Animations API（`Element.animate()`）のキーフレームへ翻訳する（src/ts/ChStyle.ts）。
+//	実際に文字が動く様子はE2E側。
 
-import {CH_IN_DEF, CH_OUT_DEF, chInTween, chStyleEase, chStylePos, parseChStyle} from '../src/ts/ChStyle';
+import {CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleEase, chStylePos, parseChStyle} from '../src/ts/ChStyle';
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import {splitCh} from '../src/ts/Txt';
 
@@ -65,24 +66,36 @@ it('chStylePos_「=」始まりは文字の大きさに対する割合（emで�
 	expect(chStylePos('')).toBe('0px');	// 壊れた指定でも動きを止めない
 });
 
-it('chStyleEase_CSSのanimation-timing-function名をGSAPのeaseへ', ()=> {
-	expect(chStyleEase('linear')).toBe('none');
-	expect(chStyleEase('ease-in')).toBe('power1.in');
-	expect(chStyleEase('ease-out')).toBe('power1.out');
-	// cubic-bezier()やsteps()はGSAPの追加プラグインが要るので既定へ倒す
-	expect(chStyleEase('cubic-bezier(.1,.2,.3,.4)')).toBe('power1.out');
+it('chStyleEase_妥当なCSS easing構文はそのまま通す', ()=> {
+	// Web Animations APIのeasingはCSSの<easing-function>構文をそのまま受け取れるので、
+	//	GSAPのease名への変換が要らない。cubic-bezier()/steps()も（以前はGSAPの追加プラグインが
+	//	要るとして既定へ倒していたが）素通しできるようになった
+	expect(chStyleEase('linear')).toBe('linear');
+	expect(chStyleEase('ease-in')).toBe('ease-in');
+	expect(chStyleEase('ease-out')).toBe('ease-out');
+	expect(chStyleEase('cubic-bezier(.1,.2,.3,.4)')).toBe('cubic-bezier(.1,.2,.3,.4)');
+	expect(chStyleEase('steps(4)')).toBe('steps(4)');
 });
 
-it('chInTween_fromが定義の値・toが素の表示状態', ()=> {
+it('chStyleEase_無効な構文は既定へ倒す', ()=> {
+	// el.animate()は構文的に無効なeasingを渡すと同期的にTypeErrorを投げるため、
+	//	シナリオ作者が壊れた値を書いても落ちないよう既定（ease-out）へフォールバックする
+	expect(chStyleEase('いち')).toBe('ease-out');
+	expect(chStyleEase('cubic-bezier(broken')).toBe('ease-out');
+});
+
+it('chStyleAnim_fromキーフレームが定義の値・toが素の表示状態', ()=> {
 	// 本家のkeyframesも`from`に定義値・`to`に`opacity:1; transform:none`を置く
-	const {from, to} = chInTween(CH_IN_DEF);
-	expect(from).toEqual({opacity: 0, x: '0.3em', y: '0em', scaleX: 1, scaleY: 1, rotation: 0});
-	expect(to).toEqual({opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0,
-		duration: 0.5, ease: 'power1.out'});
+	const {keyframes, options} = chStyleAnim(CH_IN_DEF);
+	expect(keyframes).toEqual([
+		{opacity: 0, transform: 'translate(0.3em, 0em) scale(1, 1) rotate(0deg)'},
+		{opacity: 1, transform: 'none'},
+	]);
+	expect(options).toEqual({duration: 500, easing: 'ease-out', fill: 'backwards'});
 });
 
-it('chInTween_waitはミリ秒→秒', ()=> {
-	expect(chInTween({...CH_OUT_DEF, wait: 250}).to.duration).toBe(0.25);
+it('chStyleAnim_durationはミリ秒のまま（Web Animations APIの慣例。秒への変換は不要）', ()=> {
+	expect(chStyleAnim({...CH_OUT_DEF, wait: 250}).options.duration).toBe(250);
 });
 
 
