@@ -37,6 +37,7 @@
 [return]
 
 *c2plike
+[er]
 [enable_event enabled=false]
 くりっくまち[waitclick]
 [er]
