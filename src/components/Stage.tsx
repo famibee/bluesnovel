@@ -53,10 +53,15 @@ export default function Stage({
 	useEffect(()=> {
 		twRef.current?.kill();
 		twRef.current = null;
-		if (! trans) {	// 終了（またはそもそも演出なし）
-			gsap.set([pgRef0.current, pgRef1.current].filter(e=> e !== null), {opacity: 1});
-			return;
-		}
+		// **trans:nullを経由せず次のtransへ直接切り替わることがある**：[wt]の直後に別レイヤの
+		//	[trans]を連続で打つと、#runStep()が同期forループの中でfinishTrans()（trans→null）と
+		//	startTrans()（null→次のtrans）を続けて呼び、Reactが両方を1回のレンダリングへ
+		//	バッチしてしまう。そうなると「終了時だけ」のopacityリセット（旧・下のif分岐）が
+		//	一度も走らないまま次の演出が始まり、前の演出でopacity 0まで下がった板がそのまま
+		//	次の演出の下地になって一瞬真っ黒に見える（実機バグ：場面転換の[trans]連続でちらつく）。
+		//	なので「終了時」に限らず**演出開始のたびに必ず**両方の板を不透明へ戻してから動かす
+		gsap.set([pgRef0.current, pgRef1.current].filter(e=> e !== null), {opacity: 1});
+		if (! trans) return;	// 終了（またはそもそも演出なし）
 
 		const el = aPgRef[foreIdx]!.current;
 		if (! el) return;

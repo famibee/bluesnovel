@@ -1,0 +1,26 @@
+; E2E用シナリオ（trans_seq.e2e.ts が使用）
+;	演出ありの[trans]を[wt]を挟んで連続で打つ（対象レイヤは1本目と2本目で変える）だけの
+;	最小シナリオ。狙いは「finishTrans（trans→null）とstartTrans（null→次のtrans）が
+;	ScriptMng#runStep()の同じforループ内で連続実行され、Reactが1回のレンダリングへ
+;	バッチしてしまう」経路そのもの。trans:nullの中間状態が一度もコミットされないと、
+;	Stage.tsxの「演出終了時だけ」効くopacityリセットが働かず、1本目の演出でopacityが
+;	下がりきった板がそのまま2本目の演出の下地になって一瞬真っ黒に見える
+;	（実機 tmp_blues の[grp]場面転換、本家 doc/prj/script/sub.sn の[trans * layer=…]直後に
+;	別レイヤの[trans]を打つ箇所で確認された不具合の再現）
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[lay layer=mes visible=true]
+はじめ[l]
+
+; 1本目：baseだけを対象に演出ありでtrans
+[lay layer=base page=back visible=false]
+[trans layer=base time=1000]
+[wt]
+
+; 2本目：[wt]の直後、間にクリック等を挟まず続けて演出ありでtrans（対象はbase,mes）
+[lay layer=base page=back visible=true]
+[trans layer=base,mes time=1000]
+[wt]
+おわり[s]

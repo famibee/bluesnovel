@@ -10712,10 +10712,7 @@ function Mu(e, t = Au) {
 function Nu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
 	let l = m((e) => e.aPage), d = m((e) => e.foreIdx), h = m((e) => e.trans), _ = (0, B.useRef)(null), x = (0, B.useRef)(null), S = [_, x], C = (0, B.useRef)(null), w = (0, B.useRef)(null);
 	(0, B.useEffect)(() => {
-		if (C.current?.kill(), C.current = null, !h) {
-			z.set([_.current, x.current].filter((e) => e !== null), { opacity: 1 });
-			return;
-		}
+		if (C.current?.kill(), C.current = null, z.set([_.current, x.current].filter((e) => e !== null), { opacity: 1 }), !h) return;
 		let e = S[d].current;
 		if (!e) return;
 		if (!h.ruleSrc) {
