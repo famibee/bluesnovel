@@ -10255,10 +10255,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			let t = document.createElement("span");
 			return t.style.display = e.c === "\n" ? "inline" : "inline-block", t.appendChild(Eu(e, b, fe, _e, ee)), c.appendChild(t), t;
 		});
-		if (me.current = [...me.current, ...o], i.push(...u), e.appendChild(c), u.forEach((e) => {
-			let t = e.querySelector("rt");
-			t && (e.style.marginBlockStart = `${String(t.offsetHeight)}px`);
-		}), wu(e, i, me.current, ve, f ?? !1, ye()), V || W) {
+		if (me.current = [...me.current, ...o], i.push(...u), e.appendChild(c), wu(e, i, me.current, ve, f ?? !1, ye()), V || W) {
 			ne(!1);
 			return;
 		}
@@ -10610,6 +10607,10 @@ function wu(e, t, n, r, i, a) {
 	} finally {
 		l.remove();
 	}
+	t.forEach((e) => e.style.marginBlockStart = ""), e.querySelectorAll(":scope > br").forEach((e) => {
+		let t = e.nextElementSibling, n = t?.querySelector("rt");
+		n && (t.style.marginBlockStart = `${String(n.offsetHeight)}px`);
+	});
 }
 function Tu(e, t, n) {
 	let r = e.length * 2;

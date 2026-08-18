@@ -264,21 +264,6 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		cache.push(...newSpans);
 		el.appendChild(frag);
 
-		// ルビの<rt>はline box計算の外側に固定量ではみ出し、詰めて表示すると1つ前の行と
-		//	重なりうる（CSSの<ruby>任せの制約。本家TxtStage.tsも同じHTML/<ruby>で組むが対応なし）。
-		//	margin-block-startではみ出し分を占有領域に含め、隣の行を侵食しないようにする
-		//	（block-startは横書きで上端・縦書きvertical-rlで右端になり、どちらの書字方向でも
-		//	「1つ前の行」側を指す）
-		newSpans.forEach(s=> {
-			const rt = s.querySelector('rt');
-			if (! rt) return;
-			// offsetHeightは要素自身にも祖先にもtransformの影響を受けないレイアウト値。
-			//	getBoundingClientRect().heightだと祖先のtransform: scale(cvsScale)（Stage.tsx）を
-			//	含んだ値になり、cvsScale!==1（ウインドウ実寸依存の非整数）のときmarginがcvsScale倍
-			//	ズレる実バグだった（リサイズ時に再計算もされないため一度ズレると直らない）
-			s.style.marginBlockStart = `${String(rt.offsetHeight)}px`;
-		});
-
 		// 計測が祖先/自身のtransformで汚染されないうちに禁則を掛ける（Web Animations APIの
 		//	Animationはまだ1つも作っていない＝この時点でnewSpansは全て素のDOM既定値のまま）
 		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
@@ -767,6 +752,29 @@ function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aC
 	} finally {
 		sentinel.remove();
 	}
+
+	// ルビの<rt>はline box計算の外側に固定量ではみ出し、詰めて表示すると1つ前の列と
+	//	重なりうる（CSSの<ruby>任せの制約。本家TxtStage.tsも同じHTML/<ruby>で組むが対応なし）。
+	//	margin-block-startではみ出し分を占有領域に含め、隣の列を侵食しないようにする
+	//	（block-startは横書きで上端・縦書きvertical-rlで右端になり、どちらの書字方向でも
+	//	「1つ前の列」側を指す）。**列の先頭（＝直前に<br>がある表示単位）にだけ**付けること。
+	//	先頭でない表示単位に付けると、その文字自身の右側に無意味な余白ができて列全体が
+	//	前の列側へ押し出され、`<br>`を跨いだだけの見た目の大穴になる（2026-08-18発覚。
+	//	どの表示単位がどの列の先頭になるかは禁則計算の結果次第で呼び出しのたびに変わるため、
+	//	新規追加時点で先付けすると古い判定のまま残る／新しく先頭になった側に付け忘れる、
+	//	の両方が起きていた）。禁則処理（上のtry節）はtop（縦書きの列内位置）だけを見ており
+	//	marginの影響を受けないので、折返し結果が確定した後にここでまとめて設定し直せる
+	cache.forEach(outer=> outer.style.marginBlockStart = '');
+	el.querySelectorAll(':scope > br').forEach(br=> {
+		const outer = br.nextElementSibling as HTMLElement | null;
+		const rt = outer?.querySelector('rt');
+		if (! rt) return;
+		// offsetHeightは要素自身にも祖先にもtransformの影響を受けないレイアウト値。
+		//	getBoundingClientRect().heightだと祖先のtransform: scale(cvsScale)（Stage.tsx）を
+		//	含んだ値になり、cvsScale!==1（ウインドウ実寸依存の非整数）のときmarginがcvsScale倍
+		//	ズレる実バグだった（リサイズ時に再計算もされないため一度ズレると直らない）
+		outer!.style.marginBlockStart = `${String(rt.offsetHeight)}px`;
+	});
 }
 
 // 表示単位1つ分のDOM。ルビ付きは<ruby>親文字<rt>ルビ</rt></ruby>（本家もHTMLのrubyで組む）。

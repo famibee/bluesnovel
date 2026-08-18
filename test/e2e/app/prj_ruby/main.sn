@@ -58,4 +58,13 @@
 [add_lay layer=sub class=txt]
 [ch layer=sub text=べつのレイヤ]
 [ch page=back text=うらのぶん]
-それでも[s]
+それでも[l]
+
+; margin-block-startは「行/列の先頭に来たルビ」にだけ掛ける（2026-08-18発覚：先頭でない
+;	ルビ付き文字に掛けると、その分だけ行/列全体が1つ前の行/列側へ押し出され隙間になる不具合
+;	だった。TxtLayer.tsx参照）。幅固定・monospaceで自然折返しさせ、2行目の先頭に
+;	ルビ付き文字（字《じ》）が来るようにする
+[er]
+[clear_lay layer=mes page=fore]
+[lay layer=mes style='width: 4em; padding: 0; margin: 0; font-family: monospace; font-size: 20px;']
+あいうえ字《じ》お[s]

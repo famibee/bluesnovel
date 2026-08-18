@@ -31,23 +31,15 @@ test('`漢字《かんじ》`が<ruby>で組まれ、平文にはルビが入ら
 	expect(await aRuby(page)).toEqual(['漢字:かんじ']);
 });
 
-test('ルビ付き文字spanは<rt>の高さぶんmargin-block-startを持つ（1つ前の行/列へ食い込まないため）', async ({page})=> {
-	// <rt>はline box計算の外側に固定量ではみ出すCSSの<ruby>の制約（line-heightでは吸収できない）。
-	//	親のinline-block spanへ実測したrt高さをmargin-block-startとして足すことで、
-	//	詰めて表示しても1つ前の行/列に重ならないようにしている（TxtLayer.tsx）。
-	//	**比較にはoffsetHeightを使う**（getBoundingClientRect()は祖先のtransform: scale(cvsScale)
-	//	を含んだ値になり、cvsScale!==1のウインドウでは一致しない——marginBlockStart自体も
-	//	offsetHeightで設定しているため、比較も同じ基準に揃える必要がある）
-	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
-		el=> {
-			const parent = el.parentElement!;
-			const rt = el.querySelector('rt')!;
-			return {
-				marginTop: parseFloat(getComputedStyle(parent).marginTop),
-				rtHeight: rt.offsetHeight,
-			};
-		});
-	expect(marginTop).toBeCloseTo(rtHeight, 0);
+test('行/列の先頭でないルビ付き文字spanはmargin-block-startを持たない（詰めて表示してよいため）', async ({page})=> {
+	// margin-block-startは「1つ前の行/列に重なる」場合だけ要る（<rt>はline box計算の外側に
+	//	固定量ではみ出すCSSの<ruby>の制約）。行/列の先頭でなければ前が無い（最初の行）か
+	//	地続き（2文字目以降）なので不要——それでも足すと、その分だけ行/列全体が1つ前の
+	//	行/列側へ押し出されて隙間になる不具合だった（2026-08-18発覚、TxtLayer.tsx参照）。
+	//	このシナリオの「漢字《かんじ》」は文章の最初＝最初の行の先頭に来るケース
+	const marginTop = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
+		el=> parseFloat(getComputedStyle(el.parentElement!).marginTop));
+	expect(marginTop).toBe(0);
 });
 
 test('`｜親文字《ルビ》`も同じく組まれる（親文字の範囲を明示する記法）', async ({page})=> {
@@ -235,6 +227,33 @@ test('layer=/page=で別レイヤ・裏ページへ本当に書ける', async ({
 	// mes（裏）はまだ表に出ていないが、ストアには正しく積まれている
 	const {aLayBack} = await snap(page);
 	expect(aLayBack.find(l=> l.nm === 'mes')?.str).toBe('うらのぶん');
+});
+
+test('行/列の先頭に来たルビ付き文字spanは<rt>の高さぶんmargin-block-startを持つ（1つ前の行/列へ食い込まないため）', async ({page})=> {
+	// 幅固定・monospaceで自然折返しさせ、2行目の先頭にルビ付き文字（字《じ》）が来るように
+	//	したシナリオ（prj_ruby/main.sn末尾）。**比較にはoffsetHeightを使う**
+	//	（getBoundingClientRect()は祖先のtransform: scale(cvsScale)を含んだ値になり、
+	//	cvsScale!==1のウインドウでは一致しない——marginBlockStart自体もoffsetHeightで
+	//	設定しているため、比較も同じ基準に揃える必要がある）
+	await gotoSesame(page);
+	await pressKey(page, 'Space');	// r_alignのシーンへ
+	await pressKey(page, 'Space');	// linkのシーンへ
+	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await waitIdle(page);
+	await pressKey(page, 'Space');	// layer=/page=対応の確認ブロックへ
+	await pressKey(page, 'Space');	// margin-block-start確認ブロックへ
+
+	expect(await mesStr(page)).toBe('あいうえ字お');
+	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
+		el=> {
+			const parent = el.parentElement!;
+			const rt = el.querySelector('rt')!;
+			return {
+				marginTop: parseFloat(getComputedStyle(parent).marginTop),
+				rtHeight: rt.offsetHeight,
+			};
+		});
+	expect(marginTop).toBeCloseTo(rtHeight, 0);
 });
 
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
