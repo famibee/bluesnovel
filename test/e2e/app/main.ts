@@ -13,7 +13,6 @@
 
 import {SysWeb} from '../../../src/web';
 import {useStore} from '../../../src/store/store';
-import gsap from 'gsap';
 
 // ?prj=basic / ?prj=button でシナリオ（プロジェクトフォルダ）を切り替える。
 //	SysBase.loaded() が読むのは常に main（ScriptMng.load('main') 固定）なので、
@@ -23,9 +22,19 @@ const prj = new URLSearchParams(location.search).get('prj') ?? 'basic';
 //	生成した使い捨ての鍵）を注入する。他のプロジェクトはcrypto:false固定のまま
 const isCrypto = prj === 'crypto';
 
-// gsapも公開する。**演出の「時間を進める機構」をテスト側から止めるため**で、
-//	止めてしまえば進度（[trans rule=…]ならSVGフィルタの係数）をこちらで任意の値に置ける＝
-//	時間待ちに頼らず、狙った進度ちょうどの絵を撮れる。src/側と同一モジュール実体を掴む点はstoreと同じ
+// freezeRaf()：**演出の「時間を進める機構」をテスト側から止めるため**で、止めてしまえば進度
+//	（[trans rule=…]ならSVGフィルタの係数）をこちらで任意の値に置ける＝時間待ちに頼らず、
+//	狙った進度ちょうどの絵を撮れる。GSAP時代は`gsap.globalTimeline.pause()`で「以後作られる分も
+//	含めて全部凍結」できたが、motionにはその代替が無い。ここは`requestAnimationFrame`自体を
+//	ブラウザAPIごと差し替える方式にした（`AudioContext.prototype.createGain`の計装と同じ発想。
+//	src/側は一切変更しない）。**[trans rule=]／[quake]（Stage.tsxが素のrAFで回している）だけ**
+//	止まる。[tsy]系・音声フェード（ScriptMng、motion＝src/ts/Tw.ts）はモジュール読み込み時に
+//	`requestAnimationFrame`を捕まえて自走するため、この差し替えの影響を受けない（＝進行し続ける）。
+//	差し替えの前に既に発行済みの実rAFが1回分だけ走ってから止まる点も、既存の
+//	`document.getAnimations().forEach(a=>a.pause())`方式（chstyle.e2e.ts）と同じ精度の話
+function freezeRaf() {
+	globalThis.requestAnimationFrame = ()=> 0;
+}
 
 // snd.e2e.ts用：AudioContext.createGain()の呼び出し回数を数える。SndBuf（src/ts/SndBuf.ts）は
 //	生成のたびに必ず1回createGain()するので、「同じファイルの重複再生要求で頭から鳴り直して
@@ -43,5 +52,5 @@ const sys = new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto
 
 // isAutoPending: オート読み・既読スキップが次の停止点へ本当に落ち着いたか（waitIdle参照）。
 //	scrMngはloaded()完了後にしか生えないので都度sys.scrMngを引き直す（キャッシュしない）
-(globalThis as any).__sn = {store: useStore, gsap, gainNodeCount: ()=> gainNodeCount,
+(globalThis as any).__sn = {store: useStore, freezeRaf, gainNodeCount: ()=> gainNodeCount,
 	isAutoPending: ()=> sys.scrMng?.isAutoPending ?? false};

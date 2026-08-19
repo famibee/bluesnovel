@@ -192,8 +192,8 @@ test('[er]を挟まない[trans]でも前の場面の文字が復活しない（
 // ============ ルール画像によるワイプ（[trans rule=…]） ============
 //	**「時間を進める機構」と「進度→見た目」を切り離してある**（src/ts/Trans.ts のコメント）。
 //	進度→係数の計算は単体テスト（test/Trans.test.ts）が全域を押さえているので、ここでは
-//	GSAPを止めて任意の進度の係数を流し込み、**その進度で本当にその絵になるか**だけを画素で見る。
-//	時間待ちに頼らないので、演出の途中という一番撮りにくい瞬間が決定的に検証できる
+//	rAFを止めて（__sn.freezeRaf()）任意の進度の係数を流し込み、**その進度で本当にその絵になるか**
+//	だけを画素で見る。時間待ちに頼らないので、演出の途中という一番撮りにくい瞬間が決定的に検証できる
 
 // 画面を撮って、指定座標の色を拾う。PNGのデコードはブラウザ（canvas）にやらせる＝依存を増やさない
 async function pixels(page: Page, aPt: {x: number; y: number}[]) {
@@ -214,7 +214,7 @@ async function pixels(page: Page, aPt: {x: number; y: number}[]) {
 	}, {b64, aPt});
 }
 
-// [trans rule=…]の場面まで進め、GSAPを止める（＝進度をこちらで決められる状態にする）
+// [trans rule=…]の場面まで進め、rAFを止める（＝進度をこちらで決められる状態にする）
 async function toRuleScene(page: Page) {
 	// **待ちマーカーで本物の停止点を確かめてから次を押す**。[trans]の演出中は
 	//	「ストアもDOMも一致して文字送りも終わっている」瞬間があり、waitTransDone()だけだと
@@ -226,7 +226,7 @@ async function toRuleScene(page: Page) {
 	}
 	await page.keyboard.press('Space');	// [trans time=9000 rule=rule_lr]
 	await expect(page.locator('#sn_rule_msk')).toHaveCount(1);
-	await page.evaluate(()=> {(globalThis as any).__sn.gsap.globalTimeline.pause()});
+	await page.evaluate(()=> {(globalThis as any).__sn.freezeRaf()});
 }
 // 進度tickの係数をSVGフィルタへ流し込む（Stage側が毎フレームやっているのと同じ計算・同じ場所）
 async function setTick(page: Page, tick: number) {

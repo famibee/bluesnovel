@@ -14,7 +14,7 @@ import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
 import {Script} from './Script';
-import {H_TSY_DEF, type T_TSY_PRP} from './Tsy';
+import {easeFn, H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {focusMng} from './FocusMng';
 import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
@@ -27,8 +27,7 @@ import {SndMng} from './SndMng';
 import {MAX_END_MS} from './SndBuf';
 import {decryptPicUrl} from './Crypto';
 import {getNatSize} from './Sprite';
-
-import gsap from 'gsap';
+import {Tw} from './Tw';
 
 type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 
@@ -556,7 +555,7 @@ export class ScriptMng {
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
 	#resumeTimer: ReturnType<typeof setTimeout> | undefined;
-	// 文字送り演出（GSAP）が終わるまで足止め中のresume指示（本家 Reading.ts はl()/p()の
+	// 文字送り演出（Web Animations API）が終わるまで足止め中のresume指示（本家 Reading.ts はl()/p()の
 	//	待ち時間カウントを文字送り完了後に開始する。ここで同じ挙動にする。演出が待ち時間より
 	//	長いと、演出の途中でオート/スキップが次へ進んでしまう問題への対応）
 	#pendingResume: {mode: 'auto' | 'skip'; msec: number} | undefined;
@@ -601,7 +600,7 @@ export class ScriptMng {
 
 	// ===== [trans]の演出と、その終了待ち（[wt]） =====
 	//	**演出の終了を宣言するのはここ**（時間切れ／[wt]中のクリック）。
-	//	Stage側のGSAPは見た目を動かすだけにしてあり、その完了コールバックに表裏の交換をやらせない。
+	//	Stage側（WAAPI）は見た目を動かすだけにしてあり、その完了コールバックに表裏の交換をやらせない。
 	//	そうしないと「交換」と「シナリオの再開」の前後が保証されず、
 	//	交換前のページへ次の文が書かれてしまう（＝画面が空のまま進む）
 	#transTimer		: ReturnType<typeof setTimeout> | undefined;
@@ -647,7 +646,7 @@ export class ScriptMng {
 	}
 
 	// ===== [quake]の画面揺らしと、その終了待ち（[wq]／[stop_quake]） =====
-	//	[trans]とまったく同じ形。揺らすのはStage側のGSAPで、**終わりを決めるのはここ**
+	//	[trans]とまったく同じ形。揺らすのはStage側のrAFループで、**終わりを決めるのはここ**
 	#quakeTimer		: ReturnType<typeof setTimeout> | undefined;
 	#quakeRunning	= false;
 	#quakeWaiting	: {canskip: boolean} | undefined;
@@ -690,18 +689,19 @@ export class ScriptMng {
 	}
 
 	// ===== トゥイーンアニメ（[tsy]/[wait_tsy]/[stop_tsy]/[pause_tsy]/[resume_tsy]） =====
-	//	本家（CmnTween.ts）は@tweenjs/tween.jsでpixiのDisplayObjectを直接動かすが、
-	//	こちらはGSAPで**ストアのレイヤ属性を**動かす。つまり画面の現在値は常にストアが持つ。
+	//	本家（CmnTween.ts）はmotion（Tw）でpixiのDisplayObjectを直接動かすが、
+	//	こちらは同じmotion（Tw、src/ts/Tw.ts）で**ストアのレイヤ属性を**動かす。
+	//	つまり画面の現在値は常にストアが持つ。
 	//	見た目だけをDOMへ書く手もある（[trans]はそうしている）が、それだとMemento（読み戻り）や
 	//	[trans]のレイヤ複製が演出前の古い値を拾ってしまうため、こちらはストア経由にした。
 	//	副作用として本家のarrive属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる。
 	//	トゥイーン名（tw_nm）はname省略時レイヤ名（本家 CmnTween.#tw_nm()）
-	readonly #hTw: {[tw_nm: string]: {tw: gsap.core.Tween | gsap.core.Timeline; end: ()=> void; next?: ()=> void}} = Object.create(null);
+	readonly #hTw: {[tw_nm: string]: {tw: Tw; end: ()=> void; next?: ()=> void}} = Object.create(null);
 	#tsyWaiting	: {tw_nm: string; canskip: boolean} | undefined;	// [wait_tsy]で待っている最中か
 
 	#beginTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy'}>) {
 		const cur = this.$fncs.getLaySty(act.nm, act.page);
-		// GSAPに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
+		// Twに渡すのは素のオブジェクト。fromが動かされ、onUpdateでストアへ書き戻す。
 		//	未指定属性の開始値は各レイヤのCSS既定（H_TSY_DEF）。
 		//	エンジン側は現在値を知らないので相対指定（left='=100'）のまま渡してくる。
 		//	width/heightはH_TSY_DEFにキーが無い（CSSの既定=autoに対応する数値が無いため）。
@@ -712,10 +712,12 @@ export class ScriptMng {
 			if (v === undefined) throw `[tsy] ${k} は [lay ${k}=…] で寸法を明示したレイヤにしか使えません`;
 			return v;
 		});
-		// **fromをそのまま（スプレッドで）ストアへ渡してはいけない**：GSAPは対象オブジェクトへ
-		//	自分用のキャッシュ（_gsap。中からtargetを指し返す）を生やすので、レイヤが循環参照になり、
-		//	structuredClone（addLayer/[trans]）もJSON化（しおり）も落ちる。
-		//	動かす属性名は分かっているので、その分だけ拾って新しいオブジェクトにする
+		// fromをそのまま（スプレッドで）ストアへ渡さず、動かす属性名（aPrp）だけ拾って新しい
+		//	オブジェクトにする。GSAP時代はこれを省くと対象オブジェクトへ自分用のキャッシュ
+		//	（_gsap。中からtargetを指し返す）が生え、レイヤが循環参照になってstructuredClone
+		//	（addLayer/[trans]）もJSON化（しおり）も落ちていた。motion（Tw）は対象へそうした
+		//	痕跡を残さないが、fromはpath区間ごとに使い回す作業用オブジェクトでもあるので、
+		//	ストアに載せる値は引き続きこの形で明示的に切り出す
 		this.#runTsy(act, from, aTo, ()=> {
 			const sty: T_LAY_STY_ARG = {};
 			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
@@ -775,31 +777,38 @@ export class ScriptMng {
 		// time=0（既読スキップ中もここ）は演出せず即座に終了状態へ
 		if (act.msec <= 0 && act.delay <= 0) {end(); this.#onTsyEnd(act.tw_nm); return}
 
-		const hVars = {
-			duration	: act.msec / 1000,	// GSAPは秒、シナリオはミリ秒
-			delay		: act.delay / 1000,
-			ease		: act.ease,
-			repeat		: act.repeat,
-			yoyo		: act.yoyo,
-			onUpdate	: apply,
-		};
-		// chain指定時は止めた状態で作り、繋ぎ元の終了時に動かし始める（本家 CmnTween.ts:219）
-		const paused = Boolean(act.chain);
-		const onComplete = ()=> {end(); this.#onTsyEnd(act.tw_nm)};
-		let tw: gsap.core.Tween | gsap.core.Timeline;
-		if (aTo.length > 1) {	// [tsy path=…]。本家はtween.jsのchain()、GSAPならtimelineで繋ぐ
-			const tl = gsap.timeline({paused, onComplete});
-			for (const to of aTo) tl.to(from, {...to, ...hVars});
-			tw = tl;
+		// 区間ごとにTwを作りchain()で連結する（[tsy path=…]。本家はtween.jsのchain()、
+		//	こちらはTw.chain()で同じ形にする）。delay/repeat/yoyoは元のGSAPタイムラインと同じく
+		//	**区間ごと**に効く（区間の間にも同じdelayの間が空く）。
+		//	pause_tsy/resume_tsyが「今動いている区間」に効くよう、区間が切り替わるたびに
+		//	#hTwの参照をonStart()で張り替える
+		const ease = easeFn(act.ease);
+		const aSeg = aTo.map(to=> {
+			const seg = new Tw(from)
+			.to(to, act.msec)
+			.delay(act.delay)
+			.easing(ease)
+			.repeat(act.repeat)
+			.yoyo(act.yoyo)
+			.onUpdate(apply);
+			seg.onStart(()=> {this.#hTw[act.tw_nm] = {end, tw: seg}});
+			return seg;
+		});
+		for (let i = 0; i < aSeg.length; ++i) {
+			const seg = aSeg[i]!;
+			const nxt = aSeg[i + 1];
+			if (nxt) seg.chain(nxt);
 		}
-		else tw = gsap.to(from, {...aTo[0]!, ...hVars, paused, onComplete});
+		const tw = aSeg[0]!;
+		aSeg[aSeg.length - 1]!.onComplete(()=> {end(); this.#onTsyEnd(act.tw_nm)});
 
 		this.#hTw[act.tw_nm] = {end, tw};
-		if (! act.chain) return;
+		// chain指定時は始めず、繋ぎ元の終了時に動かし始める（本家 CmnTween.ts:219）
+		if (! act.chain) {tw.start(); return}
 
 		const src = this.#hTw[act.chain];
 		if (! src) throw `${act.chain}は存在しない・または終了したトゥイーンです`;	// 本家と同じ文言
-		src.next = ()=> tw.play();
+		src.next = ()=> tw.start();
 	}
 
 	// トゥイーン1件の後片付け。[wait_tsy]で待っていたなら続きを回す
@@ -934,10 +943,10 @@ export class ScriptMng {
 		this.#goSafe();
 	}
 
-	// [fadese]/[fadebgm]/[fadeoutse]/[fadeoutbgm]の本体（GSAPでGainNode.gainを動かす。
+	// [fadese]/[fadebgm]/[fadeoutse]/[fadeoutbgm]の本体（TwでGainNode.gainを動かす。
 	//	本家 SndBuf.ts の StPlaying.fade()/StFade と同じ役割だが、状態機械ではなくバッファ名ごとの
 	//	レジストリにした。#hTwとは別枠にしてあるのは、[stop_tsy]等の名前空間と混ざらないようにするため）
-	readonly #hSndTw: {[buf: string]: {tw: gsap.core.Tween; end: ()=> void}} = Object.create(null);
+	readonly #hSndTw: {[buf: string]: {tw: Tw; end: ()=> void}} = Object.create(null);
 	#beginFadeSnd(act: Extract<T_ENGINE_ACTION, {t: 'fadeSnd'}>) {
 		// 同じバッファへの再フェードは、前のフェードを畳んでから始める（本家は黙って無視するだけだが、
 		//	それは指摘済みの不備＝ロード中・フェード中の音量変更が消える。こちらは追随させる）
@@ -956,7 +965,9 @@ export class ScriptMng {
 		if (! gn || act.msec <= 0 && act.delay <= 0) {end(); this.#onSndFadeEnd(act.buf); return}
 
 		const onComplete = ()=> {end(); this.#onSndFadeEnd(act.buf)};
-		const tw = gsap.to(gn.gain, {value: act.volume, duration: act.msec / 1000, delay: act.delay / 1000, onComplete});
+		// 既定easeは等速（Twの既定＝GSAP時代のpower1.outから変更）。本家（howlerのfade()）も
+		//	線形なので、こちらを本家に揃える形で正とする
+		const tw = new Tw(gn.gain).to({value: act.volume}, act.msec).delay(act.delay).onComplete(onComplete).start();
 		this.#hSndTw[act.buf] = {tw, end};
 	}
 	#onSndFadeEnd(buf: string) {
@@ -1535,9 +1546,11 @@ export class ScriptMng {
 		case 'stopTsy':
 			this.#endTsy(act.tw_nm);
 			break;
-		case 'pauseTsy':
-			this.#hTw[act.tw_nm]?.tw.paused(act.paused);
+		case 'pauseTsy': {
+			const tw = this.#hTw[act.tw_nm]?.tw;
+			if (act.paused) tw?.pause(); else tw?.resume();
 			break;
+		}
 
 		// ---- ＢＧＭ・効果音（ts/SndMng.ts・ts/SndBuf.ts） ----
 		case 'playSnd':

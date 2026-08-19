@@ -7,11 +7,11 @@
 
 // トゥイーンアニメ（[tsy]/[wait_tsy]/[stop_tsy]/[pause_tsy]/[resume_tsy]）の、
 //	エンジンが担当する部分＝属性の解釈と検査。本家 LayerMng.ts:798 #tsy() ＋ CmnTween.ts。
-//	実際にアニメを回すのはScriptMng（GSAP）なので、動きそのものはE2E（tsy.e2e.ts）。
+//	実際にアニメを回すのはScriptMng（motion）なので、動きそのものはE2E（tsy.e2e.ts）。
 //	相対指定（'=100'）はレイヤの現在値が要るためScriptMng側で解決する＝ここではrelフラグまで
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
-import {A_TSY_FRM_PRP, cnvTweenArg, easeToGsap, parseTsyPath, tsyName} from '../src/ts/Tsy';
+import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, easeFn, parseTsyPath, tsyName} from '../src/ts/Tsy';
 
 import {expect, it} from 'bun:test';
 
@@ -63,23 +63,33 @@ it('cnvTweenArg_notNumber', ()=> {
 	expect(()=> cnvTweenArg('tsy', {left: 'もじ'})).toThrow('[tsy] leftの値が不正です');
 });
 
-it('easeToGsap_maps', ()=> {
-	// tween.jsのQuadratic/Cubic/Quartic/QuinticはGSAPのpower1〜4に一対一で対応する
-	expect(easeToGsap(undefined)).toBe('none');
-	expect(easeToGsap('Linear.None')).toBe('none');
-	expect(easeToGsap('Quadratic.Out')).toBe('power1.out');
-	expect(easeToGsap('Quintic.InOut')).toBe('power4.inOut');
-	expect(easeToGsap('Sinusoidal.In')).toBe('sine.in');
-	expect(easeToGsap('Exponential.Out')).toBe('expo.out');
-	expect(easeToGsap('Circular.In')).toBe('circ.in');
-	expect(easeToGsap('Back.Out')).toBe('back.out');	// 本家 ext_fg.sn が使う
-	expect(easeToGsap('Bounce.InOut')).toBe('bounce.inOut');
-	expect(easeToGsap('Elastic.In')).toBe('elastic.in');
+it('chkEase_normalizes', ()=> {
+	expect(chkEase(undefined)).toBe('Linear.None');	// 本家の既定も Linear.None（＝等速）
+	expect(chkEase('Back.Out')).toBe('Back.Out');	// 本家 ext_fg.sn が使う
 });
 
-it('easeToGsap_throws', ()=> {
-	expect(()=> easeToGsap('Nazo.Out')).toThrow('異常なease指定です');
-	expect(()=> easeToGsap('Back')).toThrow('異常なease指定です');
+it('chkEase_throws', ()=> {
+	expect(()=> chkEase('Nazo.Out')).toThrow('異常なease指定です');
+	expect(()=> chkEase('Back')).toThrow('異常なease指定です');
+});
+
+it('easeFn_maps', ()=> {
+	// 本家 tween.js の Easing 実装をそのまま移植した式なので、代表値で数値一致を確認する
+	expect(easeFn(undefined)(0.5)).toBe(0.5);	// 未指定＝Linear.None（等速）
+	expect(easeFn('Linear.None')(0.3)).toBe(0.3);
+	expect(easeFn('Quadratic.Out')(0.5)).toBeCloseTo(0.75);
+	expect(easeFn('Quadratic.In')(0.5)).toBeCloseTo(0.25);
+	expect(easeFn('Sinusoidal.In')(0)).toBeCloseTo(0);
+	expect(easeFn('Circular.Out')(1)).toBeCloseTo(1);
+	// 端点（0→0、1→1）はどのイージングも共通で成り立つ
+	for (const nm of ['Back.InOut', 'Bounce.Out', 'Elastic.In', 'Exponential.InOut', 'Quintic.Out']) {
+		expect(easeFn(nm)(0)).toBeCloseTo(0);
+		expect(easeFn(nm)(1)).toBeCloseTo(1);
+	}
+});
+
+it('easeFn_throws', ()=> {
+	expect(()=> easeFn('Nazo.Out')).toThrow('異常なease指定です');
 });
 
 it('tsyName_defaultsToLayer', ()=> {
@@ -147,7 +157,7 @@ it('parseTsyPath_framePrp', ()=> {
 it('tsy_pushesAction', ()=> {
 	expect(tsy('[tsy layer=base time=500 left=100 alpha=0]')).toEqual({
 		t: 'tsy', tw_nm: 'base', nm: 'base', page: 'fore',
-		msec: 500, delay: 0, ease: 'none', repeat: 0, yoyo: false, backlay: false,
+		msec: 500, delay: 0, ease: 'Linear.None', repeat: 0, yoyo: false, backlay: false,
 		hTo: {alpha: {v: 0, rel: false}, left: {v: 100, rel: false}},
 	});
 });
@@ -194,17 +204,17 @@ it('tsy_page', ()=> {
 });
 
 it('tsy_repeatAndYoyo', ()=> {
-	// 本家は「repeat=1で計1回」なのでtween.jsへrepeat-1を渡す。GSAPも同じ規約
+	// 本家は「repeat=1で計1回」なのでtween.jsへrepeat-1を渡す。motionも同じ規約
 	expect(tsy('[tsy layer=base time=500 left=100]').repeat).toBe(0);		// 省略値1 → 0
 	expect(tsy('[tsy layer=base time=500 left=100 repeat=3]').repeat).toBe(2);
-	expect(tsy('[tsy layer=base time=500 left=100 repeat=0]').repeat).toBe(-1);	// 0以下は無限
+	expect(tsy('[tsy layer=base time=500 left=100 repeat=0]').repeat).toBe(Infinity);	// 0以下は無限
 	expect(tsy('[tsy layer=base time=500 left=100 yoyo=true]').yoyo).toBe(true);
 });
 
 it('tsy_delayAndEase', ()=> {
 	const a = tsy('[tsy layer=base time=500 left=100 delay=200 ease=Back.Out]');
 	expect(a.delay).toBe(200);
-	expect(a.ease).toBe('back.out');
+	expect(a.ease).toBe('Back.Out');
 });
 
 it('tsy_skippingMakesItInstant', ()=> {
@@ -280,7 +290,7 @@ function tsyFrm(src: string) {
 it('tsyFrame_pushesAction', ()=> {
 	expect(tsyFrm('[tsy_frame id=yesno time=500 x=100 alpha=0]')).toEqual({
 		t: 'tsyFrame', tw_nm: 'frm\nyesno', id: 'yesno',
-		msec: 500, delay: 0, ease: 'none', repeat: 0, yoyo: false,
+		msec: 500, delay: 0, ease: 'Linear.None', repeat: 0, yoyo: false,
 		hTo: {x: {v: 100, rel: false}, alpha: {v: 0, rel: false}},
 	});
 });

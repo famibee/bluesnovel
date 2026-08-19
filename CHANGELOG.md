@@ -18,6 +18,43 @@
 
 - [ ]
 
+- [x] **本家に倣い、gsapをmotionへ置き換え（依存ライブラリのライセンス対応）**（2026-08-19）
+  - 本家`skynovel_esm`が同日（commit `d36e52c`）に`@tweenjs/tween.js`から`motion@13.1.0`へ移行。
+    理由は**GreenSock(gsap)のstandard licenseが非OSIで、MIT公開パッケージかつ`dist/`へ依存を
+    丸ごとバンドルする構成とは相性が悪い**ため。bluesnovelも同条件（MIT公開・`src/build.ts`が
+    依存を`dist/`/`dist_app/`へ同梱）に当てはまるため、`todo.md`に倣って追随した
+  - gsapの3つの役割を役割ごとに適材適所へ振り分けた。**GSAPを1対1でmotionへ置き換えるのではなく**：
+    - `[tsy]`/`[tsy_frame]`（`ScriptMng`。ストアのレイヤ属性・`FrameMng`の見た目を動かす）と
+      `[fadese]`/`[fadebgm]`（`GainNode.gain`）→ 本家`CmnTween.ts`の`Tw`クラスを移植した
+      薄いラッパー`src/ts/Tw.ts`（motionの`animate()`を1箇所に閉じ込める）
+    - `[trans]`のクロスフェード → 既に`[ch_in_style]`で採用済みのWeb Animations API
+      （`Element.animate()`）。`[trans rule=]`の進度・`[quake]`の毎フレーム乱数 → 素の`rAF`ループ
+      （どちらもGSAPを「時間を刻むだけのticker」として使っていたので、ライブラリ自体が不要になった）
+  - `Tw.ts`は本家がハマった罠をそのまま踏襲：motionの`ctrl.stop()`は同期的に止まらないため、
+    対象へ直接animateさせず**ダミーのproxyを動かしてonUpdateで対象へ書き戻す**方式にした
+    （省くと`[stop_tsy]`/`[wait_tsy]`中のクリックで、確定させた最終値をアニメが上書きしてしまう）。
+    `animate(<any>proxy, hTo, {...})`の`<any>`キャストも本家のまま踏襲——インデックスシグネチャ
+    型からの総称型推論に失敗し`number | number[]`用の別オーバーロードへ誤って解決される
+    tscの挙動を回避するために必要（本家 CmnTween.ts:75 で先に踏まれていた罠）
+  - イージング名（本家 tween.js 形式）→ライブラリのease名への変換（`easeToGsap()`）を廃し、
+    本家`CmnTween.#hEase`相当の**31種の実関数**を`Tsy.ts`へ直接移植（`chkEase`/`easeFn`）。
+    tween.jsはMITなので式の流用可（本家と同じ根拠）。副次的に、GSAPの`power1〜4`/`back`/`elastic`
+    と tween.js の数値差が消えて本家と完全一致するようになった
+  - `[tsy path=…]`の区間連結は`gsap.timeline`から`Tw.chain()`（本家のtween.js `chain()`相当）へ。
+    `pause_tsy`/`resume_tsy`が「今動いている区間」に効くよう、区間が切り替わるたびに
+    `ScriptMng`側の登録参照を`Tw.onStart()`フックで張り替える対応を追加（本家はこの対応が無く
+    先頭区間にしか効かない）
+  - repeatの無限表現がGSAP規約の`-1`からmotion規約の`Infinity`へ変更（`ScriptEngine.ts`）。
+    音声フェードの既定easeもGSAP時代の`power1.out`から等速へ変更（本家howlerの`fade()`も線形）
+  - E2E（`test/e2e/trans.e2e.ts`）が`gsap.globalTimeline.pause()`で行っていた「以後作られる分も
+    含めた全体凍結」はmotionに相当APIが無いため、`globalThis.requestAnimationFrame`自体を
+    差し替える`__sn.freezeRaf()`（`test/e2e/app/main.ts`）へ置き換えた。`[trans rule=]`/`[quake]`
+    （Stage.tsxの素のrAFループ）だけが止まり、`[tsy]`系・音声フェード（motion）はモジュール
+    読み込み時にrAFを捕まえて自走するため影響を受けない、という非対称になる
+  - 単体テスト全件・E2E全件（既存の無関係なフレーク1件を除く）で回帰なしを確認。`bunx tsc`
+    （本体・`test/e2e`とも）もエラーなし
+  - `package.json`の依存を`gsap`→`motion`へ差し替え
+
 - [x] **場面転換で演出ありの`[trans]`を連続で打つと一瞬真っ黒がちらつく（対象外レイヤの
   黒画面ちらつき、続報）**（2026-08-18）
   - 症状：`[grp]`マクロ相当（本家 `doc/prj/script/sub.sn` の `[trans * layer=&dsp_lays_grp]`

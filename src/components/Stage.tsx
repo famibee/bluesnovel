@@ -17,7 +17,6 @@ import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filte
 import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css} from '@emotion/react';
-import gsap from 'gsap';
 
 // **デザインモード（長押しで入る）の有効・無効**。詳細は下の useLongPress のTODO参照
 const ENA_DESIGN_MODE = false;
@@ -44,30 +43,38 @@ export default function Stage({
 	const pgRef0 = useRef<HTMLDivElement>(null);
 	const pgRef1 = useRef<HTMLDivElement>(null);
 	const aPgRef = [pgRef0, pgRef1];
-	const twRef = useRef<gsap.core.Tween | null>(null);
+	// ルール画像ワイプ（[trans rule=…]）の進度を刻むrAFの後始末用。クロスフェード側は
+	//	WAAPI（Element.animate()）任せなので専用のrefは要らない（下のgetAnimations()参照）
+	const transRafRef = useRef<number | null>(null);
 	// ルール画像ワイプ（[trans rule=…]）で毎フレーム書き換えるSVGフィルタの係数。
 	//	本家はWebGLのフラグメントシェーダだが、こちらは
 	//	「ルール画像の赤チャンネル→不透明度」の一次変換1つで書ける（src/ts/Trans.ts）ので、
 	//	feFuncAのslope/interceptだけを動かせば同じ絵になる
 	const funcRef = useRef<SVGFEFuncAElement>(null);
 	useEffect(()=> {
-		twRef.current?.kill();
-		twRef.current = null;
+		if (transRafRef.current !== null) cancelAnimationFrame(transRafRef.current);
+		transRafRef.current = null;
 		// **trans:nullを経由せず次のtransへ直接切り替わることがある**：[wt]の直後に別レイヤの
 		//	[trans]を連続で打つと、#runStep()が同期forループの中でfinishTrans()（trans→null）と
 		//	startTrans()（null→次のtrans）を続けて呼び、Reactが両方を1回のレンダリングへ
 		//	バッチしてしまう。そうなると「終了時だけ」のopacityリセット（旧・下のif分岐）が
 		//	一度も走らないまま次の演出が始まり、前の演出でopacity 0まで下がった板がそのまま
 		//	次の演出の下地になって一瞬真っ黒に見える（実機バグ：場面転換の[trans]連続でちらつく）。
-		//	なので「終了時」に限らず**演出開始のたびに必ず**両方の板を不透明へ戻してから動かす
-		gsap.set([pgRef0.current, pgRef1.current].filter(e=> e !== null), {opacity: 1});
+		//	なので「終了時」に限らず**演出開始のたびに必ず**両方の板を不透明へ戻してから動かす。
+		//	`fill:'forwards'`のWAAPIアニメは終了後も**inline styleでなく効果として**opacityを
+		//	保持し続けるので、素のopacity書き換えだけでは消えない。cancel()で確実に外す
+		for (const el of [pgRef0.current, pgRef1.current]) {
+			if (! el) continue;
+			el.getAnimations().forEach(a=> a.cancel());
+			el.style.opacity = '';
+		}
 		if (! trans) return;	// 終了（またはそもそも演出なし）
 
 		const el = aPgRef[foreIdx]!.current;
 		if (! el) return;
 
 		if (! trans.ruleSrc) {	// 既定＝クロスフェード
-			twRef.current = gsap.to(el, {opacity: 0, duration: trans.time / 1000, ease: 'none'});
+			el.animate([{opacity: 1}, {opacity: 0}], {duration: trans.time, easing: 'linear', fill: 'forwards'});
 			return;
 		}
 		// ルール画像ワイプ。**動かすのは進度（tick）だけ**で、tick→見た目はTrans.tsの純粋関数。
@@ -81,11 +88,13 @@ export default function Stage({
 			fn.setAttribute('intercept', String(intercept));
 		};
 		setTick(0);
-		const o = {tick: 0};
-		twRef.current = gsap.to(o, {
-			tick: 1, duration: trans.time / 1000, ease: 'none',
-			onUpdate: ()=> setTick(o.tick),
-		});
+		const t0 = performance.now();
+		const step = (now: number)=> {
+			const tick = trans.time <= 0 ? 1 : Math.min((now - t0) / trans.time, 1);
+			setTick(tick);
+			if (tick < 1) transRafRef.current = requestAnimationFrame(step);
+		};
+		transRafRef.current = requestAnimationFrame(step);
 	}, [trans]);
 
 	// [quake]の画面揺らし。[trans]と同じ役割分担で、**ここは見た目を動かすだけ**。
@@ -95,22 +104,28 @@ export default function Stage({
 	//	こちらは表裏のページ箱そのものを動かす。ステージ側のoverflow:hiddenが端を切るのも同じ絵。
 	//	**毎フレーム [-hmax,+hmax]／[-vmax,+vmax] のランダム位置へ跳ばす**（補間しない）のも本家どおり
 	const quake = useStore(s=> s.quake);
-	const qkRef = useRef<gsap.core.Tween | null>(null);
+	const quakeRafRef = useRef<number | null>(null);
 	useEffect(()=> {
-		qkRef.current?.kill();
-		qkRef.current = null;
+		if (quakeRafRef.current !== null) cancelAnimationFrame(quakeRafRef.current);
+		quakeRafRef.current = null;
 		const aEl = [pgRef0.current, pgRef1.current].filter(e=> e !== null);
-		if (! quake) {gsap.set(aEl, {x: 0, y: 0}); return}
+		if (! quake) {
+			// translate(0,0)も「恒等transform」としてスタッキングコンテキストを作ってしまう
+			//	（.claude/docs/PITFALLS.md参照）ので、0へ戻すのでなく明示的に外す
+			for (const el of aEl) el.style.transform = '';
+			return;
+		}
 
 		const {hmax: h, vmax: v} = quake;
-		// GSAPは「時間を刻む係」でしかない（動かす値は自前のランダム）ので、
-		//	ダミーの数値をtweenして onUpdate だけ使う。長さは終了宣言側が決めるので余裕をみて長め
-		qkRef.current = gsap.to({v: 0}, {v: 1, duration: 3600, ease: 'none', onUpdate: ()=> {
-			gsap.set(aEl, {
-				x: h === 0 ? 0 : Math.round(Math.random() * h * 2) - h,
-				y: v === 0 ? 0 : Math.round(Math.random() * v * 2) - v,
-			});
-		}});
+		// 素のrAFループ。動かす値は毎フレームの乱数そのものなので、時間駆動のライブラリは要らない。
+		//	止めるのは終了宣言側（ScriptMng）がstore.quakeをnullへ戻したとき＝このeffectの再実行
+		const step = ()=> {
+			const x = h === 0 ? 0 : Math.round(Math.random() * h * 2) - h;
+			const y = v === 0 ? 0 : Math.round(Math.random() * v * 2) - v;
+			for (const el of aEl) el.style.transform = `translate(${String(x)}px, ${String(y)}px)`;
+			quakeRafRef.current = requestAnimationFrame(step);
+		};
+		quakeRafRef.current = requestAnimationFrame(step);
 	}, [quake]);
 
 	// ウインドウサイズ追従

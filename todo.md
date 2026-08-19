@@ -1,23 +1,5 @@
 #TODO 優先順位順
 
-## 要検証（出自不確か・追跡工数を投じない）
-
-**縦書きグリフ描画不具合**：2026-08-17、上記の改行位置ズレ調査中に**Claude自身が実機比較の
-スクリーンショット目視で発見・自己判定**した現象（禁則で次列へ送られた対の2文字目のグリフが
-描画されない）。**ユーザーによる観測報告は一度もない**（本人へ確認したところ「今初めて聞いた」
-とのこと）。根拠は目視1回のみで、以後の追試（手動3回・フォント読み込み遅延注入17回・実アプリ
-自動周回80回、累計100試行超）は**すべて非再現**。観測アーティファクト（Claudeの誤認）である
-可能性を排除できていないため、**ユーザーまたは第三者が実機で再現を確認するまで追跡工数を
-投じない**。詳細はCHANGELOG.md 2026-08-17の該当エントリ群を参照。
-
-対策として行ったGSAP→Web Animations API置換（コミット`3b7eeb2`）は**取り消さない**：動機は
-誤っていたが、副次的に実バグ2件（`sty4Moveable`の恒等transform常時適用、ルビ`marginBlockStart`の
-`getBoundingClientRect`誤用）を修正済みで、E2E・単体テストとも回帰なしを実機確認済みのため
-
-`test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・
-`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は
-再開時に再利用可能
-
 > **タグ／変数の実装状況は `docs/tag.html`（タグ一覧）と `docs/dev.html`（save:/sys:/tmp:変数）に集約**。
 > 名称先頭のマークで表す：🟢実装済／🟡実装中・機能未達／🔴未済。本家からの変更点・メモは各タグの詳細部に。
 > **済んだことは `CHANGELOG.md`**（作業ごとの経緯・判断つき）。
@@ -58,6 +40,9 @@
 
 ## アセット・基盤
 
+- [ ] 本家と違い tinygesture がないが、これは単に移植漏れか。それとも依存外し＆自作か。Apache-2.0 license だが他の候補はあるか
+- [ ] bluesnovel の CLAUDE.md 系ファイルやtsソース、テストを参考に追加・更新
+  - `CHANGELOG.md` の扱いは本家が最終的に正
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（2026-08-10調査、詳細はCHANGELOG.md参照）：
   - `skynovel_esm`は`semantic-release`から**`release-please`へ移行済み**（`.github/workflows/release-please.yml`+`publish.yml`、`release-please-config.json`、npm Trusted Publishing/OIDC）。本CLAUDE.mdの「semantic-release＋conventionalcommits」の記述は古い
   - bluesnovelの`package.json`にはsemantic-release用の`release`設定と`@semantic-release/changelog`/`@semantic-release/git`だけが中途半端に残存（本体`semantic-release`パッケージは無い）。release-please化するなら要削除
@@ -69,6 +54,24 @@
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
 - [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
+
+## 要検証（出自不確か・追跡工数を投じない）
+
+**縦書きグリフ描画不具合**：2026-08-17、上記の改行位置ズレ調査中に**Claude自身が実機比較の
+スクリーンショット目視で発見・自己判定**した現象（禁則で次列へ送られた対の2文字目のグリフが
+描画されない）。**ユーザーによる観測報告は一度もない**（本人へ確認したところ「今初めて聞いた」
+とのこと）。根拠は目視1回のみで、以後の追試（手動3回・フォント読み込み遅延注入17回・実アプリ
+自動周回80回、累計100試行超）は**すべて非再現**。観測アーティファクト（Claudeの誤認）である
+可能性を排除できていないため、**ユーザーまたは第三者が実機で再現を確認するまで追跡工数を
+投じない**。詳細はCHANGELOG.md 2026-08-17の該当エントリ群を参照。
+
+対策として行ったGSAP→Web Animations API置換（コミット`3b7eeb2`）は**取り消さない**：動機は
+誤っていたが、副次的に実バグ2件（`sty4Moveable`の恒等transform常時適用、ルビ`marginBlockStart`の
+`getBoundingClientRect`誤用）を修正済みで、E2E・単体テストとも回帰なしを実機確認済みのため
+
+`test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・
+`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は
+再開時に再利用可能
 
 ## 保留
 

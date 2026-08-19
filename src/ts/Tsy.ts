@@ -108,33 +108,108 @@ export function parseTsyPath(tag: string, path: string, aPrp: readonly string[] 
 }
 
 
-// イージング名を本家（tween.js）の書式からGSAPの書式へ。
-//	本家は31種を名前で持つが、対応関係が付くので機械的に変換する。
-//	tween.jsのQuadratic/Cubic/Quartic/QuinticはGSAPのpower1〜4に一対一で対応する
-const H_EASE_FAMILY: {[name: string]: string} = {
-	Quadratic	: 'power1',
-	Cubic		: 'power2',
-	Quartic		: 'power3',
-	Quintic		: 'power4',
-	Sinusoidal	: 'sine',
-	Exponential	: 'expo',
-	Circular	: 'circ',
-	Elastic		: 'elastic',
-	Back		: 'back',
-	Bounce		: 'bounce',
+// イージング名（本家 tween.js の書式。CmnTween.ts:184-262 #hEase の移植）を実関数へ。
+//	tween.jsはMITなので式そのものを流用可（本家コメントと同じ根拠）。GSAP時代は名前を
+//	GSAPの書式へ機械変換していたが、motion（Tw.ts）は`ease`に関数をそのまま渡せるため、
+//	ここで直接31種の実装を持つ（副次的に、GSAPのpower1〜4/back/elasticとtween.jsの
+//	数値差が消えて本家と完全一致するようになった）
+function bounceOut(k: number): number {
+	if (k < 1 / 2.75) return 7.5625 * k * k;
+	if (k < 2 / 2.75) return 7.5625 * (k -= 1.5 / 2.75) * k + 0.75;
+	if (k < 2.5 / 2.75) return 7.5625 * (k -= 2.25 / 2.75) * k + 0.9375;
+	return 7.5625 * (k -= 2.625 / 2.75) * k + 0.984375;
+}
+const H_EASE: {[name: string]: (k: number)=> number} = {
+	'Back.In'			: k=> {
+		const s = 1.70158;
+		return k === 1 ? 1 : k*k*((s+1)*k -s);
+	},
+	'Back.InOut'		: k=> {
+		const s = 1.70158 * 1.525;
+		if ((k *= 2) < 1) return 0.5 * (k*k*((s+1)*k -s));
+		return 0.5 * ((k -= 2) *k*((s+1)*k +s) +2);
+	},
+	'Back.Out'			: k=> {
+		const s = 1.70158;
+		return k === 0 ? 0 : --k*k*((s+1)*k +s) +1;
+	},
+	'Bounce.In'			: k=> 1 -bounceOut(1 -k),
+	'Bounce.InOut'		: k=> k < 0.5
+		? (1 -bounceOut(1 -k*2)) * 0.5
+		: bounceOut(k*2 -1) * 0.5 +0.5,
+	'Bounce.Out'		: k=> bounceOut(k),
+	'Circular.In'		: k=> 1 -Math.sqrt(1 -k*k),
+	'Circular.InOut'	: k=> {
+		if ((k *= 2) < 1) return -0.5 * (Math.sqrt(1 -k*k) -1);
+		return 0.5 * (Math.sqrt(1 -(k -= 2) *k) +1);
+	},
+	'Circular.Out'		: k=> Math.sqrt(1 - --k * k),
+	'Cubic.In'			: k=> k*k*k,
+	'Cubic.InOut'		: k=> {
+		if ((k *= 2) < 1) return 0.5 * k*k*k;
+		return 0.5 * ((k -= 2) *k*k +2);
+	},
+	'Cubic.Out'			: k=> --k*k*k +1,
+	'Elastic.In'		: k=> {
+		if (k === 0) return 0;
+		if (k === 1) return 1;
+		return -Math.pow(2, 10 * (k -1)) * Math.sin((k -1.1) *5 *Math.PI);
+	},
+	'Elastic.InOut'		: k=> {
+		if (k === 0) return 0;
+		if (k === 1) return 1;
+		k *= 2;
+		if (k < 1) return -0.5 * Math.pow(2, 10 * (k -1)) * Math.sin((k -1.1) *5 *Math.PI);
+		return 0.5 * Math.pow(2, -10 * (k -1)) * Math.sin((k -1.1) *5 *Math.PI) +1;
+	},
+	'Elastic.Out'		: k=> {
+		if (k === 0) return 0;
+		if (k === 1) return 1;
+		return Math.pow(2, -10 *k) * Math.sin((k -0.1) *5 *Math.PI) +1;
+	},
+	'Exponential.In'	: k=> k === 0 ? 0 : Math.pow(1024, k -1),
+	'Exponential.InOut'	: k=> {
+		if (k === 0) return 0;
+		if (k === 1) return 1;
+		if ((k *= 2) < 1) return 0.5 * Math.pow(1024, k -1);
+		return 0.5 * (-Math.pow(2, -10 * (k -1)) +2);
+	},
+	'Exponential.Out'	: k=> k === 1 ? 1 : 1 -Math.pow(2, -10 *k),
+	'Linear.None'		: k=> k,
+	'Quadratic.In'		: k=> k*k,
+	'Quadratic.InOut'	: k=> {
+		if ((k *= 2) < 1) return 0.5 * k*k;
+		return -0.5 * (--k * (k -2) -1);
+	},
+	'Quadratic.Out'		: k=> k * (2 -k),
+	'Quartic.In'		: k=> k*k*k*k,
+	'Quartic.InOut'		: k=> {
+		if ((k *= 2) < 1) return 0.5 * k*k*k*k;
+		return -0.5 * ((k -= 2) *k*k*k -2);
+	},
+	'Quartic.Out'		: k=> 1 - --k * k * k * k,
+	'Quintic.In'		: k=> k*k*k*k*k,
+	'Quintic.InOut'		: k=> {
+		if ((k *= 2) < 1) return 0.5 * k*k*k*k*k;
+		return 0.5 * ((k -= 2) *k*k*k*k +2);
+	},
+	'Quintic.Out'		: k=> --k*k*k*k*k +1,
+	'Sinusoidal.In'		: k=> 1 -Math.sin(((1.0 -k) *Math.PI) /2),
+	'Sinusoidal.InOut'	: k=> 0.5 * (1 -Math.sin(Math.PI * (0.5 -k))),
+	'Sinusoidal.Out'	: k=> Math.sin((k *Math.PI) /2),
 };
-const H_EASE_DIR: {[name: string]: string} = {In: 'in', Out: 'out', InOut: 'inOut'};
 
-export function easeToGsap(nm: string | undefined): string {
-	if (! nm) return 'none';		// 本家の既定も Linear.None（＝等速）
-	const [fam = '', dir = ''] = nm.split('.');
-	if (fam === 'Linear') return 'none';
+// 名前の妥当性検査（本家 CmnTween.ease() と同じ扱い）。ScriptEngine がシナリオ実行時に
+//	呼び、書き間違いをその場で例外にする。戻り値は正規化した名前（未指定は既定の'Linear.None'）
+export function chkEase(nm: string | undefined): string {
+	if (! nm) return 'Linear.None';
+	if (! H_EASE[nm]) throw `異常なease指定です：${nm}`;
+	return nm;
+}
 
-	const f = H_EASE_FAMILY[fam];
-	const d = H_EASE_DIR[dir];
-	if (! f || ! d) throw `異常なease指定です：${nm}`;	// 本家 CmnTween.ease() と同じ扱い
-
-	return `${f}.${d}`;
+// 名前→実関数。ScriptMng がトゥイーンを組み立てる際に呼ぶ
+export function easeFn(nm: string | undefined): (k: number)=> number {
+	return H_EASE[chkEase(nm)]!;
 }
 
 
