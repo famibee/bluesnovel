@@ -256,10 +256,10 @@
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#copybookmark">🟢 [copybookmark] しおりの複写</a></li>
 		<li class="mb1"><a href="#erasebookmark">🟢 [erasebookmark] しおりの消去</a></li>
-		<li class="mb1"><a href="#load">🟡 [load] しおりの読込</a></li>
+		<li class="mb1"><a href="#load">🟢 [load] しおりの読込</a></li>
 		<li class="mb1"><a href="#record_place">🟢 [record_place] セーブポイント指定</a></li>
-		<li class="mb1"><a href="#reload_script">🟡 [reload_script] スクリプト再読込</a></li>
-		<li class="mb1"><a href="#save">🟡 [save] しおりの保存</a></li>
+		<li class="mb1"><a href="#reload_script">🟢 [reload_script] スクリプト再読込</a></li>
+		<li class="mb1"><a href="#save">🟢 [save] しおりの保存</a></li>
 	</ul>
 	<p>画面揺らし</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -274,7 +274,7 @@
 		<li class="mb1"><a href="#import">🟢 [import] プレイデータをインポート</a></li>
 		<li class="mb1"><a href="#loadplugin">🟢 [loadplugin] プラグインの読み込み</a></li>
 		<li class="mb1"><a href="#navigate_to">🟢 [navigate_to] ＵＲＬを開く</a></li>
-		<li class="mb1"><a href="#snapshot">🟡 [snapshot] スナップショット</a></li>
+		<li class="mb1"><a href="#snapshot">🟢 [snapshot] スナップショット</a></li>
 		<li class="mb1"><a href="#title">🟢 [title] タイトル指定</a></li>
 		<li class="mb1"><a href="#toggle_full_screen">🟢 [toggle_full_screen] 全画面状態切替</a></li>
 		<li class="mb1"><a href="#update_check">🟢 [update_check] 更新チェック機能</a></li>
@@ -500,7 +500,6 @@
 
 </p>
 <h2 id="lay" class="w-heading">[lay]レイヤ設定(共通)</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：画像レイヤは <code>fn</code>／<code>face</code>に対応（<code>face</code>省略時は直前の値を維持し、<code>face=""</code>で明示的にクリアする本家どおりの挙動）、レイヤ共通は <code>visible</code>／<code>alpha</code>／<code>pos</code>／<code>left</code>／<code>top</code>／<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>／<code>width</code>／<code>height</code>／<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>／<code>pivot_x</code>／<code>pivot_y</code>／<code>blendmode</code>／<code>index</code>／<code>float</code>／<code>dive</code>／<code>filter</code>／<code>page</code>に対応。<code>pos</code>（本家 <code>Layer.setXYByPos()</code>。主に立ち絵に使う）は<b><code>left</code>／<code>center</code>／<code>right</code>等より優先</b>し、X中心を<code>c</code>（省略時既定・ステージ中央）／<code>l</code>（左端がステージ左端に接する）／<code>r</code>（右端がステージ右端に接する）／数値（その位置を中心に）で指定、Yは常に<b>画像下端をステージ下端へ自動接地</b>させる（実寸を知らないbluesnovelでは<code>bottom=stageH</code>・寄せ<code>align_y='bottom'</code>の組で同じ絵にする）。<code>pos=stay</code>は位置を変えない。<code>width</code>／<code>height</code>は画像レイヤなら絵を指定サイズへ拡縮（本家pixiの<code>Sprite.width/height</code>相当。縦横比は無視）、文字レイヤなら文字表示領域の寸法になる。<b>本家GrpLayer.ts:88-91と違い、片方だけの指定でも他方を潰さない</b>（本家は<code>argChk_Num(hArg,'height',0)</code>相当が未指定側に0を書き込むため、<code>width</code>単独指定で縦潰れして絵が消えるバグを持つ。bluesnovelは本家<code>[button]</code>（<code>Button.ts:287-296</code>）と同じ「独立ifで未指定は自然サイズ維持」の形に揃えた）。文字レイヤの背景は <code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>／<code>style</code>。<br/><b>背景の実際の不透明度は <code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code></b>（本家 TxtLayer.ts:388。設定画面の「バック不透明度」がここに効く）。<code>b_alpha_isfixed=true</code> のレイヤだけが掛け算を免れる。<code>b_pic</code>（文字レイヤ背後の枠画像）を指定すると <b><code>b_color</code> は無視される</b>のも本家どおり。<br/>文字組みは <code>ffs</code>（文字詰め＝CSSの<code>font-feature-settings</code>。<b>1文字ずつ当てる</b>ので <code>noffs</code> で外せる）に対応。<br/><code>bura</code>（ぶら下げ禁則）と <code>kinsoku_sol</code>／<code>kinsoku_eol</code>／<code>kinsoku_dns</code>／<code>kinsoku_bura</code>（禁則文字集合の指定）にも対応：本家 <code>Hyphenation.ts</code> の自前改行計算を移植し、<b>ブラウザ標準の行分割・禁則は使わない</b>。文字spanを<code>display: inline-block</code>にしてブラウザ標準の禁則（UAX #14）を無効化したうえで、レンダリング後にDOM計測し、禁則違反があれば<code>&lt;br&gt;</code>を手動で挿して再計測する（本家と同じ方式）。<code>bura</code>も自前計算なので<b>全ブラウザで効く</b>（旧実装のCSS <code>hanging-punctuation</code>依存はやめた。ChromeはこのCSSに未対応で効いていなかった）。相違点は、本家がRangeで1文字ずつ計測するのに対し、こちらは表示単位spanの矩形で折り返しを検出すること（inline-block化で表示単位が内部で折り返さない原子的な箱になるため、これで足りる）。<br/><b>副作用としてブラウザの単語区切りも効かなくなるため、英単語も本家同様に途中で分割されうる</b>（inline-block化はUAX #14を丸ごと無効化するため）。<code>break_fixed</code>／<code>break_fixed_left</code>／<code>break_fixed_top</code>（<code>[l]</code>／<code>[p]</code>待ちマーカーの位置決め用）は未対応：bluesnovelは待ちマーカーをReactの兄弟spanで別管理しており本文の流れに依存しないため、用途が無い。<br/><code>r_align</code>（ルビ位置。<code>left</code>／<code>center</code>／<code>right</code>／<code>start</code>／<code>justify</code>／<code>121</code>／<code>even</code>／<code>1ruby</code>）にも対応：ルビ記法内の<code>位置｜ルビ</code>指定（傍点は<code>center｜ヽ</code>扱い）があればそちらが勝つ。CSSの論理プロパティ（<code>padding-inline</code>等）で組むので<b>本家と違い縦書き判定が要らない</b>のが相違点、Safari／Firefoxの分岐（<code>ruby-align</code>等への読み替え）は本家どおり。<code>sesame</code>（傍点の文字を変更）も対応。<br/>背景は<code>back_clear</code>（<code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>を初期状態へ戻す。本家 TxtLayer.ts:376-385）にも対応。<b>指定時は他のb_*属性を本家同様に無視する</b>（同じタグで<code>back_clear=true</code>と<code>b_pic=…</code>等を同時に書いても後者は効かない）。<br/><code>b_pic</code>指定時は枠画像の自然サイズへ文字表示領域を自動調整する（本家 <code>TxtLayer.ts:396-414 setMySize()</code> 相当）。<b><code>width</code>／<code>height</code>の明示があればそちらが勝つ</b>——本家は<code>#drawBack()</code>が後から走るので同じ<code>b_pic</code>を再指定すると<code>setMySize()</code>が呼ばれず明示指定が生き残るという順序依存の罠があるが、bluesnovelは<code>[button]</code>と同じ「明示が常に勝つ」に揃えて持ち込んでいない。<br/>未対応：<code>b_left</code>／<code>b_top</code>（枠画像のずらし。調査の結果、<b>本家も一切読んでおらず実質未配線</b>——実プロジェクトのシナリオが指定していても効いていない）。<code>blur_x</code>／<code>blur_y</code> は CSS の <code>blur()</code> が半径1つしか持てないため表現できない。</p>
 <h4>レイヤに各種設定を行う。</h4>
 <p class="mb2 px1">
 
@@ -511,7 +510,7 @@
 <tr><td>visible</td><td></td><td>現在値</td><td>true、false</td><td>true：表示、false：非表示</td></tr>
 <tr><td>alpha</td><td></td><td>1.0</td><td>0.0〜1.0</td><td>レイヤの透過度。0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
 <tr><td>blendmode</td><td></td><td>何もしない</td><td>ブレンドモード名（"screen"など）</td><td>このレイヤと下のレイヤとの重なりにおいて、<br/>ドット単位で色のブレンド演算を行なう。<br/>詳細は<a href="tag.html#blendMode" target="_blank" rel="noopener">blendModeの解説</a>を参照</td></tr>
-<tr><td>pos</td><td></td><td>c</td><td>c・l・r・横座標</td><td>主に立ち絵に使う。横と縦座標を同時に設定する。<br/>横座標は指定した値（文字cの場合は画面中央、lは左寄り、rは右寄り）に設定し、画像下端を画面下端に接するように自動計算する</td></tr>
+<tr><td>pos</td><td></td><td>c</td><td>c・l・r・横座標・stay</td><td>主に立ち絵に使う。横と縦座標を同時に設定する。<br/><code>left</code>／<code>center</code>／<code>right</code>等より優先する。<br/>横座標は指定した値（文字cの場合は画面中央、lは左寄り、rは右寄り）に設定し、画像下端を画面下端に接するように自動計算する。<br/><code>stay</code>を指定すると位置を変えない</td></tr>
 <tr><td>left</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン左端の画面左端からの距離</td></tr>
 <tr><td>center</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン中央の画面左端からの距離</td></tr>
 <tr><td>right</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン右端の画面左端からの距離</td></tr>
@@ -520,8 +519,8 @@
 <tr><td>middle</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン中央の画面上端からの距離</td></tr>
 <tr><td>bottom</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン下端の画面上端からの距離</td></tr>
 <tr><td>s_bottom</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン下端の画面下端からの距離</td></tr>
-<tr><td>width</td><td></td><td>自然サイズ</td><td>1〜；横幅</td><td>レイヤの横幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の横幅になる</td></tr>
-<tr><td>height</td><td></td><td>自然サイズ</td><td>1〜；縦幅</td><td>レイヤの縦幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の縦幅になる</td></tr>
+<tr><td>width</td><td></td><td>自然サイズ</td><td>1〜；横幅</td><td>レイヤの横幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の横幅になる。<code>height</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
+<tr><td>height</td><td></td><td>自然サイズ</td><td>1〜；縦幅</td><td>レイヤの縦幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の縦幅になる。<code>width</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
 <tr><td>rotation</td><td></td><td>0</td><td>-180〜180；回転角度</td><td>回転角を度単位で指定。時計回りは0～180、反時計回りは0～-180を指定。 左上を中心に回る</td></tr>
 <tr><td>scale_x</td><td></td><td>1.0</td><td>実数</td><td>横方向を何倍に拡大／縮小するか。負の値ならレイヤを左右反転</td></tr>
 <tr><td>scale_y</td><td></td><td>1.0</td><td>実数</td><td>縦方向を何倍に拡大／縮小するか。負の値ならレイヤを上下反転</td></tr>
@@ -585,20 +584,21 @@
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>b_color</td><td></td><td>(↑と同じ)</td><td>色指定。0x000000など</td><td>テキスト背後の矩形色。初期値は 0x000000（黒）</td></tr>
-<tr><td>b_alpha</td><td></td><td>(↑と同じ)</td><td>実数：0.0（透明）〜1.0（不透過）</td><td>テキスト背後の矩形不透明度。<br/>表示しない場合は0を指定。初期値は 0</td></tr>
+<tr><td>b_alpha</td><td></td><td>(↑と同じ)</td><td>実数：0.0（透明）〜1.0（不透過）</td><td>テキスト背後の矩形不透明度。実際の不透明度は<code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code>（設定画面の「バック不透明度」）になる。<br/>表示しない場合は0を指定。初期値は 0</td></tr>
 <tr><td>b_alpha_isfixed</td><td></td><td>現在値</td><td>true、false</td><td>true：テキスト背後の矩形不透明度を、「b_alpha属性と sys:TextLayer.Back.Alpha の掛け算とせず」、b_alpha属性値そのものにする。（これは2017/2/13以前の仕様）</td></tr>
-<tr><td>b_pic</td><td></td><td>(↑と同じ)</td><td>画像ファイル名</td><td>文字レイヤ背後の枠画像を指定する。b_alphaの影響を受ける。<br/>（これを指定するとb_colorは無視される）</td></tr>
-<tr><td>back_clear</td><td></td><td>現在値</td><td>true、false</td><td>true：背景をクリアする</td></tr>
+<tr><td>b_pic</td><td></td><td>(↑と同じ)</td><td>画像ファイル名</td><td>文字レイヤ背後の枠画像を指定する。b_alphaの影響を受ける。指定すると文字表示領域が枠画像の自然サイズへ自動調整される（<code>width</code>／<code>height</code>の明示があればそちらが勝つ）。<br/>（これを指定するとb_colorは無視される）</td></tr>
+<tr><td>back_clear</td><td></td><td>現在値</td><td>true、false</td><td>true：背景（<code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>）を初期状態へ戻す。<code>b_pic=</code>等と同時に指定した場合、他のb_*属性は無視される</td></tr>
 <tr><td>pl</td><td></td><td>1.5em</td><td>実数（px）</td><td>文字表示領域の左内側余白（padding-left）。content-boxのため<code>width</code>で指定した文字表示領域の幅とは別に外側へ足される（画像レイヤの<code>width</code>と同じ「エンジンは実寸を知らない」流儀）</td></tr>
 <tr><td>pr</td><td></td><td>1.5em</td><td>実数（px）</td><td>文字表示領域の右内側余白（padding-right）</td></tr>
 <tr><td>pt</td><td></td><td>1em</td><td>実数（px）</td><td>文字表示領域の上内側余白（padding-top）</td></tr>
 <tr><td>pb</td><td></td><td>1em</td><td>実数（px）</td><td>文字表示領域の下内側余白（padding-bottom）</td></tr>
-<tr><td>break_fixed</td><td rowspan="3"></td><td rowspan="3">現在値</td><td>true、false</td><td>
+<tr><td>🟡 break_fixed</td><td rowspan="3"></td><td rowspan="3">現在値</td><td>true、false</td><td>
 	true：クリック待ちマークを固定位置に表示<br/>
-	false：最後に表示した文字の次、改行せずぶら下げ位置に表示
+	false：最後に表示した文字の次、改行せずぶら下げ位置に表示<br/>
+	（bluesnovel）未対応：待ちマーカーをReactの兄弟spanで別管理しており本文の流れに依存しないため、位置決めの出番が無い
 </td></tr>
-<tr><td>break_fixed_left</td><td rowspan="2">整数</td><td rowspan="2">クリック待ちマークの表示位置を指定する</td></tr>
-<tr><td>break_fixed_top</td></tr>
+<tr><td>🟡 break_fixed_left</td><td rowspan="2">整数</td><td rowspan="2">クリック待ちマークの表示位置を指定する</td></tr>
+<tr><td>🟡 break_fixed_top</td></tr>
 <tr><td>style</td><td></td><td>何もしない</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	[span][ch]などで style を指定しない際のデフォルト値。<br/>
@@ -615,8 +615,10 @@
 	……（1ルビ文字アキ）ルビの前後をルビ一文字空け、ルビ間は均等にあける<br/><br/>初期値は center。<br/>
 	<br/>
 	※親文字よりルビの方が長い場合は、親文字に対する「中付き」表示になる<br/>
-	→<a href="https://famibee.github.io/SKYNovel_gallery/index.html?cur=ruby" target="_blank" rel="noopener">参考（機能ギャラリー・直感的なルビ文法）</a>
+	→<a href="https://famibee.github.io/SKYNovel_gallery/index.html?cur=ruby" target="_blank" rel="noopener">参考（機能ギャラリー・直感的なルビ文法）</a><br/>
+	ルビ記法内の<code>位置｜ルビ</code>指定（傍点は<code>center｜ヽ</code>扱い）があればそちらが優先する
 </td></tr>
+<tr><td>sesame</td><td></td><td>現在値</td><td>文字列</td><td>傍点の文字を変更する</td></tr>
 </table>
 
 	<amp-img src="pic/r_align.png" width="864" height="275" layout="responsive"></amp-img>
@@ -630,6 +632,7 @@
 	（二重引用符・ダブルコーテーションマークも必要なので、【ffs='"pwid"'】と指定する。<br/>
 	これは【ffs='"palt" 1, "trad" 1'】という指定も CSS にできるため）<br/>
 	初期値は指定なし<br/>
+	（bluesnovel）1文字ずつ当てるため、対象外にしたい文字は<code>noffs</code>で外す<br/>
 	→【参考】<a href="https://ics.media/entry/14087/" target="_blank" rel="noopener">文字詰めできるCSSのfont-feature-settingsが凄い！ 日本語フォントこそ指定したい自動カーニング - ICS MEDIA</a>
 </td></tr>
 <tr><td>noffs</td><td></td><td>現在値</td><td>文字列</td><td>
@@ -660,6 +663,7 @@
 	追い出しよりぶら下げを優先<br/>
 	行頭禁則もぶら下げる<br/>
 	二文字以上のぶら下げ・行頭禁則はあきらめて行頭に文字を続けていく<br/>
+	（bluesnovel）ブラウザ標準の行分割・禁則は使わず自前計算するため全ブラウザで同じ結果になるが、副作用としてブラウザの単語区切りも効かなくなり、英単語も途中で分割されうる<br/>
 </td></tr>
 <tr><td>kinsoku_bura</td><td></td><td>何もしない</td><td>文字列</td><td>
 	ぶら下げの禁則処理文字を変更できる。対象文字を列挙した文字列を指定。<br/>
@@ -717,13 +721,13 @@
 </p>
 <h2 id="trans" class="w-heading">[trans]ページ裏表を交換</h2>
 <h4>裏ページを表ページとクロスフェードする。</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>layer</code>／<code>time</code>／<code>rule</code>／<code>vague</code>に対応。<b>演出を動かすのはStage側、終了を宣言するのはScriptMng</b>（時間切れ／<a href="#wt">[wt]</a>中のクリック／<a href="#finish_trans">[finish_trans]</a>）——完了コールバックに表裏の交換をやらせると、シナリオの再開との前後が保証されず交換前のページへ次の文が書かれてしまうため。前の演出が動いている最中に次の[trans]が来たら、まずそれを終わらせて表裏を確定させる。<br/>クロスフェードは<b>表ページのopacityを1→0にして下から裏を出す</b>（裏を上にフェードインさせると、裏が透明な箇所で最後にパチッと切り替わるため）。<br/><b><code>rule</code>（ルール画像によるワイプ）はWebGLを使わずSVGフィルタ＋CSSマスクで実装</b>。本家のフラグメントシェーダ（LayerMng.ts:548）は結局「ルール画像の赤チャンネル R → 表ページの不透明度」の一次関数<code>clamp(R/(2*vague) + (vague - tick)/(2*vague))</code>なので、<code>feComponentTransfer</code>の<code>feFuncA type="linear"</code>（<code>slope</code>／<code>intercept</code>、結果は0〜1へクランプ）へそのまま載せられる。進度<code>tick</code>を0→1へ動かすのがStage側の素のrAFループ、<code>tick</code>から係数を出すのが純粋関数（<code>src/ts/Trans.ts</code>）という切り分けなので、<b>任意の進度の絵を時間待ちなしで検証できる</b>（E2Eはそこを画素で見ている）。ルール画像はステージ全面へ引き伸ばす。<br/><b>未対応</b>：<code>glsl</code>（自前シェーダの差し替え。WebGLを使わないため実現しようがないので、指定されたらその場でエラーにする）・<code>delay</code>・<code>ease</code>（進度は常に等速）。</p>
 <p class="mb2 px1">
 
 <p>クロスフェードを開始すると、終了を待たずに次のタグへと処理を進める。<br/>
 	終了を待ちたい場合は[wt]を使用する。<br/>
 	<br/>
 	クロスフェード終了後は元・裏ページから元・表ページに内容をコピーし、同じ内容になる。<br/>
+	演出中に次の[trans]を実行すると、まず前の演出を終わらせてから改めて開始する。<br/>
 	<br/>
 	ルール画像は白黒かグレースケールを推奨。（見た目と動きが一致する）<br/>
 	また[trans]～[wt]間で文字表示や[ch]は動作未定義、非推奨。<br/>
@@ -731,10 +735,10 @@
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可能）</td><td>クロスフェードするレイヤ。指定以外のレイヤは変化させない</td></tr>
 <tr><td>time</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化にかける時間</td></tr>
-<tr><td>delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化する前に待機する遅延時間</td></tr>
-<tr><td>rule</td><td></td><td>画面全体ピクセルで同時にクロスフェードする</td><td>画像ファイル名</td><td>指定した場合はルール画像として、ピクセル単位でクロスフェードするタイミングをずらす。<br/>ルール画像の黒いピクセル（と同じ位置にあるピクセル）が先に処理され、白が最後になる</td></tr>
+<tr><td>🟡 delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化する前に待機する遅延時間<br/>（bluesnovel）未対応</td></tr>
+<tr><td>rule</td><td></td><td>画面全体ピクセルで同時にクロスフェードする</td><td>画像ファイル名</td><td>指定した場合はルール画像として、ピクセル単位でクロスフェードするタイミングをずらす。<br/>ルール画像の黒いピクセル（と同じ位置にあるピクセル）が先に処理され、白が最後になる。ステージ全面へ引き伸ばして使う</td></tr>
 <tr><td>vague</td><td></td><td>0.04</td><td>0.0〜1.0</td><td>トランジション期間全体を1とした値。表レイヤと裏レイヤの境界を曖昧にぼかす度合い</td></tr>
-<tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>
+<tr><td>🟡 ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>
 指定できる値は以下の通り。<br/>
 Back.In、Back.InOut、Back.Out<br/>
 Bounce.In、Bounce.InOut、Bounce.Out<br/>
@@ -750,13 +754,15 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <br/>
 ・<a href="https://github.com/tweenjs/tween.js/blob/master/README.md" target="_blank" rel="noopener">tween.js/README.md at master · tweenjs/tween.js</a><br/>
 ・<a href="https://ics.media/tutorial-createjs/tween/" target="_blank" rel="noopener">CreateJS でのトゥイーンの作成方法 - ICS MEDIA</a><br/>
+（bluesnovel）未対応：進度は常に等速<br/>
 </td></tr>
-<tr><td>glsl</td><td></td><td></td><td>シェーダー記述言語GLSL</td><td>
+<tr><td>🟡 glsl</td><td></td><td></td><td>シェーダー記述言語GLSL</td><td>
 動作サンプルがありますので、詳細はそちらで。<br/>機能ギャラリー【[フラグメントシェーダで[trans]](https://famibee.github.io/SKYNovel_gallery/?cur=glsl_slide)】<br/>
 	ざっくり説明すると、<br/>
 	【vTextureCoord】がピクセルの位置、<br/>
 	【uSampler】が一ピクセル単位の画像データ、<br/>
 	【tick】が時間経過、です。<br/>
+	（bluesnovel）未対応：WebGLを使わないシェーダー非依存の実装のため、指定するとエラーになる<br/>
 </td></tr>
 </table>
 
@@ -814,19 +820,21 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 　以下はフィルターごとに指定できる属性説明です。<br/>
 　項目ごとの説明は煩雑なので、<a href="https://github.com/pixijs/filters?tab=readme-ov-file" target="_blank" rel="noopener">pixijs の動くサンプル</a>をお試しください。<br/>
+　（bluesnovel）<code>multiply</code>属性は全フィルター共通で無視される（指定してもしなくても結果は同じ）。<br/>
 
 <h4>フィルター「blur」に指定できる属性</h4>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>strength</td><td></td><td>8</td><td>整数</td><td>強さ</td></tr>
-<tr><td>quality</td><td></td><td>4</td><td>整数</td><td>品質</td></tr>
-<tr><td>resolution</td><td></td><td>0</td><td>整数</td><td>解像度</td></tr>
-<tr><td>kernel_size</td><td></td><td>5</td><td>5、7、9、11、13、15</td><td>カーネルサイズ</td></tr>
+<tr><td>🟡 quality</td><td></td><td>4</td><td>整数</td><td>品質<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
+<tr><td>🟡 resolution</td><td></td><td>0</td><td>整数</td><td>解像度<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
+<tr><td>🟡 kernel_size</td><td></td><td>5</td><td>5、7、9、11、13、15</td><td>カーネルサイズ<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
 <tr><td>blur_x</td><td></td><td>2</td><td>整数</td><td>X強度</td></tr>
 <tr><td>blur_y</td><td></td><td>2</td><td>整数</td><td>Y強度</td></tr>
-<tr><td>epeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます</td></tr>
+<tr><td>🟡 epeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
 </table>
 
-<h4>フィルター「noise」に指定できる属性</h4>
+<h4>🟡 フィルター「noise」に指定できる属性</h4>
+<p>（bluesnovel）未対応：CSSにもSVGの単純な組合せにも相当する表現が無い</p>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>noise</td><td></td><td>0.5</td><td>0.0〜1.0</td><td>適用するノイズの量</td></tr>
 <tr><td>seed</td><td></td><td>Math.random()</td><td>整数</td><td>ノイズの生成に適用するシード値</td></tr>
@@ -928,35 +936,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>multiply</td><td></td><td>false</td><td>true、false</td><td>true の場合、現在の行列と行列を乗算</td></tr>
 </table>
 
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：
-	<code>noise</code>以外の21種に対応。**表示がpixi→DOMに変わった影響が最も出ている場所**で、
-	2通りの実装に分かれる。<br/>
-	・CSSの<code>filter</code>プロパティに同じ関数があるもの（<code>blur</code>／<code>brightness</code>／
-	<code>contrast</code>／<code>grayscale</code>／<code>black_and_white</code>／<code>negative</code>／
-	<code>saturate</code>／<code>hue</code>／<code>sepia</code>）はそのまま書く<br/>
-	・残りはすべて本家のColorMatrixFilterのプリセットなので、<b>pixiと同じ5x4行列をSVGの
-	<code>feColorMatrix</code>へ流す</b>（pixiの<code>m[0..19]</code>とSVGの<code>values</code>は並びが同じ）。
-	<code>&lt;filter&gt;</code>要素は今使われている行列のぶんだけステージが出し、
-	CSSからは<code>filter: url(#…)</code>で指す（<b>同一文書内の要素しか指せない</b>ため。
-	<code>data:</code>URLは不可）。色空間はsRGB固定<br/>
-	<b>相違が2つ</b>：<code>multiply</code>属性は無視する（pixiでは「今の行列に掛ける」意味だが、
-	こちらはフィルターをCSSの<code>filter</code>に並べる＝前の結果に順に掛かるので、
-	掛け合わせは並べた時点で起きている）。またpixiは<code>multiply=true</code>のときだけ
-	オフセット列を255で割る（同じプリセットでも指定で明るさが変わる）が、こちらは行列を
-	最初からSVGの流儀（オフセットは0〜1）で書き、その揺れを持ち込まない<br/>
-	<code>blendmode</code>（フィルター単位のブレンド）にも対応：CSSは要素につき<code>mix-blend-mode</code>を
-	1つしか持てないため、<b>レイヤ自身の<a href="#lay">[lay blendmode=]</a>と同じ枠へ合流させる</b>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：
+	<code>blendmode</code>（フィルター単位のブレンド）は<a href="#lay">[lay blendmode=]</a>と同じ枠へ合流する
 	（有効なフィルターの中で最後に指定されたものが勝つ。<code>[lay blendmode=]</code>が明示されていれば
 	そちらが優先）。複数フィルターがそれぞれ別のblendmodeを持つケースは表現できない。値は
-	<a href="#lay">[lay]</a>・<a href="#button">[button]</a>と同じ4種のみ<br/>
-	<code>blur</code>の<code>blur_x</code>／<code>blur_y</code>にも対応：CSSの<code>blur()</code>は
-	半径1つしか持てないため、指定があるときだけSVGの<code>feGaussianBlur</code>
-	（<code>stdDeviation</code>がX/Y別々に持てる）へ切り替える。無指定時は従来どおり
-	<code>strength</code>をそのまま半径pxとしたCSSの<code>blur()</code>のまま。本家
-	（Layer.ts:122-123）は常に<code>blur_x</code>／<code>blur_y</code>（既定2）で上書きし
-	<code>strength</code>は見た目に効かないため、指定時は本家の既定値2をそのまま使う<br/>
-	<b>未対応</b>：<code>noise</code>（CSSにもSVGの単純な組合せにも相当が無い）・
-	<code>quality</code>／<code>kernel_size</code>／<code>resolution</code>／<code>repeat_edge_pixels</code>（pixi前提）
+	<a href="#lay">[lay]</a>・<a href="#button">[button]</a>と同じ4種のみ。<br/>
+	<code>blur</code>の<code>blur_x</code>／<code>blur_y</code>を明示指定した場合はそちらが効き、
+	無指定時は<code>strength</code>をそのままぼかし半径として使う。
 </p>
 
 </p>
@@ -1026,7 +1012,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </p>
 <h2 id="tsy" class="w-heading">[tsy]トゥイーン開始</h2>
 <h4>レイヤーにトゥイーンアニメ（変形・移動・回転アニメーション）を加える。</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家はtween.jsでpixiの表示物を直接動かすが、こちらは<b>motion（薄いラッパー<code>src/ts/Tw.ts</code>）でストアのレイヤ属性を動かす</b>（＝画面の現在値は常にストアが持つ）。そのため本家の <code>arrive</code> は<b>常時ONと同じ挙動</b>で、属性としては受け付けない。イージング名は本家（tween.js）の書式のまま書ける（本家<code>CmnTween.#hEase</code>相当の31種の実関数を<code>src/ts/Tsy.ts</code>へ直接移植しているので、ライブラリのease名への変換を挟まない）。<br/>目標値に指定できるのは <code>alpha</code>／<code>left</code>（<code>x</code>）／<code>top</code>（<code>y</code>）／<code>width</code>／<code>height</code>／<code>rotation</code>／<code>scale_x</code>／<code>scale_y</code>／<code>pivot_x</code>／<code>pivot_y</code>。<b><code>x</code>／<code>y</code> は <code>left</code>／<code>top</code> の別名</b>として受ける（本家は <code>x</code>／<code>y</code> だけを見るので <code>[tsy left=…]</code> は黙って無視されるが、上流シナリオが両方の書き方で揺れているため）。<br/><b><code>width</code>／<code>height</code>は<a href="tag.html#lay" target="_blank" rel="noopener">[lay width=/height=]</a>で数値を明示したレイヤに限り動かせる</b>：CSSの既定（<code>auto</code>）には対応する現在値が無いため、明示の無いレイヤを動かそうとすると「<code>[lay width=…]</code> で寸法を明示したレイヤにしか使えません」と例外になる（0から伸びる驚きの挙動にはしない）。<br/><code>path</code>（複数区間の経路）と <code>chain</code>（他トゥイーンの終了に繋ぐ）に対応。<b>相対値（先頭 <code>=</code>）はどの区間もトゥイーン開始時の値が基準</b>なので、<code>(,=50) (,=0)</code> が「50下げてから元へ戻す」になる（本家も同じ）。区間の連結は本家のtween.js <code>chain()</code> 相当を<code>Tw.chain()</code>で行う。<br/><code>filter</code>／<code>enable_filter</code>に対応：<code>[lay filter=…]</code>と同じ処理を、トゥイーン開始と同時に一度だけ適用する（本家同様、値自体をアニメーションさせるわけではない）。<code>backlay</code>にも対応：トゥイーン終了時の最終値を反対側のページへも反映する。<br/><b>未対応</b>：<code>render</code>（pixi前提）。</p>
 <p class="mb2 px1">
 
 	「目標値」を設定する時、相対値あるいは絶対値を指定できる。
@@ -1047,7 +1032,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr class="y"><td>time</td><td>y</td><td></td><td>0〜；ミリ秒</td><td>トゥイーンにかける時間</td></tr>
 <tr><td>delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>トゥイーンを始める前の、何もしない待ち時間</td></tr>
 <tr><td>repeat</td><td></td><td>1</td><td>0〜</td><td>繰返し回数。0以下で無限ループ。1を設定すると「繰り返しなし」、2を設定すると「二回同じ動き」を行なう</td></tr>
-<tr><td>arrive</td><td></td><td>false</td><td>true、false</td><td>trueならクリックキャンセルでアニメ終端までSkip。<br/>falseならその場で停止</td></tr>
+<tr><td>🟡 arrive</td><td></td><td>false</td><td>true、false</td><td>trueならクリックキャンセルでアニメ終端までSkip。<br/>falseならその場で停止<br/>（bluesnovel）未対応：常にtrue相当の挙動になり、属性としては受け付けない</td></tr>
 <tr><td>backlay</td><td></td><td>false</td><td>true、false</td><td>trueならトゥイーン終了時、fore→backへ属性をコピーする。<br/>コピーする属性はalpha, height, rotation, scale_x, scale_y, pivot_x, pivot_y, width, left, top</td></tr>
 <tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>
 指定できる値は以下の通り。<br/>
@@ -1068,15 +1053,15 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>yoyo</td><td></td><td>false</td><td>true、false</td><td>（暫定）ヨーヨーのように逆方向に戻って繰り返す</td></tr>
 <tr><td>chain</td><td></td><td>なにもしない</td><td>レイヤ名</td><td>指定したレイヤのトゥイーンアニメが終了してから、このトゥイーンを続けて開始する</td></tr>
-<tr class="y"><td>alpha</td><td rowspan="11">いずれかを指定</td><td rowspan="11">何もしない</td><td rowspan="11">相対値か絶対値</td><td rowspan="10">同名属性の変化目標値</td></tr>
-<tr class="y"><td>height</td></tr>
+<tr class="y"><td>alpha</td><td rowspan="9">いずれかを指定</td><td rowspan="9">何もしない</td><td rowspan="9">相対値か絶対値</td><td rowspan="7">同名属性の変化目標値</td></tr>
 <tr class="y"><td>rotation</td></tr>
 <tr class="y"><td>scale_x</td></tr>
 <tr class="y"><td>scale_y</td></tr>
 <tr class="y"><td>pivot_x</td></tr>
 <tr class="y"><td>pivot_y</td></tr>
-<tr class="y"><td>width</td></tr>
 <tr class="y"><td>x</td></tr>
+<tr class="y"><td>height</td><td rowspan="2">同名属性の変化目標値。<a href="tag.html#lay">[lay width=/height=]</a>で数値を明示したレイヤに限り指定できる（明示の無いレイヤを動かそうとするとエラーになる）</td></tr>
+<tr class="y"><td>width</td></tr>
 <tr class="y"><td>y</td></tr>
 <tr class="y"><td>path</td><td>
 	指定すると複数のポイントを連続してトゥイーンアニメする。<br/>
@@ -1088,7 +1073,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	　・変更しない項目を省略できる<br/>
 	　　例）(,10, 0.11) (12,,0.13 ) (14,15,) ()<br/>
 	　・[tsy]属性のような「初期位置からの相対値」形式<br/>
-	　　先頭に=を追加する。<br/>
+	　　先頭に=を追加する。どの区間も常にトゥイーン開始時の値が基準になる<br/>
+	　　（例：<code>(,=50) (,=0)</code>は「50下げてから元へ戻す」動き）<br/>
 	　　例）(=-22)<br/>
 	　・[tsy]属性のような「範囲内でランダムな値」形式<br/>
 	　　'か"で囲み、カンマ , で【最小値】【最大値】を区切る。<br/>
@@ -1102,10 +1088,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	　JSON解析失敗はスイッチにかかわらず出力する。<br/>
 
 </td></tr>
-<tr><td>render</td><td></td><td>false</td><td>true、false</td><td>
-	trueを指定すると[trans]のように絵を合成してから不透明度を適用するように（半透明時に差分境界が見えなくなる）
+<tr><td>🟡 render</td><td></td><td>false</td><td>true、false</td><td>
+	trueを指定すると[trans]のように絵を合成してから不透明度を適用するように（半透明時に差分境界が見えなくなる）<br/>
+	（bluesnovel）未対応：pixi前提の合成方式のため
 </td></tr>
-<tr><td>filter</td><td></td><td>なにもしない</td><td>フィルター名</td><td>レイヤに指定するフィルター名。その他必要な属性は適宜指定する。詳細は<a href="tag.html#add_filter" target="_blank" rel="noopener">[add_filter]</a>参照。ただし[add_filter]のような追加ではなく上書き</td></tr>
+<tr><td>filter</td><td></td><td>なにもしない</td><td>フィルター名</td><td>レイヤに指定するフィルター名。その他必要な属性は適宜指定する。詳細は<a href="tag.html#add_filter" target="_blank" rel="noopener">[add_filter]</a>参照。ただし[add_filter]のような追加ではなく上書き。トゥイーン開始と同時に一度だけ適用する（値自体をアニメーションさせるわけではない）</td></tr>
 <tr><td>enable_filter</td><td></td><td>true</td><td>true、false</td><td>フィルターを有効にするか</td></tr>
 </table>
 
@@ -1166,7 +1153,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
 <tr class="y"><td>text</td><td>y</td><td></td><td>表示したい文字列</td><td>ルビ文法（《》）も解析する。改行も [r] で出来る</td></tr>
 <tr><td>record</td><td></td><td>true</td><td>true、false</td><td>履歴に保存するか</td></tr>
-<tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
+<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
 <tr><td>style</td><td></td><td>何もしない</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る。<br/>
@@ -1179,13 +1166,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
-<tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
-<tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
+<tr><td>🟡 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟡 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名<br/>（bluesnovel）未対応</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>・
-	<code>layer</code>／<code>page</code>に対応。
-	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、styleはそのtextの間だけ効く。
-	<code>record</code>・<code>wait</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
+	<code>record</code>・<code>layer</code>／<code>page</code>に対応。
+	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、styleはそのtextの間だけ効く。</p>
 <p>[ch]を使わない、より簡潔な記述文法があります。<br/>
 	以下の記述は、<br/>
 	[ch text=&amp;test]<br/>
@@ -1231,22 +1217,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </table>
 
 <p class="mb2 px1">
-	<b>bluesnovel：本家はCSSの<code>@keyframes</code>を組み立ててスタイルシートへ挿すが、こちらはWeb Animations API
-	（<code>Element.animate()</code>）のキーフレームへ翻訳する</b>
-	（<code>src/ts/ChStyle.ts</code>）。文字送りを既にWeb Animations APIで回しているため——2つの仕組みを併走させると
-	クリックでの瞬時完了（<code>Animation.finish()</code>）が効かなくなる。相違が2つ：<br/>
-	・<code>x</code>／<code>y</code>の相対指定（<code>'=0.3'</code>）は本家が<code>30%</code>、
-	こちらは<code>0.3em</code>。パーセントは要素自身の箱を基準にするので、本家は文字spanへ
-	<code>display: inline-block</code>を敷いて箱を作っている。bluesnovelの文字spanはinlineのまま
-	（行分割をブラウザに任せている前提を崩さないため）で幅が0＝パーセントが効かない。
-	<b>全角文字では同じ値</b>（全角の箱＝フォントサイズなので 30% == 0.3em）で、半角文字だけずれる<br/>
-	・<code>ease</code>はCSSの<code>&lt;easing-function&gt;</code>構文をそのまま渡せる
-	（<code>cubic-bezier()</code>／<code>steps()</code>も使える）。ただし<code>el.animate()</code>は構文的に
-	無効な値を渡すと同期的に<code>TypeError</code>を投げるため、<code>chStyleEase()</code>が正規表現で
-	妥当性を検査し、無効なら<code>ease-out</code>へ倒す<br/>
-	なお1文字あたりの遅れ（本家の<code>animation-delay</code>＝文字表示ウェイト）は今は固定値。
-	<a href="#autowc">[autowc]</a>の表 → <code>sys:sn.tagCh.msecWait</code>（既読なら<code>_Kidoku</code>側）
-	の順に落ちる。**待ちはその文字が出る前に入る**ので、[autowc]に載せた文字自身とそれ以降が後ろへずれる
+	<b>bluesnovel</b>：<code>x</code>／<code>y</code>の相対指定（<code>'=0.3'</code>）の単位は<code>0.3em</code>。
+	全角文字では本家の<code>30%</code>指定と同じ値になるが、半角文字だけ本家とずれる。<br/>
+	<code>ease</code>はCSSの<code>&lt;easing-function&gt;</code>構文をそのまま渡せる
+	（<code>cubic-bezier()</code>／<code>steps()</code>も使える）。無効な値を指定した場合は<code>ease-out</code>になる。<br/>
+	1文字あたりの遅れ（文字表示ウェイト）は<a href="#autowc">[autowc]</a>の表 → <code>sys:sn.tagCh.msecWait</code>
+	（既読なら<code>_Kidoku</code>側）の順に決まる。待ちはその文字が出る「前」に入るので、[autowc]に載せた文字自身と
+	それ以降が後ろへずれる
 </p>
 </p>
 <h2 id="ch_out_style" class="w-heading">[ch_out_style]文字消去演出定義</h2>
@@ -1358,23 +1335,19 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
-<tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
+<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>pic</code>（アニメpng＝スプライトシートも可）・<code>r</code>（ルビ）・
-	<code>style</code>／<code>r_style</code>・<code>layer</code>／<code>page</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く
-	（本家も<code>&amp;emsp;</code>を置いてそこへ重ねる）。<br/>
-	<code>width</code>／<code>height</code>／<code>x</code>／<code>y</code>に対応（本家 TxtStage.ts:685-688）。
-	<b>書いた時だけ当てる</b>——省略すれば全角空白1つぶんの枠に<code>background-size: contain</code>で収まる
-	（本家の既定もフォントサイズなので同じ絵）。<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、
-	CSSの独立<code>translate</code>で表す（行の高さや隣の文字の位置を動かさないため）。<br/>
-	未対応：<code>id</code>・<code>wait</code>。</p>
+	<code>style</code>／<code>r_style</code>・<code>layer</code>／<code>page</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く。<br/>
+	<code>width</code>／<code>height</code>／<code>x</code>／<code>y</code>に対応：<b>書いた時だけ当てる</b>——省略すれば全角空白1つぶんの枠に収まる。
+	<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、行の高さや隣の文字の位置は動かさない。<br/>
+	（bluesnovel）未対応：<code>id</code>。</p>
 <p>※省略時は画像サイズになるが、ロード完了直後に文字配置を決めるのでちらつく。それを嫌う際に指定する<br/>
 	※特にモバイルなどでゲーム画面が自動で拡大縮小される場合、省略したらその時の本文文字サイズとして扱われる。なるべくサイズ指定を推奨。</p>
 
 </p>
 <h2 id="link" class="w-heading">[link]ハイパーリンク</h2>
 <h4>指定した文字レイヤの表ページに、ハイパーリンクを作成する。</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>label</code>／<code>fn</code>／<code>call</code>／<code>arg</code>／<code>url</code>（クリック時のジャンプ・URL遷移）、<code>style</code>／<code>style_hover</code>／<code>style_clicked</code>／<code>r_style</code>／<code>r_style_hover</code>／<code>r_style_clicked</code>（CSSでそのまま当てる。<code>style_clicked</code>は<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗せる——本文DOMをReactの外で直接組むため<code>:active</code>疑似クラスが使えない。省略時の既定は表のとおり）、<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ。<a href="#button">[button]</a>と同じ実装で<code>placement</code>のみ見る）・<code>layer</code>／<code>page</code>に対応。<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）にも対応（本家 EventMng.ts:465-491）：既定bufは<a href="#playse">[playse]</a>自体の既定<code>SE</code>とは別の<code>SYS</code>、<code>join</code>は常に<code>false</code>（投げっぱなし）。<code>[enable_event enabled=false]</code>の間はCSSの<code>pointer-events: none</code>で鳴らない。<br/><code>global</code>は**受理はするが効果を持たない**：本家はローカル予約イベント表が読み進めの節目ごとにリセットされ、<code>global=true</code>がそれを生き延びさせる仕組みだが、こちらのクリックは予約表を経由せずReactが要素に直接ハンドラを付ける方式（表示されている間は常にクリック可能＝本家の<code>global=true</code>相当が既定）なので、本家のリセットに相当するものが無く効きようがない。<br/>未対応：<code>onenter</code>／<code>onleave</code>（詳細はtodo.md）。</p>
 <p class="mb2 px1">
 
 <p>[link]から[endlink]（ハイパーリンクの終了）までで囲った範囲をリンク区間と呼び、<br/>
@@ -1385,7 +1358,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
 <tr><td>style</td><td></td><td>'background-color: rgba(255,0,0,0.5);'</td><td>CSS style</td><td>リンク上にマウスカーソルが乗っていない状態のCSS スタイル</td></tr>
 <tr><td>style_hover</td><td></td><td>'background-color: rgba(255,0,0,0.9);'</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしていない）のCSS スタイル</td></tr>
-<tr><td>style_clicked</td><td></td><td>styleの値</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）のCSS スタイル</td></tr>
+<tr><td>style_clicked</td><td></td><td>styleの値</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）のCSS スタイル。<code>mousedown</code>〜<code>mouseup</code>／<code>mouseleave</code>の間だけ乗る</td></tr>
 <tr><td>r_style</td><td></td><td>styleの値</td><td>CSS style</td><td>リンク上にマウスカーソルが乗っていない状態のルビの CSS スタイル</td></tr>
 <tr><td>r_style_hover</td><td></td><td>style_hoverの値</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしていない）のルビの CSS スタイル</td></tr>
 <tr><td>r_style_clicked</td><td></td><td>r_styleの値</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）のルビの CSS スタイル</td></tr>
@@ -1396,11 +1369,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>fn</td><td>どちらか、もしくは両方を指定</td><td>処理中のスクリプトファイル</td><td>スクリプトファイル名</td><td>クリック時にジャンプする先</td></tr>
 <tr><td>label</td><td>スクリプトファイルの先頭</td><td>ラベル名（半角アスタリスク*も含む）</td><td>コール先のスクリプトファイルにあるラベル</td><td>クリック時ジャンプ先で「&sn.eventLabel」にて値を受け取れる</td></tr>
 <tr><td>url</td><td>fnかlabelか、このurlを指定</td><td>fn・label によるスクリプトジャンプ</td><td>ブラウザで開けるURL</td><td>クリック時にURLを開く。指定時は fn・label を無視する</td></tr>
-<tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく</td></tr>
+<tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく<br/>（bluesnovel）受理はするが効果を持たない：表示されている間は常にクリック可能（本家のtrue相当）が既定のため</td></tr>
 <tr><td>arg</td><td></td><td></td><td>ジャンプ先に渡したい値</td><td>指定した場合、クリック時ジャンプ先で「&amp;sn.eventArg」にて値を受け取れる</td></tr>
-<tr><td>onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること</td></tr>
-<tr><td>onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること</td></tr>
-<tr><td>clickse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、クリック時に効果音を再生する</td></tr>
+<tr><td>🟡 onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：詳細はtodo.md参照</td></tr>
+<tr><td>🟡 onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：詳細はtodo.md参照</td></tr>
+<tr><td>clickse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、クリック時に効果音を再生する。既定バッファは<code>SYS</code>（<a href="#playse">[playse]</a>の既定<code>SE</code>とは異なる）で、再生は投げっぱなし（<code>join=false</code>相当）。<code>[enable_event enabled=false]</code>の間は鳴らない</td></tr>
 <tr><td>enterse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上にマウスカーソルが載った時に効果音を再生する</td></tr>
 <tr><td>leavese</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上からマウスカーソルが外れた時に効果音を再生する</td></tr>
 <tr><td>clicksebuf</td><td></td><td>SYS</td><td>サウンドバッファ名</td><td>クリック時効果音を再生するサウンドバッファを指定する</td></tr>
@@ -1582,7 +1555,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>layer</td><td></td><td>デフォルト文字レイヤ</td><td>文字レイヤ名</td><td>文字を表示するレイヤ</td></tr>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
-<tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
+<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
 <tr><td>style</td><td></td><td>全てクリア</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	このタグ以降の文字表示に適用される。
@@ -1591,15 +1564,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグ以降のルビ表示に適用される。
 </td></tr>
-<tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
-<tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
-<tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
+<tr><td>🟡 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟡 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟡 r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照<br/>（bluesnovel）未対応
 </td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
 	（次の[span]まで効き、属性なしの[span]で解除）。
-	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。
-	<code>wait</code>・<code>r_align</code>・<code>ch_in_style</code>／<code>ch_out_style</code>は未対応。</p>
+	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。</p>
 
 </p>
 <h2 id="tcy" class="w-heading">[tcy]縦中横を表示する</h2>
@@ -1619,10 +1591,10 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
+<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
-	（CSSの<code>text-combine-upright: all</code>で組む）。<code>wait</code>・
-	<code>dummy</code>は未対応。縦書き（<code>writing-mode</code>）の詰めは別項目。</p>
+	（CSSの<code>text-combine-upright: all</code>で組む）。縦書き（<code>writing-mode</code>）の詰めは別項目。</p>
 
 </p>
 
@@ -2276,19 +2248,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <h1><a id="ラベル・ジャンプ"></a>ラベル・ジャンプ</h1>
 <h2 id="button" class="w-heading">[button]ボタンを表示</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：実装中。既定ページは本家準拠の <b>back</b>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら <code>page=fore</code>）。配置は <b>left/top を書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）に対応：吹き出しは画面に1つを使い回し、マウスを乗せた時とフォーカスが入った時に出す（本家 EventMng.ts:418）。本家はpopper.jsで位置を決めるが、こちらは依存を増やさず自前で置くので <code>hint_opt</code> は <code>placement</code>（top／bottom／left／right）だけ見る。画面端にはみ出す場合は自動で反対側へ切り替え、それでも収まらなければ画面内へ位置をずらす（本家popperの<code>flip</code>／<code>preventOverflow</code>モディファイア相当の簡易版）。フォーカス時はホバーと同じ見た目にする（本家 EventMng.ts:435 の hv／nr 相当）。<br/><code>style</code>／<code>style_hover</code>／<code>style_clicked</code>（通常・ホバー/フォーカス中・押下中）は<b>CSSで書ける</b>——本家はpixiのTextStyle JSONだが、こちらはDOMなのでCSSをそのまま当てるほうが素直なため。ギャラリーのサンプル互換で、<code>{</code>で始まる値だけは主要キー（<code>fill</code>／<code>fontSize</code>／<code>fontFamily</code>／<code>fontWeight</code>／<code>fontStyle</code>／<code>align</code>／<code>letterSpacing</code>／<code>lineHeight</code>）をCSSへ読み替える（<code>dropShadow</code>等は落とす）。<br/><b>画像ボタン</b>：<code>pic</code>は「通常｜押下｜ホバー」を横に3コマ並べた1枚（本家 Button.ts:269 が幅を3等分して張り替える）。
-	こちらは背景を3倍幅に敷き、<code>background-position-x</code>を0%／50%／100%と動かして同じ3コマにする。
-	<b>どのコマを見せるかはインラインstyleに書けない</b>（インラインは<code>:hover</code>／<code>:active</code>より強い）ので、状態別ルール側が持つ。
-	箱の大きさは絵の実寸（横は3コマ分の1/3）で、<code>width</code>／<code>height</code>を書けばそちらが勝つ。<b><code>pic</code>を書くと文字は出ない</b>（本家も文字の組み立てへ進まない）。
-	<code>b_pic</code>は文字を残して背後へ絵を中央合わせで敷く。箱の大きさは絵の実寸で、<code>width</code>／<code>height</code>を書けばそちらが勝つ（本家 Button.ts:249 と同じ）。
-	<br/><b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）に対応（本家 EventMng.ts:465-491）。
-	<code>join</code>は常にfalse固定（クリック・ホバーはシナリオの読み進めと無関係なUIイベントなので、ロード完了を待つ意味が無い）。
-	<code>enabled=false</code>のボタンは効果音も鳴らない（本家 Button.ts:101 と同じくクリック/ホバーのイベント自体を受けない）。
-	パス解決は<b>鳴らす瞬間</b>に行う（押されるかどうか分からない音を先読みしても仕方ないため。見つからなくても画面は止めず、
-	デバッグ表示のみ）——存在チェックをボタン生成時に行う本家との相違点。
-	<a href="#playse">[playse]</a>と同様、<b>同じバッファに同じファイルの再生要求が重なったら頭から鳴り直さない</b>
-	（連打・素早いホバー→クリックでも音が途切れて聞こえることはない）。
-	<br/><b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：本家では<code>Layer.ts</code>の<code>isButton</code>分岐が3箇所とも常に<code>false</code>で呼ばれておらず未配線のままだったが、仕様として掘り起こして実装した。詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。<code>center</code>／<code>right</code>は「表示物の実寸を指定値から引く」動きだが、画像ボタンの3コマ分割分も含めCSSの<code>translate</code>で表現するため素の実寸を問わず揃う。</p>
 <h4>文字レイヤにボタンを配置する。</h4>
 <p class="mb2 px1">
 
@@ -2301,25 +2260,20 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>b_pic</td><td></td><td></td><td>画像ファイル名</td><td>文字ボタンの背景画像が指定できる。画像の大きさにかかわらず、文字ボタンのちょうど真ん中に来るよう配置される</td></tr>
 <tr><td>width</td><td></td><td>※100</td><td>1〜；横幅</td><td>文字ボタンの横幅を指定する。画像ボタンの場合はこの指定を無視し、画像横幅の1/3にする</td></tr>
 <tr><td>height</td><td></td><td>※30</td><td>1〜；縦幅</td><td>文字ボタンの縦幅を指定する。画像ボタンの場合はこの指定を無視し、画像横幅の1/3にする。<br/>また、文字は必ず横一列になるため、この設定値はフォントサイズと兼用になる</td></tr>
-<tr><td>style</td><td></td><td>※</td><td><del>CSS style</del><br/><a href="https://pixijs.download/dev/docs/PIXI.TextStyle.html" target="_blank" rel="noopener">PIXI TextStyle</a>のJSON文字列（右項で列挙した一部）</td><td>
-	文字ボタン上にマウスカーソルが乗っていない状態のCSS スタイル。<br/>
-	JSONは　style='{"fill": "deepskyblue"}'　のように指定する。<br/>
+<tr><td>style</td><td></td><td>※</td><td>CSS style</td><td>
+	文字ボタン上にマウスカーソルが乗っていない状態の CSS スタイル。<br/>
+	style='color: deepskyblue;' のように指定する。<br/>
 	<br/>
 	※以下がデフォルト値であり、指定できる主なプロパティ。<br/>
-	fill: 'black';<br/>
-	align: 'center';<br/>
-	fontFamily: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;<br/>
-	fontSize: 【height属性の値。未指定時は 30】;<br/>
-	padding: 5;<br/>
-	dropShadow: true;<br/>
-	dropShadowAlpha: 0.7;<br/>
-	<s>dropShadowColor: white;</s><br/>
-	dropShadowColor: #ffffff';（<a href="https://github.com/pixijs/pixi.js/issues/6818" target="_blank" rel="noopener">※pixi.js v5.0.3 頃から色名前が使えない不具合）</a><br/>
-	dropShadowBlur: 3;<br/>
-	dropShadowDistance: 0;<br/>
+	color: black;<br/>
+	text-align: center;<br/>
+	font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;<br/>
+	font-size: 【height属性の値。未指定時は 30px】;<br/>
+	padding: 5px;<br/>
+	text-shadow: 0 0 7px rgba(255, 255, 255, 0.7);<br/>
 </td></tr>
-<tr><td>style_hover</td><td></td><td>styleの設定＋「fill: white;」を採用</td><td><a href="https://pixijs.download/dev/docs/PIXI.TextStyle.html" target="_blank" rel="noopener">PIXI TextStyle</a>のJSON文字列</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしていない）のCSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
-<tr><td>style_clicked</td><td></td><td>style_hoverの設定＋「dropShadow: false;」を採用</td><td><a href="https://pixijs.download/dev/docs/PIXI.TextStyle.html" target="_blank" rel="noopener">PIXI TextStyle</a>のJSON文字列</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）のCSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
+<tr><td>style_hover</td><td></td><td>styleの設定＋「color: white;」を採用</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしていない）の CSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
+<tr><td>style_clicked</td><td></td><td>style_hoverの設定＋「text-shadow: none;」を採用</td><td>CSS style</td><td>文字ボタン上にマウスカーソルが乗っている状態（クリックしている）の CSS スタイル。<br/>設定できる値はstyleと同様</td></tr>
 <tr><td>alpha</td><td></td><td>1.0</td><td>0.0〜1.0；透過度</td><td>透過度。0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
 <tr><td>left<br/>top<br/>center<br/>middle<br/>right<br/>bottom<br/>s_right<br/>s_bottom</td><td></td><td>※</td><td>※</td><td>※詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>を参照</td></tr>
 <tr><td>rotation</td><td></td><td>0</td><td>-180〜180；回転角度</td><td>時計回りは0～180、反時計回りは0～-180を指定。 左上を中心に回る</td></tr>
@@ -2357,27 +2311,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td><td>CSS style</td><td>ツールチップ矩形の CSS スタイル</td></tr>
 <tr><td>hint_opt</td><td></td><td>
 <pre>
-&nbsp;{
-&nbsp;&nbsp;"placement": "bottom",
-&nbsp;&nbsp;"modifiers": [
-&nbsp;&nbsp;&nbsp;{
-&nbsp;&nbsp;&nbsp;&nbsp;"name": "flip",
-&nbsp;&nbsp;&nbsp;&nbsp;"options": {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"fallbackPlacements": ["top", "bottom"]
-&nbsp;&nbsp;&nbsp;&nbsp;}
-&nbsp;&nbsp;&nbsp;}
-&nbsp;&nbsp;]
-&nbsp;}
+&nbsp;{"placement": "bottom"}
 </pre>
 </td><td>json</td><td>
-	基本的には以下の形式です。<br/>
-	・{"placement": "（値）"}<br/>
-	・{"placement": "（値）","modifiers": []}<br/>
-	「画面外にはみ出たときは placement の値を切り替えたい」<br/>
-	「ちょっとだけずらしたい」場合は、modifiers配列に設定を追加していきます。<br/>
-	設定については以下のサイトを参照してください。<br/>
-	・<a href="https://popper.js.org/docs/v2/modifiers/flip/">Flip | Popper</a><br/>
-	・<a href="https://popper.js.org/docs/v2/modifiers/offset/">Offset | Popper</a><br/>
+	{"placement": "（値）"}の形式で、値は top／bottom／left／right のいずれか。<br/>
+	画面端にはみ出す場合は自動で反対側へ切り替わり、それでも収まらなければ画面内へ位置をずらす。<br/>
 	<br/>
 	【tips】JSON文法は「文字列は " で囲む、' はダメ」などむやみに厳密なため、サイト「<a href="https://lab.syncer.jp/Tool/JSON-Viewer/">JSON Pretty Linter - JSONの整形と構文チェック</a>」などを使用することを推奨します。<br/>
 </td></tr>
@@ -2403,6 +2341,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>dragmove_label</td><td>...</td><td>...</td><td>...</td><td>(↑と同じ)</td></tr>
 <tr><td>dragmove_arg</td><td></td><td></td><td>文字列</td><td>指定した場合、ドラッグ中コール先で「&amp;sn.eventArg」にて値を受け取れる</td></tr>
 </table>
+
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>：既定ページは<code>back</code>（[trans]で表へ出す流儀。[trans]を挟まずその場に出すなら<code>page=fore</code>）。配置は<b>left/topを書いた時だけ絶対配置</b>（本家は常に絶対で省略時0,0）。文字は箱(width×height)に収まるよう拡縮。<br/>
+<code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）：マウスを乗せた時とフォーカスが入った時に出る。画面端にはみ出す場合は自動で反対側へ切り替え、それでも収まらなければ画面内へ位置をずらす。フォーカス時はホバーと同じ見た目になる。<br/>
+<b>画像ボタン</b>：<code>pic</code>は「通常｜押下｜ホバー」を横に3コマ並べた1枚。箱の大きさは絵の実寸（横は3コマ分の1/3）で、<code>width</code>／<code>height</code>を書けばそちらが勝つ。<code>pic</code>を書くと文字は出ない。<code>b_pic</code>は文字を残して背後へ絵を中央合わせで敷く。<br/>
+<b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）：<code>join</code>は常にfalse固定（投げっぱなし）。<code>enabled=false</code>のボタンは効果音も鳴らない。同じバッファに同じファイルの再生要求が重なっても、頭から鳴り直さない。<br/>
+<b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。</p>
 
 </p>
 <h2 id="call" class="w-heading">[call]サブルーチンコール</h2>
@@ -2681,7 +2625,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="load" class="w-heading">[load]しおりの読込</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：しおりから <b>save: 変数・ifスタック・表裏ページ・再開位置</b>を戻し、そのスクリプトを読み直して再開する。<code>place</code>／<code>fn</code>＋<code>label</code> 対応。<b>音声の復元</b>にも対応（本家 <code>playLoopFromSaveObj()</code>）：<code>save:const.sn.loopPlaying</code>に無いバッファは止め、有るバッファは<code>save:</code>の帳簿（volume/start_ms/end_ms/ret_ms）を読んで鳴らし直す。<br/><code>index</code>／<code>do_rec</code>にも対応：本家調査の結果、<code>index</code>は「しおりのページログの何ページ目か」ではなく、<b>保存時点の再開位置を無視して<code>fn</code>（省略時は現在のスクリプト）の<code>index</code>位置（トークン番号）へ直接ジャンプする</b>ページ移動用の機能（<code>label</code>は無視される）と判明。<code>do_rec</code>（既定<code>true</code>）は、ロードした状態を次の<a href="#record_place">record_place</a>代わりに持たせるかどうか——<code>false</code>にすると持たせない（本家は<a href="#reload_script">reload_script</a>がこの目的で使う）。<br/>また<b>読み戻し履歴（PageUp/PageDown）は捨てる</b>——ロード後の位置は履歴と繋がらないため。</p>
 <h4>しおりデータを読み込み、スクリプト処理を再開する</h4>
 <p class="mb2 px1">
 
@@ -2691,6 +2634,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>index</td><td></td><td>指定なし</td><td>トークン番号</td><td>指定すると、保存時点の再開位置でなく<code>fn</code>（省略時は現在のスクリプト）のこの位置へ直接ジャンプする（ページ移動用）。この時<code>label</code>は無視され、<code>fn</code>単独で指定できる</td></tr>
 <tr><td>do_rec</td><td></td><td>true</td><td>true、false</td><td>ロードした状態を次の[record_place]代わりに持たせるか。falseなら持たせない（[reload_script]用）</td></tr>
 </table>
+
+<p class="mb2 px1"><b>bluesnovel</b>：音声も復元する。<code>save:const.sn.loopPlaying</code>に無いバッファは止め、有るバッファは保存されている音量・再生位置を読んで鳴らし直す。<br/>
+読み戻し履歴（PageUp/PageDown）はロードすると捨てる——ロード後の位置は履歴と繋がらないため。</p>
 
 </p>
 <h2 id="record_place" class="w-heading">[record_place] セーブポイント指定</h2>
@@ -2709,7 +2655,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="reload_script" class="w-heading">[reload_script] スクリプト再読込</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：最後の [<a href="#record_place">record_place</a>] 位置から、スクリプトを<b>キャッシュを捨てて読み直して</b>再開する。テンプレの <code>ext_lang.sn</code> が「表示言語を変えたら本文を読み直す」のに使う。<br/>本家との違い：本家は派生ファイル（<code>fn@</code>）のキャッシュもまとめて捨てるが、こちらは再開位置のファイルだけ。</p>
 <h4>現在処理中のスクリプトをリロードする。</h4>
 <p class="mb2 px1">
 
@@ -2717,11 +2662,13 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	<br/>
 	現在処理中のスクリプトをリロードする。<br/>
 	実行位置は<a href="tag.html#record_place" target="_blank" rel="noopener">[record_place]</a>によるセーブポイントまで戻って再開する。<br/>
+	テンプレの <code>ext_lang.sn</code> が「表示言語を変えたら本文を読み直す」のに使っている。<br/>
 	※スクリプトを大幅に変えた後だと、正常に再開できない場合があります。<br/>
+	<br/>
+	<b>bluesnovel</b>：キャッシュを捨てるのは再開位置のスクリプトファイルのみ（本家は派生ファイル<code>fn@</code>のキャッシュもまとめて捨てる）。
 
 </p>
 <h2 id="save" class="w-heading">[save]しおりの保存</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：[<a href="#record_place">record_place</a>] で覚えたしおりを <code>place</code> へ保存する。<code>place</code> 以外の属性はそのまましおりの見出しになり、組み込み変数 <code>const.sn.bookmark.json</code> から読める（ロード画面はこれで枠を並べる）。保存先は localStorage で、キーは prj.json の <code>save_ns</code> ごと。書き込みは本家同様<b>最短500ms間隔にまとめられる</b>。<br/><b>サムネイル画像</b>（<code>pic</code>属性）にも対応：<code>[snapshot fn='userdata:/…']</code>で撮った絵を<code>pic</code>に渡せば、他の属性と同様そのまましおりの見出しへ乗る。<code>userdata:/</code>はセーブ層（<code>SaveMng</code>）にdata URLのまま置かれ、ロード画面は<code>[lay fn=&amp;pic]</code>で読み返せる（テンプレの<code>frames/_archive.sn</code>と同じ形）。<br/>未対応：暗号化。</p>
 <h4>しおりデータを保存する。</h4>
 <p class="mb2 px1">
 
@@ -2736,13 +2683,15 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>path</td><td></td><td>従来通り SharedObjectに保存</td><td>フォルダパス</td><td>指定した場合、しおりをファイルとしてフォルダパス下に保存する</td></tr>
 </table>
 
+<p class="mb2 px1"><b>bluesnovel</b>：<code>place</code> 以外の属性はそのまましおりの見出しになり、組み込み変数 <code>const.sn.bookmark.json</code> から読める（ロード画面はこれで枠を並べる）。保存先は localStorage で、キーは prj.json の <code>save_ns</code> ごと。書き込みは本家同様<b>最短500ms間隔にまとめられる</b>。プロジェクト設定で暗号化を有効にしていれば、しおりも暗号化して保存される。<br/>
+<b>サムネイル画像</b>（<code>pic</code>属性）にも対応：<code>[snapshot fn='userdata:/…']</code>で撮った絵を<code>pic</code>に渡せば、他の属性と同様そのまましおりの見出しへ乗る。ロード画面は<code>[lay fn=&amp;pic]</code>で読み返せる。</p>
+
 </p>
 
 
 <h1><a id="画面揺らし"></a>画面揺らし</h1>
 <h2 id="quake" class="w-heading">[quake]画面を揺らす</h2>
 <h4>画面全体を揺らす</h4>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：<code>time</code>／<code>hmax</code>／<code>vmax</code>に対応。本家はレイヤを板テクスチャへ描いてそのスプライトを揺らすが、こちらは<b>表裏のページ箱そのもの</b>を動かす（ステージ側の<code>overflow: hidden</code>が端を切るので絵は同じ）。揺れ幅はステージ座標のpxで、<b>毎フレーム <code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code> のランダム位置へ跳ぶ</b>（補間しない）のも本家どおり。<code>time=0</code>と既読スキップ中は揺らさない。<br/>揺れ幅は<b>ストアに入れない</b>（毎フレームのランダム値なのでストア更新には重すぎ、かつ最後は必ず0へ戻る一時的な見た目なので読み戻しにも要らない）。<a href="#trans">[trans]</a>と同じで、揺らすのはStage側・<b>終了を宣言するのはScriptMng</b>（時間切れ／<a href="#wq">[wq]</a>中のクリック／<a href="#stop_quake">[stop_quake]</a>）。<br/><b>未対応</b>（凍結）：<code>delay</code>／<code>repeat</code>／<code>ease</code>／<code>yoyo</code>（本家でも揺れ幅はランダムなのでイージングは効かず、実質「揺らす長さ」しか変わらない）。特定レイヤだけを揺らしたい場合は<a href="#tsy">[tsy path=…]</a>で代替できる（立ち絵の揺れ演出はこちらで実現している）。</p>
 <p class="mb2 px1">
 
 <table>
@@ -2750,11 +2699,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr class="y"><td>time</td><td>y</td><td></td><td>0〜；ミリ秒</td><td>揺らす時間</td></tr>
 <tr><td>hmax</td><td></td><td>10</td><td>0〜</td><td>横方向の最大揺らし幅。幅はランダム値を取る</td></tr>
 <tr><td>vmax</td><td></td><td>10</td><td>0〜</td><td>縦方向の最大揺らし幅。幅はランダム値を取る</td></tr>
-<tr><td>delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>トゥイーンを始める前の、何もしない待ち時間</td></tr>
-<tr><td>repeat</td><td></td><td>1</td><td>0〜</td><td>繰返し回数。0以下で無限ループ。1を設定すると「繰り返しなし」、2を設定すると「二回同じ動き」を行なう</td></tr>
-<tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>指定できる値は<a href="tag.html#tsy" target="_blank" rel="noopener">[tsy]</a>を参照</td></tr>
-<tr><td>yoyo</td><td></td><td>false</td><td>true、false</td><td>（暫定）ヨーヨーのように逆方向に戻って繰り返す</td></tr>
+<tr><td>🟡 delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>トゥイーンを始める前の、何もしない待ち時間<br/>（bluesnovel）未対応（凍結）</td></tr>
+<tr><td>🟡 repeat</td><td></td><td>1</td><td>0〜</td><td>繰返し回数。0以下で無限ループ。1を設定すると「繰り返しなし」、2を設定すると「二回同じ動き」を行なう<br/>（bluesnovel）未対応（凍結）</td></tr>
+<tr><td>🟡 ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>指定できる値は<a href="tag.html#tsy" target="_blank" rel="noopener">[tsy]</a>を参照<br/>（bluesnovel）未対応（凍結）：本家でも揺れ幅はランダムなのでイージングは効かない</td></tr>
+<tr><td>🟡 yoyo</td><td></td><td>false</td><td>true、false</td><td>（暫定）ヨーヨーのように逆方向に戻って繰り返す<br/>（bluesnovel）未対応（凍結）</td></tr>
 </table>
+
+<p class="mb2 px1"><b>bluesnovel</b>：揺れ幅はステージ座標のpxで、毎フレーム<code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code>のランダム位置へ跳ぶ（補間しない）。<code>time=0</code>と既読スキップ中は揺らさない。<br/>
+特定レイヤだけを揺らしたい場合は<a href="#tsy">[tsy path=…]</a>で代替できる（立ち絵の揺れ演出はこちらで実現している）。</p>
 
 </p>
 <h2 id="stop_quake" class="w-heading">[stop_quake]画面揺らし中断</h2>
@@ -2832,11 +2784,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 </p>
 <h2 id="snapshot" class="w-heading">[snapshot]スナップショット</h2>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：本家は pixi のレンダラで描き直すが、こちらの表示は DOM なので<b>「DOM を複製 → SVG の <code>&lt;foreignObject&gt;</code> → canvas → 画像」</b>で撮る（外部ライブラリ無し）。全属性に対応。<br/>
-	<b>行き先は <code>fn</code> の書き方で決まる</b>。<code>userdata:/…</code> なら<b>セーブ層</b>（本家はセーブデータと同じフォルダの実ファイル。ブラウザにフォルダは無いので localStorage へ data URL のまま置く）で、日時は付かないので <code>[lay fn='userdata:/…']</code> で読み返せる（しおりのサムネイル用途）。それ以外は<b>ダウンロード</b>（本家の <code>downloads:/</code>）で、名前の後ろに日時が付く。<code>[export]</code>／<code>[import]</code> にも一緒に乗る。<br/>
-	<b>相違</b>：ダウンロード名は<b>日時を拡張子の前</b>に入れる（本家は <code>fn＋日時＋'.png'</code> 固定で、拡張子でフォーマットを選べるのは <code>userdata:/</code> 側だけだった）。<code>b_color</code> は表のとおり <b>0xAARRGGBB</b> として扱う（<code>0x0</code> で透過 png・<code>0xFF000000</code> が不透明な黒。本家 web 版の実装はここが逆になっている）。<br/>
-	<b>アプリ（Electron）版</b>：Electron の <code>capturePage</code> でウインドウ画素をそのまま撮る（全レイヤ・表ページ・背景色未指定の素朴な撮影のときだけ。<code>layer</code>／裏ページ／<code>b_color</code> 指定時は原理的に再現できないため下記の DOM→SVG 方式へフォールバック）ため、<b>HTML フレーム（[add_frame]）の中身も写る</b>。<br/>
-	<b>web 版の未対応</b>：<b>HTML フレーム（[add_frame]）の中身は写らない</b>（&lt;img&gt; 化された SVG は iframe を描画しないため。本家 web 版も pixi ステージだけを撮るので結果は同じ）。</p>
 <h4>アプリ表示部分全体を画像として保存する</h4>
 <p class="mb2 px1">
 
@@ -2854,6 +2801,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>smoothing</td><td></td><td>false</td><td>true、false</td><td>拡大・縮小保存される場合、スムージングするか</td></tr>
 <tr><td>b_color</td><td></td><td>config.anprjで指定した背景色</td><td>色指定。0xFF000000（黒）など<br/>16進数では透過2桁＋赤2桁＋緑2桁＋青2桁で指定</td><td>テキスト背後の矩形色。pngで 0x0 にすると透過する。<br/>透過しない黒は 0xFF000000</td></tr>
 </table>
+
+<p class="mb2 px1"><b>bluesnovel</b>：<code>fn</code>の書き方で行き先が決まる。<code>userdata:/…</code>なら<b>セーブ層</b>（しおりのサムネイル用途。日時は付かず<code>[lay fn='userdata:/…']</code>で読み返せる）、それ以外は<b>ダウンロード</b>（名前の後ろに日時が付く）。<code>[export]</code>／<code>[import]</code>にも一緒に乗る。<br/>
+アプリ（Electron）版は<b>HTMLフレーム（[add_frame]）の中身も写る</b>が、web版は写らない（本家web版も同様）。</p>
 
 <p>※fnを「userdata:/」で始まるファイル名にするとセーブデータと同じフォルダに保存します。</p>
 <br/>

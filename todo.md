@@ -15,6 +15,37 @@
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 ギャラリー（<https://github.com/famibee/SKYNovel_gallery>）の `public/prj/<機能>/` が機能ごとの仕様。
 
+## 移植漏れ（基盤ロジック・2026-08-20調査）
+
+無名ラベル(**after/**before)未実装の修正（コミット9c041f1）を機に、タグ属性表(docs/tag.html)には
+現れない基盤ロジック（ラベル解決・変数管理・構文解析）を本家スクリプトと突き合わせ調査した結果。
+
+- [ ] **`label2idx()`の無名ラベル探索にマクロ境界チェックが無い**（`src/ts/Script.ts:61-75`）。
+      本家`ScriptIterator.ts:1173-1183`は`**before`/`**after`探索中、マクロ実行中なら
+      マクロ境界（`[macro]`/`[endmacro]`）を越えたら即エラーにするが、bluesnovelは単純な
+      前後線形走査のみでこの境界が無く、マクロ内で対象ラベルが見つからない場合に境界を越えて
+      無関係な`**`マーカーに誤ヒットしうる。今回の無名ラベル修正の隣に残っていた同種の穴
+- [ ] **`const.`接頭辞キーの再代入禁止ガードが無い**（`src/ts/VarStore.ts:203-220` `set()`）。
+      本家`Variable.ts:503-505`は`save:`/`sys:`/`mp:`いずれの名前空間でも一度セットされた
+      `const.*`キーへの再代入を例外で禁止するが、bluesnovelは`tmp:`の組み込みキーしかチェック
+      しておらず、エンジン内部状態（`save:const.sn.mesLayer`等）をユーザースクリプトの`[let]`で
+      誤って上書きしても黙って壊れる
+- [ ] **マクロ名の予約語表`RESERVED_TAGS`に実装済み7タグが漏れている**
+      （`src/ts/ScriptEngine.ts:542-566`）。`ch`/`endlink`/`graph`/`link`/`ruby2`/`span`/`tcy`が
+      表に無く、これらと同名の`[macro]`を定義してもエラーにならず素通りする。本家は動的検査
+      （`ScriptIterator.ts:1366`）なので漏れようがないが、bluesnovelは静的表の二重管理になって
+      いて同期が崩れている
+- [ ] 【要確認】`[jump]`/`[call]`の派生ファイル（`fn+'@'`）差分マージが未移植。本家
+      `ScriptIterator.ts:1055-1093`は`fn+'@'`ファイルがあれば基底ファイルと行単位マージする
+      仕組みを持つが、bluesnovel `ScriptMng.ts`の`#fetchScript()`には無い。意図的削減かどうか
+      記録が無いため要判断
+- [ ] 【要確認・優先度低】`save:sn.userFnTail`への代入トリガが未接続。`cfg.userFnTail`自体は
+      `src/sn/ConfigBase.ts`に存在するが、スクリプト側の`[let]`から反映される経路が無い
+      （本家`Variable.ts:693-697`は`#hSetValTrg`で接続）
+- [ ] 【軽微】`label`が`*`始まりかの検証漏れ、`[if]`の`exp`が`&`始まりの場合のエラーチェック漏れ
+      （本家`ScriptIterator.ts:1035,890,920`）：誤入力の検出漏れのみで正しいスクリプトへの
+      実害は無い
+
 ## 挙動の詰め・実機確認
 
 - [ ] **アプリ（Electron）版の`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない。ウインドウ位置復元・electron-store化は実機確認済み＝CHANGELOG.md 2026-08-12参照）
@@ -37,6 +68,9 @@
         SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
         これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
 - [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
+- [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
+- [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。`[span]`は`wait`/`r_align`も未対応。`[graph]`は`wait`（`id`属性はGrammar.tsにも本家にも見当たらず出自不明、対象外とする）、`[tcy]`は`wait`が未対応。いずれも2026-08-20、`docs/tag.html`整理時に理由未記載のまま放置されていたのを発見。実装要否・理由の調査はこれから
+- [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
 
 ## アセット・基盤
 
