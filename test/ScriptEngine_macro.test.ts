@@ -221,3 +221,49 @@ it('c2m_nameIsReservedAsTagName', ()=> {
 	expect(()=> run('[macro name=char2macro]X[endmacro]')).toThrow();
 	expect(()=> run('[macro name=bracket2macro]X[endmacro]')).toThrow();
 });
+
+
+// ============ 無名ラベル探索のマクロ境界チェック（本家 ScriptIterator.ts:1173-1183） ============
+//	マクロ本体実行中の`**before`/`**after`探索が、マクロの外にある無関係な`**`マーカーへ
+//	越境してヒットしないこと（todo.md「移植漏れ」参照。境界チェックが無いと単純な前後線形走査で
+//	マクロ境界の外まで拾ってしまう）
+
+it('macro_boundary_before_stopsAtMacroBegin', ()=> {
+	// マクロ本体の外（ファイル先頭）にある`**`は、[macro ...]を越えるので拾ってはいけない
+	expect(()=> new ScriptEngine('t1',
+		'**\n'+
+		'[macro name=m][jump label=**before]NG[endmacro]'+
+		'[m]OK'
+	).step()).toThrow();
+});
+
+it('macro_boundary_after_stopsAtEndmacro', ()=> {
+	// マクロ本体の外（[endmacro]の後）にある`**`は、[endmacro]を越えるので拾ってはいけない
+	expect(()=> new ScriptEngine('t1',
+		'[macro name=m][jump label=**after]NG[endmacro]'+
+		'**\n'+
+		'[m]OK'
+	).step()).toThrow();
+});
+
+it('macro_boundary_doesNotBlock_markerInsideSameMacro', ()=> {
+	// 境界チェックはマクロを跨ぐ場合だけの制約。同じマクロ本体内に`**`があれば従来どおり見つかる。
+	//	`**`の直後に[jump label=**before]を置くとジャンプ先が[jump]自身に戻る無限ループになるため、
+	//	間に[s]を挟んで1停止分ずらし、2回目のstep()で正しく**の次（FOUND）へ戻ることを確認する
+	const se = new ScriptEngine('t1',
+		'[macro name=m]**\nFOUND[s]X[jump label=**before]NG[endmacro]'+
+		'[m]'
+	);
+	se.step();	// マクロ呼び出し→FOUND出力→[s]で最初の停止
+	const a = se.step();	// X出力→[jump **before]で**の次（FOUND）へ戻り、FOUND再出力→[s]で再停止
+	expect(a.some(v=> v.t === 'chgStr' && v.str === 'FOUNDXFOUND')).toBe(true);
+});
+
+it('macro_boundary_doesNotAffect_outsideMacro', ()=> {
+	// マクロを介さない通常の無名ラベルジャンプは境界チェックの対象外で従来どおり動く
+	expect(run(
+		'[jump label=**after]NG\n'+
+		'**\n'+
+		'OK'
+	)).toBe('OK');
+});

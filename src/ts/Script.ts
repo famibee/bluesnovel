@@ -52,23 +52,38 @@ export class Script {
 
 	// 無名ラベル（`**`/`***`…+`before`/`after`）判定。本家 ScriptIterator.ts:1137 と同じ正規表現
 	static readonly #REG_NONAME_LABEL = /(\*{2,})([^|]*)/;
+	// マクロ定義の境界トークン判定。本家 ScriptIterator.ts:1136-1137 と同じ正規表現
+	static readonly #REG_TOKEN_MACRO_BEGIN = /^\[macro\s/;
+	static readonly #REG_TOKEN_MACRO_END = /^\[endmacro[\s\]]/;
 
 	// ラベル名（*付き）から「その次のトークンの索引」を得る。未定義ならundefined。
 	//	`**after`/`**before`等の無名ラベルは事前登録された表を引かず、fromIdxを起点に前後どちらかへ
 	//	トークンを線形走査し、`**`（*が2個以上連続）と完全一致する行を探す（本家 ScriptIterator.ts:1164
 	//	#seekScript()の無名ラベルジャンプ分岐を移植。名前付きラベルと違い**現在の実行位置に応じて
-	//	行き先が変わる**ため、呼び出し側は必ず現在のトークン位置をfromIdxへ渡すこと）
-	label2idx(label: string, fromIdx: number): number | undefined {
+	//	行き先が変わる**ため、呼び出し側は必ず現在のトークン位置をfromIdxへ渡すこと）。
+	//	inMacro：呼び出し元がマクロ本体を実行中か（呼び出し側が`mp:const.sn.macro`の有無で判定して渡す）。
+	//	マクロ実行中の探索が定義済みマクロの境界（[macro]/[endmacro]）を越えて無関係な`**`マーカーへ
+	//	誤ヒットしないよう、越えた時点で打ち切りundefinedを返す（本家 ScriptIterator.ts:1173-1183）。
+	//	beforeはinMacro時のみ[macro]境界をチェックし、afterはinMacro不問で[endmacro]境界をチェック
+	//	するという非対称も本家のまま踏襲する（afterは実行時に読み飛ばされるマクロ本体を横切ったこと
+	//	自体が常に不正、beforeは定義済みマクロの中身を単に通過するだけなら不正ではないため）
+	label2idx(label: string, fromIdx: number, inMacro = false): number | undefined {
 		const m = label.match(Script.#REG_NONAME_LABEL);
 		if (! m) return this.#hLabel[label];
 
 		const marker = m[1]!;
 		if (m[2] === 'before') {
-			for (let i = fromIdx - 1; i >= 0; --i) if (this.aToken[i] === marker) return i + 1;
+			for (let i = fromIdx - 1; i >= 0; --i) {
+				if (inMacro && Script.#REG_TOKEN_MACRO_BEGIN.test(this.aToken[i]!)) return undefined;
+				if (this.aToken[i] === marker) return i + 1;
+			}
 			return undefined;
 		}
 		if (m[2] === 'after') {
-			for (let i = fromIdx + 1; i < this.len; ++i) if (this.aToken[i] === marker) return i + 1;
+			for (let i = fromIdx + 1; i < this.len; ++i) {
+				if (Script.#REG_TOKEN_MACRO_END.test(this.aToken[i]!)) return undefined;
+				if (this.aToken[i] === marker) return i + 1;
+			}
 			return undefined;
 		}
 		return undefined;

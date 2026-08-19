@@ -454,6 +454,11 @@ export class ScriptEngine {
 	readonly #val = new VarStore;
 	readonly #expr = new ExprEval(this.#val);
 
+	// マクロ本体を実行中か（本家 ScriptIterator.ts:1109 の`mp:const.sn.macro.name`判定に相当）。
+	//	マクロ呼び出し時にsetMpする'const.sn.macro'（mp:名前空間へ入る）の有無で判定する。
+	//	Script#label2idx()の無名ラベル探索でマクロ境界チェックを行うかどうかに使う
+	#isInMacro(): boolean {return Boolean(this.#val.get('mp:const.sn.macro'))}
+
 	// 本文履歴（本家 LayerMng.ts:84 が持つ Log）。**エンジン側に置く**のは、
 	//	記録するのが「シナリオが書いた本文」であってDOMの見た目ではないため。
 	//	上限ページ数はprj.jsonの`log.max_len`（ScriptMngが組み込み変数として渡す）
@@ -659,7 +664,7 @@ export class ScriptEngine {
 		this.#script = scr;
 		if (! label) {this.#idx = idx; return}
 
-		const to = scr.label2idx(label, idx);
+		const to = scr.label2idx(label, idx, this.#isInMacro());
 		if (to === undefined) throw `ラベル【${label}】がスクリプト【${scr.fn}】に見つかりません`;
 		this.#idx = to;
 	}
@@ -724,7 +729,7 @@ export class ScriptEngine {
 
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
 	jumpToLabel(label: string) {
-		const to = this.#script.label2idx(label, this.#idx);
+		const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		this.#idx = to;
 	}
@@ -739,7 +744,7 @@ export class ScriptEngine {
 	//	[return]側では復元しない。理由は#doReturn()のコメント参照）。[load fn= label=]（本家と
 	//	同じ「復元後そのラベルをコール」）だけは通常のcallと同じ挙動でよいためfalseで呼ぶ
 	callToLabel(label: string, freezeClearOnResume = true) {
-		const to = this.#script.label2idx(label, this.#idx);
+		const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		// this.#idxは既に停止点の次のトークンを指している（#returnで戻る先）
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
@@ -1772,7 +1777,7 @@ export class ScriptEngine {
 				return 'stop';
 			}
 
-			const to = this.#script.label2idx(label, this.#idx);
+			const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());
 			if (to === undefined) throw `[jump] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#idx = to;
 			return 'skip';
@@ -1797,7 +1802,7 @@ export class ScriptEngine {
 				return 'stop';
 			}
 
-			const to = this.#script.label2idx(label, this.#idx);
+			const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());
 			if (to === undefined) throw `[call] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#pushCallStk(this.#idx, true, args);	// 飛び先が確定してから積む（例外時にスタックを汚さない）
 			this.#idx = to;
@@ -2694,7 +2699,7 @@ export class ScriptEngine {
 				aAct.push({t: 'loadScript', fn, label, idx: 0});
 				return 'stop';
 			}
-			const to = this.#script.label2idx(label, this.#idx);
+			const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());
 			if (to === undefined) throw `[return] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#idx = to;
 			return 'skip';
