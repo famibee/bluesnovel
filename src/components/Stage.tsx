@@ -9,12 +9,13 @@ import {CmnLib, argChk_Boolean, uint} from '../sn/CmnLib';
 import GrpLayer from './GrpLayer';
 import TxtLayer from './TxtLayer';
 import {clearDrag, isDragging, styLay, type T_LAY_CMN} from './Lay';
-import {onLong, setDesignMode, type T_ARG} from './Main';
+import {modKeyName, suppressClick, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
 import {ruleMaskFunc} from '../ts/Trans';
 import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
+import {detectSwipe} from '../ts/Swipe';
 
-import {RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type PointerEvent, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css} from '@emotion/react';
 
@@ -295,12 +296,35 @@ export default function Stage({
 	//	フック自体は残す（呼び出し順を変えるとReactのフック規則に触れるため）
 	const longPressEvent = useLongPress(e=> {
 		e.stopPropagation();	// でも止まらない
-		onLong();			// これで止める
+		suppressClick();	// これで止める
 
 		if (isDragging()) return;
 		tglDesignMode();
 		setDesignMode(! isDesignMode);	// React のくせで取れないので
 	}, {isPreventDefault: true, delay: 300,});
+
+	// swipeleft/right/up/down（本家 EventMng.ts:164-219 相当）。tinygestureは使わず
+	//	pointerdown〜pointerupの移動量だけで判定する自作（判定式は src/ts/Swipe.ts 参照）。
+	//	デザインモード中はレイヤのドラッグ操作と衝突するため判定しない
+	const swipeStart = useRef<{x: number, y: number} | null>(null);
+	function onPointerDown(e: PointerEvent) {
+		swipeStart.current = {x: e.clientX, y: e.clientY};
+	}
+	function onPointerUp(e: PointerEvent) {
+		const st = swipeStart.current;
+		swipeStart.current = null;
+		if (! st || isDesignMode) return;
+
+		const rect = stageRef.current!.getBoundingClientRect();
+		const dir = detectSwipe(e.clientX -st.x, e.clientY -st.y, rect.width, rect.height);
+		if (! dir) return;
+
+		suppressClick();	// スワイプ直後に発生するクリックで読み進めてしまわないよう抑止
+		// 修飾キー前置は本家同様マウス操作時のみ（EventMng.ts:212-219 #modKey4MouseEvent）。
+		//	modKeyName()はネイティブMouseEvent型（DOMのPointerEventはこれを継承）を取るので
+		//	Reactの合成イベントでなくnativeEventを渡す
+		scrMng.fireEvent((e.pointerType === 'mouse' ?modKeyName(e.nativeEvent) :'') +dir);
+	}
 
 
 	// 今どちらかのページで使われている色成分行列（重複はidで畳む）
@@ -333,7 +357,7 @@ export default function Stage({
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
 	} : {}}};
-	return <div css={styStage} onClick={onClick} {...ENA_DESIGN_MODE ?longPressEvent :{}} ref={stageRef}>
+	return <div css={styStage} onClick={onClick} onPointerDown={onPointerDown} onPointerUp={onPointerUp} {...ENA_DESIGN_MODE ?longPressEvent :{}} ref={stageRef}>
 		{/* ルール画像ワイプ（[trans rule=…]）のマスク。本家のフラグメントシェーダの置き換えで、
 			・feColorMatrix：ルール画像の**赤チャンネル**をアルファへ移し、RGBは白に固定する
 			　（本家シェーダも ru.r を読む。RGB白＋輝度マスクなので mask-type の指定に頼らない）

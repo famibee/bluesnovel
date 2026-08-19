@@ -1182,8 +1182,9 @@ var xt = T.Fragment, St = function(e, t, n) {
 }, wt = /* @__PURE__ */ e({
 	Main: () => Dt,
 	initMain: () => Et,
-	onLong: () => Nt,
-	setDesignMode: () => jt
+	modKeyName: () => kt,
+	setDesignMode: () => jt,
+	suppressClick: () => Nt
 }), Tt = (0, g.lazy)(() => import("./Stage.js"));
 function Et(e, t, n) {
 	e.render(/* @__PURE__ */ St(Dt, {
@@ -1330,6 +1331,6 @@ function Nt() {
 	Mt = !0;
 }
 //#endregion
-export { Dt as Main, bt as a, lt as c, h as d, f, Ct as i, Et as initMain, Ye as l, p as m, xt as n, vt as o, Nt as onLong, m as p, St as r, gt as s, jt as setDesignMode, wt as t, _ as u };
+export { Dt as Main, bt as a, lt as c, h as d, f, Ct as i, Et as initMain, Ye as l, p as m, kt as modKeyName, xt as n, vt as o, m as p, St as r, gt as s, jt as setDesignMode, Nt as suppressClick, wt as t, _ as u };
 
 //# sourceMappingURL=Main.js.map

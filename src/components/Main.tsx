@@ -191,7 +191,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	});
 
 	function onClick() {
-		if (isLong) {isLong = false; return}
+		if (isClickSuppressed) {isClickSuppressed = false; return}
 		if (isDesignMode) return;
 		scrMng.cancelAuto();	// 手動クリックでオート読み・既読スキップを止める
 		scrMng.unlockAudio();	// ブラウザの自動再生ポリシー対策
@@ -217,8 +217,9 @@ function keyName(e: KeyboardEvent): string {
 }
 
 // マウスイベントの修飾キー前置（本家 EventMng.ts:355 #modKey4MouseEvent）。
-//	keyName()と違い「修飾キー自身か」の判定が要らない（押されたのはマウスなので）
-function modKeyName(e: MouseEvent): string {
+//	keyName()と違い「修飾キー自身か」の判定が要らない（押されたのはマウスなので）。
+//	Stage.tsxのswipe判定でも使うためexport
+export function modKeyName(e: MouseEvent): string {
 	return	(e.altKey	? 'alt+'	: '')
 		+	(e.ctrlKey	? 'ctrl+'	: '')
 		+	(e.metaKey	? 'meta+'	: '')
@@ -228,5 +229,8 @@ function modKeyName(e: MouseEvent): string {
 let isDesignMode = false;	// この形でないとちらつく
 export const setDesignMode = (b: boolean)=> isDesignMode = b;
 
-let isLong = false;
-export function onLong() {isLong = true}
+// 長押し・スワイプ判定の直後に発生するクリックを打ち消す共有フラグ
+//	（元は長押し専用のisLong/onLongだったが、スワイプ判定＝Stage.tsxのonPointerUpも
+//	同じ目的で呼ぶため汎用名にした）
+let isClickSuppressed = false;
+export function suppressClick() {isClickSuppressed = true}

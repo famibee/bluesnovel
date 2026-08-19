@@ -40,7 +40,6 @@
 
 ## アセット・基盤
 
-- [ ] 本家と違い tinygesture がないが、これは単に移植漏れか。それとも依存外し＆自作か。Apache-2.0 license だが他の候補はあるか
 - [ ] bluesnovel の CLAUDE.md 系ファイルやtsソース、テストを参考に追加・更新
   - `CHANGELOG.md` の扱いは本家が最終的に正
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（2026-08-10調査、詳細はCHANGELOG.md参照）：

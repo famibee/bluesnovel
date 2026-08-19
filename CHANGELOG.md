@@ -18,6 +18,25 @@
 
 - [ ]
 
+- [x] **tinygestureとの差分を調査し、swipe判定を自作で追加**（2026-08-19）
+  - 本家`skynovel_esm`は`tinygesture`（`EventMng.ts:164-219`）でtap/longpress/panend/
+    swipeleft/right/up/downを一括処理するが、bluesnovelは`tinygesture`自体に依存していない。
+    調査の結果、tap→React標準`onClick`、longpress→`react-use`の`useLongPress`で既に代替済みと
+    判明。**swipeleft/right/up/downだけが未実装**（単純な移植漏れ）だったため、今回
+    `src/ts/Swipe.ts`の純粋関数`detectSwipe`として自作した
+  - 判定式は本家の設定（`velocityThreshold: 0`で速度条件を実質無効化、`disregardVelocityThreshold`は
+    距離条件のOR先）を反映し、tinygesture既定の`threshold`（辺の15%、最小25px）による
+    距離のみの判定に整理。対角スワイプ（`diagonalSwipes`既定false）は本家も未使用のため
+    持ち込まない
+  - `Stage.tsx`の`onPointerDown`/`onPointerUp`で配線。デザインモード中はレイヤのドラッグ操作と
+    衝突するため判定しない。マウス操作時のみ本家同様に修飾キーを前置
+    （`pointerType === 'mouse'`判定、`nativeEvent`を`modKeyName()`へ渡す）
+  - 長押し専用だった`isLong`/`onLong`（`Main.tsx`）を`isClickSuppressed`/`suppressClick`へ
+    リネームし、長押し・スワイプ両方の「直後クリックの誤発火防止」で共用
+  - `docs/tag.html`の`[event key=]`にswipeleft等を追記。単体テスト`test/Swipe.test.ts`追加
+  - 本家`skynovel_esm`側のtinygesture一式（tap/longpress/panend含む）の置き換えは影響範囲が
+    大きいため今回は見送り、`skynovel_esm/TODO.md`へ申し送り済み
+
 - [x] **本家に倣い、gsapをmotionへ置き換え（依存ライブラリのライセンス対応）**（2026-08-19）
   - 本家`skynovel_esm`が同日（commit `d36e52c`）に`@tweenjs/tween.js`から`motion@13.1.0`へ移行。
     理由は**GreenSock(gsap)のstandard licenseが非OSIで、MIT公開パッケージかつ`dist/`へ依存を
