@@ -430,10 +430,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
 	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。
 	//	[enable_event enabled=false]の間はクリックを受けない（本家 TxtLayer.enabled 相当）
+	//	isolation: isolate は本文箱（styTxt）と同じ理由：BtnLayer.tsx の各ボタンが
+	//	`position: relative; z-index: 2`を持つため、これが無いとその2がStageレベルの
+	//	スタッキングコンテキストまで漏れ、[lay float=/index=/dive=]で他レイヤをどれだけ
+	//	前面へ動かしてもボタンだけは常に最前面に居座ってしまう（DOM順で並べたはずが
+	//	z-indexありの要素だけが順序を無視するため）。閉じ込めることで、ボタンを持つ層自体は
+	//	他のGrpLayer/TxtLayerと同じくDOM順（＝float等の並び替え）で前後関係が決まるようにする
 	const styBtnBox = css`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
+		isolation: isolate;
 		${enabled ? '' : 'pointer-events: none;'}
 	`;
 	// [button left=/top=]で座標指定されたボタンは**ステージ原点基準**の絶対配置にする
@@ -458,6 +465,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const aBtnFlow = aBtn.filter(b=> ! isPosBtn(b));
 	const aBtnPos = aBtn.filter(isPosBtn);
 	const styBtnPosBox = css`
+		isolation: isolate;
 		${enabled ? '' : 'pointer-events: none;'}
 	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）

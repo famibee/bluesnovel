@@ -230,6 +230,18 @@ it('step_jumpLabel', ()=> {
 	expect(a.some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);
 });
 
+it('step_jumpLabel_anonymousAfter', ()=> {
+	// 無名ラベル`**after`：現在位置から後方でリテラル`**`と完全一致する行へジャンプする
+	// （本家 ScriptIterator.ts:1179 #seekScript()の無名ラベルafter分岐を移植。
+	// _album.sn:113-121 の[event key=... label=**after]と同じ用法）
+	const se = new ScriptEngine('t1', '[jump label=**after]むし[s]\n**\nあ[s]');
+	const a = se.step();
+	expect(a.at(-1)!.t).toBe('stop');
+	// jump先の「あ」だけが表示され、「むし」はスキップされる
+	expect(a.some(v=> v.t === 'chgStr' && v.str.includes('むし'))).toBe(false);
+	expect(a.some(v=> v.t === 'chgStr' && v.str === 'あ')).toBe(true);
+});
+
 it('step_unknownTagIgnored', ()=> {
 	// [dump_script]はGrammar.tsのT_HTagには居るが未実装（todo.md参照。本家はVSCode拡張との連携で、
 	//	こちらは対応する拡張が無い）＝「宣言はあるが#execTag()にcaseが無いタグ」の実例として使う
@@ -503,6 +515,27 @@ it('jumpToLabel_movesIdxToLabel', ()=> {
 it('jumpToLabel_unknownLabelThrows', ()=> {
 	const se = new ScriptEngine('t1', 'あ[s]');
 	expect(()=> se.jumpToLabel('*nothing')).toThrow();
+});
+
+it('jumpToLabel_anonymousBefore_seeksBackwardFromCurrentIdx', ()=> {
+	// `**before`は名前付きラベルと違い事前登録された表を引かず、現在位置(this.#idx)から
+	// 手前へリテラル`**`を探す（本家 ScriptIterator.ts:1172 の無名ラベルbefore分岐）。
+	// [button]/[event]のクリック時はその時点の実行位置が起点になるため、
+	// 定義順ではなく現在地からの走査であることを確認する
+	const se = new ScriptEngine('t1', '**\nあ[s]\nい[s]');
+	se.step();	// 1つ目の[s]で停止（現在位置は「**」より後ろ・「い」の手前）
+
+	se.jumpToLabel('**before');
+	const a = se.step();
+	// **直後の「あ」から再実行される（「い」ではない）
+	expect(a.some(v=> v.t === 'chgStr' && v.str.includes('い'))).toBe(false);
+	expect(a.some(v=> v.t === 'chgStr' && v.str.includes('あ'))).toBe(true);
+});
+
+it('jumpToLabel_anonymousAfter_unknownMarkerThrows', ()=> {
+	// 対応する`**`行が無ければ名前付きラベルと同じくthrow
+	const se = new ScriptEngine('t1', 'あ[s]');
+	expect(()=> se.jumpToLabel('**after')).toThrow();
 });
 
 

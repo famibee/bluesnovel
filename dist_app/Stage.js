@@ -10347,6 +10347,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
+		isolation: isolate;
 		${N ? "" : "pointer-events: none;"}
 	`, { display: Fe, opacity: Ie, mixBlendMode: Le, filter: Re } = n, ze = {
 		...Fe === void 0 ? {} : { display: Fe },
@@ -10354,6 +10355,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 		...Le === void 0 ? {} : { mixBlendMode: Le },
 		...Re === void 0 ? {} : { filter: Re }
 	}, Be = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, Ve = P.filter((e) => !Be(e)), He = P.filter(Be), Ue = _u`
+		isolation: isolate;
 		${N ? "" : "pointer-events: none;"}
 	`, { r: We, g: Ge, b: Ke } = ku(x), qe = m((e) => e.backAlpha), Je = S * (C ? 1 : qe), Ye = Je === 0 || a.length === 0 && x === void 0 && !w, Xe = _u`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための

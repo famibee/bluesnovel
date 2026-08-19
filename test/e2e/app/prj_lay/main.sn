@@ -24,8 +24,16 @@
 [lay layer=mes visible=true pivot_x=50 pivot_y=80 blendmode=multiply]
 ぴぼっと[p]
 
-; 重なり順。add_lay順に base -> mes なので mes が手前。[lay float=true]で base を最前面へ
-[lay layer=base float=true]
+; 重なり順。add_lay順に base -> mes なので mes が手前。[lay float=true]で base を最前面へ。
+;	mesにボタンを乗せておく：BtnLayer.tsx のボタンは`position: relative; z-index: 2`を持つため、
+;	TxtLayer側でその漏れを閉じ込めていないと、[lay float=]で他レイヤを前面へ動かしてもボタンだけが
+;	z-indexで最前面に居座り続けてしまう回帰の確認（todo.md 2026-08-20の[lay float=true]不具合）。
+;	alpha=1・blendmode=normalに戻しておく：opacity<1やmix-blend-mode!=normalはそれ自体がCSSの
+;	スタッキングコンテキストを作ってしまい、上のz-index漏れをたまたま閉じ込めてしまうため
+;	（本題はalpha/blendmodeとも既定のレイヤで再現する不具合）
+[lay layer=mes alpha=1 blendmode=normal]
+[button layer=mes page=fore text=ぼたん label=*btn_zorder]
+[lay layer=base left=0 top=0 width=800 height=600 float=true]
 まえへ[p]
 
 ; フィルター。[add_filter]は重ね、[enable_filter]で個別に効き目を切り替える
@@ -81,3 +89,7 @@
 ; [lay width=/height=]の明示があればそちらが勝つ（本家の順序依存の罠は持ち込まない）
 [lay layer=mes width=200 height=100]
 わくめいじ[s]
+
+; 到達しない：上の[button ... label=*btn_zorder]の飛び先を定義しておくだけ（未クリックのため実際は通らない）
+*btn_zorder
+[s]

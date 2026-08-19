@@ -94,7 +94,26 @@ test('[lay float=true]でレイヤが最前面（DOMの末尾）へ移る', asyn
 	const s = await snap(page);
 	expect(s.aLay.map(l=> l.nm)).toEqual(['mes', 'base']);
 	expect(s.aLayBack.map(l=> l.nm)).toEqual(['mes', 'base']);
-	expect(await domOrder()).toEqual(['SPAN', 'DIV']);
+	// mesの直前でボタン（次テスト用に[button]を1つ乗せている）が加わり、mes自体は
+	//	本文spanとボタン箱spanの2枚になる（TxtLayer.tsx参照）ので、SPANが1つ増える
+	expect(await domOrder()).toEqual(['SPAN', 'SPAN', 'DIV']);
+});
+
+test('[lay float=true]はボタンを持つ層の上にも効く（BtnLayer.tsxのz-index:2に負けない）', async ({page})=> {
+	// BtnLayer.tsxの各ボタンは`position: relative; z-index: 2`を持つ。TxtLayer側でその値を
+	//	`isolation: isolate`で閉じ込めていないと、[lay float=]でDOM順を入れ替えても
+	//	ボタンだけがz-indexでStageレベルの最前面に居座り、baseを前面へ動かしても覆えない
+	//	（todo.md 2026-08-20：実テンプレのアルバム画面で【最初から】【ロード】ボタン文字が
+	//	画像ビュアーの上に透けて見え続けていた不具合の再現）
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('まえへ');
+
+	const box = await page.getByText('ぼたん').boundingBox();
+	if (! box) throw 'ボタン【ぼたん】の位置が取得できません';
+	const topTag = await page.evaluate(([x, y])=> document.elementFromPoint(x, y)?.tagName,
+		[box.x + box.width / 2, box.y + box.height / 2] as [number, number]);
+	// baseが最前面へ移り、ボタン（span）の位置にはbase（GrpLayerの根=div）が来る
+	expect(topTag).toBe('DIV');
 });
 
 test('[add_filter]が重なってCSSのfilterになり、[enable_filter]で個別に切れる', async ({page})=> {

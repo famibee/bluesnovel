@@ -697,7 +697,7 @@ var T = { save: "game" }, ee = class t {
 		return e == null ? e : String(e).replaceAll(this.#l, (e) => String(e.startsWith("$") ? this.val.get(e.slice(1)) : this.parse(e.slice(2, -1))));
 	}
 	getValAmpersand = (e) => e.startsWith("&") ? String(this.parse(e.slice(1))) : e;
-}, ie = class {
+}, ie = class e {
 	fn;
 	grm;
 	#e;
@@ -728,8 +728,19 @@ var T = { save: "game" }, ee = class t {
 	get len() {
 		return this.#e.aToken.length;
 	}
-	label2idx(e) {
-		return this.#t[e];
+	static #r = /(\*{2,})([^|]*)/;
+	label2idx(t, n) {
+		let r = t.match(e.#r);
+		if (!r) return this.#t[t];
+		let i = r[1];
+		if (r[2] === "before") {
+			for (let e = n - 1; e >= 0; --e) if (this.aToken[e] === i) return e + 1;
+			return;
+		}
+		if (r[2] === "after") {
+			for (let e = n + 1; e < this.len; ++e) if (this.aToken[e] === i) return e + 1;
+			return;
+		}
 	}
 	defC2M(e, t, n, r) {
 		this.grm[e](t, n, this.#e, r), this.#n();
@@ -1408,7 +1419,7 @@ var Ae = class {
 			this.#_ = n;
 			return;
 		}
-		let r = e.label2idx(t);
+		let r = e.label2idx(t, n);
 		if (r === void 0) throw `ラベル【${t}】がスクリプト【${e.fn}】に見つかりません`;
 		this.#_ = r;
 	}
@@ -1460,12 +1471,12 @@ var Ae = class {
 		return e;
 	}
 	jumpToLabel(e) {
-		let t = this.#g.label2idx(e);
+		let t = this.#g.label2idx(e, this.#_);
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;
 		this.#_ = t;
 	}
 	callToLabel(e, t = !0) {
-		let n = this.#g.label2idx(e);
+		let n = this.#g.label2idx(e, this.#_);
 		if (n === void 0) throw `[button] ラベル【${e}】が見つかりません`;
 		this.#X(--this.#_), t && (this.#S = !1), this.#_ = n;
 	}
@@ -2080,7 +2091,7 @@ var Ae = class {
 					label: e,
 					idx: 0
 				}), "stop";
-				let n = this.#g.label2idx(e);
+				let n = this.#g.label2idx(e, this.#_);
 				if (n === void 0) throw `[jump] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
 				return this.#_ = n, "skip";
 			}
@@ -2094,7 +2105,7 @@ var Ae = class {
 					label: e,
 					idx: 0
 				}), "stop";
-				let n = this.#g.label2idx(e);
+				let n = this.#g.label2idx(e, this.#_);
 				if (n === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
 				return this.#X(this.#_, !0, i), this.#_ = n, "skip";
 			}
@@ -2688,7 +2699,7 @@ var Ae = class {
 				label: r,
 				idx: 0
 			}), "stop";
-			let t = this.#g.label2idx(r);
+			let t = this.#g.label2idx(r, this.#_);
 			if (t === void 0) throw `[return] ラベル【${r}】がスクリプト【${this.fn}】に見つかりません`;
 			return this.#_ = t, "skip";
 		}

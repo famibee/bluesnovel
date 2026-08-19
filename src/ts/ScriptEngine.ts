@@ -659,7 +659,7 @@ export class ScriptEngine {
 		this.#script = scr;
 		if (! label) {this.#idx = idx; return}
 
-		const to = scr.label2idx(label);
+		const to = scr.label2idx(label, idx);
 		if (to === undefined) throw `ラベル【${label}】がスクリプト【${scr.fn}】に見つかりません`;
 		this.#idx = to;
 	}
@@ -724,7 +724,7 @@ export class ScriptEngine {
 
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
 	jumpToLabel(label: string) {
-		const to = this.#script.label2idx(label);
+		const to = this.#script.label2idx(label, this.#idx);
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		this.#idx = to;
 	}
@@ -739,7 +739,7 @@ export class ScriptEngine {
 	//	[return]側では復元しない。理由は#doReturn()のコメント参照）。[load fn= label=]（本家と
 	//	同じ「復元後そのラベルをコール」）だけは通常のcallと同じ挙動でよいためfalseで呼ぶ
 	callToLabel(label: string, freezeClearOnResume = true) {
-		const to = this.#script.label2idx(label);
+		const to = this.#script.label2idx(label, this.#idx);
 		if (to === undefined) throw `[button] ラベル【${label}】が見つかりません`;
 		// this.#idxは既に停止点の次のトークンを指している（#returnで戻る先）
 		// hMp：[call]/マクロ呼び出しと同じく、呼び出し時点のmp:値を保存する（#doReturn()で復元）
@@ -1772,7 +1772,7 @@ export class ScriptEngine {
 				return 'stop';
 			}
 
-			const to = this.#script.label2idx(label);
+			const to = this.#script.label2idx(label, this.#idx);
 			if (to === undefined) throw `[jump] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#idx = to;
 			return 'skip';
@@ -1797,7 +1797,7 @@ export class ScriptEngine {
 				return 'stop';
 			}
 
-			const to = this.#script.label2idx(label);
+			const to = this.#script.label2idx(label, this.#idx);
 			if (to === undefined) throw `[call] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#pushCallStk(this.#idx, true, args);	// 飛び先が確定してから積む（例外時にスタックを汚さない）
 			this.#idx = to;
@@ -2694,7 +2694,7 @@ export class ScriptEngine {
 				aAct.push({t: 'loadScript', fn, label, idx: 0});
 				return 'stop';
 			}
-			const to = this.#script.label2idx(label);
+			const to = this.#script.label2idx(label, this.#idx);
 			if (to === undefined) throw `[return] ラベル【${label}】がスクリプト【${this.fn}】に見つかりません`;
 			this.#idx = to;
 			return 'skip';
