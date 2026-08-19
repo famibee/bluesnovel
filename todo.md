@@ -40,21 +40,6 @@
 
 ## アセット・基盤
 
-- [ ] **【要ユーザー作業】npmリリース処理のrelease-please化・コード側は移行済み**：
-      `.github/workflows/release-please.yml`+`publish.yml`・`release-please-config.json`・
-      `.release-please-manifest.json`を追加し、`package.json`のsemantic-release残骸
-      （`release`設定・`@semantic-release/changelog`/`@semantic-release/git`）を削除済み
-      （2026-08-19）。残るのは GitHub/npmjs.org 管理画面でのみ完結する外部設定：
-  - GitHub App自体は`skynovel_esm`と共用（`skynovel-esm-release-bot`、Repository access に
-    `famibee/bluesnovel`を追加済み・2026-08-19）。ただしsecrets/variablesはリポジトリごとに
-    個別登録が必要なため、`bluesnovel`リポジトリのSettings→Secrets and variables→Actionsへ
-    `RELEASE_APP_CLIENT_ID`（variable）・`RELEASE_APP_PRIVATE_KEY`（secret、`skynovel_esm`と
-    同じ値）を登録
-  - npm側でこのパッケージ（`@famibee/bluesnovel`）のTrusted Publishing（OIDC）設定
-    （パッケージ単位のためApp共用とは無関係、別途必要）
-  - 上記が済むまでは`main`へのpushで`release-please.yml`が失敗する（トークン取得不可）ので、
-    設定完了まではワークフローの失敗は想定内
-
 ## 優先度低
 
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
