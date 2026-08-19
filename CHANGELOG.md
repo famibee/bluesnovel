@@ -681,6 +681,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.2.1](https://github.com/famibee/bluesnovel/compare/v0.2.0...v0.2.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* リリーステスト ([09bb7fe](https://github.com/famibee/bluesnovel/commit/09bb7feea28115026a6f5eb42d0e1f65745c8555))
+
 ## 2026/08/02
 
 - [x] **`skynovel_esm`（本家）から引き継いだリソースリーク調査への対応**（2026-07-30）
