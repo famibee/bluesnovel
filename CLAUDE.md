@@ -64,8 +64,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 - 「ページ」は**レイヤページ**(fore/back, `aPage`) と**テキストページ**(`[p]` 区切り, `PageLog`) の
   2 つの別物。`[page]` は名前に反して後者を操作する。
 - `[trans]` は `foreIdx` を反転するだけ。store は**2 配列間でレイヤデータを動かさない**。
-- `[tsy]` は `[trans]` と逆で DOM でなく **store 経由**。GSAP のターゲットをそのまま store に
-  渡すと `structuredClone`/`JSON` が壊れる。
+- `[tsy]` は `[trans]` と逆で DOM でなく **store 経由**。トゥイーン本体は `motion`（2026-08-19
+  に GSAP から移行）の薄いラッパー `src/ts/Tw.ts`。動かした対象をそのまま store に渡さず、
+  動いた属性だけ切り出して書き戻す。
 - `[add_frame]` は意図的に**store の外**（`FrameMng` が DOM 側で所有、`srcdoc` で same-origin）。
 - 重ね順は `aPage[i]` の配列順。`[lay float=/index=/dive=]` の並べ替えは**必ず両ページ同一に**。
 - `ScriptEngine.step()` が読むトークンを **`trimStart()` してはいけない**（Grammar 前提が壊れる）。

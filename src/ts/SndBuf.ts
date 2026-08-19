@@ -62,7 +62,7 @@ export class SndBuf {
 		else gn.connect(dst);
 	}
 
-	readonly gn: GainNode;	// フェードのターゲット（ScriptMngがgn.gainをGSAPで動かす）
+	readonly gn: GainNode;	// フェードのターゲット（ScriptMngがgn.gainをmotion経由のTw.tsで動かす）
 	get loop() {return this.opt.loop}
 
 	#src: AudioBufferSourceNode | undefined;

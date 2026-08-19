@@ -16,10 +16,10 @@ import {gotoSn, mesStr, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'quake')});
 
-// 表ページの箱に付いたずれ（GSAPはtransform: translate(…)で書く）。揺れていなければ0,0
+// 表ページの箱に付いたずれ（Stageの素のrAFループがtransform: translate(…)で書く）。揺れていなければ0,0
 const ofs = (page: Page)=> page.locator('#skynovel [data-page="fore"]').evaluate(e=> {
 	const t = getComputedStyle(e).transform;
-	if (t === 'none') return {x: 0, y: 0};	// まだGSAPが一度も書いていない
+	if (t === 'none') return {x: 0, y: 0};	// まだrAFループが一度も書いていない
 
 	const m = new DOMMatrixReadOnly(t);
 	return {x: m.m41, y: m.m42};

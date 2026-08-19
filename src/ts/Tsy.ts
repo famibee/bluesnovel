@@ -5,10 +5,12 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// トゥイーン（[tsy]系タグ）のうち、GSAPもDOMも触らない部分。
-//	本家 CmnTween.ts の cnvTweenArg()（属性値→目標値）と ease()（イージング名の解決）に対応する。
+// トゥイーン（[tsy]系タグ）のうち、motionもDOMも触らない部分。
+//	本家 CmnTween.ts の cnvTweenArg()（属性値→目標値）と ease()（イージング名の解決。ここでは
+//	tween.js形式のease名から31種の実関数へ直接解決する。ライブラリ側ease名への変換は
+//	2026-08-19のGSAP→motion移行で不要になった）に対応する。
 //	エンジン（ScriptEngine）から呼べるようにここへ分けてある：
-//	実際にアニメーションを回すのはScriptMng（GSAP）だが、属性の解釈と検査は
+//	実際にアニメーションを回すのはScriptMng（Tw.ts、motion）だが、属性の解釈と検査は
 //	シナリオ実行時＝エンジン側でやりたいため（書き間違いをその場で例外にできる）
 
 

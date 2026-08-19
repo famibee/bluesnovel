@@ -165,7 +165,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		...(pb !== undefined ? {paddingBottom: `${String(pb)}px`} : {}),
 	};
 
-	// 1文字ずつの文字送り演出（GSAP stagger）
+	// 1文字ずつの文字送り演出（Web Animations API、文字ごとにdelayをずらして順に再生）
 	//	・aCh は「そのページの累積全文字」を表示単位へ割ったもの（ルビ付きは親文字＋ルビで1単位）。
 	//	  前回からの差分（新規追加分）だけをspan化してアニメする
 	//	・isReadBack中（読み戻りで前のページを演じ直している間）は文字送り演出をせず瞬時に確定表示

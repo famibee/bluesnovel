@@ -18,6 +18,26 @@
 
 - [ ]
 
+- [x] **CLAUDE.md系ファイル・tsソース・テスト・公開ドキュメントを、直近の実装変更に合わせて棚卸し**
+  （2026-08-19）
+  - `b8b6ab6`（gsap→motion移行）以降、CLAUDE.md／`.claude/docs/ARCHITECTURE.md`／`PITFALLS.md`に
+    GSAP前提の古い記述が残っていることが判明。`[tsy]`/`[tsy_frame]`/音声フェードは`motion`の
+    薄いラッパー`src/ts/Tw.ts`へ、`[trans]`クロスフェードはWeb Animations APIへ、
+    `[trans rule=]`/`[quake]`は素の`rAF`ループへ、という実際の役割分担に合わせて記述を更新
+  - PITFALLS.mdに新規節「GSAP→motion移行（2026-08-19）」を追加。あわせて`9167e54`
+    （`[p]`待ち中の割り込みcallで`clearOnResume`を凍結する仕様）、`0fefbda`（`[trans]`連続打ち時、
+    Reactバッチングでopacityリセットが一度も走らない不具合）の知見も未反映だったため追記
+  - ARCHITECTURE.mdの主要ファイル一覧に新設ファイル`Tw.ts`/`Tsy.ts`/`Trans.ts`/`Swipe.ts`を追加
+  - `src/ts/Tsy.ts`/`Trans.ts`/`ChStyle.ts`/`SndBuf.ts`/`store.tsx`/`TxtLayer.tsx`、
+    `test/ScriptEngine_quake.test.ts`/`test/e2e/tsy.e2e.ts`/`quake.e2e.ts`、
+    `test/e2e/app/prj_chstyle/main.sn`/`prj_trans/main.sn`のコメントも同様にGSAP前提の記述が
+    残っていたため実態（motion/Web Animations API/素のrAFループ）へ更新
+  - 公開ドキュメント`docs/tag.html`/`docs/dev.html`（`bun run docs`で確認できる、ユーザーが直接
+    読む唯一の実装状況情報源）の`[tsy]`/`[tsy_frame]`/`[trans]`/`[fadebgm]`/`[fadese]`/`[wb]`/
+    `[wf]`/`[ch_in_style]`各項目の説明文も同様に更新。「GSAP時代は〜だった」という正確な過去形の
+    経緯説明はそのまま残した
+  - コード変更は無し（コメント・ドキュメントのみ）のため型チェック・テストへの影響は無い
+
 - [x] **tinygestureとの差分を調査し、swipe判定を自作で追加**（2026-08-19）
   - 本家`skynovel_esm`は`tinygesture`（`EventMng.ts:164-219`）でtap/longpress/panend/
     swipeleft/right/up/downを一括処理するが、bluesnovelは`tinygesture`自体に依存していない。

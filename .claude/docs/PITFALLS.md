@@ -22,14 +22,21 @@
   入れ替えると両コンテナの子が丸ごと差し替わり、`TxtLayer` が遷移と同時にタイピングを再生する。
 - クロスフェードは fore の opacity **1→0**（下に back）。back を上にフェードインさせると、back が
   透明な箇所で最後にパチッと切り替わる。fore を消す方式なら遷移中の見た目が既に最終状態。
+- **opacity のリセットは演出「終了時」でなく「開始のたび毎回」行う**。`[wt]` 直後に別レイヤ対象の
+  `[trans]` を連続で打つと、`ScriptMng#runStep()` が同期の `for` ループ内で `finishTrans()`
+  （`trans→null`）と直後の `startTrans()`（`null→次のtrans`）を続けて呼ぶため、React が両方を
+  1 回のレンダリングへバッチし、`trans:null` という中間状態が一度もコミットされないことがある。
+  「`trans` が `null` に戻ったときだけリセット」という実装だと、直前の演出で 0 まで下がった
+  opacity がそのまま次の演出の下地に残り一瞬真っ黒になる（2026-08-18、
+  `test/e2e/trans_seq.e2e.ts` + `prj_transflash`）。
 - **表示属性はシナリオが書いたときだけ格納する**（`T_LAY_STY` は全 optional、本家の
   `'left' in hArg` 判定と同じ）。既定値を持たせると毎 render で全属性のインラインスタイルが出て、
   各レイヤ component 自身の CSS を黙って上書きする。`[clear_lay]` はキーを**削除**する（数値に
   戻すのではなく）。`visible` は触らない。
 - 書き込みはページ単位。`[lay]` の既定は `fore`、`[button]` は本家同様 `back`、`[er]` は**両ページ**
   を消す（でないと `[trans]` で前シーンの本文が戻ってくる）。
-- **遷移の完了を宣言するのは `ScriptMng`**（GSAP の `onComplete` ではない）。`Stage` は描くだけ。
-  `finishTrans()` が同期的に `foreIdx` を反転し、その後シナリオが再開する。`[wt]` も同じ期限を待ち、
+- **遷移の完了を宣言するのは `ScriptMng`**（`Stage` 側の Web Animations API の `onfinish` ではない）。
+  `Stage` は描くだけ。`finishTrans()` が同期的に `foreIdx` を反転し、その後シナリオが再開する。`[wt]` も同じ期限を待ち、
   途中クリックは「今すぐ終われ」と読み替える（`#goSafe()`）ので必ず最終状態に着地する。
 - **`ScriptEngine` も本文の蓄積（`#hTxt`/`#hTxtBk`。`[ch]`/`[span]`等の `layer=`/`page=` 対応で表裏
   2 面持ちにした）を store の交換に追随させる必要がある**。store は `foreIdx` 反転だけで済むが、
@@ -42,13 +49,21 @@
 
 ## `[tsy]` は `[trans]` と逆で、DOM でなく store を通す
 
-GSAP はプレーンオブジェクトを動かし、`onUpdate` が `chgLay` で毎フレーム store に書き戻す。DOM
-だけ塗る方が安いが、それだと しおり と `[trans]` のレイヤ複製がアニメ前の値を読む。帰結が 2 つ:
-本家の `arrive` 属性は実質常時 on、そして **GSAP のターゲットをそのまま store に渡してはいけない**
-（`_gsap` キャッシュが循環参照を作り `structuredClone` と `JSON` を壊す。`ScriptMng` はアニメ対象
-プロパティだけコピーする）。純粋な部分（属性値→ターゲット、ease 名変換、tween 命名）は
-**`src/ts/Tsy.ts`**。本家の `[tsy]` は `x`/`y` しか読まないが、ここでは `left`/`top` の別名なので
-どちらでも動く。
+トゥイーン本体は **`src/ts/Tw.ts`**（`motion` の薄いラッパー。2026-08-19 に GSAP から移行、経緯は
+下の「GSAP→motion移行」節）。プレーンな proxy オブジェクトを動かし、`onUpdate` が `chgLay` で
+毎フレーム store に書き戻す。DOM だけ塗る方が安いが、それだと しおり と `[trans]` のレイヤ複製が
+アニメ前の値を読む。帰結が 2 つ: 本家の `arrive` 属性は実質常時 on、そして **動かした対象
+（`from`）をそのまま store に渡してはいけない**（`from` は `[tsy path=…]` の区間ごとに使い回す
+作業用オブジェクトなので、そのまま渡すと後続区間の書き換えが store 側の値にも及ぶ。`ScriptMng`
+はアニメ対象プロパティだけ切り出してコピーする）。純粋な部分（属性値→ターゲット、31 種の ease
+関数、tween 命名）は **`src/ts/Tsy.ts`**。本家の `[tsy]` は `x`/`y` しか読まないが、ここでは
+`left`/`top` の別名なのでどちらでも動く。
+
+**`motion` の `ctrl.stop()` は同期的に止まらない**（stop 後もしばらく target への書き込みが裏で
+続く）。`Tw.ts` は target へ直接 `animate()` させず、ダミーの proxy を動かして `onUpdate` 側で
+`#finished` フラグを見て「以後 target へ触らせない」を保証する。`onComplete` も proxy が正確に
+最終値へ到達した `onUpdate` の後に来るとは限らない（丸め誤差・順序のズレ）ため、`#finished` を
+立てる前に目標値そのものを target へ代入して確定させる（先に本家がハマった罠を踏襲）。
 
 ## HTML フレーム (`[add_frame]`) は意図的に store の外
 
@@ -114,6 +129,16 @@ DOM を触らない。キー名を決めるのは `Main.tsx` の `keyName()`＝`
 ローカル予約は 1 回限りで、`[call]` がコールスタックに退避し `[return]` が復元する。**マクロ呼び出し
 では退避しない**（本家 `ScriptIterator.ts:957`）。`global=true` はこれら全部の対象外。
 
+`[button call=true]`/`[event call=true]` は `[l]`/`[p]` 待ち中への**一時的な割り込み**でもありうる。
+`[p]` は次の進行時に現在レイヤをクリアする `clearOnResume` フラグを立てる（`ScriptEngine.ts:2353`、
+試作の改ページ挙動）が、割り込み call の呼び出し中はこれを `false` に凍結する（`callToLabel()`/
+`callToScript()` の `freezeClearOnResume` 既定 `true`）。凍結しないと、`[p]` 待ち中にサブルーチンへ
+飛んだだけで本文が消えてしまう。`[return]` で `[p]` の位置まで戻れば、そのタグ自体の再実行で
+自然に `true` へ戻るため、**`[return]` 側では明示的に復元しない**。`[load fn= label=]`（本家と同じ
+「復元後そのラベルをコール」）だけは通常の call と同じ挙動でよいため `freezeClearOnResume=false`
+で呼ぶ。この仕様変更（`dfe99ed`）にテスト用シナリオが追随できておらず、`waitev.e2e.ts` の
+E2E が旧（バグ）挙動に依存して壊れていたことがある（2026-08-18、詳細は CHANGELOG.md）。
+
 ## 既読管理
 
 `step()` が取る全トークンで走る。`#recordKidoku()` がファイル別 `Areas`（本家のクラスを移植）に
@@ -153,9 +178,10 @@ skynovel_esm 調査で判明）。bluesnovel は howler を積まず、Web Audio
 - **待ち合わせ（`[ws]`/`[wl]`/`[wf]`/`[wb]`）を持つのは `SndBuf` ではなく `ScriptMng`**
   （`[trans]`/`[tsy]` と同じ「終わりを宣言するのは ScriptMng」という設計に揃えた）。`SndBuf.stop()`
   は明示停止でも自然終了でも**必ず 1 回だけ** `onEnd` を発火するので、本家の「終了通知の出し忘れ」
-  に起因するハングは構造的に起きない。フェードは GSAP が `GainNode.gain` を時間で動かすだけで
-  **音の再生状態と独立**しているため、フェード中に音が自然終了してもフェードの完了は影響を
-  受けない（本家の「`[wf]`待機中の自然終了でハング」不備が起こり得ない理由）。
+  に起因するハングは構造的に起きない。フェードは `Tw.ts`（`motion`。2026-08-19 に GSAP から移行）
+  が `GainNode.gain` を時間で動かすだけで**音の再生状態と独立**しているため、フェード中に音が
+  自然終了してもフェードの完了は影響を受けない（本家の「`[wf]`待機中の自然終了でハング」不備が
+  起こり得ない理由）。
 - **`AudioContext` は初回のユーザー操作まで `suspended`**（自動再生ポリシー）。`Main.tsx` の
   クリック/キー入力ハンドラが毎回 `scrMng.unlockAudio()` を呼んで `resume()` する。`suspended` の
   まま再生すると `ended` イベントが来ないため、`SndBuf` は非ループ再生に限り擬似終了タイマー
@@ -177,8 +203,9 @@ GSAP既定の`force3D:"auto"`がアニメ中だけ`transform: matrix3d(...)`を�
 昇格/降格をアニメのたびに引き起こしていたことが、縦書き＋Webフォント環境でのグリフ描画欠落
 （`CHANGELOG.md` 2026-08-17）の最有力容疑と判明したため、ブラウザ標準の`Element.animate()`へ
 置き換えた。本家もCSSアニメ（クラス着脱）で完結しておりJSトゥイーンエンジンを要していない
-（`skynovel_esm/src/sn/TxtStage.ts:590-597 skipChIn()`）。GSAP自体は`[tsy]`/`[trans]`/`[quake]`/
-音声フェードに引き続き使う——文字出現演出だけが対象。
+（`skynovel_esm/src/sn/TxtStage.ts:590-597 skipChIn()`）。当時GSAP自体は`[tsy]`/`[trans]`/
+`[quake]`/音声フェードに引き続き使っていたが、2026-08-19にライセンス対応で`motion`へ全面移行し
+GSAP自体をリポジトリから除去した（詳細は次節「GSAP→motion移行」）。
 
 - **`[ch_in_style]`の`to`は常にCSSの初期値（`opacity:1, transform:none`）と一致する設計**。
   `options.fill: 'backwards'`と組み合わせると、delay中/実行中は`from`の見た目を保ち、自然終了時・
@@ -221,3 +248,41 @@ GSAP既定の`force3D:"auto"`がアニメ中だけ`transform: matrix3d(...)`を�
 視覚的副作用を持たないプロパティで、`transform`のような偶然の依存を残さない。**負のz-indexを
 使う箇所を増やすときは、対象要素が意図してスタッキングコンテキストを持っているか（`isolation`/
 `position`+`z-index`/`opacity<1`/`transform`等のどれかを明示しているか）を必ず確認すること**。
+
+## GSAP→motion移行（2026-08-19）
+
+GreenSock(GSAP)のstandard licenseが非OSIで、MIT公開かつ`src/build.ts`が依存を`dist/`/`dist_app/`
+へ丸ごとバンドルする構成とは相性が悪いため、本家`skynovel_esm`の同日の移行
+（`@tweenjs/tween.js`→`motion@13.1.0`）に合わせて全面置換した（`package.json`から`gsap`は消え
+`motion`のみになっている）。**GSAPを1対1でmotionへ置き換えたのではなく、役割ごとに適材適所へ
+振り分けた**:
+
+- `[tsy]`/`[tsy_frame]`（`ScriptMng`。store のレイヤ属性・`FrameMng` の見た目）と
+  `[fadese]`/`[fadebgm]`（`GainNode.gain`）→ `src/ts/Tw.ts`（本家 `CmnTween.ts` の `Tw` クラスを
+  移植した薄いラッパー。motion の `animate()` をこの 1 ファイルに閉じ込める）。
+- `[trans]` のクロスフェード → 既に `[ch_in_style]` で採用済みの Web Animations API
+  （`Element.animate()`、`Stage.tsx`）。
+- `[trans rule=]` の進度・`[quake]` の毎フレーム乱数 → 素の `rAF` ループ（`Stage.tsx`）。
+  どちらも GSAP を「時間を刻むだけの ticker」として使っていただけなので、ライブラリ自体が丸ごと
+  不要になった。
+
+`Tw.ts` が踏んでいる罠は「`[tsy]` は…」節を参照。付随する変更点:
+
+- イージング名（本家 tween.js 形式）→ライブラリの ease 名への変換（`easeToGsap()`）を廃し、本家
+  `CmnTween.#hEase` 相当の**31種の実関数**を `src/ts/Tsy.ts` へ直接移植した（tween.js は MIT なので
+  式の流用可）。副次的に GSAP の `power1〜4`/`back`/`elastic` と tween.js の数値差が消え、本家と
+  完全一致するようになった。
+- `[tsy path=…]` の区間連結は `gsap.timeline` から `Tw.chain()`（tween.js の `chain()` 相当）へ。
+  `pause_tsy`/`resume_tsy` が「今動いている区間」に効くよう、区間が切り替わるたびに `ScriptMng`
+  側の登録参照を `Tw.onStart()` フックで張り替える対応を追加した（本家はこの対応が無く先頭区間
+  にしか効かない）。
+- repeat の無限表現が GSAP 規約の `-1` から motion 規約の `Infinity` へ変更（`ScriptEngine.ts`）。
+  音声フェードの既定 ease も GSAP 時代の `power1.out` から等速へ変更（本家 howler の `fade()` も
+  線形）。
+- **E2Eの全体凍結手段が変わった**: `test/e2e/trans.e2e.ts` が `gsap.globalTimeline.pause()` で
+  行っていた「以後作られる分も含めた全体凍結」は motion に相当 API が無いため、
+  `globalThis.requestAnimationFrame` 自体を差し替える `__sn.freezeRaf()`（`test/e2e/app/main.ts`）
+  へ置き換えた。`[trans rule=]`/`[quake]`（`Stage.tsx` の素の `rAF` ループ）だけが止まり、
+  `[tsy]` 系・音声フェード（motion）はモジュール読み込み時に `rAF` を捕まえて自走するため影響を
+  受けない、という非対称になる。凍結して数値検証する E2E を新設・修正するときはこの非対称を
+  踏まえること。

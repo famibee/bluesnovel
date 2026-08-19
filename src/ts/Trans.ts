@@ -5,13 +5,14 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// ルール画像による[trans]（ワイプ）のうち、DOMもGSAPも触らない部分。
+// ルール画像による[trans]（ワイプ）のうち、DOMもアニメーションライブラリも触らない部分。
 //	本家 LayerMng.ts:548 のフラグメントシェーダ #srcRuleTransFragment を、
 //	WebGLを使わずSVGフィルタ＋CSSマスクへ置き換えるための計算だけをここへ分ける。
 //
 //	**「時間を進める機構」と「進度→見た目」を切り離すのが目的**：
 //	進度（tick）を受け取って見た目を決めるのがこのファイルの純粋関数、
-//	tickを0→1へ動かすのがStage側のGSAP。こうしておくと
+//	tickを0→1へ動かすのがStage側の素のrAFループ（2026-08-19のGSAP→motion移行で、
+//	GSAPを「時間を刻むだけのticker」として使っていたのをrAF直書きへ置き換えた）。こうしておくと
 //	・進度の計算は単体テストで全域を確かめられる（test/Trans.test.ts）
 //	・E2Eは任意の進度を流し込んで画を撮れる（時間待ちに頼らない）
 //	という切り分けになる。

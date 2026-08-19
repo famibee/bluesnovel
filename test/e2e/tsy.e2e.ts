@@ -23,7 +23,7 @@ test('[tsy]が時間をかけて値を動かし、[wait_tsy]がその間シナ�
 
 	await page.keyboard.press('Space');	// [tsy time=1200 left=200] → [wait_tsy]
 
-	// 途中経過がストアへ書き戻されている（GSAPのonUpdate→chgLay）
+	// 途中経過がストアへ書き戻されている（motion＝Tw.tsのonUpdate→chgLay）
 	await expect.poll(async ()=> layNum(page, 'base', 'left'), {timeout: 5_000})
 		.toBeGreaterThan(0);
 	expect(await layNum(page, 'base', 'left')).toBeLessThan(200);

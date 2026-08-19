@@ -787,7 +787,7 @@ bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsy
 <tr><td>🟡 sys:sn.tagCh.canskip</td><td>true</td><td>true、false</td><td>テキストをクリックなどでスキップ可能か</td></tr>
 <tr><td>🟢 sys:sn.tagCh.doWait</td><td>true</td><td>true、false</td><td>未読テキストにウェイトを掛けるか</td></tr>
 <tr><td>🟢 sys:sn.tagCh.doWait_Kidoku</td><td>true</td><td>true、false</td><td>既読テキストにウェイトを掛けるか</td></tr>
-<tr><td>🟢 sys:sn.tagCh.msecWait</td><td>10</td><td>0〜；ミリ秒</td><td>未読テキスト待ち時間（ミリ秒）<br/><b>bluesnovel：1文字が動き出してから次の文字が動き出すまでの遅れ</b>（GSAPのtweenの位置）。文字1つのアニメ時間そのものは[<a href="tag.html#ch_in_style" target="_blank" rel="noopener">ch_in_style</a>]の<code>wait</code>。エンジンが既読状態と合わせて決め、ScriptMngが停止点ごとにストアへ写す</td></tr>
+<tr><td>🟢 sys:sn.tagCh.msecWait</td><td>10</td><td>0〜；ミリ秒</td><td>未読テキスト待ち時間（ミリ秒）<br/><b>bluesnovel：1文字が動き出してから次の文字が動き出すまでの遅れ</b>（Web Animations APIのdelay）。文字1つのアニメ時間そのものは[<a href="tag.html#ch_in_style" target="_blank" rel="noopener">ch_in_style</a>]の<code>wait</code>。エンジンが既読状態と合わせて決め、ScriptMngが停止点ごとにストアへ写す</td></tr>
 <tr><td>🟢 sys:sn.tagCh.msecWait_Kidoku</td><td>10</td><td>0〜；ミリ秒</td><td>既読テキスト待ち時間（ミリ秒）</td></tr>
 <tr><td>🟢 sys:TextLayer.Back.Alpha</td><td>0.5</td><td>0.0〜1.0；透過度</td><td>バック不透明度。テキストウインドウの背景の濃度。0.0で透明、1.0で不透明。<br/>bluesnovel：全文字レイヤの背景に掛かる（各レイヤの<code>b_alpha</code>との積）。<code>b_alpha_isfixed=true</code>のレイヤだけ掛からない</td></tr>
 </table>

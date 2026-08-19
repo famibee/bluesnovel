@@ -68,6 +68,19 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   クラス。退場処理が無く不備の温床だった）は持たない。`[ws]`/`[wl]`/`[wf]`/`[wb]` の待ち合わせは
   `SndBuf` ではなく **`ScriptMng` が持つ**（`[trans]`/`[tsy]` と同じ設計。詳細は
   [PITFALLS.md](PITFALLS.md)）。
+- **`src/ts/Tw.ts`** — トゥイーン本体。`motion`（2026-08-19 に GSAP から移行、経緯・罠は
+  [PITFALLS.md](PITFALLS.md)）の薄いラッパーで、本家 `CmnTween.ts` の `Tw` クラスを移植した。
+  `[tsy]`/`[tsy_frame]`（store のレイヤ属性・`FrameMng` の見た目）と `[fadese]`/`[fadebgm]`
+  （`GainNode.gain`）が使う。`motion` の import はこのファイルに閉じ込める。
+- **`src/ts/Tsy.ts`** — `[tsy]`/`[tsy_frame]` のうち DOM も `motion` も触らない純粋部分（属性値→
+  目標値、31 種の ease 関数、tween 命名）。`ScriptEngine` から呼べるので属性の書き間違いをその場で
+  例外にできる。
+- **`src/ts/Trans.ts`** — `[trans rule=]`（ルール画像ワイプ）のうち DOM も `motion` も触らない
+  純粋部分。本家のフラグメントシェーダ（`LayerMng.ts` の `#srcRuleTransFragment`）を、WebGL を
+  使わず SVG フィルタ＋CSS マスクへ置き換えるための「進度→見た目」計算だけを切り出してある。
+- **`src/ts/Swipe.ts`** — スワイプ判定（`swipeleft`/`swiperight`/`swipeup`/`swipedown`）の純粋関数
+  `detectSwipe`。本家は `tinygesture` の一括処理だが、bluesnovel は tap/longpress を React 標準/
+  `react-use` で代替済みのため未実装だったスワイプ判定だけを自作した（2026-08-19）。
 
 **本家由来ファイルは本家のテストを無改変で持っている**（`test/Grammar.test.ts`,
 `test/ExprEval.test.ts`, `test/VarStore.test.ts` の後半）。これらを触るときはまず

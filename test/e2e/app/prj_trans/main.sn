@@ -54,7 +54,7 @@
 ; ルール画像によるワイプ（[trans rule=…]）。表裏を**単色の板**で塗り分けておき、
 ;	境界の位置を画素で確かめられるようにする。rule_lrは左が黒・右が白の横グラデーションで、
 ;	暗い所から先に表ページが消える＝進度tickに応じて左から右へ赤が青へ入れ替わる。
-;	演出は9秒＝テスト側がGSAPを止めて任意の進度を流し込むための「長い箱」
+;	演出は9秒＝テスト側がrAFループを止めて任意の進度を流し込むための「長い箱」
 [er]
 [lay layer=mes page=fore b_color=0xFF0000 b_alpha=1 b_alpha_isfixed=true style="position: absolute; left: 0; top: 0; width: 800px; height: 600px; margin: 0; padding: 0; border: none;"]
 [lay layer=mes page=back b_color=0x0000FF b_alpha=1 b_alpha_isfixed=true style="position: absolute; left: 0; top: 0; width: 800px; height: 600px; margin: 0; padding: 0; border: none;"]

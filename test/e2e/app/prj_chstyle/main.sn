@@ -1,7 +1,7 @@
 ; E2E用シナリオ（chstyle.e2e.ts が使用）
 ;	文字出現演出（[ch_in_style]）を[lay in_style=…]で切り替える。
 ;	**定義そのものは値としてストアに載る**（本家はCSSの@keyframesを挿す）ので、
-;	ここで見たいのは「選んだ定義どおりにGSAPが動くか」＝実際の見た目の側
+;	ここで見たいのは「選んだ定義どおりにWeb Animations APIが動くか」＝実際の見た目の側
 [add_lay layer=mes class=txt]
 [current layer=mes]
 

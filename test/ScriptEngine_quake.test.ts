@@ -6,7 +6,7 @@
 ** ***** END LICENSE BLOCK ***** */
 
 // 画面揺らし（[quake]/[stop_quake]/[wq]）のうち、エンジンが担当する「どのアクションを積むか」。
-//	実際に揺らすのはStage（GSAP）、終了を決めるのはScriptMngなのでE2E側（quake.e2e.ts）。
+//	実際に揺らすのはStage（素のrAFループ）、終了を決めるのはScriptMngなのでE2E側（quake.e2e.ts）。
 //	本家 LayerMng.ts:754 #quake()。本家は[trans]と同じトゥイーン枠を使い回すので
 //	[wq]＝[wt]、[stop_quake]＝[finish_trans]だが、こちらは同じ形の**別の**待ち行列にしてある
 

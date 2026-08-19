@@ -48,8 +48,9 @@ type T_STATE = {
 	addBtn	: (arg: T_ADDBTN)=> void,
 
 	// 文字出現・消去演出の定義表（[ch_in_style]/[ch_out_style]）。本家は TxtStage の
-	//	staticな連想配列で、CSSの`@keyframes`をスタイルシートへ挿す。こちらはGSAPで動かすので
-	//	定義を値のまま持ち、TxtLayerが名前で引く。**レイヤごとではなく画面ぜんぶで1つ**（本家も同じ）
+	//	staticな連想配列で、CSSの`@keyframes`をスタイルシートへ挿す。こちらはWeb Animations APIで
+	//	動かすので定義を値のまま持ち、TxtLayerが名前で引く。**レイヤごとではなく画面ぜんぶで1つ**
+	//	（本家も同じ）
 	hChIn	: {[nm: string]: T_CH_STYLE},
 	hChOut	: {[nm: string]: T_CH_STYLE},
 	defChStyle: (arg: T_DEFCHSTYLE)=> void,
@@ -65,14 +66,14 @@ type T_STATE = {
 
 	// [trans]の進行状態。startTrans()で開始し、finishTrans()で表裏を入れ替えて終了する。
 	//	**終了を宣言するのは必ずScriptMng**（時間切れ／[wt]中のクリック）で、
-	//	Stage側のGSAPは見た目を動かすだけ。完了コールバックに交換をやらせると、
+	//	Stage側のWeb Animations APIは見た目を動かすだけ。完了コールバックに交換をやらせると、
 	//	シナリオの再開（ScriptMng）との前後が保証されず、交換前のページへ次の文が書かれてしまう
 	trans		: T_TRANS;
 	startTrans	: (arg: T_STARTTRANS)=> void,
 	finishTrans	: ()=> void,
 
 	// [quake]の進行状態。[trans]とまったく同じ役割分担で、**終了を宣言するのはScriptMng**
-	//	（時間切れ／[wq]中のクリック／[stop_quake]）。Stage側のGSAPは揺らすだけ。
+	//	（時間切れ／[wq]中のクリック／[stop_quake]）。Stage側の素のrAFループは揺らすだけ。
 	//	揺れ幅そのものはストアに入れない：毎フレームのランダム位置なのでストア更新には重すぎ、
 	//	かつ最後は必ず0へ戻る一時的な見た目なので、Memento（読み戻し）に要らない
 	quake		: T_QUAKE;
@@ -94,7 +95,7 @@ type T_STATE = {
 	styPaging	: string;		// 読み戻り中の本文の見た目（[page style=…]。本家 styPaging）
 	setStyPaging: (s: string)=> void;
 
-	isTyping	: boolean;		// 文字送り演出（GSAP）実行中か。trueの間はクリックで進行せずスキップ要求のみ行う
+	isTyping	: boolean;		// 文字送り演出（Web Animations API）実行中か。trueの間はクリックで進行せずスキップ要求のみ行う
 	setIsTyping	: (b: boolean)=> void;
 	skipReq		: number;		// TxtLayer側へ「今のアニメを瞬時完了させろ」と伝える合図（インクリメントで通知）
 	requestSkip	: ()=> void;
@@ -276,7 +277,7 @@ export type T_ADDBTN = {
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
 export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
-	// 文字送り演出（GSAP）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
+	// 文字送り演出（Web Animations API）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
 	//	演出完了まで遅らせるため（ScriptMng#scheduleResume）。isTypingはstateの値そのものだと
 	//	attachTsx時点のスナップショットで固まってしまうので、関数越しに読む
 	& {isTyping: ()=> boolean}>;
@@ -443,7 +444,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		return putPage(s, idx, aLay);
 	}),
 	// [tsy]（トゥイーン）の開始値を読むための唯一の読み出し口。setterではないのでgetを使う。
-	//	「現在値からの相対」（[tsy left='=100']）と、GSAPへ渡す開始値のために要る。
+	//	「現在値からの相対」（[tsy left='=100']）と、motion（Tw.ts）へ渡す開始値のために要る。
 	//	未指定の属性は値を持たない（＝各レイヤのCSS既定）ので、ここではundefinedのまま返し、
 	//	既定値の穴埋めは呼ぶ側（ScriptMngのH_TSY_DEF）に任せる
 	getLaySty: (nm: string, page: T_PAGE)=> {

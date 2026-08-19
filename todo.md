@@ -40,8 +40,6 @@
 
 ## アセット・基盤
 
-- [ ] bluesnovel の CLAUDE.md 系ファイルやtsソース、テストを参考に追加・更新
-  - `CHANGELOG.md` の扱いは本家が最終的に正
 - [ ] npmリリース処理を`skynovel_esm`に合わせる（2026-08-10調査、詳細はCHANGELOG.md参照）：
   - `skynovel_esm`は`semantic-release`から**`release-please`へ移行済み**（`.github/workflows/release-please.yml`+`publish.yml`、`release-please-config.json`、npm Trusted Publishing/OIDC）。本CLAUDE.mdの「semantic-release＋conventionalcommits」の記述は古い
   - bluesnovelの`package.json`にはsemantic-release用の`release`設定と`@semantic-release/changelog`/`@semantic-release/git`だけが中途半端に残存（本体`semantic-release`パッケージは無い）。release-please化するなら要削除

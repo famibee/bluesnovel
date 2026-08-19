@@ -16,8 +16,9 @@
 //	ことがある不具合」）の最有力容疑と判明。GSAPを採用する技術的必然性も無かった（本家のスキップ
 //	`skynovel_esm/src/sn/TxtStage.ts:590-597 skipChIn()`はクラスの一括差し替えのみで完結しており
 //	JSトゥイーンエンジンを要していない）ため、ブラウザ標準のWeb Animations APIへ置き換えた。
-//	`Tsy.ts`が`[tsy]`に対してやっているのとは違い、こちらはGSAP自体を経由しない
-//	（`[tsy]`/`[trans]`/`[quake]`はレイヤ単位の変形でGSAPを引き続き使う）。
+//	`Tsy.ts`が`[tsy]`に対してやっているのとは違い、こちらはアニメーションライブラリを経由しない
+//	（当時`[tsy]`/`[trans]`/`[quake]`はレイヤ単位の変形でGSAPを引き続き使っていたが、2026-08-19に
+//	ライセンス対応で`motion`へ全面移行しGSAP自体を除去した。詳細は`.claude/docs/PITFALLS.md`）。
 
 export type T_CH_STYLE = {
 	wait	: number;	// アニメ時間（ミリ秒）。0で瞬時
