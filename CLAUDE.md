@@ -90,12 +90,10 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   - VSCode 拡張 *Todo+* がこの prefix しか拾わない。
 - **`todo.md`** がルートの作業計画（*Todo+* のチェックボックス形式、ほぼ優先度順）。
   - セッション開始時に読む。続きの作業、などがあればy/n確認してから着手。
-  - **終わった項目は `todo.md` に残さず `CHANGELOG.md` へ移す**。
-  - `CHANGELOG.md` は**新しい方が上**（`## 後ほど` ブロックの直後が最新の日付見出し）。単独の
-    `- [ ]` マーカは常に `## 後ほど` ブロック直後に置き、その位置に `- [x] …` ブロックを書いて
-    後ろに空行 1 つ、**マーカはそのまま残す**（次回も同じ手順で追記できるように）。同じ作業で
-    `todo.md` からは消す。**マーカが別の場所（古い日付見出しの中など）に紛れていたら、書く前に
-    `## 後ほど` 直後へ動かしてから使う**（過去、日付順が崩れた実績あり）。
+  - **終わった項目は `todo.md` から消す**だけでよい（`CHANGELOG.md` への手動転記はしない）。
+    リリースノートは `release-please` がコミットメッセージから自動生成する（後述）。作業の
+    経緯・判断は `todo.md` を消す際のコミットメッセージに書く（本文を厚く書いてよい。
+    conventionalcommits の見出し行がリリースノートに載る）。
 - **属性の既定値は 1 箇所**（エンジン入口の `case` か CSS、どちらか。両方には書かない）。判定基準・
   台帳は [ARCHITECTURE.md#属性の既定値](.claude/docs/ARCHITECTURE.md#属性の既定値) と
   `test/argdef_parity.test.ts`。
@@ -104,7 +102,11 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   - まず軽い呼び出し（`get_current_config`）で生死を見る。
   - タイムアウト後は再実行の前に状態を確認する。
   - シンボル系ツールは `activate_project`（`bluesnovel`）が先に要る。
-- リリースは `semantic-release` ＋ conventionalcommits プリセット。
+- リリースは `release-please`（`.github/workflows/release-please.yml`+`publish.yml`、
+  `release-please-config.json`、npm Trusted Publishing/OIDC。本家 `skynovel_esm` と同じ構成。
+  2026-08-19 に `semantic-release` から移行）。`main` への push で release PR
+  （`autorelease: pending`）が更新され、マージで `CHANGELOG.md` が自動生成・タグが打たれ、
+  `publish.yml` が npm publish する。
 
 ## 参考資料
 

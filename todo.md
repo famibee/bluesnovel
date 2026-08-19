@@ -40,11 +40,20 @@
 
 ## アセット・基盤
 
-- [ ] npmリリース処理を`skynovel_esm`に合わせる（2026-08-10調査、詳細はCHANGELOG.md参照）：
-  - `skynovel_esm`は`semantic-release`から**`release-please`へ移行済み**（`.github/workflows/release-please.yml`+`publish.yml`、`release-please-config.json`、npm Trusted Publishing/OIDC）。本CLAUDE.mdの「semantic-release＋conventionalcommits」の記述は古い
-  - bluesnovelの`package.json`にはsemantic-release用の`release`設定と`@semantic-release/changelog`/`@semantic-release/git`だけが中途半端に残存（本体`semantic-release`パッケージは無い）。release-please化するなら要削除
-  - **`CHANGELOG.md`の手動運用（todo.md完了項目を日付見出し＋経緯付きで移す）とrelease-pleaseの自動書き換えが衝突する**ため、着手前に運用を決める必要あり（自動生成を別ファイルに逃がすか、手動運用をやめるか）
-  - GitHub App作成・`RELEASE_APP_CLIENT_ID`/`RELEASE_APP_PRIVATE_KEY`登録・npm側Trusted Publishing設定はGitHub/npmjs.org管理画面での作業が要る（エージェント側では完結しない）
+- [ ] **【要ユーザー作業】npmリリース処理のrelease-please化・コード側は移行済み**：
+      `.github/workflows/release-please.yml`+`publish.yml`・`release-please-config.json`・
+      `.release-please-manifest.json`を追加し、`package.json`のsemantic-release残骸
+      （`release`設定・`@semantic-release/changelog`/`@semantic-release/git`）を削除済み
+      （2026-08-19）。残るのは GitHub/npmjs.org 管理画面でのみ完結する外部設定：
+  - GitHub App自体は`skynovel_esm`と共用（`skynovel-esm-release-bot`、Repository access に
+    `famibee/bluesnovel`を追加済み・2026-08-19）。ただしsecrets/variablesはリポジトリごとに
+    個別登録が必要なため、`bluesnovel`リポジトリのSettings→Secrets and variables→Actionsへ
+    `RELEASE_APP_CLIENT_ID`（variable）・`RELEASE_APP_PRIVATE_KEY`（secret、`skynovel_esm`と
+    同じ値）を登録
+  - npm側でこのパッケージ（`@famibee/bluesnovel`）のTrusted Publishing（OIDC）設定
+    （パッケージ単位のためApp共用とは無関係、別途必要）
+  - 上記が済むまでは`main`へのpushで`release-please.yml`が失敗する（トークン取得不可）ので、
+    設定完了まではワークフローの失敗は想定内
 
 ## 優先度低
 
