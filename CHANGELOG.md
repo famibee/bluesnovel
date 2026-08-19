@@ -681,6 +681,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.2.2](https://github.com/famibee/bluesnovel/compare/v0.2.1...v0.2.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* 無名ラベル(**after/**before)未実装とボタンのz-index漏れによる[lay float]無効化を修正 ([9c041f1](https://github.com/famibee/bluesnovel/commit/9c041f18e802eef71c297f75d6e76e8a660254b4))
+
 ## [0.2.1](https://github.com/famibee/bluesnovel/compare/v0.2.0...v0.2.1) (2026-08-19)
 
 
