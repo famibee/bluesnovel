@@ -123,6 +123,13 @@ export	function argChk_Boolean(hash: T_HASH_Arg, name: string, def: boolean): bo
 }
 
 
+// [prj.json init.bg_color]をCSSにそのまま渡せる文字列へ。本家 CmnLib.ts:131 parseColor()は
+//	pixiが要る数値(0xRRGGBB)へ変換するが、bluesnovelはCSSがそのまま色名・#RRGGBBを解釈できるので
+//	**数値のときだけ**#RRGGBBへ変換すればよい（文字列は素通し）
+export function cssColorOf(v: string | number): string {
+	if (typeof v !== 'number') return v;
+	return `#${v.toString(16).padStart(6, '0')}`;
+}
 // export function parseColor(v: string): number {
 // 	if (v.startsWith('#')) return parseInt(v.slice(1), 16);
 // 	const n = Number(v);
@@ -185,6 +192,9 @@ export class CmnLib {
 
 	static	stageW		= 0;
 	static	stageH		= 0;
+	// ステージの既定背景色（[prj.json init.bg_color]、本家 LayerMng.ts:172-178 が#fore/#back両方に
+	//	敷くステージ大の塗りと同じ役目）。CSSにそのまま渡せる形（cssColorOf()参照）で持つ
+	static	bgColor		= '#000000';
 	static	debugLog	= false;
 	static	platform	: string;
 	static	plat_desc	: string;

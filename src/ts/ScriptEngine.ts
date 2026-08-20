@@ -1868,8 +1868,12 @@ export class ScriptEngine {
 			const layerNm = args.layer || this.#curTxtLayer;
 			if (! layerNm) throw '[button] layerは必須です（試作仕様）';
 			const label = args.label ?? '';
-			const fn = args.fn ?? '';	// fn指定時は別スクリプトのラベルへ飛ぶ（label省略ならそのファイルの先頭）
-			if (! label && ! fn) throw '[button] fnまたはlabelは必須です';
+			// fn指定時は別スクリプトのラベルへ飛ぶ（label省略ならそのファイルの先頭）。
+			//	本家 LayerMng.ts:1101 hArg.fn ??= this.scrItr.scriptFn と同じく、
+			//	fn省略時は常にカレントスクリプトを既定にする。**label・fnとも省略時**は
+			//	クリック先を持たない「画像表示専用ボタン」（[button pic=... enabled=false]。
+			//	ch_gallery/ch_button の非ボタン用途）として許容する
+			const fn = args.fn ?? this.fn;
 			// 画像ボタン（本家 Button.ts:104）。**picがあれば文字は出さない**（本家も
 			//	pic側の分岐で早期returnし、文字の組み立てへ進まない）
 			const {pic} = args;

@@ -27,17 +27,21 @@ function i(e, t, n) {
 	let i = String(r);
 	return e[t] = i !== "false" && !!i;
 }
-var a = /^[^/.]+$|[^/]+(?=\.)/;
-function o(e) {
-	return (a.exec(e) ?? [""])[0];
+function a(e) {
+	return typeof e == "number" ? `#${e.toString(16).padStart(6, "0")}` : e;
 }
-var s = class {
+var o = /^[^/.]+$|[^/]+(?=\.)/;
+function s(e) {
+	return (o.exec(e) ?? [""])[0];
+}
+var c = class {
 	static init() {
 		let e = globalThis.navigator.userAgent;
 		this.platform = e, this.plat_desc = e, this.isSafari = /safari/i.test(e) && !/chrome|chromium|crios|edg|android|fxios/i.test(e), this.isFirefox = /firefox|fxios/i.test(e), this.isMac = /macintosh|mac os x/i.test(e) && !/iphone|ipad|ipod/i.test(e), this.isMobile = !/windows|macintosh|mac os x/i.test(e) || /iphone|ipad|ipod|android/i.test(e);
 	}
 	static stageW = 0;
 	static stageH = 0;
+	static bgColor = "#000000";
 	static debugLog = !1;
 	static platform;
 	static plat_desc;
@@ -52,6 +56,6 @@ var s = class {
 	static cc4ColorName;
 };
 //#endregion
-export { o as a, n as i, i as n, e as o, r, t as s, s as t };
+export { n as a, t as c, a as i, i as n, s as o, r, e as s, c as t };
 
 //# sourceMappingURL=CmnLib.js.map

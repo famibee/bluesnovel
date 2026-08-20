@@ -62,7 +62,7 @@ var i = "skynovel", a = class {
 	#e;
 	#t;
 	async run() {
-		let [{ createRoot: t }, { initMain: n }, { Config: r }, { ScriptMng: a }, { setFetch: o, setDecFncs: s }, { resetStore: c }] = await Promise.all([
+		let [{ createRoot: n }, { initMain: r }, { Config: a }, { ScriptMng: o }, { setFetch: s, setDecFncs: c }, { resetStore: l }] = await Promise.all([
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
 			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
@@ -70,18 +70,18 @@ var i = "skynovel", a = class {
 			import("./Sprite.js").then((e) => e.t),
 			import("./store.js")
 		]);
-		o((e, t) => this.fetch(e, t)), s((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), c());
-		let l = await r.generate(this);
-		this.setMain(l), document.body.style.backgroundColor = String(l.oCfg.init.bg_color);
-		let u = this.#t ??= document.getElementById(i) ?? (() => {
+		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
+		let u = await a.generate(this);
+		this.setMain(u), document.body.style.backgroundColor = t.bgColor;
+		let d = this.#t ??= document.getElementById(i) ?? (() => {
 			let e = document.createElement("div");
 			return e.id = i, document.body.appendChild(e), e;
-		})(), d = new a(this);
-		this.scrMng = d, this.#e = t(u), n(this.#e, {
-			heStage: u,
+		})(), f = new o(this);
+		this.scrMng = f, this.#e = n(d), r(this.#e, {
+			heStage: d,
 			sys: this,
-			scrMng: d
-		}, () => queueMicrotask(() => d.load("main")));
+			scrMng: f
+		}, () => queueMicrotask(() => f.load("main")));
 	}
 	async stop() {
 		if (!this.#e) return;

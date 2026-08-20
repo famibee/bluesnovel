@@ -25,8 +25,33 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は
-      `ch_button`/`ruby`/`filter`等）：
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`ruby`/`filter`等）：
+  - [x] `ch_button`（文字ボタン・リンク）で2件発見・修正。
+        1つ目：`[button]`が`label`・`fn`両方省略時に一律`throw`していたが、本家
+        `LayerMng.ts:1101`は`hArg.fn ??= this.scrItr.scriptFn`でfnを常にカレントスクリプトへ
+        既定化するため実質不要な制約で、`[button pic=... enabled=false]`（クリック先を持たない
+        画像表示専用ボタン、main.sn:31の「非ボタン、画像表示するだけの使い方」）が読み込み時点で
+        例外落ちしていた。`ScriptEngine.ts`の`case 'button'`で`fn`を`args.fn ?? this.fn`へ変更し
+        throwを削除（`test/ScriptEngine.test.ts`・`test/ScriptEngine_btn.test.ts`の関連テストも
+        「fnは常にaddBtnアクションへ載る」前提に更新）。
+        2つ目：`[prj.json init.bg_color]`（ステージ全体の背景色。本家`LayerMng.ts:172-178`が
+        `#fore`/`#back`両方に敷くステージ大の塗り）が実質未実装だった。`SysBase.ts`の
+        `document.body.style.backgroundColor = String(cfg.oCfg.init.bg_color)`は、bg_colorが
+        prj.json由来の生の数値（例：4231232）のとき`String(4231232)`="4231232"という無効な
+        CSS値になり、代入がブラウザに黙って無視されるため常時デフォルトの黒のままだった。加えて
+        `Stage.tsx`の`styStage`/`styPage`はステージ・ページ背景を`black`に直書きしており、
+        bg_colorを反映する経路がそもそも無かった（コメントで「素通しの黒」と明記されていたが
+        本来は設定色であるべきだった）。`CmnLib.ts`に`cssColorOf()`（数値のときだけ`#RRGGBB`へ
+        変換、文字列はCSSがそのまま解釈できるので素通し）と`CmnLib.bgColor`を追加、
+        `Config.ts`の`load()`で`super.load()`後（＝`this.oCfg.init`が既定値とマージ済みの後）に
+        設定するようにし、`SysBase.ts`・`Stage.tsx`（styStage/styPage）はそれぞれ
+        `CmnLib.bgColor`を参照するよう修正。ch_buttonのmat/main.snは背景画像を一切使わず
+        `bg_color`だけに頼る作りだったため、本家実機（緑一色のステージ）とbluesnovel（常に黒）の
+        差が一目瞭然だった。修正後、playwright-cliで本家実機と同じ緑（`#409040`）がステージ全体
+        （文字レイヤの箱より外側も含む）に敷かれることを確認済み。Q1（[button]4種＋[link]2種＋
+        既読スキップ・画像ボタン2種）→Q2（[link]2種、`にっぽんばし`の`style=`背景ハイライトも
+        含む）→終端まで一通りクリックで通し、誤答・正解いずれの分岐も本家と同じ文言・遷移に
+        なることを確認済み。`bun test`（1684件）・`tsc --noEmit`とも回帰無し
   - [x] `[link]`のホバー（`style_hover`・`hint`ツールチップ）自体は本家ギャラリー実機と
         playwright-cliで比較し正しく動作することを確認済み。ただし確認の過程で、`top`の
         本文（`[add_lay layer=mes class=txt]`のみで`[lay style=…]`を一度も受けていない

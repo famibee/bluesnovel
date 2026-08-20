@@ -1,9 +1,9 @@
-import { o as e, t } from "./CmnLib.js";
+import { i as e, s as t, t as n } from "./CmnLib.js";
 //#region src/sn/ConfigBase.ts
-var n = /* @__PURE__ */ function(e) {
+var r = /* @__PURE__ */ function(e) {
 	return e.DEFAULT = "", e.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", e.SCRIPT = "sn|ssn", e.FONT = "woff2|woff|otf|ttf", e.SOUND = "mp3|m4a|ogg|aac|flac|wav", e.HTML = "htm|html", e.CSS = "css", e.SN = "sn", e.TST_PNGPNG_ = "png|png_", e.TST_HH = "hh", e.TST_EEE = "eee", e.TST_GGG = "ggg", e.TST_PNGXML = "png|xml", e;
 }({});
-function r() {
+function i() {
 	return {
 		save_ns: "",
 		window: {
@@ -41,9 +41,9 @@ function r() {
 		debuger_token: ""
 	};
 }
-var i = class {
+var a = class {
 	sys;
-	oCfg = r();
+	oCfg = i();
 	userFnTail = "";
 	hPathFn2Exts = {};
 	constructor(e) {
@@ -88,10 +88,10 @@ var i = class {
 		return `skynovel.${this.oCfg.save_ns} - `;
 	}
 	#n = /([^/\s]+)\.([^\d]\w+)/;
-	searchPath(t, n = "") {
-		if (!t) throw "[searchPath] fnが空です";
-		if (t.startsWith("http://")) return t;
-		let r = t.match(this.#n), i = r ? r[1] ?? "" : t, a = r ? r[2] : "";
+	searchPath(e, n = "") {
+		if (!e) throw "[searchPath] fnが空です";
+		if (e.startsWith("http://")) return e;
+		let r = e.match(this.#n), i = r ? r[1] ?? "" : e, a = r ? r[2] : "";
 		if (this.userFnTail) {
 			let e = i + "@@" + this.userFnTail;
 			if (e in this.hPathFn2Exts) {
@@ -103,24 +103,24 @@ var i = class {
 			}
 		}
 		let o = this.hPathFn2Exts[i];
-		if (!o) throw `サーチパスに存在しないファイル【${t}】です`;
+		if (!o) throw `サーチパスに存在しないファイル【${e}】です`;
 		if (!a) {
-			let r = e(o[":cnt"]);
+			let r = t(o[":cnt"]);
 			if (n === "") {
-				if (r > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
-				return t;
+				if (r > 1) throw `指定ファイル【${e}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
+				return e;
 			}
 			let i = `|${n}|`;
 			if (r > 1) {
-				let e = 0;
-				for (let r of Object.keys(o)) if (i.includes(`|${r}|`) && ++e > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
+				let t = 0;
+				for (let r of Object.keys(o)) if (i.includes(`|${r}|`) && ++t > 1) throw `指定ファイル【${e}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
 			}
 			for (let [e, t] of Object.entries(o)) if (i.includes(`|${e}|`)) return t;
-			throw `サーチ対象拡張子群【${n}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${t}】`;
+			throw `サーチ対象拡張子群【${n}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${e}】`;
 		}
-		if (n !== "" && !`|${n}|`.includes(`|${a}|`)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${t}】`;
+		if (n !== "" && !`|${n}|`.includes(`|${a}|`)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${e}】`;
 		let s = o[a];
-		if (!s) throw `サーチパスに存在しない拡張子【${a}】です。探索ファイル名=【${t}】、サーチ対象拡張子群【${n}】`;
+		if (!s) throw `サーチパスに存在しない拡張子【${a}】です。探索ファイル名=【${e}】、サーチ対象拡張子群【${n}】`;
 		return s;
 	}
 	matchPath(e, t = "") {
@@ -142,28 +142,28 @@ var i = class {
 		for (let [e, r] of Object.entries(t)) n[e] = (e.startsWith(":") ? "" : this.sys.arg.cur) + String(r);
 		this.hPathFn2Exts[e] = n;
 	}
-}, a = "userdata:/", o = "downloads:/", s = class e extends i {
+}, o = "userdata:/", s = "downloads:/", c = class t extends a {
 	sys;
-	static async generate(t) {
-		let n = new e(t), r = t.arg.cur + "prj.json", i = await t.fetch(r);
+	static async generate(e) {
+		let n = new t(e), r = e.arg.cur + "prj.json", i = await e.fetch(r);
 		if (!i.ok) throw Error(i.statusText);
-		let a = await t.dec(r, await i.text());
+		let a = await e.dec(r, await i.text());
 		return await n.load(JSON.parse(a)), n;
 	}
 	constructor(e) {
 		super(e), this.sys = e;
 	}
-	async load(e) {
-		return e.window ??= {
+	async load(t) {
+		t.window ??= {
 			width: 300,
 			height: 300
-		}, t.stageW = e.window.width, t.stageH = e.window.height, t.debugLog = e.debug.debugLog, t.init(), super.load(e);
+		}, n.stageW = t.window.width, n.stageH = t.window.height, n.debugLog = t.debug.debugLog, n.init(), await super.load(t), n.bgColor = e(this.oCfg.init.bg_color);
 	}
-	searchPath(e, t = n.DEFAULT) {
+	searchPath(e, t = r.DEFAULT) {
 		return e.startsWith("downloads:/") ? this.sys.path_downloads + e.slice(11) : e.startsWith("userdata:/") ? this.sys.path_userdata + "storage/" + e.slice(10) : super.searchPath(e, t);
 	}
 };
 //#endregion
-export { s as Config, o as PROTOCOL_DL, a as PROTOCOL_USERDATA, n as t };
+export { c as Config, s as PROTOCOL_DL, o as PROTOCOL_USERDATA, r as t };
 
 //# sourceMappingURL=Config.js.map

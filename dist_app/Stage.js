@@ -1,5 +1,5 @@
 import { r as e, t } from "./rolldown-runtime.js";
-import { n, o as r, t as i } from "./CmnLib.js";
+import { n, s as r, t as i } from "./CmnLib.js";
 import { t as a } from "./react.js";
 import { t as o } from "./FocusMng.js";
 import { _ as s, a as c, c as l, d as u, g as d, h as f, i as p, l as m, m as h, o as g, p as _, u as v, useStore as y, v as b } from "./store.js";
@@ -10804,7 +10804,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		width: ${L}px;
 		height: ${R}px;
 		overflow: hidden;
-		background-color: black;
+		background-color: ${i.bgColor};
 
 		/* ステージ既定フォント。本家 TxtLayer.ts:272 のメッセージ層デフォルトと同じ Hiragino 系スタック。
 			ここへ置けば各レイヤ（文字メッセージ等）が継承する。ボタンは本家 sn.button.fontFamily 相当を
@@ -10825,7 +10825,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background-color: black;
+		background-color: ${i.bgColor};
 	`, ue = _u`
 		position: relative; z-index: 1;
 

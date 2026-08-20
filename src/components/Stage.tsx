@@ -209,13 +209,14 @@ export default function Stage({
 
 	// css
 	//	ステージ本体。ここが座標系の原点かつ表示範囲で、はみ出したレイヤは切り取られる。
-	//	背景は黒（画像を置いていない領域＝素通しの黒。[trans]中も同じ）
+	//	背景は[prj.json init.bg_color]（本家 LayerMng.ts:172-178。画像を置いていない領域に
+	//	素通しで出る色。[trans]中も同じ）
 	const styStage = css`
 		position: relative;
 		width: ${stageW}px;
 		height: ${stageH}px;
 		overflow: hidden;
-		background-color: black;
+		background-color: ${CmnLib.bgColor};
 
 		/* ステージ既定フォント。本家 TxtLayer.ts:272 のメッセージ層デフォルトと同じ Hiragino 系スタック。
 			ここへ置けば各レイヤ（文字メッセージ等）が継承する。ボタンは本家 sn.button.fontFamily 相当を
@@ -241,13 +242,14 @@ export default function Stage({
 	`;
 	// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
 	//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
-	//	不透明な黒地にしておくことで、画像の無い部分は黒く塗り潰される
+	//	不透明にしておくことで、画像の無い部分はbg_colorで塗り潰される（本家は#fore/#back
+	//	両方に同じbg_color塗りを敷く。LayerMng.ts:172-180）
 	const styPage = css`
 		position: absolute; top: 0; left: 0;
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background-color: black;
+		background-color: ${CmnLib.bgColor};
 	`;
 
 	const styBtn = css`

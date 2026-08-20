@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {CmnLib} from './CmnLib';
+import {CmnLib, cssColorOf} from './CmnLib';
 import type {SysBase} from './SysBase';
 import {ConfigBase, SEARCH_PATH_ARG_EXT, type T_CFG_RAW} from './ConfigBase';
 
@@ -34,7 +34,9 @@ export class Config extends ConfigBase {
 		CmnLib.debugLog = oCfg.debug.debugLog;
 		CmnLib.init();	// UA文字列を見るだけなので同期（本家はplatform.jsを動的importしていた）
 
-		return super.load(oCfg);
+		await super.load(oCfg);
+		// super.load()後：this.oCfg.initは既定値とマージ済みなので、未指定でも安全に読める
+		CmnLib.bgColor = cssColorOf(this.oCfg.init.bg_color);
 	}
 
 	override	searchPath(fn: string, extptn: SEARCH_PATH_ARG_EXT = SEARCH_PATH_ARG_EXT.DEFAULT): string {

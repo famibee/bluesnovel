@@ -101,7 +101,10 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		// React 初期表示
 		const cfg = await Config.generate(this);
 		this.setMain(cfg);
-		document.body.style.backgroundColor = String(cfg.oCfg.init.bg_color);
+		// bg_colorは生の数値/色名/#RRGGBBのいずれもありうる（T_CFG_RAW.init.bg_color）ので、
+		//	String()だけでは数値（例:4231232）がCSSとして無効なまま素通りしてしまっていた
+		//	（Config.tsのload()内でCmnLib.bgColorへ変換済み。cssColorOf()参照）
+		document.body.style.backgroundColor = CmnLib.bgColor;
 
 		// 初回だけ：ホストHTMLの既存要素（sn_gallery index.htmlの<canvas id="skynovel">等、
 		//	pixi.js時代の名残）があればそれをそのままマウント先にし、無ければdivを新設する。

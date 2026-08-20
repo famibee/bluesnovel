@@ -1,9 +1,9 @@
-import { a as e, t } from "./CmnLib.js";
+import { o as e, r as t, t as n } from "./CmnLib.js";
 //#region src/sn/ConfigBase.ts
-var n = /* @__PURE__ */ function(e) {
+var r = /* @__PURE__ */ function(e) {
 	return e.DEFAULT = "", e.SP_GSM = "png|jpg|jpeg|json|svg|webp|mp4|webm", e.SCRIPT = "sn|ssn", e.FONT = "woff2|woff|otf|ttf", e.SOUND = "mp3|m4a|ogg|aac|flac|wav", e.HTML = "htm|html", e.CSS = "css", e.SN = "sn", e.TST_PNGPNG_ = "png|png_", e.TST_HH = "hh", e.TST_EEE = "eee", e.TST_GGG = "ggg", e.TST_PNGXML = "png|xml", e;
 }({});
-function r() {
+function i() {
 	return {
 		save_ns: "",
 		window: {
@@ -41,9 +41,9 @@ function r() {
 		debuger_token: ""
 	};
 }
-var i = class {
+var a = class {
 	sys;
-	oCfg = r();
+	oCfg = i();
 	userFnTail = "";
 	hPathFn2Exts = {};
 	constructor(e) {
@@ -142,7 +142,7 @@ var i = class {
 		for (let [e, r] of Object.entries(t)) n[e] = (e.startsWith(":") ? "" : this.sys.arg.cur) + String(r);
 		this.hPathFn2Exts[e] = n;
 	}
-}, a = "userdata:/", o = "downloads:/", s = class e extends i {
+}, o = "userdata:/", s = "downloads:/", c = class e extends a {
 	sys;
 	static async generate(t) {
 		let n = new e(t), r = t.arg.cur + "prj.json", i = await t.fetch(r);
@@ -154,16 +154,16 @@ var i = class {
 		super(e), this.sys = e;
 	}
 	async load(e) {
-		return e.window ??= {
+		e.window ??= {
 			width: 300,
 			height: 300
-		}, t.stageW = e.window.width, t.stageH = e.window.height, t.debugLog = e.debug.debugLog, t.init(), super.load(e);
+		}, n.stageW = e.window.width, n.stageH = e.window.height, n.debugLog = e.debug.debugLog, n.init(), await super.load(e), n.bgColor = t(this.oCfg.init.bg_color);
 	}
-	searchPath(e, t = n.DEFAULT) {
+	searchPath(e, t = r.DEFAULT) {
 		return e.startsWith("downloads:/") ? this.sys.path_downloads + e.slice(11) : e.startsWith("userdata:/") ? this.sys.path_userdata + "storage/" + e.slice(10) : super.searchPath(e, t);
 	}
 };
 //#endregion
-export { s as Config, o as PROTOCOL_DL, a as PROTOCOL_USERDATA, n as t };
+export { c as Config, s as PROTOCOL_DL, o as PROTOCOL_USERDATA, r as t };
 
 //# sourceMappingURL=Config.js.map
