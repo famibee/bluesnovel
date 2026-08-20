@@ -426,18 +426,18 @@ export class ScriptEngine {
 	readonly #hLoopPlay: {[buf: string]: string} = Object.create(null);
 	#setLoopPlay(buf: string, fn: string) {
 		this.#hLoopPlay[buf] = fn;
-		this.#val.set('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
+		this.#val.setNochk('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
 	}
 	#delLoopPlay(buf: string) {
 		if (buf in this.#hLoopPlay) {
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete this.#hLoopPlay[buf];
-			this.#val.set(`save:const.sn.sound.${buf}.fn`, '');
+			this.#val.setNochk(`save:const.sn.sound.${buf}.fn`, '');
 		}
 		// bufが未登録でも書く：save:const.sn.loopPlayingの既定値'{}'（CmnInterface.ts）を
 		//	初回の[playse]/[stopse]の時点で確実に埋めておくため（本家はモジュール変数なので
 		//	常に存在するが、こちらはインスタンスの初期状態が「未定義」になり得る）
-		this.#val.set('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
+		this.#val.setNochk('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
 	}
 
 	// VOICE再生中のBGM音量絞り込み（本家 SndBuf.ts:143-157 のモジュール変数vol_mul_talkingを
@@ -565,6 +565,7 @@ export class ScriptEngine {
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
 		'button', 'event', 'clear_event', 'enable_event', 'clearvar', 'clearsysvar', 'page',
 		'wait', 'waitclick', 'l', 'p', 's',
+		'ch', 'endlink', 'graph', 'link', 'ruby2', 'span', 'tcy',
 		// ＢＧＭ・効果音・動画
 		'fadebgm', 'fadeoutbgm', 'fadeoutse', 'fadese', 'playbgm', 'playse',
 		'stop_allse', 'stopbgm', 'stopfadese', 'stopse', 'volume', 'wb', 'wf', 'wl', 'ws', 'xchgbuf', 'wv',
@@ -645,7 +646,7 @@ export class ScriptEngine {
 		//	（例：本家準拠の[hidetext]相当が既定文字レイヤを掴む処理）、変数が未定義のまま
 		//	式評価が'undefined'を返し、[lay layer=&save:const.sn.mesLayer]のlayer属性が
 		//	丸ごと消えて「存在しないレイヤ」例外になる事故があったため
-		this.#val.set('save:const.sn.mesLayer', this.#curTxtLayer);
+		this.#val.setNochk('save:const.sn.mesLayer', this.#curTxtLayer);
 	}
 	#isFullScr = false;
 	setFullScr(b: boolean) {this.#isFullScr = b}
@@ -674,7 +675,7 @@ export class ScriptEngine {
 
 	// ScriptMng（DOM側）が「DOMを触った結果」を組み込み変数へ書き戻すための口。
 	//	[add_frame]の読込完了や[let_frame]の取得値がこれを通る（本家 val.setVal_Nochk('tmp', …) 相当）
-	setValNochk(name: string, v: T_VAL_D) {this.#val.set(name, v)}
+	setValNochk(name: string, v: T_VAL_D) {this.#val.setNochk(name, v)}
 
 	// sys:への代入に即座に反応させたい副作用の登録口（本家の「代入トリガ関数」T_fncSetVal相当）。
 	//	専用タグを経由しない直接代入（[let]・&=・設定画面）にも反応させたい値のためのフック。
@@ -775,8 +776,8 @@ export class ScriptEngine {
 	//	この2つは復元時にどこへ戻るかそのものなので、しおりのhSaveに含まれる必要がある
 	recordPlace() {
 		const {fn, idx} = this.nowScrIdx();
-		this.#val.set('save:const.sn.scriptFn', fn);
-		this.#val.set('save:const.sn.scriptIdx', idx);
+		this.#val.setNochk('save:const.sn.scriptFn', fn);
+		this.#val.setNochk('save:const.sn.scriptIdx', idx);
 	}
 	// しおりのエンジン側の中身。ifスタックはコールスタックぶんを切り落とす
 	//	（本家 #aIfStk.slice(#aCallStk.length)。復元時はコールスタックが空になるため）
@@ -785,7 +786,7 @@ export class ScriptEngine {
 		//	**本家は本文を1トークン追記するたびにこれを書き直す**が、この値を読むのは
 		//	しおりの保存と復元だけなので、ここ＝スナップショットを取る直前の1回で足りる。
 		//	（本家がそうしているのは、あちらのLogがしおり処理から見えない場所に居るため）
-		this.#val.set('save:const.sn.sLog', this.#log.json());
+		this.#val.setNochk('save:const.sn.sLog', this.#log.json());
 		return {
 			hSave	: this.#val.cloneNs('game'),
 			aIfStk	: this.#aIfStk.slice(this.#aCallStk.length),
@@ -1097,7 +1098,7 @@ export class ScriptEngine {
 			// 文字レイヤは作った時点で「イベントを受ける」（本家 LayerMng.ts:465）。
 			//	[enable_event]がこれを書き換える。**シナリオから読むための値**なので、
 			//	これを書き換えても効かない（有効・無効を変えるのは[enable_event]）
-			if (cls === 'txt') this.#val.set(`save:const.sn.layer.${nm}.enabled`, true);
+			if (cls === 'txt') this.#val.setNochk(`save:const.sn.layer.${nm}.enabled`, true);
 			aAct.push({t: 'addLay', cls, nm});
 			return 'skip';
 		}
@@ -1108,7 +1109,7 @@ export class ScriptEngine {
 			if (nmCur !== this.#curTxtLayer) this.#recPagebreak();
 			this.#curTxtLayer = nmCur;
 			// 本家（LayerMng.ts:958）と同じくsave:へも書く。しおりに含まれるので[load]で戻る
-			this.#val.set('save:const.sn.mesLayer', this.#curTxtLayer);
+			this.#val.setNochk('save:const.sn.mesLayer', this.#curTxtLayer);
 			return 'skip';
 		}
 
@@ -1697,13 +1698,13 @@ export class ScriptEngine {
 			const ena = args.enabled === undefined
 				? this.#val.get('game:const.sn.autowc.enabled') === true
 				: args.enabled !== 'false';
-			this.#val.set('save:const.sn.autowc.enabled', ena);
+			this.#val.setNochk('save:const.sn.autowc.enabled', ena);
 
 			const {text} = args;
 			if (('text' in args) !== ('time' in args)) throw '[autowc] textとtimeは同時指定必須です';
-			this.#val.set('save:const.sn.autowc.text', text ?? '');
+			this.#val.setNochk('save:const.sn.autowc.text', text ?? '');
 			if (! text) {	// 表を空にするだけ（enabledは上で反映済み）
-				this.#val.set('save:const.sn.autowc.time', '');
+				this.#val.setNochk('save:const.sn.autowc.time', '');
 				aAct.push({t: 'autowc', enabled: ena, hWait: {}});
 				return 'skip';
 			}
@@ -1714,7 +1715,7 @@ export class ScriptEngine {
 
 			const hWait: {[ch: string]: number} = {};
 			aCh.forEach((c, i)=> {hWait[c] = uint(ScriptEngine.#argNum('autowc', 'time', aTm[i] ?? ''))});
-			this.#val.set('save:const.sn.autowc.time', args.time ?? '');
+			this.#val.setNochk('save:const.sn.autowc.time', args.time ?? '');
 			aAct.push({t: 'autowc', enabled: ena, hWait});
 			return 'skip';
 		}
@@ -2054,10 +2055,10 @@ export class ScriptEngine {
 				h	: num('height', 'h', now('h', cfg('height'))),
 			};
 			// 本家同様sys:へ焼き付ける（設定として残る＝次の起動でも同じ位置・大きさ）
-			this.#val.set('sys:const.sn.nativeWindow.x', o.x);
-			this.#val.set('sys:const.sn.nativeWindow.y', o.y);
-			this.#val.set('sys:const.sn.nativeWindow.w', o.w);
-			this.#val.set('sys:const.sn.nativeWindow.h', o.h);
+			this.#val.setNochk('sys:const.sn.nativeWindow.x', o.x);
+			this.#val.setNochk('sys:const.sn.nativeWindow.y', o.y);
+			this.#val.setNochk('sys:const.sn.nativeWindow.w', o.w);
+			this.#val.setNochk('sys:const.sn.nativeWindow.h', o.h);
 			aAct.push({t: 'window', ...o});
 			return 'skip';
 		}
@@ -2168,7 +2169,7 @@ export class ScriptEngine {
 
 			// 「次に保存する枠」を1つ進める（本家と同じ、今書いた枠が現在値のときだけ）
 			const now = Number(this.#val.get('sys:const.sn.save.place'));
-			if (place === now) this.#val.set('sys:const.sn.save.place', now +1);
+			if (place === now) this.#val.setNochk('sys:const.sn.save.place', now +1);
 			return 'skip';
 		}
 
@@ -2305,7 +2306,7 @@ export class ScriptEngine {
 			this.#chkFrm('set_frame', id);
 
 			// 本家同様、組み込み変数にも同じ値を控える（フレーム側と食い違わないように）
-			this.#val.set(`const.sn.frm.${id}.${var_name}`, text);
+			this.#val.setNochk(`const.sn.frm.${id}.${var_name}`, text);
 			aAct.push({t: 'setFrame', id, var_name, text});
 			return 'skip';
 		}
@@ -2332,7 +2333,7 @@ export class ScriptEngine {
 			const enabled = (args.enabled ?? 'true') !== 'false';
 			// シナリオから今の状態を読めるようにする（本家 LayerMng.ts:1092 と同じ save: 名前空間）。
 			//	**読む専用**：ここへ代入しても有効・無効は変わらない（変えるのはこのタグ）
-			this.#val.set(`save:const.sn.layer.${nm}.enabled`, enabled);
+			this.#val.setNochk(`save:const.sn.layer.${nm}.enabled`, enabled);
 			aAct.push({t: 'enableEvent', nm, enabled});
 			return 'skip';
 		}
@@ -2405,11 +2406,11 @@ export class ScriptEngine {
 			// 目標音量（save:）と基準音量（sys:。バッファごとに無ければ1で作る）の合成が実効音量
 			const vn = `const.sn.sound.${buf}.`;
 			const savevol = ScriptEngine.#clampVol(ScriptEngine.#argNumDef(name, 'volume', args.volume, 1));
-			this.#val.set(`save:${vn}volume`, savevol);
-			this.#val.set(`save:${vn}fn`, fn);
-			this.#val.set(`save:${vn}start_ms`, start_ms);
-			this.#val.set(`save:${vn}end_ms`, end_ms);
-			this.#val.set(`save:${vn}ret_ms`, ret_ms);
+			this.#val.setNochk(`save:${vn}volume`, savevol);
+			this.#val.setNochk(`save:${vn}fn`, fn);
+			this.#val.setNochk(`save:${vn}start_ms`, start_ms);
+			this.#val.setNochk(`save:${vn}end_ms`, end_ms);
+			this.#val.setNochk(`save:${vn}ret_ms`, ret_ms);
 			const sysvol = Number(this.#val.get(`sys:${vn}volume`, 1, true));
 			let volume = savevol * sysvol;
 
@@ -2468,8 +2469,8 @@ export class ScriptEngine {
 			for (const k of Object.keys(D)) {
 				const v = this.#val.get(`save:${vn}${k}`, D[k]);
 				const v2 = this.#val.get(`save:${vn2}${k}`, D[k]);
-				this.#val.set(`save:${vn}${k}`, v2);
-				this.#val.set(`save:${vn2}${k}`, v);
+				this.#val.setNochk(`save:${vn}${k}`, v2);
+				this.#val.setNochk(`save:${vn2}${k}`, v);
 			}
 
 			// ループ帳簿（save:const.sn.loopPlaying）も両方向に入れ替える。本家 SndBuf.ts:64 の
@@ -2479,7 +2480,7 @@ export class ScriptEngine {
 			const lp2 = this.#hLoopPlay[buf2];
 			if (lp2 === undefined) delete this.#hLoopPlay[buf]; else this.#hLoopPlay[buf] = lp2;
 			if (lp === undefined) delete this.#hLoopPlay[buf2]; else this.#hLoopPlay[buf2] = lp;
-			this.#val.set('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
+			this.#val.setNochk('save:const.sn.loopPlaying', JSON.stringify(this.#hLoopPlay));
 
 			aAct.push({t: 'xchgBufSnd', buf, buf2});
 			return 'skip';
@@ -2489,7 +2490,7 @@ export class ScriptEngine {
 			const buf = args.buf || 'SE';
 			const vn = `const.sn.sound.${buf}.`;
 			const sysvol = ScriptEngine.#clampVol(ScriptEngine.#argNumDef('volume', 'volume', args.volume, 1));
-			this.#val.set(`sys:${vn}volume`, sysvol);
+			this.#val.setNochk(`sys:${vn}volume`, sysvol);
 			const savevol = Number(this.#val.get(`save:${vn}volume`, 1, true));
 			aAct.push({t: 'volumeSnd', buf, volume: savevol * sysvol});
 			return 'skip';
@@ -2504,7 +2505,7 @@ export class ScriptEngine {
 
 			// [fadeoutse]/[fadeoutbgm]はvolume=0固定（属性そのものを受け付けない。本家tag.html準拠）
 			const savevol = isOut ? 0 : ScriptEngine.#clampVol(ScriptEngine.#argNum(name, 'volume', args.volume ?? ''));
-			this.#val.set(`save:${vn}volume`, savevol);
+			this.#val.setNochk(`save:${vn}volume`, savevol);
 			const sysvol = Number(this.#val.get(`sys:${vn}volume`, 1, true));
 			// stopの既定：fadeoutは常にtrue、fadeはvolume=0を指定した時だけtrue（本家 SndBuf.ts:413）
 			const stop = (args.stop ?? (savevol === 0 ? 'true' : 'false')) !== 'false';
@@ -2605,6 +2606,8 @@ export class ScriptEngine {
 	#if(args: {[k: string]: string}) {
 		const exp = args.exp ?? '';
 		if (! exp) throw '[if] expは必須です（試作仕様）';
+		// 本家 ScriptIterator.ts:890：expは既に式なので先頭に「&」は不要（誤入力の検出）
+		if (exp.startsWith('&')) throw '[if] 属性expは「&」が不要です';
 
 		let idxGo = this.#expr.evalBool(exp) ? this.#idx : -1;
 		let cntDepth = 0;	// 入れ子ifの深度カウンター（elsif/elseは深度を跨がないためifとendifのみ数える）
@@ -2632,6 +2635,8 @@ export class ScriptEngine {
 
 				const e = a2.exp ?? '';
 				if (! e) throw '[elsif] expは必須です（試作仕様）';
+				// 本家 ScriptIterator.ts:920：expは既に式なので先頭に「&」は不要（誤入力の検出）
+				if (e.startsWith('&')) throw '[elsif] 属性expは「&」が不要です';
 				if (this.#expr.evalBool(e)) idxGo = this.#idx + 1;
 				continue;
 			}

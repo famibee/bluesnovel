@@ -339,12 +339,15 @@ it('defSetTrigger_firesOnDirectAssign', ()=> {
 });
 
 it('defSetTriggerSoundVol_firesWithParsedBuf', ()=> {
-	// bufはキー完全一致では表せないので、const.sn.sound.<buf>.volumeの<buf>部分を渡す
+	// bufはキー完全一致では表せないので、const.sn.sound.<buf>.volumeの<buf>部分を渡す。
+	//	実運用ではsys:const.sn.sound.<buf>.volumeへの代入は[volume]タグ経由（エンジン内部の
+	//	setNochk()）で行われる（本家サンプルも直接代入ではなく[volume buf=... volume=...]を
+	//	使う）ため、ここでもsetNochk()でトリガー発火ロジックのみを検証する
 	const vs = new VarStore;
 	const aCalled: [string, unknown][] = [];
 	vs.defSetTriggerSoundVol((buf, v)=> aCalled.push([buf, v]));
-	vs.set('sys:const.sn.sound.VOICE.volume', 0.3);
-	vs.set('sys:const.sn.sound.BGM.volume', 0.7);
+	vs.setNochk('sys:const.sn.sound.VOICE.volume', 0.3);
+	vs.setNochk('sys:const.sn.sound.BGM.volume', 0.7);
 	expect(aCalled).toEqual([['VOICE', 0.3], ['BGM', 0.7]]);
 });
 

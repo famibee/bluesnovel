@@ -321,29 +321,36 @@ var w = { save: "game" }, T = class e {
 		if (t === "null") return null;
 		if (t !== "undefined") return e.REG_NUMERICLITERAL.test(t) ? parseFloat(t) : t;
 	}
-	set(t, n, r = "") {
-		let { ns: i, key: a } = e.parseName(t);
-		if (i === "tmp" && a in this.#t) throw `組み込み変数【${t}】へは代入できません`;
-		let o = `${i}.${a}`;
-		r === "str" ? this.#n.add(o) : this.#n.delete(o);
-		let s = e.castTo(n, r);
-		if (this.#e[o] = s, this.#r[o]?.(s), i === "sys" && this.#i) {
-			let e = /^const\.sn\.sound\.([^.]+)\.volume$/.exec(a);
-			e && this.#i(e[1], s);
+	set(e, t, n = "") {
+		this.#c(e, t, n, !0);
+	}
+	setNochk(e, t, n = "") {
+		this.#c(e, t, n, !1);
+	}
+	#c(t, n, r, i) {
+		let { ns: a, key: o } = e.parseName(t);
+		if (a === "tmp" && o in this.#t) throw `組み込み変数【${t}】へは代入できません`;
+		let s = `${a}.${o}`;
+		if (i && o.startsWith("const.") && s in this.#e) throw `変数【${t}】は書き換え不可です`;
+		r === "str" ? this.#n.add(s) : this.#n.delete(s);
+		let c = e.castTo(n, r);
+		if (this.#e[s] = c, this.#r[s]?.(c), a === "sys" && this.#i) {
+			let e = /^const\.sn\.sound\.([^.]+)\.volume$/.exec(o);
+			e && this.#i(e[1], c);
 		}
 	}
 	static castTo(t, n) {
 		switch (n) {
 			case "": return t;
-			case "num": return e.#c(t);
-			case "int": return c(e.#c(t));
-			case "uint": return u(e.#c(t));
+			case "num": return e.#l(t);
+			case "int": return c(e.#l(t));
+			case "uint": return u(e.#l(t));
 			case "bool": return t != null && String(t) !== "false" && !!String(t);
 			case "str": return t == null ? t : String(t);
 			default: throw `cast【${String(n)}】は未定義です`;
 		}
 	}
-	static #c(e) {
+	static #l(e) {
 		let t = String(e), n = t.startsWith("0x") ? parseInt(t, 16) : parseFloat(t);
 		if (Number.isNaN(n)) throw `値【${t}】が数値ではありません`;
 		return n;
@@ -354,7 +361,7 @@ var w = { save: "game" }, T = class e {
 		return e;
 	}
 	setMp(e) {
-		this.#l("mp.");
+		this.#u("mp.");
 		for (let t of Object.keys(e)) this.#e[`mp.${t}`] = e[t];
 	}
 	cloneNs(e) {
@@ -367,7 +374,7 @@ var w = { save: "game" }, T = class e {
 	}
 	setNs(e, t) {
 		let n = `${e}.`;
-		this.#l(n);
+		this.#u(n);
 		for (let [e, r] of Object.entries(t)) {
 			let t = e.endsWith("@str"), i = n + (t ? e.slice(0, -4) : e);
 			this.#e[i] = r, t && this.#n.add(i);
@@ -387,12 +394,12 @@ var w = { save: "game" }, T = class e {
 		return e;
 	}
 	clearGame() {
-		this.#l("game.");
+		this.#u("game.");
 	}
 	clearSys() {
-		this.#l("sys."), this.#a();
+		this.#u("sys."), this.#a();
 	}
-	#l(e) {
+	#u(e) {
 		for (let t of Object.keys(this.#e)) t.startsWith(e) && (delete this.#e[t], this.#n.delete(t));
 	}
 }, ee = /\[[^\]]+\]/g, te = {
@@ -731,6 +738,7 @@ var w = { save: "game" }, T = class e {
 	static #i = /^\[macro\s/;
 	static #a = /^\[endmacro[\s\]]/;
 	label2idx(t, n, r = !1) {
+		if (t && !t.startsWith("*")) throw `[jump系] labelは*で始まります：${t}`;
 		let i = t.match(e.#r);
 		if (!i) return this.#t[t];
 		let a = i[1];
@@ -1364,10 +1372,10 @@ var ke = class {
 	#C = Object.create(null);
 	#w = Object.create(null);
 	#T(e, t) {
-		this.#w[e] = t, this.#O.set("save:const.sn.loopPlaying", JSON.stringify(this.#w));
+		this.#w[e] = t, this.#O.setNochk("save:const.sn.loopPlaying", JSON.stringify(this.#w));
 	}
 	#E(e) {
-		e in this.#w && (delete this.#w[e], this.#O.set(`save:const.sn.sound.${e}.fn`, "")), this.#O.set("save:const.sn.loopPlaying", JSON.stringify(this.#w));
+		e in this.#w && (delete this.#w[e], this.#O.setNochk(`save:const.sn.sound.${e}.fn`, "")), this.#O.setNochk("save:const.sn.loopPlaying", JSON.stringify(this.#w));
 	}
 	#D = 1;
 	resetVolMulTalking() {
@@ -1403,7 +1411,7 @@ var ke = class {
 	#z = !1;
 	#B = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.log.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.log.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.ch.endlink.graph.link.ruby2.span.tcy.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
 	#V() {
 		let t = Object.create(null);
 		for (let n of e.RESERVED_TAGS) t[n] = !0;
@@ -1411,7 +1419,7 @@ var ke = class {
 		return t;
 	}
 	constructor(e, t = "") {
-		this.#g = e instanceof re ? e : new re(e, t), this.#O.defBuiltin("const.sn.scriptFn", () => this.fn), this.#O.defBuiltin("const.sn.isKidoku", () => this.#z), this.#O.defBuiltin("const.sn.displayState", () => this.#H), this.#O.defBuiltin("const.Date.getDateStr", () => d()), this.#O.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#O.defBuiltin("const.sn.last_page_plain_text", () => xe(this.#y[this.#v] ?? "")), this.#O.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#O.defBuiltin("const.sn.log.json", () => this.#j.json()), this.#O.defBuiltin("const.sn.key.alternate", () => this.#U.Alt === !0), this.#O.defBuiltin("const.sn.key.command", () => this.#U.Meta === !0), this.#O.defBuiltin("const.sn.key.control", () => this.#U.Control === !0), this.#O.defBuiltin("const.sn.key.end", () => this.#U.End === !0), this.#O.defBuiltin("const.sn.key.escape", () => this.#U.Escape === !0), this.#O.defBuiltin("const.sn.key.back", () => !1), this.#O.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#O.defBuiltin("const.sn.aIfStk.length", () => this.#P.length), this.#O.defBuiltin("const.sn.vctCallStk.length", () => this.#F.length), this.#O.set("save:const.sn.mesLayer", this.#v);
+		this.#g = e instanceof re ? e : new re(e, t), this.#O.defBuiltin("const.sn.scriptFn", () => this.fn), this.#O.defBuiltin("const.sn.isKidoku", () => this.#z), this.#O.defBuiltin("const.sn.displayState", () => this.#H), this.#O.defBuiltin("const.Date.getDateStr", () => d()), this.#O.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#O.defBuiltin("const.sn.last_page_plain_text", () => xe(this.#y[this.#v] ?? "")), this.#O.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#O.defBuiltin("const.sn.log.json", () => this.#j.json()), this.#O.defBuiltin("const.sn.key.alternate", () => this.#U.Alt === !0), this.#O.defBuiltin("const.sn.key.command", () => this.#U.Meta === !0), this.#O.defBuiltin("const.sn.key.control", () => this.#U.Control === !0), this.#O.defBuiltin("const.sn.key.end", () => this.#U.End === !0), this.#O.defBuiltin("const.sn.key.escape", () => this.#U.Escape === !0), this.#O.defBuiltin("const.sn.key.back", () => !1), this.#O.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#O.defBuiltin("const.sn.aIfStk.length", () => this.#P.length), this.#O.defBuiltin("const.sn.vctCallStk.length", () => this.#F.length), this.#O.setNochk("save:const.sn.mesLayer", this.#v);
 	}
 	#H = !1;
 	setFullScr(e) {
@@ -1437,7 +1445,7 @@ var ke = class {
 		return this.#O.get(e);
 	}
 	setValNochk(e, t) {
-		this.#O.set(e, t);
+		this.#O.setNochk(e, t);
 	}
 	defSetTrigger(e, t) {
 		this.#O.defSetTrigger(e, t);
@@ -1505,10 +1513,10 @@ var ke = class {
 	}
 	recordPlace() {
 		let { fn: e, idx: t } = this.nowScrIdx();
-		this.#O.set("save:const.sn.scriptFn", e), this.#O.set("save:const.sn.scriptIdx", t);
+		this.#O.setNochk("save:const.sn.scriptFn", e), this.#O.setNochk("save:const.sn.scriptIdx", t);
 	}
 	nowMarkPart() {
-		return this.#O.set("save:const.sn.sLog", this.#j.json()), {
+		return this.#O.setNochk("save:const.sn.sLog", this.#j.json()), {
 			hSave: this.#O.cloneNs("game"),
 			aIfStk: this.#P.slice(this.#F.length),
 			hTxt: { ...this.#y },
@@ -1685,7 +1693,7 @@ var ke = class {
 				let e = n.layer ?? n.nm ?? "";
 				if (!e) throw "[add_lay] layerは必須です（試作仕様）";
 				let t = (n.class ?? "txt").toLowerCase() === "grp" ? "grp" : "txt";
-				return this.#y[e] = "", this.#b[e] = "", t === "txt" && this.#O.set(`save:const.sn.layer.${e}.enabled`, !0), o.push({
+				return this.#y[e] = "", this.#b[e] = "", t === "txt" && this.#O.setNochk(`save:const.sn.layer.${e}.enabled`, !0), o.push({
 					t: "addLay",
 					cls: t,
 					nm: e
@@ -1693,7 +1701,7 @@ var ke = class {
 			}
 			case "current": {
 				let e = n.layer ?? n.nm ?? this.#v;
-				return e !== this.#v && this.#ce(), this.#v = e, this.#O.set("save:const.sn.mesLayer", this.#v), "skip";
+				return e !== this.#v && this.#ce(), this.#v = e, this.#O.setNochk("save:const.sn.mesLayer", this.#v), "skip";
 			}
 			case "add_face": {
 				let e = n.name ?? "";
@@ -2042,10 +2050,10 @@ var ke = class {
 			}
 			case "autowc": {
 				let t = n.enabled === void 0 ? this.#O.get("game:const.sn.autowc.enabled") === !0 : n.enabled !== "false";
-				this.#O.set("save:const.sn.autowc.enabled", t);
+				this.#O.setNochk("save:const.sn.autowc.enabled", t);
 				let { text: r } = n;
 				if ("text" in n != "time" in n) throw "[autowc] textとtimeは同時指定必須です";
-				if (this.#O.set("save:const.sn.autowc.text", r ?? ""), !r) return this.#O.set("save:const.sn.autowc.time", ""), o.push({
+				if (this.#O.setNochk("save:const.sn.autowc.text", r ?? ""), !r) return this.#O.setNochk("save:const.sn.autowc.time", ""), o.push({
 					t: "autowc",
 					enabled: t,
 					hWait: {}
@@ -2055,7 +2063,7 @@ var ke = class {
 				let s = {};
 				return i.forEach((t, n) => {
 					s[t] = u(e.#n("autowc", "time", a[n] ?? ""));
-				}), this.#O.set("save:const.sn.autowc.time", n.time ?? ""), o.push({
+				}), this.#O.setNochk("save:const.sn.autowc.time", n.time ?? ""), o.push({
 					t: "autowc",
 					enabled: t,
 					hWait: s
@@ -2246,7 +2254,7 @@ var ke = class {
 					w: i("width", "w", t("w", r("width"))),
 					h: i("height", "h", t("h", r("height")))
 				};
-				return this.#O.set("sys:const.sn.nativeWindow.x", a.x), this.#O.set("sys:const.sn.nativeWindow.y", a.y), this.#O.set("sys:const.sn.nativeWindow.w", a.w), this.#O.set("sys:const.sn.nativeWindow.h", a.h), o.push({
+				return this.#O.setNochk("sys:const.sn.nativeWindow.x", a.x), this.#O.setNochk("sys:const.sn.nativeWindow.y", a.y), this.#O.setNochk("sys:const.sn.nativeWindow.w", a.w), this.#O.setNochk("sys:const.sn.nativeWindow.h", a.h), o.push({
 					t: "window",
 					...a
 				}), "skip";
@@ -2322,7 +2330,7 @@ var ke = class {
 					json: r
 				});
 				let i = Number(this.#O.get("sys:const.sn.save.place"));
-				return t === i && this.#O.set("sys:const.sn.save.place", i + 1), "skip";
+				return t === i && this.#O.setNochk("sys:const.sn.save.place", i + 1), "skip";
 			}
 			case "load":
 				if (n.index === void 0 && "fn" in n != "label" in n) throw "[load] fnとlabelはセットで指定して下さい";
@@ -2431,7 +2439,7 @@ var ke = class {
 				if (!e) throw "[set_frame] idは必須です";
 				if (!t) throw "[set_frame] var_nameは必須です";
 				if (!r) throw "[set_frame] textは必須です";
-				return this.#ee("set_frame", e), this.#O.set(`const.sn.frm.${e}.${t}`, r), o.push({
+				return this.#ee("set_frame", e), this.#O.setNochk(`const.sn.frm.${e}.${t}`, r), o.push({
 					t: "setFrame",
 					id: e,
 					var_name: t,
@@ -2452,7 +2460,7 @@ var ke = class {
 			case "clear_event": return this.clearEvent(n.global === "true"), "skip";
 			case "enable_event": {
 				let e = n.layer || this.#v, t = (n.enabled ?? "true") !== "false";
-				return this.#O.set(`save:const.sn.layer.${e}.enabled`, t), o.push({
+				return this.#O.setNochk(`save:const.sn.layer.${e}.enabled`, t), o.push({
 					t: "enableEvent",
 					nm: e,
 					enabled: t
@@ -2507,7 +2515,7 @@ var ke = class {
 					if (m <= p) throw `[${t}] ret_ms:${String(p)} >= end_ms:${String(m)} は異常値です`;
 				}
 				let h = `const.sn.sound.${a}.`, g = e.#a(e.#i(t, "volume", n.volume, 1));
-				this.#O.set(`save:${h}volume`, g), this.#O.set(`save:${h}fn`, s), this.#O.set(`save:${h}start_ms`, f), this.#O.set(`save:${h}end_ms`, m), this.#O.set(`save:${h}ret_ms`, p);
+				this.#O.setNochk(`save:${h}volume`, g), this.#O.setNochk(`save:${h}fn`, s), this.#O.setNochk(`save:${h}start_ms`, f), this.#O.setNochk(`save:${h}end_ms`, m), this.#O.setNochk(`save:${h}ret_ms`, p);
 				let _ = g * Number(this.#O.get(`sys:${h}volume`, 1, !0));
 				if (a === "BGM") _ *= this.#D;
 				else if (a === "VOICE") {
@@ -2558,10 +2566,10 @@ var ke = class {
 				}, a = `const.sn.sound.${t}.`, s = `const.sn.sound.${r}.`;
 				for (let e of Object.keys(i)) {
 					let t = this.#O.get(`save:${a}${e}`, i[e]), n = this.#O.get(`save:${s}${e}`, i[e]);
-					this.#O.set(`save:${a}${e}`, n), this.#O.set(`save:${s}${e}`, t);
+					this.#O.setNochk(`save:${a}${e}`, n), this.#O.setNochk(`save:${s}${e}`, t);
 				}
 				let c = this.#w[t], l = this.#w[r];
-				return l === void 0 ? delete this.#w[t] : this.#w[t] = l, c === void 0 ? delete this.#w[r] : this.#w[r] = c, this.#O.set("save:const.sn.loopPlaying", JSON.stringify(this.#w)), o.push({
+				return l === void 0 ? delete this.#w[t] : this.#w[t] = l, c === void 0 ? delete this.#w[r] : this.#w[r] = c, this.#O.setNochk("save:const.sn.loopPlaying", JSON.stringify(this.#w)), o.push({
 					t: "xchgBufSnd",
 					buf: t,
 					buf2: r
@@ -2569,7 +2577,7 @@ var ke = class {
 			}
 			case "volume": {
 				let t = n.buf || "SE", r = `const.sn.sound.${t}.`, i = e.#a(e.#i("volume", "volume", n.volume, 1));
-				this.#O.set(`sys:${r}volume`, i);
+				this.#O.setNochk(`sys:${r}volume`, i);
 				let a = Number(this.#O.get(`save:${r}volume`, 1, !0));
 				return o.push({
 					t: "volumeSnd",
@@ -2582,7 +2590,7 @@ var ke = class {
 			case "fadeoutse":
 			case "fadeoutbgm": {
 				let r = t === "fadebgm" || t === "fadeoutbgm", i = t === "fadeoutse" || t === "fadeoutbgm", a = r ? "BGM" : n.buf || "SE", s = `const.sn.sound.${a}.`, c = i ? 0 : e.#a(e.#n(t, "volume", n.volume ?? ""));
-				this.#O.set(`save:${s}volume`, c);
+				this.#O.setNochk(`save:${s}volume`, c);
 				let l = Number(this.#O.get(`sys:${s}volume`, 1, !0)), u = (n.stop ?? (c === 0 ? "true" : "false")) !== "false";
 				u && this.#E(a);
 				let d = this.skipEnabled, f = d ? 0 : e.#n(t, "time", n.time ?? ""), p = d ? 0 : e.#i(t, "delay", n.delay, 0);
@@ -2652,6 +2660,7 @@ var ke = class {
 	#ne(t) {
 		let n = t.exp ?? "";
 		if (!n) throw "[if] expは必須です（試作仕様）";
+		if (n.startsWith("&")) throw "[if] 属性expは「&」が不要です";
 		let r = this.#k.evalBool(n) ? this.#_ : -1, i = 0, a = !1, o = this.#g.len;
 		for (; this.#_ < o; ++this.#_) {
 			let t = this.#g.aToken[this.#_];
@@ -2673,6 +2682,7 @@ var ke = class {
 					if (i > 0 || r > -1) continue;
 					let e = o.exp ?? "";
 					if (!e) throw "[elsif] expは必須です（試作仕様）";
+					if (e.startsWith("&")) throw "[elsif] 属性expは「&」が不要です";
 					this.#k.evalBool(e) && (r = this.#_ + 1);
 					continue;
 				}

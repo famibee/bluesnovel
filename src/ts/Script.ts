@@ -68,6 +68,10 @@ export class Script {
 	//	するという非対称も本家のまま踏襲する（afterは実行時に読み飛ばされるマクロ本体を横切ったこと
 	//	自体が常に不正、beforeは定義済みマクロの中身を単に通過するだけなら不正ではないため）
 	label2idx(label: string, fromIdx: number, inMacro = false): number | undefined {
+		// 本家 ScriptIterator.ts:1035：labelは*で始まる前提（誤入力の検出。
+		//	チェックが無くても「ラベルが見つかりません」で結局失敗するが、原因が分かりにくくなる）
+		if (label && ! label.startsWith('*')) throw `[jump系] labelは*で始まります：${label}`;
+
 		const m = label.match(Script.#REG_NONAME_LABEL);
 		if (! m) return this.#hLabel[label];
 

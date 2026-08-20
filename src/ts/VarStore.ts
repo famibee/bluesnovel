@@ -200,13 +200,27 @@ export class VarStore {
 		return val;
 	}
 	// 変数への代入。castは[let]/[let_ml]/「&計算」書式のcast指定（省略時は変換しない）
+	//	（本家 #setVal()＝チェックあり相当。ユーザースクリプトからの直接代入経路専用）
 	set(name: string, val: T_VAL_D, cast: T_CAST = '') {
+		this.#setImpl(name, val, cast, true);
+	}
+	// チェック無し版（本家 setVal_Nochk() 相当）。エンジン内部が自身の状態（save:const.sn.mesLayer等）
+	//	を繰り返し書き戻す口で、const.*キーの再代入禁止ガードの対象外にする
+	setNochk(name: string, val: T_VAL_D, cast: T_CAST = '') {
+		this.#setImpl(name, val, cast, false);
+	}
+	#setImpl(name: string, val: T_VAL_D, cast: T_CAST, chkConst: boolean) {
 		const {ns, key} = VarStore.parseName(name);
 		// 組み込み変数はget()と同様、tmp:名前空間の場合のみガードする
 		//（game:/sys:で同名のキーを使うこと自体は許容する）
 		if (ns === 'tmp' && key in this.#hBuiltin) throw `組み込み変数【${name}】へは代入できません`;
 
 		const k = `${ns}.${key}`;
+		// 本家 Variable.ts:503-505：const.*キーは名前空間問わず、一度セットされたら再代入禁止
+		//（初回セットは許容。エンジン内部状態（save:const.sn.mesLayer等）がユーザースクリプトの
+		//	[let]で誤って上書きされて黙って壊れるのを防ぐ）
+		if (chkConst && key.startsWith('const.') && k in this.#h) throw `変数【${name}】は書き換え不可です`;
+
 		if (cast === 'str') this.#setNoCast.add(k); else this.#setNoCast.delete(k);
 		const v = VarStore.castTo(val, cast);
 		this.#h[k] = v;

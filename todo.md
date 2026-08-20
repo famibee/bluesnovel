@@ -20,16 +20,6 @@
 無名ラベル(**after/**before)未実装の修正（コミット9c041f1）を機に、タグ属性表(docs/tag.html)には
 現れない基盤ロジック（ラベル解決・変数管理・構文解析）を本家スクリプトと突き合わせ調査した結果。
 
-- [ ] **`const.`接頭辞キーの再代入禁止ガードが無い**（`src/ts/VarStore.ts:203-220` `set()`）。
-      本家`Variable.ts:503-505`は`save:`/`sys:`/`mp:`いずれの名前空間でも一度セットされた
-      `const.*`キーへの再代入を例外で禁止するが、bluesnovelは`tmp:`の組み込みキーしかチェック
-      しておらず、エンジン内部状態（`save:const.sn.mesLayer`等）をユーザースクリプトの`[let]`で
-      誤って上書きしても黙って壊れる
-- [ ] **マクロ名の予約語表`RESERVED_TAGS`に実装済み7タグが漏れている**
-      （`src/ts/ScriptEngine.ts:542-566`）。`ch`/`endlink`/`graph`/`link`/`ruby2`/`span`/`tcy`が
-      表に無く、これらと同名の`[macro]`を定義してもエラーにならず素通りする。本家は動的検査
-      （`ScriptIterator.ts:1366`）なので漏れようがないが、bluesnovelは静的表の二重管理になって
-      いて同期が崩れている
 - [ ] 【要確認】`[jump]`/`[call]`の派生ファイル（`fn+'@'`）差分マージが未移植。本家
       `ScriptIterator.ts:1055-1093`は`fn+'@'`ファイルがあれば基底ファイルと行単位マージする
       仕組みを持つが、bluesnovel `ScriptMng.ts`の`#fetchScript()`には無い。意図的削減かどうか
@@ -37,9 +27,6 @@
 - [ ] 【要確認・優先度低】`save:sn.userFnTail`への代入トリガが未接続。`cfg.userFnTail`自体は
       `src/sn/ConfigBase.ts`に存在するが、スクリプト側の`[let]`から反映される経路が無い
       （本家`Variable.ts:693-697`は`#hSetValTrg`で接続）
-- [ ] 【軽微】`label`が`*`始まりかの検証漏れ、`[if]`の`exp`が`&`始まりの場合のエラーチェック漏れ
-      （本家`ScriptIterator.ts:1035,890,920`）：誤入力の検出漏れのみで正しいスクリプトへの
-      実害は無い
 
 ## 挙動の詰め・実機確認
 
