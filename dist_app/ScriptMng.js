@@ -2880,7 +2880,13 @@ var Ae = class {
 		return n ? i() : i;
 	}
 	elms(e) {
-		let t = e.slice(4), n = t.indexOf(":"), r = n < 0 ? t : t.slice(0, n), i = n < 0 ? "" : t.slice(n + 1), a = this.#r[r]?.contentDocument;
+		let t = e.slice(4), n = t.indexOf(":");
+		if (n < 0) return {
+			id: "",
+			sel: t,
+			aEl: [...document.querySelectorAll(t)]
+		};
+		let r = t.slice(0, n), i = t.slice(n + 1), a = this.#r[r]?.contentDocument;
 		if (!a) throw `[event] frame【${r}】が読み込まれていません`;
 		return {
 			id: r,

@@ -23,7 +23,20 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 残りは以下：
 
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
-      bluesnovel未対応のタグ・機能を洗い出すフェーズへ
+      bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
+      確認できるトップページ）から着手し、playwright-cliでの実機確認により以下2件のバグを
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［イベント検知
+      部・`[button]`・`[link]`のホバー］→`ch_button`/`ruby`/`filter`等）：
+  - [x] `[event key='dom=セレクタ']`（コロン無し＝メイン文書対象）が誤動作。`FrameMng.ts`の
+        `elms()`がコロンの有無を見ずセレクタ全体を「フレームid」として`#hIfrm`を引いていたため、
+        `need_err=false`指定でも例外が飛んでいた。本家`Reading.ts:79`の`getHtmlElmList()`は
+        コロン無しなら`document.querySelectorAll()`でメイン文書を対象にする仕様。修正済み
+        （`src/ts/FrameMng.ts`）
+  - [x] `sn_gallery/index.html`のマウント先が`<canvas id="skynovel">`のままだった。bluesnovelは
+        React DOM描画に移行済みだが、受け皿がpixi.js時代の`<canvas>`タグ（子要素はブラウザ仕様上
+        フォールバック扱いで描画されない）だったため、DOM構造は正しいのに画面が真っ黒になって
+        いた。`<div id="skynovel">`に修正（`sn_gallery/index.html`、フルスクリーン用CSS
+        セレクタも合わせて修正）
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

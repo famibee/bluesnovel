@@ -231,13 +231,16 @@ export class FrameMng {
 		return fnc ? (v as ()=> unknown)() : v;
 	}
 
-	// key='dom=フレームid:セレクタ' の対象要素（本家 ReadingState.getHtmlElmList()）。
+	// key='dom=フレームid:セレクタ' の対象要素（本家 Reading.ts:79 getHtmlElmList()）。
+	//	コロンが無い場合（'dom=セレクタ'）はフレームでなくメイン文書が対象（本家Reading.ts:95）
 	//	**セレクタは大小文字を区別する**ので、呼ぶ側は小文字化前の文字列を渡すこと
 	elms(rawKey: string): {id: string; sel: string; aEl: HTMLElement[]} {
 		const body = rawKey.slice(4);	// 'dom=' を外す
 		const i = body.indexOf(':');
-		const id = i < 0 ? body : body.slice(0, i);
-		const sel = i < 0 ? '' : body.slice(i + 1);
+		if (i < 0) return {id: '', sel: body, aEl: [...document.querySelectorAll<HTMLElement>(body)]};
+
+		const id = body.slice(0, i);
+		const sel = body.slice(i + 1);
 		const doc = this.#hIfrm[id]?.contentDocument;
 		if (! doc) throw `[event] frame【${id}】が読み込まれていません`;
 
