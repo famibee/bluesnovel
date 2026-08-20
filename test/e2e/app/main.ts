@@ -30,10 +30,20 @@ const isCrypto = prj === 'crypto';
 //	src/側は一切変更しない）。**[trans rule=]／[quake]（Stage.tsxが素のrAFで回している）だけ**
 //	止まる。[tsy]系・音声フェード（ScriptMng、motion＝src/ts/Tw.ts）はモジュール読み込み時に
 //	`requestAnimationFrame`を捕まえて自走するため、この差し替えの影響を受けない（＝進行し続ける）。
-//	差し替えの前に既に発行済みの実rAFが1回分だけ走ってから止まる点も、既存の
-//	`document.getAnimations().forEach(a=>a.pause())`方式（chstyle.e2e.ts）と同じ精度の話
+//	差し替え時点で既に発行済みの実rAFは、`requestAnimationFrame`を差し替えても取り消せず1回分だけ
+//	必ず走る（Stage.tsxのstep()がその中でsetTick(実経過時間)してから次のrAFを予約し直す＝
+//	予約し直す時にはもう差し替え後なのでそこで止まる）。この1回分がPlaywright側の後続コード
+//	（setTick()での上書き）と非同期に競合すると、まれに直前の実測tickで上書きされたまま返ってしまう
+//	（trans.e2e.ts「境界はvague幅でぼける」がflakyだった原因）。なので**その1回分の実行を
+//	ここで待ってから返す**：差し替え前の本物のrequestAnimationFrameで「番兵」を登録すれば、
+//	同じフレームの中で先に登録済みのstep()より後に呼ばれる＝番兵が解決した時点でstep()の
+//	上書きは確実に終わっている
 function freezeRaf() {
-	globalThis.requestAnimationFrame = ()=> 0;
+	const raf = requestAnimationFrame;
+	return new Promise<void>(resolve=> {
+		globalThis.requestAnimationFrame = ()=> 0;
+		raf(()=> resolve());
+	});
 }
 
 // snd.e2e.ts用：AudioContext.createGain()の呼び出し回数を数える。SndBuf（src/ts/SndBuf.ts）は

@@ -226,7 +226,9 @@ async function toRuleScene(page: Page) {
 	}
 	await page.keyboard.press('Space');	// [trans time=9000 rule=rule_lr]
 	await expect(page.locator('#sn_rule_msk')).toHaveCount(1);
-	await page.evaluate(()=> {(globalThis as any).__sn.freezeRaf()});
+	// freezeRaf()は差し替え時点で既に発行済みの実rAF（1回分）が走り終わるまで待ってから返る
+	//	（そうしないと直後のsetTick()と競合し、実測tickで上書きされたまま返ることがある）
+	await page.evaluate(()=> (globalThis as any).__sn.freezeRaf());
 }
 // 進度tickの係数をSVGフィルタへ流し込む（Stage側が毎フレームやっているのと同じ計算・同じ場所）
 async function setTick(page: Page, tick: number) {

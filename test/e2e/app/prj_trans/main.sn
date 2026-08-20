@@ -54,11 +54,16 @@
 ; ルール画像によるワイプ（[trans rule=…]）。表裏を**単色の板**で塗り分けておき、
 ;	境界の位置を画素で確かめられるようにする。rule_lrは左が黒・右が白の横グラデーションで、
 ;	暗い所から先に表ページが消える＝進度tickに応じて左から右へ赤が青へ入れ替わる。
-;	演出は9秒＝テスト側がrAFループを止めて任意の進度を流し込むための「長い箱」
+;	演出は2500時間＝テスト側がrAFループを止めて任意の進度を流し込むための「長い箱」。
+;	toRuleScene()はマスクDOM出現→freezeRaf()の間に実時間が経過し、その分だけ本物のtickが
+;	自然に進んでしまう（CI等の高負荷時はここが数秒に伸びうる）。短いtime値だと、
+;	freezeRaf()が待つ「差し替え前に発行済みの最後の実rAF」がその進んだtickで上書きし、
+;	直後のsetTick()より前に境界（tick≈1）へ達した値のまま返ってflakyになる（実測）ので、
+;	どれだけ実時間がかかっても誤差が無視できるくらい長くしてある
 [er]
 [lay layer=mes page=fore b_color=0xFF0000 b_alpha=1 b_alpha_isfixed=true style="position: absolute; left: 0; top: 0; width: 800px; height: 600px; margin: 0; padding: 0; border: none;"]
 [lay layer=mes page=back b_color=0x0000FF b_alpha=1 b_alpha_isfixed=true style="position: absolute; left: 0; top: 0; width: 800px; height: 600px; margin: 0; padding: 0; border: none;"]
-[trans time=9000 rule=rule_lr]
+[trans time=9000000 rule=rule_lr]
 [s]
 
 *btn
