@@ -1,6 +1,8 @@
-import type { TArg } from './Grammar';
+import type { TArg, TTag } from './Grammar';
 import type { Areas, T_H_Areas } from './Areas';
 import type { T_H_VAL_MP } from './CallStack';
+import type { T_SEARCHPATH } from './ConfigBase';
+import type { Layer } from './Layer';
 export interface IMyTrace {
     (txt: string, lvl?: string, fnline?: boolean, adjust_line?: number): void;
 }
@@ -8,7 +10,21 @@ export type T_PropParser = {
     parse(s: string): any;
     getValAmpersand(val: string): string;
 };
+export type T_PLUGIN_INFO = {
+    window: {
+        width: number;
+        height: number;
+    };
+};
+export type T_LayerFactory = () => Layer;
 export type T_PluginInitArg = {
+    getInfo(): T_PLUGIN_INFO;
+    addTag(tag_name: string, tag_fnc: TTag): void;
+    addLayCls(cls: string, fnc: T_LayerFactory): void;
+    searchPath: T_SEARCHPATH;
+    getVal(arg_name: string, def?: number | string): any;
+    resume(fnc?: () => void): void;
+    render(dsp: any, renTx?: any, clear?: boolean): void;
     setDec(fnc: (ext: string, tx: string) => Promise<string>): void;
     setDecAB(fnc: (ab: ArrayBuffer) => Promise<ArrayBuffer>): void;
     setEnc(fnc: (tx: string) => Promise<string>): void;

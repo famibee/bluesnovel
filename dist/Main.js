@@ -1,6 +1,7 @@
 import { n as e, r as t, t as n } from "./rolldown-runtime.js";
 import { t as r } from "./react.js";
-import { S as i, n as a } from "./store.js";
+import { t as i } from "./FocusMng.js";
+import { useStore as a } from "./store.js";
 //#region src/ts/GamepadMng.ts
 var o = [
 	"",
@@ -245,11 +246,14 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 		}
 		function f(e, n, r, a, s, u) {
 			var f = n.children;
-			if (f !== void 0) if (a) if (ie(f)) {
-				for (a = 0; a < f.length; a++) p(f[a]);
-				Object.freeze && Object.freeze(f);
-			} else console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
-			else p(f);
+			if (f !== void 0) {
+				if (a) {
+					if (ie(f)) {
+						for (a = 0; a < f.length; a++) p(f[a]);
+						Object.freeze && Object.freeze(f);
+					} else console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
+				} else p(f);
+			}
 			if (D.call(n, "key")) {
 				f = t(e);
 				var m = Object.keys(n).filter(function(e) {
@@ -505,15 +509,17 @@ function ke(e, t, n, r, i, a, o, s, c) {
 					_ == -1 && (C = L(C, /\f/g, "")), p > 0 && V(C) - d && fe(p > 32 ? Me(C + ";", r, n, d - 1) : Me(L(C, " ", "") + ";", r, n, d - 2), c);
 					break;
 				case 59: C += ";";
-				default: if (fe(S = Ae(C, t, n, l, u, i, s, y, b = [], x = [], d), a), v === 123) if (u === 0) ke(C, t, S, S, b, a, d, s, x);
-				else switch (f === 99 && z(C, 3) === 110 ? 100 : f) {
-					case 100:
-					case 108:
-					case 109:
-					case 115:
-						ke(e, S, S, r && fe(Ae(e, S, S, 0, 0, i, s, y, i, b = [], d), x), i, x, d, s, r ? b : x);
-						break;
-					default: ke(C, S, S, S, [""], x, 0, s, x);
+				default: if (fe(S = Ae(C, t, n, l, u, i, s, y, b = [], x = [], d), a), v === 123) {
+					if (u === 0) ke(C, t, S, S, b, a, d, s, x);
+					else switch (f === 99 && z(C, 3) === 110 ? 100 : f) {
+						case 100:
+						case 108:
+						case 109:
+						case 115:
+							ke(e, S, S, r && fe(Ae(e, S, S, 0, 0, i, s, y, i, b = [], d), x), i, x, d, s, r ? b : x);
+							break;
+						default: ke(C, S, S, S, [""], x, 0, s, x);
+					}
 				}
 			}
 			l = u = p = 0, h = _ = 1, y = C = "", d = o;

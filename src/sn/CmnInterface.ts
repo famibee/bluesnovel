@@ -5,9 +5,11 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import type {TArg} from './Grammar';
+import type {TArg, TTag} from './Grammar';
 import type {Areas, T_H_Areas} from './Areas';
 import type {T_H_VAL_MP} from './CallStack';
+import type {T_SEARCHPATH} from './ConfigBase';
+import type {Layer} from './Layer';
 import {CmnLib, getDateStr} from './CmnLib';
 
 export interface IMyTrace {
@@ -25,11 +27,32 @@ export type T_PropParser = {
 
 // =============== Plugin
 // 本家（skynovel_esm）は暗号化・改竄検査のロジック自体を秘匿するため、プラグイン（snsys_pre）が
-//	SysBase.loaded()経由でsetDec/setEnc/getHashを注入する設計を取る。bluesnovelもこれを踏襲するが、
-//	一般プラグイン向けのフック（addTag/addLayCls/getInfo/getVal/resume/render/searchPath）と
-//	Electron専用のgetStK（本家はelectron-storeのencryptionKeyに使うが、bluesnovelは
-//	セーブ暗号化をweb/app版で統一しenc()一本にするため消費先が無い）は対象外（todo.mdへ）
+//	SysBase.loaded()経由でsetDec/setEnc/getHashを注入する設計を取る。bluesnovelもこれを踏襲する。
+//	addTag/addLayCls/getInfo/getVal/resume/render/searchPathは、sn_galleryの3D/Live2D系
+//	プラグイン（3d_layer/cubism3_layer/emote_layer）が型的にコンパイルを通すためだけに追加した
+//	もので、SysBase側で実際に一般プラグインのinit()を呼び出す配線はまだ無い（呼ばれないため
+//	実行しても効果を持たない）。renderの引数はpixi.jsのDisplayObject/RenderTexture相当だが、
+//	bluesnovelはpixi.jsに依存しないためanyへ緩めている（todo.md「sn_galleryをbluesnovel駆動に
+//	する」参照）。Electron専用のgetStK（本家はelectron-storeのencryptionKeyに使うが、
+//	bluesnovelはセーブ暗号化をweb/app版で統一しenc()一本にするため消費先が無い）は対象外
+export type T_PLUGIN_INFO = {
+	window: {
+		width	: number;
+		height	: number;
+	},
+}
+export type T_LayerFactory = ()=> Layer;
 export type T_PluginInitArg = {
+	getInfo(): T_PLUGIN_INFO;
+	addTag(tag_name: string, tag_fnc: TTag): void;
+	addLayCls(cls: string, fnc: T_LayerFactory): void;
+	searchPath: T_SEARCHPATH;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	getVal(arg_name: string, def?: number | string): any;
+	resume(fnc?: ()=> void): void;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	render(dsp: any, renTx?: any, clear?: boolean): void;
+
 	setDec(fnc: (ext: string, tx: string)=> Promise<string>): void;
 	// 画像・動画の中身を復号する。本家は{ext_num, ab}を返させ拡張子情報まで秘匿するが、
 	//	bluesnovelはファイル名（path.jsonが持つ論理名）自体は秘匿対象にしていないので、

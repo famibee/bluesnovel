@@ -20,6 +20,7 @@ export declare class VarStore {
     static readonly REG_NUMERICLITERAL: RegExp;
     static castAuto(val: T_VAL_D): T_VAL_D;
     set(name: string, val: T_VAL_D, cast?: T_CAST): void;
+    setNochk(name: string, val: T_VAL_D, cast?: T_CAST): void;
     static castTo(val: T_VAL_D, cast: T_CAST): T_VAL_D;
     cloneMp(): {
         [key: string]: T_VAL_D;

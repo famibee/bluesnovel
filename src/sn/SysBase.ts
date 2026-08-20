@@ -7,8 +7,10 @@
 
 import type {T_HPlugin, T_SysBase, T_SysBaseLoadedParams} from './CmnInterface';
 import { T_Config, T_SysRoots } from './ConfigBase';
+import {CmnLib} from './CmnLib';
 import type {T_DATA4VARI_TRANSPORT} from '../ts/SaveMng';
 import type {ScriptMng} from '../ts/ScriptMng';
+import type {Root} from 'react-dom/client';
 import store from './localStore';
 
 
@@ -33,6 +35,15 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		const pre = hPlg.snsys_pre;
 		delete hPlg.snsys_pre;	// eslint-disable-line @typescript-eslint/no-dynamic-delete
 		await pre?.init({
+			// 一般プラグイン向けのフック（addTag/addLayCls/…）はsnsys_preでは使わないため
+			//	本家 SysBase.ts:51-64 と同じくno-opで埋める（宛先はSysBase.init()側、todo.md参照）
+			getInfo		: ()=> ({window: {width: CmnLib.stageW, height: CmnLib.stageH}}),
+			addTag		: ()=> { /* empty */ },
+			addLayCls	: ()=> { /* empty */ },
+			searchPath	: ()=> '',
+			getVal		: ()=> undefined,
+			resume		: ()=> { /* empty */ },
+			render		: ()=> { /* empty */ },
 			setDec: f=> {this.dec = f},
 			setDecAB: f=> {this.decAB = f},
 			setEnc: f=> {this.enc = f},
@@ -49,37 +60,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
 </style>`);
 
-		await Promise.all([
-			import('react-dom/client'),
-			import('../components/Main'),
-			import('./Config'),
-			import('../ts/ScriptMng'),
-			import('../ts/Sprite'),
-		]).then(async ([{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch, setDecFncs}])=> {
-			// GrpLayer/TxtLayer（Reactコンポーネント）はsysを持たないので、アニメpngシートの
-			//	.json取得・複号だけモジュールレベルで注入する（Sprite.ts参照）
-			setFetch((url, init)=> this.fetch(url, init));
-			setDecFncs((ext, tx)=> this.dec(ext, tx), ab=> this.decAB(ab), this.arg.crypto);
-
-			// React 初期表示
-			const cfg = await Config.generate(this);
-			this.setMain(cfg);
-			document.body.style.backgroundColor = String(cfg.oCfg.init.bg_color);
-
-			let he = <HTMLDivElement>document.getElementById(SN_ID);
-			if (he) {
-				const clone_cvs = <HTMLDivElement>he.cloneNode(true);
-				clone_cvs.id = SN_ID;
-			}
-			else {	// 自動的に作ってくれるが、どうも appendChild に遅延があるので
-				he = document.createElement('div');
-				he.id = SN_ID;
-				document.body.appendChild(he);
-			}
-			const scrMng = new ScriptMng(this);
-			this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
-			initMain(createRoot(he), {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
-		});
+		await this.run();
 	}
 
 
@@ -87,8 +68,71 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	setMain(cfg: T_Config) {
 		this.cfg = cfg;
 	}
-	scrMng?: ScriptMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
-	protected async run() {}
+	scrMng: ScriptMng | undefined;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
+
+	// 起動、および SysWeb.runSN() によるプロジェクト切替の両方から呼ばれる（本家 SysBase.run()。
+	//	skynovel_esm/src/sn/SysBase.ts:73-89）。2回目以降は前のプロジェクトを完全に畳んでから
+	//	作り直す：Reactツリー（#root）・zustandストア・ScriptMngが個別に抱えるタイマー/トゥイーン/
+	//	音声はどれもunmountだけでは戻らないため、3つとも明示的に片付ける
+	//	（本家は main?.destroy(); main = await Main.generate(this) の一行で済むが、
+	//	こちらは唯一のグローバルストアを使い回す都合上これだけの手当てが要る）
+	#root: Root | undefined;
+	#heStage?: HTMLDivElement;
+	protected async run() {
+		const [{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch, setDecFncs}, {resetStore}] = await Promise.all([
+			import('react-dom/client'),
+			import('../components/Main'),
+			import('./Config'),
+			import('../ts/ScriptMng'),
+			import('../ts/Sprite'),
+			import('../store/store'),
+		]);
+		// GrpLayer/TxtLayer（Reactコンポーネント）はsysを持たないので、アニメpngシートの
+		//	.json取得・複号だけモジュールレベルで注入する（Sprite.ts参照）
+		setFetch((url, init)=> this.fetch(url, init));
+		setDecFncs((ext, tx)=> this.dec(ext, tx), ab=> this.decAB(ab), this.arg.crypto);
+
+		if (this.#root) {	// 2回目以降＝プロジェクト切替（前のプロジェクトを畳む）
+			this.scrMng?.destroy();
+			this.#root.unmount();
+			resetStore();
+		}
+
+		// React 初期表示
+		const cfg = await Config.generate(this);
+		this.setMain(cfg);
+		document.body.style.backgroundColor = String(cfg.oCfg.init.bg_color);
+
+		// 初回だけ：ホストHTMLの既存要素（sn_gallery index.htmlの<canvas id="skynovel">等、
+		//	pixi.js時代の名残）があればそれをそのままマウント先にし、無ければdivを新設する。
+		//	以後（プロジェクト切替）は同じ要素へ#rootを作り直すだけで、DOMは触らない
+		const he = this.#heStage ??= <HTMLDivElement>document.getElementById(SN_ID) ?? (()=> {
+			const el = document.createElement('div');
+			el.id = SN_ID;
+			document.body.appendChild(el);
+			return el;
+		})();
+
+		const scrMng = new ScriptMng(this);
+		this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
+		this.#root = createRoot(he);
+		initMain(this.#root, {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
+	}
+
+	// プロジェクトを止めるだけ（作り直さない。本家 SysBase.stop()：
+	//	skynovel_esm/src/sn/SysBase.ts:90-93 main?.destroy(); main = undefined; に相当）。
+	//	SysWeb.runSN()と同じ3点（ScriptMngの資源・Reactツリー・ストア）を畳む
+	async stop() {
+		if (! this.#root) return;
+
+		this.scrMng?.destroy();
+		this.#root.unmount();
+		this.#root = undefined;
+		this.scrMng = undefined;
+
+		const {resetStore} = await import('../store/store');
+		resetStore();
+	}
 
 
 	protected $path_downloads	= '';

@@ -71,7 +71,7 @@ type T_STATE = {
 };
 export type T_WAIT = {
     nm: string;
-    kind: 'l' | 'p';
+    kind: 'l' | 'p' | 'waitclick';
     src?: string;
     x?: number;
     y?: number;
@@ -209,4 +209,5 @@ export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAl
     isTyping: () => boolean;
 }>;
 export declare const useStore: import("zustand").UseBoundStore<import("zustand").StoreApi<T_STATE>>;
+export declare function resetStore(): void;
 export {};

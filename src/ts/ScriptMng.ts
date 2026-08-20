@@ -61,6 +61,22 @@ export class ScriptMng {
 		this.#hTag.log		= o=> this.#log(o, this.#engine?.fn ?? '', this.#engine?.lineNum ?? NaN);	// ログ出力
 	}
 
+	// SysBase.stop()/run()から、プロジェクト切替・エンジン全停止のときに呼ばれる（本家 main.destroy()に相当。
+	//	本家は破棄するオブジェクトを画面ごと一撃で消せるが、こちらはScriptMngが直接タイマー・トゥイーン・
+	//	音声・DOM要素を抱えているので、ここでまとめて畳まないと次のプロジェクトへ古いコールバックが
+	//	紛れ込む（#finishTrans等は$fncs＝旧Main.tsxのstoreセッターを直接叩くため、
+	//	unmount後に発火するとリセット直後のストアを壊しうる）
+	destroy() {
+		this.cancelAuto();
+		clearTimeout(this.#transTimer);
+		clearTimeout(this.#quakeTimer);
+		clearTimeout(this.#waiting?.timer);
+		for (const {tw} of Object.values(this.#hTw)) tw.kill();
+		for (const {tw} of Object.values(this.#hSndTw)) tw.kill();
+		this.#sndMng.stopAll();
+		this.#spnDbg.remove();
+	}
+
 	// Main.tsx からの初期化
 	attachTsx(trgNext: ()=> void, fncs: T_INIT_FNCS, hTag: T_HTag) {
 		this.$trgNext = trgNext;

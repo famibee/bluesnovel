@@ -4,9 +4,13 @@ import type { TArg } from './sn/Grammar';
 export type { TArg };
 import { SysBase } from './sn/SysBase';
 import type { T_SysBaseParams, T_SysBaseLoadedParams } from './sn/CmnInterface';
+import { argChk_Num, argChk_Boolean } from './sn/CmnLib';
+import { Layer } from './sn/Layer';
+export { argChk_Num, argChk_Boolean, Layer };
 export declare class SysWeb extends SysBase {
     #private;
     constructor(...[hPlg, arg]: T_SysBaseParams);
     protected loaded(...[hPlg, arg]: T_SysBaseLoadedParams): Promise<void>;
+    runSN(prj: string): Promise<void>;
     appendFile(path: string, data: string): Promise<void>;
 }

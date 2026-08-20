@@ -1,6 +1,7 @@
 import { a as e, i as t, o as n, r, t as i } from "./CmnLib.js";
 import { t as a } from "./SaveMng.js";
-import { S as o, a as s, i as c, l, m as u, r as d, t as f, x as p } from "./store.js";
+import { t as o } from "./FocusMng.js";
+import { DEF_BTN_FONT as s, f as c, n as l, r as u, s as d, t as f, y as p } from "./store.js";
 import { o as m, r as h } from "./Sprite.js";
 import { PROTOCOL_USERDATA as g, t as _ } from "./Config.js";
 //#region src/sn/AnalyzeTagArg.ts
@@ -1801,7 +1802,7 @@ var Ae = class {
 					t: "addFilter",
 					aLayNm: [o],
 					page: e,
-					flt: u(i),
+					flt: c(i),
 					replace: !0
 				}), "skip";
 			}
@@ -1809,7 +1810,7 @@ var Ae = class {
 				t: "addFilter",
 				aLayNm: t.#c(i.layer),
 				page: t.#h("add_filter", i, "fore"),
-				flt: u(i),
+				flt: c(i),
 				replace: !1
 			}), "skip";
 			case "clear_filter": return a.push({
@@ -1829,10 +1830,14 @@ var Ae = class {
 				if (e !== "fore" && e !== "back" && e !== "both") throw `属性 page【${e}】が不正です`;
 				let n = t.#c(i.layer);
 				if (i.layer !== void 0 && n === null) throw "[clear_lay] layer属性が空です";
-				if (e !== "back") if ((!n || n.includes(this.#v)) && this.#ce(), n) for (let e of n) this.#y[e] = "";
-				else for (let e of Object.keys(this.#y)) this.#y[e] = "";
-				if (e !== "fore") if (n) for (let e of n) this.#b[e] = "";
-				else for (let e of Object.keys(this.#b)) this.#b[e] = "";
+				if (e !== "back") {
+					if ((!n || n.includes(this.#v)) && this.#ce(), n) for (let e of n) this.#y[e] = "";
+					else for (let e of Object.keys(this.#y)) this.#y[e] = "";
+				}
+				if (e !== "fore") {
+					if (n) for (let e of n) this.#b[e] = "";
+					else for (let e of Object.keys(this.#b)) this.#b[e] = "";
+				}
 				return a.push({
 					t: "clearLay",
 					aLayNm: n,
@@ -1876,18 +1881,18 @@ var Ae = class {
 			case "tsy": {
 				let { layer: e } = i;
 				if (!e) throw "[tsy] layerは必須です";
-				let n = this.skipEnabled, r = n ? 0 : t.#n("tsy", "time", i.time ?? ""), o = n ? 0 : t.#i("tsy", "delay", i.delay, 0), s = t.#i("tsy", "repeat", i.repeat, 1), c = t.argPage(i, "fore");
+				let n = this.skipEnabled, r = n ? 0 : t.#n("tsy", "time", i.time ?? ""), o = n ? 0 : t.#i("tsy", "delay", i.delay, 0), s = t.#i("tsy", "repeat", i.repeat, 1), l = t.argPage(i, "fore");
 				return i.filter !== void 0 && a.push({
 					t: "addFilter",
 					aLayNm: [e],
-					page: c,
-					flt: u(i),
+					page: l,
+					flt: c(i),
 					replace: !0
 				}), a.push({
 					t: "tsy",
 					tw_nm: E("tsy", i),
 					nm: e,
-					page: c,
+					page: l,
 					msec: r,
 					delay: o,
 					ease: he(i.ease),
@@ -2072,7 +2077,7 @@ var Ae = class {
 			}
 			case "ch_in_style":
 			case "ch_out_style": {
-				let e = r === "ch_in_style" ? "in" : "out", { name: t, sty: n } = l(r, i, e === "in");
+				let e = r === "ch_in_style" ? "in" : "out", { name: t, sty: n } = d(r, i, e === "in");
 				if (this.#N[e].has(t)) throw `[${r}] name【${t}】はすでにあります`;
 				return this.#N[e].add(t), a.push({
 					t: "defChStyle",
@@ -2208,7 +2213,7 @@ var Ae = class {
 				if (i.clear === "true") return a.push({ t: "clearPageLog" }), "skip";
 				if (i.to === void 0) return "skip";
 				let e = i.to;
-				if (!d.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
+				if (!f.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
 				return a.push({
 					t: "pageTo",
 					to: e
@@ -3240,10 +3245,12 @@ var it = /* @__NO_SIDE_EFFECTS__ */ (e) => e, at = (...e) => e.reduce((e, t) => 
 	}
 	notify(e, t, n) {
 		let r = this.subscriptions.length;
-		if (r) if (r === 1) this.subscriptions[0](e, t, n);
-		else for (let i = 0; i < r; i++) {
-			let r = this.subscriptions[i];
-			r && r(e, t, n);
+		if (r) {
+			if (r === 1) this.subscriptions[0](e, t, n);
+			else for (let i = 0; i < r; i++) {
+				let r = this.subscriptions[i];
+				r && r(e, t, n);
+			}
 		}
 	}
 	getSize() {
@@ -3712,24 +3719,26 @@ function rr(e) {
 		isResolvedFromDuration: !1,
 		...e
 	};
-	if (!nr(e, tr) && nr(e, er)) if (t.velocity = 0, e.visualDuration) {
-		let n = e.visualDuration, r = 2 * Math.PI / (n * 1.2), i = r * r, a = 2 * O(.05, 1, 1 - (e.bounce || 0)) * Math.sqrt(i);
-		t = {
-			...t,
-			mass: G.mass,
-			stiffness: i,
-			damping: a
-		};
-	} else {
-		let n = $n({
-			...e,
-			velocity: 0
-		});
-		t = {
-			...t,
-			...n,
-			mass: G.mass
-		}, t.isResolvedFromDuration = !0;
+	if (!nr(e, tr) && nr(e, er)) {
+		if (t.velocity = 0, e.visualDuration) {
+			let n = e.visualDuration, r = 2 * Math.PI / (n * 1.2), i = r * r, a = 2 * O(.05, 1, 1 - (e.bounce || 0)) * Math.sqrt(i);
+			t = {
+				...t,
+				mass: G.mass,
+				stiffness: i,
+				damping: a
+			};
+		} else {
+			let n = $n({
+				...e,
+				velocity: 0
+			});
+			t = {
+				...t,
+				...n,
+				mass: G.mass
+			}, t.isResolvedFromDuration = !0;
+		}
 	}
 	return t;
 }
@@ -5140,11 +5149,13 @@ var ba = class extends Ur {
 			this.needsMeasurement = !0;
 			return;
 		}
-		if (a !== o) if (Nr(a) && Nr(o)) for (let t = 0; t < e.length; t++) {
-			let n = e[t];
-			typeof n == "string" && (e[t] = parseFloat(n));
+		if (a !== o) {
+			if (Nr(a) && Nr(o)) for (let t = 0; t < e.length; t++) {
+				let n = e[t];
+				typeof n == "string" && (e[t] = parseFloat(n));
+			}
+			else X[n] && (this.needsMeasurement = !0);
 		}
-		else X[n] && (this.needsMeasurement = !0);
 	}
 	resolveNoneKeyframes() {
 		let { unresolvedKeyframes: e, name: t } = this, n = [];
@@ -5248,12 +5259,14 @@ function Ra(e, t, n) {
 		let i = t[r], a = n[r];
 		if ($(i)) e.addValue(r, i);
 		else if ($(a)) e.addValue(r, Q(i, { owner: e }));
-		else if (a !== i) if (e.hasValue(r)) {
-			let t = e.getValue(r);
-			t.liveStyle === !0 ? t.jump(i) : t.hasAnimated || t.set(i);
-		} else {
-			let t = e.getStaticValue(r);
-			e.addValue(r, Q(t === void 0 ? i : t, { owner: e }));
+		else if (a !== i) {
+			if (e.hasValue(r)) {
+				let t = e.getValue(r);
+				t.liveStyle === !0 ? t.jump(i) : t.hasAnimated || t.set(i);
+			} else {
+				let t = e.getStaticValue(r);
+				e.addValue(r, Q(t === void 0 ? i : t, { owner: e }));
+			}
 		}
 	}
 	for (let r in n) t[r] === void 0 && e.removeValue(r);
@@ -5263,10 +5276,12 @@ function Ra(e, t, n) {
 //#region node_modules/motion-dom/dist/es/render/utils/reduced-motion/state.mjs
 var za = { current: null }, Ba = { current: !1 }, Va = typeof window < "u";
 function Ha() {
-	if (Ba.current = !0, Va) if (window.matchMedia) {
-		let e = window.matchMedia("(prefers-reduced-motion)"), t = () => za.current = e.matches;
-		e.addEventListener("change", t), t();
-	} else za.current = !1;
+	if (Ba.current = !0, Va) {
+		if (window.matchMedia) {
+			let e = window.matchMedia("(prefers-reduced-motion)"), t = () => za.current = e.matches;
+			e.addEventListener("change", t), t();
+		} else za.current = !1;
+	}
 }
 //#endregion
 //#region node_modules/motion-dom/dist/es/render/VisualElement.mjs
@@ -5566,8 +5581,10 @@ function to(e, t) {
 }
 var no = { correct: (e, t) => {
 	if (!t.target) return e;
-	if (typeof e == "string") if (z.test(e)) e = parseFloat(e);
-	else return e;
+	if (typeof e == "string") {
+		if (z.test(e)) e = parseFloat(e);
+		else return e;
+	}
 	return `${to(e, t.target.x)}% ${to(e, t.target.y)}%`;
 } }, ro = { correct: (e, { treeScale: t, projectionDelta: n }) => {
 	let r = e, i = U.parse(e);
@@ -6125,6 +6142,12 @@ var Xo = class e {
 			color: black;
 			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#Ke(e), this.#t.log = (e) => this.#Je(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
+	destroy() {
+		this.cancelAuto(), clearTimeout(this.#I), clearTimeout(this.#U), clearTimeout(this.#Y?.timer);
+		for (let { tw: e } of Object.values(this.#Q)) e.kill();
+		for (let { tw: e } of Object.values(this.#me)) e.kill();
+		this.#w.stopAll(), this.#e.remove();
+	}
 	attachTsx(e, t, n) {
 		this.$trgNext = e, this.$fncs = t, this.#t = n, this.#t.title = ({ text: e }) => {
 			if (!e) throw "[title] textは必須です";
@@ -6207,7 +6230,7 @@ var Xo = class e {
 			return JSON.stringify(r);
 		});
 	}
-	#c = new s(() => this.sys.cfg.oCfg.log.max_len);
+	#c = new u(() => this.sys.cfg.oCfg.log.max_len);
 	#l;
 	#u = [];
 	#d = !1;
@@ -7275,7 +7298,7 @@ var Xo = class e {
 				this.sys.updateCheck(e.url);
 				break;
 			case "clearPageLog":
-				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", c), this.#f();
+				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", l), this.#f();
 				break;
 			case "pageStyle":
 				this.#r?.setValNochk("save:const.sn.styPaging", e.style), this.#f();
@@ -7302,7 +7325,7 @@ var Xo = class e {
 						...e.mark
 					});
 				}
-				this.#A = e.kind === "s", e.resume ? this.#P(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || f), this.#r && this.$fncs.setChWait(this.#r.chWait);
+				this.#A = e.kind === "s", e.resume ? this.#P(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || s), this.#r && this.$fncs.setChWait(this.#r.chWait);
 				break;
 			}
 		}

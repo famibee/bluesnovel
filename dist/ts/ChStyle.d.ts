@@ -19,23 +19,7 @@ export declare function parseChStyle(tag: string, args: {
 };
 export declare function chStylePos(v: string): string;
 export declare function chStyleEase(ease: string): string;
-export declare function chInTween(sty: T_CH_STYLE): {
-    from: {
-        opacity: number;
-        x: string;
-        y: string;
-        scaleX: number;
-        scaleY: number;
-        rotation: number;
-    };
-    to: {
-        opacity: number;
-        x: number;
-        y: number;
-        scaleX: number;
-        scaleY: number;
-        rotation: number;
-        duration: number;
-        ease: string;
-    };
+export declare function chStyleAnim(sty: T_CH_STYLE): {
+    keyframes: Keyframe[];
+    options: KeyframeAnimationOptions;
 };

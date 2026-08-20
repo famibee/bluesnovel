@@ -436,8 +436,8 @@ export declare class ScriptEngine {
     get atEnd(): boolean;
     peekUpcomingPicFn(): string[];
     jumpToLabel(label: string): void;
-    callToLabel(label: string): void;
-    callToScript(scr: Script, label?: string): void;
+    callToLabel(label: string, freezeClearOnResume?: boolean): void;
+    callToScript(scr: Script, label?: string, freezeClearOnResume?: boolean): void;
     nowScrIdx(): {
         fn: string;
         idx: number;

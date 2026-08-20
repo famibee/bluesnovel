@@ -5,8 +5,9 @@ type T_BTNARG = {
     call: boolean;
     fn: string;
     sty?: T_BTN_STY | undefined;
+    enabled: boolean;
     onActivate: (label: string, call: boolean, fn: string) => void;
     onSe: (fn: string, buf: string) => void;
 };
-export default function BtnLayer({ text, label, call, fn, sty, onActivate, onSe }: T_BTNARG): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function BtnLayer({ text, label, call, fn, sty, enabled, onActivate, onSe }: T_BTNARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};

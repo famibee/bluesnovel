@@ -8,14 +8,16 @@ type HSysBaseArg = {
     dip: string;
 };
 export declare class SysBase implements T_SysRoots, T_SysBase {
+    #private;
     readonly hPlg: T_HPlugin;
     readonly arg: HSysBaseArg;
     constructor(hPlg: T_HPlugin | undefined, arg: HSysBaseArg);
     protected loaded(...[hPlg,]: T_SysBaseLoadedParams): Promise<void>;
     cfg: T_Config;
     setMain(cfg: T_Config): void;
-    scrMng?: ScriptMng;
+    scrMng: ScriptMng | undefined;
     protected run(): Promise<void>;
+    stop(): Promise<void>;
     protected $path_downloads: string;
     get path_downloads(): string;
     protected $path_userdata: string;

@@ -15,7 +15,8 @@ export declare function cnvTweenArg(tag: string, args: {
     [k: string]: string;
 }, aPrp?: readonly string[]): T_TSY_TO;
 export declare function parseTsyPath(tag: string, path: string, aPrp?: readonly string[]): T_TSY_TO[];
-export declare function easeToGsap(nm: string | undefined): string;
+export declare function chkEase(nm: string | undefined): string;
+export declare function easeFn(nm: string | undefined): (k: number) => number;
 export declare function tsyName(tag: string, args: {
     [k: string]: string;
 }): string;

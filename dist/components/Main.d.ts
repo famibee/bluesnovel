@@ -11,5 +11,6 @@ export declare function Main({ arg, inited }: {
     arg: T_ARG;
     inited: () => void;
 }): import("@emotion/react/jsx-runtime").JSX.Element;
+export declare function modKeyName(e: MouseEvent): string;
 export declare const setDesignMode: (b: boolean) => boolean;
-export declare function onLong(): void;
+export declare function suppressClick(): void;

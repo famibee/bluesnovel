@@ -7,6 +7,7 @@ export declare class ScriptMng {
     #private;
     private readonly sys;
     constructor(sys: SysBase);
+    destroy(): void;
     attachTsx(trgNext: () => void, fncs: T_INIT_FNCS, hTag: T_HTag): void;
     $trgNext: () => void;
     $fncs: T_INIT_FNCS;

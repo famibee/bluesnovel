@@ -672,3 +672,11 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	wait		: null,
 	setWait		: w=> set(()=> ({wait: w})),
 }))
+
+// プロジェクト切替（SysBase.run()の2回目以降）・エンジン全停止（SysBase.stop()）で、
+//	前のプロジェクトのレイヤ・変数・演出状態を引きずらないための初期化。zustandはモジュール単位の
+//	グローバルストアなので、Reactツリーのunmount/remountだけでは戻らない
+//	（本家はプロジェクトごとにSysBase.data/aPage等を作り直すインスタンスだが、
+//	こちらは唯一のストアを使い回すため明示的なリセットが要る）
+const INITIAL_STATE = useStore.getState();
+export function resetStore() {useStore.setState(INITIAL_STATE, true)}

@@ -12,16 +12,36 @@ export type {TArg};
 
 import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
+import {argChk_Num, argChk_Boolean} from './sn/CmnLib';
+import {Layer} from './sn/Layer';
+export {argChk_Num, argChk_Boolean, Layer};
 
 // 仮置きでここに
 export class SysWeb extends SysBase {
+	// ギャラリー等、複数プロジェクトを1ページ内で切替える利用者向け（本家 SysWeb.ts:18-27）。
+	//	runSN(prj)は「baseから見た相対名」を受け取る想定なので、最初のarg.curから
+	//	末尾2階層（プロジェクト名＋空要素）を除いたものをbaseとして覚えておく
+	readonly #path_base: string;
 	constructor(...[hPlg = {}, arg = {cur: 'prj/', crypto: false, dip: ''}]: T_SysBaseParams) {	// DOMContentLoaded は呼び出し側でやる
 		super(hPlg, arg);
+		const a = arg.cur.split('/');
+		this.#path_base = a.length > 2 ? a.slice(0, -2).join('/') + '/' : '';
 		queueMicrotask(async ()=> this.loaded(hPlg, arg));
 	}
 
 	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
 		await super.loaded(hPlg, arg);	// cfg.oCfgはこの後で使える
+
+		// ギャラリーのプロジェクト切替導線（本家 SysWeb.ts:31-41）。data-prjはページ遷移なしで
+		//	別プロジェクトへ切替え、data-reloadは今のプロジェクトを最初からやり直す。
+		//	loaded()は初回しか呼ばれないので、ここで一度だけ登録すれば足りる
+		document.querySelectorAll('[data-prj]').forEach(v=> {
+			const elm = v.attributes.getNamedItem('data-prj');
+			if (elm) v.addEventListener('click', ()=> {void this.runSN(elm.value)}, {passive: true});
+		});
+		document.querySelectorAll('[data-reload]').forEach(v=>
+			v.addEventListener('click', ()=> {void this.run()}, {passive: true})
+		);
 
 		// debug.devtool=falseの時だけ警告オーバーレイのガードを有効化（本家 devtools-detect相当。
 		//	理由・仕組みは DevToolsGuard.ts 参照。Electronアプリ版は appMain_cmn.ts が別途対応済み）
@@ -29,6 +49,20 @@ export class SysWeb extends SysBase {
 			const {initDevToolsGuard} = await import('./ts/DevToolsGuard');
 			initDevToolsGuard();
 		}
+	}
+
+	// プロジェクト切替（本家 SysWeb.ts:60-67）。#now_prjは同じリンクの連打で二重に
+	//	作り直さないための重複防止で、`&& this.scrMng`は本家に無い分岐——本家はstop()を
+	//	挟まない前提の導線しか無いが、こちらはElectron版ギャラリー（index_app.html）が
+	//	モーダルの開閉ごとにstop()→runSN()を呼ぶため、「stop済みなら同じprjでも作り直す」を
+	//	付け足さないと閉じて同じサンプルを開き直したときに再生されない
+	#now_prj = ':';
+	async runSN(prj: string) {
+		this.arg.cur = this.#path_base + prj + '/';
+		if (this.#now_prj === this.arg.cur && this.scrMng) return;
+
+		this.#now_prj = this.arg.cur;
+		await this.run();
 	}
 
 	// [log]用（本家 SysWeb.ts:264 appendFile/outputFile）。ブラウザにファイル追記の手段は無いので、
@@ -49,7 +83,3 @@ export class SysWeb extends SysBase {
 	}
 
 }
-
-// import {CmnLib, argChk_Num, argChk_Boolean} from './ts/CmnLib';
-// import {Layer} from './ts/Layer';
-// export {SysWeb, CmnLib, argChk_Num, argChk_Boolean, Layer};

@@ -558,15 +558,17 @@ var t = /* @__PURE__ */ e(((e) => {
 		}
 		function M(e, t, n) {
 			var r = q.actQueue;
-			if (r !== null) if (r.length !== 0) try {
-				N(r), k(function() {
-					return M(e, t, n);
-				});
-				return;
-			} catch (e) {
-				q.thrownErrors.push(e);
+			if (r !== null) {
+				if (r.length !== 0) try {
+					N(r), k(function() {
+						return M(e, t, n);
+					});
+					return;
+				} catch (e) {
+					q.thrownErrors.push(e);
+				}
+				else q.actQueue = null;
 			}
-			else q.actQueue = null;
 			0 < q.thrownErrors.length ? (r = A(q.thrownErrors), q.thrownErrors.length = 0, n(r)) : t(e);
 		}
 		function N(e) {

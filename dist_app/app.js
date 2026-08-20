@@ -27,9 +27,19 @@ var i = "skynovel", a = class {
 	constructor(e = {}, t) {
 		this.hPlg = e, this.arg = t;
 	}
-	async loaded(...[t]) {
-		let n = t.snsys_pre;
-		delete t.snsys_pre, await n?.init({
+	async loaded(...[e]) {
+		let n = e.snsys_pre;
+		delete e.snsys_pre, await n?.init({
+			getInfo: () => ({ window: {
+				width: t.stageW,
+				height: t.stageH
+			} }),
+			addTag: () => {},
+			addLayCls: () => {},
+			searchPath: () => "",
+			getVal: () => void 0,
+			resume: () => {},
+			render: () => {},
 			setDec: (e) => {
 				this.dec = e;
 			},
@@ -42,35 +52,43 @@ var i = "skynovel", a = class {
 			getHash: (e) => {
 				this.hash = e;
 			}
-		}), document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await Promise.all([
-			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
-			import("./Main.js").then((e) => e.t),
-			import("./Config.js"),
-			import("./ScriptMng.js"),
-			import("./Sprite.js").then((e) => e.t)
-		]).then(async ([{ createRoot: e }, { initMain: t }, { Config: n }, { ScriptMng: r }, { setFetch: a, setDecFncs: o }]) => {
-			a((e, t) => this.fetch(e, t)), o((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto);
-			let s = await n.generate(this);
-			this.setMain(s), document.body.style.backgroundColor = String(s.oCfg.init.bg_color);
-			let c = document.getElementById(i);
-			if (c) {
-				let e = c.cloneNode(!0);
-				e.id = i;
-			} else c = document.createElement("div"), c.id = i, document.body.appendChild(c);
-			let l = new r(this);
-			this.scrMng = l, t(e(c), {
-				heStage: c,
-				sys: this,
-				scrMng: l
-			}, () => queueMicrotask(() => l.load("main")));
-		});
+		}), document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await this.run();
 	}
 	cfg;
 	setMain(e) {
 		this.cfg = e;
 	}
 	scrMng;
-	async run() {}
+	#e;
+	#t;
+	async run() {
+		let [{ createRoot: t }, { initMain: n }, { Config: r }, { ScriptMng: a }, { setFetch: o, setDecFncs: s }, { resetStore: c }] = await Promise.all([
+			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
+			import("./Main.js").then((e) => e.t),
+			import("./Config.js"),
+			import("./ScriptMng.js"),
+			import("./Sprite.js").then((e) => e.t),
+			import("./store.js")
+		]);
+		o((e, t) => this.fetch(e, t)), s((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), c());
+		let l = await r.generate(this);
+		this.setMain(l), document.body.style.backgroundColor = String(l.oCfg.init.bg_color);
+		let u = this.#t ??= document.getElementById(i) ?? (() => {
+			let e = document.createElement("div");
+			return e.id = i, document.body.appendChild(e), e;
+		})(), d = new a(this);
+		this.scrMng = d, this.#e = t(u), n(this.#e, {
+			heStage: u,
+			sys: this,
+			scrMng: d
+		}, () => queueMicrotask(() => d.load("main")));
+	}
+	async stop() {
+		if (!this.#e) return;
+		this.scrMng?.destroy(), this.#e.unmount(), this.#e = void 0, this.scrMng = void 0;
+		let { resetStore: e } = await import("./store.js");
+		e();
+	}
 	$path_downloads = "";
 	get path_downloads() {
 		return this.$path_downloads;

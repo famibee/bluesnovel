@@ -7,7 +7,7 @@ export declare class Script {
     get aLNum(): readonly number[];
     constructor(fn: string, src: string, grm?: Grammar);
     get len(): number;
-    label2idx(label: string): number | undefined;
+    label2idx(label: string, fromIdx: number, inMacro?: boolean): number | undefined;
     defC2M(tag: 'char2macro' | 'bracket2macro', args: {
         [k: string]: string;
     }, hTag: {

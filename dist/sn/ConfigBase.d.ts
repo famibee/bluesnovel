@@ -75,6 +75,7 @@ export type T_Fn2Path = {
 export type T_SEARCHPATH = (fn: string, extptn?: SEARCH_PATH_ARG_EXT) => string;
 export type T_Config = {
     oCfg: T_CFG;
+    userFnTail: string;
     headNs: string;
     searchPath: T_SEARCHPATH;
     matchPath: (fnptn: string, extptn?: SEARCH_PATH_ARG_EXT) => readonly T_Exts[];
