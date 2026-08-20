@@ -14,7 +14,9 @@ import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';
 import {argChk_Num, argChk_Boolean} from './sn/CmnLib';
 import {Layer} from './sn/Layer';
+import type {T_RecordPlayBack_lay} from './sn/Layer';
 export {argChk_Num, argChk_Boolean, Layer};
+export type {T_RecordPlayBack_lay};
 
 // 仮置きでここに
 export class SysWeb extends SysBase {
