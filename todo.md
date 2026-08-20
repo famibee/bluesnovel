@@ -24,9 +24,9 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
-      確認できるトップページ）から着手し、playwright-cliでの実機確認により以下2件のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［イベント検知
-      部・`[button]`・`[link]`のホバー］→`ch_button`/`ruby`/`filter`等）：
+      確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［`[link]`の
+      ホバーをbluesnovel側で再確認（isGallery対応後）］→`ch_button`/`ruby`/`filter`等）：
   - [x] `[event key='dom=セレクタ']`（コロン無し＝メイン文書対象）が誤動作。`FrameMng.ts`の
         `elms()`がコロンの有無を見ずセレクタ全体を「フレームid」として`#hIfrm`を引いていたため、
         `need_err=false`指定でも例外が飛んでいた。本家`Reading.ts:79`の`getHtmlElmList()`は
@@ -37,6 +37,45 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         フォールバック扱いで描画されない）だったため、DOM構造は正しいのに画面が真っ黒になって
         いた。`<div id="skynovel">`に修正（`sn_gallery/index.html`、フルスクリーン用CSS
         セレクタも合わせて修正）
+  - [x] `[button]`の`arg`属性がクリック時に`&sn.eventArg`へ渡らず`undefined`になっていた。
+        `[event]`/`[link]`は対応済みだったが`[button]`だけ2箇所で欠落：`ScriptEngine.ts`の
+        アクション生成（`T_ENGINE_ACTION`の`addBtn`型と生成コード）と、`ScriptMng.ts`
+        `#applyAction()`のaddBtnケース（storeへ渡す直前）。本家実機は`push button !`、修正前の
+        bluesnovelは`undefined !`になることをplaywright-cliで確認して特定した。修正済み
+        （`src/ts/ScriptEngine.ts`・`src/ts/ScriptMng.ts`・`src/store/store.tsx`・
+        `src/components/TxtLayer.tsx`・`src/components/BtnLayer.tsx`）。`global`属性は
+        `[link]`と同様「本家でも効果を持たない扱い」の可能性が高いが未検証のため対象外のまま
+  - [x] `main.sn`の`[event key=wheel.y<0]`・`[event key=gamepadconnected]`はbluesnovelで
+        反応しないが、本家ギャラリー実機（playwright-cliでホイールダウン送出）でも反応しない
+        ことを確認済み。コード上も本家`EventMng.ts`は`downwheel`/`upwheel`という別名で発火して
+        おり`wheel.y<0`という名前のイベントは存在しない（`wheel.y>0`は`waitRsvEvent()`内部の
+        読み進め待ち専用キーで別物）。`gamepadconnected`も本家`GamepadMng.ts`はポーリング方式
+        （コメントに「移植元 bluesnovel」とあり、むしろこちらが本家へ逆輸入された側）で該当
+        イベント名の発火が無い。**どちらも本家自体で死んでいる記法のため、bluesnovel側の対応
+        不要**と判断
+  - [ ] **ステージ拡大ロジックに本家の「ギャラリー埋め込み」分岐（`isGallery`）が丸ごと未実装**
+        （レイヤ配置崩れの主因、優先度高）。本家`SysBase.cvsResize()`
+        （`skynovel_esm/src/sn/SysBase.ts:231`）は`isGallery = cvs.parentElement !== document.body`
+        を判定し、埋め込み時（sn_galleryのような左メニュー付きレイアウト）はcanvasの**親要素の
+        実サイズ**（`sn_gallery/index.html`の`#skynovel`に付いたBootstrapの`mw-100 mh-100`で
+        制約された領域）を拡大の基準にする。bluesnovel側`calcScale()`（`src/components/Stage.tsx:
+        450-499`）はこの`isGallery`分岐がコメントアウトされたまま（473-489行目）残っており、
+        常に`window.innerWidth/innerHeight`（ウィンドウ全体）を基準に拡大してしまう。2026-08-21、
+        同一ビューポート(1010×800)でplaywright-cli実機比較し、本家はステージが`prj.json`
+        指定通り750×500のまま、bluesnovelは1010×673まで拡大される差を確認。結果、レイヤの
+        絶対px座標配置が本家と大きくズレ、`top`のイベント検知シーン以降で画面が崩れる
+  - [ ] `[lay]`のstyle属性が特定のシーン遷移後に丸ごと消え、コンポーネント既定CSSへ
+        フォールバックする（原因未確定）。`main.sn`の`*init`ラベル内`[lay layer=mes ...
+        style='width:718px; height:480px; writing-mode:vertical-rl; ...']`（複数CSSプロパティを
+        `;`区切り指定）が、後続の`[lay layer=mes page=back ... style='text-shadow:...']`
+        （`b_alpha=0`だけ変える意図のシーン転換用タグ）実行後に消える。パーサー層（`Grammar.ts`
+        の`#REG_TOKEN`・`AnalyzeTagArg.ts`の`#REG_TAGARG`・`ScriptEngine.ts`の`#resolveTag()`・
+        `store.tsx`の`chgLay()`・`TxtLayer.tsx`の`styTxt`）は全段階でstyle文字列を無傷で通す
+        ことをサブエージェント調査で確認済み（クォート内`;`が壊すという当初の仮説は誤り）。
+        本家では同じシーン遷移後も縦書き(`writing-mode`)が保持されていることを実機確認済みなので、
+        `page=back`でレイヤを再生成する際に**前面ページのstyleを引き継ぐかどうか**の設計差
+        （本家は部分マージ、bluesnovelは新規初期化？）を疑っているが未検証。上のisGallery対応後、
+        レイアウトが正しい状態で再度実機比較して切り分けること
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

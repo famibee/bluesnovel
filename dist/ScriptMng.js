@@ -2197,6 +2197,7 @@ var ke = class {
 					call: c,
 					...s === void 0 ? {} : { nm: s },
 					...r ? { fn: r } : {},
+					...i.arg === void 0 ? {} : { arg: i.arg },
 					...Object.keys(u).length > 0 ? { sty: u } : {}
 				}), "skip";
 			}
@@ -7214,6 +7215,7 @@ var es = class e {
 					label: e.label,
 					...e.call === void 0 ? {} : { call: e.call },
 					...e.fn === void 0 ? {} : { fn: e.fn },
+					...e.arg === void 0 ? {} : { arg: e.arg },
 					...t === void 0 ? {} : { sty: t }
 				});
 				break;

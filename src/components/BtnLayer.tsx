@@ -21,9 +21,10 @@ type T_BTNARG = {
 	label	: string;
 	call	: boolean;
 	fn		: string;
+	arg?	: string | undefined;	// [button arg=...]。クリック時に&sn.eventArgとして受け取れる
 	sty?	: T_BTN_STY | undefined;
 	enabled	: boolean;	// 親の文字レイヤの[enable_event enabled=]。falseの間はクリックもキー操作も受けない
-	onActivate: (label: string, call: boolean, fn: string)=> void;
+	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
 
@@ -128,7 +129,7 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, call, fn, sty, enabled, onActivate, onSe}: T_BTNARG) {
+export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onActivate, onSe}: T_BTNARG) {
 	// 実効的な有効・無効：層側（[enable_event]）とボタン自身（[button enabled=]）のANDを取る
 	const isEnabled = enabled && sty?.enabled !== false;
 	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
@@ -200,7 +201,7 @@ export default function BtnLayer({text, label, call, fn, sty, enabled, onActivat
 		if (! isEnabled) return;
 		hintMng.hide();			// 本家もpointerdownで消す（EventMng.ts:424）
 		playSe('clickse', 'clicksebuf');
-		onActivate(label, call ?? false, fn);
+		onActivate(label, call ?? false, fn, arg);
 	};
 
 	// ツールチップ（[button hint=…]）。本家 EventMng.ts:418 も pointerover/out と
@@ -302,7 +303,7 @@ export default function BtnLayer({text, label, call, fn, sty, enabled, onActivat
 		if (! isEnabled) return;
 		hintMng.hide();			// onClickと同様、決定と同時にヒントも消す（ゲームパッドOKはここを通る）
 		playSe('clickse', 'clicksebuf');
-		onActivate(label, call ?? false, fn);
+		onActivate(label, call ?? false, fn, arg);
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる

@@ -1515,7 +1515,7 @@ export class ScriptMng {
 				...(act.sty.pic ? {src: this.#searchPic('button pic', act.sty.pic)} : {}),
 				...(act.sty.b_pic ? {b_src: this.#searchPic('button b_pic', act.sty.b_pic)} : {}),
 			};
-			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(sty !== undefined ? {sty} : {})});
+			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.arg !== undefined ? {arg: act.arg} : {}), ...(sty !== undefined ? {sty} : {})});
 			break;
 		}
 		case 'chgLay':

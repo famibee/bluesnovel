@@ -10058,8 +10058,8 @@ function bu(e, t, n, r) {
 	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y;
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || t.x !== 1 || t.y !== 1) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
 }
-function xu({ text: e, label: t, call: n, fn: r, sty: i, enabled: a, onActivate: s, onSe: c }) {
-	let l = a && i?.enabled !== !1, u = _u`
+function xu({ text: e, label: t, call: n, fn: r, arg: i, sty: a, enabled: s, onActivate: c, onSe: l }) {
+	let u = s && a?.enabled !== !1, d = _u`
 		position: relative;
 		z-index: 2;
 
@@ -10084,92 +10084,92 @@ function xu({ text: e, label: t, call: n, fn: r, sty: i, enabled: a, onActivate:
 		transition: color 0.3s;
 		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
 			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
-		${i?.style ?? ""}
+		${a?.style ?? ""}
 		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
 			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
 			既定のフォーカスリングは画面に合わないので消す。
 			既定のホバーは本家 style_hover の fill:'white' 相当 */
-		&:hover, &:focus {${i?.style_hover ?? "color: white;"}}
+		&:hover, &:focus {${a?.style_hover ?? "color: white;"}}
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
-		&:active {${i?.style_clicked ?? "text-shadow: none;"}}
+		&:active {${a?.style_clicked ?? "text-shadow: none;"}}
 		/* 画像ボタンのコマ送り。絵は「通常｜押下｜ホバー」を横に3コマ並べた1枚で
 			（本家 Button.ts:269 が幅を3等分して張り替える）、背景を3倍幅に敷いてあるので
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
-		${i?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
-	`, d = (e, t) => {
-		if (!l) return;
-		let n = i?.[e];
-		n && c(n, i?.[t] ?? "SYS");
-	}, f = (e) => {
-		e.stopPropagation(), l && (hu.hide(), d("clickse", "clicksebuf"), s(t, n ?? !1, r));
-	}, p = () => {
-		i?.hint && hu.show(g.current, i.hint, i.hint_style, i.hint_opt);
+		${a?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
+	`, f = (e, t) => {
+		if (!u) return;
+		let n = a?.[e];
+		n && l(n, a?.[t] ?? "SYS");
+	}, p = (e) => {
+		e.stopPropagation(), u && (hu.hide(), f("clickse", "clicksebuf"), c(t, n ?? !1, r, i));
 	}, m = () => {
-		p(), d("enterse", "entersebuf");
+		a?.hint && hu.show(_.current, a.hint, a.hint_style, a.hint_opt);
 	}, h = () => {
-		hu.hide(), d("leavese", "leavesebuf");
-	}, g = (0, B.useRef)(null);
+		m(), f("enterse", "entersebuf");
+	}, g = () => {
+		hu.hide(), f("leavese", "leavesebuf");
+	}, _ = (0, B.useRef)(null);
 	(0, B.useEffect)(() => {
-		let e = g.current;
-		if (!(!e || !l)) return o.add(e), () => o.remove(e);
-	}, [l]);
-	let [_, v] = (0, B.useState)({
+		let e = _.current;
+		if (!(!e || !u)) return o.add(e), () => o.remove(e);
+	}, [u]);
+	let [v, b] = (0, B.useState)({
 		x: 1,
 		y: 1
-	}), b = i?.pic ? i.src ?? "" : "", [x, S] = (0, B.useState)(null);
+	}), x = a?.pic ? a.src ?? "" : "", [S, C] = (0, B.useState)(null);
 	(0, B.useEffect)(() => {
-		if (!b) {
-			S(null);
+		if (!x) {
+			C(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && S({
+			e && C({
 				w: t.naturalWidth / 3,
 				h: t.naturalHeight
 			});
-		}, t.src = b, () => {
+		}, t.src = x, () => {
 			e = !1;
 		};
-	}, [b]);
-	let C = i?.b_pic ? i.b_src ?? "" : "", [w, T] = (0, B.useState)(null);
+	}, [x]);
+	let w = a?.b_pic ? a.b_src ?? "" : "", [T, E] = (0, B.useState)(null);
 	return (0, B.useEffect)(() => {
-		if (!C) {
-			T(null);
+		if (!w) {
+			E(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && T({
+			e && E({
 				w: t.naturalWidth,
 				h: t.naturalHeight
 			});
-		}, t.src = C, () => {
+		}, t.src = w, () => {
 			e = !1;
 		};
-	}, [C]), (0, B.useLayoutEffect)(() => {
-		let e = g.current;
+	}, [w]), (0, B.useLayoutEffect)(() => {
+		let e = _.current;
 		if (!e) {
-			v({
+			b({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
-		if (i?.pic) {
-			v({
+		if (a?.pic) {
+			b({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		let t = () => {
-			let { w: t, h: r } = yu(i, x, w), a = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
+			let { w: t, h: r } = yu(a, S, T), i = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
 			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
 			let c = e.offsetWidth, l = e.offsetHeight;
-			e.style.width = a, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), v({
+			e.style.width = i, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), b({
 				x: c > 0 ? t / c : 1,
 				y: l > 0 ? r / l : 1
 			});
@@ -10177,22 +10177,22 @@ function xu({ text: e, label: t, call: n, fn: r, sty: i, enabled: a, onActivate:
 		return n.observe(e), t(), () => n.disconnect();
 	}, [
 		e,
-		i?.width,
-		i?.height,
-		i?.pic,
-		w
+		a?.width,
+		a?.height,
+		a?.pic,
+		T
 	]), /* @__PURE__ */ M("span", {
-		css: u,
-		style: i ? bu(i, _, x, w) : void 0,
-		ref: g,
-		tabIndex: l ? 0 : -1,
-		onClick: f,
+		css: d,
+		style: a ? bu(a, v, S, T) : void 0,
+		ref: _,
+		tabIndex: u ? 0 : -1,
+		onClick: p,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), l && (hu.hide(), d("clickse", "clicksebuf"), s(t, n ?? !1, r)));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), u && (hu.hide(), f("clickse", "clicksebuf"), c(t, n ?? !1, r, i)));
 		},
-		onMouseEnter: m,
-		onMouseLeave: h,
-		onFocus: p,
+		onMouseEnter: h,
+		onMouseLeave: g,
+		onFocus: m,
 		onBlur: () => hu.hide(),
 		children: e
 	});
@@ -10520,6 +10520,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
+				arg: e.arg,
 				sty: e.sty,
 				enabled: N,
 				onActivate: I,
@@ -10535,6 +10536,7 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 				label: e.label,
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
+				arg: e.arg,
 				sty: e.sty,
 				enabled: N,
 				onActivate: I,
