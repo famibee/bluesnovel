@@ -10397,7 +10397,11 @@ function Su({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: i, s
 			z-index: -1;
 		}` : ""}
 
-		font-size: xxx-large;
+		/* [add_lay class=txt]直後、[lay style=…]を一度も受けていない状態の既定フォントサイズ。
+			本家 TxtLayer.ts:272 のコンストラクタ既定（24px）に合わせる。xxx-large（≒48px）のままだと
+			widthのCSS既定70%（test/argdef_parity.test.ts A_CSS_DEF、本家と意図的に違えた値）との
+			組み合わせで本文が箱から大きくはみ出す（sn_galleryのtopプロジェクトで発覚） */
+		font-size: 24px;
 		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
 			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
 			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：

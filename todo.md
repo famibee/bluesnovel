@@ -25,9 +25,24 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［`[link]`の
-      ホバーをbluesnovel側で再確認（isGallery対応後）］→
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は
       `ch_button`/`ruby`/`filter`等）：
+  - [x] `[link]`のホバー（`style_hover`・`hint`ツールチップ）自体は本家ギャラリー実機と
+        playwright-cliで比較し正しく動作することを確認済み。ただし確認の過程で、`top`の
+        本文（`[add_lay layer=mes class=txt]`のみで`[lay style=…]`を一度も受けていない
+        fore面）が横に暴走してステージ外（実測x=-1556px）へはみ出し、[link]自体が
+        画面外になっていて最初は検証不能だった。原因は本家`TxtLayer.ts:272`
+        （文字レイヤ生成時に`width/height=stageW/stageH, font-size:24px`等を必ず一度
+        セットするコンストラクタ既定）に対応する初期化がbluesnovelに無く、
+        `TxtLayer.tsx`のCSS既定（`font-size: xxx-large`≒48px、自身のコメントでも
+        「試作の目印であってテンプレが期待する見た目ではない」と自認）へフォールバック
+        していたため。`width: 70%`は`test/argdef_parity.test.ts`の`A_CSS_DEF`で
+        本家と意図的に違えた既定と明記されているため触らず、**未整理だった
+        `font-size`のみ**を本家の24pxへ修正（`src/components/TxtLayer.tsx`の`styTxt`、
+        `xxx-large→24px`。デザインモード入力欄側の`xxx-large`は別用途のため維持）。
+        修正後、playwright-cliで本家ギャラリー実機と同一箇所（`top`の「文字リンク」）へ
+        マウスを合わせ、赤い破線アウトラインとツールチップ「目を輝かせる」が同一表示に
+        なることを確認済み。`bun test`（1684件）・`tsc --noEmit`とも回帰無し
   - [x] `[event key='dom=セレクタ']`（コロン無し＝メイン文書対象）が誤動作。`FrameMng.ts`の
         `elms()`がコロンの有無を見ずセレクタ全体を「フレームid」として`#hIfrm`を引いていたため、
         `need_err=false`指定でも例外が飛んでいた。本家`Reading.ts:79`の`getHtmlElmList()`は
