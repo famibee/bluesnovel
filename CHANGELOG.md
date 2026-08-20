@@ -681,6 +681,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.3.1](https://github.com/famibee/bluesnovel/compare/v0.3.0...v0.3.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* trans.e2e.tsの[trans rule=]まわりのflakyを解消 ([e769332](https://github.com/famibee/bluesnovel/commit/e76933225656c805b3b2974a52f82f55566e7924))
+
 ## [0.3.0](https://github.com/famibee/bluesnovel/compare/v0.2.2...v0.3.0) (2026-08-20)
 
 
