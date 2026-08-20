@@ -693,6 +693,12 @@
 	なお[<a href="tag.html#rec_ch" target="_blank" rel="noopener">rec_ch</a>]／
 	[<a href="tag.html#rec_r" target="_blank" rel="noopener">rec_r</a>]はこの値に関わらず記録する
 </td></tr>
+<tr><td>save:sn.userFnTail</td><td>''</td><td>文字列（'@'禁止）</td><td>
+	ユーザー種別ごとにファイルを差し替えるためのタグ。空でなければ、パス解決時に
+	「元ファイル名+'@@'+この値」というファイル（例：chapter1@@premium.sn）があれば
+	そちらを優先して読み込む（<code>ConfigBase.searchPath()</code>）。
+	代入すると即座に反映される
+</td></tr>
 <tr><td>save:const.sn.sLog</td><td>'[]'</td><td>文字列</td><td>
 	履歴 JSON テキスト<br/>
 	【2019/12/18】内容が const.sn.log.json と同様に。<br/>

@@ -6279,7 +6279,11 @@ var es = class r {
 			}), e.defSetTriggerSoundVol((t, n) => {
 				let r = Number(e.getVal(`save:const.sn.sound.${t}.volume`) ?? 1);
 				this.#w.setVol(t, r * Number(n));
-			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#E()), await this.#g(e), Ye(this.sys.cfg);
+			}), e.defSetTrigger("sys:sn.sound.movie_volume", () => this.#E()), e.defSetTrigger("save:sn.userFnTail", (e) => {
+				let t = String(e);
+				if (t.includes("@")) throw "この変数では文字「@」は禁止です";
+				this.sys.cfg.userFnTail = t;
+			}), await this.#g(e), Ye(this.sys.cfg);
 		}
 		this.go = () => this.#k(), this.$trgNext();
 	}

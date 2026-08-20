@@ -19,6 +19,7 @@ import {beforeEach, expect, it} from 'bun:test';
 //===== Test Class =====
 class CfgTest implements T_Config {
 	oCfg	= creCFG();
+	userFnTail	= '';
 	headNs	= '';
 	searchPath: T_SEARCHPATH = _fn=> '';
 	matchPath = (_fnptn: string, _extptn?: SEARCH_PATH_ARG_EXT): readonly T_Exts[]=> [];

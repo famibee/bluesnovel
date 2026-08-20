@@ -121,6 +121,13 @@ export class ScriptMng {
 				this.#sndMng.setVol(buf, savevol * Number(v));
 			});
 			engine.defSetTrigger('sys:sn.sound.movie_volume', ()=> this.#applyMovieVolume());
+			// ユーザー別ファイル差替タグ（本家 Variable.ts:693-697）。[let]から直接反映
+			//	（searchPath()側の参照は sys.cfg.userFnTail → ConfigBase.ts:219）
+			engine.defSetTrigger('save:sn.userFnTail', v=> {
+				const val = String(v);
+				if (val.includes('@')) throw 'この変数では文字「@」は禁止です';
+				this.sys.cfg.userFnTail = val;
+			});
 			await this.#loadSaveData(engine);
 			// プロジェクト同梱フォントを`@font-face`で使えるようにする（本家 TxtLayer.ts:97）。
 			//	シナリオ側に読み込みタグは無く、path.jsonにあるフォントは全部登録される
