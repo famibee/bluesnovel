@@ -776,6 +776,20 @@ function Z(e, t) {
 		trans: null
 	};
 }
+function ne(e, t) {
+	let n = (e) => {
+		let t = /* @__PURE__ */ new Map();
+		for (let n of e.split(";")) {
+			let e = n.indexOf(":");
+			if (e < 0) continue;
+			let r = n.slice(0, e).trim(), i = n.slice(e + 1).trim();
+			r && i && t.set(r, i);
+		}
+		return t;
+	}, r = n(e ?? "");
+	for (let [e, i] of n(t)) r.set(e, i);
+	return [...r].map(([e, t]) => `${e}: ${t};`).join(" ");
+}
 function Q(e, t, n) {
 	let r = e.find((e) => e.nm === t);
 	if (!r) throw `存在しないレイヤ ${t} です`;
@@ -843,7 +857,12 @@ var $ = K()((e, t) => ({
 		let { idx: i, aLay: a } = Y(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
 		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
-		return o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura), Object.assign(o, r), X(e, i, a);
+		o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura);
+		let s = o.cls === "txt" && r.style !== void 0 ? {
+			...r,
+			style: r.style ? ne(o.style, r.style) : ""
+		} : r;
+		return Object.assign(o, s), X(e, i, a);
 	}),
 	getLaySty: (e, n) => {
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
@@ -1020,11 +1039,11 @@ var $ = K()((e, t) => ({
 	setSkipping: (t) => e(() => ({ skipping: t })),
 	wait: null,
 	setWait: (t) => e(() => ({ wait: t }))
-})), ne = $.getState();
-function re() {
-	$.setState(ne, !0);
+})), re = $.getState();
+function ie() {
+	$.setState(re, !0);
 }
 //#endregion
-export { J as DEF_BTN_FONT, u as _, C as a, x as c, ee as d, p as f, l as g, h, I as i, S as l, f as m, R as n, te as o, d as p, z as r, re as resetStore, D as s, L as t, b as u, $ as useStore, m as v, i as y };
+export { J as DEF_BTN_FONT, u as _, C as a, x as c, ee as d, p as f, l as g, h, I as i, S as l, f as m, R as n, te as o, d as p, z as r, ie as resetStore, D as s, L as t, b as u, $ as useStore, m as v, i as y };
 
 //# sourceMappingURL=store.js.map

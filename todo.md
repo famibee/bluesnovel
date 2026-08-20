@@ -26,7 +26,7 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
       発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［`[link]`の
-      ホバーをbluesnovel側で再確認（isGallery対応後）／`[lay]`のstyle消失問題の再切り分け］→
+      ホバーをbluesnovel側で再確認（isGallery対応後）］→
       `ch_button`/`ruby`/`filter`等）：
   - [x] `[event key='dom=セレクタ']`（コロン無し＝メイン文書対象）が誤動作。`FrameMng.ts`の
         `elms()`がコロンの有無を見ずセレクタ全体を「フレームid」として`#hIfrm`を引いていたため、
@@ -71,18 +71,24 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         比較し、幅792pxを基準にbluesnovel側が792×528（アスペクト比750:500と一致）で安定
         （リロード3回・幅リサイズ3回とも比率維持を確認）することを確認済み。非ギャラリー時
         （`tmp_blues`）はwindow基準のまま回帰無しも確認
-  - [ ] `[lay]`のstyle属性が特定のシーン遷移後に丸ごと消え、コンポーネント既定CSSへ
-        フォールバックする（原因未確定）。`main.sn`の`*init`ラベル内`[lay layer=mes ...
-        style='width:718px; height:480px; writing-mode:vertical-rl; ...']`（複数CSSプロパティを
-        `;`区切り指定）が、後続の`[lay layer=mes page=back ... style='text-shadow:...']`
-        （`b_alpha=0`だけ変える意図のシーン転換用タグ）実行後に消える。パーサー層（`Grammar.ts`
-        の`#REG_TOKEN`・`AnalyzeTagArg.ts`の`#REG_TAGARG`・`ScriptEngine.ts`の`#resolveTag()`・
-        `store.tsx`の`chgLay()`・`TxtLayer.tsx`の`styTxt`）は全段階でstyle文字列を無傷で通す
-        ことをサブエージェント調査で確認済み（クォート内`;`が壊すという当初の仮説は誤り）。
-        本家では同じシーン遷移後も縦書き(`writing-mode`)が保持されていることを実機確認済みなので、
-        `page=back`でレイヤを再生成する際に**前面ページのstyleを引き継ぐかどうか**の設計差
-        （本家は部分マージ、bluesnovelは新規初期化？）を疑っているが未検証。上のisGallery対応後、
-        レイアウトが正しい状態で再度実機比較して切り分けること
+  - [x] `[lay]`のstyle属性が特定のシーン遷移後に丸ごと消え、コンポーネント既定CSSへ
+        フォールバックする不具合。原因は`store.tsx`の`chgLay()`が`style`属性を**文字列まるごと
+        Object.assignで置き換えていた**こと。本家`TxtStage.ts:194`の`lay()`は一時`<span>`へ
+        `cssText`を流し込みCSSOMでプロパティを取り出し、既存の`CSSStyleDeclaration`へ**プロパティ
+        単位で**上書きする（cssText全体を消すのは空文字指定時＝elseの1行のみ）。つまり
+        `[lay style='text-shadow:...']`のような一部プロパティだけの指定は、本家では既存の
+        `width`/`height`/`writing-mode`等を残したまま`text-shadow`だけ上書きする「差分マージ」で、
+        bluesnovelの「全置換」とは意味が違っていた。`sn_gallery`の`top`（`main.sn:67-68`で
+        `layer=mes`にwidth/height/writing-mode込みのstyleを設定→`[trans]`で表裏へ複製→
+        `main.sn:27`の`b_alpha=0`だけ変える意図の`[lay style='text-shadow:...']`が、本来残すべき
+        width/height/writing-modeを巻き添えで消していた）で再現・修正・実機確認済み。
+        `store.tsx`はzustandの`create()`がDOM非依存という設計（`store_lay.test.ts`参照）のため、
+        DOM APIではなく`mergeCssText()`という文字列パースの自前実装でプロパティ単位マージを行う
+        （`chgLay()`内、`e.cls === 'txt' && sty.style !== undefined`のときだけ適用。空文字指定は
+        本家同様の全消去として扱う）。playwright-cliで本家ギャラリー実機と`sn_gallery`（bluesnovel
+        駆動）を同じシナリオ位置（`[trans]`後の「各種イベント検知」セクション）まで進めて比較し、
+        どちらも`writing-mode: vertical-rl`・`width: 718px`・`height: 480px`を保持したまま
+        `text-shadow`だけ新しい値になっていることを確認済み
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

@@ -316,6 +316,27 @@ function finTrans(s: T_STATE, aLayNm: string[] | null): Partial<T_STATE> {
 	return {aPage, foreIdx: bi, trans: null};
 }
 
+// [lay style=…]のCSSをプロパティ単位でマージする（本家 TxtStage.ts:194 lay()は一時<span>へ
+//	cssTextを流し込みCSSOMでプロパティを取り出して既存styleへ1つずつ上書きするが、storeはDOM非依存
+//	（store_lay.test.ts参照）を保つため文字列パースで代替する。空文字指定（本家の else 節）は
+//	全消去として扱う
+function mergeCssText(oldCss: string | undefined, newCss: string): string {
+	const parse = (css: string)=> {
+		const m = new Map<string, string>();
+		for (const decl of css.split(';')) {
+			const i = decl.indexOf(':');
+			if (i < 0) continue;
+			const k = decl.slice(0, i).trim();
+			const v = decl.slice(i + 1).trim();
+			if (k && v) m.set(k, v);
+		}
+		return m;
+	};
+	const m = parse(oldCss ?? '');
+	for (const [k, v] of parse(newCss)) m.set(k, v);
+	return [...m].map(([k, v])=> `${k}: ${v};`).join(' ');
+}
+
 // レイヤ1件を探す（見つからない・種別違いは例外）// レイヤ1件を探す（見つからない・種別違いは例外）
 function findLay<C extends 'grp' | 'txt'>(aLay: T_LAY[], nm: string, cls: C) {
 	const e = aLay.find(e=> e.nm === nm);
@@ -441,7 +462,13 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			);
 		}
 
-		Object.assign(e, sty);
+		// styleは属性まるごとの置き換えではなく、本家同様CSSプロパティ単位で既存styleへ足す
+		//	（[lay style='text-shadow:…']だけを送るシーン転換タグが、先に指定済みの
+		//	width/height/writing-mode等を消してしまっていた不具合の修正）
+		const sty2 = e.cls === 'txt' && sty.style !== undefined
+			? {...sty, style: sty.style ? mergeCssText(e.style, sty.style) : ''}
+			: sty;
+		Object.assign(e, sty2);
 		return putPage(s, idx, aLay);
 	}),
 	// [tsy]（トゥイーン）の開始値を読むための唯一の読み出し口。setterではないのでgetを使う。
