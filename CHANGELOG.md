@@ -681,6 +681,21 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.3.2](https://github.com/famibee/bluesnovel/compare/v0.3.1...v0.3.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **sn:** [button]のarg属性がクリック時に&sn.eventArgへ渡らない不具合を修正 ([f879536](https://github.com/famibee/bluesnovel/commit/f879536f7e0ca070c675cecdfa9625185d21f366))
+* **sn:** [button]のlabel/fn両省略と、ステージ背景色bg_color未反映を修正 ([8e87beb](https://github.com/famibee/bluesnovel/commit/8e87beba3d23497f6b13b37f9ceb028f8e370fd1))
+* **sn:** [event] dom=セレクタ(コロン無し)がフレーム未読込エラーになる不具合を修正 ([7b0677c](https://github.com/famibee/bluesnovel/commit/7b0677cd6f464c0ff445f268f55ddde79ff793d0))
+* **sn:** [lay] faceが[add_face]未定義名でもファイル名として使えるよう修正 ([04f23cb](https://github.com/famibee/bluesnovel/commit/04f23cb413c6b8556bcd146dcb12361838c1dbe3))
+* **sn:** [lay]のstyle属性が後続の部分style指定で丸ごと消える不具合を修正 ([2ebbb1f](https://github.com/famibee/bluesnovel/commit/2ebbb1fac5abae0464ceb429e9de5d8e4afdd088))
+* **sn:** sn_gallery埋め込み時にステージがwindow全体基準で拡大してしまう不具合を修正 ([b134574](https://github.com/famibee/bluesnovel/commit/b134574cd8efe2f10a08d77b9c53212d96843d67))
+* **sn:** sn_gallery連携プラグイン向けにLayer/argChk_*とT_PluginInitArgを拡張 ([55e4cd3](https://github.com/famibee/bluesnovel/commit/55e4cd305a0e0c398218d1b890494a38215b459a))
+* **sn:** T_RecordPlayBack_lay型をweb.tsからexport ([4053fee](https://github.com/famibee/bluesnovel/commit/4053fee90ad2508f1645c10951d515acce4497d7))
+* **sn:** 文字レイヤの既定font-sizeを本家の24pxに合わせ、本文のステージ外はみ出しを解消 ([32cc952](https://github.com/famibee/bluesnovel/commit/32cc952538a9038cebc3e08b23b6baca37404f97))
+
 ## [0.3.1](https://github.com/famibee/bluesnovel/compare/v0.3.0...v0.3.1) (2026-08-20)
 
 
