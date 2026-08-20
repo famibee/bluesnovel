@@ -34,4 +34,12 @@
 ;	「、」自身とそれ以降が後ろへずれる。表に無い文字の待ちは0なので「あ」は即出る
 [autowc enabled=true text="、" time=500]
 [er]
-あ、い[s]
+あ、い[l]
+
+; sys:sn.tagCh.msecWaitを明示的に変えると、既定演出（[ch_in_style]未指定）の文字間隔（delay）も
+;	その値へ追随する。[autowc]は前の場面の設定が残ったままだと文字ごとのウェイト表が優先されて
+;	chWaitへ落ちなくなる（Txt.ts:70）ので、ここで必ず切る
+[autowc enabled=false]
+&sys:sn.tagCh.msecWait = 500
+[er]
+まち[s]

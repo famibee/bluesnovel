@@ -150,3 +150,50 @@ test('[autowc]は表に載せた文字の手前で長く待つ', async ({page})=
 	expect(a[1]!.opacity).toBe(0);				// 、：500msの待ちを挟むのでまだ開始値のまま
 	expect(a[2]!.opacity).toBe(0);				// い：その後ろなので同じく
 });
+
+test('sys:sn.tagCh.msecWaitを変えると既定演出の間隔もその値に追随する', async ({page})=> {
+	// 実機で「大きな数字にしても一文字ずつ表示されているように見えない」という報告があり、
+	//	ここまでのテストは相対比較（stagger自体があるか）しか見ておらずsys:からの伝播そのものは
+	//	未検証だったための追加（本文はTxtLayer.tsx:292 の w = ch.w ?? chWait 経路）。
+	//	msecWait=500・既定演出（wait=500・join=true）で2文字「まち」を出すと、
+	//	1文字目はdelay=500ms・2文字目はdelay=1000msになる想定（本文はpos計算のコメント参照）。
+	//	実時間のsleep+スクリーンショットで100msごとに確かめると、CIの負荷でその都度ずれて
+	//	アサーションを緩めるしかなくなる。freeze()済みのAnimationはcurrentTimeを手で進められる
+	//	ので、1msも待たずに「100ms刻みで見た時の姿」を正確に再現できる
+	await toSceneFrozen(page, 5, 'まち');
+
+	let prev = 0;
+	const opacityAt = async (sec: number)=> {
+		await advance(page, sec - prev);
+		prev = sec;
+		return chStyles(page);
+	};
+
+	// 0.1〜0.4秒：1文字目のdelay（500ms）にすら届かないので、2文字とも動いていない
+	for (const sec of [0.1, 0.2, 0.3, 0.4]) {
+		const a = await opacityAt(sec);
+		expect(a.length).toBe(2);
+		expect(a[0]!.opacity).toBe(0);
+		expect(a[1]!.opacity).toBe(0);
+	}
+	// 0.6秒：1文字目（delay=500ms）だけ動き出している。2文字目（delay=1000ms）はまだ
+	{
+		const a = await opacityAt(0.6);
+		expect(a[0]!.opacity).toBeGreaterThan(0);
+		expect(a[0]!.opacity).toBeLessThan(1);
+		expect(a[1]!.opacity).toBe(0);
+	}
+	// 1.1秒：1文字目は出現アニメ完了（delay500+wait500=1000ms）。2文字目（delay=1000ms）が動き出す
+	{
+		const a = await opacityAt(1.1);
+		expect(a[0]!.opacity).toBe(1);
+		expect(a[1]!.opacity).toBeGreaterThan(0);
+		expect(a[1]!.opacity).toBeLessThan(1);
+	}
+	// 1.6秒：2文字とも出現アニメ完了（delay1000+wait500=1500ms）
+	{
+		const a = await opacityAt(1.6);
+		expect(a[0]!.opacity).toBe(1);
+		expect(a[1]!.opacity).toBe(1);
+	}
+});

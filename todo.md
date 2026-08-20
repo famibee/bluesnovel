@@ -1,7 +1,5 @@
 #TODO 優先順位順
 
-> **タグ／変数の実装状況は `docs/tag.html`（タグ一覧）と `docs/dev.html`（save:/sys:/tmp:変数）に集約**。
-> 名称先頭のマークで表す：🟢実装済／🟡実装中・機能未達／🔴未済。本家からの変更点・メモは各タグの詳細部に。
 > **済んだことは `CHANGELOG.md`**（作業ごとの経緯・判断つき）。
 > このtodo.mdは**これからやること**だけを持つ（＝いずれ空になるのが正しい）。
 
@@ -14,15 +12,6 @@
 実装が要るのはその中身のタグのみ。`[notice]` はプロジェクト側プラグインなので対象外。
 表示アーキテクチャがpixi.js→Reactに変わるため、タグの変更・追加・削除・保留は随時判断する。
 ギャラリー（<https://github.com/famibee/SKYNovel_gallery>）の `public/prj/<機能>/` が機能ごとの仕様。
-
-## 挙動の詰め・実機確認
-
-- [ ] **アプリ（Electron）版の`app://`パッケージ版読み込みを実機で確認**（サンドボックス環境にディスプレイが無くGUI起動できず未検証。ロジックは型チェック・単体テスト・E2E（ブラウザ版のみ）でしか確認していない。ウインドウ位置復元・electron-store化は実機確認済み＝CHANGELOG.md 2026-08-12参照）
-  - [ ] `npm run app_bld`→`out/`起動、`npm run pkg:mac`→パッケージ版で`app://bundle/index.html`が開き、`prj.json`/`path.json`/シナリオ/画像/音声/フォント/`[add_frame]`のiframeが読めるか（`file://`のままだと`fetch`がスキームを受け付けず起動できなかった問題への対応。DevTools Consoleにエラーが出ていないことも）。electron-builderのビルド自体（`unable to copy, file is symlinked outside the package`エラー）は原因判明・解消確認済み（`tmp_blues`の`file:../bluesnovel`ローカル依存によるシンボリックリンクが原因で、npm公開後は自然に解消する見込み。詳細はCHANGELOG.md 2026-08-12参照）。残るのはパッケージ版を実機で開いての動作確認のみ
-- [ ] 文字送りの速さを`tmp_blues`実機（実アセット）で体感確認。`sys:sn.tagCh.msecWait`（既定10ms）・
-      `[ch_in_style]`の`default`（既定500ms）が仕様通り動くことはE2Eフィクスチャでの数値検証
-      （GSAPタイムライン凍結→時刻ごとの`opacity`/`transform`確認）で済んでいる（詳細はCHANGELOG.md
-      2026-08-10参照）。残っているのは実アセット・実際の読書体感としての確認
 
 ## タグ・変数の残り
 
