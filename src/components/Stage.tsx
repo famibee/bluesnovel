@@ -129,14 +129,19 @@ export default function Stage({
 		quakeRafRef.current = requestAnimationFrame(step);
 	}, [quake]);
 
-	// ウインドウサイズ追従
-	const [wh, setWH] = useState<T_WH>(innWH());
+	// ウインドウサイズ追従。**埋め込み時（sn_galleryのような左メニュー付きレイアウト）は
+	//	windowでなく親要素の実サイズを基準にする**（本家 SysBase.cvsResize():231-237の isGallery
+	//	分岐。isGallery＝マウント先#skynovelがdocument.bodyの直下に無い＝ホストHTML側に
+	//	既存のレイアウトが敷かれている状態。sn_gallery/index.htmlでは`#skynovel`自身に
+	//	Bootstrapの`mw-100 mh-100`が付き、その実サイズは親要素`.container-fluid.p-0`基準で決まる）
+	const isGallery = heStage.parentElement !== document.body;
+	const [wh, setWH] = useState<T_WH>(innWH(heStage, isGallery));
 	useMount(()=> {
-		function onResize() {setWH(innWH())}
+		function onResize() {setWH(innWH(heStage, isGallery))}
 		globalThis.addEventListener('resize', onResize);
 		return ()=> globalThis.removeEventListener('resize', onResize);
 	});
-	const {cvsScale} = calcScale(wh);
+	const {cvsScale} = calcScale(wh, isGallery);
 
 	// ステージ（＝ノベルゲームの表示範囲そのもの）の寸法は prj.json の window.width/height 固定。
 	//	Config.generate() が CmnLib.stageW/stageH へ入れている
@@ -447,7 +452,7 @@ export default function Stage({
 		width	: number;
 		height	: number;
 	};
-	function calcScale({width: w, height: h}: T_WH) {
+	function calcScale({width: w, height: h}: T_WH, isGallery: boolean) {
 		let cvsWidth = 0;
 		let cvsHeight = 0;
 		let cvsScale = 1;
@@ -455,49 +460,52 @@ export default function Stage({
 		// **拡大もする**（本家 SysBase.cvsResize()）。本家は `expanding` の既定が true で、
 		//	ステージが窓より小さいときも窓いっぱいまで引き伸ばす。ここを落としていたため、
 		//	窓が広いと右に黒帯が残り、[toggle_full_screen]でも等倍のままだった。
-		//	expanding=false（拡大しない）はprj.jsonの`dip`次第だが、こちらは未対応なので常に拡大する
-		if (argChk_Boolean(CmnLib.hDip, 'expanding', true)
+		//	expanding=false（拡大しない）はprj.jsonの`dip`次第だが、こちらは未対応なので常に拡大する。
+		//	なお本家が持つ ofsPadLeft/Top_Dom2PIXI（DOM座標→PIXI座標の変換オフセット）は、
+		//	bluesnovelにPIXI座標系そのものが無い（マウス位置は素のDOM座標のまま扱う）ため移植不要
+		if (isGallery) {
+			// 埋め込み時（sn_galleryのような左メニュー付きレイアウト）は**幅だけ**を基準に拡縮する
+			//	（本家 SysBase.cvsResize():248, 234-236）。本家はcanvasの親要素の高さがCSS上
+			//	`height: auto`（子要素＝canvas自身に追随）で、`mh-100`（max-height:100%）は
+			//	不定な高さに対しては効かない（CSS 2.1 §10.7）ため、実質「`mw-100`による幅の制約
+			//	＋canvasのintrinsic aspect ratioで高さが幅に追随する」だけで決まっている。
+			//	bluesnovelの#skynovelはcanvasと違いintrinsicサイズを持たない素のdivなので、
+			//	親要素の高さ（=#skynovel自身の直前の高さがそのまま返るだけの循環値）を読んでは
+			//	いけない（実際に読んで試すと、前回セット分がフィードバックして値がドリフトする
+			//	不具合になった）。幅（`w`＝親要素の`clientWidth`。こちらは祖先から決まる非循環値）
+			//	だけを基準にステージのアスペクト比でcvsHeightを導出する
+			cvsWidth = w;
+			cvsHeight = uint(CmnLib.stageH / CmnLib.stageW * w);
+			cvsScale = cvsWidth / CmnLib.stageW;
+		}
+		else if (argChk_Boolean(CmnLib.hDip, 'expanding', true)
 			|| CmnLib.stageW > w
 			|| CmnLib.stageH > h) {
 			if (CmnLib.stageW / CmnLib.stageH <= w / h) {
 				cvsHeight = h;
 				cvsWidth = uint(CmnLib.stageW / CmnLib.stageH * h);
-				// cvsWidth  = CmnLib.stageW /CmnLib.stageH *h;
 			}
 			else {
 				cvsWidth = w;
 				cvsHeight = uint(CmnLib.stageH / CmnLib.stageW * w);
-				// cvsHeight = CmnLib.stageH /CmnLib.stageW *w;
 			}
 			cvsScale = cvsWidth / CmnLib.stageW;
-			// if (isGallery) {
-			// 	ofsPadLeft_Dom2PIXI	= 0;
-			// 	ofsPadTop_Dom2PIXI	= 0;
-			// }
-			// else {
-			// const sc = 1 -cvsScale;
-			// if (CmnLib.isMobile) {
-			// 	ofsPadLeft_Dom2PIXI = (w -cvsWidth) /2 *sc;
-			// 	ofsPadTop_Dom2PIXI  = (h -cvsHeight)/2 *sc;
-			// }
-			// else {
-			// 	ofsPadLeft_Dom2PIXI = cr.left*sc;
-			// 	ofsPadTop_Dom2PIXI  = cr.top *sc;
-			// }
-			// [left] /cvsScale -[left]
-			// PaddingLeft を DOMで引いてPIXIで足すイメージ
-			// }
 		}
 		else {
 			cvsWidth = CmnLib.stageW;
 			cvsHeight = CmnLib.stageH;
 			cvsScale = 1;
-			// ofsPadLeft_Dom2PIXI	= 0;
-			// ofsPadTop_Dom2PIXI	= 0;
 		}
 		return {cvsScale, cvsWidth, cvsHeight};
 	}
-	function innWH(): T_WH {
+	function innWH(heStage: HTMLElement, isGallery: boolean): T_WH {
+		// isGallery時はwindow全体でなく、埋め込み先（#skynovelの親要素）の幅を基準にする
+		//	（本家 SysBase.cvsResize():234-236）。heightは上のcalcScale()のisGallery分岐が
+		//	使わないので0のまま返す（親要素のclientHeightは#skynovel自身に追随する循環値の
+		//	ため読んでも意味が無い。詳細はcalcScale()のコメント参照）
+		if (isGallery && heStage.parentElement) {
+			return {width: heStage.parentElement.clientWidth, height: 0};
+		}
 		const {innerWidth: width, innerHeight: height} = globalThis;
 		return {width, height};
 	}

@@ -26,7 +26,8 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
       発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`top`の残り［`[link]`の
-      ホバーをbluesnovel側で再確認（isGallery対応後）］→`ch_button`/`ruby`/`filter`等）：
+      ホバーをbluesnovel側で再確認（isGallery対応後）／`[lay]`のstyle消失問題の再切り分け］→
+      `ch_button`/`ruby`/`filter`等）：
   - [x] `[event key='dom=セレクタ']`（コロン無し＝メイン文書対象）が誤動作。`FrameMng.ts`の
         `elms()`がコロンの有無を見ずセレクタ全体を「フレームid」として`#hIfrm`を引いていたため、
         `need_err=false`指定でも例外が飛んでいた。本家`Reading.ts:79`の`getHtmlElmList()`は
@@ -53,17 +54,23 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         （コメントに「移植元 bluesnovel」とあり、むしろこちらが本家へ逆輸入された側）で該当
         イベント名の発火が無い。**どちらも本家自体で死んでいる記法のため、bluesnovel側の対応
         不要**と判断
-  - [ ] **ステージ拡大ロジックに本家の「ギャラリー埋め込み」分岐（`isGallery`）が丸ごと未実装**
-        （レイヤ配置崩れの主因、優先度高）。本家`SysBase.cvsResize()`
+  - [x] **ステージ拡大ロジックに本家の「ギャラリー埋め込み」分岐（`isGallery`）が丸ごと未実装**
+        だった（レイヤ配置崩れの主因）。本家`SysBase.cvsResize()`
         （`skynovel_esm/src/sn/SysBase.ts:231`）は`isGallery = cvs.parentElement !== document.body`
-        を判定し、埋め込み時（sn_galleryのような左メニュー付きレイアウト）はcanvasの**親要素の
-        実サイズ**（`sn_gallery/index.html`の`#skynovel`に付いたBootstrapの`mw-100 mh-100`で
-        制約された領域）を拡大の基準にする。bluesnovel側`calcScale()`（`src/components/Stage.tsx:
-        450-499`）はこの`isGallery`分岐がコメントアウトされたまま（473-489行目）残っており、
-        常に`window.innerWidth/innerHeight`（ウィンドウ全体）を基準に拡大してしまう。2026-08-21、
-        同一ビューポート(1010×800)でplaywright-cli実機比較し、本家はステージが`prj.json`
-        指定通り750×500のまま、bluesnovelは1010×673まで拡大される差を確認。結果、レイヤの
-        絶対px座標配置が本家と大きくズレ、`top`のイベント検知シーン以降で画面が崩れる
+        を判定し、埋め込み時（sn_galleryのような左メニュー付きレイアウト）は幅方向だけを
+        制約として拡縮する（`mh-100`＝max-height:100%は、親要素の高さがCSS上`height: auto`＝
+        不定のため実質無効。効いているのは`mw-100`による幅の制約と、canvas固有のintrinsic
+        aspect ratioで高さが幅に追随する仕組みだけ）。2026-08-21、`src/components/Stage.tsx`の
+        `calcScale()`/`innWH()`に`isGallery`分岐を実装（`heStage.parentElement !== document.body`
+        で判定し、幅は`heStage.parentElement.clientWidth`、高さはステージのアスペクト比から
+        導出）。**親要素の高さ（`clientHeight`）を基準にする実装を最初に試したところ、
+        `.container-fluid.p-0`が`#skynovel`自身にしか子を持たず`height: auto`のため、
+        前回セットした高さがそのまま読み返されて値がドリフトする不具合になった**（実測で
+        430px→673pxへ増加）ため、高さは使わず幅のみを基準にする方式へ変更。playwright-cliで
+        本家ギャラリー実機（`famibee.github.io/SKYNovel_gallery`）と同一ビューポート(1010×800)
+        比較し、幅792pxを基準にbluesnovel側が792×528（アスペクト比750:500と一致）で安定
+        （リロード3回・幅リサイズ3回とも比率維持を確認）することを確認済み。非ギャラリー時
+        （`tmp_blues`）はwindow基準のまま回帰無しも確認
   - [ ] `[lay]`のstyle属性が特定のシーン遷移後に丸ごと消え、コンポーネント既定CSSへ
         フォールバックする（原因未確定）。`main.sn`の`*init`ラベル内`[lay layer=mes ...
         style='width:718px; height:480px; writing-mode:vertical-rl; ...']`（複数CSSプロパティを
