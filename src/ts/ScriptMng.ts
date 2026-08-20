@@ -1209,7 +1209,10 @@ export class ScriptMng {
 			}
 
 			// 再開位置。**スクリプトは必ず読み直す**（本家も「吉里吉里に動作を合わせる」ため
-			//	キャッシュを捨てる。[reload_script]はファイルが編集された後の読み直しが目的なので必須）
+			//	キャッシュを捨てる。[reload_script]はファイルが編集された後の読み直しが目的なので必須。
+			//	本家 ScriptIterator.ts:1487-1507 は派生ファイルの有無を都度判定して該当分だけ
+			//	キャッシュ破棄する専用処理を持つが、bluesnovelは元々ここで無条件に全キャッシュを
+			//	都度破棄するので、その専用処理は不要＝派生ファイルも自然に読み直される）
 			const fn = String(engine.getVal('save:const.sn.scriptFn') ?? '');
 			const idx = Number(engine.getVal('save:const.sn.scriptIdx') ?? 0);
 			if (! fn) throw '再開位置（save:const.sn.scriptFn）が空です';
@@ -1787,9 +1790,33 @@ export class ScriptMng {
 	async #fetchScript(fn: string): Promise<string> {
 		try {
 			const path = this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SCRIPT);
-			const res = await this.sys.fetch(path);
-			if (! res.ok) throw Error(res.statusText);
-			return await this.sys.dec(path, await res.text());
+
+			// 派生ファイル（fn+'@'。searchPath()内部でuserFnTailと合成されると
+			//	fn+'@@@'+tailになる）があれば、基底とマージする（本家 ScriptIterator.ts:1055-1093）。
+			//	searchPath()は無ければ例外を投げる仕様なので、それを「無し」の判定に使う
+			let path_diff = '';
+			try {path_diff = this.sys.cfg.searchPath(fn +'@', SEARCH_PATH_ARG_EXT.SCRIPT)}
+			catch {/* 派生ファイルはない */}
+
+			if (! path_diff) {
+				const res = await this.sys.fetch(path);
+				if (! res.ok) throw Error(res.statusText);
+				return await this.sys.dec(path, await res.text());
+			}
+
+			const [resBase, resDiff] = await Promise.all([this.sys.fetch(path), this.sys.fetch(path_diff)]);
+			if (! resBase.ok) throw Error(resBase.statusText);
+			if (! resDiff.ok) throw Error(resDiff.statusText);
+			const [scrBase, scrDiff] = await Promise.all([
+				this.sys.dec(path, await resBase.text()),
+				this.sys.dec(path_diff, await resDiff.text()),
+			]);
+
+			// 【派生スクリプト】の空行へ【基底スクリプト】の同じ行の内容をコピー（継承）
+			const aBase = scrBase.split('\n');
+			const aDiff = scrDiff.split('\n');
+			for (let i=0; i<aDiff.length && i<aBase.length; ++i) aDiff[i] ||= aBase[i] ?? '';
+			return aDiff.join('\n');
 		} catch (e) {
 			// path.jsonに載っていない・取得できない＝シナリオが続けられないので、
 			//	ここは黙って代替せず止める（'ET'は表示してからthrowする）

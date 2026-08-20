@@ -7309,9 +7309,21 @@ var Xo = class e {
 	}
 	async #Ge(e) {
 		try {
-			let t = this.sys.cfg.searchPath(e, _.SCRIPT), n = await this.sys.fetch(t);
-			if (!n.ok) throw Error(n.statusText);
-			return await this.sys.dec(t, await n.text());
+			let t = this.sys.cfg.searchPath(e, _.SCRIPT), n = "";
+			try {
+				n = this.sys.cfg.searchPath(e + "@", _.SCRIPT);
+			} catch {}
+			if (!n) {
+				let e = await this.sys.fetch(t);
+				if (!e.ok) throw Error(e.statusText);
+				return await this.sys.dec(t, await e.text());
+			}
+			let [r, i] = await Promise.all([this.sys.fetch(t), this.sys.fetch(n)]);
+			if (!r.ok) throw Error(r.statusText);
+			if (!i.ok) throw Error(i.statusText);
+			let [a, o] = await Promise.all([this.sys.dec(t, await r.text()), this.sys.dec(n, await i.text())]), s = a.split("\n"), c = o.split("\n");
+			for (let e = 0; e < c.length && e < s.length; ++e) c[e] ||= s[e] ?? "";
+			return c.join("\n");
 		} catch (t) {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}

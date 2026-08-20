@@ -2665,7 +2665,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	テンプレの <code>ext_lang.sn</code> が「表示言語を変えたら本文を読み直す」のに使っている。<br/>
 	※スクリプトを大幅に変えた後だと、正常に再開できない場合があります。<br/>
 	<br/>
-	<b>bluesnovel</b>：キャッシュを捨てるのは再開位置のスクリプトファイルのみ（本家は派生ファイル<code>fn@</code>のキャッシュもまとめて捨てる）。
+	<b>bluesnovel</b>：再開位置のスクリプトファイルは無条件でキャッシュを捨てて読み直すため、
+	派生ファイル（<code>fn@</code>）だけを狙い撃ちして捨てる本家の専用処理は不要（結果は同じ）。
 
 </p>
 <h2 id="save" class="w-heading">[save]しおりの保存</h2>

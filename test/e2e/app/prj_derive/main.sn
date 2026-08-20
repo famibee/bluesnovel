@@ -1,0 +1,6 @@
+; E2E用シナリオ（derive.e2e.ts が使用）
+;	[jump fn=der]の飛び先に派生ファイル（der@.sn）がある状態で、
+;	基底（der.sn）と差分マージされて実行されることを見る
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[jump fn=der]
