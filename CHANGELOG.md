@@ -681,6 +681,20 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.3.0](https://github.com/famibee/bluesnovel/compare/v0.2.2...v0.3.0) (2026-08-20)
+
+
+### Features
+
+* [jump]/[call]の派生ファイル（fn@）差分マージを実装 ([4c13fbd](https://github.com/famibee/bluesnovel/commit/4c13fbdca71de6e17d51bc54bae1fe00d7c46b8c))
+* save:sn.userFnTailの代入トリガを接続 ([d0329ca](https://github.com/famibee/bluesnovel/commit/d0329ca2e4dcd0b15b2a7815cbf7d366305ef9e8))
+
+
+### Bug Fixes
+
+* label2idx()の無名ラベル探索にマクロ境界チェックを追加 ([b665e1a](https://github.com/famibee/bluesnovel/commit/b665e1a67bbc5e065c6984f339681e4e26a5ef8f))
+* エンジン内部状態のconst.*再代入ガードと軽微な検証漏れを追加 ([da234fa](https://github.com/famibee/bluesnovel/commit/da234fa7c3b9d9185643f177e773d3ab28afc675))
+
 ## [0.2.2](https://github.com/famibee/bluesnovel/compare/v0.2.1...v0.2.2) (2026-08-19)
 
 
