@@ -721,8 +721,9 @@ export class ScriptEngine {
 			const picFn = args.fn || args.pic;
 			if (picFn && ! picFn.startsWith('&') && ! picFn.startsWith('%')) aFn.push(picFn);
 			if (args.face) for (const nm of args.face.split(',')) {
-				const fn = hFace.get(nm);
-				if (fn) aFn.push(fn);
+				if (nm.startsWith('&') || nm.startsWith('%')) continue;
+				// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバックに合わせる）
+				aFn.push(hFace.get(nm) ?? nm);
 			}
 		}
 		return aFn;
@@ -1141,9 +1142,8 @@ export class ScriptEngine {
 						// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
 						for (const nm of args.face.split(',')) {
 							if (! nm) throw '[lay] face属性に空要素が含まれています';
-							const f = this.#hFace[nm];
-							if (! f) throw `[lay] face【${nm}】は[add_face]で未定義です`;
-							aFace.push(f);
+							// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
+							aFace.push(this.#hFace[nm] ?? {fn: nm, dx: 0, dy: 0, blendmode: argBlendmode('normal')});
 						}
 					}
 					o.aFace = aFace;

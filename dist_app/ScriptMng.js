@@ -1483,10 +1483,7 @@ var Ae = class {
 			}
 			if (a !== "lay") continue;
 			let s = o.fn || o.pic;
-			if (s && !s.startsWith("&") && !s.startsWith("%") && e.push(s), o.face) for (let t of o.face.split(",")) {
-				let r = n.get(t);
-				r && e.push(r);
-			}
+			if (s && !s.startsWith("&") && !s.startsWith("%") && e.push(s), o.face) for (let t of o.face.split(",")) t.startsWith("&") || t.startsWith("%") || e.push(n.get(t) ?? t);
 		}
 		return e;
 	}
@@ -1729,9 +1726,12 @@ var Ae = class {
 						let e = [];
 						if (i.face) for (let t of i.face.split(",")) {
 							if (!t) throw "[lay] face属性に空要素が含まれています";
-							let n = this.#C[t];
-							if (!n) throw `[lay] face【${t}】は[add_face]で未定義です`;
-							e.push(n);
+							e.push(this.#C[t] ?? {
+								fn: t,
+								dx: 0,
+								dy: 0,
+								blendmode: p("normal")
+							});
 						}
 						t.aFace = e;
 					}

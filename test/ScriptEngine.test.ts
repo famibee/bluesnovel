@@ -137,8 +137,15 @@ it('step_lay_faceWithFnOmitted_usesNameAsFn', ()=> {
 	]);
 });
 
-it('step_lay_faceUndefinedNameThrows', ()=> {
-	expect(()=> new ScriptEngine('t1', '[lay fn=base face=nothing][s]').step()).toThrow();
+it('step_lay_faceUndefinedName_usesNameAsFn', ()=> {
+	// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
+	const a = new ScriptEngine('t1', '[lay fn=base face=nothing][s]').step();
+	expect(a).toEqual([
+		{t: 'chgPic', nm: '', page: 'fore', fn: 'base', aFace: [
+			{fn: 'nothing', dx: 0, dy: 0, blendmode: 'normal'},
+		]},
+		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
+	]);
 });
 
 it('step_lay_faceOmitted_noAFaceKey', ()=> {

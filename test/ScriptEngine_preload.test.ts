@@ -45,6 +45,12 @@ it('peekUpcomingPicFn_resolvesFace', ()=> {
 	expect(se.peekUpcomingPicFn()).toEqual(['body', 'face_smile']);
 });
 
+it('peekUpcomingPicFn_faceUndefinedName_usesNameAsFn', ()=> {
+	// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバックに合わせる）
+	const se = new ScriptEngine('t1', `${LAYS}[lay layer=base fn=body face=nothing]あ[l]`);
+	expect(se.peekUpcomingPicFn()).toEqual(['body', 'nothing']);
+});
+
 it('peekUpcomingPicFn_ignoresDynamicValues', ()=> {
 	// 「&式」「%マクロ引数」は実行しないと解決できないので、そのまま無視する（best-effort）
 	const se = new ScriptEngine('t1', `${LAYS}[lay layer=base fn=&"bg" +"1"&]あ[l]`);
