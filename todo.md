@@ -25,8 +25,8 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`tag_lay_face`/
-      `tag_lay_mov`/`sound`等）：
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。`sound`まで完了、次は残りの
+      プラグイン系プロジェクト）：
   - [x] `ch_button`（文字ボタン・リンク）で2件発見・修正。
         1つ目：`[button]`が`label`・`fn`両方省略時に一律`throw`していたが、本家
         `LayerMng.ts:1101`は`hArg.fn ??= this.scrItr.scriptFn`でfnを常にカレントスクリプトへ
@@ -246,6 +246,71 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         `[link]`と全く同じ理由（`todo.md`保留セクション参照）で未実装（属性自体を読んでいない）、
         `[wait_tsy arrive=]`は無視（値をストアへ直接書く設計上、常時ON相当になるだけで実害なし。
         `ScriptEngine.ts`にコメント済み）、`[dump_script]`はsn_extension連携停止に伴う既知の保留
+  - [x] `tag_lay_face`で発見・修正：**`[fg face=...]`の差分絵（2番目以降）にアニメpngシート
+        （`.json`）を指定すると壊れた画像アイコンになり全く表示されない**不具合（`main.sn:25`の
+        `face="minoura_kuchi_hohoemi,minoura_me_mabataki,minoura_mayu_urei"`、まばたき差分
+        `minoura_me_mabataki.json`が該当）。原因は2つ重なっていた。
+        1つ目：`GrpLayer.tsx`の差分絵（`aFace`）描画が常に`<img src={faceSrc}>`固定で、
+        基本画像（`fn`）側にはある`isSheet`判定（`.json`ならCSSアニメで再生するdiv、
+        `Sprite.ts`の`loadSheet()`/`aniSpriteClass()`）が丸ごと素通りしていた。理由付けの
+        コメントに「本家もcsvの先頭スプライトにしか適用しない」とあったが、これは
+        本家`GrpLayer.ts:88`の`width`/`height`属性（`SpritesMng.#csv2Sprites`の
+        `fncFirstComp`＝csv先頭要素にしか効かない）の話であって、アニメpngシート判定
+        （`SpritesMng.#csv2Sprites`本体、拡張子`.json`なら`#cacheAniSpr`→`AnimatedSprite`化）
+        はcsvの各要素を等しく行う別の処理だった（`skynovel_esm/src/sn/SpritesMng.ts:146-224`）。
+        つまり「差分絵はスプライトシート非対応」というbluesnovel側の認識自体が誤りだった。
+        `T_FACE_SRC`に`isSheet`を追加（`GrpLayer.tsx`・`ScriptMng.ts`のchgPicケース、
+        基本画像と同じ`src.endsWith('.json')`判定）し、シート読み込みの`useState`/`useEffect`を
+        `useSheet()`フックへ切り出して基本画像・差分絵（新設した`FaceImg`サブコンポーネント。
+        `aFace`は配列でHooksをmap内で呼べないため分離）の両方から使う形に修正。
+        2つ目：1つ目を直しても表示されず調査したところ、`minoura_me_mabataki.json`自体が
+        UTF-16LE BOM付き（Adobe Flash CS6書き出し）で、`Sprite.ts`の`loadSheet()`が使う
+        `fetch().text()`は常にUTF-8決め打ちでBOMをsniffingしないため文字化けし、
+        `JSON.parse()`が例外を投げて`.catch(()=> undefined)`に静かに握りつぶされていた
+        （本家はpixiの`Loader`がXHRの`responseText`経由で読むため、ブラウザのBOM検出に
+        暗黙に乗れていた）。`loadSheet()`を`r.text()`から`r.arrayBuffer()`＋新設の
+        `decodeText()`（BOM（UTF-8/UTF-16LE/UTF-16BE）を見て`TextDecoder`を出し分け、
+        無指定はUTF-8）へ変更。playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）
+        を比較し、まばたき差分のフレーム（目が開いた絵）が同一表示になり、DOM上も
+        `<div data-fn="minoura_me_mabataki" class="sn_ani4">`としてCSSアニメクラスが
+        正しく生成されることを確認済み。修正前後ともコンソールエラー無し。それ以外の
+        `[fg]`呼び出し（口・眼・眉の全組合せ、`time=0`即時切替含む）は表情・重なり順とも
+        本家と一致。`bun test`（1684件）・`tsc --noEmit`とも回帰無し
+  - [x] `tag_lay_mov`はplaywright-cliで本家ギャラリー実機と比較しバグ無しと確認済み（コード変更
+        無し）。`[lay fn=nc10889 page=back]`→`[trans]`によるmp4動画へのクロスフェード、
+        `[wv fn=]`（動画終了待ち）、`[tsy]`によるmp4動画のトゥイーン移動（`x=100 ease=Bounce.Out`・
+        `y=500`の2種）、動画の自然サイズ（640×480、`video.videoWidth/Height`実測で本家の
+        pixi`Sprite.from(video)`と一致）、退場後`[jump label=*loop]`での再ループ、いずれも
+        本家と同じ位置・タイミングで動作。調査中、遷移直後にステージ幅が750pxから縮んだように
+        見えた目視上の疑いは、`#skynovel`の`getBoundingClientRect()`実測で750×500のまま
+        不変と判明（実際は動画の自然サイズ640pxがステージ左端から伸びているのを、目分量で
+        ステージ端と誤認しただけ）。誤診断だったため深追い不要
+  - [x] `sound`で発見・修正：**`[button]`/`[event]`/`[link]`で`arg`属性を省略すると
+        `&sn.eventLabel`が常に`undefined`になる**不具合（`[demo]`マクロの
+        `[ch text='&"【"+ sn.eventLabel +"】"']`が「【undefined】」と表示され、本家の
+        「【*ラベル名】」と食い違う）。`ScriptMng.ts`の`jumpToLabelAndGo()`が
+        `if (arg !== undefined) {…eventArg/eventLabel両方を設定…}`という作りで、
+        `eventLabel`の設定を`arg`の有無で条件分岐させていたのが原因。本家`Main.ts`の
+        `resumeByJumpOrCall()`は`arg`の有無に関わらず**毎回**`eventArg`（省略時は空文字列）・
+        `eventLabel`の両方を代入する（`this.#setVal_Nochk('tmp', 'sn.eventArg', String(hArg.arg ?? ''))`・
+        `this.#setVal_Nochk('tmp', 'sn.eventLabel', hArg.label ?? '')`）。`arg`は`[link arg=]`用の
+        追加情報でしかなく、`eventLabel`の可否とは無関係のはずが、bluesnovelでは誤って同じ
+        `if`にくくられていた。`sound`のボタンは大半が`arg`未指定（`label`のみ）のため、
+        ほぼ全シナリオで`eventLabel`表示が壊れていた。`jumpToLabelAndGo()`を本家と同じく
+        常時両方設定する形に修正（`src/ts/ScriptMng.ts`）。playwright-cliで本家ギャラリー実機と
+        bluesnovel（sn_gallery駆動）を比較し、`downBGM`/`xchgbuf`/`pan`/`playplay`/`ws`/
+        `ws_canskip`/`fadese`/`s1e3r2L`等、一通りのラベルで「【*ラベル名】」表示が一致することを
+        確認済み。`bun test`（1684件）・`tsc --noEmit`とも回帰無し。
+        なお検証中、`sound`の`top`（`[add_lay layer=mes class=txt]`のみでstyle未指定のfore面）で、
+        本家は文字レイヤ幅がステージ幅（750px）一杯なのに対しbluesnovelは既定`width: 70%`
+        （`TxtLayer.tsx`。`test/argdef_parity.test.ts`の`A_CSS_DEF`で「本家の既定0は採らない」と
+        意図的に違えた既定と明記済み）のため、本来1行に収まる説明文（「単発再生（効果音）後、
+        　　　　　　連続再生（ＢＧＭ）後、」）が2〜3行に折り返され、直後のボタン群
+        （`stopse`/`stop_allse`等）と重なって表示される崩れを発見。`[link]`項目（`ch_button`欄）
+        で既に「意図的な既定差なので触らず」と一度判断された論点の再検出だが、`sound`での
+        崩れ方は`top`より大きい。幅70%既定を本家準拠（コンストラクタ既定＝ステージ幅一杯、
+        `[link]`項目記載の`TxtLayer.ts:272`）へ寄せるかは全プロジェクトの文字レイヤに影響する
+        変更のため、`sound`検証のスコープ外として今回は見送り、着手する場合は改めて判断
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

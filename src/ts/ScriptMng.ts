@@ -397,12 +397,13 @@ export class ScriptMng {
 	//	引数なしのopen()は近年のブラウザで効かない。'_blank'はポップアップブロックの対象になり得る
 	navigateTo(url: string) {globalThis.open(url, '_blank')}
 
-	//	argは[link arg=…]用。予約イベント（[event]）と同じく飛び先で&sn.eventArgとして受け取れる
+	//	argは[link arg=…]用。予約イベント（[event]）と同じく飛び先で&sn.eventArgとして受け取れる。
+	//	本家 Main.ts resumeByJumpOrCall() はargの有無に関わらず毎回両方を代入する（省略時は空文字列）。
+	//	argが渡ったときだけに絞っていたのは誤りで、arg省略の[button]/[link]では&sn.eventLabelが
+	//	常にundefinedのままになっていた
 	jumpToLabelAndGo(label: string, call: boolean, fn = '', arg?: string) {
-		if (arg !== undefined) {	// 本家 Main.ts resumeByJumpOrCall() が予約イベントで行うのと同じ代入
-			this.#engine?.setValNochk('tmp:sn.eventArg', arg);
-			this.#engine?.setValNochk('tmp:sn.eventLabel', label);
-		}
+		this.#engine?.setValNochk('tmp:sn.eventArg', arg ?? '');
+		this.#engine?.setValNochk('tmp:sn.eventLabel', label);
 		void this.#jumpToLabelAndGo(label, call, fn).catch(this.#catchErr);
 	}
 
@@ -1440,8 +1441,13 @@ export class ScriptMng {
 			const isSheet = src.endsWith('.json');
 			const isMovie = /\.(?:mp4|webm)$/i.test(src);
 			// act.aFaceがundefined＝[lay face=...]省略。ストア側でも省略扱いとし、
-			//	パス解決自体をスキップして直前のfaceをそのまま残す
-			const aFace = act.aFace?.map(f=> ({...f, src: this.#searchPic('add_face', f.fn)}));
+			//	パス解決自体をスキップして直前のfaceをそのまま残す。
+			//	isSheetは基本画像（isSheet変数）と同じ判定：各要素は等しくアニメpngシート候補
+			//	（本家 SpritesMng.#csv2Sprites はcsvの各要素を拡張子で個別判定する。先頭限定ではない）
+			const aFace = act.aFace?.map(f=> {
+				const faceSrc = this.#searchPic('add_face', f.fn);
+				return {...f, src: faceSrc, isSheet: faceSrc.endsWith('.json')};
+			});
 			// exactOptionalPropertyTypes: true のため、undefinedの時はaFaceキー自体を省略する
 			//	（chgPicはaFaceキー無しなら直前の値を維持する）
 			if (! this.sys.crypto) {

@@ -430,7 +430,7 @@ it('clearTxtLay_ボタンも消す', ()=> {
 // ============ chgPic：aFace省略時は直前の値を維持（本家 GrpLayer.ts:76-85） ============
 
 it('chgPic_aFaceOmitted_keepsPreviousFace', ()=> {
-	const face = [{fn: 'f1', src: '/f1.png', dx: 1, dy: 2, blendmode: 'normal'}];
+	const face = [{fn: 'f1', src: '/f1.png', isSheet: false, dx: 1, dy: 2, blendmode: 'normal'}];
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: face});
 
 	// fnを再指定してもaFace省略なら、直前のfaceがそのまま残る（本家：fnは毎回明示、faceは省略可）
@@ -442,7 +442,7 @@ it('chgPic_aFaceOmitted_keepsPreviousFace', ()=> {
 });
 
 it('chgPic_aFaceEmptyArray_clearsFaceExplicitly', ()=> {
-	const face = [{fn: 'f1', src: '/f1.png', dx: 1, dy: 2, blendmode: 'normal'}];
+	const face = [{fn: 'f1', src: '/f1.png', isSheet: false, dx: 1, dy: 2, blendmode: 'normal'}];
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: face});
 
 	// aFace: []（face=""相当）は明示的なクリアなので、省略時とは違い実際に消える

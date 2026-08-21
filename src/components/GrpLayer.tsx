@@ -22,8 +22,11 @@ export type T_FACE = {
 };
 // ストアが持つのは上に解決済みURL（src）を足したもの。
 //	パス解決（path.json）はScriptMngが行う＝renderの中でsearchPath()を呼ばない
-//	（サーチパスに無いと例外を投げるので、renderで投げるとReactごと落ちる）
-export type T_FACE_SRC = T_FACE & {src: string};
+//	（サーチパスに無いと例外を投げるので、renderで投げるとReactごと落ちる）。
+//	isSheetは基本画像（fn）と同じくScriptMngがBlob URL化前のsrc拡張子で判定済み
+//	（本家 SpritesMng.#csv2Sprites はcsvの各要素を等しくロードし、拡張子.jsonなら
+//	差分絵でもAnimatedSpriteにする＝先頭だけの特別扱いではない）
+export type T_FACE_SRC = T_FACE & {src: string; isSheet: boolean};
 type T_GRPARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	nm		: string;	// レイヤ名。data-lay属性としてDOMへ出す（[snapshot layer=…]の絞り込み用）
@@ -44,6 +47,37 @@ type T_GRPARG = T_LAY_CMN & {
 export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
+
+// srcが指すアニメpngシートを読み、`aniSpriteClass()`で再生用CSSクラス名を得る（純粋にsrc/isSheet
+//	依存。基本画像・差分絵（face）どちらも同じ形で使う——本家がcsvの各要素を等しくロードするのと同じ）
+function useSheet(src: string, isSheet: boolean): T_SHEET | undefined {
+	const [sheet, setSheet] = useState<T_SHEET | undefined>(undefined);
+	useEffect(()=> {
+		// crypto構成では復号中の一瞬src=''になる（ScriptMng #decryptPic）。空のままfetchしない
+		if (! isSheet || ! src) {setSheet(undefined); return}
+
+		let alive = true;
+		void loadSheet(src).then(v=> {
+			if (! alive) return;
+			setSheet(v);
+			if (v) setNatSize(src, v.fw, v.fh);	// const.sn.lay[N].…width/height用（本家GrpLayer.ts相当）
+		});
+		return ()=> {alive = false};
+	}, [src, isSheet]);
+	return sheet;
+}
+
+// 差分絵（face）1枚分。基本画像と同じくisSheetならCSSアニメ再生のdiv、そうでなければimgで描く。
+//	dx,dyでdiv0基準の絶対配置、blendmodeはmix-blend-modeへそのまま渡す
+function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_SRC) {
+	const sheet = useSheet(faceSrc, isSheet);
+	if (! faceSrc) return null;
+
+	const styPos: CSSProperties = {position: 'absolute', left: dx, top: dy, mixBlendMode: blendmode as CSSProperties['mixBlendMode']};
+	if (sheet) return <div className={aniSpriteClass(sheet)} style={styPos} data-fn={faceFn}/>;
+	if (isSheet) return null;	// シート読み込み中はまだ描かない（基本画像と同じ挙動）
+	return <img src={faceSrc} data-fn={faceFn} style={styPos}/>;
+}
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
@@ -66,19 +100,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	**isSheetはpropsで受け取る**（ScriptMngがBlob URL化前のsrcで判定してストアへ渡す）。
 	//	fn（論理名。例："anime"）は拡張子を持たないためここでは判定できず、
 	//	crypto構成ではsrcもBlob URLに化けて拡張子情報を失う
-	const [sheet, setSheet] = useState<T_SHEET | undefined>(undefined);
-	useEffect(()=> {
-		// crypto構成では復号中の一瞬src=''になる（ScriptMng #decryptPic）。空のままfetchしない
-		if (! isSheet || ! src) {setSheet(undefined); return}
-
-		let alive = true;
-		void loadSheet(src).then(v=> {
-			if (! alive) return;
-			setSheet(v);
-			if (v) setNatSize(src, v.fw, v.fh);	// const.sn.lay[N].…width/height用（本家GrpLayer.ts相当）
-		});
-		return ()=> {alive = false};
-	}, [src, isSheet]);
+	const sheet = useSheet(src, isSheet);
 
 	// 動画（[lay fn=movie.mp4/.webm]）はisMovie propsで判定（上記isSheetと同じ理由でfnからは
 	//	判定できない。`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）。
@@ -95,7 +117,9 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	styLay()がpxで箱のサイズを決めるので、中身は**指定された軸だけ**100%を当てて箱に合わせる
 	//	（本家pixiのSprite.width/heightと同じくアスペクト比は無視。片方だけ指定時は他方auto＝
 	//	自然サイズのまま、というTxtLayer.tsx:502-504の待ちマーク画像と同じパターン）。
-	//	差分絵（aFace）は対象外（本家もcsvの先頭スプライトにしか適用しないため常に自然サイズ）
+	//	差分絵（aFace）は対象外（本家 SpritesMng.#csv2Sprites の fncFirstComp はcsvの先頭要素＝
+	//	基本画像にしかwidth/heightを適用しないため常に自然サイズ。スプライトシート対応の可否とは
+	//	別の話——各要素は等しくアニメpngシート判定される。下のFaceImg参照）
 	const styFit: CSSProperties = {display: 'block',
 		...('width' in sty ? {width: '100%'} : {}), ...('height' in sty ? {height: '100%'} : {})};
 
@@ -121,14 +145,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 				onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
 			{src && ! isSheet && ! isMovie && <img src={src} style={styFit}
 				onLoad={e=> {setNatSize(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}}/>}
-			{aFace.map(({fn: faceFn, src: faceSrc, dx, dy, blendmode}, i)=> {
-				if (! faceSrc) return null;
-				return <img
-					key={`${faceFn}_${String(i)}`}
-					src={faceSrc}
-					style={{position: 'absolute', left: dx, top: dy, mixBlendMode: blendmode as CSSProperties['mixBlendMode']}}
-				/>;
-			})}
+			{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 		</div>
 		{isDesignMode && <Moveable
 			target={div0}

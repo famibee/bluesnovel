@@ -80,11 +80,22 @@ export function loadSheet(jsonSrc: string): Promise<T_SHEET | undefined> {
 	return hSheet[jsonSrc] ??= snFetch(jsonSrc)
 		.then(async r=> {
 			if (! r.ok) throw `${String(r.status)} ${r.statusText}`;
-			return snDec('json', await r.text());
+			return snDec('json', decodeText(await r.arrayBuffer()));
 		})
 		.then(tx=> JSON.parse(tx) as unknown)
 		.then(async json=> parseSheet(json, await decryptPicUrl(sheetImgSrc(jsonSrc, json), snCrypto, snFetch, snDecAB)))
 		.catch(()=> undefined);	// 読めなければただの静止画として扱う（表示は止めない）
+}
+
+// BOMを見てUTF-8/UTF-16LE/UTF-16BEを判定しデコードする。`fetch().text()`は常にUTF-8決め打ちで
+//	BOMをsniffingしないため（本家はpixiのLoaderがXHR responseText経由で読み、ブラウザがBOMを見て
+//	自動デコードするので暗黙に通っていた）、TexturePacker系ツール（Adobe Flash CS6等）が書き出す
+//	UTF-16LE BOM付きjsonだとJSON.parseが文字化けで失敗し、シートが静かに読めなくなっていた
+function decodeText(buf: ArrayBuffer): string {
+	const b = new Uint8Array(buf);
+	if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder('utf-16le').decode(buf.slice(2));
+	if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder('utf-16be').decode(buf.slice(2));
+	return new TextDecoder('utf-8').decode(buf);	// UTF-8 BOMもTextDecoderが読み飛ばす
 }
 
 // シート画像のURL。json内の`meta.image`を**jsonと同じ場所**から引く（本家も同じ扱い）

@@ -6442,7 +6442,7 @@ var ts = class t {
 		globalThis.open(e, "_blank");
 	}
 	jumpToLabelAndGo(e, t, n = "", r) {
-		r !== void 0 && (this.#r?.setValNochk("tmp:sn.eventArg", r), this.#r?.setValNochk("tmp:sn.eventLabel", e)), this.#O(e, t, n).catch(this.#i);
+		this.#r?.setValNochk("tmp:sn.eventArg", r ?? ""), this.#r?.setValNochk("tmp:sn.eventLabel", e), this.#O(e, t, n).catch(this.#i);
 	}
 	#C;
 	attachFrameBox(e) {
@@ -7115,10 +7115,14 @@ var ts = class t {
 				});
 				break;
 			case "chgPic": {
-				let t = this.#Re("lay", e.fn), n = t.endsWith(".json"), r = /\.(?:mp4|webm)$/i.test(t), i = e.aFace?.map((e) => ({
-					...e,
-					src: this.#Re("add_face", e.fn)
-				}));
+				let t = this.#Re("lay", e.fn), n = t.endsWith(".json"), r = /\.(?:mp4|webm)$/i.test(t), i = e.aFace?.map((e) => {
+					let t = this.#Re("add_face", e.fn);
+					return {
+						...e,
+						src: t,
+						isSheet: t.endsWith(".json")
+					};
+				});
 				if (!this.sys.crypto) {
 					this.$fncs.chgPic({
 						nm: e.nm,
