@@ -1648,7 +1648,7 @@ var ke = class {
 	}
 	step() {
 		let e = [];
-		for (this.#S && (this.#S = !1, this.#ce(), this.#y[this.#v] = "", e.push({
+		for (this.#S && (this.#S = !1, this.#ue(), this.#y[this.#v] = "", e.push({
 			t: "chgStr",
 			nm: this.#v,
 			page: "fore",
@@ -1661,7 +1661,7 @@ var ke = class {
 				let n = this.#t(t);
 				if (!n) continue;
 				let { name: r, args: i } = n;
-				if (this.#$(r, i, e) === "stop") return e;
+				if (this.#te(r, i, e) === "stop") return e;
 				continue;
 			}
 			let r = t, i = this.#g.grm.ce;
@@ -1676,7 +1676,7 @@ var ke = class {
 				r = e == null ? "" : String(e);
 			} else if (n === 59) continue;
 			else if (n === 42 && t.length > 1) continue;
-			this.#se(e, r);
+			this.#le(e, r);
 		}
 		return e;
 	}
@@ -1684,22 +1684,121 @@ var ke = class {
 		let { name: t, text: n, cast: r } = x(e.slice(1));
 		this.#O.set(this.#k.getValAmpersand(t.trim()), this.#k.parse(n), r ?? "");
 	}
-	#$(e, i, a) {
+	#$(e, t, r) {
+		let i = e.fn || e.pic;
+		if (i) {
+			let n = {
+				t: "chgPic",
+				nm: e.layer ?? "",
+				page: r,
+				fn: i
+			};
+			if (e.face !== void 0) {
+				let t = [];
+				if (e.face) for (let n of e.face.split(",")) {
+					if (!n) throw "[lay] face属性に空要素が含まれています";
+					t.push(this.#C[n] ?? {
+						fn: n,
+						dx: 0,
+						dy: 0,
+						blendmode: f("normal")
+					});
+				}
+				n.aFace = t;
+			}
+			t.push(n);
+		}
+		if (e.back_clear !== void 0) e.back_clear === "true" && t.push({
+			t: "chgBackClear",
+			nm: e.layer ?? "",
+			page: r
+		});
+		else {
+			if (e.b_alpha !== void 0 || e.b_alpha_isfixed !== void 0) {
+				let n = {
+					t: "chgBAlpha",
+					nm: e.layer ?? "",
+					page: r
+				};
+				if (e.b_alpha !== void 0) {
+					let t = Number(e.b_alpha);
+					if (Number.isNaN(t)) throw `[lay] b_alphaの値が不正です：${e.b_alpha}`;
+					n.b_alpha = Math.min(1, Math.max(0, t));
+				}
+				e.b_alpha_isfixed !== void 0 && (n.isFixed = e.b_alpha_isfixed !== "false"), t.push(n);
+			}
+			e.b_pic !== void 0 && t.push({
+				t: "chgBPic",
+				nm: e.layer ?? "",
+				page: r,
+				fn: e.b_pic
+			});
+		}
+		let a = {};
+		if (e.visible !== void 0 && (a.visible = e.visible !== "false"), e.alpha !== void 0 && (a.alpha = n.#n("lay", "alpha", e.alpha)), e.pos !== void 0 && e.pos !== "stay") {
+			let t = e.pos, r = Number(this.#O.get("tmp:const.sn.config.window.width")), i = Number(this.#O.get("tmp:const.sn.config.window.height"));
+			t === "" || t === "c" ? (a.left = r / 2, a.align_x = "center") : t === "l" ? a.left = 0 : t === "r" ? (a.left = r, a.align_x = "right") : (a.left = n.#n("lay", "pos", t), a.align_x = "center"), a.top = i, a.align_y = "bottom";
+		} else e.left === void 0 ? e.center === void 0 ? e.right === void 0 ? e.s_right !== void 0 && (a.s_right = this.#r("lay", "left", e.s_right)) : (a.left = this.#r("lay", "left", e.right), a.align_x = "right") : (a.left = this.#r("lay", "left", e.center), a.align_x = "center") : a.left = this.#r("lay", "left", e.left), e.top === void 0 ? e.middle === void 0 ? e.bottom === void 0 ? e.s_bottom !== void 0 && (a.s_bottom = this.#r("lay", "top", e.s_bottom)) : (a.top = this.#r("lay", "top", e.bottom), a.align_y = "bottom") : (a.top = this.#r("lay", "top", e.middle), a.align_y = "middle") : a.top = this.#r("lay", "top", e.top);
+		if (e.width !== void 0 && (a.width = n.#n("lay", "width", e.width)), e.height !== void 0 && (a.height = n.#n("lay", "height", e.height)), e.rotation !== void 0 && (a.rotation = n.#n("lay", "rotation", e.rotation)), e.scale_x !== void 0 && (a.scale_x = n.#n("lay", "scale_x", e.scale_x)), e.scale_y !== void 0 && (a.scale_y = n.#n("lay", "scale_y", e.scale_y)), e.pivot_x !== void 0 && (a.pivot_x = n.#n("lay", "pivot_x", e.pivot_x)), e.pivot_y !== void 0 && (a.pivot_y = n.#n("lay", "pivot_y", e.pivot_y)), e.blendmode !== void 0 && (a.blendmode = f(e.blendmode)), e.b_color !== void 0 && e.back_clear !== "true" && (a.b_color = n.#n("lay", "b_color", e.b_color)), e.style !== void 0 && (a.style = e.style), e.pl !== void 0 && (a.pl = n.#n("lay", "pl", e.pl)), e.pr !== void 0 && (a.pr = n.#n("lay", "pr", e.pr)), e.pt !== void 0 && (a.pt = n.#n("lay", "pt", e.pt)), e.pb !== void 0 && (a.pb = n.#n("lay", "pb", e.pb)), e.ffs !== void 0 && (a.ffs = e.ffs), e.noffs !== void 0 && (a.noffs = e.noffs), e.bura !== void 0 && (a.bura = e.bura !== "false"), e.kinsoku_sol !== void 0 && (a.kinsoku_sol = e.kinsoku_sol), e.kinsoku_eol !== void 0 && (a.kinsoku_eol = e.kinsoku_eol), e.kinsoku_dns !== void 0 && (a.kinsoku_dns = e.kinsoku_dns), e.kinsoku_bura !== void 0 && (a.kinsoku_bura = e.kinsoku_bura), ie.setting(e), e.r_align !== void 0) {
+			if (!Se.includes(e.r_align)) throw `[lay] r_alignの値が不正です：${e.r_align}`;
+			a.r_align = e.r_align;
+		}
+		e.in_style !== void 0 && (a.in_style = e.in_style), e.out_style !== void 0 && (a.out_style = e.out_style), Object.keys(a).length > 0 && t.push({
+			t: "chgLay",
+			nm: e.layer ?? "",
+			page: r,
+			sty: a
+		}), e.filter !== void 0 && t.push({
+			t: "addFilter",
+			aLayNm: [e.layer ?? ""],
+			page: r,
+			flt: s(e),
+			replace: !0
+		});
+	}
+	#ee(e, t) {
+		let r = e.layer ?? "";
+		if ((e.float ?? "false") !== "false") t.push({
+			t: "moveLay",
+			nm: r,
+			mode: "float"
+		});
+		else if (e.index) {
+			let i = n.#n("lay", "index", e.index);
+			i && t.push({
+				t: "moveLay",
+				nm: r,
+				mode: "index",
+				index: i
+			});
+		} else e.dive && t.push({
+			t: "moveLay",
+			nm: r,
+			mode: "dive",
+			dive: e.dive
+		});
+	}
+	#te(e, i, a) {
 		let o = this.#g.len;
 		switch (e) {
 			case "add_lay": {
 				let e = i.layer ?? i.nm ?? "";
 				if (!e) throw "[add_lay] layerは必須です（試作仕様）";
 				let t = (i.class ?? "txt").toLowerCase() === "grp" ? "grp" : "txt";
-				return this.#y[e] = "", this.#b[e] = "", t === "txt" && this.#O.setNochk(`save:const.sn.layer.${e}.enabled`, !0), a.push({
+				this.#y[e] = "", this.#b[e] = "", t === "txt" && this.#O.setNochk(`save:const.sn.layer.${e}.enabled`, !0), a.push({
 					t: "addLay",
 					cls: t,
 					nm: e
-				}), "skip";
+				});
+				let n = i.layer === void 0 ? {
+					...i,
+					layer: e
+				} : i;
+				return this.#$(n, a, "fore"), this.#$(n, a, "back"), this.#ee(n, a), "skip";
 			}
 			case "current": {
 				let e = i.layer ?? i.nm ?? this.#v;
-				return e !== this.#v && this.#ce(), this.#v = e, this.#O.setNochk("save:const.sn.mesLayer", this.#v), "skip";
+				return e !== this.#v && this.#ue(), this.#v = e, this.#O.setNochk("save:const.sn.mesLayer", this.#v), "skip";
 			}
 			case "add_face": {
 				let e = i.name ?? "";
@@ -1713,97 +1812,8 @@ var ke = class {
 				}, "skip";
 			}
 			case "lay": {
-				let e = n.argPage(i, "fore"), t = i.fn || i.pic;
-				if (t) {
-					let n = {
-						t: "chgPic",
-						nm: i.layer ?? "",
-						page: e,
-						fn: t
-					};
-					if (i.face !== void 0) {
-						let e = [];
-						if (i.face) for (let t of i.face.split(",")) {
-							if (!t) throw "[lay] face属性に空要素が含まれています";
-							e.push(this.#C[t] ?? {
-								fn: t,
-								dx: 0,
-								dy: 0,
-								blendmode: f("normal")
-							});
-						}
-						n.aFace = e;
-					}
-					a.push(n);
-				}
-				if (i.back_clear !== void 0) i.back_clear === "true" && a.push({
-					t: "chgBackClear",
-					nm: i.layer ?? "",
-					page: e
-				});
-				else {
-					if (i.b_alpha !== void 0 || i.b_alpha_isfixed !== void 0) {
-						let t = {
-							t: "chgBAlpha",
-							nm: i.layer ?? "",
-							page: e
-						};
-						if (i.b_alpha !== void 0) {
-							let e = Number(i.b_alpha);
-							if (Number.isNaN(e)) throw `[lay] b_alphaの値が不正です：${i.b_alpha}`;
-							t.b_alpha = Math.min(1, Math.max(0, e));
-						}
-						i.b_alpha_isfixed !== void 0 && (t.isFixed = i.b_alpha_isfixed !== "false"), a.push(t);
-					}
-					i.b_pic !== void 0 && a.push({
-						t: "chgBPic",
-						nm: i.layer ?? "",
-						page: e,
-						fn: i.b_pic
-					});
-				}
-				let r = {};
-				if (i.visible !== void 0 && (r.visible = i.visible !== "false"), i.alpha !== void 0 && (r.alpha = n.#n("lay", "alpha", i.alpha)), i.pos !== void 0 && i.pos !== "stay") {
-					let e = i.pos, t = Number(this.#O.get("tmp:const.sn.config.window.width")), a = Number(this.#O.get("tmp:const.sn.config.window.height"));
-					e === "" || e === "c" ? (r.left = t / 2, r.align_x = "center") : e === "l" ? r.left = 0 : e === "r" ? (r.left = t, r.align_x = "right") : (r.left = n.#n("lay", "pos", e), r.align_x = "center"), r.top = a, r.align_y = "bottom";
-				} else i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (r.s_right = this.#r("lay", "left", i.s_right)) : (r.left = this.#r("lay", "left", i.right), r.align_x = "right") : (r.left = this.#r("lay", "left", i.center), r.align_x = "center") : r.left = this.#r("lay", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (r.s_bottom = this.#r("lay", "top", i.s_bottom)) : (r.top = this.#r("lay", "top", i.bottom), r.align_y = "bottom") : (r.top = this.#r("lay", "top", i.middle), r.align_y = "middle") : r.top = this.#r("lay", "top", i.top);
-				if (i.width !== void 0 && (r.width = n.#n("lay", "width", i.width)), i.height !== void 0 && (r.height = n.#n("lay", "height", i.height)), i.rotation !== void 0 && (r.rotation = n.#n("lay", "rotation", i.rotation)), i.scale_x !== void 0 && (r.scale_x = n.#n("lay", "scale_x", i.scale_x)), i.scale_y !== void 0 && (r.scale_y = n.#n("lay", "scale_y", i.scale_y)), i.pivot_x !== void 0 && (r.pivot_x = n.#n("lay", "pivot_x", i.pivot_x)), i.pivot_y !== void 0 && (r.pivot_y = n.#n("lay", "pivot_y", i.pivot_y)), i.blendmode !== void 0 && (r.blendmode = f(i.blendmode)), i.b_color !== void 0 && i.back_clear !== "true" && (r.b_color = n.#n("lay", "b_color", i.b_color)), i.style !== void 0 && (r.style = i.style), i.pl !== void 0 && (r.pl = n.#n("lay", "pl", i.pl)), i.pr !== void 0 && (r.pr = n.#n("lay", "pr", i.pr)), i.pt !== void 0 && (r.pt = n.#n("lay", "pt", i.pt)), i.pb !== void 0 && (r.pb = n.#n("lay", "pb", i.pb)), i.ffs !== void 0 && (r.ffs = i.ffs), i.noffs !== void 0 && (r.noffs = i.noffs), i.bura !== void 0 && (r.bura = i.bura !== "false"), i.kinsoku_sol !== void 0 && (r.kinsoku_sol = i.kinsoku_sol), i.kinsoku_eol !== void 0 && (r.kinsoku_eol = i.kinsoku_eol), i.kinsoku_dns !== void 0 && (r.kinsoku_dns = i.kinsoku_dns), i.kinsoku_bura !== void 0 && (r.kinsoku_bura = i.kinsoku_bura), ie.setting(i), i.r_align !== void 0) {
-					if (!Se.includes(i.r_align)) throw `[lay] r_alignの値が不正です：${i.r_align}`;
-					r.r_align = i.r_align;
-				}
-				i.in_style !== void 0 && (r.in_style = i.in_style), i.out_style !== void 0 && (r.out_style = i.out_style), Object.keys(r).length > 0 && a.push({
-					t: "chgLay",
-					nm: i.layer ?? "",
-					page: e,
-					sty: r
-				});
-				let o = i.layer ?? "";
-				if ((i.float ?? "false") !== "false") a.push({
-					t: "moveLay",
-					nm: o,
-					mode: "float"
-				});
-				else if (i.index) {
-					let e = n.#n("lay", "index", i.index);
-					e && a.push({
-						t: "moveLay",
-						nm: o,
-						mode: "index",
-						index: e
-					});
-				} else i.dive && a.push({
-					t: "moveLay",
-					nm: o,
-					mode: "dive",
-					dive: i.dive
-				});
-				return i.filter !== void 0 && a.push({
-					t: "addFilter",
-					aLayNm: [o],
-					page: e,
-					flt: s(i),
-					replace: !0
-				}), "skip";
+				let e = n.argPage(i, "fore");
+				return this.#$(i, a, e), this.#ee(i, a), "skip";
 			}
 			case "add_filter": return a.push({
 				t: "addFilter",
@@ -1830,7 +1840,7 @@ var ke = class {
 				let t = n.#c(i.layer);
 				if (i.layer !== void 0 && t === null) throw "[clear_lay] layer属性が空です";
 				if (e !== "back") {
-					if ((!t || t.includes(this.#v)) && this.#ce(), t) for (let e of t) this.#y[e] = "";
+					if ((!t || t.includes(this.#v)) && this.#ue(), t) for (let e of t) this.#y[e] = "";
 					else for (let e of Object.keys(this.#y)) this.#y[e] = "";
 				}
 				if (e !== "fore") {
@@ -1905,7 +1915,7 @@ var ke = class {
 			case "tsy_frame": {
 				let { id: e } = i;
 				if (!e) throw "[tsy_frame] idは必須です";
-				this.#ee("tsy_frame", e);
+				this.#ne("tsy_frame", e);
 				let t = this.skipEnabled, r = n.#i("tsy_frame", "repeat", i.repeat, 1);
 				return a.push({
 					t: "tsyFrame",
@@ -1941,32 +1951,32 @@ var ke = class {
 			}), "skip";
 			case "let":
 				if (i.text === void 0) throw `[let] textは必須です（name:${i.name ?? ""}）`;
-				return this.#te("let", i, i.text), "skip";
+				return this.#re("let", i, i.text), "skip";
 			case "let_abs": {
 				let e = n.#i("let_abs", "text", i.text, 0);
-				return this.#te("let_abs", i, String(e < 0 ? -e : e)), "skip";
+				return this.#re("let_abs", i, String(e < 0 ? -e : e)), "skip";
 			}
 			case "let_round": {
 				let e = n.#i("let_round", "text", i.text, 0);
-				return this.#te("let_round", i, String(Math.round(e))), "skip";
+				return this.#re("let_round", i, String(Math.round(e))), "skip";
 			}
-			case "let_length": return this.#te("let_length", i, String((i.text ?? "").length)), "skip";
+			case "let_length": return this.#re("let_length", i, String((i.text ?? "").length)), "skip";
 			case "let_char_at": {
 				let e = n.#i("let_char_at", "pos", i.pos, 0);
-				return this.#te("let_char_at", i, (i.text ?? "").charAt(e)), "skip";
+				return this.#re("let_char_at", i, (i.text ?? "").charAt(e)), "skip";
 			}
 			case "let_index_of": {
 				let { val: e } = i;
 				if (!e) throw "[let_index_of] valは必須です";
 				let t = n.#i("let_index_of", "start", i.start, 0);
-				return this.#te("let_index_of", i, String((i.text ?? "").indexOf(e, t))), "skip";
+				return this.#re("let_index_of", i, String((i.text ?? "").indexOf(e, t))), "skip";
 			}
 			case "let_substr": {
 				let e = n.#i("let_substr", "pos", i.pos, 0), t = i.text ?? "";
-				return this.#te("let_substr", i, i.len === "all" ? t.slice(e) : t.slice(e, e + r(n.#i("let_substr", "len", i.len, 1)))), "skip";
+				return this.#re("let_substr", i, i.len === "all" ? t.slice(e) : t.slice(e, e + r(n.#i("let_substr", "len", i.len, 1)))), "skip";
 			}
-			case "let_replace": return this.#te("let_replace", i, (i.text ?? "").replace(n.#s("let_replace", i), String(i.val))), "skip";
-			case "let_search": return this.#te("let_search", i, String((i.text ?? "").search(n.#s("let_search", i)))), "skip";
+			case "let_replace": return this.#re("let_replace", i, (i.text ?? "").replace(n.#s("let_replace", i), String(i.val))), "skip";
+			case "let_search": return this.#re("let_search", i, String((i.text ?? "").search(n.#s("let_search", i)))), "skip";
 			case "let_ml": {
 				let e = i.name ?? "";
 				if (!e) throw "[let_ml] nameは必須です";
@@ -1977,15 +1987,15 @@ var ke = class {
 				return this.#O.set(e, t, "str"), this.#_ += 2, "skip";
 			}
 			case "endlet_ml": return "skip";
-			case "if": return this.#ne(i), "skip";
+			case "if": return this.#ie(i), "skip";
 			case "elsif":
 			case "else":
-			case "endif": return this.#re(), "skip";
+			case "endif": return this.#ae(), "skip";
 			case "r": {
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, "\n", !0, e, t), "skip";
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, "\n", !0, e, t), "skip";
 			}
-			case "er": return (i.rec_page_break ?? "true") !== "false" && this.#ce(), this.#y[this.#v] = "", this.#b[this.#v] = "", a.push({
+			case "er": return (i.rec_page_break ?? "true") !== "false" && this.#ue(), this.#y[this.#v] = "", this.#b[this.#v] = "", a.push({
 				t: "chgStr",
 				nm: this.#v,
 				page: "both",
@@ -1997,8 +2007,8 @@ var ke = class {
 				clearFilter: i.clear_filter === "true"
 			}), "skip";
 			case "span": {
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, n.#ae("span", {
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, n.#se("span", {
 					...i,
 					layer: void 0,
 					page: void 0
@@ -2007,21 +2017,21 @@ var ke = class {
 			case "link": {
 				if (!i.url && !i.label && !i.fn) throw "[link] fn・label・urlのいずれかは必須です";
 				i.clickse !== void 0 && (i.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (i.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (i.leavesebuf = i.leavesebuf || "SYS");
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, n.#ae("link", {
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, n.#se("link", {
 					...i,
 					layer: void 0,
 					page: void 0
 				}), !0, e, t), "skip";
 			}
 			case "endlink": {
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, n.#ae("endlink", {}), !0, e, t), "skip";
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, n.#se("endlink", {}), !0, e, t), "skip";
 			}
 			case "graph": {
 				if (!i.pic) throw "[graph] picは必須です";
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, n.#ae("grp", {
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, n.#se("grp", {
 					...i,
 					layer: void 0,
 					page: void 0
@@ -2029,8 +2039,8 @@ var ke = class {
 			}
 			case "tcy": {
 				if (!i.t) throw "[tcy] tは必須です";
-				let { nm: e, page: t } = this.#oe(i);
-				return this.#se(a, n.#ae("tcy", {
+				let { nm: e, page: t } = this.#ce(i);
+				return this.#le(a, n.#se("tcy", {
 					...i,
 					layer: void 0,
 					page: void 0
@@ -2045,13 +2055,13 @@ var ke = class {
 				}
 				let { text: t } = i;
 				if (!t) throw `[${e}] textは必須です`;
-				let { nm: r, page: o } = this.#oe(i);
-				return this.#se(a, n.#ae("add", {
+				let { nm: r, page: o } = this.#ce(i);
+				return this.#le(a, n.#se("add", {
 					...i,
 					text: void 0,
 					layer: void 0,
 					page: void 0
-				}) + t.replaceAll("[r]", "\n") + n.#ae("add_close", {}), i.record !== "false", r, o), "skip";
+				}) + t.replaceAll("[r]", "\n") + n.#se("add_close", {}), i.record !== "false", r, o), "skip";
 			}
 			case "autowc": {
 				let e = i.enabled === void 0 ? this.#O.get("game:const.sn.autowc.enabled") === !0 : i.enabled !== "false";
@@ -2087,10 +2097,10 @@ var ke = class {
 			}
 			case "rec_ch": {
 				let { text: e, ...t } = i;
-				return e ? (Object.keys(t).length && this.#j.setAttr(t), this.#j.add(n.#ae("add", {
+				return e ? (Object.keys(t).length && this.#j.setAttr(t), this.#j.add(n.#se("add", {
 					...i,
 					text: void 0
-				}) + e.replaceAll("[r]", "\n") + n.#ae("add_close", {})), "skip") : "skip";
+				}) + e.replaceAll("[r]", "\n") + n.#se("add_close", {})), "skip") : "skip";
 			}
 			case "rec_r": return this.#j.add("\n"), "skip";
 			case "reset_rec": return this.#j.reset(i.text ?? ""), "skip";
@@ -2132,7 +2142,7 @@ var ke = class {
 				if (n === void 0) throw `[call] ラベル【${e}】がスクリプト【${this.fn}】に見つかりません`;
 				return this.#Z(this.#_, !0, i), this.#_ = n, "skip";
 			}
-			case "return": return this.#ie(a, i);
+			case "return": return this.#oe(a, i);
 			case "macro": {
 				let e = i.name ?? "";
 				if (!e) throw "[macro] nameは必須です（試作仕様）";
@@ -2174,7 +2184,7 @@ var ke = class {
 			}
 			case "char2macro":
 			case "bracket2macro": return this.#g.defC2M(e, i, this.#V(), this.#_), "skip";
-			case "endmacro": return this.#ie(a);
+			case "endmacro": return this.#oe(a);
 			case "button": {
 				let e = i.layer || this.#v;
 				if (!e) throw "[button] layerは必須です（試作仕様）";
@@ -2286,7 +2296,7 @@ var ke = class {
 			}), "stop";
 			case "clear_text": {
 				let e = i.layer || this.#v, t = n.argPage(i, "fore");
-				return e === this.#v && t === "fore" && this.#ce(), this.#x(t)[e] = "", a.push({
+				return e === this.#v && t === "fore" && this.#ue(), this.#x(t)[e] = "", a.push({
 					t: "chgStr",
 					nm: e,
 					page: t,
@@ -2425,7 +2435,7 @@ var ke = class {
 			case "frame": {
 				let { id: e } = i;
 				if (!e) throw "[frame] idは必須です";
-				this.#ee("frame", e);
+				this.#ne("frame", e);
 				let t = (i.float ?? "false") === "false" ? i.index === void 0 ? i.dive ? { mode: "dive" } : void 0 : {
 					mode: "index",
 					index: n.#n("frame", "index", i.index)
@@ -2443,7 +2453,7 @@ var ke = class {
 				if (!e) throw "[set_frame] idは必須です";
 				if (!t) throw "[set_frame] var_nameは必須です";
 				if (!n) throw "[set_frame] textは必須です";
-				return this.#ee("set_frame", e), this.#O.setNochk(`const.sn.frm.${e}.${t}`, n), a.push({
+				return this.#ne("set_frame", e), this.#O.setNochk(`const.sn.frm.${e}.${t}`, n), a.push({
 					t: "setFrame",
 					id: e,
 					var_name: t,
@@ -2454,7 +2464,7 @@ var ke = class {
 				let { id: e, var_name: t } = i;
 				if (!e) throw "[let_frame] idは必須です";
 				if (!t) throw "[let_frame] var_nameは必須です";
-				return this.#ee("let_frame", e), a.push({
+				return this.#ne("let_frame", e), a.push({
 					t: "letFrame",
 					id: e,
 					var_name: t,
@@ -2653,15 +2663,15 @@ var ke = class {
 			}
 		}
 	}
-	#ee(e, t) {
+	#ne(e, t) {
 		if (!this.#O.get(`const.sn.frm.${t}`)) throw `[${e}] frame【${t}】が読み込まれていません`;
 	}
-	#te(e, t, n) {
+	#re(e, t, n) {
 		let r = t.name ?? "";
 		if (!r) throw `[${e}] nameは必須です`;
 		this.#O.set(r, n, t.cast ?? "");
 	}
-	#ne(e) {
+	#ie(e) {
 		let t = e.exp ?? "";
 		if (!t) throw "[if] expは必須です（試作仕様）";
 		if (t.startsWith("&")) throw "[if] 属性expは「&」が不要です";
@@ -2706,12 +2716,12 @@ var ke = class {
 		}
 		throw "[if] に対応する [endif] が見つかりません（試作仕様）";
 	}
-	#re() {
+	#ae() {
 		let e = this.#P.pop();
 		if (e === void 0 || e === -1) throw "[if] に対応していない [elsif]/[else]/[endif] です";
 		this.#_ = e;
 	}
-	#ie(e, t = {}) {
+	#oe(e, t = {}) {
 		let n = this.#F.pop();
 		if (!n) throw "[return] 呼び出し元がありません（[call]/マクロ呼び出しされていないか、既に戻っています）";
 		this.#P.length = n.lenIfStk, this.#O.setMp(n.hMp), n.hEvt && (this.#I = n.hEvt);
@@ -2734,16 +2744,16 @@ var ke = class {
 			idx: n.returnIdx
 		}), "stop");
 	}
-	static #ae(e, t) {
+	static #se(e, t) {
 		return `｜&emsp;《${e}｜${encodeURIComponent(JSON.stringify(t))}》`;
 	}
-	#oe(e) {
+	#ce(e) {
 		return {
 			nm: e.layer || this.#v,
 			page: n.argPage(e, "fore")
 		};
 	}
-	#se(e, t, n = !0, r = this.#v, i = "fore") {
+	#le(e, t, n = !0, r = this.#v, i = "fore") {
 		let a = this.#x(i), o = (a[r] ?? "") + t;
 		a[r] = o, n && this.#M && r === this.#v && i === "fore" && this.#j.add(t), e.push({
 			t: "chgStr",
@@ -2752,7 +2762,7 @@ var ke = class {
 			str: o
 		});
 	}
-	#ce() {
+	#ue() {
 		this.#j.pagebreak();
 	}
 }, je = class e {

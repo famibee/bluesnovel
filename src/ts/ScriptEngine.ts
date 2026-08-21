@@ -1084,6 +1084,174 @@ export class ScriptEngine {
 		);
 	}
 
+	// [lay]属性のうち特定ページ（fore/back片方）に効くもの（[add_lay]から表裏それぞれへ2回呼ばれる想定）。
+	//	picまたはfn属性変更、face属性による差分合成、文字レイヤ背景の不透明度（b_alpha）、
+	//	レイヤ共通の見た目（visible/alpha/位置/寸法/blendmode/…）、フィルターに対応（試作簡略）
+	#applyLayPage(args: {[k: string]: string}, aAct: T_ENGINE_ACTION[], page: T_PAGE): void {
+		// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
+		const picFn = args.fn || args.pic;
+		if (picFn) {
+			const o: Extract<T_ENGINE_ACTION, {t: 'chgPic'}> = {t: 'chgPic', nm: args.layer ?? '', page, fn: picFn};
+			// face属性省略時はaFaceを積まない＝直前のfaceを維持（本家：fnは毎回明示、faceは省略可）。
+			//	face=""は明示的なクリア指定なので空配列を積む
+			if (args.face !== undefined) {
+				const aFace: T_FACE[] = [];
+				if (args.face) {
+					// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
+					for (const nm of args.face.split(',')) {
+						if (! nm) throw '[lay] face属性に空要素が含まれています';
+						// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
+						aFace.push(this.#hFace[nm] ?? {fn: nm, dx: 0, dy: 0, blendmode: argBlendmode('normal')});
+					}
+				}
+				o.aFace = aFace;
+			}
+			aAct.push(o);
+		}
+
+		// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
+		//	（本家 TxtLayer.ts:376-385）。**指定時は他のb_*属性処理を素通りする**のが本家の規約
+		//	（#drawBack()が早期returnする）。false指定時は何もしない
+		if (args.back_clear !== undefined) {
+			if (args.back_clear === 'true') aAct.push({t: 'chgBackClear', nm: args.layer ?? '', page});
+		}
+		else {
+			// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
+			//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
+			if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
+				const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
+				if (args.b_alpha !== undefined) {
+					const v = Number(args.b_alpha);
+					if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+					// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
+					//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
+					//	範囲外の値が残ってしまうため、ここで正規化する。
+					//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
+					o.b_alpha = Math.min(1, Math.max(0, v));
+				}
+				if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
+				aAct.push(o);
+			}
+
+			// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
+			//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
+			//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
+			if (args.b_pic !== undefined) {
+				aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
+			}
+		}
+
+		// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）
+		const sty: T_LAY_STY_ARG = {};
+		if (args.visible !== undefined) sty.visible = args.visible !== 'false';
+		if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
+		// pos：立ち絵配置のショートカット（本家 Layer.setXYByPos()）。left/center/right/…系より
+		//	優先する（本家は`if (hArg.pos) {setXYByPos(); return}`と早期returnし他の位置属性を
+		//	見ない）。c/l/r/数値でX中心を指定し、Yは常に画像下端をステージ下端へ接地させる
+		//	（本家は`ret.y = stageH - b_height`で計算するが、実寸を知らないこちらは
+		//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない
+		if (args.pos !== undefined && args.pos !== 'stay') {
+			const p = args.pos;
+			const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
+			const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
+			if (p === '' || p === 'c') {sty.left = stageW /2; sty.align_x = 'center'}
+			else if (p === 'l') sty.left = 0;
+			else if (p === 'r') {sty.left = stageW; sty.align_x = 'right'}
+			else {sty.left = ScriptEngine.#argNum('lay', 'pos', p); sty.align_x = 'center'}
+			sty.top = stageH;
+			sty.align_y = 'bottom';
+		}
+		else {
+			// 横位置は left / center / right / s_right の**排他**（本家 Layer.ts:513-532 の else if）。
+			//	center・rightは「指定値から表示物の幅を引く」＝寄せ。実寸はエンジンが知らないので
+			//	寄せの種類だけを渡し、CSSの独立translateプロパティで表現する（Lay.ts styLay）
+			if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
+			else if (args.center !== undefined) {
+				sty.left = this.#argPos('lay', 'left', args.center);
+				sty.align_x = 'center';
+			}
+			else if (args.right !== undefined) {
+				sty.left = this.#argPos('lay', 'left', args.right);
+				sty.align_x = 'right';
+			}
+			else if (args.s_right !== undefined) sty.s_right = this.#argPos('lay', 'left', args.s_right);
+			// 縦位置も同じ並び（top / middle / bottom / s_bottom）
+			if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
+			else if (args.middle !== undefined) {
+				sty.top = this.#argPos('lay', 'top', args.middle);
+				sty.align_y = 'middle';
+			}
+			else if (args.bottom !== undefined) {
+				sty.top = this.#argPos('lay', 'top', args.bottom);
+				sty.align_y = 'bottom';
+			}
+			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
+		}
+		// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
+		//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
+		//	**独立した2つのif**：片方だけの指定でも成立させる（本家の潰れバグは踏襲しない）
+		if (args.width !== undefined) sty.width = ScriptEngine.#argNum('lay', 'width', args.width);
+		if (args.height !== undefined) sty.height = ScriptEngine.#argNum('lay', 'height', args.height);
+		if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
+		if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
+		if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
+		if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
+		if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
+		if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
+		// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
+		if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
+		if (args.style !== undefined) sty.style = args.style;
+		// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
+		if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);
+		if (args.pr !== undefined) sty.pr = ScriptEngine.#argNum('lay', 'pr', args.pr);
+		if (args.pt !== undefined) sty.pt = ScriptEngine.#argNum('lay', 'pt', args.pt);
+		if (args.pb !== undefined) sty.pb = ScriptEngine.#argNum('lay', 'pb', args.pb);
+		// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
+		//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
+		//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**
+		//	（既定値はここに書かない。本家もtruthy判定＝現在値維持で、既定はKinsokuクラスが持つ）
+		if (args.ffs !== undefined) sty.ffs = args.ffs;
+		if (args.noffs !== undefined) sty.noffs = args.noffs;
+		if (args.bura !== undefined) sty.bura = args.bura !== 'false';
+		if (args.kinsoku_sol !== undefined) sty.kinsoku_sol = args.kinsoku_sol;
+		if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
+		if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
+		if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
+		// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要
+		RubySpliter.setting(args);
+		// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ
+		if (args.r_align !== undefined) {
+			if (! (A_R_ALIGN as readonly string[]).includes(args.r_align))
+				throw `[lay] r_alignの値が不正です：${args.r_align}`;
+			sty.r_align = args.r_align as T_R_ALIGN;
+		}
+		// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
+		if (args.in_style !== undefined) sty.in_style = args.in_style;
+		if (args.out_style !== undefined) sty.out_style = args.out_style;
+		if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
+
+		// [lay filter=…]はフィルターを**置き換える**（本家 Layer.lay() の
+		//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）
+		if (args.filter !== undefined) {
+			aAct.push({t: 'addFilter', aLayNm: [args.layer ?? ''], page, flt: bldFilter(args), replace: true});
+		}
+	}
+
+	// [lay]属性のうちページに依存しないもの（本家 LayerMng.ts:489 #lay() の float/index/dive。
+	//	**表裏とも同じ順に動かす**＝本家も#fore/#backの両方をsetChildIndexする）。
+	//	並び替えは現在の並びが要るのでストア側で解決する
+	#applyLayOrder(args: {[k: string]: string}, aAct: T_ENGINE_ACTION[]): void {
+		const nmLay = args.layer ?? '';
+		if ((args.float ?? 'false') !== 'false') aAct.push({t: 'moveLay', nm: nmLay, mode: 'float'});
+		else if (args.index) {
+			// 本家は `if (hArg.index)` の内側でさらに `if (argChk_Num(...))` と数値の真偽を見るので、
+			//	**index=0は何も起きない**（最背面へ送る指定にはならない）。そのまま移植する
+			const i = ScriptEngine.#argNum('lay', 'index', args.index);
+			if (i) aAct.push({t: 'moveLay', nm: nmLay, mode: 'index', index: i});
+		}
+		else if (args.dive) aAct.push({t: 'moveLay', nm: nmLay, mode: 'dive', dive: args.dive});
+	}
+
 	// [ タグ ]トークン1件分の処理。戻り値：
 	//	'skip' … このタグの処理を終え、通常どおり次のトークンへ進む
 	//	'stop' … [l]/[p]/[s]による停止点。呼び出し元（step()）はaActをそのまま返す
@@ -1101,6 +1269,15 @@ export class ScriptEngine {
 			//	これを書き換えても効かない（有効・無効を変えるのは[enable_event]）
 			if (cls === 'txt') this.#val.setNochk(`save:const.sn.layer.${nm}.enabled`, true);
 			aAct.push({t: 'addLay', cls, nm});
+			// 本家 Pages コンストラクタ（Pages.ts:35 `ret.isWait = f.lay(hArg) || b.lay(hArg)`）は、
+			//	新規レイヤ作成時に[add_lay]自身のhArgへ[lay]と同じ属性処理を表裏両方へ適用する。
+			//	fn/blendmode/visible等を[add_lay]自身に書ける（例：sn_galleryのblendmodeプロジェクトの
+			//	`[add_lay layer=bg class=grp fn=…]`）のはこのため。並び順（float/index/dive）は
+			//	page非依存なので1回だけ
+			const argsL = args.layer !== undefined ? args : {...args, layer: nm};
+			this.#applyLayPage(argsL, aAct, 'fore');
+			this.#applyLayPage(argsL, aAct, 'back');
+			this.#applyLayOrder(argsL, aAct);
 			return 'skip';
 		}
 		case 'current': {	// デフォルト文字レイヤ切替（試作簡略：layer属性のみ）
@@ -1130,166 +1307,8 @@ export class ScriptEngine {
 
 		case 'lay': {		// 試作簡略：画像レイヤの絵（picまたはfn属性）変更、face属性による差分合成、及び文字レイヤ背景の不透明度（b_alpha）に対応
 			const page = ScriptEngine.argPage(args, 'fore');	// 書き込み先のページ（本家 Pages.argChk_page(hArg, 'fore')）
-			// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
-			const picFn = args.fn || args.pic;
-			if (picFn) {
-				const o: Extract<T_ENGINE_ACTION, {t: 'chgPic'}> = {t: 'chgPic', nm: args.layer ?? '', page, fn: picFn};
-				// face属性省略時はaFaceを積まない＝直前のfaceを維持（本家：fnは毎回明示、faceは省略可）。
-				//	face=""は明示的なクリア指定なので空配列を積む
-				if (args.face !== undefined) {
-					const aFace: T_FACE[] = [];
-					if (args.face) {
-						// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
-						for (const nm of args.face.split(',')) {
-							if (! nm) throw '[lay] face属性に空要素が含まれています';
-							// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
-							aFace.push(this.#hFace[nm] ?? {fn: nm, dx: 0, dy: 0, blendmode: argBlendmode('normal')});
-						}
-					}
-					o.aFace = aFace;
-				}
-				aAct.push(o);
-			}
-
-			// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
-			//	（本家 TxtLayer.ts:376-385）。**指定時は他のb_*属性処理を素通りする**のが本家の規約
-			//	（#drawBack()が早期returnする）。false指定時は何もしない
-			if (args.back_clear !== undefined) {
-				if (args.back_clear === 'true') aAct.push({t: 'chgBackClear', nm: args.layer ?? '', page});
-			}
-			else {
-				// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
-				//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
-				if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
-					const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
-					if (args.b_alpha !== undefined) {
-						const v = Number(args.b_alpha);
-						if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
-						// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
-						//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
-						//	範囲外の値が残ってしまうため、ここで正規化する。
-						//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
-						o.b_alpha = Math.min(1, Math.max(0, v));
-					}
-					if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
-					aAct.push(o);
-				}
-
-				// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
-				//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
-				//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
-				if (args.b_pic !== undefined) {
-					aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
-				}
-			}
-
-			// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）
-			const sty: T_LAY_STY_ARG = {};
-			if (args.visible !== undefined) sty.visible = args.visible !== 'false';
-			if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
-			// pos：立ち絵配置のショートカット（本家 Layer.setXYByPos()）。left/center/right/…系より
-			//	優先する（本家は`if (hArg.pos) {setXYByPos(); return}`と早期returnし他の位置属性を
-			//	見ない）。c/l/r/数値でX中心を指定し、Yは常に画像下端をステージ下端へ接地させる
-			//	（本家は`ret.y = stageH - b_height`で計算するが、実寸を知らないこちらは
-			//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない
-			if (args.pos !== undefined && args.pos !== 'stay') {
-				const p = args.pos;
-				const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
-				const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
-				if (p === '' || p === 'c') {sty.left = stageW /2; sty.align_x = 'center'}
-				else if (p === 'l') sty.left = 0;
-				else if (p === 'r') {sty.left = stageW; sty.align_x = 'right'}
-				else {sty.left = ScriptEngine.#argNum('lay', 'pos', p); sty.align_x = 'center'}
-				sty.top = stageH;
-				sty.align_y = 'bottom';
-			}
-			else {
-				// 横位置は left / center / right / s_right の**排他**（本家 Layer.ts:513-532 の else if）。
-				//	center・rightは「指定値から表示物の幅を引く」＝寄せ。実寸はエンジンが知らないので
-				//	寄せの種類だけを渡し、CSSの独立translateプロパティで表現する（Lay.ts styLay）
-				if (args.left !== undefined) sty.left = this.#argPos('lay', 'left', args.left);
-				else if (args.center !== undefined) {
-					sty.left = this.#argPos('lay', 'left', args.center);
-					sty.align_x = 'center';
-				}
-				else if (args.right !== undefined) {
-					sty.left = this.#argPos('lay', 'left', args.right);
-					sty.align_x = 'right';
-				}
-				else if (args.s_right !== undefined) sty.s_right = this.#argPos('lay', 'left', args.s_right);
-				// 縦位置も同じ並び（top / middle / bottom / s_bottom）
-				if (args.top !== undefined) sty.top = this.#argPos('lay', 'top', args.top);
-				else if (args.middle !== undefined) {
-					sty.top = this.#argPos('lay', 'top', args.middle);
-					sty.align_y = 'middle';
-				}
-				else if (args.bottom !== undefined) {
-					sty.top = this.#argPos('lay', 'top', args.bottom);
-					sty.align_y = 'bottom';
-				}
-				else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
-			}
-			// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
-			//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
-			//	**独立した2つのif**：片方だけの指定でも成立させる（本家の潰れバグは踏襲しない）
-			if (args.width !== undefined) sty.width = ScriptEngine.#argNum('lay', 'width', args.width);
-			if (args.height !== undefined) sty.height = ScriptEngine.#argNum('lay', 'height', args.height);
-			if (args.rotation !== undefined) sty.rotation = ScriptEngine.#argNum('lay', 'rotation', args.rotation);
-			if (args.scale_x !== undefined) sty.scale_x = ScriptEngine.#argNum('lay', 'scale_x', args.scale_x);
-			if (args.scale_y !== undefined) sty.scale_y = ScriptEngine.#argNum('lay', 'scale_y', args.scale_y);
-			if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
-			if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
-			if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
-			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
-			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
-			if (args.style !== undefined) sty.style = args.style;
-			// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
-			if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);
-			if (args.pr !== undefined) sty.pr = ScriptEngine.#argNum('lay', 'pr', args.pr);
-			if (args.pt !== undefined) sty.pt = ScriptEngine.#argNum('lay', 'pt', args.pt);
-			if (args.pb !== undefined) sty.pb = ScriptEngine.#argNum('lay', 'pb', args.pb);
-			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
-			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
-			//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**
-			//	（既定値はここに書かない。本家もtruthy判定＝現在値維持で、既定はKinsokuクラスが持つ）
-			if (args.ffs !== undefined) sty.ffs = args.ffs;
-			if (args.noffs !== undefined) sty.noffs = args.noffs;
-			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
-			if (args.kinsoku_sol !== undefined) sty.kinsoku_sol = args.kinsoku_sol;
-			if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
-			if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
-			if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
-			// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要
-			RubySpliter.setting(args);
-			// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ
-			if (args.r_align !== undefined) {
-				if (! (A_R_ALIGN as readonly string[]).includes(args.r_align))
-					throw `[lay] r_alignの値が不正です：${args.r_align}`;
-				sty.r_align = args.r_align as T_R_ALIGN;
-			}
-			// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
-			if (args.in_style !== undefined) sty.in_style = args.in_style;
-			if (args.out_style !== undefined) sty.out_style = args.out_style;
-			if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
-
-			// レイヤの重なり順（本家 LayerMng.ts:489 #lay() の float/index/dive）。
-			//	**表裏とも同じ順に動かす**（本家も#fore/#backの両方をsetChildIndexする）ので、
-			//	page属性とは無関係。並び替えは現在の並びが要るのでストア側で解決する
-			const nmLay = args.layer ?? '';
-			if ((args.float ?? 'false') !== 'false') aAct.push({t: 'moveLay', nm: nmLay, mode: 'float'});
-			else if (args.index) {
-				// 本家は `if (hArg.index)` の内側でさらに `if (argChk_Num(...))` と数値の真偽を見るので、
-				//	**index=0は何も起きない**（最背面へ送る指定にはならない）。そのまま移植する
-				const i = ScriptEngine.#argNum('lay', 'index', args.index);
-				if (i) aAct.push({t: 'moveLay', nm: nmLay, mode: 'index', index: i});
-			}
-			else if (args.dive) aAct.push({t: 'moveLay', nm: nmLay, mode: 'dive', dive: args.dive});
-
-			// [lay filter=…]はフィルターを**置き換える**（本家 Layer.lay() の
-			//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）
-			if (args.filter !== undefined) {
-				aAct.push({t: 'addFilter', aLayNm: [nmLay], page, flt: bldFilter(args), replace: true});
-			}
+			this.#applyLayPage(args, aAct, page);
+			this.#applyLayOrder(args, aAct);
 			return 'skip';
 		}
 

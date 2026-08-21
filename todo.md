@@ -202,6 +202,24 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         文字レイヤの既定aquamarine背景＋オレンジ点線枠（`TxtLayer.tsx:480`のコメントに
         「テンプレが期待する見た目ではない」既定色と明記済み。`b_color`未指定時に文字がある
         層を可視化する開発用の目印）
+  - [x] `blendmode`で発見・修正：**`[add_lay]`自身に書かれた`fn`/`blendmode`等の属性が
+        全く処理されていなかった**（レイヤが常時真っ黒で描画されない不具合）。本家
+        `Pages`コンストラクタ（`skynovel_esm/src/sn/Pages.ts:35`）は新規レイヤ生成時、
+        渡されたhArg全体（`[add_lay]`自身の属性）に対して`[lay]`と同じ処理
+        （`f.lay(hArg) || b.lay(hArg)`）を**表裏両方へ**適用する。つまり本家では
+        `[add_lay layer=bg class=grp fn=画像]`のように`[add_lay]`自身にfn等を書ける
+        （`tag_tsy`・`blendmode`が実際にこの書き方を使用）。bluesnovelの
+        `ScriptEngine.ts` `case 'add_lay'`は`addLay`アクションを積むだけで、fn以下の
+        属性を一切見ておらず、`[lay]`側で別途指定しない限り画像もblendmodeも反映されない
+        構造的な欠落だった。修正は`case 'lay'`の中身（fn/pic・face・b_alpha・b_pic・
+        visible/alpha/位置/寸法/blendmode等・filter）を`#applyLayPage(args, aAct, page)`、
+        重なり順（float/index/dive、page非依存）を`#applyLayOrder(args, aAct)`として
+        切り出し、`case 'lay'`は1回ずつ、`case 'add_lay'`は`#applyLayPage`を'fore'・'back'
+        それぞれに（表裏両方へ同じ初期値を適用）、`#applyLayOrder`を1回呼ぶ形に変更
+        （`src/ts/ScriptEngine.ts`）。playwright-cliで本家ギャラリー実機と
+        bluesnovel（sn_gallery駆動）のblendmodeプロジェクトを比較し、normal/add/multiply/
+        screenの4種いずれも背景画像・2枚の合成画像とも完全一致することを確認済み。
+        `bun test`（1684件）・`tsc --noEmit`とも回帰無し
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 
