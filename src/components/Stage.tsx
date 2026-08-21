@@ -466,18 +466,22 @@ export default function Stage({
 		//	なお本家が持つ ofsPadLeft/Top_Dom2PIXI（DOM座標→PIXI座標の変換オフセット）は、
 		//	bluesnovelにPIXI座標系そのものが無い（マウス位置は素のDOM座標のまま扱う）ため移植不要
 		if (isGallery) {
-			// 埋め込み時（sn_galleryのような左メニュー付きレイアウト）は**幅だけ**を基準に拡縮する
-			//	（本家 SysBase.cvsResize():248, 234-236）。本家はcanvasの親要素の高さがCSS上
-			//	`height: auto`（子要素＝canvas自身に追随）で、`mh-100`（max-height:100%）は
-			//	不定な高さに対しては効かない（CSS 2.1 §10.7）ため、実質「`mw-100`による幅の制約
-			//	＋canvasのintrinsic aspect ratioで高さが幅に追随する」だけで決まっている。
+			// 埋め込み時（sn_galleryのような左メニュー付きレイアウト）は**幅だけ**を基準に、
+			//	**縮小のみ・拡大はしない**（本家 SysBase.cvsResize():248, 234-236, 289）。本家は
+			//	isGallery時、canvasへJSでwidth/heightを一切設定しない（cvsResize():289
+			//	`if (! isGallery) {ps.width=...}` で分岐、isGalleryはここを素通りする）ため、
+			//	canvasは`mw-100`（max-width:100%）とHTML width/height属性＝intrinsicサイズ
+			//	（stageW/stageH）だけで表示サイズが決まる。max-width:100%は「はみ出るときだけ
+			//	縮小」で拡大はしないCSSの通常挙動なので、親要素が広くてもstageW/stageHを超えない。
+			//	`mh-100`（max-height:100%）は親の高さがCSS上`height: auto`のため不定な高さに
+			//	対しては効かない（CSS 2.1 §10.7）ので高さ方向の制約は無い。
 			//	bluesnovelの#skynovelはcanvasと違いintrinsicサイズを持たない素のdivなので、
 			//	親要素の高さ（=#skynovel自身の直前の高さがそのまま返るだけの循環値）を読んでは
 			//	いけない（実際に読んで試すと、前回セット分がフィードバックして値がドリフトする
 			//	不具合になった）。幅（`w`＝親要素の`clientWidth`。こちらは祖先から決まる非循環値）
-			//	だけを基準にステージのアスペクト比でcvsHeightを導出する
-			cvsWidth = w;
-			cvsHeight = uint(CmnLib.stageH / CmnLib.stageW * w);
+			//	をstageWと比較し、狭いときだけそれに合わせて縮小、広いときはstageWのまま
+			cvsWidth = Math.min(w, CmnLib.stageW);
+			cvsHeight = uint(CmnLib.stageH / CmnLib.stageW * cvsWidth);
 			cvsScale = cvsWidth / CmnLib.stageW;
 		}
 		else if (argChk_Boolean(CmnLib.hDip, 'expanding', true)

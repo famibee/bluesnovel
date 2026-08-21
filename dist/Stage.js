@@ -11056,7 +11056,7 @@ function Pu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 }
 function Fu({ width: e, height: t }, a) {
 	let o = 0, s = 0, c = 1;
-	return a ? (o = e, s = n(i.stageH / i.stageW * e), c = o / i.stageW) : r(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = n(i.stageW / i.stageH * t)) : (o = e, s = n(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
+	return a ? (o = Math.min(e, i.stageW), s = n(i.stageH / i.stageW * o), c = o / i.stageW) : r(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = n(i.stageW / i.stageH * t)) : (o = e, s = n(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
 		cvsScale: c,
 		cvsWidth: o,
 		cvsHeight: s

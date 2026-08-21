@@ -25,7 +25,8 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`ruby`/`filter`等）：
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`ruby`の残り
+      （[tcy]横書き時の描画幅が本家よりやや広い・right/121/even/1ruby未比較）または`filter`等）：
   - [x] `ch_button`（文字ボタン・リンク）で2件発見・修正。
         1つ目：`[button]`が`label`・`fn`両方省略時に一律`throw`していたが、本家
         `LayerMng.ts:1101`は`hArg.fn ??= this.scrItr.scriptFn`でfnを常にカレントスクリプトへ
@@ -129,6 +130,23 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         駆動）を同じシナリオ位置（`[trans]`後の「各種イベント検知」セクション）まで進めて比較し、
         どちらも`writing-mode: vertical-rl`・`width: 718px`・`height: 480px`を保持したまま
         `text-shadow`だけ新しい値になっていることを確認済み
+  - [x] `ruby`で発見：**ステージ拡大ロジック（isGallery分岐）が広い画面で本家より過剰に
+        拡大していた**（`[lay]`style差分マージ修正時に実装した分岐そのもののバグ）。本家
+        `SysBase.ts:cvsResize()`は289行目`if (! isGallery) {ps.width=...; ps.height=...;}`
+        でJSによるcanvasサイズ設定をisGallery時は素通りし、canvasは`mw-100`
+        （max-width:100%）とHTML width/height属性＝intrinsicサイズ（`prj.json`の`window`、
+        rubyなら750×500）だけで表示サイズが決まる。max-width:100%は「はみ出る時だけ縮小、
+        拡大はしない」CSSの通常挙動なので、親要素がどれだけ広くてもintrinsicサイズを超えない。
+        しかし`Stage.tsx`の`calcScale()`は`cvsWidth = w`（親要素の`clientWidth`）を常に
+        採用しており、親要素が広い時も無条件にそこまで拡大してしまっていた。狭いビューポート
+        （親要素686px<750px）ではたまたま両者一致するため、8/21先述の792×528確認時
+        （親要素792px辺りで偶然近い値）は見抜けなかった。1280px幅の広いビューポートで
+        本家が750×500のまま変わらないのに対しbluesnovel側は1053×702まで拡大され、
+        文字も過大表示（一見ステージ全体が緑色に見えるほど）になっていたのをplaywright-cliで
+        発見。`cvsWidth = Math.min(w, CmnLib.stageW)`（狭い時だけ縮小、広い時はintrinsic
+        サイズのまま）に修正（`src/components/Stage.tsx`の`calcScale()`）。狭い/広い両方の
+        ビューポートで本家と実測一致することを確認済み。`bun test`（1684件）・`tsc --noEmit`
+        とも回帰無し
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 
