@@ -25,7 +25,8 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`blendmode`等）：
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`tag_lay_face`/
+      `tag_lay_mov`/`sound`等）：
   - [x] `ch_button`（文字ボタン・リンク）で2件発見・修正。
         1つ目：`[button]`が`label`・`fn`両方省略時に一律`throw`していたが、本家
         `LayerMng.ts:1101`は`hArg.fn ??= this.scrItr.scriptFn`でfnを常にカレントスクリプトへ
@@ -220,6 +221,31 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         bluesnovel（sn_gallery駆動）のblendmodeプロジェクトを比較し、normal/add/multiply/
         screenの4種いずれも背景画像・2枚の合成画像とも完全一致することを確認済み。
         `bun test`（1684件）・`tsc --noEmit`とも回帰無し
+  - [x] `tag_tsy`で発見・修正：**`[button call=true]`が`[wait_tsy canskip=false]`等の
+        ブロッキング待機中はクリックしても一切反映されない**不具合（pause/resumeボタンが
+        全く効かず、アニメが止まらない）。原因は`ScriptMng.ts`の`#goSafe()`が「クリックでの
+        読み進め」と「ボタン/イベントのcall/jump割り込み」を同じゲートで扱っていたこと。
+        `[button ... call=true label=*pause]`クリック時は`#jumpToLabelAndGo()`→
+        `engine.callToLabel(label)`でエンジンのカーソルを`*pause`ラベルへ移すが（本家と同じ
+        コールスタックpush）、続けて呼ぶ`#goSafe()`は`#tsyWaiting`（`[wait_tsy]`の待機状態）を
+        見て`canskip=false`なら即`return`し、`#runStep()`を一切呼ばないため、`[pause_tsy]`が
+        実行されるのは**待機中のトゥイーンが自然終了した後**になり、体感上ボタンが無効化されて
+        いた（playwright-cliでクリック後10秒間位置が変化し続けることを確認して特定）。
+        `callToLabel()`は戻り先を`--this.#idx`（1つ前）で積むため、`[return]`は「割り込まれた
+        待ちタグそのもの」を再実行する設計（本家`#doReturn()`のコメント「[p]タグ自体が
+        再実行される」と同じ規約）。`[wait_tsy]`はこの再実行が完全に冪等（動いているトゥイーンの
+        有無を見るだけ、`ScriptEngine.ts`の`case 'wait_tsy'`も副作用なし）なため、`#goSafe()`に
+        `viaCall`引数を追加し、`#jumpToLabelAndGo()`からの呼び出し（`#goSafe(true)`）に限り
+        `#tsyWaiting`のゲートをバイパスして即座に`#runStep()`を回すよう修正（`src/ts/ScriptMng.ts`）。
+        `[trans]`/`[wait]`/`[quake]`等の他の待ちタグは再実行すると演出自体が再発火してしまう
+        （`[wait_tsy]`のような存在チェックの冪等実装が無い）ため、同じ理屈でのバイパスはできず
+        今回は対象外のまま。playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を
+        比較し、pause/resumeボタンのクリックで正しくトゥイーンが停止・再開する（3回連続で
+        位置固定・再開とも安定）ことを確認済み。`bun test`（1684件）・`tsc --noEmit`とも回帰無し。
+        なお同時に洗い出した以下は対応不要・保留のまま：`[button onenter=/onleave=]`は
+        `[link]`と全く同じ理由（`todo.md`保留セクション参照）で未実装（属性自体を読んでいない）、
+        `[wait_tsy arrive=]`は無視（値をストアへ直接書く設計上、常時ON相当になるだけで実害なし。
+        `ScriptEngine.ts`にコメント済み）、`[dump_script]`はsn_extension連携停止に伴う既知の保留
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

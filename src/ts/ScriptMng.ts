@@ -520,13 +520,24 @@ export class ScriptMng {
 			this.myTrace(`[button]/[event] ジャンプ先エラー fn:${fn || engine.fn} ${String(e)}`, 'ET');
 			return;
 		}
-		this.#goSafe();
+		this.#goSafe(true);
 	}
 
 	// #runStep()は非同期になったので、投げっぱなしにせずここで握る。
 	//	myTrace(…, 'ET')は表示後にthrowする仕様なので、そのままだと未処理のPromise拒否になる
 	//	（同期だった頃はDOMイベントハンドラまで抜けていた）。表示は済んでいるので握って良い
-	#goSafe() {
+	// viaCall＝[button]/[event]のcall/jump予約（jumpToLabelAndGo経由）からの呼び出しか。
+	//	通常のクリック読み進めと違い、callToLabel()が積んだ戻り先は「割り込まれた待ちタグ自身」
+	//	（--idxで1つ戻して積むため、[return]はそのタグを再実行する。本家 #doReturn()のコメント
+	//	参照）なので、[wait_tsy]待ち中でも安全に今すぐ実行してよい：[pause_tsy]等を含む呼び先を
+	//	[return]まで走らせても、戻った先で同じ[wait_tsy]が再実行され、動いているトゥイーンが
+	//	あれば（#waitTsy()参照。存在チェックだけの副作用無い実装）そのまま待ちに戻るだけで済む。
+	//	tag_tsyのpause/resumeボタン（[button call=true label=*pause]）が、canskip=false指定の
+	//	[wait_tsy]中はクリックしても#runStep()が一切呼ばれず待ちが自然終了するまで無視され続ける
+	//	不具合として発見（2026-08-21）。[trans]/[wait]/[quake]等の他の待ちタグは再実行すると
+	//	演出そのものが再発火してしまう（[wait_tsy]のような存在チェックの冪等実装が無い）ため、
+	//	同じ理屈でのバイパスはできず対象外のまま
+	#goSafe(viaCall = false) {
 		// [s]で停止中は、クリック・キーでは進まない（進めるのは[event]/[button]の予約だけ）。
 		//	本家 ReadingState_wait4Tag も、タグ名が's'のときだけonUserActを付けずに待つ。
 		//	[waitclick]は同じ停止でもクリックで進む（＝ここを通らない）
@@ -543,7 +554,7 @@ export class ScriptMng {
 			if (this.#waiting.canskip) this.#endWait();
 			return;
 		}
-		if (this.#tsyWaiting) {
+		if (this.#tsyWaiting && ! viaCall) {
 			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
 			return;
 		}

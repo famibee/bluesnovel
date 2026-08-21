@@ -6516,10 +6516,10 @@ var ts = class t {
 				this.myTrace(`[button]/[event] ジャンプ先エラー fn:${n || r.fn} ${String(e)}`, "ET");
 				return;
 			}
-			this.#k();
+			this.#k(!0);
 		}
 	}
-	#k() {
+	#k(e = !1) {
 		if (!this.#A) {
 			if (this.#R) {
 				this.#R.canskip && this.#V();
@@ -6529,7 +6529,7 @@ var ts = class t {
 				this.#Y.canskip && this.#Z();
 				return;
 			}
-			if (this.#$) {
+			if (this.#$ && !e) {
 				this.#$.canskip && this.#ae(this.#$.tw_nm);
 				return;
 			}
