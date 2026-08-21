@@ -78,7 +78,11 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 		if (! o.pic) {
 			sty.fontSize = `${String(h)}px`;	// 本家も fontSize:height（Button.ts:133）
 			sty.lineHeight = 1;
-			sty.padding = 0;	// 箱に文字をぴったり収めたいので padding 無し（fit実測の基準を素の文字寸法にする）
+			// padding:5pxは基本CSS（styBtn）まかせ（本家 Button.ts:126 TextStyle.padding:5と同じ値）。
+			//	本家はpixi Text.widthセット時、canvas全体（文字+padding*2）を基準にスケールするため
+			//	（@pixi/text text.mjs updateText()）、fit実測もpadding込みのoffsetWidth/Heightで
+			//	揃える必要がある。以前ここをpadding:0にしていたため、本家よりpadding分だけ
+			//	scaleが過大になり、隣接ボタンと文字が重なって見えていた
 		}
 		sty.boxSizing = 'border-box';
 	}

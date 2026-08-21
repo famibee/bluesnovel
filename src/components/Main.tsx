@@ -36,6 +36,11 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const title = useStore(s=> s.title);
 	const addTitle = useStore(s=> s.addTitle);
 	useTitle(title);
+	// 本家 SysWeb.ts:248 titleSub()：document.titleだけでなく[data-title]要素も更新する
+	//	（sn_galleryのナビゲーションバーの現在地表示等がこれを見ている）
+	useEffect(()=> {
+		document.querySelectorAll('[data-title]').forEach(v=> {v.textContent = title});
+	}, [title]);
 
 	const addLayer = useStore(s=> s.addLayer);
 	const chgPic = useStore(s=> s.chgPic);

@@ -1200,7 +1200,11 @@ function Et(e, t, n) {
 }
 function Dt({ arg: e, inited: t }) {
 	let { heStage: n, sys: r, scrMng: i } = e, o = a((e) => e.title), s = a((e) => e.addTitle);
-	ne(o);
+	ne(o), (0, g.useEffect)(() => {
+		document.querySelectorAll("[data-title]").forEach((e) => {
+			e.textContent = o;
+		});
+	}, [o]);
 	let c = a((e) => e.addLayer), l = a((e) => e.chgPic), u = a((e) => e.chgBAlpha), f = a((e) => e.chgStr), p = a((e) => e.chgLay), m = a((e) => e.defChStyle), h = a((e) => e.setChWait), v = a((e) => e.setAutowc), y = a((e) => e.getLaySty), b = a((e) => e.getPages), x = a((e) => e.chgBPic), S = a((e) => e.chgBackClear), ee = a((e) => e.setBackAlpha), te = a((e) => e.setBtnFont), w = a((e) => e.getPagesJson), re = a((e) => e.replace), T = a((e) => e.toggleFullScr), E = a((e) => e.clearLay), D = a((e) => e.clearTxtLay), ie = a((e) => e.moveLay), O = a((e) => e.chgFilter), k = a((e) => e.enableEvent), A = a((e) => e.addBtn), j = a((e) => e.setReadBack), M = a((e) => e.setStyPaging), N = a((e) => e.isReadBack), P = a((e) => e.isTyping), F = (0, g.useRef)(P);
 	F.current = P;
 	let ae = a((e) => e.requestSkip), oe = a((e) => e.setWait), I = a((e) => e.setSkipping), se = a((e) => e.startTrans), ce = a((e) => e.finishTrans), le = a((e) => e.startQuake), ue = a((e) => e.finishQuake);

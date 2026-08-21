@@ -25,8 +25,7 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 - [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
       bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`（一目で複数機能が
       確認できるトップページ）から着手し、playwright-cliでの実機確認により以下のバグを
-      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`ruby`の残り
-      （[tcy]横書き時の描画幅が本家よりやや広い・right/121/even/1ruby未比較）または`filter`等）：
+      発見・修正済み（コアタグ系→プラグイン系の優先順で継続中。次は`blendmode`等）：
   - [x] `ch_button`（文字ボタン・リンク）で2件発見・修正。
         1つ目：`[button]`が`label`・`fn`両方省略時に一律`throw`していたが、本家
         `LayerMng.ts:1101`は`hArg.fn ??= this.scrItr.scriptFn`でfnを常にカレントスクリプトへ
@@ -147,6 +146,62 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         サイズのまま）に修正（`src/components/Stage.tsx`の`calcScale()`）。狭い/広い両方の
         ビューポートで本家と実測一致することを確認済み。`bun test`（1684件）・`tsc --noEmit`
         とも回帰無し
+  - [x] `ruby`の残り（[tcy]横書き時の描画幅が本家よりやや広い・right/121/even/1ruby未比較）を検証。
+        playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を同一ビューポート
+        (1010×800)、`getBoundingClientRect()`・`getComputedStyle()`によるDOM実測で比較（目視の
+        スクリーンショットはCSS px≠表示pxの誤認を招きやすく、今回も一度誤診しかけたため使わず）：
+        `[tcy]`の描画幅（`t=628 r=炎`・`t=451 r=華氏`）は本家と完全一致（両者とも
+        59.140625px・59.25px）。todo記載の「本家よりやや広い」差は、同じ8/21に先述の
+        `TxtLayer.tsx`フォントサイズ既定値修正（`xxx-large`→24px。ch_button項参照）の副次効果で
+        解消済みと判明。`r_align`（無指定/left/center/right/justify/121/even/1rubyの全8種）は、
+        各行主題の複数文字ルビ（`奇天烈大百科《…｜るびもじ》`、4字ルビ／6字ベース）で`rt`要素の
+        computed styleを比較し、bluesnovel（`padding-inline`）と本家（`padding-left`+
+        `padding-right`個別指定）が数値まで完全一致（例：121は両者とも`calc(1em)`、evenは
+        `calc(1.6em)`）することを確認。`TxtLayer.tsx`の`styRAlign()`は本家`#mkStyle_r_align()`の
+        再現として正確と判明。副次的な発見として、同じ行の単漢字ルビ（`蜊《…｜あさり》`、
+        ベース1字に対しルビ3字＝`styRAlign()`内`len-rb.length<0`の早期returnケース）へ
+        r_align=justify/121/even/1rubyを指定すると、**本家自体がそのルビ以降の行内容を丸ごと
+        描画しない**（`row.textContent`が「奇天烈大百科るびもじ」で止まり、後続の
+        「・蜊《…》」やeven/1ruby等のラベル文字列が本家では一切出ない）不具合を発見。bluesnovel
+        はこのケースでも行全体を最後まで描画するが、該当ルビの`r_align`は`text-align: 121;`の
+        ようなCSSとして無効な値になりブラウザへ黙って破棄される（結果はブラウザ既定のruby配置
+        へフォールバックするだけで見た目は破綻しない）。本家自体がこの組み合わせで壊れており
+        比較対象が無い＋bluesnovel側は文字欠落もクラッシュも起きていないため、過去の
+        `wheel.y<0`/`gamepadconnected`と同じ「本家自体が死んでいる記法」の扱いとして対応不要と
+        判断。なお`縦書き`ボタンは`sn_gallery`のmain.snにのみ存在し本家GH Pages版
+        （`famibee.github.io/SKYNovel_gallery`）には無い（`document.body.textContent`に
+        「縦書き」が含まれないことを確認）ため縦書きでのr_align比較は本家参照が無く対象外。
+        bluesnovel単体の縦書き表示は目視で崩れ無し確認（ルビ位置・tcy・改行とも正常）。
+        コード変更は無し（検証のみ）
+  - [x] `filter`で2件発見・修正。
+        1つ目：ページタイトル（`[title]`）を切り替えても、sn_gallery側ナビゲーションバーの
+        現在地表示（`index_app.html`の`<span data-title>`、本家`SysWeb.ts:248`の`titleSub()`が
+        `document.title`と一緒に更新する仕組み）が初回の「top page」のまま更新されなかった。
+        `document.title`自体はreact-useの`useTitle()`で正しく更新されていたが、bluesnovelには
+        `[data-title]`要素を更新する処理が無かった（本家からの移植漏れ）。`Main.tsx`に
+        `useEffect(()=> {document.querySelectorAll('[data-title]').forEach(v=> {v.textContent = title})}, [title])`
+        を追加して対応
+        2つ目：**[button]の文字ボタンが横に並ぶと、本家より過剰に重なって表示される**不具合
+        （「blur noise」が「blumoise」のように重なって見える）。`BtnLayer.tsx`の
+        `styBtnArg()`が文字ボタンに`padding: 0`を明示していた（「fit実測の基準を素の文字寸法に
+        する」という当時の意図的コメント付き）のに対し、本家`Button.ts:126`のpixi
+        `TextStyle`は`padding: 5`。pixi `Text.updateText()`
+        （`@pixi/text/dist/esm/text.mjs:1462`）はcanvas全体を`文字の実測幅 + padding*2`で
+        確保し、`Sprite.width`セッター（`scale.x = value / texture.orig.width`）がその
+        padding込みの幅を基準にスケールを計算する。つまり本家は「箱幅100pxに文字＋余白10pxを
+        収める」計算をしているのに、bluesnovelは「箱幅100pxに文字だけを収める」計算をしていたため、
+        本家よりtransform:scaleが過大になり隣接ボタンと重なっていた。`padding: 0`の指定を削除し、
+        基本CSS（`styBtn`）側の`padding: 5px`をそのままfit実測にも使わせる形に修正。
+        playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を同一ビューポート
+        （1010×800・1280×900）で比較し、両方とも「blur noise」等の間隔がほぼ一致することを
+        確認済み。`blur`フィルタ・`[fg_squat]`（屈伸）アニメーションの動作も実機確認済み。
+        `bun test`（1684件）・`tsc --noEmit`とも回帰無し。
+        なお以下は実機比較で見つかったが**バグではなく既知の意図的な試作実装**と判明：
+        `[l]`待ちマーカー（`breakline`アセット未登録時の既定絵文字🩷。本家は`breakLine`が
+        空関数で何も表示しない仕様だが、bluesnovelは`docs/tag.html`に明記済みの「試作の絵文字」）、
+        文字レイヤの既定aquamarine背景＋オレンジ点線枠（`TxtLayer.tsx:480`のコメントに
+        「テンプレが期待する見た目ではない」既定色と明記済み。`b_color`未指定時に文字がある
+        層を可視化する開発用の目印）
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 
