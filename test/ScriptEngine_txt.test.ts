@@ -106,18 +106,28 @@ it('tcy_requiresT', ()=> {
 	expect(()=> units('[tcy r=炎]')).toThrow('[tcy] tは必須です');
 });
 
+// [link]は既定で赤背景が付く（本家 LayerMng.ts:1029-1031。style/style_hover/style_clickedの
+//	既定値で、リンクだと分かる見た目にする）。以下のテストで毎回書くのを避けるため定数化
+const LNK_DEFAULT_STYLE = 'background-color: rgba(255,0,0,0.5);';
+const LNK_DEFAULT_S = {s: LNK_DEFAULT_STYLE};
+const LNK_DEFAULT_HOVER_CLICK = {
+	sh: 'background-color: rgba(255,0,0,0.9);',
+	sc: LNK_DEFAULT_STYLE,
+	rsh: 'background-color: rgba(255,0,0,0.9);',
+};
+
 it('link_marksUnitsUntilEndlink', ()=> {
 	expect(units('あ[link label=*goal]いう[endlink]え')).toEqual([
 		{c: 'あ'},
-		{c: 'い', lnk: {label: '*goal', fn: '', call: false, arg: ''}},
-		{c: 'う', lnk: {label: '*goal', fn: '', call: false, arg: ''}},
+		{...LNK_DEFAULT_S, c: 'い', lnk: {label: '*goal', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK}},
+		{...LNK_DEFAULT_S, c: 'う', lnk: {label: '*goal', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK}},
 		{c: 'え'},
 	]);
 });
 
 it('link_callFnArg', ()=> {
 	expect(units('[link fn=sub label=*g call=true arg=x]あ[endlink]')).toEqual([
-		{c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: 'sub', call: true, arg: 'x', ...LNK_DEFAULT_HOVER_CLICK}},
 	]);
 });
 
@@ -129,7 +139,7 @@ it('link_url', ()=> {
 	// [link url=…]はラベルへ飛ばずURLを開く（本家も「指定時は fn・label を無視する」）。
 	//	開くのはDOM側＝[navigate_to]と同じ経路（ScriptMng.navigateTo）
 	expect(units(`[link url='https://example.com/']あ[endlink]`)).toEqual([
-		{c: 'あ', lnk: {label: '', fn: '', call: false, arg: '', url: 'https://example.com/'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '', fn: '', call: false, arg: '', url: 'https://example.com/', ...LNK_DEFAULT_HOVER_CLICK}},
 	]);
 });
 
@@ -156,7 +166,7 @@ it('graph_requiresPic', ()=> {
 it('link_hint', ()=> {
 	// [link hint=…]も[button]と同じ吹き出し（Hint.ts）。表示単位に運ぶだけ
 	expect(units(`[link label=*g hint=ヒント hint_style="color: red;" hint_opt='{"placement": "bottom"}']あ[endlink]`))
-		.toEqual([{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '',
+		.toEqual([{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK,
 			hint: 'ヒント', hs: 'color: red;', ho: `{"placement": "bottom"}`}}]);
 });
 
@@ -166,23 +176,23 @@ it('link_hint', ()=> {
 
 it('linkSe_clickse', ()=> {
 	expect(units('[link label=*g clickse=ok]あ[endlink]')).toEqual([
-		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', clickse: 'ok', clicksebuf: 'SYS'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK, clickse: 'ok', clicksebuf: 'SYS'}},
 	]);
 });
 
 it('linkSe_bufDefaultsToSYS', ()=> {
 	// bufの既定は'SYS'（本家 EventMng.ts:466,475,484）。[playse]自体の既定'SE'とは別
 	expect(units('[link label=*g enterse=hover]あ[endlink]')).toEqual([
-		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', enterse: 'hover', entersebuf: 'SYS'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK, enterse: 'hover', entersebuf: 'SYS'}},
 	]);
 	expect(units('[link label=*g leavese=bye]あ[endlink]')).toEqual([
-		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', leavese: 'bye', leavesebuf: 'SYS'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK, leavese: 'bye', leavesebuf: 'SYS'}},
 	]);
 });
 
 it('linkSe_bufOverridable', ()=> {
 	expect(units('[link label=*g clickse=ok clicksebuf=BGM]あ[endlink]')).toEqual([
-		{c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', clickse: 'ok', clicksebuf: 'BGM'}},
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '', ...LNK_DEFAULT_HOVER_CLICK, clickse: 'ok', clicksebuf: 'BGM'}},
 	]);
 });
 

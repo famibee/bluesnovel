@@ -13,6 +13,7 @@
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import {Script} from '../src/ts/Script';
 import {Grammar} from '../src/sn/Grammar';
+import {plainOf, setEscape, splitCh} from '../src/ts/Txt';
 
 import {expect, it} from 'bun:test';
 
@@ -159,13 +160,36 @@ it('script_sharesGrammarInstance', ()=> {
 });
 
 it('escape_charIsStrippedOnDisplay', ()=> {
-	// エスケープ文字を設定すると「\[」はタグにならず、表示時に「[」だけになる
+	// エスケープ文字を設定すると「\[」はタグにならず、表示時に「[」だけになる。
+	//	1文字目を落とすのは表示直前のsplitCh()（本家 RubySpliter.putTxt()と同じ設計）。
+	//	chgStrの時点のstrはエスケープシーケンスを含んだ生の文字列のまま運ばれる
+	//	（ここで先に剥がしてしまうと、\｜のように剥がした残りの文字がsplitCh側で
+	//	改めて特殊記号として解釈されてしまう不具合になる。escape項目参照）
 	const grm = new Grammar;
 	grm.setEscape('\\');
-	//	素材は「\[esc\]\;\&\\」＝ [ esc ] ; & \ を表示させたいもの
-	const se = new ScriptEngine(new Script('t1', '\\[esc\\]\\;\\&\\\\[s]', grm));
-	const a = se.step();
-	expect(a.filter(v=> v.t === 'chgStr').at(-1)).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: '[esc];&\\'});
+	setEscape('\\');	// splitCh()が使うRubySpliterはGrammarと別インスタンス（ScriptMng.tsが両方呼ぶ）
+	try {
+		//	素材は「\[esc\]\;\&\\」＝ [ esc ] ; & \ を表示させたいもの
+		const se = new ScriptEngine(new Script('t1', '\\[esc\\]\\;\\&\\\\[s]', grm));
+		const a = se.step();
+		const str = a.filter(v=> v.t === 'chgStr').at(-1);
+		expect(str).toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: '\\[esc\\]\\;\\&\\\\'});
+		expect(plainOf(splitCh((str as {str: string}).str))).toBe('[esc];&\\');
+	} finally {setEscape('')}	// 他テストのsplitCh()前提（エスケープ未設定）を壊さない
+});
+
+it('escape_pipeNotReinterpretedAsRuby', ()=> {
+	// \｜の直後に《…》が続いても、剥がされた｜がルビ記法として再解釈されてはいけない
+	//	（sn_galleryのescapeプロジェクトで実機発見：\｜が消えて表示されない不具合の再現）
+	const grm = new Grammar;
+	grm.setEscape('¥');
+	setEscape('¥');
+	try {
+		const se = new ScriptEngine(new Script('t1', '¥｜¥¥母様《おっかさん》[s]', grm));
+		const a = se.step();
+		const str = a.filter(v=> v.t === 'chgStr').at(-1);
+		expect(plainOf(splitCh((str as {str: string}).str))).toBe('｜¥母様');
+	} finally {setEscape('')}
 });
 
 it('escape_notSet_bracketStartsTag', ()=> {

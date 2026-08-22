@@ -1664,9 +1664,8 @@ var ke = class {
 				if (this.#te(r, i, e) === "stop") return e;
 				continue;
 			}
-			let r = t, i = this.#g.grm.ce;
-			if (i && t.length > 1 && t.startsWith(i)) r = t.slice(1);
-			else if (n === 38) {
+			let r = t, i = this.#g.grm.ce, a = !!i && t.length > 1 && t.startsWith(i);
+			if (!a && n === 38) {
 				if (!t.endsWith("&")) {
 					this.#Q(t);
 					continue;
@@ -1674,8 +1673,8 @@ var ke = class {
 				if (t.charAt(1) === "&") throw "「&表示&」書式では「&」指定が不要です";
 				let e = this.#k.parse(t.slice(1, -1));
 				r = e == null ? "" : String(e);
-			} else if (n === 59) continue;
-			else if (n === 42 && t.length > 1) continue;
+			} else if (!a && n === 59) continue;
+			else if (!a && n === 42 && t.length > 1) continue;
 			this.#le(e, r);
 		}
 		return e;
@@ -2016,7 +2015,7 @@ var ke = class {
 			}
 			case "link": {
 				if (!i.url && !i.label && !i.fn) throw "[link] fn・label・urlのいずれかは必須です";
-				i.clickse !== void 0 && (i.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (i.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (i.leavesebuf = i.leavesebuf || "SYS");
+				i.clickse !== void 0 && (i.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (i.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (i.leavesebuf = i.leavesebuf || "SYS"), i.style ??= "background-color: rgba(255,0,0,0.5);", i.style_hover ??= "background-color: rgba(255,0,0,0.9);", i.style_clicked ??= i.style;
 				let { nm: e, page: t } = this.#ce(i);
 				return this.#le(a, n.#se("link", {
 					...i,

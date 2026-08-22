@@ -898,7 +898,41 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 		return;
 	}
 
-	void loadSheet(src).then(sh=> {if (sh) box.classList.add(aniSpriteClass(sh))});
+	void loadSheet(src).then(sh=> {
+		if (! sh) return;
+		// gw/gh省略時、シート用CSSクラスはコマ実寸(fw×fh)をpx固定で持つため、
+		//	つけただけだと文字サイズをはみ出す（本家はDOM実測でsp.width/heightへ強制する
+		//	＝TxtStage.ts:560）。background-positionがkeyframesにpx直書きのため
+		//	background-sizeでは縮小できず、実寸のまま描くinner要素をtransform:scaleで
+		//	縮小し、box側はoverflow:hiddenで縮小後のぶんだけ場所を取る（占有スペースに
+		//	transformを混ぜるとscaleが二重に掛かってしまうため、占有と描画を要素で分離）。
+		//	box自身がまだフラグメント内で未接続なことがある呼び出し元と違い、
+		//	loadSheet()はfetchを挟むので、このthen内では既にDOM接続済み
+		if (o.gw === undefined && o.gh === undefined) {
+			const {width: natW, height: natH} = box.getBoundingClientRect();
+			if (natW > 0 && natH > 0) {
+				box.style.display = 'inline-block';
+				box.style.position = 'relative';
+				box.style.overflow = 'hidden';
+				box.style.width = `${String(natW)}px`;
+				box.style.height = `${String(natH)}px`;
+				box.style.verticalAlign = 'text-bottom';
+				// 絶対配置で通常のインラインフローから外す（そうしないとinner本来の実寸
+				//	(fw×fh)がインラインフローの占有幅として扱われ、box幅を超えた分が
+				//	上下左右どちらへクリップされるか不定になる）
+				const inner = document.createElement('span');
+				inner.classList.add(aniSpriteClass(sh));
+				inner.style.position = 'absolute';
+				inner.style.left = '0';
+				inner.style.top = '0';
+				inner.style.transformOrigin = 'top left';
+				inner.style.transform = `scale(${String(natW / sh.fw)}, ${String(natH / sh.fh)})`;
+				box.appendChild(inner);
+			}
+			else box.classList.add(aniSpriteClass(sh));
+		}
+		else box.classList.add(aniSpriteClass(sh));
+	});
 }
 
 // [link]区間の1単位をクリックできるようにする。

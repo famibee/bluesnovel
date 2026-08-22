@@ -60,7 +60,7 @@
 		"@types/react-dom": "^19.2.4",
 		"@typescript/typescript6": "^6.0.2",
 		"electron": "^43.4.1",
-		"eslint": "^10.8.1",
+		"eslint": "^10.9.0",
 		"eslint-plugin-import": "^2.32.0",
 		"eslint-plugin-jest": "^29.16.1",
 		"globals": "^17.11.0",

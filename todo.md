@@ -311,6 +311,105 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         崩れ方は`top`より大きい。幅70%既定を本家準拠（コンストラクタ既定＝ステージ幅一杯、
         `[link]`項目記載の`TxtLayer.ts:272`）へ寄せるかは全プロジェクトの文字レイヤに影響する
         変更のため、`sound`検証のスコープ外として今回は見送り、着手する場合は改めて判断
+  - [x] `anime_png`で発見・修正：**`[graph]`本文中インライン画像にアニメpngシート（.json）を
+        指定すると、文字サイズへ縮小されず元のコマ実寸のまま巨大に表示され、後続の文字位置も
+        崩れる**不具合（`い[graph pic=clock r=るび]`の時計が120px角、`[span style='font-size:
+        100px;'][graph pic=blink]`の目が420px角で表示され、レイアウトが総崩れになっていた）。
+        本家`TxtStage.ts:560`の`#spWork()`は`sp.width = rct.width; sp.height = rct.height;`で
+        pixi Spriteの寸法を**DOM実測（`&emsp;`1文字ぶんの矩形）へ常に強制**することで、
+        width/height属性の有無に関わらず既定は文字サイズへ縮小される仕組み（明示指定時は
+        `rct`自体をその値で上書きしてから同じ強制を掛ける）。`TxtLayer.tsx`の`elGraph()`は
+        静止画（背景画像+`background-size: contain`）ではboxの自然サイズに収まり結果的に
+        本家と同じ絵になっていたが、アニメpngシートは`aniSpriteClass()`が生成するCSSクラスが
+        コマ実寸(`width: fwpx; height: fhpx`)をそのまま持つため、gw/gh未指定時にこの制約が
+        一切掛からず素通りしていた（静止画側は「たまたま動いていた」だけで、[graph]全体で
+        「文字サイズへ収める」処理自体が無かったのが根本原因）。`background-position`を
+        `@keyframes`へpx直書きしている都合上`background-size`では縮小できないため、
+        gw/gh未指定時のみ実寸のまま描く`inner`要素（アニメシートのクラスを当てる）を
+        `absolute`配置で追加し、`transform: scale(natW/fw, natH/fh)`（`natW/H`は
+        クラス適用前のbox自体のDOM実測＝本家の`&emsp;`実測に相当）で縮小、box側は
+        `overflow: hidden`で縮小後のぶんだけ場所を取る形に修正（`src/components/TxtLayer.tsx`
+        の`elGraph()`）。**占有スペース（box自体のwidth/height）とtransform:scaleを同じ要素へ
+        重ねるとscaleが二重に掛かってしまう**（60px相当の文字サイズが60×(60/150)=24pxまで
+        縮んでしまう不具合を実装中に一度踏んだ）ため、占有と描画を別要素に分離。また`inner`を
+        通常のインラインフローに置くと実寸(150×150px)がそのままフローの占有幅として扱われ
+        `overflow: hidden`で上下左右どちらかにクリップされて見えなくなる不具合も出たため、
+        box側`position: relative`＋inner側`position: absolute; left:0; top:0;`で
+        インラインフローから外して対処。playwright-cliで本家ギャラリー実機とbluesnovel
+        （sn_gallery駆動）を比較し、時計・まばたき目・虹色丸の3種とも位置・サイズが本家と
+        一致することをDOM実測（`getBoundingClientRect()`、時計は60×60px＝`[lay]`の
+        `font-size: 60px`と一致）で確認済み。`bun test`（1684件）・`tsc --noEmit`とも回帰無し。
+        なお`[lay b_pic=blink_big]`（文字レイヤの**枠画像**へのアニメpngシート適用、本家は
+        顔全体がまばたきする背景として表示）は本家との差分を確認したが、`todo.md`
+        「優先度低」節に既知未対応として記載済み（CSSの`background-image`直指定のみで
+        `.json`シート再生に非対応）のため対応不要。gw/gh明示指定時のシート表示（クラスの
+        `width: fwpx`をインラインスタイルで上書きするだけで`transform`を掛けていない、
+        指定サイズへ縮小されずクリップされるだけの可能性）は今回未検証のまま
+  - [x] `anon_label`は本家ギャラリー実機とplaywright-cliで比較し、無名ラベル（`**`/`***`/`****`
+        の相対探索）によるジャンプ・ループ動作が完全一致することを確認済み（コード変更無し）
+  - [x] `debug`で発見・修正：**`[link]`にstyle未指定時、本家が敷く既定の赤背景
+        （リンクだと視覚的に分かるようにする強調表示）が一切付かない**不具合。本家
+        `LayerMng.ts:1029-1031`の`#link()`は`hArg.style ??= 'background-color:
+        rgba(255,0,0,0.5);'; hArg.style_hover ??= 'background-color: rgba(255,0,0,0.9);';
+        hArg.style_clicked ??= hArg.style;`という既定値を持つが、bluesnovelの
+        `ScriptEngine.ts` `case 'link'`にはこの既定値処理が無く、`main.sn`側で`style=`を
+        明示しないリンク（`debug`の`[dump_lay]`等4本、`ch_button`の「にほんばし」等）が
+        本家では赤背景で強調されるのに対しbluesnovelでは何の強調も無い黒文字のままだった。
+        `ch_button`確認時（8/21）は比較対象のリンクが偶々`style=`明示指定だったため見落として
+        いた。本家と同じ既定値を`case 'link'`へ追加（属性の既定値は1箇所ルールに従いここで
+        確定、`src/ts/ScriptEngine.ts`）。`test/ScriptEngine_txt.test.ts`の`[link]`関連7件が
+        「styleが乗らない」前提のまま失敗したため、既定の赤背景込みの期待値へ更新
+        （`LNK_DEFAULT_STYLE`/`LNK_DEFAULT_S`/`LNK_DEFAULT_HOVER_CLICK`定数を追加して重複を
+        圧縮）。playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を比較し、
+        4本のリンクとも同じ赤背景（`rgba(255,0,0,0.5)`）で強調されることを確認済み（文字色
+        自体は本家が白・bluesnovelが黒だが、本家スタイルは`background-color`のみでtext colorを
+        含んでおらず、テキストレイヤ既定の文字色の話のため別論点・対象外）。`bun test`
+        （1684件）・`tsc --noEmit`とも回帰無し。
+        なお`*before5`（`[err layer=絵 text=ウヒョー]`、存在しないタグ`err`をわざと呼んで
+        「エラー停止時の前五行表示」機能を実演するデモ）は本家では実行すると画面最上部の
+        タイトルバーに赤字で「{E} (fn:main line:20) [err]例外 未定義のタグ【err】です」という
+        エラー表示が出るが、bluesnovelでは何も起きない。原因はエラー処理の欠落ではなく、
+        `ScriptEngine.ts`の`switch`の`default`節（2590行目、コメント「試作では未対応タグは
+        無視（後の本実装で拡充）」）が**未定義タグに遭遇しても例外を投げず`skip`で素通りする**
+        設計そのものにある。本家は未定義タグ＝即例外という設計だが、bluesnovelは多数のタグが
+        まだ未実装（`docs/tag.html`の🔴マーク多数）な試作段階のため、意図的に「無視して読み
+        進める」設計に倒している。これを本家と揃える（未定義タグ＝例外）と、シナリオ中で
+        未実装タグを使っている既存プロジェクトが軒並みエラー停止するようになり影響範囲が
+        エンジン全体に及ぶため、`debug`単体の検証スコープを超えるとして今回は見送り。
+        エラー表示バー自体（`index_app.html`側、console.log/errorの内容を画面上部へ表示する
+        仕組み）は`[dump_lay]`等のconsole.log出力で同じ見た目の表示がbluesnovel側でも動作
+        することを確認済みで、欠けているのは「未定義タグで例外を投げる」部分のみ
+  - [x] `escape`で発見・修正：**エスケープ文字（`¥｜`等）の直後に`《…》`が続くと、剥がした
+        はずの記号がルビ記法として再解釈されて消える**不具合（`¥｜¥¥母様《おっかさん》`が
+        本家では「｜¥母様」＋ルビ「おっかさん」と表示されるのに対し、bluesnovelは先頭の「｜」が
+        消えて「¥母様」のみになっていた）。原因は二重処理。本家は`Grammar.ts`（トークナイザ）が
+        `¥.`パターンで**トークンの境界だけ**を切り、実際にエスケープの1文字目を落とすのは
+        表示直前の`RubySpliter.putTxt()`（`skynovel_esm/src/sn/RubySpliter.ts:72`。理由は
+        コメント通り「PCRE2」で作った正規表現の代替パターンで`ce`グループを最優先に置き、
+        ルビ記法より先にエスケープとして消費させるため）という一発勝負の設計。bluesnovelは
+        本家のRubySpliterを`src/sn/RubySpliter.ts`へ丸移植し`Txt.ts`の`splitCh()`から使って
+        いた（同じく1文字目を落とす処理を持つ）にもかかわらず、`ScriptEngine.ts`の`step()`側
+        （1051-1058行目）に**本家に無い独自の「トークン内でエスケープの1文字目を先に落とす」
+        処理が別途残っていた**（コメント「bluesnovelにRubySpliterはまだ無いので」と書かれて
+        おり、RubySpliter追加前の古い実装が置き去りになっていたと判明）。結果、`¥｜`は
+        `ScriptEngine.ts`側で先に`｜`へ変換されて`chgStr`の`str`（ストアの地の文）に混入し、
+        その`｜`を含む`str`を後段の`splitCh()`（RubySpliter）が処理する際、素の`｜`記号
+        として`｜(?<str>...)《(?<ruby>...)》`パターンに再度マッチしてしまい、ルビ記法へ誤って
+        取り込まれていた（後続の`《おっかさん》`まで丸ごと消費され、結果的に先頭の「｜」も
+        含めて表示から消えていた）。`ScriptEngine.ts`側の1文字目除去処理を削除し、エスケープ
+        シーケンスは2文字のまま`chgStr`まで運び、表示直前の`splitCh()`（RubySpliter）で
+        初めて1文字目を落とす設計に統一（本家と同じ「一発勝負」に揃えた）。`&`/`;`/`*`で
+        始まるエスケープシーケンス（`¥&`/`¥;`/`¥*`）が変数操作・コメント・ラベル定義の分岐へ
+        誤って入らないよう、各分岐に`! isEsc`ガードを追加。`test/ScriptEngine_multifile.test.ts`
+        の`escape_charIsStrippedOnDisplay`は「`chgStr`の`str`は生のエスケープシーケンスの
+        まま」という新しい前提に更新し（1文字目を剥がした結果は`splitCh()`を通してから見る
+        形へ変更）、`escape_pipeNotReinterpretedAsRuby`を新設して今回のバグを再現するテストを
+        追加（テストは`Txt.ts`の`setEscape()`というモジュールグローバル状態を書き換えるため、
+        他テストの「エスケープ未設定」前提を壊さないよう`finally`で必ず`setEscape('')`へ
+        戻す）。playwright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を比較し、
+        `¥｜¥¥母様《おっかさん》¥;¥&¥[¥*、¥@`→`愉快《おも｜しろ》@`（`@`は`char2macro`で
+        `[l][r]`マクロ）の表示・`[jump label=**before]`によるループとも本家と完全一致することを
+        確認済み。`bun test`（1685件）・`tsc --noEmit`とも回帰無し
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

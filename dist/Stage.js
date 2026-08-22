@@ -10696,7 +10696,16 @@ function ku(e, t, n) {
 		return;
 	}
 	R(t).then((t) => {
-		t && e.classList.add(z(t));
+		if (t) {
+			if (n.gw === void 0 && n.gh === void 0) {
+				let { width: n, height: r } = e.getBoundingClientRect();
+				if (n > 0 && r > 0) {
+					e.style.display = "inline-block", e.style.position = "relative", e.style.overflow = "hidden", e.style.width = `${String(n)}px`, e.style.height = `${String(r)}px`, e.style.verticalAlign = "text-bottom";
+					let i = document.createElement("span");
+					i.classList.add(z(t)), i.style.position = "absolute", i.style.left = "0", i.style.top = "0", i.style.transformOrigin = "top left", i.style.transform = `scale(${String(n / t.fw)}, ${String(r / t.fh)})`, e.appendChild(i);
+				} else e.classList.add(z(t));
+			} else e.classList.add(z(t));
+		}
 	});
 }
 function Au(e, t, n, r, i, a, o) {

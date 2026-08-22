@@ -1050,13 +1050,15 @@ export class ScriptEngine {
 
 			let txt = token;
 			const ce = this.#script.grm.ce;	// エスケープ文字（prj.jsonのinit.escape。未設定なら空文字）
-			if (ce && token.length > 1 && token.startsWith(ce)) {
-				// エスケープシーケンス（\[ など）。Grammarが2文字で1トークンにしているので、
-				//	タグやコメントとして解釈されることはない。表示時に1文字目を落とす
-				//	（本家は表示側 RubySpliter.putTxt() で同じことをしている）
-				txt = token.slice(1);
-			}
-			else if (uc === 38) {	// & 変数操作・変数表示（本家 Main.ts:243）
+			// エスケープシーケンス（\[ など）。Grammarが2文字で1トークンにしているので、
+			//	&/;/*等の後続分岐（変数操作・コメント・ラベル定義）には渡さず素通りする。
+			//	**ここでは1文字目を落とさない**：落とした残り1文字（例えば\｜→｜）が
+			//	プレーンな特殊記号としてstrへ混ざると、その後Txt.ts側のRubySpliterが
+			//	ルビ記法として再解釈してしまう（\｜の直後に《…》があると意図せずルビが付く）。
+			//	本家 RubySpliter.putTxt() と同じく、エスケープシーケンスは2文字のまま運び、
+			//	表示直前（splitCh）で初めて1文字目を落とす設計に統一する
+			const isEsc = !! ce && token.length > 1 && token.startsWith(ce);
+			if (! isEsc && uc === 38) {	// & 変数操作・変数表示（本家 Main.ts:243）
 				if (! token.endsWith('&')) {this.#letAmpersand(token); continue}	// ＆代入
 
 				// ＆表示＆：式の評価結果をそのまま文字表示へ回す
@@ -1064,8 +1066,8 @@ export class ScriptEngine {
 				const v = this.#expr.parse(token.slice(1, -1));
 				txt = v === null || v === undefined ? '' : String(v);
 			}
-			else if (uc === 59) continue;	// ; コメント（行末までで1トークン）
-			else if (uc === 42 && token.length > 1) continue;	// * ラベル定義（実行時はスキップ）
+			else if (! isEsc && uc === 59) continue;	// ; コメント（行末までで1トークン）
+			else if (! isEsc && uc === 42 && token.length > 1) continue;	// * ラベル定義（実行時はスキップ）
 
 			// 文字表示（プレーンテキスト＝地の文）
 			this.#appendTxt(aAct, txt);
@@ -1660,6 +1662,11 @@ export class ScriptEngine {
 			if (args.clickse !== undefined) args.clicksebuf = args.clicksebuf || 'SYS';
 			if (args.enterse !== undefined) args.entersebuf = args.entersebuf || 'SYS';
 			if (args.leavese !== undefined) args.leavesebuf = args.leavesebuf || 'SYS';
+			// リンクだと分かる既定の赤背景（本家 LayerMng.ts:1029-1031）。styleは属性の既定値は
+			//	1箇所ルールにより必ずここで確定させる（Txt.ts/TxtLayer.tsxではフォールバックしない）
+			args.style ??= 'background-color: rgba(255,0,0,0.5);';
+			args.style_hover ??= 'background-color: rgba(255,0,0,0.9);';
+			args.style_clicked ??= args.style;
 			const {nm, page} = this.#txtTarget(args);
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('link', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
