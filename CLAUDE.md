@@ -102,6 +102,10 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   - まず軽い呼び出し（`get_current_config`）で生死を見る。
   - タイムアウト後は再実行の前に状態を確認する。
   - シンボル系ツールは `activate_project`（`bluesnovel`）が先に要る。
+- **Claude Code プラグインは未導入**（`security-guidance`/`code-simplifier` を2026-08-23に検討し
+  見送り済み）。ビルトイン skill の `security-review`/`simplify` と機能が重複する上、プラグイン側は
+  Edit/Write・commit のたびに自動でLLM呼び出しが走る分だけコストが増えるため、必要な時に手動で
+  skill を呼ぶ運用のまま。再検討する場合は上記2点の比較から。
 - リリースは `release-please`（`.github/workflows/release-please.yml`+`publish.yml`、
   `release-please-config.json`、npm Trusted Publishing/OIDC。本家 `skynovel_esm` と同じ構成。
   2026-08-19 に `semantic-release` から移行）。`main` への push で release PR
