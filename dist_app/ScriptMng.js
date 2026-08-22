@@ -6478,16 +6478,26 @@ var Zo = class e {
 	#W = !1;
 	#G;
 	#K(e) {
-		clearTimeout(this.#U), this.#W = !0, this.#U = setTimeout(() => this.#q(), e.msec), this.$fncs.startQuake({
+		console.log("DEBUG beginQuake", {
+			msec: e.msec,
+			t: Date.now()
+		}), clearTimeout(this.#U), this.#W = !0, this.#U = setTimeout(() => this.#q(), e.msec), this.$fncs.startQuake({
 			hmax: e.hmax,
 			vmax: e.vmax
 		});
 	}
 	#q() {
-		clearTimeout(this.#U), this.#U = void 0, this.#W = !1, this.$fncs.finishQuake(), this.#G && (this.#G = void 0, this.#k());
+		console.log("DEBUG finishQuake", {
+			t: Date.now(),
+			quakeWaiting: this.#G
+		}), clearTimeout(this.#U), this.#U = void 0, this.#W = !1, this.$fncs.finishQuake(), this.#G && (this.#G = void 0, this.#k());
 	}
 	#J(e) {
-		if (this.#W) {
+		if (console.log("DEBUG waitQuake", {
+			quakeRunning: this.#W,
+			canskip: e,
+			t: Date.now()
+		}), this.#W) {
 			this.#G = { canskip: e };
 			return;
 		}
@@ -6731,13 +6741,21 @@ var Zo = class e {
 			i.ended && n && this.#Te(i), this.#k();
 			return;
 		}
-		i.addEventListener("ended", () => {
-			this.#xe?.fn === e && (this.#xe = void 0, n && this.#Te(i), this.#k());
-		}, { once: !0 }), this.#xe = {
+		this.#xe = {
 			fn: e,
 			canskip: t,
 			stop: n
 		};
+		let a = () => {
+			if (this.#xe?.fn !== e) return;
+			let t = this.#Se(e);
+			if (!t || t.loop || t.ended) {
+				this.#xe = void 0, t?.ended && n && this.#Te(t), this.#k();
+				return;
+			}
+			requestAnimationFrame(a);
+		};
+		requestAnimationFrame(a);
 	}
 	#we() {
 		let e = this.#xe;

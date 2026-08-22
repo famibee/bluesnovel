@@ -691,12 +691,14 @@ export class ScriptMng {
 	#quakeWaiting	: {canskip: boolean} | undefined;
 
 	#beginQuake(act: Extract<T_ENGINE_ACTION, {t: 'quake'}>) {
+		console.log('DEBUG beginQuake', {msec: act.msec, t: Date.now()});
 		clearTimeout(this.#quakeTimer);
 		this.#quakeRunning = true;
 		this.#quakeTimer = setTimeout(()=> this.#finishQuake(), act.msec);
 		this.$fncs.startQuake({hmax: act.hmax, vmax: act.vmax});
 	}
 	#finishQuake() {
+		console.log('DEBUG finishQuake', {t: Date.now(), quakeWaiting: this.#quakeWaiting});
 		clearTimeout(this.#quakeTimer);
 		this.#quakeTimer = undefined;
 		this.#quakeRunning = false;
@@ -707,6 +709,7 @@ export class ScriptMng {
 		this.#goSafe();
 	}
 	#waitQuake(canskip: boolean) {
+		console.log('DEBUG waitQuake', {quakeRunning: this.#quakeRunning, canskip, t: Date.now()});
 		if (this.#quakeRunning) {this.#quakeWaiting = {canskip}; return}
 
 		setTimeout(()=> this.#goSafe(), 0);	// #waitTrans()と同じ事情
@@ -1068,14 +1071,28 @@ export class ScriptMng {
 			return;
 		}
 
-		const done = ()=> {
-			if (this.#videoWaiting?.fn !== fn) return;	// [wv]待機中のクリックで既に打ち切り済み
-			this.#videoWaiting = undefined;
-			if (stop) this.#stopVideo(ve);
-			this.#goSafe();
-		};
-		ve.addEventListener('ended', done, {once: true});
+		// 'ended'イベント購読ではなくrAFでの毎フレームポーリングにする。理由：
+		//	[trans layer=]は対象外レイヤ（動画含む）をback側divにも複製表示する
+		//	（Stage.tsx #trans対象外レイヤの合成、本家 LayerMng.ts:648相当）ため、
+		//	同じ論理名(nm)のGrpLayerがfore/back両divに一時的に2つ存在し、videoタグも
+		//	複製される。本家はpixi.jsのSpriteがHTMLVideoElementを直接参照し続けるため
+		//	同一要素のままだが、こちらはReactでDOM要素そのものを描画するため、trans完了時に
+		//	どちらかがアンマウントされると、最初に見つけたvideo要素へ張った'ended'リスナーが
+		//	消えて二度と発火しない（動画が終わっても[wv]が永久に進まなくなる不具合の原因だった）。
+		//	`#findVideo()`を毎フレーム呼び直せば、要素が差し替わっても常に最新のものを見られる
 		this.#videoWaiting = {fn, canskip, stop};
+		const poll = ()=> {
+			if (this.#videoWaiting?.fn !== fn) return;	// [wv]待機中のクリックで既に打ち切り済み
+			const cur = this.#findVideo(fn);
+			if (! cur || cur.loop || cur.ended) {
+				this.#videoWaiting = undefined;
+				if (cur?.ended && stop) this.#stopVideo(cur);
+				this.#goSafe();
+				return;
+			}
+			requestAnimationFrame(poll);
+		};
+		requestAnimationFrame(poll);
 	}
 	// [wv]待機中のクリックで打ち切る。'ended'は{once:true}なので、まだ発火していなければ
 	//	そのまま残っても無害（done()の#videoWaiting?.fn!==fnガードが二重発火を防ぐ）
