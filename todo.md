@@ -410,6 +410,55 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
         `¥｜¥¥母様《おっかさん》¥;¥&¥[¥*、¥@`→`愉快《おも｜しろ》@`（`@`は`char2macro`で
         `[l][r]`マクロ）の表示・`[jump label=**before]`によるループとも本家と完全一致することを
         確認済み。`bun test`（1685件）・`tsc --noEmit`とも回帰無し
+  - [x] `frame`はplaywright-cliで本家ギャラリー実機とbluesnovel（sn_gallery駆動）を比較し、
+        バグ無しと確認済み（コード変更無し）。`[add_frame]`（`srcdoc`同一オリジンでのフレーム
+        生成）・`[frame visible=]`（表示/非表示切替）・`[set_frame]`（フレームのJS変数へ書込み。
+        `chkTst`/`rngTst`/`radTst`/`txtTst`/`txtArea`の5種）・`[let_frame]`（フレームのJS変数を
+        読戻し、`function=true`でJS関数コールも兼ねる）・`[event key='dom=tst:#id']`
+        （コロン付き＝フレームid指定でのDOM要素イベント検知。`ch_button`項で先に直した
+        コロン無し＝メイン文書対象のバグとは別経路で、こちらは元から正しく動作）を一通り
+        操作（チェックボックス・レンジ・ラジオ・テキスト・テキストエリアの変更、フレームを
+        閉じる、ページ送りでの`**`無名ラベルへのループ）し、いずれも本家と同じタイトルバー表示
+        （`&sys:tst.gallery.import.val_*`相当の値を都度`[title]`へ反映する仕組み）になることを
+        確認。なお目視した`top`のfore面幅70%既定（ステージ幅いっぱいでない）差は`ch_button`・
+        `sound`項で既に既知の意図的差分と判断済みの論点の再検出で、`frame`固有の問題ではない
+  - [x] `import`で確認：`[export]`（プレイデータを`.swpd`ファイルへダウンロード）・
+        `[import]`（ファイル選択→読込）・`[event key='sn:imported']`（インポート完了イベント）は
+        playwright-cliでの実操作（チェック・ラジオ・テキストを変更→エクスポート→リロードで
+        既定値へ戻ることを確認→エクスポート済みファイルをインポート→変更後の値が
+        `frame`側フォームへ正しく復元されることをDOM実測で確認）でバグ無し。ただし検証中、
+        `top`項で既知の「fore面幅70%既定」問題（`ch_button`・`sound`項既出）が、`import`では
+        単なる見た目のズレでなく**実際にリンクがクリックできなくなる実害**として初めて
+        確認された：本家は文字レイヤ幅がステージ幅（750px）いっぱいのため本文
+        「変更し【エクスポート】後、画面リロードしても【インポート】で戻ります」が1行に収まり
+        フレームの上に完全表示されるが、bluesnovelは幅70%既定のため3行に折り返され、3行目の
+        「インポート」リンクがフレーム表示位置（`main.sn`の`[frame id=tst visible=true y=80]`）と
+        重なって**視覚的に隠れクリック不能**（今回はDOM要素へ直接`.click()`して機能確認を継続）。
+        `sound`項では「ボタン群と重なって表示が崩れる」までは確認済みだったが、要素が完全に
+        別要素の下に隠れ操作不能になる実害はこれが初めての確証。幅70%既定を本家準拠へ寄せるかは
+        全プロジェクトの文字レイヤに影響する変更のため`import`単体の検証スコープ外として今回も
+        コード変更は見送るが、実害の重さが増した事実は次回の優先度判断のためここに記録
+  - [x] `tag_page`で発見・修正：**`[event key=… arg=…]`で予約したキー・DOMイベントが発火すると、
+        `arg`が握りつぶされ`&sn.eventArg`が常に空文字列になる**不具合（`[event key=home
+        label=*page arg=oldest]`のようにHome/PageUp/PageDown/End/Enterキーで`[page to=&sn.eventArg]`
+        を呼ぶ定番パターンが、押しても無反応どころか内部的には毎回`[page]属性to「」は異常です`の
+        例外を投げていた）。原因は`ScriptMng.ts`の`fireEvent()`。`engine.beginEvent(key)`が
+        `tmp:sn.eventArg`/`tmp:sn.eventLabel`を正しく設定した直後、`this.jumpToLabelAndGo(ev.label,
+        ev.call, ev.fn)`と**`ev.arg`を渡さずに**呼んでいたため、`jumpToLabelAndGo()`自身の
+        `this.#engine?.setValNochk('tmp:sn.eventArg', arg ?? '')`（`sound`項で直した「argの有無に
+        関わらず毎回設定する」実装。本家`resumeByJumpOrCall()`同様）が`arg=undefined`を受け取り
+        `''`で即座に上書き＝`beginEvent()`が置いた正しい値を消していた。`[button]`/`[link]`は
+        `Stage.tsx`の`onActivate`が`scrMng.jumpToLabelAndGo(label, call, fn, arg)`と4引数すべて
+        直接渡す別経路のため無傷で、キーボード・`dom=`クリック・`sn:imported`等システムイベント
+        経由（＝`fireEvent()`を通る全ての`[event]`）だけがこの巻き添えを受けていた。
+        `fireEvent()`の呼び出しを`this.jumpToLabelAndGo(ev.label, ev.call, ev.fn, ev.arg)`へ修正
+        （`src/ts/ScriptMng.ts`）。この定番パターンを検証する専用のE2Eフィクスチャ
+        （`test/e2e/app/prj_page/main.sn`・`test/e2e/page.e2e.ts`）が既に存在しており、修正前は
+        5件中4件が失敗（Home/PageUp/PageDown/Enterいずれも無反応）することを確認、修正後は
+        5件とも成功に転じた。`event.e2e.ts`・`readback.e2e.ts`・`frame.e2e.ts`（dom=系イベント）
+        22件・`bun test`（1685件）・`tsc --noEmit`とも回帰無し。`frame`・`import`項の検証時は
+        使っていた`[event key='dom=…']`がいずれも`arg`未指定だったため発覚しておらず、`arg`付き
+        イベントを初めて使う`tag_page`で顕在化した
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

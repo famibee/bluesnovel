@@ -6374,7 +6374,7 @@ var Zo = class e {
 		let t = this.#r;
 		if (!t || this.#c.isPaging && this.#u.length > 0 && !this.#u.includes(e)) return !1;
 		let n = t.beginEvent(e);
-		return n ? n.url ? (this.navigateTo(n.url), !0) : (this.jumpToLabelAndGo(n.label, n.call, n.fn), !0) : !1;
+		return n ? n.url ? (this.navigateTo(n.url), !0) : (this.jumpToLabelAndGo(n.label, n.call, n.fn, n.arg), !0) : !1;
 	}
 	async #O(e, t, n) {
 		let r = this.#r;

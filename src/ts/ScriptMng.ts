@@ -498,7 +498,11 @@ export class ScriptMng {
 		// url指定の予約はラベルへ飛ばずURLを開く（本家も fn・label より優先）
 		if (ev.url) {this.navigateTo(ev.url); return true}
 
-		this.jumpToLabelAndGo(ev.label, ev.call, ev.fn);
+		// ev.argはengine.beginEvent()が既にtmp:sn.eventArgへ設定済みだが、jumpToLabelAndGo()は
+		//	「argが渡らなければ空文字列で上書きする」作りなので、ここで渡し忘れると
+		//	[event key=… arg=…]のargが常に空文字列へ潰されてしまう（[button]/[link]は
+		//	Stage.tsxのonActivateが直接argを渡しており影響なし）
+		this.jumpToLabelAndGo(ev.label, ev.call, ev.fn, ev.arg);
 		return true;
 	}
 
