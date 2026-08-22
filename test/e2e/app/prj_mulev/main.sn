@@ -1,0 +1,72 @@
+; E2E用シナリオ（mulev.e2e.ts が使用）。
+;	本家 sn_gallery の mul_ev（複数イベント待ち）のうち、todo.mdに残っていた
+;	「pで始まる7パターン」——効果（quake/fadese/playse/tsy/tsy_frame/trans/lay_mov）が
+;	進行中に[p]で読み進めた直後、後続の待ちタグ（[wq]等）が正しく効果の終了まで
+;	待てるか——を、本家のpixi.js canvas目視比較に頼らずbluesnovel自身のstore/DOMで検証する。
+;	各ブロックの構造は共通：
+;	  効果開始 → 「p.」[p]（ここでクリックしないと絶対に先へ進まないこと自体も確認）
+;	  → 「つづいたX」[待ちタグ]（効果が終わるまでは絶対に「おわったX」へ進まないこと）
+;	  → 「おわったX」（クリック不要で自動的に進むこと）
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 初回ページロード（Viteの初回チャンク読込等）の待ち時間を効果の計測に含めないための
+;	ゲート。ここでのクリックを合図に、以後の各効果はテスト側の操作直後に始まる
+じゅんび[p]
+
+; ---- A: quake + p ----
+[er]
+[quake time=1200 hmax=8 vmax=8]
+p.[p]
+つづいたA[wq]
+[er]おわったA[p]
+
+; ---- B: fadese + p ----
+[er]
+[playse fn=se buf=tst loop=true]
+[fadese volume=0 time=1200 buf=tst]
+p.[p]
+つづいたB[wf buf=tst]
+[er]おわったB[p]
+[stopse buf=tst]
+
+; ---- C: playse + p ----
+[er]
+[playse fn=se]
+p.[p]
+つづいたC[ws]
+[er]おわったC[p]
+
+; ---- D: tsy + p ----
+[er]
+[add_lay layer=twy class=grp fn=asset_pic]
+[lay layer=twy left=0]
+[tsy layer=twy time=1200 left=200]
+p.[p]
+つづいたD[wait_tsy layer=twy]
+[er]おわったD[p]
+
+; ---- E: tsy_frame + p ----
+[er]
+[add_frame id=frm src=frame visible=true width=200 height=150]
+[tsy_frame id=frm time=1200 x=200]
+p.[p]
+つづいたE[wait_tsy id=frm]
+[er]おわったE[p]
+
+; ---- F: trans + p ----
+[er]
+[add_lay layer=trs class=grp fn=asset_pic]
+[lay layer=trs fn=asset_pic page=back]
+[trans layer=trs time=1200]
+p.[p]
+つづいたF[wt]
+[er]おわったF[p]
+
+; ---- G: lay mov + p ----
+[er]
+[add_lay layer=vid class=grp]
+[lay layer=vid fn=movie]
+p.[p]
+つづいたG[wv fn=movie]
+[er]おわったG[s]

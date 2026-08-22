@@ -6604,26 +6604,16 @@ var ts = class t {
 	#W = !1;
 	#G;
 	#K(e) {
-		console.log("DEBUG beginQuake", {
-			msec: e.msec,
-			t: Date.now()
-		}), clearTimeout(this.#U), this.#W = !0, this.#U = setTimeout(() => this.#q(), e.msec), this.$fncs.startQuake({
+		clearTimeout(this.#U), this.#W = !0, this.#U = setTimeout(() => this.#q(), e.msec), this.$fncs.startQuake({
 			hmax: e.hmax,
 			vmax: e.vmax
 		});
 	}
 	#q() {
-		console.log("DEBUG finishQuake", {
-			t: Date.now(),
-			quakeWaiting: this.#G
-		}), clearTimeout(this.#U), this.#U = void 0, this.#W = !1, this.$fncs.finishQuake(), this.#G && (this.#G = void 0, this.#k());
+		clearTimeout(this.#U), this.#U = void 0, this.#W = !1, this.$fncs.finishQuake(), this.#G && (this.#G = void 0, this.#k());
 	}
 	#J(e) {
-		if (console.log("DEBUG waitQuake", {
-			quakeRunning: this.#W,
-			canskip: e,
-			t: Date.now()
-		}), this.#W) {
+		if (this.#W) {
 			this.#G = { canskip: e };
 			return;
 		}

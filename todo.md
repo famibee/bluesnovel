@@ -2,6 +2,12 @@
 
 > **済んだことは `CHANGELOG.md`**（作業ごとの経緯・判断つき）。
 > このtodo.mdは**これからやること**だけを持つ（＝いずれ空になるのが正しい）。
+> 例外：sn_gallery突き合わせ（下記）の`[x]`は、洗い出しフェーズ進行中は**削除せず、他の
+> 項目と同じ1〜2行に縮めて残す**（どこまで洗い出したかの記録として一覧の価値があるため）。
+> **消すのは親項目（洗い出しフェーズ自体）が完了した時に一括**：1件ずつ消すと「どこまで
+> 済んだか」の一覧性が失われるため。詳しい経緯は消す時のコミットメッセージへ（本文を厚く
+> 書いてよい）。未着手フォルダは`[ ]`の明示リストを持つ（`ls sn_gallery/public/prj/`との
+> 毎回の目視突き合わせをしない。1件終えたらそのフォルダ名をこのリストから消し、上の`[x]`へ）。
 
 ## 進め方
 
@@ -48,17 +54,18 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
   - [x] `frame`：本家一致確認（コード変更無し）
   - [x] `import`：本家一致確認（バグ無し。文字レイヤ幅70%既定でリンクがクリック不能になる実害を確認、見送り継続）
   - [x] `tag_page`：`[event key=… arg=…]`でargが握りつぶされる不具合を修正
-  - [ ] `mul_ev`：[trans layer=]実行中に対象外レイヤ（動画含む）がback側divへ複製され、
-        同一レイヤのGrpLayer（video要素）が2重化して`[wv]`の`ended`リスナーを見失う不具合を
-        `#waitVideoPlay`のポーリング化で修正済み（`src/ts/ScriptMng.ts`）。全63パターン
-        （A〜G×9、quake/fadese/playse/tsy/tsy_frame/trans/動画×p/s/ws/wf/wq/wait_tsy/wt/wv/wait）
-        のうちsで始まる/主待ちタグ自身のケースは実測で本家想定通りと確認済み。**残りは`p`で
-        始まる7パターン**（A01/D01/E01/F01等、`[p]`クリック直後に揺れ等がまだ続く状態で後続の
-        待ちタグ（[wq]等）が正しく待てるか）。bluesnovel側はデバッグログで`#quakeRunning`等の
-        内部状態が正しく機能していることを確認済みだが、本家はcanvas描画（pixi.js）でDOM文字列
-        比較が使えず、スクリーンショット目視では`[p]`解除〜改ページクリア〜再表示のタイミングが
-        読み取りづらく、本家との一致・不一致を確証できていない。次回、本家`ScriptIterator.ts`の
-        `[p]`実装を読んで内部処理を正確に追うか、目視検証を再挑戦するかを判断
+  - [x] `mul_ev`：[trans]対象外レイヤ複製でvideo要素が2重化し`[wv]`が進まなくなる不具合を修正。
+        「`p`で始まる7パターン」も本家バグ（トゥイーン枠共有起因）の非該当をE2Eで実測確認済み
+        （詳細は本項目を消すコミットのメッセージ参照）
+  - [x] `top`：上記`[link]`ホバー〜`[lay]`style消える等一連の不具合はここ（ギャラリー本体の
+        メニュー画面）を突き合わせて発見したもの
+  - [x] 凍結：`3d_base`/`3d_efk`/`3d_gltf`/`3d_theta`/`77slide`
+  - [ ] 残り未着手フォルダ（2026-08-23、`ls sn_gallery/public/prj/`と上記`[x]`を突き合わせて
+        洗い出し。以後はこの`[ ]`を消す形で進捗管理する——毎回全件再突き合わせをしない）：
+        `ch_in_out`/`cubism3_layer`/
+        `emote_layer`/`ext_fg`/`ext_fg2`/`ext_for_call`/`font`/`glsl_slide`/`icons`/`kidoku`/
+        `let_zenkaku`/`line_breaking_rules`/`log_and_play`/`multiline`/`simple_novel`/`tag_if`/
+        `tag_quake`/`txt_back`/`txt_back2`
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

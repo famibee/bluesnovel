@@ -1,0 +1,7 @@
+{
+	"main": {":cnt": 1, "sn": "main.sn"},
+	"asset_pic": {":cnt": 1, "png": "asset_pic.png"},
+	"se": {":cnt": 1, "wav": "se.wav"},
+	"movie": {":cnt": 1, "mp4": "movie.mp4"},
+	"frame": {":cnt": 1, "html": "frame.html"}
+}

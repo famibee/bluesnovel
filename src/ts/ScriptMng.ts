@@ -691,14 +691,12 @@ export class ScriptMng {
 	#quakeWaiting	: {canskip: boolean} | undefined;
 
 	#beginQuake(act: Extract<T_ENGINE_ACTION, {t: 'quake'}>) {
-		console.log('DEBUG beginQuake', {msec: act.msec, t: Date.now()});
 		clearTimeout(this.#quakeTimer);
 		this.#quakeRunning = true;
 		this.#quakeTimer = setTimeout(()=> this.#finishQuake(), act.msec);
 		this.$fncs.startQuake({hmax: act.hmax, vmax: act.vmax});
 	}
 	#finishQuake() {
-		console.log('DEBUG finishQuake', {t: Date.now(), quakeWaiting: this.#quakeWaiting});
 		clearTimeout(this.#quakeTimer);
 		this.#quakeTimer = undefined;
 		this.#quakeRunning = false;
@@ -709,7 +707,6 @@ export class ScriptMng {
 		this.#goSafe();
 	}
 	#waitQuake(canskip: boolean) {
-		console.log('DEBUG waitQuake', {quakeRunning: this.#quakeRunning, canskip, t: Date.now()});
 		if (this.#quakeRunning) {this.#quakeWaiting = {canskip}; return}
 
 		setTimeout(()=> this.#goSafe(), 0);	// #waitTrans()と同じ事情
