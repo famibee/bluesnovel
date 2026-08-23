@@ -681,6 +681,15 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.3.4](https://github.com/famibee/bluesnovel/compare/v0.3.3...v0.3.4) (2026-08-23)
+
+
+### Bug Fixes
+
+* **sn:** [lay pos=]後に[tsy left=]で動かすと古いalign_xが残り位置が半幅ぶんズレる不具合を修正 ([9398619](https://github.com/famibee/bluesnovel/commit/9398619925659d16a94198830e6f95bf391cfce4))
+* **sn:** b_picボタンの文字/背景ズレとpic enabled=falseの全体表示を修正 ([4359a11](https://github.com/famibee/bluesnovel/commit/4359a111e155bb349ebcce5e9129369c2a8950db))
+* **sn:** OSの「モーションを減らす」設定で[tsy]の位置移動系属性が瞬時移動になる不具合を修正 ([9398619](https://github.com/famibee/bluesnovel/commit/9398619925659d16a94198830e6f95bf391cfce4))
+
 ## [0.3.3](https://github.com/famibee/bluesnovel/compare/v0.3.2...v0.3.3) (2026-08-23)
 
 
