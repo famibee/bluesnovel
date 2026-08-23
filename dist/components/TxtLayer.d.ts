@@ -41,6 +41,7 @@ export type T_BTN = {
     label: string;
     call?: boolean;
     fn?: string;
+    arg?: string;
     sty?: T_BTN_STY;
 };
 type T_TXTARG = T_LAY_CMN & {

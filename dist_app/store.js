@@ -857,7 +857,7 @@ var $ = K()((e, t) => ({
 		let { idx: i, aLay: a } = Y(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
 		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
-		o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura);
+		o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura), r.left !== void 0 && r.align_x === void 0 && delete o.align_x, r.top !== void 0 && r.align_y === void 0 && delete o.align_y;
 		let s = o.cls === "txt" && r.style !== void 0 ? {
 			...r,
 			style: r.style ? ne(o.style, r.style) : ""

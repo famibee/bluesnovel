@@ -1,12 +1,18 @@
+export type T_FRAME = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    ox: number;
+    oy: number;
+};
 export type T_SHEET = {
     img: string;
-    fw: number;
-    fh: number;
-    cols: number;
-    rows: number;
+    boxW: number;
+    boxH: number;
+    frames: T_FRAME[];
     cnt: number;
     sec: number;
-    isCol: boolean;
 };
 export declare function parseSheet(json: unknown, img: string): T_SHEET | undefined;
 declare let snFetch: (url: string, init?: RequestInit) => Promise<Response>;
@@ -22,5 +28,5 @@ export declare function getNatSize(src: string): {
     h: number;
 } | undefined;
 export declare function aniSpriteClass(sh: T_SHEET, doc?: Document): string;
-export declare function aniSpriteCss({ img, fw, fh, cols, rows, cnt, sec, isCol }: T_SHEET, cls: string): string;
+export declare function aniSpriteCss({ img, boxW, boxH, frames, cnt, sec }: T_SHEET, cls: string): string;
 export {};

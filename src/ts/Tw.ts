@@ -21,6 +21,15 @@
 //	  「以後targetへ触らせない」を保証する
 //	- motionの`onComplete`は、proxyが正確に最終値へ到達したonUpdateの後に来るとは限らない
 //	  （丸め誤差や順序のズレ）ため、`#finished`を立てる前に目標値そのものをtargetへ代入して確定させる
+//	- **motionはOSの「モーションを減らす」(prefers-reduced-motion)設定を、left/top/width/height/
+//	  transform系（`positionalKeys`）の属性だけ勝手に汲み取り、その属性を動かす区間だけ
+//	  瞬時完了（calculatedDuration=0）にする**（motion-dom animateTarget()。対象がDOM要素か
+//	  どうかは関係なく、キー名だけで判定される）。alpha等の非positional属性はこの対象外なので
+//	  影響を受けない。ここが揃わないと「同じ[fg2]呼び出し内でaphaは滑らかに動くのにxだけ瞬時移動
+//	  する」という症状になる（実機ログで確認・2026-08-24）。[tsy]はUIの付随演出ではなく作者が
+//	  明示的に指定する演出そのものなので、OSのアクセシビリティ設定を暗黙に継承すべきではない
+//	  （継承したいなら別途 sn.* 側で明示のオプトインを用意すべき話）→ `reduceMotion: false`で
+//	  明示的にOFFにする
 
 import {animate, type AnimationPlaybackControls} from 'motion';
 
@@ -81,6 +90,9 @@ export class Tw {
 			ease		: this.#ease,
 			repeat		: this.#repeatN,
 			...this.#yoyo ? {repeatType: 'reverse' as const} : {},
+			// 上のコメント参照：OSのreduce-motion設定でleft/top/width/height/scale_*等が
+			//	勝手に瞬時完了にされるのを防ぐ
+			reduceMotion: false,
 			onUpdate	: ()=> {
 				if (this.#finished) return;
 				Object.assign(this.#target, proxy);

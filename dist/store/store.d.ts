@@ -202,6 +202,7 @@ export type T_ADDBTN = {
     label: string;
     call?: boolean;
     fn?: string;
+    arg?: string;
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";

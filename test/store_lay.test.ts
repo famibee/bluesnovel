@@ -75,6 +75,38 @@ it('moveLay_unknownLayerThrows', ()=> {
 });
 
 
+it('chgLay_leftAloneClearsStaleAlignX', ()=> {
+	// [lay pos=]等でalign_x='center'を立てた後、align_xを伴わずleftだけ更新する呼び出し
+	//	（[tsy left=]が代表例）が来たら、古いalign_xは消えるべき（left/align_xは排他）。
+	//	消え残ると新しいleftへ古い-50%translateが二重に乗って表示位置がずれる
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 375, align_x: 'center'}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 87}});
+
+	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e?.left).toBe(87);
+	expect(e?.align_x).toBeUndefined();
+});
+
+it('chgLay_leftWithAlignXOverwrites', ()=> {
+	// align_xを伴う呼び出し（[lay center=/right=]相当）は普通に上書きする
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 375, align_x: 'center'}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 100, align_x: 'right'}});
+
+	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e?.left).toBe(100);
+	expect(e?.align_x).toBe('right');
+});
+
+it('chgLay_topAloneClearsStaleAlignY', ()=> {
+	S().chgLay({nm: 'a', page: 'fore', sty: {top: 480, align_y: 'bottom'}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {top: 50}});
+
+	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e?.top).toBe(50);
+	expect(e?.align_y).toBeUndefined();
+});
+
+
 it('clearLay_allLayers', ()=> {
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: []});
 	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', src: '/pc.png', isSheet: false, isMovie: false, aFace: []});

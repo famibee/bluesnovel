@@ -121,6 +121,7 @@ export type T_ENGINE_ACTION = {
     label: string;
     call?: boolean;
     fn?: string;
+    arg?: string;
     sty?: T_BTN_STY;
 } | {
     t: 'chgLay';

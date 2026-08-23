@@ -8,6 +8,7 @@ export type T_FACE = {
 };
 export type T_FACE_SRC = T_FACE & {
     src: string;
+    isSheet: boolean;
 };
 type T_GRPARG = T_LAY_CMN & {
     sty: CSSProperties;

@@ -6128,6 +6128,7 @@ var Jo = qo(), Yo = class {
 			ease: this.#i,
 			repeat: this.#a,
 			...this.#o ? { repeatType: "reverse" } : {},
+			reduceMotion: !1,
 			onUpdate: () => {
 				this.#f || (Object.assign(this.#e, e), this.#s?.(this.#e));
 			},

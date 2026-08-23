@@ -462,6 +462,16 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			);
 		}
 
+		// left/align_x、top/align_yは排他（本家 Layer.ts:513-532 相当。ScriptEngine.ts:1172の
+		//	コメント参照）。Object.assignは指定したキーだけを上書きするため、align_xを伴わず
+		//	leftだけを更新する呼び出し（[tsy left=]が代表例。「もう寸法込みの絵の左端」を渡してくる
+		//	前提でcenter/right寄せの-50%translateは要らない）が来ても、直前の[lay pos=/center=/right=]
+		//	で立ったalign_xは素通りして残り続け、新しいleftへ古いtranslateが二重に乗って表示位置が
+		//	幅・高さの半分ぶんずれてしまっていた（[fg2]で立ち絵をtsyで動かした後の最終位置が
+		//	本家とズレる不具合の原因）
+		if (sty.left !== undefined && sty.align_x === undefined) delete e.align_x;
+		if (sty.top !== undefined && sty.align_y === undefined) delete e.align_y;
+
 		// styleは属性まるごとの置き換えではなく、本家同様CSSプロパティ単位で既存styleへ足す
 		//	（[lay style='text-shadow:…']だけを送るシーン転換タグが、先に指定済みの
 		//	width/height/writing-mode等を消してしまっていた不具合の修正）

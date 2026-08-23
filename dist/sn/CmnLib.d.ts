@@ -9,6 +9,7 @@ type T_HASH_Arg = {
 };
 export declare function argChk_Num(hash: T_HASH_Arg, name: string, def: number): number;
 export declare function argChk_Boolean(hash: T_HASH_Arg, name: string, def: boolean): boolean;
+export declare function cssColorOf(v: string | number): string;
 export declare function getFn(p: string): string;
 export declare function getExt(p: string): string | undefined;
 export type T_DIP = {
@@ -18,6 +19,7 @@ export declare class CmnLib {
     static init(): void;
     static stageW: number;
     static stageH: number;
+    static bgColor: string;
     static debugLog: boolean;
     static platform: string;
     static plat_desc: string;
