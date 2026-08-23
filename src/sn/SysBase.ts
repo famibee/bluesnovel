@@ -15,7 +15,13 @@ import store from './localStore';
 
 
 // React Developer Toolsのインストールを推されるコンソールメッセージを消す
-(window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = {isDisabled: true};
+// React Developer Tools拡張機能自体が入っている環境では、__REACT_DEVTOOLS_GLOBAL_HOOK__を
+// 拡張機能側がgetterのみで定義済みのことがあり、その場合ここでの代入がTypeErrorになり
+// モジュール初期化全体が止まって画面が真っ白になる。拡張機能がフック済みならこの代入は
+// 不要なので、失敗は無視してよい。
+try {
+	(window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = {isDisabled: true};
+} catch {/* React Developer Tools拡張機能がフック済み */}
 
 type HSysBaseArg = {
 	cur		: string;

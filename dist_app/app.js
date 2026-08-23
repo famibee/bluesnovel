@@ -20,7 +20,9 @@ var r = {
 };
 //#endregion
 //#region src/sn/SysBase.ts
-window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
+try {
+	window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: !0 };
+} catch {}
 var i = "skynovel", a = class {
 	hPlg;
 	arg;
