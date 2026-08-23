@@ -1,6 +1,6 @@
 import { a as e, c as t, o as n, s as r, t as i } from "./CmnLib.js";
 import { t as a } from "./FocusMng.js";
-import { DEF_BTN_FONT as o, f as s, n as c, r as l, s as u, t as d, y as f } from "./store.js";
+import { DEF_BTN_FONT as o, b as s, n as c, p as l, r as u, s as d, t as f } from "./store.js";
 import { o as p, r as m } from "./Sprite.js";
 import { PROTOCOL_USERDATA as h, t as g } from "./Config.js";
 //#region src/sn/AnalyzeTagArg.ts
@@ -1701,7 +1701,7 @@ var ke = class {
 						fn: n,
 						dx: 0,
 						dy: 0,
-						blendmode: f("normal")
+						blendmode: s("normal")
 					});
 				}
 				n.aFace = t;
@@ -1744,7 +1744,7 @@ var ke = class {
 				a.left = e / 2, a.align_x = "center", a.top = t, a.align_y = "bottom";
 			}
 		}
-		if (e.width !== void 0 && (a.width = n.#n("lay", "width", e.width)), e.height !== void 0 && (a.height = n.#n("lay", "height", e.height)), e.rotation !== void 0 && (a.rotation = n.#n("lay", "rotation", e.rotation)), e.scale_x !== void 0 && (a.scale_x = n.#n("lay", "scale_x", e.scale_x)), e.scale_y !== void 0 && (a.scale_y = n.#n("lay", "scale_y", e.scale_y)), e.pivot_x !== void 0 && (a.pivot_x = n.#n("lay", "pivot_x", e.pivot_x)), e.pivot_y !== void 0 && (a.pivot_y = n.#n("lay", "pivot_y", e.pivot_y)), e.blendmode !== void 0 && (a.blendmode = f(e.blendmode)), e.b_color !== void 0 && e.back_clear !== "true" && (a.b_color = n.#n("lay", "b_color", e.b_color)), e.style !== void 0 && (a.style = e.style), e.pl !== void 0 && (a.pl = n.#n("lay", "pl", e.pl)), e.pr !== void 0 && (a.pr = n.#n("lay", "pr", e.pr)), e.pt !== void 0 && (a.pt = n.#n("lay", "pt", e.pt)), e.pb !== void 0 && (a.pb = n.#n("lay", "pb", e.pb)), e.ffs !== void 0 && (a.ffs = e.ffs), e.noffs !== void 0 && (a.noffs = e.noffs), e.bura !== void 0 && (a.bura = e.bura !== "false"), e.kinsoku_sol !== void 0 && (a.kinsoku_sol = e.kinsoku_sol), e.kinsoku_eol !== void 0 && (a.kinsoku_eol = e.kinsoku_eol), e.kinsoku_dns !== void 0 && (a.kinsoku_dns = e.kinsoku_dns), e.kinsoku_bura !== void 0 && (a.kinsoku_bura = e.kinsoku_bura), ie.setting(e), e.r_align !== void 0) {
+		if (e.width !== void 0 && (a.width = n.#n("lay", "width", e.width)), e.height !== void 0 && (a.height = n.#n("lay", "height", e.height)), e.rotation !== void 0 && (a.rotation = n.#n("lay", "rotation", e.rotation)), e.scale_x !== void 0 && (a.scale_x = n.#n("lay", "scale_x", e.scale_x)), e.scale_y !== void 0 && (a.scale_y = n.#n("lay", "scale_y", e.scale_y)), e.pivot_x !== void 0 && (a.pivot_x = n.#n("lay", "pivot_x", e.pivot_x)), e.pivot_y !== void 0 && (a.pivot_y = n.#n("lay", "pivot_y", e.pivot_y)), e.blendmode !== void 0 && (a.blendmode = s(e.blendmode)), e.b_color !== void 0 && e.back_clear !== "true" && (a.b_color = n.#n("lay", "b_color", e.b_color)), e.style !== void 0 && (a.style = e.style), e.pl !== void 0 && (a.pl = n.#n("lay", "pl", e.pl)), e.pr !== void 0 && (a.pr = n.#n("lay", "pr", e.pr)), e.pt !== void 0 && (a.pt = n.#n("lay", "pt", e.pt)), e.pb !== void 0 && (a.pb = n.#n("lay", "pb", e.pb)), e.ffs !== void 0 && (a.ffs = e.ffs), e.noffs !== void 0 && (a.noffs = e.noffs), e.bura !== void 0 && (a.bura = e.bura !== "false"), e.kinsoku_sol !== void 0 && (a.kinsoku_sol = e.kinsoku_sol), e.kinsoku_eol !== void 0 && (a.kinsoku_eol = e.kinsoku_eol), e.kinsoku_dns !== void 0 && (a.kinsoku_dns = e.kinsoku_dns), e.kinsoku_bura !== void 0 && (a.kinsoku_bura = e.kinsoku_bura), ie.setting(e), e.r_align !== void 0) {
 			if (!Se.includes(e.r_align)) throw `[lay] r_alignの値が不正です：${e.r_align}`;
 			a.r_align = e.r_align;
 		}
@@ -1757,7 +1757,7 @@ var ke = class {
 			t: "addFilter",
 			aLayNm: [e.layer ?? ""],
 			page: r,
-			flt: s(e),
+			flt: l(e),
 			replace: !0
 		});
 	}
@@ -1813,7 +1813,7 @@ var ke = class {
 					fn: i.fn || e,
 					dx: Number(i.dx || "0"),
 					dy: Number(i.dy || "0"),
-					blendmode: f(i.blendmode || "normal")
+					blendmode: s(i.blendmode || "normal")
 				}, "skip";
 			}
 			case "lay": {
@@ -1824,7 +1824,7 @@ var ke = class {
 				t: "addFilter",
 				aLayNm: n.#c(i.layer),
 				page: n.#h("add_filter", i, "fore"),
-				flt: s(i),
+				flt: l(i),
 				replace: !1
 			}), "skip";
 			case "clear_filter": return a.push({
@@ -1895,22 +1895,22 @@ var ke = class {
 			case "tsy": {
 				let { layer: e } = i;
 				if (!e) throw "[tsy] layerは必須です";
-				let t = this.skipEnabled, r = t ? 0 : n.#n("tsy", "time", i.time ?? ""), o = t ? 0 : n.#i("tsy", "delay", i.delay, 0), c = n.#i("tsy", "repeat", i.repeat, 1), l = n.argPage(i, "fore");
+				let t = this.skipEnabled, r = t ? 0 : n.#n("tsy", "time", i.time ?? ""), o = t ? 0 : n.#i("tsy", "delay", i.delay, 0), s = n.#i("tsy", "repeat", i.repeat, 1), c = n.argPage(i, "fore");
 				return i.filter !== void 0 && a.push({
 					t: "addFilter",
 					aLayNm: [e],
-					page: l,
-					flt: s(i),
+					page: c,
+					flt: l(i),
 					replace: !0
 				}), a.push({
 					t: "tsy",
 					tw_nm: E("tsy", i),
 					nm: e,
-					page: l,
+					page: c,
 					msec: r,
 					delay: o,
 					ease: me(i.ease),
-					repeat: c > 0 ? c - 1 : Infinity,
+					repeat: s > 0 ? s - 1 : Infinity,
 					yoyo: (i.yoyo ?? "false") !== "false",
 					hTo: le("tsy", i),
 					backlay: (i.backlay ?? "false") !== "false",
@@ -2091,7 +2091,7 @@ var ke = class {
 			}
 			case "ch_in_style":
 			case "ch_out_style": {
-				let t = e === "ch_in_style" ? "in" : "out", { name: n, sty: r } = u(e, i, t === "in");
+				let t = e === "ch_in_style" ? "in" : "out", { name: n, sty: r } = d(e, i, t === "in");
 				if (this.#P[t].has(n)) throw `[${e}] name【${n}】はすでにあります`;
 				return this.#P[t].add(n), a.push({
 					t: "defChStyle",
@@ -2195,23 +2195,23 @@ var ke = class {
 				if (!e) throw "[button] layerは必須です（試作仕様）";
 				let t = i.label ?? "", r = i.fn ?? this.fn, { pic: o } = i;
 				if (!o && !i.text) throw "[button] textまたはpic属性は必須です";
-				let s = i.nm, c = i.call === "true", l = n.argPage(i, "back"), u = {};
-				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (u.s_right = this.#r("button", "left", i.s_right)) : (u.left = this.#r("button", "left", i.right), u.align_x = "right") : (u.left = this.#r("button", "left", i.center), u.align_x = "center") : u.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (u.s_bottom = this.#r("button", "top", i.s_bottom)) : (u.top = this.#r("button", "top", i.bottom), u.align_y = "bottom") : (u.top = this.#r("button", "top", i.middle), u.align_y = "middle") : u.top = this.#r("button", "top", i.top);
+				let c = i.nm, l = i.call === "true", u = n.argPage(i, "back"), d = {};
+				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (d.s_right = this.#r("button", "left", i.s_right)) : (d.left = this.#r("button", "left", i.right), d.align_x = "right") : (d.left = this.#r("button", "left", i.center), d.align_x = "center") : d.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (d.s_bottom = this.#r("button", "top", i.s_bottom)) : (d.top = this.#r("button", "top", i.bottom), d.align_y = "bottom") : (d.top = this.#r("button", "top", i.middle), d.align_y = "middle") : d.top = this.#r("button", "top", i.top);
 				for (let e of n.#f) {
 					let t = i[e];
-					t !== void 0 && Object.assign(u, { [e]: n.#n("button", e, t) });
+					t !== void 0 && Object.assign(d, { [e]: n.#n("button", e, t) });
 				}
-				return !o && !i.b_pic && (u.width ??= 100, u.height ??= 30), i.enabled !== void 0 && (u.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (u.blendmode = f(i.blendmode)), i.style !== void 0 && (u.style = n.#u(i.style)), i.style_hover !== void 0 && (u.style_hover = n.#u(i.style_hover)), i.style_clicked !== void 0 && (u.style_clicked = n.#u(i.style_clicked)), i.hint !== void 0 && (u.hint = i.hint), i.hint_style !== void 0 && (u.hint_style = i.hint_style), i.hint_opt !== void 0 && (u.hint_opt = i.hint_opt), o !== void 0 && (u.pic = o), i.b_pic !== void 0 && (u.b_pic = i.b_pic), i.clickse !== void 0 && (u.clickse = i.clickse, u.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (u.enterse = i.enterse, u.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (u.leavese = i.leavese, u.leavesebuf = i.leavesebuf || "SYS"), a.push({
+				return !o && !i.b_pic && (d.width ??= 100, d.height ??= 30), i.enabled !== void 0 && (d.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (d.blendmode = s(i.blendmode)), i.style !== void 0 && (d.style = n.#u(i.style)), i.style_hover !== void 0 && (d.style_hover = n.#u(i.style_hover)), i.style_clicked !== void 0 && (d.style_clicked = n.#u(i.style_clicked)), i.hint !== void 0 && (d.hint = i.hint), i.hint_style !== void 0 && (d.hint_style = i.hint_style), i.hint_opt !== void 0 && (d.hint_opt = i.hint_opt), o !== void 0 && (d.pic = o), i.b_pic !== void 0 && (d.b_pic = i.b_pic), i.clickse !== void 0 && (d.clickse = i.clickse, d.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (d.enterse = i.enterse, d.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (d.leavese = i.leavese, d.leavesebuf = i.leavesebuf || "SYS"), a.push({
 					t: "addBtn",
 					layerNm: e,
-					page: l,
+					page: u,
 					text: o ? "" : i.text ?? "",
 					label: t,
-					call: c,
-					...s === void 0 ? {} : { nm: s },
+					call: l,
+					...c === void 0 ? {} : { nm: c },
 					...r ? { fn: r } : {},
 					...i.arg === void 0 ? {} : { arg: i.arg },
-					...Object.keys(u).length > 0 ? { sty: u } : {}
+					...Object.keys(d).length > 0 ? { sty: d } : {}
 				}), "skip";
 			}
 			case "page": {
@@ -2226,7 +2226,7 @@ var ke = class {
 				if (i.clear === "true") return a.push({ t: "clearPageLog" }), "skip";
 				if (i.to === void 0) return "skip";
 				let e = i.to;
-				if (!d.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
+				if (!f.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
 				return a.push({
 					t: "pageTo",
 					to: e
@@ -6378,7 +6378,7 @@ var ts = class t {
 			return JSON.stringify(r);
 		});
 	}
-	#c = new l(() => this.sys.cfg.oCfg.log.max_len);
+	#c = new u(() => this.sys.cfg.oCfg.log.max_len);
 	#l;
 	#u = [];
 	#d = !1;

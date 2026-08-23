@@ -5,11 +5,11 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
+import {type T_LAY_IDX, type T_LAY_CMN, getLayerRenderer} from './Lay';
+import Layer from './Layer';
 import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET} from '../ts/Sprite';
 
-import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
-import Moveable from 'react-moveable';
+import {type CSSProperties, MouseEvent, useEffect, useState} from 'react';
 
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像（fn）の左上を原点(0,0)とした相対座標
@@ -42,9 +42,14 @@ type T_GRPARG = T_LAY_CMN & {
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
 	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
 	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
+	// [lay type=…]。本家の[lay type=gltf]相当で、指定時は中身の描画をLay.tsのレジストリ
+	//	（registerLayerKind）に委譲する（3d等のプラグイン用の拡張点。cls自体は'grp'のまま増やさない。
+	//	理由はLay.tsのT_LAY_PLUGIN_*のコメント参照）。未指定なら従来通りimg/video/faceを描く
+	kind?	: string | undefined;
+	ext?	: Record<string, unknown> | undefined;	// kind指定時のプラグイン固有属性（例：camera/directional_light）
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]};
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]; kind?: string; ext?: Record<string, unknown>};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
@@ -79,7 +84,8 @@ function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_
 	return <img src={faceSrc} data-fn={faceFn} style={styPos}/>;
 }
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
+export default function GrpLayer({cmn, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play, kind, ext}: T_GRPARG) {
+	const {styChild, isDesignMode} = cmn;
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -123,11 +129,6 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	const styFit: CSSProperties = {display: 'block',
 		...('width' in sty ? {width: '100%'} : {}), ...('height' in sty ? {height: '100%'} : {})};
 
-	const div0 = useRef<HTMLDivElement>(null);
-	const evt = (style: CSSStyleDeclaration, transform: string)=> {
-		noticeDrag();
-		style.transform = transform;
-	}
 	// div0はposition:absoluteかつwidth未指定（[lay width=]の明示が無い）とき、CSSのshrink-to-fit
 	//	計算に落ちる。available width（containing blockの右端までの残り幅）が画像の自然幅より
 	//	狭いと、そこまで縮小されてしまう——[lay center=/right=/pos=]でステージ幅の半分を超える
@@ -135,48 +136,28 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	1/3程度に縮んで表示された）。max-contentで常に内容の自然幅を使わせ、sty.widthの明示
 	//	（後勝ち）があればそちらを優先する
 	const styDiv0: CSSProperties = {width: 'max-content', ...sty};
-	return <>
-		<div css={styChild} ref={div0} data-lay={nm} style={styDiv0} onMouseDown={e=> onMouseDown(e)}>
-			{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
-				（Reactがページ全体再ダウンロードの可能性を警告するため）。
-				アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
-			{sheet && <div className={aniSpriteClass(sheet)}/>}
-			{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
-				onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
-			{src && ! isSheet && ! isMovie && <img src={src} style={styFit}
-				onLoad={e=> {setNatSize(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}}/>}
-			{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
-		</div>
-		{isDesignMode && <Moveable
-			target={div0}
 
-			/* draggable */
-			draggable={true}
-			throttleDrag={1}
-			onDrag={({target: {style}, transform})=> evt(style, transform)}
+	// [lay type=…]指定時は中身をプラグインへ委譲する（本家[lay type=gltf]相当）。
+	//	箱（Layer.tsx＝位置・回転・拡縮・Moveable）は通常の画像レイヤと共通のまま、
+	//	中身だけがプラグイン提供のものに変わる。keepRatioはプラグインの中身依存なのでfalse
+	//	（拡縮は3D側のカメラ・レイアウトが決めるべきで、画像のような自然な縦横比を前提にしない）
+	if (kind !== undefined) {
+		const renderer = getLayerRenderer(kind);
+		if (! renderer) throw `未登録のレイヤー種別です（type=${kind}）。プラグインが読み込まれていません`;
+		return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={false} onMouseDown={onMouseDown}>
+			{renderer({nm, ext: ext ?? {}}, cmn)}
+		</Layer>;
+	}
 
-			/* resizable*/
-			resizable={true}
-			keepRatio={true}
-			onResize={({target: {style}, width, height, drag: {transform}})=> {
-				evt(style, transform);
-				style.width = `${width}px`;
-				style.height = `${height}px`;
-			}}
-
-			/* rotatable */
-			rotatable={true}
-			throttleRotate={0}
-			startDragRotate={0}
-			throttleDragRotate={0}
-			rotationPosition={'top'}
-			onRotate={({target: {style}, drag: {transform}})=> evt(style, transform)}
-
-			originDraggable={true}
-			onDragOrigin={({target: {style}, transformOrigin, drag: {transform}})=> {
-				evt(style, transform);
-				style.transformOrigin = transformOrigin;
-			}}
-		/>}
-	</>;
+	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true} onMouseDown={onMouseDown}>
+		{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
+			（Reactがページ全体再ダウンロードの可能性を警告するため）。
+			アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
+		{sheet && <div className={aniSpriteClass(sheet)}/>}
+		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
+			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
+		{src && ! isSheet && ! isMovie && <img src={src} style={styFit}
+			onLoad={e=> {setNatSize(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}}/>}
+		{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
+	</Layer>;
 }

@@ -1,7 +1,7 @@
 import { a as e, i as t, o as n, s as r, t as i } from "./CmnLib.js";
 import { t as a } from "./SaveMng.js";
 import { t as o } from "./FocusMng.js";
-import { DEF_BTN_FONT as s, f as c, n as l, r as u, s as d, t as f, y as p } from "./store.js";
+import { DEF_BTN_FONT as s, b as c, n as l, p as u, r as d, s as f, t as p } from "./store.js";
 import { o as m, r as h } from "./Sprite.js";
 import { PROTOCOL_USERDATA as g, t as _ } from "./Config.js";
 //#region src/sn/AnalyzeTagArg.ts
@@ -1702,7 +1702,7 @@ var Ae = class {
 						fn: e,
 						dx: 0,
 						dy: 0,
-						blendmode: p("normal")
+						blendmode: c("normal")
 					});
 				}
 				e.aFace = n;
@@ -1745,7 +1745,7 @@ var Ae = class {
 				a.left = e / 2, a.align_x = "center", a.top = t, a.align_y = "bottom";
 			}
 		}
-		if (t.width !== void 0 && (a.width = e.#n("lay", "width", t.width)), t.height !== void 0 && (a.height = e.#n("lay", "height", t.height)), t.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", t.rotation)), t.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", t.scale_x)), t.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", t.scale_y)), t.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", t.pivot_x)), t.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", t.pivot_y)), t.blendmode !== void 0 && (a.blendmode = p(t.blendmode)), t.b_color !== void 0 && t.back_clear !== "true" && (a.b_color = e.#n("lay", "b_color", t.b_color)), t.style !== void 0 && (a.style = t.style), t.pl !== void 0 && (a.pl = e.#n("lay", "pl", t.pl)), t.pr !== void 0 && (a.pr = e.#n("lay", "pr", t.pr)), t.pt !== void 0 && (a.pt = e.#n("lay", "pt", t.pt)), t.pb !== void 0 && (a.pb = e.#n("lay", "pb", t.pb)), t.ffs !== void 0 && (a.ffs = t.ffs), t.noffs !== void 0 && (a.noffs = t.noffs), t.bura !== void 0 && (a.bura = t.bura !== "false"), t.kinsoku_sol !== void 0 && (a.kinsoku_sol = t.kinsoku_sol), t.kinsoku_eol !== void 0 && (a.kinsoku_eol = t.kinsoku_eol), t.kinsoku_dns !== void 0 && (a.kinsoku_dns = t.kinsoku_dns), t.kinsoku_bura !== void 0 && (a.kinsoku_bura = t.kinsoku_bura), ae.setting(t), t.r_align !== void 0) {
+		if (t.width !== void 0 && (a.width = e.#n("lay", "width", t.width)), t.height !== void 0 && (a.height = e.#n("lay", "height", t.height)), t.rotation !== void 0 && (a.rotation = e.#n("lay", "rotation", t.rotation)), t.scale_x !== void 0 && (a.scale_x = e.#n("lay", "scale_x", t.scale_x)), t.scale_y !== void 0 && (a.scale_y = e.#n("lay", "scale_y", t.scale_y)), t.pivot_x !== void 0 && (a.pivot_x = e.#n("lay", "pivot_x", t.pivot_x)), t.pivot_y !== void 0 && (a.pivot_y = e.#n("lay", "pivot_y", t.pivot_y)), t.blendmode !== void 0 && (a.blendmode = c(t.blendmode)), t.b_color !== void 0 && t.back_clear !== "true" && (a.b_color = e.#n("lay", "b_color", t.b_color)), t.style !== void 0 && (a.style = t.style), t.pl !== void 0 && (a.pl = e.#n("lay", "pl", t.pl)), t.pr !== void 0 && (a.pr = e.#n("lay", "pr", t.pr)), t.pt !== void 0 && (a.pt = e.#n("lay", "pt", t.pt)), t.pb !== void 0 && (a.pb = e.#n("lay", "pb", t.pb)), t.ffs !== void 0 && (a.ffs = t.ffs), t.noffs !== void 0 && (a.noffs = t.noffs), t.bura !== void 0 && (a.bura = t.bura !== "false"), t.kinsoku_sol !== void 0 && (a.kinsoku_sol = t.kinsoku_sol), t.kinsoku_eol !== void 0 && (a.kinsoku_eol = t.kinsoku_eol), t.kinsoku_dns !== void 0 && (a.kinsoku_dns = t.kinsoku_dns), t.kinsoku_bura !== void 0 && (a.kinsoku_bura = t.kinsoku_bura), ae.setting(t), t.r_align !== void 0) {
 			if (!Ce.includes(t.r_align)) throw `[lay] r_alignの値が不正です：${t.r_align}`;
 			a.r_align = t.r_align;
 		}
@@ -1758,7 +1758,7 @@ var Ae = class {
 			t: "addFilter",
 			aLayNm: [t.layer ?? ""],
 			page: r,
-			flt: c(t),
+			flt: u(t),
 			replace: !0
 		});
 	}
@@ -1814,7 +1814,7 @@ var Ae = class {
 					fn: i.fn || e,
 					dx: Number(i.dx || "0"),
 					dy: Number(i.dy || "0"),
-					blendmode: p(i.blendmode || "normal")
+					blendmode: c(i.blendmode || "normal")
 				}, "skip";
 			}
 			case "lay": {
@@ -1825,7 +1825,7 @@ var Ae = class {
 				t: "addFilter",
 				aLayNm: e.#c(i.layer),
 				page: e.#h("add_filter", i, "fore"),
-				flt: c(i),
+				flt: u(i),
 				replace: !1
 			}), "skip";
 			case "clear_filter": return a.push({
@@ -1896,18 +1896,18 @@ var Ae = class {
 			case "tsy": {
 				let { layer: t } = i;
 				if (!t) throw "[tsy] layerは必須です";
-				let n = this.skipEnabled, r = n ? 0 : e.#n("tsy", "time", i.time ?? ""), o = n ? 0 : e.#i("tsy", "delay", i.delay, 0), s = e.#i("tsy", "repeat", i.repeat, 1), l = e.argPage(i, "fore");
+				let n = this.skipEnabled, r = n ? 0 : e.#n("tsy", "time", i.time ?? ""), o = n ? 0 : e.#i("tsy", "delay", i.delay, 0), s = e.#i("tsy", "repeat", i.repeat, 1), c = e.argPage(i, "fore");
 				return i.filter !== void 0 && a.push({
 					t: "addFilter",
 					aLayNm: [t],
-					page: l,
-					flt: c(i),
+					page: c,
+					flt: u(i),
 					replace: !0
 				}), a.push({
 					t: "tsy",
 					tw_nm: E("tsy", i),
 					nm: t,
-					page: l,
+					page: c,
 					msec: r,
 					delay: o,
 					ease: he(i.ease),
@@ -2092,7 +2092,7 @@ var Ae = class {
 			}
 			case "ch_in_style":
 			case "ch_out_style": {
-				let e = t === "ch_in_style" ? "in" : "out", { name: n, sty: r } = d(t, i, e === "in");
+				let e = t === "ch_in_style" ? "in" : "out", { name: n, sty: r } = f(t, i, e === "in");
 				if (this.#P[e].has(n)) throw `[${t}] name【${n}】はすでにあります`;
 				return this.#P[e].add(n), a.push({
 					t: "defChStyle",
@@ -2196,23 +2196,23 @@ var Ae = class {
 				if (!t) throw "[button] layerは必須です（試作仕様）";
 				let n = i.label ?? "", r = i.fn ?? this.fn, { pic: o } = i;
 				if (!o && !i.text) throw "[button] textまたはpic属性は必須です";
-				let s = i.nm, c = i.call === "true", l = e.argPage(i, "back"), u = {};
-				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (u.s_right = this.#r("button", "left", i.s_right)) : (u.left = this.#r("button", "left", i.right), u.align_x = "right") : (u.left = this.#r("button", "left", i.center), u.align_x = "center") : u.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (u.s_bottom = this.#r("button", "top", i.s_bottom)) : (u.top = this.#r("button", "top", i.bottom), u.align_y = "bottom") : (u.top = this.#r("button", "top", i.middle), u.align_y = "middle") : u.top = this.#r("button", "top", i.top);
+				let s = i.nm, l = i.call === "true", u = e.argPage(i, "back"), d = {};
+				i.left === void 0 ? i.center === void 0 ? i.right === void 0 ? i.s_right !== void 0 && (d.s_right = this.#r("button", "left", i.s_right)) : (d.left = this.#r("button", "left", i.right), d.align_x = "right") : (d.left = this.#r("button", "left", i.center), d.align_x = "center") : d.left = this.#r("button", "left", i.left), i.top === void 0 ? i.middle === void 0 ? i.bottom === void 0 ? i.s_bottom !== void 0 && (d.s_bottom = this.#r("button", "top", i.s_bottom)) : (d.top = this.#r("button", "top", i.bottom), d.align_y = "bottom") : (d.top = this.#r("button", "top", i.middle), d.align_y = "middle") : d.top = this.#r("button", "top", i.top);
 				for (let t of e.#f) {
 					let n = i[t];
-					n !== void 0 && Object.assign(u, { [t]: e.#n("button", t, n) });
+					n !== void 0 && Object.assign(d, { [t]: e.#n("button", t, n) });
 				}
-				return !o && !i.b_pic && (u.width ??= 100, u.height ??= 30), i.enabled !== void 0 && (u.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (u.blendmode = p(i.blendmode)), i.style !== void 0 && (u.style = e.#u(i.style)), i.style_hover !== void 0 && (u.style_hover = e.#u(i.style_hover)), i.style_clicked !== void 0 && (u.style_clicked = e.#u(i.style_clicked)), i.hint !== void 0 && (u.hint = i.hint), i.hint_style !== void 0 && (u.hint_style = i.hint_style), i.hint_opt !== void 0 && (u.hint_opt = i.hint_opt), o !== void 0 && (u.pic = o), i.b_pic !== void 0 && (u.b_pic = i.b_pic), i.clickse !== void 0 && (u.clickse = i.clickse, u.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (u.enterse = i.enterse, u.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (u.leavese = i.leavese, u.leavesebuf = i.leavesebuf || "SYS"), a.push({
+				return !o && !i.b_pic && (d.width ??= 100, d.height ??= 30), i.enabled !== void 0 && (d.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (d.blendmode = c(i.blendmode)), i.style !== void 0 && (d.style = e.#u(i.style)), i.style_hover !== void 0 && (d.style_hover = e.#u(i.style_hover)), i.style_clicked !== void 0 && (d.style_clicked = e.#u(i.style_clicked)), i.hint !== void 0 && (d.hint = i.hint), i.hint_style !== void 0 && (d.hint_style = i.hint_style), i.hint_opt !== void 0 && (d.hint_opt = i.hint_opt), o !== void 0 && (d.pic = o), i.b_pic !== void 0 && (d.b_pic = i.b_pic), i.clickse !== void 0 && (d.clickse = i.clickse, d.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (d.enterse = i.enterse, d.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (d.leavese = i.leavese, d.leavesebuf = i.leavesebuf || "SYS"), a.push({
 					t: "addBtn",
 					layerNm: t,
-					page: l,
+					page: u,
 					text: o ? "" : i.text ?? "",
 					label: n,
-					call: c,
+					call: l,
 					...s === void 0 ? {} : { nm: s },
 					...r ? { fn: r } : {},
 					...i.arg === void 0 ? {} : { arg: i.arg },
-					...Object.keys(u).length > 0 ? { sty: u } : {}
+					...Object.keys(d).length > 0 ? { sty: d } : {}
 				}), "skip";
 			}
 			case "page": {
@@ -2227,7 +2227,7 @@ var Ae = class {
 				if (i.clear === "true") return a.push({ t: "clearPageLog" }), "skip";
 				if (i.to === void 0) return "skip";
 				let e = i.to;
-				if (!f.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
+				if (!p.includes(e)) throw `[page] 属性to「${i.to}」は異常です`;
 				return a.push({
 					t: "pageTo",
 					to: e
@@ -6252,7 +6252,7 @@ var Zo = class e {
 			return JSON.stringify(r);
 		});
 	}
-	#c = new u(() => this.sys.cfg.oCfg.log.max_len);
+	#c = new d(() => this.sys.cfg.oCfg.log.max_len);
 	#l;
 	#u = [];
 	#d = !1;

@@ -18,7 +18,7 @@ import {styFilter, blendmodeOf, type T_FLT} from '../ts/Filter';
 import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
-import type {CSSProperties} from 'react';
+import type {CSSProperties, ReactNode} from 'react';
 import type {SerializedStyles} from '@emotion/react';
 
 
@@ -144,6 +144,25 @@ export type T_LAY_CMN = {
 	};
 };
 export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
+
+// 画像系レイヤー（cls: 'grp'）の「中身の描き方」を差し替えるプラグイン拡張点。
+//	**大分類（cls: grp/txt）自体は増やさない**：store.tsx（chgLay/clearLay等）が随所で
+//	`e.cls === 'grp'`の判別ユニオン絞り込みに依存しており、clsに3つ目の値を足すと
+//	（`(string & {})`等でリテラル外を許す形にすると）その絞り込みが軒並み壊れる（実測済み）。
+//	そこで「'grp'の中のさらに細かい表示方式」という1段下の軸（[lay type=…]→`kind`）を用意し、
+//	本家の`[lay type=gltf]`（Pixiへプラグインで3Dを合成）に相当する拡張はここで受ける。
+//	共通の箱（位置・回転・拡縮・Moveable）は`Layer.tsx`が持つので、
+//	rendererは中身（Layer.tsxのchildren）だけを返せばよい
+export type T_LAY_PLUGIN_ARG = {nm: string; ext: Record<string, unknown>};
+export type T_LAY_PLUGIN_RENDERER = (arg: T_LAY_PLUGIN_ARG, cmn: T_LAY_CMN['cmn'])=> ReactNode;
+const hPluginLayer = new Map<string, T_LAY_PLUGIN_RENDERER>();
+export function registerLayerKind(kind: string, renderer: T_LAY_PLUGIN_RENDERER) {
+	if (hPluginLayer.has(kind)) throw new Error(`registerLayerKind: '${kind}' は既に登録済みです`);
+	hPluginLayer.set(kind, renderer);
+}
+export function getLayerRenderer(kind: string): T_LAY_PLUGIN_RENDERER | undefined {
+	return hPluginLayer.get(kind);
+}
 
 
 // デザインモードのMoveableでドラッグしたか。ドラッグ終わりのクリックを

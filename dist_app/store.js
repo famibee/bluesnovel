@@ -430,23 +430,23 @@ function p(e) {
 		...r === void 0 ? {} : { blendmode: r }
 	};
 }
-function m(e) {
+function ee(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function h(e) {
+function m(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function g(e) {
+function h(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function _(e) {
+function g(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var v = [
+var _ = [
 	"visible",
 	"alpha",
 	"left",
@@ -465,21 +465,25 @@ var v = [
 	"blendmode",
 	"aFlt"
 ];
-function ee(e) {
+function v(e) {
 	let t = {};
 	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left)}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top)}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : g(e.aFlt));
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : h(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = _(e.aFlt);
+		let n = g(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-var y = !1, b = () => {
-	y = !0;
+var y = /* @__PURE__ */ new Map();
+function te(e) {
+	return y.get(e);
+}
+var b = !1, ne = () => {
+	b = !0;
 }, x = () => {
-	y = !1;
-}, S = () => y, C = {
+	b = !1;
+}, S = () => b, C = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -533,7 +537,7 @@ function A(e) {
 	let t = e.trim();
 	return k.test(t) ? t : "ease-out";
 }
-function te(e) {
+function re(e) {
 	return {
 		keyframes: [{
 			opacity: e.alpha,
@@ -776,7 +780,7 @@ function Z(e, t) {
 		trans: null
 	};
 }
-function ne(e, t) {
+function ie(e, t) {
 	let n = (e) => {
 		let t = /* @__PURE__ */ new Map();
 		for (let n of e.split(";")) {
@@ -860,7 +864,7 @@ var $ = K()((e, t) => ({
 		o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura), r.left !== void 0 && r.align_x === void 0 && delete o.align_x, r.top !== void 0 && r.align_y === void 0 && delete o.align_y;
 		let s = o.cls === "txt" && r.style !== void 0 ? {
 			...r,
-			style: r.style ? ne(o.style, r.style) : ""
+			style: r.style ? ie(o.style, r.style) : ""
 		} : r;
 		return Object.assign(o, s), X(e, i, a);
 	}),
@@ -868,7 +872,7 @@ var $ = K()((e, t) => ({
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
 		if (!i) throw `存在しないレイヤ ${e} です`;
 		let a = {};
-		for (let e of v) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
+		for (let e of _) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
 		return a;
 	},
 	getPages: () => {
@@ -905,7 +909,7 @@ var $ = K()((e, t) => ({
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
-			for (let t of v) t !== "visible" && delete e[t];
+			for (let t of _) t !== "visible" && delete e[t];
 			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, i = (e) => {
 			if (!t) {
@@ -1039,11 +1043,11 @@ var $ = K()((e, t) => ({
 	setSkipping: (t) => e(() => ({ skipping: t })),
 	wait: null,
 	setWait: (t) => e(() => ({ wait: t }))
-})), re = $.getState();
-function ie() {
-	$.setState(re, !0);
+})), ae = $.getState();
+function oe() {
+	$.setState(ae, !0);
 }
 //#endregion
-export { J as DEF_BTN_FONT, u as _, C as a, x as c, ee as d, p as f, l as g, h, I as i, S as l, f as m, R as n, te as o, d as p, z as r, ie as resetStore, D as s, L as t, b as u, $ as useStore, m as v, i as y };
+export { J as DEF_BTN_FONT, l as _, C as a, i as b, x as c, ne as d, v as f, m as g, f as h, I as i, te as l, d as m, R as n, re as o, p, z as r, oe as resetStore, D as s, L as t, S as u, $ as useStore, u as v, ee as y };
 
 //# sourceMappingURL=store.js.map
