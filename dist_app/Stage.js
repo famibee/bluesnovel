@@ -10065,22 +10065,102 @@ function Su(e, t, n, r) {
 	(e.left !== void 0 || e.top !== void 0 || e.s_right !== void 0 || e.s_bottom !== void 0) && (i.position = "absolute", i.margin = 0, e.s_right === void 0 ? i.left = `${String(e.left ?? 0)}px` : i.right = `${String(e.s_right)}px`, e.s_bottom === void 0 ? i.top = `${String(e.top ?? 0)}px` : i.bottom = `${String(e.s_bottom)}px`), (e.align_x !== void 0 || e.align_y !== void 0) && (i.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`);
 	{
 		let { w: t, h: a } = xu(e, n, r);
-		t > 0 && (i.width = `${String(t)}px`), a > 0 && (i.height = `${String(a)}px`), e.pic || (i.fontSize = `${String(a)}px`, i.lineHeight = 1), i.boxSizing = "border-box";
+		t > 0 && (i.width = `${String(t)}px`), a > 0 && (i.height = `${String(a)}px`), e.pic || (i.fontSize = `${String(bu(e).h)}px`, i.lineHeight = 1), i.boxSizing = "border-box";
 	}
-	e.pic && e.src ? (i.backgroundImage = `url("${e.src}")`, i.backgroundSize = "300% 100%", i.backgroundRepeat = "no-repeat") : e.b_pic && e.b_src && (i.backgroundImage = `url("${e.b_src}")`, i.backgroundPosition = "center", i.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (i.opacity = e.alpha);
+	e.pic && e.src && (i.backgroundImage = `url("${e.src}")`, i.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", i.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (i.opacity = e.alpha);
 	let a = (e.scale_x ?? 1) * t.x, o = (e.scale_y ?? 1) * t.y;
 	return (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0 || t.x !== 1 || t.y !== 1) && (i.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(a)}, ${String(o)})`, i.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (i.mixBlendMode = e.blendmode), e.enabled === !1 && (i.color = "gray", i.pointerEvents = "none"), i;
 }
 function Cu({ text: e, label: t, call: n, fn: r, arg: i, sty: a, enabled: s, onActivate: c, onSe: l }) {
-	let u = s && a?.enabled !== !1, d = yu`
+	let u = s && a?.enabled !== !1, d = y((e) => e.btnFont), f = (0, B.useRef)(null);
+	(0, B.useEffect)(() => {
+		let e = f.current;
+		if (!(!e || !u)) return o.add(e), () => o.remove(e);
+	}, [u]);
+	let p = a?.pic ? a.src ?? "" : "", m = a?.enabled !== !1, [h, g] = (0, B.useState)(null);
+	(0, B.useEffect)(() => {
+		if (!p) {
+			g(null);
+			return;
+		}
+		let e = !0, t = new Image();
+		return t.onload = () => {
+			e && g({
+				w: m ? t.naturalWidth / 3 : t.naturalWidth,
+				h: t.naturalHeight
+			});
+		}, t.src = p, () => {
+			e = !1;
+		};
+	}, [p, m]);
+	let _ = a?.b_pic ? a.b_src ?? "" : "", [v, b] = (0, B.useState)(null);
+	(0, B.useEffect)(() => {
+		if (!_) {
+			b(null);
+			return;
+		}
+		let e = !0, t = new Image();
+		return t.onload = () => {
+			e && b({
+				w: t.naturalWidth,
+				h: t.naturalHeight
+			});
+		}, t.src = _, () => {
+			e = !1;
+		};
+	}, [_]);
+	let [x, S] = (0, B.useState)({
+		x: 1,
+		y: 1
+	});
+	(0, B.useLayoutEffect)(() => {
+		let e = f.current;
+		if (!e) {
+			S({
+				x: 1,
+				y: 1
+			});
+			return;
+		}
+		if (a?.pic) {
+			S({
+				x: 1,
+				y: 1
+			});
+			return;
+		}
+		let t = () => {
+			let { w: t, h: r } = bu(a), i = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
+			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
+			let c = e.offsetWidth, l = e.offsetHeight;
+			e.style.width = i, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), S({
+				x: c > 0 ? t / c : 1,
+				y: l > 0 ? r / l : 1
+			});
+		}, n = new ResizeObserver(t);
+		return n.observe(e), t(), () => n.disconnect();
+	}, [
+		e,
+		a?.width,
+		a?.height,
+		a?.pic
+	]);
+	let C = yu`
 		position: relative;
 		z-index: 2;
 
-		display: inline-block;
+		/* inline-flexで文字を縦横中央に置く。b_pic指定時は箱の高さ（=枠画像の実寸）が
+			文字の行の高さよりずっと大きくなるが、display:inline-blockのままだと文字は
+			既定で箱の上端に流れるだけで縦方向は中央に来ない。下の疑似要素::before（背景）は
+			箱の中心を基準に置いているので、文字も箱の中心に来ないと互いにズレて見える
+			（sn_gallery ch_button で発覚） */
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		box-sizing: border-box;
 		margin: 0.3em;
 		padding: 5px;
-		font-family: ${y((e) => e.btnFont)};
+		font-family: ${d};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
 			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */
@@ -10111,101 +10191,56 @@ function Cu({ text: e, label: t, call: n, fn: r, arg: i, sty: a, enabled: s, onA
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
 		${a?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
-	`, f = (e, t) => {
+		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
+			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：本体は上の
+			transformで文字を箱へ収めるfit倍率（scale）を持つため、そこへ背景を直接置くとb_pic枠まで
+			一緒に縮んで絵より小さく描かれてしまう（sn_gallery ch_button で発覚）。::before側に
+			逆倍率（1/fit）を自身の中心基準で掛けて打ち消すことで、親のfitに引きずられず絵の実寸の
+			まま中央に留まる */
+		${a?.b_pic && a.b_src ? (() => {
+		let e = v?.w ?? 0, t = v?.h ?? 0, { w: n, h: r } = xu(a, h, v), i = (n - e) / 2, o = (r - t) / 2;
+		return `
+				&::before {
+					content: '';
+					position: absolute;
+					left: ${String(i)}px;
+					top: ${String(o)}px;
+					width: ${String(e)}px;
+					height: ${String(t)}px;
+					background-image: url("${a.b_src}");
+					background-repeat: no-repeat;
+					transform: scale(${String(1 / x.x)}, ${String(1 / x.y)});
+					transform-origin: ${String(e / 2)}px ${String(t / 2)}px;
+					z-index: -1;
+					pointer-events: none;
+				}
+			`;
+	})() : ""}
+	`, w = (e, t) => {
 		if (!u) return;
 		let n = a?.[e];
 		n && l(n, a?.[t] ?? "SYS");
-	}, p = (e) => {
-		e.stopPropagation(), u && (_u.hide(), f("clickse", "clicksebuf"), c(t, n ?? !1, r, i));
-	}, m = () => {
-		a?.hint && _u.show(_.current, a.hint, a.hint_style, a.hint_opt);
-	}, h = () => {
-		m(), f("enterse", "entersebuf");
-	}, g = () => {
-		_u.hide(), f("leavese", "leavesebuf");
-	}, _ = (0, B.useRef)(null);
-	(0, B.useEffect)(() => {
-		let e = _.current;
-		if (!(!e || !u)) return o.add(e), () => o.remove(e);
-	}, [u]);
-	let [v, b] = (0, B.useState)({
-		x: 1,
-		y: 1
-	}), x = a?.pic ? a.src ?? "" : "", [S, C] = (0, B.useState)(null);
-	(0, B.useEffect)(() => {
-		if (!x) {
-			C(null);
-			return;
-		}
-		let e = !0, t = new Image();
-		return t.onload = () => {
-			e && C({
-				w: t.naturalWidth / 3,
-				h: t.naturalHeight
-			});
-		}, t.src = x, () => {
-			e = !1;
-		};
-	}, [x]);
-	let w = a?.b_pic ? a.b_src ?? "" : "", [T, E] = (0, B.useState)(null);
-	return (0, B.useEffect)(() => {
-		if (!w) {
-			E(null);
-			return;
-		}
-		let e = !0, t = new Image();
-		return t.onload = () => {
-			e && E({
-				w: t.naturalWidth,
-				h: t.naturalHeight
-			});
-		}, t.src = w, () => {
-			e = !1;
-		};
-	}, [w]), (0, B.useLayoutEffect)(() => {
-		let e = _.current;
-		if (!e) {
-			b({
-				x: 1,
-				y: 1
-			});
-			return;
-		}
-		if (a?.pic) {
-			b({
-				x: 1,
-				y: 1
-			});
-			return;
-		}
-		let t = () => {
-			let { w: t, h: r } = xu(a, S, T), i = e.style.width, o = e.style.transform, s = e.style.whiteSpace;
-			e.style.width = "auto", e.style.transform = "none", e.style.whiteSpace = "pre";
-			let c = e.offsetWidth, l = e.offsetHeight;
-			e.style.width = i, e.style.transform = o, e.style.whiteSpace = s, c > 0 && l > 0 && n.disconnect(), b({
-				x: c > 0 ? t / c : 1,
-				y: l > 0 ? r / l : 1
-			});
-		}, n = new ResizeObserver(t);
-		return n.observe(e), t(), () => n.disconnect();
-	}, [
-		e,
-		a?.width,
-		a?.height,
-		a?.pic,
-		T
-	]), /* @__PURE__ */ M("span", {
-		css: d,
-		style: a ? Su(a, v, S, T) : void 0,
-		ref: _,
+	}, T = (e) => {
+		e.stopPropagation(), u && (_u.hide(), w("clickse", "clicksebuf"), c(t, n ?? !1, r, i));
+	}, E = () => {
+		a?.hint && _u.show(f.current, a.hint, a.hint_style, a.hint_opt);
+	};
+	return /* @__PURE__ */ M("span", {
+		css: C,
+		style: a ? Su(a, x, h, v) : void 0,
+		ref: f,
 		tabIndex: u ? 0 : -1,
-		onClick: p,
+		onClick: T,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), u && (_u.hide(), f("clickse", "clicksebuf"), c(t, n ?? !1, r, i)));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), u && (_u.hide(), w("clickse", "clicksebuf"), c(t, n ?? !1, r, i)));
 		},
-		onMouseEnter: h,
-		onMouseLeave: g,
-		onFocus: m,
+		onMouseEnter: () => {
+			E(), w("enterse", "entersebuf");
+		},
+		onMouseLeave: () => {
+			_u.hide(), w("leavese", "leavesebuf");
+		},
+		onFocus: E,
 		onBlur: () => _u.hide(),
 		children: e
 	});

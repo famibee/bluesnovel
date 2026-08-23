@@ -197,6 +197,10 @@ it('btn_bPicKeepsText', ()=> {
 	const a = btn('[button b_pic=waku text=おす label=*a]');
 	expect(a?.text).toBe('おす');
 	expect(a?.sty).toMatchObject({b_pic: 'waku'});
-	// 文字ボタンなので寸法の既定は入る
-	expect(a?.sty).toMatchObject({width: 100, height: 30});
+	// picと同じくb_picも寸法の既定を埋めない（本家もtxt.width/heightは100/30に固定したまま、
+	//	コンテナの#o.width/heightだけがb_pic読み込み後に絵の実寸へ広がる＝Button.ts:174-176）。
+	//	ここで埋めてしまうとBtnLayerが持つ「絵の実寸で箱を測る」ロジック（btnBoxSize）がo.widthの
+	//	??に阻まれて働かず、b_pic枠が100x30に切り詰められる（sn_gallery ch_button で発覚した不具合）
+	expect('width' in a!.sty!).toBe(false);
+	expect('height' in a!.sty!).toBe(false);
 });

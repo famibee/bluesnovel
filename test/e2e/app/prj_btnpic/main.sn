@@ -15,7 +15,11 @@
 
 ; 背景画像。文字は消えず、その背後に絵が敷かれる
 [button page=fore b_pic=waku text=もじ label=*a left=20 top=240]
-はいけい[s]
+はいけい[l]
+
+; enabled=false時は3コマ分割しない（本家 Button.ts:270）。箱の大きさは絵の実寸そのまま＝180x40
+[button page=fore pic=btn3 enabled=false label=*a left=20 top=340]
+むこう[s]
 
 *a
 [s]

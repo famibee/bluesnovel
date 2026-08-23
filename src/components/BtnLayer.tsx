@@ -76,7 +76,12 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 		if (w > 0) sty.width = `${String(w)}px`;
 		if (h > 0) sty.height = `${String(h)}px`;
 		if (! o.pic) {
-			sty.fontSize = `${String(h)}px`;	// 本家も fontSize:height（Button.ts:133）
+			// フォントサイズは**文字自身の箱**（width/height省略時BTN_DEF）から取る。b_pic指定時も
+			//	本家は文字スプライトをwidth=100/height=30（既定）へ拡縮するだけで、b_pic画像の実寸には
+			//	連動しない（Button.ts:123,152。#o.width/heightが実寸へ広がるのは#loaded_b_pic後の
+			//	コンテナ寸法の話で、文字そのものの拡縮とは別）。上のwは背景画像を敷く箱の大きさなので
+			//	ここで使うとb_pic枠いっぱいに文字が引き伸ばされてしまう
+			sty.fontSize = `${String(btnSize(o).h)}px`;	// 本家も fontSize:height（Button.ts:133）
 			sty.lineHeight = 1;
 			// padding:5pxは基本CSS（styBtn）まかせ（本家 Button.ts:126 TextStyle.padding:5と同じ値）。
 			//	本家はpixi Text.widthセット時、canvas全体（文字+padding*2）を基準にスケールするため
@@ -93,18 +98,17 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 	//	状態ごとの切り替えは styBtn 側の &:hover / &:active が持つ
 	if (o.pic && o.src) {
 		sty.backgroundImage = `url("${o.src}")`;
-		sty.backgroundSize = '300% 100%';
+		// enabled=falseは3コマ分割しない（本家 Button.ts:270。上のnatPic参照）ので、
+		//	箱＝絵の実寸ちょうどに敷くだけでよい。100%を書かなくても既定のautoで実寸表示になるが、
+		//	明示しておく方が「コマ分割しない」意図が読み取りやすい
+		sty.backgroundSize = o.enabled === false ? '100% 100%' : '300% 100%';
 		sty.backgroundRepeat = 'no-repeat';
 		// **どのコマを見せるかはインラインで書かない**。インラインstyleは`:hover`/`:active`の
 		//	ルールより強く、状態で切り替えられなくなるため（切り替えはstyBtn側が持つ）
 	}
-	// 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
-	//	（Button.ts:249）。箱の大きさは上で絵の実寸に広げてあるので、こちらは中央に敷くだけでよい
-	else if (o.b_pic && o.b_src) {
-		sty.backgroundImage = `url("${o.b_src}")`;
-		sty.backgroundPosition = 'center';
-		sty.backgroundRepeat = 'no-repeat';
-	}
+	// 背景画像（[button b_pic=…]）は下のstyBtnの`&::before`が敷く。ここ（インラインstyle）に
+	//	置かないのは、この関数が返す値は下のtransform（fit込み）を丸ごと受ける要素そのものの
+	//	styleだから——同じ要素に置くと背景まで一緒にfitで縮んでしまう（sn_gallery ch_button で発覚）
 	if (o.alpha !== undefined) sty.opacity = o.alpha;
 
 	// 変形：回転・拡縮に加え、上記フィット倍率(fit)を掛ける（fitはwidth指定時のみ1以外になる）。
@@ -140,6 +144,91 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 	//	ストアへ写しているのはScriptMngで、ステージ既定フォント（Stage.tsx）とは別に差し替えられる
 	const btnFont = useStore(s=> s.btnFont);
 
+	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
+	//	ゲーム内ボタンをFocusMngへ入れているのに対応）。表示されている間だけ輪に居ればよいので、
+	//	マウント／アンマウントで出し入れする。spanなのでtabIndexを付けないとfocus()が効かない。
+	//	isEnabledの変化でも出し入れする：[enable_event enabled=false]の間はクリックを受けない
+	//	（TxtLayer.tsxのpointer-events:none）のに、フォーカスの輪には残ったままだと
+	//	ゲームパッド・キーボードのEnterだけは素通りしてしまうため（実例：タイトル画面の
+	//	クリック待ちオーバーレイ表示中でもタイトルボタンにフォーカスできてしまう不具合）
+	const ref = useRef<HTMLSpanElement>(null);
+	useEffect(()=> {
+		const el = ref.current;
+		if (! el || ! isEnabled) return;
+
+		focusMng.add(el);
+		return ()=> focusMng.remove(el);
+	}, [isEnabled]);
+
+	// 画像ボタンの箱の大きさ＝**絵の実寸**（横は3コマ並びなので1/3）。本家 Button.ts:280 に対応。
+	//	実寸を知れるのはDOM側だけなので、ここで読み込んで測る。
+	//	width/heightが書かれていればそちらが勝つ（本家も `'width' in hArg` を優先する）。
+	//	**enabled=falseは3コマ分割しない**——本家 Button.ts:270 `w = enabled ? w_3 : sp.width` と
+	//	同じで、クリックを受けないボタンは通常｜押下｜ホバーの状態を持たないため、絵をそのまま
+	//	1枚の飾り画像として使う（ch_gallery/ch_button の非ボタン用途。main.sn:31）
+	const picSrc = sty?.pic ? sty.src ?? '' : '';
+	const picEnabled = sty?.enabled !== false;
+	const [natPic, setNatPic] = useState<{w: number; h: number} | null>(null);
+	useEffect(()=> {
+		if (! picSrc) {setNatPic(null); return}
+
+		let alive = true;
+		const img = new Image;
+		img.onload = ()=> {
+			if (alive) setNatPic({w: picEnabled ? img.naturalWidth / 3 : img.naturalWidth, h: img.naturalHeight});
+		};
+		img.src = picSrc;
+		return ()=> {alive = false};
+	}, [picSrc, picEnabled]);
+	// b_pic（背景画像）の実寸。picと違い3コマ分割は無いので、そのままの寸法を使う
+	const bPicSrc = sty?.b_pic ? sty.b_src ?? '' : '';
+	const [natBPic, setNatBPic] = useState<{w: number; h: number} | null>(null);
+	useEffect(()=> {
+		if (! bPicSrc) {setNatBPic(null); return}
+
+		let alive = true;
+		const img = new Image;
+		img.onload = ()=> {
+			if (alive) setNatBPic({w: img.naturalWidth, h: img.naturalHeight});
+		};
+		img.src = bPicSrc;
+		return ()=> {alive = false};
+	}, [bPicSrc]);
+
+	// [button width=（height=）]指定時、文字を箱ちょうどに収める倍率を**実測**する（本家 pixi
+	//	Text.width/height 相当。CSSに文字フィットが無いための代替）。幅制約と変形を一時的に外して
+	//	素の文字寸法(offsetWidth/Height＝変形非依存・CSS px)を測り、箱寸法との比を fit として scale へ渡す。
+	//	useLayoutEffect なので描画前に確定し、未縮小の文字が一瞬はみ出すチラつきは出ない。
+	const [fit, setFit] = useState({x: 1, y: 1});
+	useLayoutEffect(()=> {
+		const el = ref.current;
+		if (! el) {setFit({x: 1, y: 1}); return}
+		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
+
+		const measure = ()=> {
+			// fitは**文字自身の箱**（btnSize＝width/height省略時BTN_DEF）に合わせる。b_pic指定でも
+			//	絵の実寸には連動しない（styBtnArgのfontSize・下の`&::before`コメント参照）
+			const {w: bw, h: bh} = btnSize(sty);
+			const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
+			el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
+			const natW = el.offsetWidth, natH = el.offsetHeight;
+			el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
+			// 親の文字レイヤが[sys_menu visible=false]等でdisplay:noneの間に測ると0のまま
+			//	（display:noneの要素はレイアウトされずoffsetWidth/Heightが常に0）。
+			//	一度でも実測できたらそれで確定してよいので監視を打ち切る（測定中のwidth一時変更
+			//	自体もResizeObserverの対象になるため、放置すると余分な再測定が続く）
+			if (natW > 0 && natH > 0) ro.disconnect();
+			setFit({
+				x: natW > 0 ? bw / natW : 1,
+				y: natH > 0 ? bh / natH : 1,
+			});
+		};
+		const ro = new ResizeObserver(measure);
+		ro.observe(el);
+		measure();
+		return ()=> ro.disconnect();
+	}, [text, sty?.width, sty?.height, sty?.pic]);
+
 	// 既定の見た目は**本家 Button.ts のデフォルト TextStyle**に寄せる（tag.html#button のデフォルトstyle）：
 	//	fill:black / align:center / fontFamily:Hiragino系 / padding:5 /
 	//	dropShadow:white・alpha0.7・blur7・distance0（＝CSSの text-shadow: 0 0 7px rgba(255,255,255,.7)）。
@@ -150,7 +239,14 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		position: relative;
 		z-index: 2;
 
-		display: inline-block;
+		/* inline-flexで文字を縦横中央に置く。b_pic指定時は箱の高さ（=枠画像の実寸）が
+			文字の行の高さよりずっと大きくなるが、display:inline-blockのままだと文字は
+			既定で箱の上端に流れるだけで縦方向は中央に来ない。下の疑似要素::before（背景）は
+			箱の中心を基準に置いているので、文字も箱の中心に来ないと互いにズレて見える
+			（sn_gallery ch_button で発覚） */
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		box-sizing: border-box;
 		margin: 0.3em;
 		padding: 5px;
@@ -189,6 +285,33 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 			&:hover, &:focus {background-position-x: 100%;}
 			&:active {background-position-x: 50%;}
 		` : ''}
+		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
+			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：本体は上の
+			transformで文字を箱へ収めるfit倍率（scale）を持つため、そこへ背景を直接置くとb_pic枠まで
+			一緒に縮んで絵より小さく描かれてしまう（sn_gallery ch_button で発覚）。::before側に
+			逆倍率（1/fit）を自身の中心基準で掛けて打ち消すことで、親のfitに引きずられず絵の実寸の
+			まま中央に留まる */
+		${sty?.b_pic && sty.b_src ? (()=> {
+			const bw = natBPic?.w ?? 0, bh = natBPic?.h ?? 0;
+			const {w: ow, h: oh} = btnBoxSize(sty, natPic, natBPic);
+			const left = (ow - bw) / 2, top = (oh - bh) / 2;
+			return `
+				&::before {
+					content: '';
+					position: absolute;
+					left: ${String(left)}px;
+					top: ${String(top)}px;
+					width: ${String(bw)}px;
+					height: ${String(bh)}px;
+					background-image: url("${sty.b_src}");
+					background-repeat: no-repeat;
+					transform: scale(${String(1 / fit.x)}, ${String(1 / fit.y)});
+					transform-origin: ${String(bw / 2)}px ${String(bh / 2)}px;
+					z-index: -1;
+					pointer-events: none;
+				}
+			`;
+		})() : ''}
 	`;
 
 	// 効果音（本家 EventMng.ts:465-491）。enabled=falseのボタンは効果音も鳴らない
@@ -218,84 +341,6 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 	//	までは鳴らさない（マウスでの乗り降りだけに揃える）
 	const onMouseEnter = ()=> {showHint(); playSe('enterse', 'entersebuf')};
 	const onMouseLeave = ()=> {hintMng.hide(); playSe('leavese', 'leavesebuf')};
-
-	// [set_focus to=next/prev]で巡回する対象として登録する（本家 EventMng.ts:435 で
-	//	ゲーム内ボタンをFocusMngへ入れているのに対応）。表示されている間だけ輪に居ればよいので、
-	//	マウント／アンマウントで出し入れする。spanなのでtabIndexを付けないとfocus()が効かない。
-	//	isEnabledの変化でも出し入れする：[enable_event enabled=false]の間はクリックを受けない
-	//	（TxtLayer.tsxのpointer-events:none）のに、フォーカスの輪には残ったままだと
-	//	ゲームパッド・キーボードのEnterだけは素通りしてしまうため（実例：タイトル画面の
-	//	クリック待ちオーバーレイ表示中でもタイトルボタンにフォーカスできてしまう不具合）
-	const ref = useRef<HTMLSpanElement>(null);
-	useEffect(()=> {
-		const el = ref.current;
-		if (! el || ! isEnabled) return;
-
-		focusMng.add(el);
-		return ()=> focusMng.remove(el);
-	}, [isEnabled]);
-
-	// [button width=（height=）]指定時、文字を箱ちょうどに収める倍率を**実測**する（本家 pixi
-	//	Text.width/height 相当。CSSに文字フィットが無いための代替）。幅制約と変形を一時的に外して
-	//	素の文字寸法(offsetWidth/Height＝変形非依存・CSS px)を測り、箱寸法との比を fit として scale へ渡す。
-	//	useLayoutEffect なので描画前に確定し、未縮小の文字が一瞬はみ出すチラつきは出ない。
-	const [fit, setFit] = useState({x: 1, y: 1});
-	// 画像ボタンの箱の大きさ＝**絵の実寸**（横は3コマ並びなので1/3）。本家 Button.ts:280 に対応。
-	//	実寸を知れるのはDOM側だけなので、ここで読み込んで測る。
-	//	width/heightが書かれていればそちらが勝つ（本家も `'width' in hArg` を優先する）
-	const picSrc = sty?.pic ? sty.src ?? '' : '';
-	const [natPic, setNatPic] = useState<{w: number; h: number} | null>(null);
-	useEffect(()=> {
-		if (! picSrc) {setNatPic(null); return}
-
-		let alive = true;
-		const img = new Image;
-		img.onload = ()=> {
-			if (alive) setNatPic({w: img.naturalWidth / 3, h: img.naturalHeight});
-		};
-		img.src = picSrc;
-		return ()=> {alive = false};
-	}, [picSrc]);
-	// b_pic（背景画像）の実寸。picと違い3コマ分割は無いので、そのままの寸法を使う
-	const bPicSrc = sty?.b_pic ? sty.b_src ?? '' : '';
-	const [natBPic, setNatBPic] = useState<{w: number; h: number} | null>(null);
-	useEffect(()=> {
-		if (! bPicSrc) {setNatBPic(null); return}
-
-		let alive = true;
-		const img = new Image;
-		img.onload = ()=> {
-			if (alive) setNatBPic({w: img.naturalWidth, h: img.naturalHeight});
-		};
-		img.src = bPicSrc;
-		return ()=> {alive = false};
-	}, [bPicSrc]);
-	useLayoutEffect(()=> {
-		const el = ref.current;
-		if (! el) {setFit({x: 1, y: 1}); return}
-		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
-
-		const measure = ()=> {
-			const {w: bw, h: bh} = btnBoxSize(sty, natPic, natBPic);
-			const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
-			el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
-			const natW = el.offsetWidth, natH = el.offsetHeight;
-			el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
-			// 親の文字レイヤが[sys_menu visible=false]等でdisplay:noneの間に測ると0のまま
-			//	（display:noneの要素はレイアウトされずoffsetWidth/Heightが常に0）。
-			//	一度でも実測できたらそれで確定してよいので監視を打ち切る（測定中のwidth一時変更
-			//	自体もResizeObserverの対象になるため、放置すると余分な再測定が続く）
-			if (natW > 0 && natH > 0) ro.disconnect();
-			setFit({
-				x: natW > 0 ? bw / natW : 1,
-				y: natH > 0 ? bh / natH : 1,
-			});
-		};
-		const ro = new ResizeObserver(measure);
-		ro.observe(el);
-		measure();
-		return ()=> ro.disconnect();
-	}, [text, sty?.width, sty?.height, sty?.pic, natBPic]);
 
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）。
 	//	マウスクリックと同じ「押された」動作なのでclickseも鳴らす

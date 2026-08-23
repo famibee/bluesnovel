@@ -96,11 +96,23 @@ test('[button b_pic=…]は文字を残して背後に絵を敷く', async ({pag
 	const b = btn(page, 2);
 	expect(await b.textContent()).toBe('もじ');
 
+	// 背景は要素本体ではなく`::before`疑似要素に敷く（本体は文字を箱へ収めるfit倍率の
+	//	transform:scaleを持つため、同じ要素に置くとb_pic枠まで一緒に縮んでしまう）
 	const sty = await b.evaluate(el=> {
-		const cs = getComputedStyle(el);
-		return {img: cs.backgroundImage, pos: cs.backgroundPosition, rep: cs.backgroundRepeat};
+		const cs = getComputedStyle(el, '::before');
+		return {img: cs.backgroundImage, rep: cs.backgroundRepeat};
 	});
 	expect(sty.img).toMatch(/waku\.png/);
-	expect(sty.pos).toBe('50% 50%');	// 中央合わせ（本家 Button.ts:249 も文字の中心に置く）
 	expect(sty.rep).toBe('no-repeat');
+});
+
+test('[button pic=… enabled=false]は3コマ分割せず絵全体を表示する', async ({page})=> {
+	// 本家 Button.ts:270 `w = enabled ? w_3 : sp.width` と同じ（ch_gallery/ch_button の
+	//	非ボタン用途）。enabled=falseはtabindexが立たないのでbtn()（tabindex="0"限定）では
+	//	拾えず、背景画像のURLで探す
+	for (let i = 0; i < 3; ++i) {await pressKey(page, 'Space'); await waitIdle(page)}
+	const b = page.locator(`${SEL_FORE} span[style*="btn3.png"][style*="pointer-events: none"]`);
+
+	await expectBoxSize(b, 180, 40);	// 3コマ分の1（60x40）ではなく絵の実寸そのまま
+	expect(await b.evaluate(el=> getComputedStyle(el).backgroundSize)).toBe('100% 100%');
 });
