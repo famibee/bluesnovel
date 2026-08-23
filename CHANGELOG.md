@@ -681,6 +681,27 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.3.3](https://github.com/famibee/bluesnovel/compare/v0.3.2...v0.3.3) (2026-08-23)
+
+
+### Bug Fixes
+
+* **sn:** [add_lay]自身のfn/blendmode等の属性が反映されない不具合を修正 ([eb9f43b](https://github.com/famibee/bluesnovel/commit/eb9f43b24c34a83978121672af80f58df444e3ea))
+* **sn:** [button]/[event]/[link]でarg省略時に&sn.eventLabelが常にundefinedになる不具合を修正 ([ea2807b](https://github.com/famibee/bluesnovel/commit/ea2807b067b04d3fcee4dae09cc77c3f86e38a6a))
+* **sn:** [event key=… arg=…]でargが握りつぶされ&sn.eventArgが常に空文字列になる不具合を修正 ([2c180b8](https://github.com/famibee/bluesnovel/commit/2c180b8fcc8ff0bd797a3d4d89771e89cec649dd))
+* **sn:** [rec_ch]のtextなし呼び出しで履歴メタデータが消える不具合を修正、sn_gallery全プロジェクト突き合わせ完了 ([a27e608](https://github.com/famibee/bluesnovel/commit/a27e60825acffa614ca24b63e2a5104ec42c9db1))
+* **sn:** [trans]対象外レイヤ複製でvideo要素が2重化し[wv]が進まなくなる不具合を修正 ([bb998ca](https://github.com/famibee/bluesnovel/commit/bb998ca755c9ba7b845393b89665e019558c282d))
+* **sn:** [wait_tsy]待機中に[button call=true]が反映されない不具合を修正 ([b9bedc6](https://github.com/famibee/bluesnovel/commit/b9bedc682f1fff3ef965c600c595a816fec2863c))
+* **sn:** grpレイヤの位置未指定時に下端中央へ落とすフォールバックを追加 ([ff7df15](https://github.com/famibee/bluesnovel/commit/ff7df156f27792887d5aad55af076d4a9ab2b769))
+* **sn:** mul_evの[p]中の待ちタグ7パターンを検証し、本家バグの非該当を確認 ([2cd855c](https://github.com/famibee/bluesnovel/commit/2cd855c78887018cc61b3bb42751fab04c72ca7b))
+* **sn:** React DevTools拡張機能導入環境でのSysBase初期化失敗を修正 ([a4efafc](https://github.com/famibee/bluesnovel/commit/a4efafca972c16a06f3a1fb6e4225cbf60ba9e9e))
+* **sn:** sn_gallery実機比較で発見したタイトル未更新・ボタン重なりを修正 ([0ac0273](https://github.com/famibee/bluesnovel/commit/0ac02730f046c4c30c92f9c69fa41594d9813a6c))
+* **sn:** ギャラリー埋め込み時のステージ拡大が本家より過剰だった不具合を修正 ([ee0d8b7](https://github.com/famibee/bluesnovel/commit/ee0d8b79d9f161604a152c8887e19a4ea5fec46b))
+* **sn:** スプライトシートの均等グリッド仮定を廃し実座標+clip-pathへ ([ff7df15](https://github.com/famibee/bluesnovel/commit/ff7df156f27792887d5aad55af076d4a9ab2b769))
+* **sn:** 文字レイヤ既定表示・?cur=プロジェクト指定・DevTools干渉の不具合を修正 ([59787dd](https://github.com/famibee/bluesnovel/commit/59787dd35ce658cd367a729a7bff906d19e3a82a))
+* **sn:** 縦書き時の[l]/[p]待ちマークの余分な回転を削除 ([ff7df15](https://github.com/famibee/bluesnovel/commit/ff7df156f27792887d5aad55af076d4a9ab2b769))
+* 完了（4プロジェクト、バグ3件修正） ([897a41c](https://github.com/famibee/bluesnovel/commit/897a41cfd54fcb00099278146ff520add732755d))
+
 ## [0.3.2](https://github.com/famibee/bluesnovel/compare/v0.3.1...v0.3.2) (2026-08-20)
 
 
