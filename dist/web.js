@@ -74,15 +74,18 @@ var a = "skynovel", o = class {
 		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
 		let u = await i.generate(this);
 		this.setMain(u), document.body.style.backgroundColor = r.bgColor;
-		let d = this.#t ??= document.getElementById(a) ?? (() => {
+		let d = document.getElementById(a), f = this.#t ??= d instanceof HTMLCanvasElement ? (() => {
+			let e = document.createElement("div");
+			return e.id = a, e.className = d.className, d.replaceWith(e), e;
+		})() : d ?? (() => {
 			let e = document.createElement("div");
 			return e.id = a, document.body.appendChild(e), e;
-		})(), f = new o(this);
-		this.scrMng = f, this.#e = t(d), n(this.#e, {
-			heStage: d,
+		})(), p = new o(this);
+		this.scrMng = p, this.#e = t(f), n(this.#e, {
+			heStage: f,
 			sys: this,
-			scrMng: f
-		}, () => queueMicrotask(() => f.load("main")));
+			scrMng: p
+		}, () => queueMicrotask(() => p.load("main")));
 	}
 	async stop() {
 		if (!this.#e) return;

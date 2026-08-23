@@ -112,15 +112,27 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		//	（Config.tsのload()内でCmnLib.bgColorへ変換済み。cssColorOf()参照）
 		document.body.style.backgroundColor = CmnLib.bgColor;
 
-		// 初回だけ：ホストHTMLの既存要素（sn_gallery index.htmlの<canvas id="skynovel">等、
-		//	pixi.js時代の名残）があればそれをそのままマウント先にし、無ければdivを新設する。
+		// 初回だけ：ホストHTMLの既存要素があればそれをそのままマウント先にし、無ければdivを新設する。
 		//	以後（プロジェクト切替）は同じ要素へ#rootを作り直すだけで、DOMは触らない
-		const he = this.#heStage ??= <HTMLDivElement>document.getElementById(SN_ID) ?? (()=> {
-			const el = document.createElement('div');
-			el.id = SN_ID;
-			document.body.appendChild(el);
-			return el;
-		})();
+		const exist = document.getElementById(SN_ID);
+		const he = this.#heStage ??= (
+			exist instanceof HTMLCanvasElement
+				? (()=> {	// sn_gallery index.htmlの<canvas id="skynovel">等、pixi.js時代の名残。
+					//	canvasの子要素はHTML仕様上フォールバックコンテンツ扱いで描画されないため、
+					//	classを引き継いだdivに差し替えてマウント先にする（本家からの乗り換え試用対応）
+					const el = document.createElement('div');
+					el.id = SN_ID;
+					el.className = exist.className;
+					exist.replaceWith(el);
+					return el;
+				})()
+				: <HTMLDivElement>exist ?? (()=> {
+					const el = document.createElement('div');
+					el.id = SN_ID;
+					document.body.appendChild(el);
+					return el;
+				})()
+		);
 
 		const scrMng = new ScriptMng(this);
 		this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
