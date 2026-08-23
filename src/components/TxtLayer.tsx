@@ -202,8 +202,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	済ませている（マージ後のそのレイヤ全体の値が要るため、エンジン単体では判定できない）
 	const kin = useMemo(()=> new Kinsoku({sol: kinsoku_sol, eol: kinsoku_eol, dns: kinsoku_dns, bura: kinsoku_bura}),
 		[kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura]);
-	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。isTateステートは別のuseLayoutEffectで
-	//	styの変化時にしか更新されないので、禁則計算の直前は都度読み直す
+	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。禁則計算の直前に都度読み直す
 	const isTategaki = ()=> !! boxRef.current && globalThis.getComputedStyle(boxRef.current).writingMode.startsWith('vertical');
 
 	useLayoutEffect(()=> {
@@ -347,25 +346,18 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	本文に戻れず読み進められなくなる」不具合対応）。[enable_event enabled=false]の間は
 	//	クリックも受けないレイヤなので、BtnLayer.tsxと同じ理由でフォーカス対象からも外す
 	const canFocusWait = wantWaitEl && enabled;
-	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。[lay style=…]でしか変わらないので
-	//	そのCSS文字列とインラインstyleが変わったときだけ測り直す
-	const [isTate, setIsTate] = useState(false);
-	useLayoutEffect(()=> {
-		const el = boxRef.current;
-		setIsTate(!! el && globalThis.getComputedStyle(el).writingMode.startsWith('vertical'));
-	}, [sCss, sty]);
 	const styWaitMark = css`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
-		/* **縦書きでは書字方向に合わせてマークも回す**（-90°）。背景画像も<img>も
-			writing-modeでは回らないので、横書き用に描かれた▼（次の行の方向を指す絵）が
-			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
-			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
-			置いているため、向きが本文と食い違うと目立つ */
-		${isTate ? 'rotate: -90deg;' : ''}
+		/* **回転は付けない**。横書き用に描かれた▶（次の行の方向を指す絵）は、writing-modeを
+			継承したinline-block（この要素自身）が縦書きコンテナ内でorthogonal flowとして
+			扱われる結果、明示的なrotateを足さなくても▶→◀（次の行＝左方向を指す）へ自動的に
+			回って見える（実機確認2026-08-23：sn_galleryトップの左端マーク。rotateを足すと
+			この暗黙の回転に上乗せされて二重に回ってしまう＝一時的にrotate:90deg/180degを
+			試して混乱した経緯がある。詳細はコミットログ参照） */
 		/* [waitclick]用プロキシ、および[l]/[p]でbreakline/breakpage未指定のときは中身が空
 			（マーカーなし、本家準拠）。中身が無いinline-blockは0x0になりFocusMng.#canFocus()の
 			getClientRects()判定に落ちてフォーカスできなくなるため、widthやheightが明示されて
@@ -908,7 +900,7 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 
 	void loadSheet(src).then(sh=> {
 		if (! sh) return;
-		// gw/gh省略時、シート用CSSクラスはコマ実寸(fw×fh)をpx固定で持つため、
+		// gw/gh省略時、シート用CSSクラスはbox実寸(boxW×boxH)をpx固定で持つため、
 		//	つけただけだと文字サイズをはみ出す（本家はDOM実測でsp.width/heightへ強制する
 		//	＝TxtStage.ts:560）。background-positionがkeyframesにpx直書きのため
 		//	background-sizeでは縮小できず、実寸のまま描くinner要素をtransform:scaleで
@@ -926,7 +918,7 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 				box.style.height = `${String(natH)}px`;
 				box.style.verticalAlign = 'text-bottom';
 				// 絶対配置で通常のインラインフローから外す（そうしないとinner本来の実寸
-				//	(fw×fh)がインラインフローの占有幅として扱われ、box幅を超えた分が
+				//	(boxW×boxH)がインラインフローの占有幅として扱われ、box幅を超えた分が
 				//	上下左右どちらへクリップされるか不定になる）
 				const inner = document.createElement('span');
 				inner.classList.add(aniSpriteClass(sh));
@@ -934,7 +926,7 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 				inner.style.left = '0';
 				inner.style.top = '0';
 				inner.style.transformOrigin = 'top left';
-				inner.style.transform = `scale(${String(natW / sh.fw)}, ${String(natH / sh.fh)})`;
+				inner.style.transform = `scale(${String(natW / sh.boxW)}, ${String(natH / sh.boxH)})`;
 				box.appendChild(inner);
 			}
 			else box.classList.add(aniSpriteClass(sh));

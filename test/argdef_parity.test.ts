@@ -64,8 +64,13 @@ function upstreamDefaults(): {[attr: string]: Set<string>} {
 const A_CSS_DEF: {[attr: string]: string} = {
 	visible	: 'CSSのvisibility既定=visible。styLay()はvisible=falseの時だけdisplay:noneを出す',
 	alpha	: 'CSSのopacity既定=1（本家 Layer/Button/TxtStageとも1）',
-	left	: 'CSSのleft=0（絶対配置の静的位置）',
-	top		: 'CSSのtop=0',
+	// grpレイヤ（class=grp）へfn/faceで画像を出す時だけ例外：本家 Layer.setXY() の isGrp
+	//	フォールバックに合わせ、位置属性が一つも無ければ#applyLayPage()がleft/topを
+	//	（下端中央）計算して積む（ScriptEngine.ts参照。todo.md 2026-08-23の[fg]表示位置不具合）。
+	//	それ以外（txtレイヤ／grpでもfn・face無指定）は引き続きCSSの0,0に委ねる——両ケースは
+	//	排他なので「既定値は1箇所」の重複にはならない
+	left	: 'CSSのleft=0（絶対配置の静的位置）。grp×fn/face時のみエンジンが下端中央を計算',
+	top		: 'CSSのtop=0。grp×fn/face時のみエンジンが下端中央を計算',
 	rotation: 'transformを出さない＝回転なし=0',
 	scale_x	: 'transformを出さない＝等倍=1',
 	scale_y	: 'transformを出さない＝等倍=1',

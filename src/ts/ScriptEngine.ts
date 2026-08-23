@@ -419,6 +419,10 @@ export class ScriptEngine {
 	get clearOnResume() {return this.#clearOnResume}
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
+	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt）。#applyLayPage()のisGrp判定専用
+	//	（本家 GrpLayer/TxtLayer はクラスごとに別インスタンスだが、こちらは単一の関数で両方を
+	//	処理するため、判定材料をここに持たせる）
+	readonly #hLayCls: {[nm: string]: 'grp' | 'txt'} = Object.create(null);
 
 	// ループ再生中のサウンドバッファ表（本家 SndBuf.ts のモジュール変数hLPをインスタンスに閉じ込めた版。
 	//	モジュール変数のままだとテストごとに新しいScriptEngineを作っても前のテストの値が残ってしまう）。
@@ -1152,7 +1156,8 @@ export class ScriptEngine {
 		//	見ない）。c/l/r/数値でX中心を指定し、Yは常に画像下端をステージ下端へ接地させる
 		//	（本家は`ret.y = stageH - b_height`で計算するが、実寸を知らないこちらは
 		//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない
-		if (args.pos !== undefined && args.pos !== 'stay') {
+		if (args.pos === 'stay') { /* 位置は変えない */ }
+		else if (args.pos !== undefined) {
 			const p = args.pos;
 			const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
 			const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
@@ -1188,6 +1193,23 @@ export class ScriptEngine {
 				sty.align_y = 'bottom';
 			}
 			else if (args.s_bottom !== undefined) sty.s_bottom = this.#argPos('lay', 'top', args.s_bottom);
+
+			// 画像レイヤ（class=grp）へfn/faceで画像を出す時、位置属性が一つも書かれていなければ
+			//	下端中央へ落とす（本家 Layer.setXY() の isGrp 専用フォールバック。iPhone6など
+			//	中途半端な画面サイズで縦位置が異常になるのを防ぐための分岐だが、bluesnovelでは
+			//	単に「位置未指定の画像レイヤはステージ左上(0,0)基準」になってしまっており、[fg]等の
+			//	初回表示が左上に出る不具合の原因だった＝todo.md 2026-08-23記載）。
+			//	本家はfn指定時のみsetXYを呼ぶ（fn省略時はSpritesMngが差し替わらないため、既に
+			//	表示済みの位置をそのまま保つ）ので、fn/face無指定の[lay layer=0 alpha=…]的な
+			//	呼び出しでは発動させない
+			if ((args.fn !== undefined || args.pic !== undefined || args.face !== undefined)
+			&& ! ('left' in sty) && ! ('s_right' in sty) && ! ('top' in sty) && ! ('s_bottom' in sty)
+			&& this.#hLayCls[args.layer ?? ''] === 'grp') {
+				const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
+				const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
+				sty.left = stageW /2; sty.align_x = 'center';
+				sty.top = stageH; sty.align_y = 'bottom';
+			}
 		}
 		// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
 		//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
@@ -1264,6 +1286,7 @@ export class ScriptEngine {
 			const nm = args.layer ?? args.nm ?? '';
 			if (! nm) throw '[add_lay] layerは必須です（試作仕様）';
 			const cls = (args.class ?? 'txt').toLowerCase() === 'grp' ? 'grp' : 'txt';
+			this.#hLayCls[nm] = cls;
 			this.#hTxt[nm] = '';
 			this.#hTxtBk[nm] = '';
 			// 文字レイヤは作った時点で「イベントを受ける」（本家 LayerMng.ts:465）。

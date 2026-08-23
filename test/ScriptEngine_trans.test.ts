@@ -205,16 +205,22 @@ it('page_toの値域', ()=> {
 
 it('scenario_titleSnLikeSequence', ()=> {
 	// tmp_esm_uc/doc/prj/theme/title.sn と同じ流れ：裏ページを組んで[trans]→[wt]
-	const a = acts(
+	const se = new ScriptEngine('t1',
 		`${LAYS}[lay layer=base fn=title page=back][lay layer=0 fn=logo page=back]`+
 		'[trans layer="base,0,mes" time=0][wt][s]'
 	);
+	se.defBuiltin('const.sn.config.window.width', ()=> 1024);
+	se.defBuiltin('const.sn.config.window.height', ()=> 768);
+	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'addLay', cls: 'grp', nm: '0'},
 		{t: 'addLay', cls: 'txt', nm: 'mes'},
 		{t: 'chgPic', nm: 'base', page: 'back', fn: 'title'},
+		// grpレイヤへfnを出す時、位置属性が無ければ下端中央へ（本家 Layer.setXY() isGrpフォールバック）
+		{t: 'chgLay', nm: 'base', page: 'back', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'chgPic', nm: '0', page: 'back', fn: 'logo'},
+		{t: 'chgLay', nm: '0', page: 'back', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'trans', aLayNm: ['base', '0', 'mes'], time: 0},
 		{t: 'waitTrans', canskip: true},
 	]);

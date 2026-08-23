@@ -16,46 +16,54 @@
 
 import {decryptPicUrl} from './Crypto';
 
-// 1コマの大きさと格子。CSSアニメを組むのに要るだけの情報へ畳んである
+// 1コマぶんの位置情報。x/yはシート画像内の実座標（TexturePackerが不規則パッキングするため、
+//	格子仮定では求まらない）。ox/oyはtrim分のオフセット（トリム無しなら0,0）
+export type T_FRAME = {x: number; y: number; w: number; h: number; ox: number; oy: number};
+
+// シート全体。CSSアニメを組むのに要るだけの情報へ畳んである
 export type T_SHEET = {
 	img		: string;	// シート画像（png）の解決済みURL
-	fw		: number;	// 1コマの幅
-	fh		: number;	// 1コマの高さ
-	cols	: number;
-	rows	: number;
-	cnt		: number;	// 実際のコマ数（格子が埋まりきらないこともある）
+	boxW	: number;	// 表示box幅（トリム前の共通サイズ＝TexturePackerのsourceSize。トリム無しはframeのw）
+	boxH	: number;	// 表示box高さ
+	frames	: T_FRAME[];	// 各コマ（定義順）
+	cnt		: number;	// 実際のコマ数（=frames.length）
 	sec		: number;	// 一巡の秒数
-	isCol	: boolean;	// コマの並び順が縦優先（列ごとに下へ進む）か
 };
 
 // TexturePacker形式（本家がpixiのSpritesheetへ食わせているのと同じjson）の必要部分
 type T_SHEET_JSON = {
-	frames	: {[nm: string]: {frame: {x: number; y: number; w: number; h: number}}};
+	frames	: {[nm: string]: {
+		frame			: {x: number; y: number; w: number; h: number};
+		spriteSourceSize?: {x: number; y: number};	// trimmed時のオフセット
+		sourceSize?		: {w: number; h: number};	// トリム前の共通サイズ
+	}};
 	meta	: {image?: string; size?: {w: number; h: number}; animationSpeed?: number};
 };
 
-// jsonからCSSアニメ用の情報を作る（純粋）。imgはシート画像の解決済みURL
+// jsonからCSSアニメ用の情報を作る（純粋）。imgはシート画像の解決済みURL。
+//	**各コマの実座標をそのまま使う**（以前は「フレーム数とシートサイズから均等グリッドと仮定」
+//	していたが、TexturePackerは省スペース化のため不規則にパッキングするため、この仮定はほぼ
+//	必ず外れて無関係な矩形を表示していた＝todo.md 2026-08-23記載の[graph]/[fg]表示不具合の原因）
 export function parseSheet(json: unknown, img: string): T_SHEET | undefined {
 	const {frames, meta} = json as T_SHEET_JSON;
-	const aFr = Object.values(frames ?? {}).map(v=> v.frame);
+	const aFr = Object.values(frames ?? {});
 	const f0 = aFr[0];
 	if (! f0 || ! meta.size) return undefined;
 
-	const {w: fw, h: fh} = f0;
-	if (fw <= 0 || fh <= 0) return undefined;
+	const {w: boxW, h: boxH} = f0.sourceSize ?? f0.frame;
+	if (boxW <= 0 || boxH <= 0) return undefined;
 
-	// コマの並び順。2コマ目が真下なら縦優先（本家サンプルのclock/breaklineがこれ）
-	const isCol = (aFr[1]?.x ?? -1) === f0.x && (aFr[1]?.y ?? -1) !== f0.y;
 	// 本家（pixi AnimatedSprite）のanimationSpeedは「1tickあたりに進むコマ数」で、
 	//	tickは60fps。つまり 0.2 なら毎秒12コマ＝一巡は コマ数 /(60*0.2) 秒
 	const spd = meta.animationSpeed ?? 1;
 	return {
-		img, fw, fh,
-		cols: Math.max(1, Math.round(meta.size.w / fw)),
-		rows: Math.max(1, Math.round(meta.size.h / fh)),
+		img, boxW, boxH,
+		frames: aFr.map(({frame, spriteSourceSize}): T_FRAME=> ({
+			x: frame.x, y: frame.y, w: frame.w, h: frame.h,
+			ox: spriteSourceSize?.x ?? 0, oy: spriteSourceSize?.y ?? 0,
+		})),
 		cnt	: aFr.length,
 		sec	: aFr.length / (60 * (spd > 0 ? spd : 1)),
-		isCol,
 	};
 }
 
@@ -136,24 +144,25 @@ export function aniSpriteClass(sh: T_SHEET, doc: Document = document): string {
 }
 
 // 上のCSS本体（純粋）。テストしたいのはこちら
-export function aniSpriteCss({img, fw, fh, cols, rows, cnt, sec, isCol}: T_SHEET, cls: string): string {
-	// コマ番号iから格子上の位置(col, row)へ。isColなら列ごとに下へ進む（縦優先）
-	const posOf = (i: number): string => {
-		const col = isCol ? Math.floor(i / rows) : i % cols;
-		const row = isCol ? i % rows : Math.floor(i / cols);
-		return `${String(-col * fw)}px ${String(-row * fh)}px`;
-	};
-	const aStep = Array.from({length: cnt}, (_, i)=>
-		`\t${String(Math.round(i / cnt * 1e6) / 1e4)}% {background-position: ${posOf(i)}; animation-timing-function: step-end;}`
+export function aniSpriteCss({img, boxW, boxH, frames, cnt, sec}: T_SHEET, cls: string): string {
+	// コマ番号iのbackground-position＋clip-path。boxはtrim前の共通サイズで固定し、
+	//	その中の(ox,oy)〜(ox+w,oy+h)だけをclip-pathで残す（trim分の余白に背景画像の
+	//	無関係な隣コマが透けて見えるのを防ぐ。trim無し＝ox=oy=0, w=boxW, h=boxHなら
+	//	insetは全辺0で実質クリップ無し）
+	const declOf = ({x, y, w, h, ox, oy}: T_FRAME): string =>
+		`background-position: ${String(-x + ox)}px ${String(-y + oy)}px; `
+		+`clip-path: inset(${String(oy)}px ${String(boxW - ox - w)}px ${String(boxH - oy - h)}px ${String(ox)}px);`;
+	const aStep = frames.map((f, i)=>
+		`\t${String(Math.round(i / cnt * 1e6) / 1e4)}% {${declOf(f)} animation-timing-function: step-end;}`
 	).join('\n');
 	return `@keyframes ${cls}_f {
 ${aStep}
-	100% {background-position: ${posOf(0)};}
+	100% {${declOf(frames[0]!)}}
 }
 .${cls} {
 	display: inline-block;
-	width: ${String(fw)}px;
-	height: ${String(fh)}px;
+	width: ${String(boxW)}px;
+	height: ${String(boxH)}px;
 	background-image: url(${JSON.stringify(img)});
 	background-repeat: no-repeat;
 	background-position: 0 0;

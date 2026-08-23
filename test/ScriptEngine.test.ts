@@ -78,10 +78,14 @@ it('step_chgPic', ()=> {
 	// [current]しない限り既定値'mes'のまま変わらない仕様（ScriptEngine.ts:57, #curTxtLayer）。
 	// face未指定時はaFaceキー自体を積まない＝直前のfaceを維持する（本家 GrpLayer.ts:76-85）。
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=GRP][lay layer=base pic=yun_1184][s]');
+	se.defBuiltin('const.sn.config.window.width', ()=> 1024);
+	se.defBuiltin('const.sn.config.window.height', ()=> 768);
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184'},
+		// grpレイヤへpicを出す時、位置属性が無ければ下端中央へ（本家 Layer.setXY() isGrpフォールバック）
+		{t: 'chgLay', nm: 'base', page: 'fore', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });
@@ -112,6 +116,8 @@ it('step_lay_faceComposesMultipleImages', ()=> {
 		'[s]',
 	].join('');
 	const se = new ScriptEngine('t1', sn);
+	se.defBuiltin('const.sn.config.window.width', ()=> 1024);
+	se.defBuiltin('const.sn.config.window.height', ()=> 768);
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: '0'},
@@ -120,6 +126,8 @@ it('step_lay_faceComposesMultipleImages', ()=> {
 			{fn: 'minoura_me_futsu', dx: 171, dy: 159, blendmode: 'normal'},
 			{fn: 'minoura_mayu_futsu', dx: 167, dy: 146, blendmode: 'multiply'},
 		]},
+		// grpレイヤへfnを出す時、位置属性が無ければ下端中央へ（本家 Layer.setXY() isGrpフォールバック）
+		{t: 'chgLay', nm: '0', page: 'fore', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'stop', kind: 's', key: 't1:6', nm: 'mes'},
 	]);
 });
@@ -127,12 +135,16 @@ it('step_lay_faceComposesMultipleImages', ()=> {
 it('step_lay_faceWithFnOmitted_usesNameAsFn', ()=> {
 	// [add_face]でfn省略時はnameをファイル名として使う（本家 SpritesMng.add_face()と同様）
 	const se = new ScriptEngine('t1', '[add_lay layer=0 class=grp][add_face name=minoura_me_futsu dx=1 dy=2][lay layer=0 fn=base face=minoura_me_futsu][s]');
+	se.defBuiltin('const.sn.config.window.width', ()=> 1024);
+	se.defBuiltin('const.sn.config.window.height', ()=> 768);
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: '0'},
 		{t: 'chgPic', nm: '0', page: 'fore', fn: 'base', aFace: [
 			{fn: 'minoura_me_futsu', dx: 1, dy: 2, blendmode: 'normal'},
 		]},
+		// grpレイヤへfnを出す時、位置属性が無ければ下端中央へ（本家 Layer.setXY() isGrpフォールバック）
+		{t: 'chgLay', nm: '0', page: 'fore', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'stop', kind: 's', key: 't1:4', nm: 'mes'},
 	]);
 });
@@ -184,11 +196,15 @@ it('step_lay_bAlpha', ()=> {
 it('step_lay_bAlpha_withPic_bothActionsPushed', ()=> {
 	// pic（またはfn）とb_alphaを同一[lay]タグ内で併用した場合、両方のアクションが記述順で積まれる
 	const se = new ScriptEngine('t1', '[add_lay layer=base class=grp][lay layer=base pic=yun_1184 b_alpha=0.5][s]');
+	se.defBuiltin('const.sn.config.window.width', ()=> 1024);
+	se.defBuiltin('const.sn.config.window.height', ()=> 768);
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'grp', nm: 'base'},
 		{t: 'chgPic', nm: 'base', page: 'fore', fn: 'yun_1184'},
 		{t: 'chgBAlpha', nm: 'base', page: 'fore', b_alpha: 0.5},
+		// grpレイヤへpicを出す時、位置属性が無ければ下端中央へ（本家 Layer.setXY() isGrpフォールバック）
+		{t: 'chgLay', nm: 'base', page: 'fore', sty: {left: 512, align_x: 'center', top: 768, align_y: 'bottom'}},
 		{t: 'stop', kind: 's', key: 't1:3', nm: 'mes'},
 	]);
 });

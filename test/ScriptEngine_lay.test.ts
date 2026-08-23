@@ -27,8 +27,26 @@ function styOf(src: string): T_LAY_STY_ARG | undefined {
 // ============ [lay]のレイヤ共通属性 ============
 
 it('lay_noStyAttr_pushesNothing', ()=> {
-	// 見た目の属性が1つも無ければchgLayは積まない（fn/b_alphaだけの[lay]は従来どおり）
-	expect(styOf('[lay layer=base fn=bg]')).toBeUndefined();
+	// 見た目の属性が1つも無ければchgLayは積まない（b_alphaだけの[lay]は従来どおり）
+	expect(styOf('[lay layer=base b_alpha=0.5]')).toBeUndefined();
+	// txtレイヤはfn/faceを持たないので、fnを書いてもgrpのisGrpフォールバックは働かない
+	expect(styOf('[lay layer=mes]')).toBeUndefined();
+});
+
+it('lay_grpFnNoPos_fallsBackToBottomCenter', ()=> {
+	// grpレイヤ（class=grp）へfn/faceで画像を出す時、位置属性が一つも無ければ
+	//	下端中央へ落とす（本家 Layer.setXY() の isGrp フォールバック。todo.md 2026-08-23の
+	//	[fg]表示位置不具合の修正）
+	expect(styOfWin('[lay layer=base fn=bg]')).toMatchObject({left: 512, align_x: 'center', top: 768, align_y: 'bottom'});
+	// faceだけの指定でも同様（fn省略＝直前のfnを維持する呼び方）
+	expect(styOfWin('[add_face name=f1 fn=f1][lay layer=base face=f1]')).toMatchObject({left: 512, align_x: 'center', top: 768, align_y: 'bottom'});
+	// 位置属性が1つでもあればフォールバックしない
+	expect(styOfWin('[lay layer=base fn=bg left=10]')).toMatchObject({left: 10});
+	expect(styOfWin('[lay layer=base fn=bg left=10]')?.align_x).toBeUndefined();
+	// pos=stayなら位置属性自体を積まない（フォールバックも発動しない）
+	expect(styOfWin('[lay layer=base fn=bg pos=stay]')).toBeUndefined();
+	// fn/face無指定（他の属性だけの変更）ではフォールバックしない＝表示済みの位置を保つ
+	expect(styOfWin('[lay layer=base alpha=0.5]')).toEqual({alpha: 0.5});
 });
 
 it('lay_visible', ()=> {

@@ -60,7 +60,7 @@ function useSheet(src: string, isSheet: boolean): T_SHEET | undefined {
 		void loadSheet(src).then(v=> {
 			if (! alive) return;
 			setSheet(v);
-			if (v) setNatSize(src, v.fw, v.fh);	// const.sn.lay[N].…width/height用（本家GrpLayer.ts相当）
+			if (v) setNatSize(src, v.boxW, v.boxH);	// const.sn.lay[N].…width/height用（本家GrpLayer.ts相当）
 		});
 		return ()=> {alive = false};
 	}, [src, isSheet]);

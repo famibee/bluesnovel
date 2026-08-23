@@ -30,20 +30,25 @@ var r = /* @__PURE__ */ e({
 	sheetImgSrc: () => m
 });
 function i(e, t) {
-	let { frames: n, meta: r } = e, i = Object.values(n ?? {}).map((e) => e.frame), a = i[0];
+	let { frames: n, meta: r } = e, i = Object.values(n ?? {}), a = i[0];
 	if (!a || !r.size) return;
-	let { w: o, h: s } = a;
+	let { w: o, h: s } = a.sourceSize ?? a.frame;
 	if (o <= 0 || s <= 0) return;
-	let c = (i[1]?.x ?? -1) === a.x && (i[1]?.y ?? -1) !== a.y, l = r.animationSpeed ?? 1;
+	let c = r.animationSpeed ?? 1;
 	return {
 		img: t,
-		fw: o,
-		fh: s,
-		cols: Math.max(1, Math.round(r.size.w / o)),
-		rows: Math.max(1, Math.round(r.size.h / s)),
+		boxW: o,
+		boxH: s,
+		frames: i.map(({ frame: e, spriteSourceSize: t }) => ({
+			x: e.x,
+			y: e.y,
+			w: e.w,
+			h: e.h,
+			ox: t?.x ?? 0,
+			oy: t?.y ?? 0
+		})),
 		cnt: i.length,
-		sec: i.length / (60 * (l > 0 ? l : 1)),
-		isCol: c
+		sec: i.length / (60 * (c > 0 ? c : 1))
 	};
 }
 var a = (e, t) => fetch(e, t), o = (e, t) => Promise.resolve(t), s = (e) => Promise.resolve(e), c = !1;
@@ -85,23 +90,20 @@ function b(e, t = document) {
 	let r = v[e.img] = `sn_ani${String(++y)}`, i = t.createElement("style");
 	return i.dataset.sn = "sprite", i.textContent = x(e, r), t.head.appendChild(i), r;
 }
-function x({ img: e, fw: t, fh: n, cols: r, rows: i, cnt: a, sec: o, isCol: s }, c) {
-	let l = (e) => {
-		let a = s ? Math.floor(e / i) : e % r, o = s ? e % i : Math.floor(e / r);
-		return `${String(-a * t)}px ${String(-o * n)}px`;
-	};
-	return `@keyframes ${c}_f {
-${Array.from({ length: a }, (e, t) => `\t${String(Math.round(t / a * 1e6) / 1e4)}% {background-position: ${l(t)}; animation-timing-function: step-end;}`).join("\n")}
-	100% {background-position: ${l(0)};}
+function x({ img: e, boxW: t, boxH: n, frames: r, cnt: i, sec: a }, o) {
+	let s = ({ x: e, y: r, w: i, h: a, ox: o, oy: s }) => `background-position: ${String(-e + o)}px ${String(-r + s)}px; clip-path: inset(${String(s)}px ${String(t - o - i)}px ${String(n - s - a)}px ${String(o)}px);`;
+	return `@keyframes ${o}_f {
+${r.map((e, t) => `\t${String(Math.round(t / i * 1e6) / 1e4)}% {${s(e)} animation-timing-function: step-end;}`).join("\n")}
+	100% {${s(r[0])}}
 }
-.${c} {
+.${o} {
 	display: inline-block;
 	width: ${String(t)}px;
 	height: ${String(n)}px;
 	background-image: url(${JSON.stringify(e)});
 	background-repeat: no-repeat;
 	background-position: 0 0;
-	animation: ${c}_f ${String(o)}s infinite;
+	animation: ${o}_f ${String(a)}s infinite;
 }`;
 }
 //#endregion

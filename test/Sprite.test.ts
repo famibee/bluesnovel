@@ -15,7 +15,7 @@ import {aniSpriteCss, loadSheet, parseSheet, setDecFncs, setFetch, sheetImgSrc} 
 import {expect, it} from 'bun:test';
 
 
-// 縦優先（2コマ目が真下）。ギャラリーの clock.5x8：150x150のコマが5列8行＝40コマ
+// 縦優先（2コマ目が真下）。ギャラリーの clock.5x8：150x150のコマが5列8行＝40コマ。trim無し
 const CLOCK = {
 	frames: {
 		'clock0001.png': {frame: {x: 0, y: 0, w: 150, h: 150}},
@@ -24,7 +24,7 @@ const CLOCK = {
 	},
 	meta: {image: 'clock.5x8.png', size: {w: 750, h: 1200}, animationSpeed: 0.2},
 };
-// 横優先（2コマ目が右隣）。ギャラリーの blink.4x1：200x200のコマが4列1行
+// 横優先（2コマ目が右隣）。ギャラリーの blink.4x1：200x200のコマが4列1行。trim無し
 const BLINK = {
 	frames: {
 		'blink0001.png': {frame: {x: 0, y: 0, w: 200, h: 200}},
@@ -32,16 +32,36 @@ const BLINK = {
 	},
 	meta: {image: 'blink.4x1.png', size: {w: 800, h: 200}, animationSpeed: 0.2},
 };
+// TexturePackerの実際のパッキングはコマ数から求まる均等格子と一致しない（todo.md
+//	2026-08-23記載の[graph]/[fg]表示不具合の原因）ため、trimmedな不規則パッキングでも
+//	各コマの実座標がそのまま使われることを確認する
+const TRIMMED = {
+	frames: {
+		f0: {frame: {x: 70, y: 190, w: 24, h: 22}, trimmed: true, spriteSourceSize: {x: 0, y: 5, w: 28, h: 32}, sourceSize: {w: 28, h: 32}},
+		f1: {frame: {x: 144, y: 72, w: 25, h: 23}, trimmed: true, spriteSourceSize: {x: 0, y: 4, w: 28, h: 32}, sourceSize: {w: 28, h: 32}},
+	},
+	meta: {image: 'trimmed.png', size: {w: 256, h: 256}},
+};
 
-it('parseSheet_grid', ()=> {
+it('parseSheet_usesActualFrameCoordsNotGrid', ()=> {
+	// 均等格子と仮定した位置ではなく、各コマの実座標をそのまま持つ
 	const o = parseSheet(CLOCK, '/prj/mat/clock.5x8.png')!;
-	expect(o).toMatchObject({img: '/prj/mat/clock.5x8.png', fw: 150, fh: 150, cols: 5, rows: 8});
+	expect(o).toMatchObject({img: '/prj/mat/clock.5x8.png', boxW: 150, boxH: 150});
+	expect(o.frames).toEqual([
+		{x: 0, y: 0, w: 150, h: 150, ox: 0, oy: 0},
+		{x: 0, y: 150, w: 150, h: 150, ox: 0, oy: 0},
+		{x: 0, y: 300, w: 150, h: 150, ox: 0, oy: 0},
+	]);
 });
 
-it('parseSheet_colMajorOrder', ()=> {
-	// 2コマ目が真下なら縦優先（列ごとに下へ進む）
-	expect(parseSheet(CLOCK, 'x.png')!.isCol).toBe(true);
-	expect(parseSheet(BLINK, 'x.png')!.isCol).toBe(false);
+it('parseSheet_trimmedKeepsSourceSizeAndOffset', ()=> {
+	// trimmed時はboxがsourceSize（トリム前の共通サイズ）、各コマにox/oyオフセットを持つ
+	const o = parseSheet(TRIMMED, 'x.png')!;
+	expect(o).toMatchObject({boxW: 28, boxH: 32});
+	expect(o.frames).toEqual([
+		{x: 70, y: 190, w: 24, h: 22, ox: 0, oy: 5},
+		{x: 144, y: 72, w: 25, h: 23, ox: 0, oy: 4},
+	]);
 });
 
 it('parseSheet_secFromAnimationSpeed', ()=> {
@@ -75,22 +95,32 @@ it('aniSpriteCss_stepCountMatchesCntNotGrid', ()=> {
 	// CLOCKは格子5x8=40マスだが実コマは3つ。余りマス（37個）の位置を踏んではいけない
 	const sh = parseSheet(CLOCK, 'x.png')!;
 	const css = aniSpriteCss(sh, 'sn_ani1');
-	// 各コマの位置（列優先：1コマ目=(0,0), 2コマ目=(0,-150px), 3コマ目=(0,-300px)）
-	expect(css).toContain('background-position: 0px 0px; animation-timing-function: step-end;');
-	expect(css).toContain('background-position: 0px -150px; animation-timing-function: step-end;');
-	expect(css).toContain('background-position: 0px -300px; animation-timing-function: step-end;');
+	// 各コマの位置（実座標そのまま：1コマ目=(0,0), 2コマ目=(0,-150px), 3コマ目=(0,-300px)）
+	expect(css).toContain('background-position: 0px 0px; clip-path: inset(0px 0px 0px 0px); animation-timing-function: step-end;');
+	expect(css).toContain('background-position: 0px -150px; clip-path: inset(0px 0px 0px 0px); animation-timing-function: step-end;');
+	expect(css).toContain('background-position: 0px -300px; clip-path: inset(0px 0px 0px 0px); animation-timing-function: step-end;');
 	// 4コマ目（格子上は存在するが実コマではない位置）は出てこない
 	expect(css).not.toContain('-450px');
 	// steps()による格子丸ごと走査（cols=5/rows=8）はもう使わない
 	expect(css).not.toContain('steps(');
 });
 
+it('aniSpriteCss_trimmedClipsToActualFrameRect', ()=> {
+	// trim分の余白に背景画像の無関係な隣コマが透けないよう、実絵の矩形だけをclip-pathで残す
+	const sh = parseSheet(TRIMMED, 'x.png')!;
+	const css = aniSpriteCss(sh, 'sn_ani3');
+	// f0: box28x32, frame(70,190,24,22), offset(0,5) → position=(-70,-185), inset(top=5, right=28-0-24=4, bottom=32-5-22=5, left=0)
+	expect(css).toContain('background-position: -70px -185px; clip-path: inset(5px 4px 5px 0px); animation-timing-function: step-end;');
+	// f1: box28x32, frame(144,72,25,23), offset(0,4) → position=(-144,-68), inset(top=4, right=28-0-25=3, bottom=32-4-23=5, left=0)
+	expect(css).toContain('background-position: -144px -68px; clip-path: inset(4px 3px 5px 0px); animation-timing-function: step-end;');
+});
+
 it('aniSpriteCss_wrapsToFirstFrameAt100Percent', ()=> {
 	// 一巡の終わりは次周期の1コマ目位置へ（stepsのラップ挙動を模倣）
 	const sh = parseSheet(BLINK, 'x.png')!;
 	const css = aniSpriteCss(sh, 'sn_ani2');
-	expect(css).toContain('100% {background-position: 0px 0px;}');
-	expect(css).toContain('50% {background-position: -200px 0px; animation-timing-function: step-end;}');
+	expect(css).toContain('100% {background-position: 0px 0px; clip-path: inset(0px 0px 0px 0px);}');
+	expect(css).toContain('50% {background-position: -200px 0px; clip-path: inset(0px 0px 0px 0px); animation-timing-function: step-end;}');
 });
 
 // crypto:true構成でのアニメpngシート読込（.jsonはsys.decでテキスト複号、シート画像は
