@@ -164,7 +164,8 @@ var a = "skynovel", o = class {
 		this.#e = n.length > 2 ? n.slice(0, -2).join("/") + "/" : "", queueMicrotask(async () => this.loaded(e, t));
 	}
 	async loaded(...[e, t]) {
-		if (await super.loaded(e, t), document.querySelectorAll("[data-prj]").forEach((e) => {
+		let n = new URLSearchParams(location.search).get("cur");
+		if (n && (t.cur = this.#e + n + "/"), await super.loaded(e, t), document.querySelectorAll("[data-prj]").forEach((e) => {
 			let t = e.attributes.getNamedItem("data-prj");
 			t && e.addEventListener("click", () => {
 				this.runSN(t.value);

@@ -32,6 +32,13 @@ export class SysWeb extends SysBase {
 	}
 
 	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
+		// ギャラリー等、URLの?cur=…で起動プロジェクトを直接指定する導線（本家 SysWeb.ts:44,55-56）。
+		//	本家はSysBase.loaded()がrun()を呼ばず、SysWeb.loaded()の最後で自分で呼ぶ（そのため
+		//	cur書き換えをrun()の前に挟める）。こちらのSysBase.loaded()はrun()まで呼び切る作りなので、
+		//	super.loaded()より前にarg.curを書き換えておかないと初回起動に間に合わない
+		const cur = new URLSearchParams(location.search).get('cur');
+		if (cur) arg.cur = this.#path_base + cur + '/';
+
 		await super.loaded(hPlg, arg);	// cfg.oCfgはこの後で使える
 
 		// ギャラリーのプロジェクト切替導線（本家 SysWeb.ts:31-41）。data-prjはページ遷移なしで

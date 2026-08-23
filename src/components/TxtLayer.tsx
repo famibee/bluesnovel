@@ -94,11 +94,11 @@ type T_TXTARG = T_LAY_CMN & {
 	kinsoku_dns?	: string | undefined;
 	kinsoku_bura?	: string | undefined;
 	r_align?: T_R_ALIGN | undefined;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
-	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定は試作の既定色
+	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定時は背景・枠を描かない（本家準拠）
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
 	b_src?	: string | undefined;	// [lay b_pic=…]の解決済みURL。**あればb_colorより優先**（本家 TxtLayer.ts:393）
-	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（試作の既定スタイルを上書きする）
+	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（既定スタイルを上書きする）
 	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（1em/1.5em）のまま
 	pl?		: number | undefined;
 	pr?		: number | undefined;
@@ -332,13 +332,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		return ()=> {alive = false};
 	}, [waitSrc, isWaitSheet]);
 
-	// [l]/[p]/[waitclick]待ち中（🩷/✅、または見た目に出ないフォーカス専用のプロキシ）。
+	// [l]/[p]/[waitclick]待ち中（breakline/breakpage素材、または見た目に出ないフォーカス専用のプロキシ）。
 	//	[s]は対象外（wait自体がnullのまま＝完全停止でユーザー操作では進めない）。読み戻り中は非表示
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
 	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
 	const wantWaitEl = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
-	// マーカー画像/絵文字を実際に描くのは[l]/[p]だけ（[waitclick]は本家どおりマーカーなし）
+	// マーカー画像を実際に描くのは[l]/[p]だけ（[waitclick]は本家どおりマーカーなし）
 	const showWaitMark = wantWaitEl && wait!.kind !== 'waitclick';
+	// 実際に見た目のマークを描くか。本家はbreakline/breakpage素材がプロジェクトに無ければ
+	//	breakLine/breakPageを空実装のまま（本家 LayerMng.ts:159-168,318-319）にする＝何も描かない。
+	//	素材未指定時に絵文字で代替していた旧表示は本家の見た目と食い違うため廃止（2026-08-23）
+	const hasVisibleMark = showWaitMark && (!! waitSheet || (!! waitSrc && ! isWaitSheet));
 	// フォーカスの輪へ登録するか（todo.md「本文で左右キーでシステムボタンにフォーカスが移った後、
 	//	本文に戻れず読み進められなくなる」不具合対応）。[enable_event enabled=false]の間は
 	//	クリックも受けないレイヤなので、BtnLayer.tsxと同じ理由でフォーカス対象からも外す
@@ -362,10 +366,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
 			置いているため、向きが本文と食い違うと目立つ */
 		${isTate ? 'rotate: -90deg;' : ''}
-		/* [waitclick]用プロキシは中身が空（マーカーなし）。中身が無いinline-blockは0x0になり
-			FocusMng.#canFocus()のgetClientRects()判定に落ちてフォーカスできなくなるため、
-			widthやheightが明示されていない時だけ最小の当たり判定を確保する（見た目には出さない） */
-		${! showWaitMark && wait?.width === undefined && wait?.height === undefined
+		/* [waitclick]用プロキシ、および[l]/[p]でbreakline/breakpage未指定のときは中身が空
+			（マーカーなし、本家準拠）。中身が無いinline-blockは0x0になりFocusMng.#canFocus()の
+			getClientRects()判定に落ちてフォーカスできなくなるため、widthやheightが明示されて
+			いない時だけ最小の当たり判定を確保する（見た目には出さない） */
+		${! hasVisibleMark && wait?.width === undefined && wait?.height === undefined
 			? 'min-inline-size: 1em; min-block-size: 1em;' : ''}
 		/* マウスクリックのネイティブなtabIndexフォーカスではブラウザ既定の矩形を出さない
 			（todo.md「格好悪い」対応）。ゲームパッド／矢印キーでの移動は分かりやすさのため出したい
@@ -469,25 +474,23 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		isolation: isolate;
 		${enabled ? '' : 'pointer-events: none;'}
 	`;
-	// 背景色は[lay b_color=0xRRGGBB]。未指定時は試作の既定色（aquamarine相当）
+	// 背景色は[lay b_color=0xRRGGBB]。未指定時は本家準拠で背景・枠を描かない（後述noBox）
 	const {r, g, b} = rgbOf(b_color);
 	// 背景の不透明度は b_alpha × sys:TextLayer.Back.Alpha（本家 TxtLayer.ts:388）。
 	//	b_alpha_isfixed=true のレイヤだけは掛けずにb_alphaそのもの（クリック待ち画面など、
 	//	設定の「バック不透明度」に影響されたくない層のための指定）
 	const backAlpha = useStore(s=> s.backAlpha);
 	const bAlpha = b_alpha * (b_alpha_isfixed ? 1 : backAlpha);
-	// **文字が1つも無い層には箱（背景＋枠）を描かない**。
-	//	既定のaquamarine背景＋点線枠は試作の*目印*（本来見えない文字層の位置と大きさを分かるようにする
-	//	もの）であって、テンプレが期待する見た目ではない。文字が無いのは
-	//	・ボタン置き場として使っている層（テンプレのタイトル画面のmes層がこれ）
-	//	・まだ何も書いていない／[er]・[clear_lay]で空にした層
-	//	のどちらかで、どちらも本家では何も見えない。とくに後者は[trans]の最中に裏ページが
-	//	見えるので、空のメッセージ窓が水色の帯として一瞬現れてしまっていた。
+	// **[lay b_color=…]が無い層には箱（背景＋枠）を描かない**（本家準拠。文字の有無は問わない）。
+	//	以前は文字が無い層だけを対象にaquamarine背景＋点線枠を*目印*として出していたが
+	//	（本来見えない文字層の位置・大きさをテンプレ作者へ伝える暫定的な可視化）、通常の文字レイヤにも
+	//	本家に無い色が付いて見た目が食い違うため廃止（2026-08-23）。位置・大きさの可視化は
+	//	デザインモード側（todo.md）の課題として分離する。
 	//	ただし[lay b_color=…]で色を明示した層は「意図して置いた板」なので描く。
 	//	**背景が完全に透明なら箱も描かない**：枠はCSSのborderでb_alphaが効かないため、
 	//	これが無いと「透明な板」に点線だけが残る。テンプレの[txt_lay_fullscreen b_alpha=0]が
 	//	まさにその形（b_colorは書くが透過度0）で、全画面の文字レイヤが点線矩形として見えていた
-	const noBox = bAlpha === 0 || (str.length === 0 && b_color === undefined && ! b_src);
+	const noBox = bAlpha === 0 || b_color === undefined;
 	const styTxt = css`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
 			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
@@ -536,7 +539,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		top: 0;
 		width: 70%;
 		white-space: pre-wrap;
-		color: inherit;
+		/* 文字色の既定は白（本家 TxtLayer.ts:272 のコンストラクタ既定styleがcolor: white）。
+			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が
+			埋もれて読めなくなる */
+		color: white;
 		/* [enable_event enabled=false]：**本文中の[link]もクリックを受けなくする**
 			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
 			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
@@ -623,12 +629,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			{wantWaitEl && <span ref={waitRef} css={styWaitMark} style={styWaitPos}
 				{...canFocusWait ? {tabIndex: 0, onKeyDown: onWaitKeyDown, 'data-wait-focus': true} : {}}>{
 				! showWaitMark ? null
-				// プロジェクトに`breakline`/`breakpage`があればそれを、無ければ試作の絵文字を出す
+				// プロジェクトに`breakline`/`breakpage`があればそれを描画。無ければ本家準拠で
+				// 何も出さない（本家 LayerMng.ts breakLine/breakPageはexistsBreakline/
+				// existsBreakpageが無ければ空実装のまま＝呼ばれても何も描かれない）
 				: waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
 				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom',
 					...wait!.width !== undefined || wait!.height !== undefined
 						? {width: '100%', height: '100%'} : {}}}/>
-				: wait!.kind === 'l' ? '🩷' : '✅'
+				: null
 			}</span>}
 		</span>
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
@@ -979,7 +987,8 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | unde
 	}
 }
 
-// [lay b_color=0xRRGGBB]を8bit成分へ。未指定時は試作の既定色（aquamarine相当）
+// [lay b_color=0xRRGGBB]を8bit成分へ。未指定時（noBox=trueで背景自体を描かないため実際には
+//	使われない）のフォールバック
 function rgbOf(b_color?: number): {r: number; g: number; b: number} {
 	if (b_color === undefined) return {r: 127, g: 255, b: 212};
 	return {r: (b_color >> 16) & 0xFF, g: (b_color >> 8) & 0xFF, b: b_color & 0xFF};
