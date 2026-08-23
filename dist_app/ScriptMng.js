@@ -2097,10 +2097,10 @@ var Ae = class {
 			}
 			case "rec_ch": {
 				let { text: t, ...n } = i;
-				return t ? (Object.keys(n).length && this.#j.setAttr(n), this.#j.add(e.#se("add", {
+				return Object.keys(n).length && this.#j.setAttr(n), t && this.#j.add(e.#se("add", {
 					...i,
 					text: void 0
-				}) + t.replaceAll("[r]", "\n") + e.#se("add_close", {})), "skip") : "skip";
+				}) + t.replaceAll("[r]", "\n") + e.#se("add_close", {})), "skip";
 			}
 			case "rec_r": return this.#j.add("\n"), "skip";
 			case "reset_rec": return this.#j.reset(i.text ?? ""), "skip";

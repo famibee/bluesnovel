@@ -2,12 +2,6 @@
 
 > **済んだことは `CHANGELOG.md`**（作業ごとの経緯・判断つき）。
 > このtodo.mdは**これからやること**だけを持つ（＝いずれ空になるのが正しい）。
-> 例外：sn_gallery突き合わせ（下記）の`[x]`は、洗い出しフェーズ進行中は**削除せず、他の
-> 項目と同じ1〜2行に縮めて残す**（どこまで洗い出したかの記録として一覧の価値があるため）。
-> **消すのは親項目（洗い出しフェーズ自体）が完了した時に一括**：1件ずつ消すと「どこまで
-> 済んだか」の一覧性が失われるため。詳しい経緯は消す時のコミットメッセージへ（本文を厚く
-> 書いてよい）。未着手フォルダは`[ ]`の明示リストを持つ（`ls sn_gallery/public/prj/`との
-> 毎回の目視突き合わせをしない。1件終えたらそのフォルダ名をこのリストから消し、上の`[x]`へ）。
 
 ## 進め方
 
@@ -26,46 +20,13 @@
 洗い出す。runSN/stop（プロジェクト切替・停止。`data-prj`クリック導線含む）は2026-08-21に
 SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/sn/SysBase.ts`の`run()`/
 `stop()`、`web.ts`の`SysWeb.runSN()`、`ScriptMng.destroy()`、`store/store.tsx`の`resetStore()`）。
+
+`sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせるフェーズは
+2026-08-23に完了（`simple_novel`はユーザー判断により対象外）。発見した不具合はすべて都度修正済み
+（凍結・保留と判定したもの以外）。経緯・詳細は各修正コミットのメッセージを参照。
+
 残りは以下：
 
-- [ ] `sn_gallery/public/prj/<機能>/`を本家ギャラリーの同名プロジェクトと1つずつ突き合わせ、
-      bluesnovel未対応のタグ・機能を洗い出すフェーズへ。2026-08-21、`top`から着手（コアタグ系→
-      プラグイン系の優先順）。詳細はコミットメッセージ参照、以下はフォルダ名と要点のみ：
-  - [x] `ch_button`：[button]label/fn両省略時throw、`[prj.json init.bg_color]`未反映を修正
-  - [x] `[link]`ホバー：本家一致確認（コード変更無し）。文字レイヤ既定font-sizeを24pxへ修正
-  - [x] `[event key='dom=セレクタ']`（コロン無し）がメイン文書対象にならない不具合を修正
-  - [x] `sn_gallery/index.html`のマウント先`<canvas>`→`<div>`に修正
-  - [x] `[button]`の`arg`属性が`&sn.eventArg`へ渡らない不具合を修正
-  - [x] `wheel.y<0`/`gamepadconnected`：本家自体が死んでいる記法のため対応不要と判断
-  - [x] ステージ拡大の`isGallery`分岐が丸ごと未実装だった不具合を実装
-  - [x] `[lay]`のstyle属性が特定のシーン遷移後に丸ごと消える不具合を修正
-  - [x] `ruby`：`isGallery`分岐が広い画面で本家より過剰拡大していたバグを修正
-  - [x] `ruby`の残り（tcy幅・r_align）：本家一致確認（コード変更無し）
-  - [x] `filter`：タイトル未更新、[button]文字ボタンの重なり表示を修正
-  - [x] `blendmode`：`[add_lay]`自身のfn/blendmode等の属性が反映されない不具合を修正
-  - [x] `tag_tsy`：`[wait_tsy]`待機中に`[button call=true]`が反映されない不具合を修正
-  - [x] `tag_lay_face`：`[fg face=]`差分絵へのアニメpngシート指定が壊れる不具合を修正
-  - [x] `tag_lay_mov`：本家一致確認（コード変更無し）
-  - [x] `sound`：arg省略時に`&sn.eventLabel`が常にundefinedになる不具合を修正
-  - [x] `anime_png`：`[graph]`本文中画像のアニメpngシートが文字サイズへ縮小されない不具合を修正
-  - [x] `anon_label`：本家一致確認（コード変更無し）
-  - [x] `debug`：`[link]`の既定赤背景ハイライトが欠落していた不具合を修正
-  - [x] `escape`：エスケープ文字直後の`《…》`がルビ記法に誤解釈される不具合を修正
-  - [x] `frame`：本家一致確認（コード変更無し）
-  - [x] `import`：本家一致確認（バグ無し。文字レイヤ幅70%既定でリンクがクリック不能になる実害を確認、見送り継続）
-  - [x] `tag_page`：`[event key=… arg=…]`でargが握りつぶされる不具合を修正
-  - [x] `mul_ev`：[trans]対象外レイヤ複製でvideo要素が2重化し`[wv]`が進まなくなる不具合を修正。
-        「`p`で始まる7パターン」も本家バグ（トゥイーン枠共有起因）の非該当をE2Eで実測確認済み
-        （詳細は本項目を消すコミットのメッセージ参照）
-  - [x] `top`：上記`[link]`ホバー〜`[lay]`style消える等一連の不具合はここ（ギャラリー本体の
-        メニュー画面）を突き合わせて発見したもの
-  - [x] 凍結：`3d_base`/`3d_efk`/`3d_gltf`/`3d_theta`/`77slide`
-  - [ ] 残り未着手フォルダ（2026-08-23、`ls sn_gallery/public/prj/`と上記`[x]`を突き合わせて
-        洗い出し。以後はこの`[ ]`を消す形で進捗管理する——毎回全件再突き合わせをしない）：
-        `ch_in_out`/`cubism3_layer`/
-        `emote_layer`/`ext_fg`/`ext_fg2`/`ext_for_call`/`font`/`glsl_slide`/`icons`/`kidoku`/
-        `let_zenkaku`/`line_breaking_rules`/`log_and_play`/`multiline`/`simple_novel`/`tag_if`/
-        `tag_quake`/`txt_back`/`txt_back2`
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
 

@@ -1763,15 +1763,20 @@ export class ScriptEngine {
 		case 'rec_ch': {	// 履歴書き込み（画面には出さない）
 			// 本家は`display: none;`を付けた[ch]として流し、履歴側でだけ見せる。
 			//	こちらは履歴の蓄積が表示と別物なので、履歴にだけ積めば済む。
-			//	textが無ければ何もしない（本家 Log.ts:68 も同じ）
 			const {text, ...rest} = args;
-			if (! text) return 'skip';
 
 			// style/r_styleは[ch]と同じ「本文ストリームに埋め込む命令」（#cmdTxt）経由で流し、
 			//	htmlOf()のsplitCh解釈にそのまま乗せる。text以外の属性は、本家同様ページ単位の
 			//	任意メタデータとしてconst.sn.log.jsonへそのまま載る（本家 Log.ts:67
-			//	`#LastLog = {...hArg, text}`。フレーム側JSが読む想定）
+			//	`#LastLog = {...hArg, text}`。フレーム側JSが読む想定）。
+			//	**textが無くても属性だけは必ず反映する**（本家 Log.ts:66-67は`text`の有無に
+			//	関わらず`#LastLog = {...hArg, ...}`を先に行い、69行目のreturnはその後）。
+			//	以前はtext省略時に丸ごと無視しており、sn_galleryのlog_and_playで
+			//	`[rec_ch name=… col=… v=…]`（textを持たない、名前表示専用の呼び出し）の
+			//	属性が履歴へ載らず「人」列がundefinedになる不具合があった
 			if (Object.keys(rest).length) this.#log.setAttr(rest);
+			if (! text) return 'skip';	// textが無ければ本文追記はしない（本家 Log.ts:68も同じ）
+
 			this.#log.add(ScriptEngine.#cmdTxt('add', {...args, text: undefined})
 				+ text.replaceAll('[r]', '\n')
 				+ ScriptEngine.#cmdTxt('add_close', {}));

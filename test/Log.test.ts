@@ -220,6 +220,15 @@ it('log_[rec_ch]の任意属性は同一ページ内の直近の指定が丸ご�
 		.toEqual([{text: 'あい', speaker: '花子'}]);
 });
 
+it('log_[rec_ch]はtextが無くても任意属性だけは反映する（名前表示専用の呼び出し）', ()=> {
+	// 本家 Log.ts:66-67 は`text`の有無に関わらず`#LastLog = {...hArg, ...}`を先に行い、
+	//	69行目のreturnはその後（sn_galleryのlog_and_playが`[rec_ch name=… col=… v=…]`と
+	//	textを持たない呼び出しで名前だけ差し込む形を使っており、この属性が丸ごと
+	//	無視されて履歴の「人」列がundefinedになる不具合があった）
+	expect(logOf('[rec_ch speaker=太郎][rec_ch text=あ]'))
+		.toEqual([{text: 'あ', speaker: '太郎'}]);
+});
+
 it('log_[rec_ch]の任意属性は改ページを跨いで持ち越さない', ()=> {
 	const se = new ScriptEngine('t1', `${LAYS}${REC}[rec_ch text=あ speaker=太郎][p][rec_ch text=い][s]`);
 	se.step();	// [p]まで
