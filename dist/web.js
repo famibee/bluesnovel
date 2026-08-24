@@ -81,11 +81,39 @@ var a = "skynovel", o = class {
 			let e = document.createElement("div");
 			return e.id = a, document.body.appendChild(e), e;
 		})(), p = new o(this);
-		this.scrMng = p, this.#e = t(f), n(this.#e, {
+		this.scrMng = p, await this.#r(p), this.#e = t(f), n(this.#e, {
 			heStage: f,
 			sys: this,
 			scrMng: p
 		}, () => queueMicrotask(() => p.load("main")));
+	}
+	#n = !1;
+	async #r(e) {
+		if (this.#n) return;
+		this.#n = !0;
+		let t = Object.values(this.hPlg);
+		if (t.length === 0) return;
+		let { addLayCls: n } = await import("./LayCls.js").then((e) => e.t);
+		await Promise.all(t.map((t) => t.init({
+			getInfo: () => ({ window: {
+				width: r.stageW,
+				height: r.stageH
+			} }),
+			addTag: (e) => {
+				throw `プラグインのaddTag('${e}')は未対応です`;
+			},
+			addLayCls: n,
+			searchPath: (e, t) => this.cfg.searchPath(e, t),
+			getVal: (t, n) => e.getVal(t, n),
+			resume: () => {
+				e.go();
+			},
+			render: () => {},
+			setDec: () => {},
+			setDecAB: () => {},
+			setEnc: () => {},
+			getHash: () => {}
+		})));
 	}
 	async stop() {
 		if (!this.#e) return;
@@ -138,8 +166,10 @@ var a = "skynovel", o = class {
 	get name() {
 		return this.name_;
 	}
-	ctn = {};
-	destroy() {}
+	ctn = document.createElement("div");
+	destroy() {
+		this.ctn.remove();
+	}
 	lay(e) {
 		return !1;
 	}
@@ -154,7 +184,6 @@ var a = "skynovel", o = class {
 	dump() {
 		return "";
 	}
-	static setXY(e, t, n, r = !1, i = !1) {}
 }, c = class extends o {
 	#e;
 	constructor(...[e = {}, t = {

@@ -25,10 +25,36 @@ SysBase/SysWeb/ScriptMng/storeへ実装・動作確認済み（`bluesnovel/src/s
 2026-08-23に完了（`simple_novel`はユーザー判断により対象外）。発見した不具合はすべて都度修正済み
 （凍結・保留と判定したもの以外）。経緯・詳細は各修正コミットのメッセージを参照。
 
+本家互換のプラグイン機構（`[add_lay class=…]`→`addLayCls`。3D/Live2D等のPixi前提プラグインを
+sn_galleryから移植できるようにする土台）は2026-08-24に実装・実行時配線まで完了（下記参照）。
+
 残りは以下：
 
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
+- [ ] sn_gallery側の3D/Live2D系プラグイン本体の移植（`3d_layer`/`cubism3_layer`/`emote_layer`）。
+      下記「プラグイン機構」の枠組みは通ったが、three.js/Live2D本体の依存はbluesnovel本体には
+      追加しない方針（ユーザー判断）なので、sn_gallery側で個別にインストールし、
+      `ThreeDLayer.ts`等をDOM版（`this.ctn.appendChild(canvas)`等）へ書き換える作業が要る
+- [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
+      本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
+- [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/
+      `Layer.copy()`相当が未実装。`src/ts/PlgLayMng.ts`にコメントで場所だけ残してある）
+- [ ] しおり（save/load）にプラグインレイヤーの中身が乗らない（`Layer.record()`/`playback()`の
+      実配線は未接続。基底クラスにAPIは残してある）
+- [ ] `addTag`（プラグインからのタグ追加）は未対応。`ScriptEngine`がタグをswitchで捌く構造のため
+      動的な登録口が無く、呼ぶと明示的にthrowする（`SysBase.#initPlg()`参照）
+
+### プラグイン機構（addLayCls）の実装メモ
+
+`src/sn/LayCls.ts`（clsレジストリ）・`src/sn/Layer.ts`（本家Layer基底のDOM版。`ctn`は素のdiv）・
+`src/ts/PlgLayMng.ts`（`[add_frame]`のFrameMngと同じ「store外・DOM側」でLayerインスタンスを
+fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（Reactの箱。中身はPlgLayMngが
+`attachBox()`で出し入れ）で構成。`T_LAY`（`src/components/Lay.ts`）は`cls: 'grp'|'txt'|(string & {})`
+へ拡張し、判別ユニオンの絞り込みは`isGrpLay`/`isTxtLay`/`isPlgLay`という型ガード関数を経由させる
+（インライン比較`e.cls==='grp'`ではプラグイン型を絞り込めないため）。`SysBase.#initPlg()`が
+`Config.generate()`の後・main.sn起動前にプラグインの`init()`を一括実行し、`addLayCls`を実際に
+機能させる。E2E疎通確認は`test/e2e/plg.e2e.ts`（`prj_plg`＋`test/e2e/app/dmyPlg.ts`）。
 
 
 ## タグ・変数の残り

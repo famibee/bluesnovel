@@ -57,7 +57,10 @@ AudioContext.prototype.createGain = function(this: AudioContext) {
 	return origCreateGain.call(this);
 };
 
-const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')} : {};
+// ?prj=plg だけ本家互換プラグイン機構（SysBase.#initPlg()/addLayCls）の疎通確認用ダミープラグインを注入
+const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')}
+	: prj === 'plg' ? {dmyPlg: await import('./dmyPlg')}
+	: {};
 const sys = new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto, dip: ''});
 
 // isAutoPending: オート読み・既読スキップが次の停止点へ本当に落ち着いたか（waitIdle参照）。

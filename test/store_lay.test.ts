@@ -12,6 +12,7 @@
 //	本家：LayerMng.ts:489 #lay() の float/index/dive
 
 import {useStore} from '../src/store/store';
+import {isGrpLay, isTxtLay} from '../src/components/Lay';
 
 import {beforeEach, expect, it} from 'bun:test';
 
@@ -115,7 +116,7 @@ it('clearLay_allLayers', ()=> {
 	S().clearLay({aLayNm: null, page: 'fore'});	// layer省略＝全レイヤ
 
 	const fore = useStore.getState().aPage[0];
-	expect(fore.map(e=> e.cls === 'grp' ? e.fn : '')).toEqual(['', '', '']);
+	expect(fore.map(e=> isGrpLay(e) ? e.fn : '')).toEqual(['', '', '']);
 	// 見た目は「未指定」へ戻すが、**visibleだけは触らない**（本家 Layer.clearLay()）
 	expect(fore[0]!.left).toBeUndefined();
 	expect(fore[0]!.visible).toBe(false);
@@ -139,7 +140,7 @@ it('clearLay_someLayers', ()=> {
 	S().clearLay({aLayNm: ['a'], page: 'fore'});
 
 	const fore = useStore.getState().aPage[0];
-	expect(fore.map(e=> e.cls === 'grp' ? e.fn : '')).toEqual(['', '', 'pc']);
+	expect(fore.map(e=> isGrpLay(e) ? e.fn : '')).toEqual(['', '', 'pc']);
 });
 
 it('clearLay_unknownLayerThrows', ()=> {
@@ -247,7 +248,7 @@ it('clearLay_dropsBackPicAndFixedFlag', ()=> {
 
 	S().clearLay({aLayNm: null, page: 'fore'});
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.b_pic).toBeUndefined();
 	expect(lay.b_src).toBeUndefined();
 	expect(lay.b_alpha_isfixed).toBeUndefined();
@@ -265,7 +266,7 @@ it('chgBackClear_resetsBackground', ()=> {
 
 	S().chgBackClear({nm: 'mes', page: 'fore'});
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.b_color).toBeUndefined();
 	expect(lay.b_pic).toBeUndefined();
 	expect(lay.b_src).toBeUndefined();
@@ -282,7 +283,7 @@ const addMes = ()=> {
 };
 const aBtnNm = ()=> {
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	return lay.aBtn.map(b=> b.nm);
 };
 
@@ -339,7 +340,7 @@ it('clearLay_dropsPadding', ()=> {
 	S().clearLay({aLayNm: null, page: 'fore'});
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.pl).toBeUndefined();
 	expect(lay.pr).toBeUndefined();
 	expect(lay.pt).toBeUndefined();
@@ -354,7 +355,7 @@ it('clearLay_dropsFfsButKeepsBuraAndKinsoku', ()=> {
 	S().clearLay({aLayNm: null, page: 'fore'});
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.ffs).toBeUndefined();
 	expect(lay.noffs).toBeUndefined();
 	expect(lay.bura).toBe(true);
@@ -368,7 +369,7 @@ it('chgLay_kinsokuMergesAndPersists', ()=> {
 	S().chgLay({nm: 'mes', page: 'fore', sty: {kinsoku_eol: '「'}});
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.kinsoku_sol).toBe('、。');
 	expect(lay.kinsoku_bura).toBe('、');
 	expect(lay.kinsoku_eol).toBe('「');
@@ -402,7 +403,7 @@ it('chgLay_kinsokuSurvivesJsonRoundtrip', ()=> {
 	S().replace(json);
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
-	if (lay.cls !== 'txt') throw '文字レイヤのはず';
+	if (! isTxtLay(lay)) throw '文字レイヤのはず';
 	expect(lay.kinsoku_eol).toBe('「');
 	expect(lay.kinsoku_bura).toBe('、');
 });
@@ -431,8 +432,8 @@ it('clearTxtLay_変形まわりを既定へ戻す', ()=> {
 	expect(e.visible).toBe(false);
 	expect(e.left).toBe(10);
 	expect(e.top).toBe(20);
-	expect(e.cls === 'txt' && e.b_color).toBe(0xFF0000);
-	expect(e.cls === 'txt' && e.style).toBe('color: red;');
+	expect(isTxtLay(e) && e.b_color).toBe(0xFF0000);
+	expect(isTxtLay(e) && e.style).toBe('color: red;');
 });
 
 it('clearTxtLay_フィルターはclear_filter=trueのときだけ落とす', ()=> {
@@ -455,7 +456,7 @@ it('clearTxtLay_ボタンも消す', ()=> {
 	S().clearTxtLay({nm: 'mes', page: 'both', clearFilter: false});
 
 	const e = useStore.getState().aPage[0].find(v=> v.nm === 'mes')!;
-	expect(e.cls === 'txt' && e.aBtn).toEqual([]);
+	expect(isTxtLay(e) && e.aBtn).toEqual([]);
 });
 
 
@@ -469,8 +470,8 @@ it('chgPic_aFaceOmitted_keepsPreviousFace', ()=> {
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa2', src: '/pa2.png', isSheet: false, isMovie: false});
 
 	const e = useStore.getState().aPage[0].find(v=> v.nm === 'a');
-	expect(e?.cls === 'grp' ? e.fn : undefined).toBe('pa2');
-	expect(e?.cls === 'grp' ? e.aFace : undefined).toEqual(face);
+	expect(e && isGrpLay(e) ? e.fn : undefined).toBe('pa2');
+	expect(e && isGrpLay(e) ? e.aFace : undefined).toEqual(face);
 });
 
 it('chgPic_aFaceEmptyArray_clearsFaceExplicitly', ()=> {
@@ -481,5 +482,5 @@ it('chgPic_aFaceEmptyArray_clearsFaceExplicitly', ()=> {
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: []});
 
 	const e = useStore.getState().aPage[0].find(v=> v.nm === 'a');
-	expect(e?.cls === 'grp' ? e.aFace : undefined).toEqual([]);
+	expect(e && isGrpLay(e) ? e.aFace : undefined).toEqual([]);
 });

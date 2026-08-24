@@ -1,0 +1,9 @@
+; E2E用シナリオ（plg.e2e.ts）。プラグイン（[add_lay class=dmy]）の疎通確認。
+;	class=dmy はtest/e2e/app/dmyPlg.tsが起動時にaddLayClsで登録するダミーcls
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[add_lay layer=x class=dmy]
+[lay layer=x foo=bar left=10]
+プラグインレイヤーを追加した。[l]
+[clear_lay layer=x page=both]
+消した。[s]

@@ -42,7 +42,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		delete hPlg.snsys_pre;	// eslint-disable-line @typescript-eslint/no-dynamic-delete
 		await pre?.init({
 			// 一般プラグイン向けのフック（addTag/addLayCls/…）はsnsys_preでは使わないため
-			//	本家 SysBase.ts:51-64 と同じくno-opで埋める（宛先はSysBase.init()側、todo.md参照）
+			//	本家 SysBase.ts:51-64 と同じくno-opで埋める（一般プラグイン向けは#initPlg()で配線済み）
 			getInfo		: ()=> ({window: {width: CmnLib.stageW, height: CmnLib.stageH}}),
 			addTag		: ()=> { /* empty */ },
 			addLayCls	: ()=> { /* empty */ },
@@ -136,8 +136,40 @@ export class SysBase implements T_SysRoots, T_SysBase {
 
 		const scrMng = new ScriptMng(this);
 		this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
+		await this.#initPlg(scrMng);
 		this.#root = createRoot(he);
 		initMain(this.#root, {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
+	}
+
+	// 一般プラグイン（3D/Live2D系。sn_galleryの3d_layer/cubism3_layer/emote_layer等）の
+	//	init()を実際に呼ぶ配線（本家 SysBase.init() 末尾の`hFactoryCls`組み込み登録後の一括実行に相当）。
+	//	CmnLib.stageW/Hが確定済み（Config.generate()の後）かつmain.snが動き出す前（initMain()の前）
+	//	でなければならない：getInfo()が正しい寸法を返せず、addLayCls登録もmain.sn実行前に済んでいる必要があるため
+	#plgInited = false;
+	async #initPlg(scrMng: ScriptMng) {
+		// プロジェクト切替（run()の2回目以降）では再実行しない。addLayClsのレジストリ（LayCls.ts）は
+		//	モジュールレベル＝ページのライフタイムで生きているため、再登録は「すでに定義済み」でthrowする
+		if (this.#plgInited) return;
+		this.#plgInited = true;
+		const aPlg = Object.values(this.hPlg);
+		if (aPlg.length === 0) return;
+
+		const {addLayCls} = await import('./LayCls');
+		await Promise.all(aPlg.map(v=> v.init({
+			getInfo		: ()=> ({window: {width: CmnLib.stageW, height: CmnLib.stageH}}),
+			// ScriptEngineがタグをswitchで捌く構造のため未対応（本家のように動的にhTagへ足す口が無い）。
+			//	sn_galleryの3D/Live2D系プラグインはaddLayClsしか使わないため後回し
+			addTag		: nm=> {throw `プラグインのaddTag('${nm}')は未対応です`},
+			addLayCls,
+			searchPath	: (fn, extptn)=> this.cfg.searchPath(fn, extptn),
+			getVal		: (nm, def)=> scrMng.getVal(nm, def),
+			resume		: ()=> {scrMng.go()},
+			// pixi.js専用（DisplayObjectのRenderTexture焼き）。bluesnovelはDOMへ直接描くので不要
+			render		: ()=> { /* empty */ },
+			// snsys_pre専用のフック。一般プラグインからは使わない想定（本家 SysBase.ts:196-200も同じくno-op）
+			setDec: ()=> { /* empty */ }, setDecAB: ()=> { /* empty */ },
+			setEnc: ()=> { /* empty */ }, getHash: ()=> { /* empty */ },
+		})));
 	}
 
 	// プロジェクトを止めるだけ（作り直さない。本家 SysBase.stop()：

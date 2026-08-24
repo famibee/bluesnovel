@@ -9,7 +9,7 @@ import type {TArg, TTag} from './Grammar';
 import type {Areas, T_H_Areas} from './Areas';
 import type {T_H_VAL_MP} from './CallStack';
 import type {T_SEARCHPATH} from './ConfigBase';
-import type {Layer} from './Layer';
+import type {T_LayerFactory} from './LayCls';
 import {CmnLib, getDateStr} from './CmnLib';
 
 export interface IMyTrace {
@@ -28,22 +28,23 @@ export type T_PropParser = {
 // =============== Plugin
 // 本家（skynovel_esm）は暗号化・改竄検査のロジック自体を秘匿するため、プラグイン（snsys_pre）が
 //	SysBase.loaded()経由でsetDec/setEnc/getHashを注入する設計を取る。bluesnovelもこれを踏襲する。
-//	addTag/addLayCls/getInfo/getVal/resume/render/searchPathは、sn_galleryの3D/Live2D系
-//	プラグイン（3d_layer/cubism3_layer/emote_layer）が型的にコンパイルを通すためだけに追加した
-//	もので、SysBase側で実際に一般プラグインのinit()を呼び出す配線はまだ無い（呼ばれないため
-//	実行しても効果を持たない）。renderの引数はpixi.jsのDisplayObject/RenderTexture相当だが、
-//	bluesnovelはpixi.jsに依存しないためanyへ緩めている（todo.md「sn_galleryをbluesnovel駆動に
-//	する」参照）。Electron専用のgetStK（本家はelectron-storeのencryptionKeyに使うが、
-//	bluesnovelはセーブ暗号化をweb/app版で統一しenc()一本にするため消費先が無い）は対象外
+//	一般プラグイン（3D/Live2D系。sn_galleryの3d_layer/cubism3_layer/emote_layer）向けの
+//	addLayCls/getInfo/searchPath/getVal/resumeはSysBase.#initPlg()で実際に配線済み
+//	（todo.md「sn_galleryをbluesnovel駆動にする」参照）。addTag/renderは未対応（後述）。
+//	renderの引数はpixi.jsのDisplayObject/RenderTexture相当だが、bluesnovelはpixi.jsに
+//	依存しないためanyへ緩めている。Electron専用のgetStK（本家はelectron-storeの
+//	encryptionKeyに使うが、bluesnovelはセーブ暗号化をweb/app版で統一しenc()一本にするため
+//	消費先が無い）は対象外
 export type T_PLUGIN_INFO = {
 	window: {
 		width	: number;
 		height	: number;
 	},
 }
-export type T_LayerFactory = ()=> Layer;
+export type {T_LayerFactory};
 export type T_PluginInitArg = {
 	getInfo(): T_PLUGIN_INFO;
+	// ScriptEngineがタグをswitchで捌く構造のため未対応（呼ぶとthrow。#initPlg()参照）
 	addTag(tag_name: string, tag_fnc: TTag): void;
 	addLayCls(cls: string, fnc: T_LayerFactory): void;
 	searchPath: T_SEARCHPATH;

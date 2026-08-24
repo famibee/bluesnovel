@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {type T_LAY_IDX, type T_LAY_CMN, getLayerRenderer} from './Lay';
+import {type T_LAY_IDX, type T_LAY_CMN} from './Lay';
 import Layer from './Layer';
 import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET} from '../ts/Sprite';
 
@@ -42,14 +42,9 @@ type T_GRPARG = T_LAY_CMN & {
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
 	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
 	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
-	// [lay type=…]。本家の[lay type=gltf]相当で、指定時は中身の描画をLay.tsのレジストリ
-	//	（registerLayerKind）に委譲する（3d等のプラグイン用の拡張点。cls自体は'grp'のまま増やさない。
-	//	理由はLay.tsのT_LAY_PLUGIN_*のコメント参照）。未指定なら従来通りimg/video/faceを描く
-	kind?	: string | undefined;
-	ext?	: Record<string, unknown> | undefined;	// kind指定時のプラグイン固有属性（例：camera/directional_light）
 };
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]; kind?: string; ext?: Record<string, unknown>};
+export type T_GRPLAY_DATA = T_LAY_IDX & {cls: 'grp'; fn: string; src: string; isSheet: boolean; isMovie: boolean; aFace: T_FACE_SRC[]};
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
 
 
@@ -84,8 +79,7 @@ function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_
 	return <img src={faceSrc} data-fn={faceFn} style={styPos}/>;
 }
 
-export default function GrpLayer({cmn, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play, kind, ext}: T_GRPARG) {
-	const {styChild, isDesignMode} = cmn;
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -136,19 +130,6 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	1/3程度に縮んで表示された）。max-contentで常に内容の自然幅を使わせ、sty.widthの明示
 	//	（後勝ち）があればそちらを優先する
 	const styDiv0: CSSProperties = {width: 'max-content', ...sty};
-
-	// [lay type=…]指定時は中身をプラグインへ委譲する（本家[lay type=gltf]相当）。
-	//	箱（Layer.tsx＝位置・回転・拡縮・Moveable）は通常の画像レイヤと共通のまま、
-	//	中身だけがプラグイン提供のものに変わる。keepRatioはプラグインの中身依存なのでfalse
-	//	（拡縮は3D側のカメラ・レイアウトが決めるべきで、画像のような自然な縦横比を前提にしない）
-	if (kind !== undefined) {
-		const renderer = getLayerRenderer(kind);
-		if (! renderer) throw `未登録のレイヤー種別です（type=${kind}）。プラグインが読み込まれていません`;
-		return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={false} onMouseDown={onMouseDown}>
-			{renderer({nm, ext: ext ?? {}}, cmn)}
-		</Layer>;
-	}
-
 	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true} onMouseDown={onMouseDown}>
 		{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 			（Reactがページ全体再ダウンロードの可能性を警告するため）。

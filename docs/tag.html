@@ -460,6 +460,7 @@
 <h1><a id="レイヤ共通"></a>レイヤ共通</h1>
 <h2 id="add_lay" class="w-heading">[add_lay]レイヤを追加する</h2>
 <h4>レイヤを追加する。</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：class=grp/txtに加え、本家互換のプラグイン機構（<code>addLayCls</code>）で登録したcls名も指定できる（3D/Live2D等のPixi前提プラグインの移植先。<code>src/sn/LayCls.ts</code>参照）。中身（3Dシーン等）はstoreに持たずDOM側（<code>src/ts/PlgLayMng.ts</code>）が抱える。未登録のclsは<code>[add_lay]</code>時点でエラーになる。</p>
 <p class="mb2 px1">
 
 レイヤはページの裏表があり、文字レイヤや画像レイヤなどの種類があります。<br/>
@@ -469,7 +470,7 @@
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>layer</td><td>y</td><td></td><td>未使用のレイヤ名</td><td>レイヤ名を指定する。<br/>未使用のレイヤ名でなければエラー＆アプリ停止</td></tr>
-<tr class="y"><td>class</td><td>y</td><td></td><td>grp、txt</td><td>レイヤの種類。grp（画像レイヤ）、txt（文字レイヤ）のレイヤ種別</td></tr>
+<tr class="y"><td>class</td><td>y</td><td></td><td>grp、txt、addLayClsで登録したcls名</td><td>レイヤの種類。grp（画像レイヤ）、txt（文字レイヤ）、またはプラグイン登録済みのcls</td></tr>
 <tr><td colspan="3">（その他）</td><td colspan="2">[lay]に指定できる属性</td></tr>
 </table>
 

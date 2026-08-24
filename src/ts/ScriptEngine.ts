@@ -30,6 +30,7 @@ import {parseChStyle, type T_CH_STYLE} from './ChStyle';
 import {A_PAGE_TO, type T_PAGE_TO} from './PageLog';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
+import {hasLayCls} from '../sn/LayCls';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -102,7 +103,13 @@ export type T_LAY_STY_ARG = {
 export type T_MARK_STY = {x?: number; y?: number; width?: number; height?: number};
 
 export type T_ENGINE_ACTION =
-	| {t: 'addLay'; cls: 'grp' | 'txt'; nm: string}
+	// clsは'grp'/'txt'固定ではなく、[add_lay class=…]に登録済みの任意のcls文字列を取る
+	//	（本家[add_lay class=3d]相当。src/sn/LayCls.tsのレジストリ参照）
+	| {t: 'addLay'; cls: string; nm: string}
+	// プラグインレイヤー（cls!=='grp'&&cls!=='txt'）向け。属性ハッシュを丸ごと渡す
+	//	（本家 Pages.lay() が hArg をそのまま Layer サブクラスの lay() へ流すのと同じ設計。
+	//	中身の解釈はプラグインの責務で、エンジンは何も知らないでよい）
+	| {t: 'layPlg'; nm: string; page: T_PAGE; hArg: {[k: string]: string}}
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace?: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。face属性省略時はundefined＝直前のfaceを維持（本家 GrpLayer.ts:76-85）。face=""で明示的にクリア
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
@@ -419,10 +426,10 @@ export class ScriptEngine {
 	get clearOnResume() {return this.#clearOnResume}
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
-	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt）。#applyLayPage()のisGrp判定専用
+	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt/プラグインcls）。#applyLayPage()の判定専用
 	//	（本家 GrpLayer/TxtLayer はクラスごとに別インスタンスだが、こちらは単一の関数で両方を
 	//	処理するため、判定材料をここに持たせる）
-	readonly #hLayCls: {[nm: string]: 'grp' | 'txt'} = Object.create(null);
+	readonly #hLayCls: {[nm: string]: string} = Object.create(null);
 
 	// ループ再生中のサウンドバッファ表（本家 SndBuf.ts のモジュール変数hLPをインスタンスに閉じ込めた版。
 	//	モジュール変数のままだとテストごとに新しいScriptEngineを作っても前のテストの値が残ってしまう）。
@@ -1094,60 +1101,70 @@ export class ScriptEngine {
 	//	picまたはfn属性変更、face属性による差分合成、文字レイヤ背景の不透明度（b_alpha）、
 	//	レイヤ共通の見た目（visible/alpha/位置/寸法/blendmode/…）、フィルターに対応（試作簡略）
 	#applyLayPage(args: {[k: string]: string}, aAct: T_ENGINE_ACTION[], page: T_PAGE): void {
-		// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
-		const picFn = args.fn || args.pic;
-		if (picFn) {
-			const o: Extract<T_ENGINE_ACTION, {t: 'chgPic'}> = {t: 'chgPic', nm: args.layer ?? '', page, fn: picFn};
-			// face属性省略時はaFaceを積まない＝直前のfaceを維持（本家：fnは毎回明示、faceは省略可）。
-			//	face=""は明示的なクリア指定なので空配列を積む
-			if (args.face !== undefined) {
-				const aFace: T_FACE[] = [];
-				if (args.face) {
-					// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
-					for (const nm of args.face.split(',')) {
-						if (! nm) throw '[lay] face属性に空要素が含まれています';
-						// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
-						aFace.push(this.#hFace[nm] ?? {fn: nm, dx: 0, dy: 0, blendmode: argBlendmode('normal')});
-					}
-				}
-				o.aFace = aFace;
-			}
-			aAct.push(o);
-		}
+		const nmLay = args.layer ?? '';
+		// プラグインレイヤー（cls!=='grp'&&cls!=='txt'）かどうか。未登録（#hLayClsに無い＝
+		//	通常は起きない。[add_lay]は必ず先に#hLayClsへ登録する）は'txt'扱いで従来どおり
+		const cls = this.#hLayCls[nmLay] ?? 'txt';
+		const isPlg = cls !== 'grp' && cls !== 'txt';
 
-		// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
-		//	（本家 TxtLayer.ts:376-385）。**指定時は他のb_*属性処理を素通りする**のが本家の規約
-		//	（#drawBack()が早期returnする）。false指定時は何もしない
-		if (args.back_clear !== undefined) {
-			if (args.back_clear === 'true') aAct.push({t: 'chgBackClear', nm: args.layer ?? '', page});
-		}
-		else {
-			// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
-			//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
-			if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
-				const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: args.layer ?? '', page};
-				if (args.b_alpha !== undefined) {
-					const v = Number(args.b_alpha);
-					if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
-					// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
-					//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
-					//	範囲外の値が残ってしまうため、ここで正規化する。
-					//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
-					o.b_alpha = Math.min(1, Math.max(0, v));
+		if (! isPlg) {
+			// picは旧仕様との互換用、fnは本家と同じ属性名（faceと併用する場合はfnを使う）。両方指定時はfnを優先
+			const picFn = args.fn || args.pic;
+			if (picFn) {
+				const o: Extract<T_ENGINE_ACTION, {t: 'chgPic'}> = {t: 'chgPic', nm: nmLay, page, fn: picFn};
+				// face属性省略時はaFaceを積まない＝直前のfaceを維持（本家：fnは毎回明示、faceは省略可）。
+				//	face=""は明示的なクリア指定なので空配列を積む
+				if (args.face !== undefined) {
+					const aFace: T_FACE[] = [];
+					if (args.face) {
+						// 本家の csvFn = fn + ','+ face と同様、カンマ区切りで複数指定。重なり順＝記述順（後の要素ほど上）
+						for (const nm of args.face.split(',')) {
+							if (! nm) throw '[lay] face属性に空要素が含まれています';
+							// [add_face]未定義の名前はファイル名そのものとして扱う（本家 SpritesMng.ts:150 の ?? フォールバック）
+							aFace.push(this.#hFace[nm] ?? {fn: nm, dx: 0, dy: 0, blendmode: argBlendmode('normal')});
+						}
+					}
+					o.aFace = aFace;
 				}
-				if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
 				aAct.push(o);
 			}
 
-			// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
-			//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
-			//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
-			if (args.b_pic !== undefined) {
-				aAct.push({t: 'chgBPic', nm: args.layer ?? '', page, fn: args.b_pic});
+			// back_clear：文字レイヤ背景（b_color/b_alpha/b_alpha_isfixed/b_pic）を初期状態へ戻す
+			//	（本家 TxtLayer.ts:376-385）。**指定時は他のb_*属性処理を素通りする**のが本家の規約
+			//	（#drawBack()が早期returnする）。false指定時は何もしない
+			if (args.back_clear !== undefined) {
+				if (args.back_clear === 'true') aAct.push({t: 'chgBackClear', nm: nmLay, page});
+			}
+			else {
+				// b_alpha / b_alpha_isfixed：文字レイヤ背景の不透明度と、その掛け算の有無。
+				//	pic/fnとは無関係に単独でも併用でも指定可（本家同様、[lay]は複数属性を同時に受け付ける）
+				if (args.b_alpha !== undefined || args.b_alpha_isfixed !== undefined) {
+					const o: Extract<T_ENGINE_ACTION, {t: 'chgBAlpha'}> = {t: 'chgBAlpha', nm: nmLay, page};
+					if (args.b_alpha !== undefined) {
+						const v = Number(args.b_alpha);
+						if (Number.isNaN(v)) throw `[lay] b_alphaの値が不正です：${args.b_alpha}`;
+						// 値域0.0〜1.0に収める。本家（TxtLayer.ts:387 argChk_Num）はクランプせず素通しするが、
+						//	CSSのrgba()が描画時に丸めるだけで、ストア（＝Memento・デザインモードが読む状態）には
+						//	範囲外の値が残ってしまうため、ここで正規化する。
+						//	例外にはしない：本家が通すスクリプトをbluesnovelだけが弾くことのないようにする
+						o.b_alpha = Math.min(1, Math.max(0, v));
+					}
+					if (args.b_alpha_isfixed !== undefined) o.isFixed = args.b_alpha_isfixed !== 'false';
+					aAct.push(o);
+				}
+
+				// b_pic：文字レイヤ背後の枠画像（本家 TxtLayer.ts:393 #drawBack()）。
+				//	**指定するとb_colorは無視される**のが本家の規約。テンプレのメッセージ窓（wafuu1）が
+				//	これで、未対応だと「白地に白文字」になって本文が読めなくなる
+				if (args.b_pic !== undefined) {
+					aAct.push({t: 'chgBPic', nm: nmLay, page, fn: args.b_pic});
+				}
 			}
 		}
 
-		// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）
+		// レイヤ共通の見た目。書かれた属性だけを拾う（本家 Layer.lay() の `'x' in hArg` 判定と同じ）。
+		//	**プラグインレイヤーにも適用する**：位置・回転・拡縮・Moveableの「箱」
+		//	（components/Layer.tsx）は本家Layer.ctnと同じくレイヤー種別によらず共通のため
 		const sty: T_LAY_STY_ARG = {};
 		if (args.visible !== undefined) sty.visible = args.visible !== 'false';
 		if (args.alpha !== undefined) sty.alpha = ScriptEngine.#argNum('lay', 'alpha', args.alpha);
@@ -1204,7 +1221,7 @@ export class ScriptEngine {
 			//	呼び出しでは発動させない
 			if ((args.fn !== undefined || args.pic !== undefined || args.face !== undefined)
 			&& ! ('left' in sty) && ! ('s_right' in sty) && ! ('top' in sty) && ! ('s_bottom' in sty)
-			&& this.#hLayCls[args.layer ?? ''] === 'grp') {
+			&& cls === 'grp') {
 				const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
 				const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
 				sty.left = stageW /2; sty.align_x = 'center';
@@ -1222,43 +1239,50 @@ export class ScriptEngine {
 		if (args.pivot_x !== undefined) sty.pivot_x = ScriptEngine.#argNum('lay', 'pivot_x', args.pivot_x);
 		if (args.pivot_y !== undefined) sty.pivot_y = ScriptEngine.#argNum('lay', 'pivot_y', args.pivot_y);
 		if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
-		// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
-		if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
-		if (args.style !== undefined) sty.style = args.style;
-		// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
-		if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);
-		if (args.pr !== undefined) sty.pr = ScriptEngine.#argNum('lay', 'pr', args.pr);
-		if (args.pt !== undefined) sty.pt = ScriptEngine.#argNum('lay', 'pt', args.pt);
-		if (args.pb !== undefined) sty.pb = ScriptEngine.#argNum('lay', 'pb', args.pb);
-		// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
-		//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
-		//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**
-		//	（既定値はここに書かない。本家もtruthy判定＝現在値維持で、既定はKinsokuクラスが持つ）
-		if (args.ffs !== undefined) sty.ffs = args.ffs;
-		if (args.noffs !== undefined) sty.noffs = args.noffs;
-		if (args.bura !== undefined) sty.bura = args.bura !== 'false';
-		if (args.kinsoku_sol !== undefined) sty.kinsoku_sol = args.kinsoku_sol;
-		if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
-		if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
-		if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
-		// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要
-		RubySpliter.setting(args);
-		// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ
-		if (args.r_align !== undefined) {
-			if (! (A_R_ALIGN as readonly string[]).includes(args.r_align))
-				throw `[lay] r_alignの値が不正です：${args.r_align}`;
-			sty.r_align = args.r_align as T_R_ALIGN;
+		if (! isPlg) {
+			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
+			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
+			if (args.style !== undefined) sty.style = args.style;
+			// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
+			if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);
+			if (args.pr !== undefined) sty.pr = ScriptEngine.#argNum('lay', 'pr', args.pr);
+			if (args.pt !== undefined) sty.pt = ScriptEngine.#argNum('lay', 'pt', args.pt);
+			if (args.pb !== undefined) sty.pb = ScriptEngine.#argNum('lay', 'pb', args.pb);
+			// 文字組み（本家 TxtLayer.ts:470 #setFfs()、Hyphenation.ts:64-90）。
+			//	ffsは文字詰め（CSSのfont-feature-settingsの値をそのまま）、noffsはffsを効かせない文字の並び、
+			//	buraはぶら下げ禁則。kinsoku_*は禁則文字集合の差し替え。**未指定は現在値維持**
+			//	（既定値はここに書かない。本家もtruthy判定＝現在値維持で、既定はKinsokuクラスが持つ）
+			if (args.ffs !== undefined) sty.ffs = args.ffs;
+			if (args.noffs !== undefined) sty.noffs = args.noffs;
+			if (args.bura !== undefined) sty.bura = args.bura !== 'false';
+			if (args.kinsoku_sol !== undefined) sty.kinsoku_sol = args.kinsoku_sol;
+			if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
+			if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
+			if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
+			// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要。
+			//	プラグインの[lay]が傍点設定を巻き込まないよう文字レイヤ専用属性群の内側にする
+			RubySpliter.setting(args);
+			// ルビ位置の既定（本家 TxtLayer.ts:307）。記法内指定（`位置｜ルビ`）があればそちらが勝つ
+			if (args.r_align !== undefined) {
+				if (! (A_R_ALIGN as readonly string[]).includes(args.r_align))
+					throw `[lay] r_alignの値が不正です：${args.r_align}`;
+				sty.r_align = args.r_align as T_R_ALIGN;
+			}
+			// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
+			if (args.in_style !== undefined) sty.in_style = args.in_style;
+			if (args.out_style !== undefined) sty.out_style = args.out_style;
 		}
-		// 文字出現・消去演出の指定（本家 TxtLayer.ts:67）。定義済みかはストア側で引く
-		if (args.in_style !== undefined) sty.in_style = args.in_style;
-		if (args.out_style !== undefined) sty.out_style = args.out_style;
-		if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: args.layer ?? '', page, sty});
+		if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: nmLay, page, sty});
 
 		// [lay filter=…]はフィルターを**置き換える**（本家 Layer.lay() の
-		//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）
+		//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）。プラグインの箱にも効く
 		if (args.filter !== undefined) {
-			aAct.push({t: 'addFilter', aLayNm: [args.layer ?? ''], page, flt: bldFilter(args), replace: true});
+			aAct.push({t: 'addFilter', aLayNm: [nmLay], page, flt: bldFilter(args), replace: true});
 		}
+
+		// プラグインレイヤー（本家 Pages.lay() の f.lay(hArg)/b.lay(hArg) 相当）。
+		//	属性ハッシュを丸ごと渡す＝中身の解釈はプラグインの責務
+		if (isPlg) aAct.push({t: 'layPlg', nm: nmLay, page, hArg: {...args}});
 	}
 
 	// [lay]属性のうちページに依存しないもの（本家 LayerMng.ts:489 #lay() の float/index/dive。
@@ -1285,7 +1309,13 @@ export class ScriptEngine {
 		case 'add_lay': {
 			const nm = args.layer ?? args.nm ?? '';
 			if (! nm) throw '[add_lay] layerは必須です（試作仕様）';
-			const cls = (args.class ?? 'txt').toLowerCase() === 'grp' ? 'grp' : 'txt';
+			// 大文字小文字は区別しない（既存テスト・シナリオが class=GRP/TXT のように書くことがあるため）
+			const cls = (args.class ?? 'txt').toLowerCase();
+			// 本家 Pages.ts:22 `if (! fncF) throw 属性 class【…】が不正です` と同じ位置での検査。
+			//	以前はgrp以外を黙ってtxtに落としていた（class=hogeがエラーにならなかった）が、
+			//	プラグインcls（[add_lay class=3d]等）を受け付けるにはタイポと未登録プラグインを
+			//	見分ける必要があるため、ここで検査する
+			if (! hasLayCls(cls)) throw `[add_lay] 属性 class【${cls}】が不正です。レイヤクラスが登録されていません`;
 			this.#hLayCls[nm] = cls;
 			this.#hTxt[nm] = '';
 			this.#hTxtBk[nm] = '';

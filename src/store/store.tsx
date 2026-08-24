@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {A_LAY_STY_KEY, type T_LAY, type T_LAY_STY} from '../components/Lay';
+import {A_LAY_STY_KEY, isGrpLay, isTxtLay, type T_LAY, type T_LAY_STY} from '../components/Lay';
 import type {T_FLT} from '../ts/Filter';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
@@ -35,6 +35,10 @@ type T_STATE = {
 	chgBackClear	: (arg: T_CHGBACKCLEAR)=> void,
 	chgLay	: (arg: T_CHGLAY)=> void,
 	getLaySty: (nm: string, page: T_PAGE)=> T_LAY_STY,
+	// プラグインレイヤー（PlgLayMng）が'fore'/'back'をストアのページ添字（0|1）へ解決するために使う。
+	//	DOM側にはstore外で持つLayerインスタンスがあり（表裏2個、本家Pages相当）、
+	//	[trans]でforeIdxが反転しても中身（DOM実体）は動かさない設計なので、添字そのものが要る
+	getForeIdx: ()=> 0 | 1,
 	getPages: ()=> {fore: T_LAY[]; back: T_LAY[]},	// [dump_lay]用。表裏まとめて覗く
 	// 表裏ページまるごとのJSON。しおり（[save]/[record_place]）が覚えるのはこれで、
 	//	戻すのは replace()。Memento（読み戻し）が記録するものと同じ形
@@ -277,7 +281,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
 	// 文字送り演出（Web Animations API）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
 	//	演出完了まで遅らせるため（ScriptMng#scheduleResume）。isTypingはstateの値そのものだと
 	//	attachTsx時点のスナップショットで固まってしまうので、関数越しに読む
@@ -443,8 +447,8 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）/pl・pr・pt・pbは文字レイヤ専用。画像レイヤへ来たら黙って無視せず知らせる
-		if (e.cls !== 'txt' && (sty.b_color !== undefined || sty.style !== undefined
+		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）/pl・pr・pt・pbは文字レイヤ専用。画像・プラグインレイヤへ来たら黙って無視せず知らせる
+		if (! isTxtLay(e) && (sty.b_color !== undefined || sty.style !== undefined
 			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined
 			|| sty.r_align !== undefined || sty.kinsoku_sol !== undefined || sty.kinsoku_eol !== undefined
 			|| sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined
@@ -454,7 +458,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		// 禁則の競合チェック（本家 Hyphenation.lay()。行頭禁則との重複はチェック対象外）。
 		//	マージ後の値（新規指定 → そのレイヤの現在値 → 既定）で判定する必要があるので、
 		//	状態を持たないエンジン側ではなくここで行う
-		if (e.cls === 'txt' && (sty.kinsoku_eol !== undefined || sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined)) {
+		if (isTxtLay(e) && (sty.kinsoku_eol !== undefined || sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined)) {
 			chkKinsoku(
 				sty.kinsoku_eol ?? e.kinsoku_eol ?? DEF_KINSOKU.eol,
 				sty.kinsoku_dns ?? e.kinsoku_dns ?? DEF_KINSOKU.dns,
@@ -475,7 +479,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		// styleは属性まるごとの置き換えではなく、本家同様CSSプロパティ単位で既存styleへ足す
 		//	（[lay style='text-shadow:…']だけを送るシーン転換タグが、先に指定済みの
 		//	width/height/writing-mode等を消してしまっていた不具合の修正）
-		const sty2 = e.cls === 'txt' && sty.style !== undefined
+		const sty2 = isTxtLay(e) && sty.style !== undefined
 			? {...sty, style: sty.style ? mergeCssText(e.style, sty.style) : ''}
 			: sty;
 		Object.assign(e, sty2);
@@ -495,6 +499,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		for (const k of A_LAY_STY_KEY) if (e[k] !== undefined) Object.assign(sty, {[k]: e[k]});
 		return sty;
 	},
+	getForeIdx: ()=> get().foreIdx,
 	getPages: ()=> {
 		const s = get();
 		return {fore: s.aPage[s.foreIdx], back: s.aPage[(1 - s.foreIdx) as 0 | 1]};
@@ -538,10 +543,12 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			// 見た目は「未指定」へ戻す（＝各レイヤのCSS既定に従う）。
 			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
 			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
-			if (e.cls === 'grp') {e.fn = ''; e.src = ''; e.aFace = []}
+			if (isGrpLay(e)) {e.fn = ''; e.src = ''; e.aFace = []}
 			// bura/kinsoku_*は[clear_lay]で変更しない（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない。
 			//	docs/tag.htmlのbura欄も既定値「現在値」＝クリアしても引き継ぐ、と明記）
-			else {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1; delete e.pl; delete e.pr; delete e.pt; delete e.pb}
+			else if (isTxtLay(e)) {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1; delete e.pl; delete e.pr; delete e.pt; delete e.pb}
+			// プラグインレイヤーはstoreに中身を持たない（中身の実体・クリアはDOM側 PlgLayMng が持つ）ので、
+			//	共通の見た目（上のA_LAY_STY_KEYループ）を戻すだけでよい
 		};
 		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
 		const clr = (aLay: T_LAY[])=> {

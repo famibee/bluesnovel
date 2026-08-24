@@ -81,6 +81,30 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 - **`src/ts/Swipe.ts`** — スワイプ判定（`swipeleft`/`swiperight`/`swipeup`/`swipedown`）の純粋関数
   `detectSwipe`。本家は `tinygesture` の一括処理だが、bluesnovel は tap/longpress を React 標準/
   `react-use` で代替済みのため未実装だったスワイプ判定だけを自作した（2026-08-19）。
+- **本家互換プラグイン機構（`[add_lay class=…]`→`addLayCls`）** — 3D/Live2D 等 Pixi 前提のプラグイン
+  （`sn_gallery/src/plugin/3d_layer` 等）を移植できるようにする土台（2026-08-24）。
+  - `src/sn/LayCls.ts` — cls 名（`grp`/`txt`/プラグイン独自名）→ Layer 工場のレジストリ。本家
+    `SysBase.hFactoryCls` 相当だが、`ScriptEngine`（`sys` を持たない）・`Stage.tsx`・`SysBase`
+    の 3 者から見えるようモジュールレベルの `Map` にしてある。
+  - `src/sn/Layer.ts` — 本家 `Layer` 基底クラスの DOM 版。本家は `ctn` が Pixi の `Sprite` で
+    位置・alpha・回転・拡縮の委譲プロパティを持つが、その役割は bluesnovel では
+    **`components/Layer.tsx`（箱）** が既に担うため、ここに残る `ctn` は「中身を入れるための
+    素の `div`」だけ（`this.ctn.appendChild(canvas)` 等をプラグイン側が行う）。
+  - `src/ts/PlgLayMng.ts` — プラグインレイヤーの DOM 側実体。`[add_frame]` の `FrameMng` と同じ
+    **store 外・DOM 側管理**パターンで、1 レイヤ名につき `Layer` インスタンスを fore/back 2 個
+    持つ（本家 `Pages` と同じ）。3D シーン等の重い可変状態を `structuredClone`
+    （`addLayer`/`finishTrans`）に載せずに済む。
+  - `src/components/PlgLayer.tsx` — React 側の箱。`GrpLayer`/`TxtLayer` と同格の第 3 の描画先で、
+    中身は `PlgLayMng.attachBox()` が出し入れする置き場所の `div` を渡すだけ。
+  - `src/components/Lay.ts` の `T_LAY_IDX.cls` は `'grp'|'txt'|(string & {})` へ拡張。判別ユニオン
+    `T_LAY` にプラグイン型 `T_PLGLAY_DATA`（`plg: true` の判別マーカー必須。無いと構造的に
+    grp/txt もこの型に代入可能になり型ガードが壊れる）を追加し、`isGrpLay`/`isTxtLay`/`isPlgLay`
+    という型ガード関数を経由して絞り込む（`e.cls === 'grp'` のようなインライン比較では、
+    `(string & {})` を含む緩い判別プロパティを TS が正しく絞り込めないため）。
+  - `SysBase.#initPlg()`（`run()` 内、`Config.generate()` の後・`initMain()` の前）が `hPlg` の
+    各プラグインの `init()` を一括実行し、`T_PluginInitArg.addLayCls` を実際に機能させる。
+    `addTag`/`render` は未対応（呼ぶと明示的に throw／no-op）。
+  - E2E 疎通確認は `test/e2e/plg.e2e.ts`（`test/e2e/app/prj_plg/` ＋ `test/e2e/app/dmyPlg.ts`）。
 
 **本家由来ファイルは本家のテストを無改変で持っている**（`test/Grammar.test.ts`,
 `test/ExprEval.test.ts`, `test/VarStore.test.ts` の後半）。これらを触るときはまず

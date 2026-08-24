@@ -5,12 +5,17 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// 本家 skynovel_esm/src/sn/Layer.ts のスタブ。bluesnovel本体はレイヤー管理をReact/DOM側で
-//	持つためこのクラスを一切使わない（hFactoryCls等の実際のレイヤー生成経路には未接続）。
-//	3D/Live2D等pixi.js前提のプラグイン（sn_gallery の3d_layer/cubism3_layer/emote_layer）が
-//	`class Foo extends Layer`と型的に継承できるようにするためだけに存在するスタブで、
-//	tscのコンパイルを通す以上の意味はない（todo.md「sn_galleryをbluesnovel駆動にする」参照）。
-//	ctn等はpixi.jsへ依存させないよう意図的にanyへ緩めている
+// 本家 skynovel_esm/src/sn/Layer.ts のbluesnovel版。本家の`ctn`はpixi.jsの`Sprite`で、
+//	位置・alpha・回転・拡縮を委譲プロパティ（x/y/alpha/rotation/scale_x/scale_y）として
+//	持っていたが、bluesnovelではその役割を「箱」（components/Layer.tsx の div0 +
+//	components/Lay.ts の styLay()）が既に担うため、ここに委譲プロパティは持たない。
+//	残るのは`ctn`（中身を入れるための素のdiv。本家が`this.ctn.addChild(sprite)`していた
+//	箇所は、プラグインが`this.ctn.appendChild(canvas等)`する形に置き換わる）と、
+//	サブクラスがoverrideする共通API（lay/clearLay/record/playback/dump）だけ。
+//	3D/Live2D等pixi.js前提のプラグイン（sn_galleryの3d_layer/cubism3_layer/emote_layer）は
+//	`class Foo extends Layer`として継承し、`this.ctn`のpixi固有操作
+//	（addChild等）をDOM操作へ書き換えることで移植する（todo.md「sn_galleryをbluesnovel駆動に
+//	する」参照）
 
 import type {TArg} from './Grammar';
 
@@ -27,17 +32,15 @@ export class Layer {
 	set name(nm: string) {this.name_ = nm}
 	get name() {return this.name_}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	readonly	ctn: any = {};
+	readonly	ctn: HTMLDivElement = document.createElement('div');
 
-	destroy() { /* empty */ }
+	destroy() {this.ctn.remove()}
 
+	// 戻り値は本家の isWait（trueなら[lay]でシナリオを止め、pia.resume()での再開を待つ）。
+	//	bluesnovel側の実配線は未対応（PITFALLS/todo.md参照）で、現状は常にfalse扱いで進む
 	lay(_hArg: TArg): boolean {return false}
 	clearLay(_hArg: TArg): void { /* empty */ }
 	record(): T_RecordPlayBack_lay {return {name: this.layname, idx: 0}}
 	playback(_hLay: T_RecordPlayBack_lay, _aPrm: Promise<void>[]): void { /* empty */ }
 	dump(): string {return ''}
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	static setXY(_base: any, _hArg: TArg, _ret: any, _isGrp = false, _isButton = false): void { /* empty */ }
 }

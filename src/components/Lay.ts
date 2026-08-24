@@ -18,7 +18,7 @@ import {styFilter, blendmodeOf, type T_FLT} from '../ts/Filter';
 import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
-import type {CSSProperties, ReactNode} from 'react';
+import type {CSSProperties} from 'react';
 import type {SerializedStyles} from '@emotion/react';
 
 
@@ -73,8 +73,11 @@ export const BTN_DEF_H = 30;
 
 export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
 
+// `(string & {})`はリテラル候補（'grp'|'txt'）の補完を保ったまま任意文字列も許すTSのイディオム。
+//	本家[add_lay class=…]と同じく、プラグイン（3D/Live2D等）が独自clsのレイヤーを
+//	追加できるようにするため、コア2種に閉じない（src/sn/LayCls.tsのレジストリ参照）
 export type T_LAY_IDX = T_LAY_STY & {
-	cls		: 'grp'|'txt';
+	cls		: 'grp'|'txt'|(string & {});
 	nm		: string;
 };
 
@@ -143,26 +146,27 @@ export type T_LAY_CMN = {
 		visible?	: boolean;
 	};
 };
-export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
+// プラグイン（[add_lay class=3d]等。src/sn/LayCls.tsのレジストリで登録されたcls）が持つ
+//	レイヤーのデータ形。**中身（3Dシーン等の重い可変状態）はstoreに持たせない**：
+//	structuredClone（addLayer/finishTrans）を通せず、storeの再描画のたびにシーンを
+//	作り直す羽目になるため。ここが持つのは「このレイヤが在ること」と共通の見た目
+//	（T_LAY_STY）だけで、中身の実体はDOM側（src/ts/PlgLayMng.ts）が本家Pages同様
+//	fore/back 2個のLayerインスタンスとして抱える（[add_frame]のFrameMngと同じ
+//	「store外・DOM側管理」パターン）。
+//	`plg: true`は判別ユニオンのマーカー：`cls: string`だけだと構造的に
+//	T_GRPLAY_DATA/T_TXTLAY_DATAもこの型に代入可能になってしまい（全プロパティを
+//	持った上位互換になるため）、下のisGrpLay/isTxtLay/isPlgLayの型ガードが
+//	正しく分岐できなくなる（実測済み）
+export type T_PLGLAY_DATA = T_LAY_IDX & {cls: string; plg: true};
+export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA | T_PLGLAY_DATA;
 
-// 画像系レイヤー（cls: 'grp'）の「中身の描き方」を差し替えるプラグイン拡張点。
-//	**大分類（cls: grp/txt）自体は増やさない**：store.tsx（chgLay/clearLay等）が随所で
-//	`e.cls === 'grp'`の判別ユニオン絞り込みに依存しており、clsに3つ目の値を足すと
-//	（`(string & {})`等でリテラル外を許す形にすると）その絞り込みが軒並み壊れる（実測済み）。
-//	そこで「'grp'の中のさらに細かい表示方式」という1段下の軸（[lay type=…]→`kind`）を用意し、
-//	本家の`[lay type=gltf]`（Pixiへプラグインで3Dを合成）に相当する拡張はここで受ける。
-//	共通の箱（位置・回転・拡縮・Moveable）は`Layer.tsx`が持つので、
-//	rendererは中身（Layer.tsxのchildren）だけを返せばよい
-export type T_LAY_PLUGIN_ARG = {nm: string; ext: Record<string, unknown>};
-export type T_LAY_PLUGIN_RENDERER = (arg: T_LAY_PLUGIN_ARG, cmn: T_LAY_CMN['cmn'])=> ReactNode;
-const hPluginLayer = new Map<string, T_LAY_PLUGIN_RENDERER>();
-export function registerLayerKind(kind: string, renderer: T_LAY_PLUGIN_RENDERER) {
-	if (hPluginLayer.has(kind)) throw new Error(`registerLayerKind: '${kind}' は既に登録済みです`);
-	hPluginLayer.set(kind, renderer);
-}
-export function getLayerRenderer(kind: string): T_LAY_PLUGIN_RENDERER | undefined {
-	return hPluginLayer.get(kind);
-}
+// cls判別の型ガード。`l.cls === 'grp'`のようなインライン比較では
+//	（cls: 'grp'|'txt'|(string & {})という緩めた型のもとでは）TSがT_PLGLAY_DATAを
+//	絞り込みから除外できない（string側のリテラル部分一致を型システムが判定できないため）。
+//	明示的な型ガード関数を経由することで、開発者の意図（是か非か）をTSに伝える
+export function isGrpLay(l: T_LAY): l is T_GRPLAY_DATA {return l.cls === 'grp'}
+export function isTxtLay(l: T_LAY): l is T_TXTLAY_DATA {return l.cls === 'txt'}
+export function isPlgLay(l: T_LAY): l is T_PLGLAY_DATA {return l.cls !== 'grp' && l.cls !== 'txt'}
 
 
 // デザインモードのMoveableでドラッグしたか。ドラッグ終わりのクリックを

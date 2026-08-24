@@ -12,10 +12,11 @@ import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib, getDateStr} from '../sn/CmnLib';
 import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
-import {ScriptEngine, type T_ENGINE_ACTION} from './ScriptEngine';
+import {ScriptEngine, type T_ENGINE_ACTION, type T_PAGE} from './ScriptEngine';
 import {Script} from './Script';
 import {easeFn, H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
+import {PlgLayMng} from './PlgLayMng';
 import {focusMng} from './FocusMng';
 import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
@@ -23,6 +24,7 @@ import {INI_STYPAGE, PageLog, type T_PAGE_TO} from './PageLog';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
 import {DEF_BTN_FONT, type T_LAY_STY_ARG} from '../store/store';
+import {isGrpLay, isTxtLay} from '../components/Lay';
 import {SndMng} from './SndMng';
 import {MAX_END_MS} from './SndBuf';
 import {decryptPicUrl} from './Crypto';
@@ -75,6 +77,7 @@ export class ScriptMng {
 		for (const {tw} of Object.values(this.#hSndTw)) tw.kill();
 		this.#sndMng.stopAll();
 		this.#spnDbg.remove();
+		this.#plgLayMng.destroy();	// プロジェクト切替で古いWebGLコンテキスト等を持ち越さない
 	}
 
 	// Main.tsx からの初期化
@@ -220,14 +223,20 @@ export class ScriptMng {
 			const {fore, back} = this.$fncs.getPages();
 			const attrs = (l: (typeof fore)[number] | undefined)=> {
 				if (! l) return undefined;
-				const natSize = l.cls === 'grp' ? getNatSize(l.src) : undefined;
 				const x = l.left ?? 0, y = l.top ?? 0;
+				// 実寸（width/height未指定時）の既定はレイヤ種別ごとに違う：
+				//	画像（grp）はSprite.tsの自然サイズキャッシュ、文字（txt）は[lay style=]の明示値。
+				//	プラグインレイヤーは実寸をエンジンが知らない（DOM側 PlgLayMng が持つ）ので0を返す
+				//	（本家GrpLayerの未ロード時と同じ扱い）
+				const wh = isGrpLay(l) ? (()=> {const n = getNatSize(l.src); return {w: n?.w ?? 0, h: n?.h ?? 0}})()
+					: isTxtLay(l) ? {w: styNum(l.style, 'width') ?? CmnLib.stageW * 0.7, h: styNum(l.style, 'height') ?? CmnLib.stageH}
+					: {w: 0, h: 0};
 				return {
 					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）
 					alpha	: l.alpha ?? 1,
 					x, y, left: x, top: y,	// 本家は x/y。left/top の別名としても引けるように両方持たせる
-					width	: l.width ?? (l.cls === 'grp' ? (natSize?.w ?? 0) : (styNum(l.style, 'width') ?? CmnLib.stageW * 0.7)),
-					height	: l.height ?? (l.cls === 'grp' ? (natSize?.h ?? 0) : (styNum(l.style, 'height') ?? CmnLib.stageH)),
+					width	: l.width ?? wh.w,
+					height	: l.height ?? wh.h,
 				};
 			};
 			const hLay: {[nm: string]: {fore: unknown; back: unknown}} = {};
@@ -413,6 +422,19 @@ export class ScriptMng {
 	//	#saveMngと同じくフィールド初期化子ではなくコンストラクタ本体で代入する
 	readonly #frmMng: FrameMng;
 	attachFrameBox(el: HTMLElement) {this.#frmMng.attachBox(el)}
+
+	// プラグインレイヤー（[add_lay class=…]）のDOM側。FrameMngと同じく中身をストアに載せない
+	//	（src/ts/PlgLayMng.ts冒頭コメント参照）。依存を注入する必要が無いためフィールド初期化子でよい
+	readonly #plgLayMng = new PlgLayMng();
+	attachPlgBox(nm: string, pageIdx: 0 | 1, el: HTMLElement | null) {this.#plgLayMng.attachBox(nm, pageIdx, el)}
+	// T_PluginInitArg.getVal の実体。プラグインが「今の変数値」を読むためのAPI
+	getVal(nm: string, def?: number | string) {return this.#engine?.getVal(nm) ?? def}
+	// 'fore'/'back' → ストアページ添字（0|1）。プラグインレイヤーのDOM実体は
+	//	（[trans]でforeIdxが反転しても動かない）ストアページ添字に固定して持つため必要
+	#pageIdx(page: T_PAGE): 0 | 1 {
+		const fi = this.$fncs.getForeIdx();
+		return page === 'fore' ? fi : (1 - fi) as 0 | 1;
+	}
 
 	// 音声層（ts/SndMng.ts）。DOM/WebAudioを直接触るのはScriptMngから見てここだけ。
 	//	myTraceはクラスフィールドとしてこれより後ろで定義されている（フィールド初期化は宣言順）ので、
@@ -1444,9 +1466,24 @@ export class ScriptMng {
 		case 'addLay':
 			// [lay]で変えられる見た目（visible/alpha/left/top/rotation/scale_*）は初期値を持たせない。
 			//	未指定＝各レイヤのCSS既定に従う（Stage.tsx T_LAY_STY のコメント参照）
-			this.$fncs.addLayer(act.cls === 'grp'
-				? {cls: 'grp', nm: act.nm, fn: '', src: '', isSheet: false, isMovie: false, aFace: []}	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
-				: {cls: 'txt', nm: act.nm, str: '', aCh: [], aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
+			switch (act.cls) {
+			case 'grp':
+				this.$fncs.addLayer({cls: 'grp', nm: act.nm, fn: '', src: '', isSheet: false, isMovie: false, aFace: []});	// aFaceは[lay face=...]で後から入る（初期は差分合成なし）
+				break;
+			case 'txt':
+				this.$fncs.addLayer({cls: 'txt', nm: act.nm, str: '', aCh: [], aBtn: [], b_alpha: 1, enabled: true});	// 文字レイヤはUIコンテナとしてaBtnを初期化。b_alphaは[lay b_alpha=...]未指定時は不透明（1）が既定
+				break;
+			default:
+				// プラグインレイヤー。storeには「在ること」と共通の見た目だけを置き、
+				//	中身（3Dシーン等）はDOM側（#plgLayMng）が本家Pages同様fore/back 2個の
+				//	Layerインスタンスとして抱える
+				this.$fncs.addLayer({cls: act.cls, nm: act.nm, plg: true});
+				this.#plgLayMng.add(act.nm, act.cls);
+				break;
+			}
+			break;
+		case 'layPlg':
+			this.#plgLayMng.lay(act.nm, this.#pageIdx(act.page), act.hArg);
 			break;
 		case 'chgPic': {
 			// **画像パスの解決はここ**（描画時ではなく）。searchPath()はサーチパスに無ければ
@@ -1564,6 +1601,7 @@ export class ScriptMng {
 			break;
 		case 'clearLay':
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
+			this.#plgLayMng.clearLay(act.aLayNm, act.page, this.$fncs.getForeIdx());
 			break;
 		case 'clearTxtLay':
 			this.$fncs.clearTxtLay({nm: act.nm, page: act.page, clearFilter: act.clearFilter});

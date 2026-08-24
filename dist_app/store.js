@@ -430,10 +430,10 @@ function p(e) {
 		...r === void 0 ? {} : { blendmode: r }
 	};
 }
-function ee(e) {
+function m(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function m(e) {
+function ee(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
 function h(e) {
@@ -475,15 +475,17 @@ function v(e) {
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-var y = /* @__PURE__ */ new Map();
-function te(e) {
-	return y.get(e);
+function y(e) {
+	return e.cls === "grp";
 }
-var b = !1, ne = () => {
-	b = !0;
-}, x = () => {
-	b = !1;
-}, S = () => b, C = {
+function b(e) {
+	return e.cls === "txt";
+}
+var x = !1, te = () => {
+	x = !0;
+}, ne = () => {
+	x = !1;
+}, S = () => x, C = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -503,52 +505,52 @@ var b = !1, ne = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, T = /[{\s.,*]/, E = (e, t, n, r) => {
+}, re = /[{\s.,*]/, T = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function D(e, t, n) {
+function E(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (T.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (re.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: E(e, "wait", t.wait, 500),
-			alpha: E(e, "alpha", t.alpha, 0),
+			wait: T(e, "wait", t.wait, 500),
+			alpha: T(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: E(e, "scale_x", t.scale_x, 1),
-			scale_y: E(e, "scale_y", t.scale_y, 1),
-			rotate: E(e, "rotate", t.rotate, 0),
+			scale_x: T(e, "scale_x", t.scale_x, 1),
+			scale_y: T(e, "scale_y", t.scale_y, 1),
+			rotate: T(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function O(e) {
+function D(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
-var k = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
-function A(e) {
+var O = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
+function k(e) {
 	let t = e.trim();
-	return k.test(t) ? t : "ease-out";
+	return O.test(t) ? t : "ease-out";
 }
-function re(e) {
+function A(e) {
 	return {
 		keyframes: [{
 			opacity: e.alpha,
-			transform: `translate(${O(e.x)}, ${O(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+			transform: `translate(${D(e.x)}, ${D(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
 		}, {
 			opacity: 1,
 			transform: "none"
 		}],
 		options: {
 			duration: e.wait,
-			easing: A(e.ease),
+			easing: k(e.ease),
 			fill: "backwards"
 		}
 	};
@@ -860,9 +862,9 @@ var $ = K()((e, t) => ({
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
 		let { idx: i, aLay: a } = Y(e, n), o = a.find((e) => e.nm === t);
 		if (!o) throw `存在しないレイヤ ${t} です`;
-		if (o.cls !== "txt" && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
-		o.cls === "txt" && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura), r.left !== void 0 && r.align_x === void 0 && delete o.align_x, r.top !== void 0 && r.align_y === void 0 && delete o.align_y;
-		let s = o.cls === "txt" && r.style !== void 0 ? {
+		if (!b(o) && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
+		b(o) && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && F(r.kinsoku_eol ?? o.kinsoku_eol ?? M.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? M.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? M.bura), r.left !== void 0 && r.align_x === void 0 && delete o.align_x, r.top !== void 0 && r.align_y === void 0 && delete o.align_y;
+		let s = b(o) && r.style !== void 0 ? {
 			...r,
 			style: r.style ? ie(o.style, r.style) : ""
 		} : r;
@@ -875,6 +877,7 @@ var $ = K()((e, t) => ({
 		for (let e of _) i[e] !== void 0 && Object.assign(a, { [e]: i[e] });
 		return a;
 	},
+	getForeIdx: () => t().foreIdx,
 	getPages: () => {
 		let e = t();
 		return {
@@ -910,7 +913,7 @@ var $ = K()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let r = (e) => {
 			for (let t of _) t !== "visible" && delete e[t];
-			e.cls === "grp" ? (e.fn = "", e.src = "", e.aFace = []) : (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
+			y(e) ? (e.fn = "", e.src = "", e.aFace = []) : b(e) && (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, i = (e) => {
 			if (!t) {
 				e.forEach(r);
@@ -1048,6 +1051,6 @@ function oe() {
 	$.setState(ae, !0);
 }
 //#endregion
-export { J as DEF_BTN_FONT, l as _, C as a, i as b, x as c, ne as d, v as f, m as g, f as h, I as i, te as l, d as m, R as n, re as o, p, z as r, oe as resetStore, D as s, L as t, S as u, $ as useStore, u as v, ee as y };
+export { J as DEF_BTN_FONT, ee as _, C as a, m as b, ne as c, b as d, te as f, f as g, d as h, I as i, S as l, p as m, R as n, A as o, v as p, z as r, oe as resetStore, E as s, L as t, y as u, $ as useStore, l as v, i as x, u as y };
 
 //# sourceMappingURL=store.js.map

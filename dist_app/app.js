@@ -82,11 +82,39 @@ var i = "skynovel", a = class {
 			let e = document.createElement("div");
 			return e.id = i, document.body.appendChild(e), e;
 		})(), p = new o(this);
-		this.scrMng = p, this.#e = n(f), r(this.#e, {
+		this.scrMng = p, await this.#r(p), this.#e = n(f), r(this.#e, {
 			heStage: f,
 			sys: this,
 			scrMng: p
 		}, () => queueMicrotask(() => p.load("main")));
+	}
+	#n = !1;
+	async #r(e) {
+		if (this.#n) return;
+		this.#n = !0;
+		let n = Object.values(this.hPlg);
+		if (n.length === 0) return;
+		let { addLayCls: r } = await import("./LayCls.js").then((e) => e.t);
+		await Promise.all(n.map((n) => n.init({
+			getInfo: () => ({ window: {
+				width: t.stageW,
+				height: t.stageH
+			} }),
+			addTag: (e) => {
+				throw `プラグインのaddTag('${e}')は未対応です`;
+			},
+			addLayCls: r,
+			searchPath: (e, t) => this.cfg.searchPath(e, t),
+			getVal: (t, n) => e.getVal(t, n),
+			resume: () => {
+				e.go();
+			},
+			render: () => {},
+			setDec: () => {},
+			setDecAB: () => {},
+			setEnc: () => {},
+			getHash: () => {}
+		})));
 	}
 	async stop() {
 		if (!this.#e) return;
