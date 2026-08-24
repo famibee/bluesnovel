@@ -75,6 +75,22 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 
 ## タグ・変数の残り
 
+- [ ] **縦書きで`〈`/`〉`（U+3008/3009）だけ90°回転しない**：2026-08-24、
+      `line_breaking_rules`（sn_gallery）の本家比較（ユーザー提供スクリーンショット）で発覚。
+      同じシナリオ内の`【`/`】`（U+3010/3011）は縦書き時に正しく回転して表示されるのに対し、
+      `〈`/`〉`だけ横向きの字形のまま。実機再現済み（bluesnovel/本家それぞれ
+      `http://localhost:8082/…?cur=line_breaking_rules` と
+      `https://famibee.github.io/SKYNovel_gallery/?cur=line_breaking_rules` を並べて確認）。
+      bluesnovel側に文字種ごとの回転テーブルは無く（`grep`でも該当コードなし）、【】と〈〉で
+      CSS計算経路も`writing-mode`/`text-orientation`とも完全に同一（`getComputedStyle`で確認）
+      ——にもかかわらず結果が割れるため、原因はbluesnovelのコードではなく、依拠している
+      ブラウザ既定の自動縦書き回転（`text-orientation: mixed`、Unicode Vertical_Orientation
+      プロパティに基づく）側の挙動差である可能性が高い。**まず原因究明が先**（ユーザー指示、
+      2026-08-24）：`text-orientation: mixed`のTr/R分類の違いか、フォント側の縦書き用グリフ
+      （'vert'/'vrt2'）の有無か、ブラウザ実装差かを切り分けてから対応方針を決める。対応案として
+      対象文字だけ個別に回転させる手も考えられるが、これは「回転は付けない」という現行方針
+      （`TxtLayer.tsx`のコメント参照。文字送りアニメの▶回転で実例あり）に反する例外を作ることに
+      なるため、原因を明らかにした上で判断する
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（優先度低）。2026-08-12に行列自体を
         再確認：`src/ts/Filter.ts`の数値は`@pixi/filter-color-matrix`の`predator()`/`colorTone()`と
@@ -108,7 +124,12 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
 - [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
-- [ ] 文字レイヤの既定幅70%（本家はステージ幅いっぱい）：`ch_button`/`sound`/`import`のsn_gallery実機比較で繰り返し発見された意図的な既定差。`import`では実際にリンクがクリック不能になる実害を確認済みだが、全プロジェクトの文字レイヤに影響するため見送り継続
+- [ ] 文字レイヤの既定幅70%（本家はステージ幅いっぱい）：`ch_button`/`sound`/`import`のsn_gallery実機比較で繰り返し発見された意図的な既定差。`import`では実際にリンクがクリック不能になる実害を確認済みだが、全プロジェクトの文字レイヤに影響するため見送り継続。
+      2026-08-24、`line_breaking_rules`（縦書き）の本家比較でも同じ原因による症状を確認：
+      `TxtLayer.tsx`の箱は`left:0`起点＋この既定70%幅のままなので、縦書き（右→左に読む）だと
+      箱の右側の余白がステージ右端側に残り、結果として文章全体がステージ左寄りに見える
+      （本家のmasume表示は箱がステージ幅いっぱいに達するため起きない）。原因はこの項目と同一で
+      新規バグではないため、対応もこの項目の見送り解除とセットで検討する
 
 ## 要検証（出自不確か・追跡工数を投じない）
 

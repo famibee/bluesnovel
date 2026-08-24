@@ -111,24 +111,29 @@ test('[button fn=…]で別ファイルのラベルへジャンプする', async
 test('[button left=/top=]は絶対配置になり、width/height/rotationもCSSへ落ちる', async ({page})=> {
 	// 本家 theme/title.sn のタイトルボタンと同じ書き方。
 	//	**left/topを書いた時だけ**絶対配置（本家は常に絶対配置で省略時0,0だが、
-	//	座標指定なしで複数並べる試作シナリオが全部重なってしまうため）
-	const box = await page.getByText('座標指定').evaluate(e=> {
+	//	座標指定なしで複数並べる試作シナリオが全部重なってしまうため）。
+	//	**getByRoleで取る**：文字はtxtRef側（1階層下、fit倍率のtransform専用）へ包んであるため、
+	//	getByTextだと文字を直接持つtxtRef側（position/width等を持たない）を拾ってしまう
+	//	（2026-08-24、fit二重スケール修正でDOMを2階層化した際に発覚。BtnLayer.tsx参照）
+	const btn = page.getByRole('button', {name: '座標指定'});
+	const box = await btn.evaluate(e=> {
 		const s = getComputedStyle(e);
 		return {pos: s.position, left: s.left, top: s.top, w: s.width, h: s.height, fs: s.fontSize};
 	});
 	expect(box).toEqual({pos: 'absolute', left: '250px', top: '360px',
 		w: '90px', h: '30px', fs: '30px'});
 
-	// rotation=15度。transformには文字を箱幅に収めるfit倍率(scale)も合成されるので、
-	//	行列成分の生値ではなく、そこから復元した回転角で確かめる（atan2(m1,m0)＝θ。スケールは相殺される）
-	const m = (await page.getByText('座標指定').evaluate(e=> getComputedStyle(e).transform))
+	// rotation=15度。本体（getByRole）にはfitは合成されない（fitはtxtRef側だけの倍率）ので、
+	//	理屈上はrotate(15deg)そのままのはずだが、他の変形と同じ考え方で角度だけ復元して確かめる
+	//	（atan2(m1,m0)＝θ。scale_x/scale_y未指定なので常に1、相殺は不要だが以前の書き方を踏襲）
+	const m = (await btn.evaluate(e=> getComputedStyle(e).transform))
 		.match(/matrix\(([^)]+)\)/)?.[1]?.split(', ').map(Number);
 	const deg = Math.atan2(m![1]!, m![0]!) * 180 / Math.PI;
 	expect(deg).toBeCloseTo(15, 1);
 });
 
 test('座標指定していないボタンは流し込み配置のまま', async ({page})=> {
-	expect(await page.getByText('ジャンプする').evaluate(e=> getComputedStyle(e).position))
+	expect(await page.getByRole('button', {name: 'ジャンプする'}).evaluate(e=> getComputedStyle(e).position))
 		.toBe('relative');
 });
 
@@ -173,7 +178,9 @@ test('hint未指定のボタンでは吹き出しを出さない', async ({page}
 });
 
 test('[button style=/style_hover=]はCSSとして当たる（ホバー・フォーカスも）', async ({page})=> {
-	const btn = page.getByText('見た目');
+	// getByRole：style/style_hoverはcolor等の見た目CSSなのでtxtRef（内側）で見ても値自体は
+	//	継承で同じに見えるが、outlineStyleは本体（tabIndex持ち）側でしか意味を持たないためgetByRoleで統一する
+	const btn = page.getByRole('button', {name: '見た目'});
 	// 色は transition: color 0.3s で変わるので、落ち着くまで待って比べる
 	const color = ()=> btn.evaluate(el=> getComputedStyle(el).color);
 	const seeColor = async (c: string)=> {
@@ -217,7 +224,7 @@ test('[lay visible=false]はボタンも隠し、alphaも効く', async ({page})
 	//	（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
 	//	位置・変形以外を橋渡ししないとボタンだけ残る。
 	//	テンプレの[sys_menu visible=false]でシステムボタンが消えなかったのがこれ
-	const btn = page.getByText('ジャンプする');
+	const btn = page.getByRole('button', {name: 'ジャンプする'});
 	await expect(btn).toBeVisible();
 
 	await pressKey(page, 'Space');	// [lay visible=false]

@@ -8,6 +8,7 @@
 import {focusMng} from '../ts/FocusMng';
 import {hintMng} from '../ts/Hint';
 import {useStore} from '../store/store';
+import {CmnLib} from '../sn/CmnLib';
 
 import type {T_BTN_STY} from './TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from './Lay';
@@ -49,7 +50,7 @@ function btnBoxSize(o: T_BTN_STY | undefined, natPic: {w: number; h: number} | n
 		? {w: o.width ?? natSrc?.w ?? 0, h: o.height ?? natSrc?.h ?? 0}
 		: btnSize(o);
 }
-function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): CSSProperties {
+function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): CSSProperties {
 	const sty: CSSProperties = {};
 	if (o.left !== undefined || o.top !== undefined || o.s_right !== undefined || o.s_bottom !== undefined) {
 		sty.position = 'absolute';
@@ -61,7 +62,7 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 		else sty.top = `${String(o.top ?? 0)}px`;
 	}
 	// 中央寄せ・右端合わせ（本家「表示物の幅を引く」）は独立translateプロパティで表現する。
-	//	transformとは別プロパティなので、下のrotation/scale（fit含む）と衝突しない。
+	//	transformとは別プロパティなので、下のrotation/scaleと衝突しない。
 	//	画像ボタンの箱幅は既に3コマ分の1（natPic.w = naturalWidth/3）なので、-50%がそのまま
 	//	本家のb_width/3計算と一致する
 	if (o.align_x !== undefined || o.align_y !== undefined) {
@@ -83,11 +84,12 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 			//	ここで使うとb_pic枠いっぱいに文字が引き伸ばされてしまう
 			sty.fontSize = `${String(btnSize(o).h)}px`;	// 本家も fontSize:height（Button.ts:133）
 			sty.lineHeight = 1;
-			// padding:5pxは基本CSS（styBtn）まかせ（本家 Button.ts:126 TextStyle.padding:5と同じ値）。
-			//	本家はpixi Text.widthセット時、canvas全体（文字+padding*2）を基準にスケールするため
-			//	（@pixi/text text.mjs updateText()）、fit実測もpadding込みのoffsetWidth/Heightで
-			//	揃える必要がある。以前ここをpadding:0にしていたため、本家よりpadding分だけ
-			//	scaleが過大になり、隣接ボタンと文字が重なって見えていた
+			// padding:5pxは基本CSS（styBtnTxt、下のtxtRef側）まかせ（本家 Button.ts:126
+			//	TextStyle.padding:5と同じ値）。本家はpixi Text.widthセット時、canvas全体
+			//	（文字+padding*2）を基準にスケールするため（@pixi/text text.mjs updateText()）、
+			//	fit実測もpadding込みのoffsetWidth/Heightで揃える必要がある（だからpaddingは
+			//	fitのtransformと同じtxtRef側に置く。箱側styBtnに残すとfit計算に含まれず本家と
+			//	比率がずれる）
 		}
 		sty.boxSizing = 'border-box';
 	}
@@ -111,17 +113,16 @@ function styBtnArg(o: T_BTN_STY, fit: {x: number; y: number}, natPic: {w: number
 	//	styleだから——同じ要素に置くと背景まで一緒にfitで縮んでしまう（sn_gallery ch_button で発覚）
 	if (o.alpha !== undefined) sty.opacity = o.alpha;
 
-	// 変形：回転・拡縮に加え、上記フィット倍率(fit)を掛ける（fitはwidth指定時のみ1以外になる）。
-	//	原点は常に本家pivot（既定左上）。本家はfitに相当するpixi Text.width/heightのスケールも
-	//	Textオブジェクト自身のローカル原点（既定0,0＝左上）基準で、ボタンコンテナの回転もそのpivot
-	//	（既定0,0＝Textの左上と一致）基準なので、fit有無で原点を変える理由が無い（Button.ts:85,123-153）。
-	//	以前centerにしていたのは誤りで、縦書き（rotation=90）のボタンを並べた時に本家と違う位置へ
-	//	ズレて重なる不具合になっていた
-	const sx = (o.scale_x ?? 1) * fit.x;
-	const sy = (o.scale_y ?? 1) * fit.y;
+	// 変形：回転・拡縮（[button rotation=/scale_x=/scale_y=]、本家指定分のみ）。
+	//	文字を箱ちょうどに収めるフィット倍率(fit)は**ここに含めない**：この関数が返すsty(width/height
+	//	込み)はボタンの箱そのもの（ref側）に当たり、箱自身のCSS width/heightを固定した上に
+	//	目標/自然比のscaleまで重ねると二重にスケールされてしまう（下のtxtRef側コメント参照）。
+	//	原点は常に本家pivot（既定左上）。本家はrotation/scale_x/scale_yをボタンコンテナ（背景画像
+	//	込みの箱全体）へ、fit相当のText.width/heightはText自身のローカル原点基準で別々に掛けており、
+	//	ここでも箱側はfit抜きの本来のpivot基準のままでよい（Button.ts:85,123-153）
 	if (o.rotation !== undefined || o.scale_x !== undefined || o.scale_y !== undefined
-	 || o.pivot_x !== undefined || o.pivot_y !== undefined || fit.x !== 1 || fit.y !== 1) {
-		sty.transform = `rotate(${String(o.rotation ?? 0)}deg) scale(${String(sx)}, ${String(sy)})`;
+	 || o.pivot_x !== undefined || o.pivot_y !== undefined) {
+		sty.transform = `rotate(${String(o.rotation ?? 0)}deg) scale(${String(o.scale_x ?? 1)}, ${String(o.scale_y ?? 1)})`;
 		sty.transformOrigin = `${String(o.pivot_x ?? 0)}px ${String(o.pivot_y ?? 0)}px`;
 	}
 	if (o.blendmode !== undefined) sty.mixBlendMode = o.blendmode as CSSProperties['mixBlendMode'];
@@ -160,6 +161,10 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		return ()=> focusMng.remove(el);
 	}, [isEnabled]);
 
+	// fit倍率を測る対象（下のtxtRef＝文字だけを包む内側要素。常に自然サイズなので
+	//	measure()側でwidth等を一時的にいじる必要が無い。理由は下のuseLayoutEffect参照
+	const txtRef = useRef<HTMLSpanElement>(null);
+
 	// 画像ボタンの箱の大きさ＝**絵の実寸**（横は3コマ並びなので1/3）。本家 Button.ts:280 に対応。
 	//	実寸を知れるのはDOM側だけなので、ここで読み込んで測る。
 	//	width/heightが書かれていればそちらが勝つ（本家も `'width' in hArg` を優先する）。
@@ -196,12 +201,17 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 	}, [bPicSrc]);
 
 	// [button width=（height=）]指定時、文字を箱ちょうどに収める倍率を**実測**する（本家 pixi
-	//	Text.width/height 相当。CSSに文字フィットが無いための代替）。幅制約と変形を一時的に外して
-	//	素の文字寸法(offsetWidth/Height＝変形非依存・CSS px)を測り、箱寸法との比を fit として scale へ渡す。
+	//	Text.width/height 相当。CSSに文字フィットが無いための代替）。txtRef（文字だけを包む内側
+	//	要素、常にwidth/height無指定＝自然サイズ）のoffsetWidth/Heightと箱寸法との比をfitとする。
+	//	**fitは箱（ref側）ではなくtxtRef側のtransformへ渡す**：以前は同じ要素にCSSのwidth:100px
+	//	（目標サイズ）とtransform:scale(目標/自然)を両方掛けており、100×(100/自然)と二重に
+	//	スケールされて箱からはみ出す/縮みすぎるバグになっていた（palt/pwidが箱の1.5倍・1.3倍に
+	//	膨張、デフォルトは0.6倍に縮小、というsn_gallery実機比較で発覚。2026-08-24）。
+	//	txtRef側は常に自然サイズのままなので、測定前にwidth/transformを一時的に戻す必要も無い。
 	//	useLayoutEffect なので描画前に確定し、未縮小の文字が一瞬はみ出すチラつきは出ない。
 	const [fit, setFit] = useState({x: 1, y: 1});
 	useLayoutEffect(()=> {
-		const el = ref.current;
+		const el = txtRef.current;
 		if (! el) {setFit({x: 1, y: 1}); return}
 		if (sty?.pic) {setFit({x: 1, y: 1}); return}	// 画像ボタンに文字は無いのでフィットも要らない
 
@@ -209,14 +219,10 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 			// fitは**文字自身の箱**（btnSize＝width/height省略時BTN_DEF）に合わせる。b_pic指定でも
 			//	絵の実寸には連動しない（styBtnArgのfontSize・下の`&::before`コメント参照）
 			const {w: bw, h: bh} = btnSize(sty);
-			const pW = el.style.width, pT = el.style.transform, pWs = el.style.whiteSpace;
-			el.style.width = 'auto'; el.style.transform = 'none'; el.style.whiteSpace = 'pre';
 			const natW = el.offsetWidth, natH = el.offsetHeight;
-			el.style.width = pW; el.style.transform = pT; el.style.whiteSpace = pWs;
 			// 親の文字レイヤが[sys_menu visible=false]等でdisplay:noneの間に測ると0のまま
 			//	（display:noneの要素はレイアウトされずoffsetWidth/Heightが常に0）。
-			//	一度でも実測できたらそれで確定してよいので監視を打ち切る（測定中のwidth一時変更
-			//	自体もResizeObserverの対象になるため、放置すると余分な再測定が続く）
+			//	一度でも実測できたらそれで確定してよいので監視を打ち切る
 			if (natW > 0 && natH > 0) ro.disconnect();
 			setFit({
 				x: natW > 0 ? bw / natW : 1,
@@ -249,7 +255,6 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		justify-content: center;
 		box-sizing: border-box;
 		margin: 0.3em;
-		padding: 5px;
 		font-family: ${btnFont};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
@@ -286,11 +291,11 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 			&:active {background-position-x: 50%;}
 		` : ''}
 		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
-			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：本体は上の
-			transformで文字を箱へ収めるfit倍率（scale）を持つため、そこへ背景を直接置くとb_pic枠まで
-			一緒に縮んで絵より小さく描かれてしまう（sn_gallery ch_button で発覚）。::before側に
-			逆倍率（1/fit）を自身の中心基準で掛けて打ち消すことで、親のfitに引きずられず絵の実寸の
-			まま中央に留まる */
+			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
+			（scale）は本体（箱）ではなく文字だけを包むtxtRef側に掛けているので、背景をtxtRefの
+			中ではなく箱側の::beforeに置くことで、fitに引きずられず絵の実寸のまま中央に留まる
+			（逆倍率で打ち消す必要は無い。以前はfitが箱側にもあったため打ち消しが要ったが、
+			2026-08-24のfit二重スケール修正で箱側から抜いた） */
 		${sty?.b_pic && sty.b_src ? (()=> {
 			const bw = natBPic?.w ?? 0, bh = natBPic?.h ?? 0;
 			const {w: ow, h: oh} = btnBoxSize(sty, natPic, natBPic);
@@ -305,13 +310,22 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 					height: ${String(bh)}px;
 					background-image: url("${sty.b_src}");
 					background-repeat: no-repeat;
-					transform: scale(${String(1 / fit.x)}, ${String(1 / fit.y)});
-					transform-origin: ${String(bw / 2)}px ${String(bh / 2)}px;
 					z-index: -1;
 					pointer-events: none;
 				}
 			`;
 		})() : ''}
+	`;
+
+	// 文字だけを包む内側要素。fit倍率（scale）は**必ずここ**（自然サイズのまま／width・height
+	//	無指定）に掛ける。箱（styBtn）側にwidth:100pxのような固定サイズを持たせた状態で同じ倍率を
+	//	重ねると「箱(100px)×(目標/自然)」と二重にスケールされてしまうため（上のfit計算コメント参照）。
+	//	padding:5pxも本家同様ここに含める（本家Text.width/heightはpadding込みの寸法を100/30へ
+	//	拡縮するため。fit計算のoffsetWidth/Heightもこの要素から測っており対応が取れている）。
+	//	transformが効くにはdisplay:inline-block（無変形のinlineには効かない）が必要
+	const styBtnTxt = css`
+		display: inline-block;
+		padding: 5px;
 	`;
 
 	// 効果音（本家 EventMng.ts:465-491）。enabled=falseのボタンは効果音も鳴らない
@@ -355,9 +369,23 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		onActivate(label, call ?? false, fn, arg);
 	};
 
-	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる
-	return <span css={styBtn} style={sty ? styBtnArg(sty, fit, natPic, natBPic) : undefined} ref={ref}
-		tabIndex={isEnabled ? 0 : -1} onClick={onClick} onKeyDown={onKeyDown}
+	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる。
+	//	role="button"：文字はtxtRef側（1階層下）へ包んだため、page.getByText(...)は
+	//	（Playwrightは文字を直接持つ最も内側の要素を返す仕様のため）txtRef側を返してしまい、
+	//	この要素が持つ position/width/rotation/tabIndex 等を読むE2Eテストが失敗するようになった
+	//	（2026-08-24発覚）。role="button"を付けてpage.getByRole('button', {name:…})で
+	//	名指しできるようにし、内部のtxtRef分割に関わらずクリック可能な本体を一意に取れるようにする
+	return <span css={styBtn} style={sty ? styBtnArg(sty, natPic, natBPic) : undefined} ref={ref}
+		role="button" tabIndex={isEnabled ? 0 : -1} onClick={onClick} onKeyDown={onKeyDown}
 		onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
-		onFocus={showHint} onBlur={()=> hintMng.hide()}>{text}</span>;
+		onFocus={showHint} onBlur={()=> hintMng.hide()}>
+		<span css={styBtnTxt} ref={txtRef}
+			style={fit.x !== 1 || fit.y !== 1 ? {transform: `scale(${String(fit.x)}, ${String(fit.y)})`} : undefined}
+		>{text}</span>
+		{/* masumeガイド枠（本家 Button.ts:21-39 #procMasume4txt/#procMasume4pic相当）。箱
+			（この要素自身）のCSS width/heightが既にbtnBoxSize()と一致しているので、inset:0の
+			1枚で文字・画像どちらのボタンも覆える。CmnLib.masume===falseなら要素ごと描画しない */}
+		{CmnLib.masume && <span style={{position: 'absolute', inset: 0, boxSizing: 'border-box',
+			background: 'rgba(136, 51, 136, 0.2)', border: '1px solid rgb(136, 51, 136)', pointerEvents: 'none'}}/>}
+	</span>;
 }

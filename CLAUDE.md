@@ -2,9 +2,7 @@
 
 ## What this is
 
-`@famibee/bluesnovel` — ESM TypeScript の**ノベルゲームフレームワーク**。作者の旧エンジン
-**SKYNovel**（コード中では **本家**、`skynovel_esm/src/…:line` の形で参照）をReactで書き直し
-たもの。あまり使用してない機能は意図的に削減。
+`@famibee/bluesnovel` — ESM TypeScript の**ノベルゲームフレームワーク**。作者の旧エンジン **SKYNovel**（コード中では **本家**、`skynovel_esm/src/…:line` の形で参照）をReactで書き直したもの。あまり使用してない機能は意図的に削減。本家に対して分家と呼ぶ。
 
 移植時は、コメントの `本家 <file>:<line>` が仕様書。関連コードを足すときもこの記法を踏襲する。
 

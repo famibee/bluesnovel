@@ -196,6 +196,10 @@ export class CmnLib {
 	//	敷くステージ大の塗りと同じ役目）。CSSにそのまま渡せる形（cssColorOf()参照）で持つ
 	static	bgColor		= '#000000';
 	static	debugLog	= false;
+	// テキストレイヤ：ガイドマス目を表示するか（本家 TxtStage.ts #fncMasume/Button.ts
+	//	#procMasume4txt 相当）。offの間はTxtLayer/BtnLayerが判定を早期returnし、
+	//	マス目用のDOM要素も文字ごとのoutline/background-colorも一切増やさない
+	static	masume		= false;
 	static	platform	: string;
 	static	plat_desc	: string;
 	static	isSafari	: boolean;

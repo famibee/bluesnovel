@@ -157,7 +157,7 @@ var a = class {
 		t.window ??= {
 			width: 300,
 			height: 300
-		}, n.stageW = t.window.width, n.stageH = t.window.height, n.debugLog = t.debug.debugLog, n.init(), await super.load(t), n.bgColor = e(this.oCfg.init.bg_color);
+		}, n.stageW = t.window.width, n.stageH = t.window.height, n.debugLog = t.debug.debugLog, n.masume = t.debug.masume, n.init(), await super.load(t), n.bgColor = e(this.oCfg.init.bg_color);
 	}
 	searchPath(e, t = r.DEFAULT) {
 		return e.startsWith("downloads:/") ? this.sys.path_downloads + e.slice(11) : e.startsWith("userdata:/") ? this.sys.path_userdata + "storage/" + e.slice(10) : super.searchPath(e, t);

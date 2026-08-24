@@ -173,6 +173,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
+	// masumeガイド枠（内側＝padding込みを除いた表示領域。外側の枠はCSSだけで足りるのでrefは
+	//	これだけでよい）。CmnLib.masume===falseの間は下のuseLayoutEffectが早期returnし、
+	//	JSX側もこのrefを持つ要素自体をレンダーしない（ref単体はnullを持つだけで実コスト無し）
+	const masumeInnerRef = useRef<HTMLSpanElement>(null);
 	// [link]のクリック。[button]と同じ経路（ScriptMng.jumpToLabelAndGo）へ流す
 	//	url指定なら[navigate_to]と同じ経路でURLを開く（ラベルへは飛ばない）
 	const onLink: T_ON_LINK = l=> {
@@ -204,6 +208,19 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		[kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura]);
 	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。禁則計算の直前に都度読み直す
 	const isTategaki = ()=> !! boxRef.current && globalThis.getComputedStyle(boxRef.current).writingMode.startsWith('vertical');
+
+	// masumeガイド枠の内側（padding込みを除いた表示領域＝本家 TxtStage.ts:336-341
+	//	cntInsidePadding相当）。bluesnovelはpaddingをboxRef自身のCSS paddingで直接持つ
+	//	（本家のような入れ子コンテナが無い）ので、算出paddingぶんだけ絶対配置のinsetを開けて描く。
+	//	pl/pr/pt/pbが未指定（既定の1em/1.5em）でも狂わないよう、propの生値でなくgetComputedStyle
+	//	で実測する
+	useLayoutEffect(()=> {
+		if (! CmnLib.masume) return;	// offなら測定・DOM書き込みとも一切行わない
+		const box = boxRef.current, inner = masumeInnerRef.current;
+		if (! box || ! inner) return;
+		const cs = globalThis.getComputedStyle(box);
+		inner.style.inset = `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}`;
+	}, [pl, pr, pt, pb, sCss]);
 
 	useLayoutEffect(()=> {
 		const el = charsRef.current;
@@ -256,6 +273,13 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			// ブラウザ標準の行分割・禁則を無効化して自前計算に一本化する（本家 TxtLayer.ts:114-117
 			//	の.sn_ch同様inline-block化。[r]由来の改行だけは箱の中で完結させず行を割らせたいのでinlineのまま）
 			s.style.display = ch.c === '\n' ? 'inline' : 'inline-block';
+			// masumeガイド枠（本家 TxtStage.ts:145-149 #fncMasumeの1文字ぶん相当）。
+			//	**outlineを使う**：borderだと箱が太る分だけこの下のapplyKinsoku()（getBoundingClientRect
+			//	で列幅を測る禁則処理）が実寸より広く見積もり、折返し位置が実際とズレてしまうため
+			if (CmnLib.masume) {
+				s.style.outline = '1px solid rgb(255, 51, 0)';
+				s.style.backgroundColor = 'rgba(102, 204, 255, 0.5)';
+			}
 			s.appendChild(elCh(ch, r_align, onLink, fncFfs, onSe));
 			frag.appendChild(s);
 			return s;
@@ -618,6 +642,16 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	return <>
 		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={styBox}>
 			<span ref={charsRef}></span>
+			{/* masumeガイド枠（本家 TxtStage.ts:329-341相当）。外側＝レイヤ全体（padding込み。
+				絶対配置のinset:0はboxRef自身のpadding-boxまでなので、これでちょうど全体を覆う）、
+				内側＝paddingを除いた実表示領域（上のuseLayoutEffectがinsetを実測して書く）。
+				CmnLib.masume===falseならこのブロック自体を描画しない＝要素もエフェクトの仕事も増えない */}
+			{CmnLib.masume && <>
+				<span style={{position: 'absolute', inset: 0, boxSizing: 'border-box',
+					background: 'rgba(51, 255, 0, 0.2)', border: '1px solid rgb(51, 255, 0)', pointerEvents: 'none'}}/>
+				<span ref={masumeInnerRef} style={{position: 'absolute', boxSizing: 'border-box',
+					background: 'rgba(0, 51, 255, 0.2)', border: '2px solid rgb(0, 51, 255)', pointerEvents: 'none'}}/>
+			</>}
 			{wantWaitEl && <span ref={waitRef} css={styWaitMark} style={styWaitPos}
 				{...canFocusWait ? {tabIndex: 0, onKeyDown: onWaitKeyDown, 'data-wait-focus': true} : {}}>{
 				! showWaitMark ? null

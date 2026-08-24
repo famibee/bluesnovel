@@ -43,6 +43,7 @@ var c = class {
 	static stageH = 0;
 	static bgColor = "#000000";
 	static debugLog = !1;
+	static masume = !1;
 	static platform;
 	static plat_desc;
 	static isSafari;
