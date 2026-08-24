@@ -52,13 +52,6 @@ sn_galleryから移植できるようにする土台）は2026-08-24に実装・
       `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。実機確認は
       依存を一時的に`file:../bluesnovel`へ切替＋`bun install`してから行うこと（確認後は
       `file:../skynovel_esm`へ戻す。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
-- [ ] `3d_layer`をbluesnovel駆動で実機比較すると新たな見た目差異を発見（2026-08-24、上記
-      `[add_lay]`例外の確認作業中）。`3d_base`で本家pixi版とbluesnovel版（依存を一時的に
-      `file:../bluesnovel`へ切替）を比較：1) 画面下部に黒い帯が出る（本家は背景画像がステージ
-      いっぱいに表示されるが、bluesnovel版は下部に余白が残る）、2) 立方体の`MeshNormalMaterial`
-      が面ごとの陰影を失い単色に見える、3) グリッドと立方体の位置関係がずれる（グリッドが下に
-      ずれ、立方体が浮いて見える）。原因未調査。参考スクショ`3d_base_本家pixi版.png`/
-      `3d_base_bluesnovel版.png`（リポジトリルート、未コミット）
 - [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
       本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
 - [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/

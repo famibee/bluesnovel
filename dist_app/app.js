@@ -54,7 +54,7 @@ var i = "skynovel", a = class {
 			getHash: (e) => {
 				this.hash = e;
 			}
-		}), document.head.insertAdjacentHTML("beforeend", "<style type=\"text/css\">\n	body {\n		background-color: black;\n	}\n	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}\n</style>"), await this.run();
+		}), await this.run();
 	}
 	cfg;
 	setMain(e) {
@@ -74,14 +74,16 @@ var i = "skynovel", a = class {
 		]);
 		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
 		let u = await a.generate(this);
-		this.setMain(u), document.body.style.backgroundColor = t.bgColor;
+		this.setMain(u);
 		let d = document.getElementById(i), f = this.#t ??= d instanceof HTMLCanvasElement ? (() => {
 			let e = document.createElement("div");
 			return e.id = i, e.className = d.className, d.replaceWith(e), e;
 		})() : d ?? (() => {
 			let e = document.createElement("div");
 			return e.id = i, document.body.appendChild(e), e;
-		})(), p = new o(this);
+		})();
+		f.parentElement === document.body && (document.body.style.backgroundColor = t.bgColor);
+		let p = new o(this);
 		this.scrMng = p, await this.#r(p), this.#e = n(f), r(this.#e, {
 			heStage: f,
 			sys: this,

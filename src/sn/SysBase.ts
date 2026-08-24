@@ -56,16 +56,6 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			getHash: f=> {this.hash = f},
 		});
 
-		document.head.insertAdjacentHTML('beforeend',
-`<style type="text/css">
-	body {
-		background-color: black;
-	}
-	:-webkit-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-	:-moz-full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-	:full-screen canvas#skynovel {width: 100%; height: 100%; object-fit: contain;}
-</style>`);
-
 		await this.run();
 	}
 
@@ -107,10 +97,6 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		// React 初期表示
 		const cfg = await Config.generate(this);
 		this.setMain(cfg);
-		// bg_colorは生の数値/色名/#RRGGBBのいずれもありうる（T_CFG_RAW.init.bg_color）ので、
-		//	String()だけでは数値（例:4231232）がCSSとして無効なまま素通りしてしまっていた
-		//	（Config.tsのload()内でCmnLib.bgColorへ変換済み。cssColorOf()参照）
-		document.body.style.backgroundColor = CmnLib.bgColor;
 
 		// 初回だけ：ホストHTMLの既存要素があればそれをそのままマウント先にし、無ければdivを新設する。
 		//	以後（プロジェクト切替）は同じ要素へ#rootを作り直すだけで、DOMは触らない
@@ -133,6 +119,18 @@ export class SysBase implements T_SysRoots, T_SysBase {
 					return el;
 				})()
 		);
+		// bg_colorは生の数値/色名/#RRGGBBのいずれもありうる（T_CFG_RAW.init.bg_color）ので、
+		//	String()だけでは数値（例:4231232）がCSSとして無効なまま素通りしてしまっていた
+		//	（Config.tsのload()内でCmnLib.bgColorへ変換済み。cssColorOf()参照）。
+		//	**埋め込み時（sn_galleryのような既存レイアウトへの差し込み。#skynovelの親がbody直下でない
+		//	＝Stage.tsxのisGalleryと同じ判定式）はページ全体の背景色を変えない**：本家はこの黒塗り
+		//	自体がSysApp（Electron専用。SysApp.ts:181、固定#000）にしか無くSysWeb（ブラウザ）は
+		//	一切行わないが、bluesnovelはWeb/App共通のここへ無条件で書いていたため、sn_gallery等の
+		//	埋め込みページでステージ外（サイドメニュー等を含むページ全体）までプロジェクトのbg_colorに
+		//	染まってしまっていた（2026-08-24、sn_galleryの3d_base実機比較でページ下部の黒帯として発覚）。
+		//	standalone時（#skynovelがbody直下）はウィンドウがステージより大きいときの余白
+		//	（レターボックス）をbg_colorで埋めるため、従来通り必要
+		if (he.parentElement === document.body) document.body.style.backgroundColor = CmnLib.bgColor;
 
 		const scrMng = new ScriptMng(this);
 		this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
