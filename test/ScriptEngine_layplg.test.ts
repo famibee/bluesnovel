@@ -28,12 +28,16 @@ afterEach(()=> {
 
 
 it('add_lay_pluginClsRegistersAndEmitsLayPlgTwice', ()=> {
-	// [add_lay]は本家 Pages コンストラクタ（f.lay/b.lay）と同じく表裏2回ぶんlayPlgを積む
+	// [add_lay]は本家 Pages コンストラクタ（f.lay/b.lay）と同じく表裏2回ぶんlayPlgを積む。
+	//	位置・寸法系属性を一つも書いていないので、プラグインレイヤーの既定（箱をステージ全体へ
+	//	フィット）のchgLayも表裏それぞれに挟まる（window.width/heightはテスト環境に無いのでNaN）
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'dmy', nm: 'x'},
+		{t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 0, top: 0, width: NaN, height: NaN}},
 		{t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', class: 'dmy'}},
+		{t: 'chgLay', nm: 'x', page: 'back', sty: {left: 0, top: 0, width: NaN, height: NaN}},
 		{t: 'layPlg', nm: 'x', page: 'back', hArg: {layer: 'x', class: 'dmy'}},
 		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
 	]);
@@ -69,9 +73,11 @@ it('lay_pluginLayer_commonStyStillApplies', ()=> {
 it('lay_pluginLayer_txtOnlyAttrsIgnoredNotThrown', ()=> {
 	// b_color等の文字レイヤ専用属性は、プラグインレイヤーへ来てもエンジン側では無視する
 	//	（store.chgLayが `! isTxtLay(e)` で弾くのはgrp/txtへの誤指定を知らせるためで、
-	//	 プラグイン向けはそもそもchgLayのstyに積まない設計）
+	//	 プラグイン向けはそもそもchgLayのstyに積まない設計）。
+	//	[add_lay]自身が積む既定サイズのchgLay（表裏2つ）はb_colorと無関係なので対象外
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][lay layer=x b_color=0xffffff][s]');
 	const a = se.step();
-	const chgLay = a.find(v=> v.t === 'chgLay');
-	expect(chgLay).toBeUndefined();
+	const aChgLay = a.filter(v=> v.t === 'chgLay');
+	expect(aChgLay).toHaveLength(2);	// [add_lay]の表裏ぶんのみ
+	expect(aChgLay.every(v=> ! ('b_color' in v.sty))).toBe(true);
 });

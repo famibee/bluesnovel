@@ -32,10 +32,33 @@ sn_galleryから移植できるようにする土台）は2026-08-24に実装・
 
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
-- [ ] sn_gallery側の3D/Live2D系プラグイン本体の移植（`3d_layer`/`cubism3_layer`/`emote_layer`）。
-      下記「プラグイン機構」の枠組みは通ったが、three.js/Live2D本体の依存はbluesnovel本体には
-      追加しない方針（ユーザー判断）なので、sn_gallery側で個別にインストールし、
-      `ThreeDLayer.ts`等をDOM版（`this.ctn.appendChild(canvas)`等）へ書き換える作業が要る
+- [ ] sn_gallery側の3D/Live2D系プラグイン本体の移植（`cubism3_layer`/`emote_layer`）。
+      `3d_layer`は2026-08-24にDOM版へ書き換え済み（`sn_gallery/src/plugin/3d_layer/ThreeDLayer.ts`。
+      pixi.jsのSprite/Textureブリッジを外し、three.jsのWebGLRendererのcanvasを直接
+      `this.ctn.appendChild()`する形に変更）。`3d_base`/`3d_gltf`で実機確認：グリッド表示・
+      立方体の生成/移動/追加/個別削除、gltfモデルの表示・アニメ切替まで正常動作。本家(pixi版)との
+      実機比較で見た目のスケールが完全一致することも画像diffで確認済み（同日、ユーザー実機の
+      devicePixelRatio=2環境で「サイズが違う」報告を受けて追跡：原因は`this.ctn`（position:relative）
+      にwidth/height未指定だったため、中身のcanvas（position:absolute）が通常のフロー計算に
+      参加せず`ctn`の高さが0のままになり、canvasの`top:50%`中央寄せの基準がずれて実際より
+      上にオフセットして描画されていたこと。`this.ctn.style.width/height = '100%'`を追加して解決。
+      3D自体のカメラ・投影計算にバグは無かった＝dpr起因の疑いやthree.jsのsetSize/setPixelRatio
+      呼び出し順序は無関係と確認済み）。ビルドは`sn_gallery`単体で`vite build`が通る。
+      残るcubism3_layer/emote_layerも同じ方針（three.js/Live2D本体の依存はbluesnovel本体には
+      追加しない方針＝ユーザー判断なので、sn_gallery側で個別にインストールし、DOM版へ書き換える）。
+      なお`ThreeDLayer.ts`はDOM版へ書き換え済みのため、依存が本家`skynovel_esm`のまま（現状維持、
+      上記「依存の付け替え」参照）だと`[add_lay layer=3d class=3d]`が`Cannot set properties of
+      undefined (setting 'position')`で例外になる（本家`Layer.ctn`はpixi.jsのSprite、
+      `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。実機確認は
+      依存を一時的に`file:../bluesnovel`へ切替＋`bun install`してから行うこと（確認後は
+      `file:../skynovel_esm`へ戻す。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
+- [ ] `3d_layer`をbluesnovel駆動で実機比較すると新たな見た目差異を発見（2026-08-24、上記
+      `[add_lay]`例外の確認作業中）。`3d_base`で本家pixi版とbluesnovel版（依存を一時的に
+      `file:../bluesnovel`へ切替）を比較：1) 画面下部に黒い帯が出る（本家は背景画像がステージ
+      いっぱいに表示されるが、bluesnovel版は下部に余白が残る）、2) 立方体の`MeshNormalMaterial`
+      が面ごとの陰影を失い単色に見える、3) グリッドと立方体の位置関係がずれる（グリッドが下に
+      ずれ、立方体が浮いて見える）。原因未調査。参考スクショ`3d_base_本家pixi版.png`/
+      `3d_base_bluesnovel版.png`（リポジトリルート、未コミット）
 - [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
       本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
 - [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/
@@ -73,6 +96,17 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 - [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
 - [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。`[span]`は`wait`/`r_align`も未対応。`[graph]`は`wait`（`id`属性はGrammar.tsにも本家にも見当たらず出自不明、対象外とする）、`[tcy]`は`wait`が未対応。いずれも2026-08-20、`docs/tag.html`整理時に理由未記載のまま放置されていたのを発見。実装要否・理由の調査はこれから
 - [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
+- [ ] `[clear_lay]`のpage省略時デフォルトが本家と逆：bluesnovelは`args.page ?? 'back'`
+      （`ScriptEngine.ts`の`case 'clear_lay'`）だが、本家`skynovel_esm`の`#clear_lay()`
+      （`LayerMng.ts:528`）は素の`Pages.getPage(hArg)`を呼んでおり、その既定は`'fore'`
+      （`Pages.ts:61-64`の`Pages.argChk_page(hArg, 'fore')`）。bluesnovel側のコメント・
+      `test/Log.test.ts:170`の「page既定は'back'（本家同様）」という前提は、`[button]`が
+      `LayerMng.ts:1100`で明示的に`Pages.argChk_page(hArg, 'back')`と指定する別物と混同した
+      誤りの可能性が高い。2026-08-24、sn_galleryの`3d_base`実機比較（`[clear_lay layer=3d]`＝
+      page省略のはずが裏面しか消えず、表のキューブが残る）で発覚。修正は`[clear_lay]`を使う
+      全シナリオ・複数テスト（`test/Log.test.ts`/`test/ScriptEngine_lay.test.ts`/
+      `test/store_lay.test.ts`/`test/e2e/lay.e2e.ts`/`test/e2e/kinsoku.e2e.ts`等）に影響するため
+      別タスクとして扱う（ユーザー判断、2026-08-24）
 
 ## アセット・基盤
 

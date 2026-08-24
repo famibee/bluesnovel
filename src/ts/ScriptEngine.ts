@@ -1099,8 +1099,12 @@ export class ScriptEngine {
 
 	// [lay]属性のうち特定ページ（fore/back片方）に効くもの（[add_lay]から表裏それぞれへ2回呼ばれる想定）。
 	//	picまたはfn属性変更、face属性による差分合成、文字レイヤ背景の不透明度（b_alpha）、
-	//	レイヤ共通の見た目（visible/alpha/位置/寸法/blendmode/…）、フィルターに対応（試作簡略）
-	#applyLayPage(args: {[k: string]: string}, aAct: T_ENGINE_ACTION[], page: T_PAGE): void {
+	//	レイヤ共通の見た目（visible/alpha/位置/寸法/blendmode/…）、フィルターに対応（試作簡略）。
+	//	isNewは[add_lay]（新規作成）からの呼び出しかどうか。プラグインレイヤーの既定サイズ
+	//	フォールバックは新規作成時にのみ効かせる（既存レイヤへの[lay]で位置・寸法を一つも
+	//	書かなかった場合に毎回ステージ全体へリセットされてしまうと、位置だけ動かしたい
+	//	[lay layer=x alpha=…]のような呼び出しで意図せず箱が動いてしまうため）
+	#applyLayPage(args: {[k: string]: string}, aAct: T_ENGINE_ACTION[], page: T_PAGE, isNew = false): void {
 		const nmLay = args.layer ?? '';
 		// プラグインレイヤー（cls!=='grp'&&cls!=='txt'）かどうか。未登録（#hLayClsに無い＝
 		//	通常は起きない。[add_lay]は必ず先に#hLayClsへ登録する）は'txt'扱いで従来どおり
@@ -1172,9 +1176,13 @@ export class ScriptEngine {
 		//	優先する（本家は`if (hArg.pos) {setXYByPos(); return}`と早期returnし他の位置属性を
 		//	見ない）。c/l/r/数値でX中心を指定し、Yは常に画像下端をステージ下端へ接地させる
 		//	（本家は`ret.y = stageH - b_height`で計算するが、実寸を知らないこちらは
-		//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない
-		if (args.pos === 'stay') { /* 位置は変えない */ }
-		else if (args.pos !== undefined) {
+		//	bottom=stageH・align_y='bottom'の組で同じ絵にする）。pos=stayは位置を変えない。
+		//	**プラグインレイヤーは対象外**：本家Layer.setXY()はgrp/txtレイヤからしか呼ばれず
+		//	（GrpLayer.ts/TxtLayer.ts）プラグインは通らないため、`pos`という属性名自体を
+		//	プラグイン側が別の意味（例：3d_layerのモデル/カメラ/グリッド座標`x,y,z`）で
+		//	再利用できる。ここで共通解釈してしまうとその名前を奪ってしまう
+		if (! isPlg && args.pos === 'stay') { /* 位置は変えない */ }
+		else if (! isPlg && args.pos !== undefined) {
 			const p = args.pos;
 			const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
 			const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
@@ -1227,6 +1235,19 @@ export class ScriptEngine {
 				sty.left = stageW /2; sty.align_x = 'center';
 				sty.top = stageH; sty.align_y = 'bottom';
 			}
+		}
+		// プラグインレイヤーは既定でステージ全体を使う（本家のプラグイン系レイヤー＝3D/Live2D等は
+		//	通常ステージいっぱいのシーン/キャンバスを持ち、本家Layer.ctnにサイズ概念自体が無いため。
+		//	位置・寸法系属性が一つも指定されなければ箱を(0,0)〜ステージ全体サイズへフィットさせる
+		//	＝上のgrp専用フォールバックの対）。未指定のまま箱に任せると`width: max-content`
+		//	（GrpLayerと共通のstyChild）は中身（canvas等）がposition:absoluteだと自然サイズを
+		//	持てずゼロ幅になってしまう
+		if (isNew && isPlg
+		&& ! ('left' in sty) && ! ('s_right' in sty) && ! ('top' in sty) && ! ('s_bottom' in sty)
+		&& args.width === undefined && args.height === undefined) {
+			sty.left = 0; sty.top = 0;
+			sty.width = Number(this.#val.get('tmp:const.sn.config.window.width'));
+			sty.height = Number(this.#val.get('tmp:const.sn.config.window.height'));
 		}
 		// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
 		//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
@@ -1330,8 +1351,8 @@ export class ScriptEngine {
 			//	`[add_lay layer=bg class=grp fn=…]`）のはこのため。並び順（float/index/dive）は
 			//	page非依存なので1回だけ
 			const argsL = args.layer !== undefined ? args : {...args, layer: nm};
-			this.#applyLayPage(argsL, aAct, 'fore');
-			this.#applyLayPage(argsL, aAct, 'back');
+			this.#applyLayPage(argsL, aAct, 'fore', true);
+			this.#applyLayPage(argsL, aAct, 'back', true);
 			this.#applyLayOrder(argsL, aAct);
 			return 'skip';
 		}

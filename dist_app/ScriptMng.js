@@ -1686,14 +1686,14 @@ var Pe = class {
 		let { name: t, text: n, cast: r } = ee(e.slice(1));
 		this.#k.set(this.#A.getValAmpersand(t.trim()), this.#A.parse(n), r ?? "");
 	}
-	#ee(t, n, r) {
-		let i = t.layer ?? "", a = this.#w[i] ?? "txt", o = a !== "grp" && a !== "txt";
-		if (!o) {
+	#ee(t, n, r, i = !1) {
+		let a = t.layer ?? "", o = this.#w[a] ?? "txt", s = o !== "grp" && o !== "txt";
+		if (!s) {
 			let e = t.fn || t.pic;
 			if (e) {
-				let a = {
+				let i = {
 					t: "chgPic",
-					nm: i,
+					nm: a,
 					page: r,
 					fn: e
 				};
@@ -1708,20 +1708,20 @@ var Pe = class {
 							blendmode: h("normal")
 						});
 					}
-					a.aFace = e;
+					i.aFace = e;
 				}
-				n.push(a);
+				n.push(i);
 			}
 			if (t.back_clear !== void 0) t.back_clear === "true" && n.push({
 				t: "chgBackClear",
-				nm: i,
+				nm: a,
 				page: r
 			});
 			else {
 				if (t.b_alpha !== void 0 || t.b_alpha_isfixed !== void 0) {
 					let e = {
 						t: "chgBAlpha",
-						nm: i,
+						nm: a,
 						page: r
 					};
 					if (t.b_alpha !== void 0) {
@@ -1733,43 +1733,43 @@ var Pe = class {
 				}
 				t.b_pic !== void 0 && n.push({
 					t: "chgBPic",
-					nm: i,
+					nm: a,
 					page: r,
 					fn: t.b_pic
 				});
 			}
 		}
-		let s = {};
-		if (t.visible !== void 0 && (s.visible = t.visible !== "false"), t.alpha !== void 0 && (s.alpha = e.#n("lay", "alpha", t.alpha)), t.pos !== "stay") {
-			if (t.pos !== void 0) {
+		let c = {};
+		if (t.visible !== void 0 && (c.visible = t.visible !== "false"), t.alpha !== void 0 && (c.alpha = e.#n("lay", "alpha", t.alpha)), !(!s && t.pos === "stay")) {
+			if (!s && t.pos !== void 0) {
 				let n = t.pos, r = Number(this.#k.get("tmp:const.sn.config.window.width")), i = Number(this.#k.get("tmp:const.sn.config.window.height"));
-				n === "" || n === "c" ? (s.left = r / 2, s.align_x = "center") : n === "l" ? s.left = 0 : n === "r" ? (s.left = r, s.align_x = "right") : (s.left = e.#n("lay", "pos", n), s.align_x = "center"), s.top = i, s.align_y = "bottom";
-			} else if (t.left === void 0 ? t.center === void 0 ? t.right === void 0 ? t.s_right !== void 0 && (s.s_right = this.#r("lay", "left", t.s_right)) : (s.left = this.#r("lay", "left", t.right), s.align_x = "right") : (s.left = this.#r("lay", "left", t.center), s.align_x = "center") : s.left = this.#r("lay", "left", t.left), t.top === void 0 ? t.middle === void 0 ? t.bottom === void 0 ? t.s_bottom !== void 0 && (s.s_bottom = this.#r("lay", "top", t.s_bottom)) : (s.top = this.#r("lay", "top", t.bottom), s.align_y = "bottom") : (s.top = this.#r("lay", "top", t.middle), s.align_y = "middle") : s.top = this.#r("lay", "top", t.top), (t.fn !== void 0 || t.pic !== void 0 || t.face !== void 0) && !("left" in s) && !("s_right" in s) && !("top" in s) && !("s_bottom" in s) && a === "grp") {
+				n === "" || n === "c" ? (c.left = r / 2, c.align_x = "center") : n === "l" ? c.left = 0 : n === "r" ? (c.left = r, c.align_x = "right") : (c.left = e.#n("lay", "pos", n), c.align_x = "center"), c.top = i, c.align_y = "bottom";
+			} else if (t.left === void 0 ? t.center === void 0 ? t.right === void 0 ? t.s_right !== void 0 && (c.s_right = this.#r("lay", "left", t.s_right)) : (c.left = this.#r("lay", "left", t.right), c.align_x = "right") : (c.left = this.#r("lay", "left", t.center), c.align_x = "center") : c.left = this.#r("lay", "left", t.left), t.top === void 0 ? t.middle === void 0 ? t.bottom === void 0 ? t.s_bottom !== void 0 && (c.s_bottom = this.#r("lay", "top", t.s_bottom)) : (c.top = this.#r("lay", "top", t.bottom), c.align_y = "bottom") : (c.top = this.#r("lay", "top", t.middle), c.align_y = "middle") : c.top = this.#r("lay", "top", t.top), (t.fn !== void 0 || t.pic !== void 0 || t.face !== void 0) && !("left" in c) && !("s_right" in c) && !("top" in c) && !("s_bottom" in c) && o === "grp") {
 				let e = Number(this.#k.get("tmp:const.sn.config.window.width")), t = Number(this.#k.get("tmp:const.sn.config.window.height"));
-				s.left = e / 2, s.align_x = "center", s.top = t, s.align_y = "bottom";
+				c.left = e / 2, c.align_x = "center", c.top = t, c.align_y = "bottom";
 			}
 		}
-		if (t.width !== void 0 && (s.width = e.#n("lay", "width", t.width)), t.height !== void 0 && (s.height = e.#n("lay", "height", t.height)), t.rotation !== void 0 && (s.rotation = e.#n("lay", "rotation", t.rotation)), t.scale_x !== void 0 && (s.scale_x = e.#n("lay", "scale_x", t.scale_x)), t.scale_y !== void 0 && (s.scale_y = e.#n("lay", "scale_y", t.scale_y)), t.pivot_x !== void 0 && (s.pivot_x = e.#n("lay", "pivot_x", t.pivot_x)), t.pivot_y !== void 0 && (s.pivot_y = e.#n("lay", "pivot_y", t.pivot_y)), t.blendmode !== void 0 && (s.blendmode = h(t.blendmode)), !o) {
-			if (t.b_color !== void 0 && t.back_clear !== "true" && (s.b_color = e.#n("lay", "b_color", t.b_color)), t.style !== void 0 && (s.style = t.style), t.pl !== void 0 && (s.pl = e.#n("lay", "pl", t.pl)), t.pr !== void 0 && (s.pr = e.#n("lay", "pr", t.pr)), t.pt !== void 0 && (s.pt = e.#n("lay", "pt", t.pt)), t.pb !== void 0 && (s.pb = e.#n("lay", "pb", t.pb)), t.ffs !== void 0 && (s.ffs = t.ffs), t.noffs !== void 0 && (s.noffs = t.noffs), t.bura !== void 0 && (s.bura = t.bura !== "false"), t.kinsoku_sol !== void 0 && (s.kinsoku_sol = t.kinsoku_sol), t.kinsoku_eol !== void 0 && (s.kinsoku_eol = t.kinsoku_eol), t.kinsoku_dns !== void 0 && (s.kinsoku_dns = t.kinsoku_dns), t.kinsoku_bura !== void 0 && (s.kinsoku_bura = t.kinsoku_bura), le.setting(t), t.r_align !== void 0) {
+		if (i && s && !("left" in c) && !("s_right" in c) && !("top" in c) && !("s_bottom" in c) && t.width === void 0 && t.height === void 0 && (c.left = 0, c.top = 0, c.width = Number(this.#k.get("tmp:const.sn.config.window.width")), c.height = Number(this.#k.get("tmp:const.sn.config.window.height"))), t.width !== void 0 && (c.width = e.#n("lay", "width", t.width)), t.height !== void 0 && (c.height = e.#n("lay", "height", t.height)), t.rotation !== void 0 && (c.rotation = e.#n("lay", "rotation", t.rotation)), t.scale_x !== void 0 && (c.scale_x = e.#n("lay", "scale_x", t.scale_x)), t.scale_y !== void 0 && (c.scale_y = e.#n("lay", "scale_y", t.scale_y)), t.pivot_x !== void 0 && (c.pivot_x = e.#n("lay", "pivot_x", t.pivot_x)), t.pivot_y !== void 0 && (c.pivot_y = e.#n("lay", "pivot_y", t.pivot_y)), t.blendmode !== void 0 && (c.blendmode = h(t.blendmode)), !s) {
+			if (t.b_color !== void 0 && t.back_clear !== "true" && (c.b_color = e.#n("lay", "b_color", t.b_color)), t.style !== void 0 && (c.style = t.style), t.pl !== void 0 && (c.pl = e.#n("lay", "pl", t.pl)), t.pr !== void 0 && (c.pr = e.#n("lay", "pr", t.pr)), t.pt !== void 0 && (c.pt = e.#n("lay", "pt", t.pt)), t.pb !== void 0 && (c.pb = e.#n("lay", "pb", t.pb)), t.ffs !== void 0 && (c.ffs = t.ffs), t.noffs !== void 0 && (c.noffs = t.noffs), t.bura !== void 0 && (c.bura = t.bura !== "false"), t.kinsoku_sol !== void 0 && (c.kinsoku_sol = t.kinsoku_sol), t.kinsoku_eol !== void 0 && (c.kinsoku_eol = t.kinsoku_eol), t.kinsoku_dns !== void 0 && (c.kinsoku_dns = t.kinsoku_dns), t.kinsoku_bura !== void 0 && (c.kinsoku_bura = t.kinsoku_bura), le.setting(t), t.r_align !== void 0) {
 				if (!De.includes(t.r_align)) throw `[lay] r_alignの値が不正です：${t.r_align}`;
-				s.r_align = t.r_align;
+				c.r_align = t.r_align;
 			}
-			t.in_style !== void 0 && (s.in_style = t.in_style), t.out_style !== void 0 && (s.out_style = t.out_style);
+			t.in_style !== void 0 && (c.in_style = t.in_style), t.out_style !== void 0 && (c.out_style = t.out_style);
 		}
-		Object.keys(s).length > 0 && n.push({
+		Object.keys(c).length > 0 && n.push({
 			t: "chgLay",
-			nm: i,
+			nm: a,
 			page: r,
-			sty: s
+			sty: c
 		}), t.filter !== void 0 && n.push({
 			t: "addFilter",
-			aLayNm: [i],
+			aLayNm: [a],
 			page: r,
 			flt: l(t),
 			replace: !0
-		}), o && n.push({
+		}), s && n.push({
 			t: "layPlg",
-			nm: i,
+			nm: a,
 			page: r,
 			hArg: { ...t }
 		});
@@ -1813,7 +1813,7 @@ var Pe = class {
 					...i,
 					layer: e
 				} : i;
-				return this.#ee(n, a, "fore"), this.#ee(n, a, "back"), this.#te(n, a), "skip";
+				return this.#ee(n, a, "fore", !0), this.#ee(n, a, "back", !0), this.#te(n, a), "skip";
 			}
 			case "current": {
 				let e = i.layer ?? i.nm ?? this.#v;
