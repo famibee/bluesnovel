@@ -681,6 +681,21 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.4.0](https://github.com/famibee/bluesnovel/compare/v0.3.4...v0.4.0) (2026-08-24)
+
+
+### Features
+
+* **sn:** 本家互換のプラグイン機構（[add_lay class=]→addLayCls）を実装 ([62f74ae](https://github.com/famibee/bluesnovel/commit/62f74aec9ed5d9d5dc689ef6f511ce717f9e0125))
+
+
+### Bug Fixes
+
+* **sn:** [button]幅省略時のfit倍率が箱と二重に掛かる不具合を修正 ([5e80647](https://github.com/famibee/bluesnovel/commit/5e806479a454802d2fbccb94c45f71a19b6cc79b))
+* **sn:** sn_gallery由来の&lt;canvas id="skynovel"&gt;をdivへ自動置換 ([ab4e179](https://github.com/famibee/bluesnovel/commit/ab4e179d6a3b9e7e9e37f86dab7f377c2fb41f3b))
+* **sn:** ギャラリー埋め込み時にページ全体が黒く染まる不具合を修正 ([1cb0788](https://github.com/famibee/bluesnovel/commit/1cb0788e83f482a0fb8c231701565105070c3db4))
+* **sn:** プラグインレイヤーの位置属性処理とデフォルトサイズ適用を修正 ([4f249c3](https://github.com/famibee/bluesnovel/commit/4f249c398ccef92bbe70208982564156b14a8f99))
+
 ## [0.3.4](https://github.com/famibee/bluesnovel/compare/v0.3.3...v0.3.4) (2026-08-23)
 
 
