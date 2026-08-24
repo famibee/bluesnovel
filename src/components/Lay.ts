@@ -112,7 +112,8 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 	//	isolationの有無で一致した）
 	if (l.alpha !== undefined) sty.opacity = l.alpha;
 	// レイヤの寸法。**独立した2つのif**（片方だけの指定でも成立）。GrpLayerは箱の大きさとして、
-	//	TxtLayerは文字表示領域の大きさとして使う（styChild/styTxtのwidth既定=70%を上書きする）
+	//	TxtLayerは文字表示領域の大きさとして使う（styTxtのright:0/bottom:0による自動算出を、
+	//	left+width+rightが揃うCSSの規則で上書きする）
 	if (l.width !== undefined) sty.width = `${String(l.width)}px`;
 	if (l.height !== undefined) sty.height = `${String(l.height)}px`;
 	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined

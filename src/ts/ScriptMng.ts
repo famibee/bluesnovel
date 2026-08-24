@@ -216,9 +216,9 @@ export class ScriptMng {
 		//	  画像レイヤ（grp）は`Sprite.ts`のsrcキー自然サイズキャッシュ（本家GrpLayer.ts:88-108相当。
 		//	  GrpLayer.tsxのimg onLoad/video onLoadedMetadata/シートロードで書く。ロード前は0＝本家と同じ）、
 		//	  文字レイヤ（txt）は[lay style="width:/height:"]の明示値（本家TxtStage.ts:259-260相当。
-		//	  styNum参照）、それも無ければ本家の既定（stageW/stageH）に倣うが、bluesnovelの実際のCSS既定は
-		//	  `width: 70%`（TxtLayer.tsx:519）でheightは可変なので、widthは`stageW*0.7`で実描画に寄せ、
-		//	  heightは対応するCSS既定が無いためstageHをそのまま採用（近似）
+		//	  styNum参照）、それも無ければ本家の既定（stageW/stageH）に倣う。bluesnovelの実際のCSSは
+		//	  width/heightを指定せずright:0/bottom:0（TxtLayer.tsx）で自動算出しており実測しないと
+		//	  求まらないため、ここはその近似としてstageW/stageHをそのまま採用する
 		engine.defBuiltin('const.sn.lay', ()=> {
 			const {fore, back} = this.$fncs.getPages();
 			const attrs = (l: (typeof fore)[number] | undefined)=> {
@@ -229,7 +229,7 @@ export class ScriptMng {
 				//	プラグインレイヤーは実寸をエンジンが知らない（DOM側 PlgLayMng が持つ）ので0を返す
 				//	（本家GrpLayerの未ロード時と同じ扱い）
 				const wh = isGrpLay(l) ? (()=> {const n = getNatSize(l.src); return {w: n?.w ?? 0, h: n?.h ?? 0}})()
-					: isTxtLay(l) ? {w: styNum(l.style, 'width') ?? CmnLib.stageW * 0.7, h: styNum(l.style, 'height') ?? CmnLib.stageH}
+					: isTxtLay(l) ? {w: styNum(l.style, 'width') ?? CmnLib.stageW, h: styNum(l.style, 'height') ?? CmnLib.stageH}
 					: {w: 0, h: 0};
 				return {
 					visible	: l.visible !== false,	// 未指定は表示（本家もdefault visible）

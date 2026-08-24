@@ -6286,7 +6286,7 @@ var ns = class e {
 						h: t?.h ?? 0
 					};
 				})() : c(e) ? {
-					w: ts(e.style, "width") ?? i.stageW * .7,
+					w: ts(e.style, "width") ?? i.stageW,
 					h: ts(e.style, "height") ?? i.stageH
 				} : {
 					w: 0,

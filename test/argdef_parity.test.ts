@@ -77,10 +77,23 @@ const A_CSS_DEF: {[attr: string]: string} = {
 	rotate	: '[add_frame]/[frame]。FrameMngが既定を持つ（rotate:0）',
 	// 本家の既定はargChk_Num(hArg,'width'/'height',0)の**0**（GrpLayer.ts:89-90）だが、
 	//	そのまま移植すると単独指定でもう片方が0＝画像が潰れて消えるバグを踏襲することになる。
-	//	bluesnovelは意図的に本家と違え、CSSの既定=auto（画像の自然サイズ／文字レイヤCSSの70%）に
-	//	委ねる（[button]が既に採っている「独立if＋未指定は自然サイズ維持」と同じ形。ScriptEngine.ts参照）
-	width	: 'CSSのwidth既定=auto（画像は自然サイズ、文字レイヤはstyTxtの70%）。本家の既定0は採らない',
-	height	: 'CSSのheight既定=auto。同上',
+	//	bluesnovelは意図的に本家と違え、CSSの既定=autoに委ねる（画像の自然サイズ。[button]が
+	//	既に採っている「独立if＋未指定は自然サイズ維持」と同じ形。ScriptEngine.ts参照）。
+	//	文字レイヤ（styTxt）だけは幅70%を意図的な既定差にしていたが、ch_button/sound/importで
+	//	リンクがクリック不能になる実害や縦書きでの左寄り表示不具合の原因だったため、
+	//	本家 TxtLayer.ts:272 のコンストラクタ既定（ステージいっぱい）に合わせwidth/heightどちらも
+	//	揃えた（2026-08-25。heightは当初widthだけ直したところ、masumeガイド枠（TxtLayer.tsx
+	//	CmnLib.masume）がステージ下端まで届かない食い違いが実機比較で見つかり追随）。
+	//	widthプロパティ自体は指定せず`right: 0`（heightも同様に`bottom: 0`）で表す：widthは常に
+	//	「中身の寸法」でpaddingは外側に足す設計（下記の本テストファイル内「pl/pr/pt/pbは文字表示
+	//	領域の内側余白」参照）。`calc(100% - 3em/2em)`という固定引き算値でも一度試したが、
+	//	[lay style="padding-bottom: …px;"]でpaddingを個別変更するプロジェクト（sn_gallery
+	//	line_breaking_rules）でズレて外形がステージをはみ出した。`right: 0`ならpaddingがどんな
+	//	値でも自動的に内側へ収まる。単純な100%（right:0を足さない）だとpaddingぶん外形が
+	//	ステージをはみ出し、[l]/[p]待ちマーカーがステージのoverflow:hiddenで切られて消える
+	//	（E2E test/e2e/wait.e2e.ts等が実際に回帰した）
+	width	: 'CSSのwidth既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでright:0により自動算出',
+	height	: 'CSSのheight既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでbottom:0により自動算出',
 };
 
 // **本家に既定はあるが、bluesnovelでは別の場所・別の形で持っているもの**。

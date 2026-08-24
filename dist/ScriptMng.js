@@ -6412,7 +6412,7 @@ var os = class t {
 						h: t?.h ?? 0
 					};
 				})() : s(e) ? {
-					w: as(e.style, "width") ?? i.stageW * .7,
+					w: as(e.style, "width") ?? i.stageW,
 					h: as(e.style, "height") ?? i.stageH
 				} : {
 					w: 0,

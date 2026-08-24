@@ -20,7 +20,8 @@
 //	ext_fg2.sn がx/yと書いていて揺れているため。**本家では[tsy left=…]は
 //	aLayerPrpNmに無いので黙って無視される**が、こちらは両方効くようにした）。
 //	width/heightは[lay width=/height=]で数値を持たせたレイヤに限り動かせる
-//	（CSSの既定=auto＝画像の自然サイズ／文字レイヤの70%には対応する現在値が無いため。
+//	（CSSの既定=auto＝画像の自然サイズ／文字レイヤはright:0・bottom:0による自動算出には
+//	対応する現在値が無いため。
 //	H_TSY_DEFに無いキーはScriptMng.#beginTsy()が「[lay width=…]で寸法を明示したレイヤにしか
 //	使えない」という文言で例外にする）
 export const A_TSY_PRP = ['alpha', 'left', 'top', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y'] as const;

@@ -32,6 +32,54 @@ sn_galleryから移植できるようにする土台）は2026-08-24に実装・
 
 - [ ] 依存の付け替え（`sn_gallery/package.json`の`"@famibee/skynovel_esm": "file:../bluesnovel"`
       という**本家のフリ**をどうするか）は本格移行時に改めて判断（2026-08-21時点は現状維持と決定）
+
+### プラグイン機構（addLayCls）の実装メモ
+
+`src/sn/LayCls.ts`（clsレジストリ）・`src/sn/Layer.ts`（本家Layer基底のDOM版。`ctn`は素のdiv）・
+`src/ts/PlgLayMng.ts`（`[add_frame]`のFrameMngと同じ「store外・DOM側」でLayerインスタンスを
+fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（Reactの箱。中身はPlgLayMngが
+`attachBox()`で出し入れ）で構成。`T_LAY`（`src/components/Lay.ts`）は`cls: 'grp'|'txt'|(string & {})`
+へ拡張し、判別ユニオンの絞り込みは`isGrpLay`/`isTxtLay`/`isPlgLay`という型ガード関数を経由させる
+（インライン比較`e.cls==='grp'`ではプラグイン型を絞り込めないため）。`SysBase.#initPlg()`が
+`Config.generate()`の後・main.sn起動前にプラグインの`init()`を一括実行し、`addLayCls`を実際に
+機能させる。E2E疎通確認は`test/e2e/plg.e2e.ts`（`prj_plg`＋`test/e2e/app/dmyPlg.ts`）。
+
+
+## タグ・変数の残り
+
+- [ ] `[clear_lay]`のpage省略時デフォルトが本家と逆：bluesnovelは`args.page ?? 'back'`
+      （`ScriptEngine.ts`の`case 'clear_lay'`）だが、本家`skynovel_esm`の`#clear_lay()`
+      （`LayerMng.ts:528`）は素の`Pages.getPage(hArg)`を呼んでおり、その既定は`'fore'`
+      （`Pages.ts:61-64`の`Pages.argChk_page(hArg, 'fore')`）。bluesnovel側のコメント・
+      `test/Log.test.ts:170`の「page既定は'back'（本家同様）」という前提は、`[button]`が
+      `LayerMng.ts:1100`で明示的に`Pages.argChk_page(hArg, 'back')`と指定する別物と混同した
+      誤りの可能性が高い。2026-08-24、sn_galleryの`3d_base`実機比較（`[clear_lay layer=3d]`＝
+      page省略のはずが裏面しか消えず、表のキューブが残る）で発覚。修正は`[clear_lay]`を使う
+      全シナリオ・複数テスト（`test/Log.test.ts`/`test/ScriptEngine_lay.test.ts`/
+      `test/store_lay.test.ts`/`test/e2e/lay.e2e.ts`/`test/e2e/kinsoku.e2e.ts`等）に影響するため
+      別タスクとして扱う（ユーザー判断、2026-08-24）
+- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
+  - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（優先度低）。2026-08-12に行列自体を
+        再確認：`src/ts/Filter.ts`の数値は`@pixi/filter-color-matrix`の`predator()`/`colorTone()`と
+        完全一致し、本家`Layer.ts`側の呼び出しも両方とも`multiply`既定`false`（＝オフセット列の
+        `/255`変換は本家側もしていない）で揃っている。`Stage.tsx`の`colorInterpolationFilters="sRGB"`
+        も設定済みで既定`linearRGB`への取り違えでもなく、素材画像のICCプロファイルも埋め込み無し／
+        標準sRGBのみで色管理差という線も弱い。矛盾しない残りの可能性はpixiのGLSLシェーダが行う
+        アルファのun-premultiply/premultiply（`c.a>0`時`c.rgb/=c.a`→行列適用→`rgb*=result.a`）と
+        SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
+        これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
+- [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
+- [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
+- [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。`[span]`は`wait`/`r_align`も未対応。`[graph]`は`wait`（`id`属性はGrammar.tsにも本家にも見当たらず出自不明、対象外とする）、`[tcy]`は`wait`が未対応。いずれも2026-08-20、`docs/tag.html`整理時に理由未記載のまま放置されていたのを発見。実装要否・理由の調査はこれから
+- [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
+
+## アセット・基盤
+
+## 優先度低
+
+- [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
+- [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
+- [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
 - [ ] sn_gallery側の3D/Live2D系プラグイン本体の移植（`cubism3_layer`/`emote_layer`）。
       `3d_layer`は2026-08-24にDOM版へ書き換え済み（`sn_gallery/src/plugin/3d_layer/ThreeDLayer.ts`。
       pixi.jsのSprite/Textureブリッジを外し、three.jsのWebGLRendererのcanvasを直接
@@ -60,76 +108,6 @@ sn_galleryから移植できるようにする土台）は2026-08-24に実装・
       実配線は未接続。基底クラスにAPIは残してある）
 - [ ] `addTag`（プラグインからのタグ追加）は未対応。`ScriptEngine`がタグをswitchで捌く構造のため
       動的な登録口が無く、呼ぶと明示的にthrowする（`SysBase.#initPlg()`参照）
-
-### プラグイン機構（addLayCls）の実装メモ
-
-`src/sn/LayCls.ts`（clsレジストリ）・`src/sn/Layer.ts`（本家Layer基底のDOM版。`ctn`は素のdiv）・
-`src/ts/PlgLayMng.ts`（`[add_frame]`のFrameMngと同じ「store外・DOM側」でLayerインスタンスを
-fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（Reactの箱。中身はPlgLayMngが
-`attachBox()`で出し入れ）で構成。`T_LAY`（`src/components/Lay.ts`）は`cls: 'grp'|'txt'|(string & {})`
-へ拡張し、判別ユニオンの絞り込みは`isGrpLay`/`isTxtLay`/`isPlgLay`という型ガード関数を経由させる
-（インライン比較`e.cls==='grp'`ではプラグイン型を絞り込めないため）。`SysBase.#initPlg()`が
-`Config.generate()`の後・main.sn起動前にプラグインの`init()`を一括実行し、`addLayCls`を実際に
-機能させる。E2E疎通確認は`test/e2e/plg.e2e.ts`（`prj_plg`＋`test/e2e/app/dmyPlg.ts`）。
-
-
-## タグ・変数の残り
-
-- [ ] **縦書きで`〈`/`〉`（U+3008/3009）だけ90°回転しない**：2026-08-24、
-      `line_breaking_rules`（sn_gallery）の本家比較（ユーザー提供スクリーンショット）で発覚。
-      同じシナリオ内の`【`/`】`（U+3010/3011）は縦書き時に正しく回転して表示されるのに対し、
-      `〈`/`〉`だけ横向きの字形のまま。実機再現済み（bluesnovel/本家それぞれ
-      `http://localhost:8082/…?cur=line_breaking_rules` と
-      `https://famibee.github.io/SKYNovel_gallery/?cur=line_breaking_rules` を並べて確認）。
-      bluesnovel側に文字種ごとの回転テーブルは無く（`grep`でも該当コードなし）、【】と〈〉で
-      CSS計算経路も`writing-mode`/`text-orientation`とも完全に同一（`getComputedStyle`で確認）
-      ——にもかかわらず結果が割れるため、原因はbluesnovelのコードではなく、依拠している
-      ブラウザ既定の自動縦書き回転（`text-orientation: mixed`、Unicode Vertical_Orientation
-      プロパティに基づく）側の挙動差である可能性が高い。**まず原因究明が先**（ユーザー指示、
-      2026-08-24）：`text-orientation: mixed`のTr/R分類の違いか、フォント側の縦書き用グリフ
-      （'vert'/'vrt2'）の有無か、ブラウザ実装差かを切り分けてから対応方針を決める。対応案として
-      対象文字だけ個別に回転させる手も考えられるが、これは「回転は付けない」という現行方針
-      （`TxtLayer.tsx`のコメント参照。文字送りアニメの▶回転で実例あり）に反する例外を作ることに
-      なるため、原因を明らかにした上で判断する
-- [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
-  - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（優先度低）。2026-08-12に行列自体を
-        再確認：`src/ts/Filter.ts`の数値は`@pixi/filter-color-matrix`の`predator()`/`colorTone()`と
-        完全一致し、本家`Layer.ts`側の呼び出しも両方とも`multiply`既定`false`（＝オフセット列の
-        `/255`変換は本家側もしていない）で揃っている。`Stage.tsx`の`colorInterpolationFilters="sRGB"`
-        も設定済みで既定`linearRGB`への取り違えでもなく、素材画像のICCプロファイルも埋め込み無し／
-        標準sRGBのみで色管理差という線も弱い。矛盾しない残りの可能性はpixiのGLSLシェーダが行う
-        アルファのun-premultiply/premultiply（`c.a>0`時`c.rgb/=c.a`→行列適用→`rgb*=result.a`）と
-        SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
-        これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
-- [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
-- [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
-- [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。`[span]`は`wait`/`r_align`も未対応。`[graph]`は`wait`（`id`属性はGrammar.tsにも本家にも見当たらず出自不明、対象外とする）、`[tcy]`は`wait`が未対応。いずれも2026-08-20、`docs/tag.html`整理時に理由未記載のまま放置されていたのを発見。実装要否・理由の調査はこれから
-- [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
-- [ ] `[clear_lay]`のpage省略時デフォルトが本家と逆：bluesnovelは`args.page ?? 'back'`
-      （`ScriptEngine.ts`の`case 'clear_lay'`）だが、本家`skynovel_esm`の`#clear_lay()`
-      （`LayerMng.ts:528`）は素の`Pages.getPage(hArg)`を呼んでおり、その既定は`'fore'`
-      （`Pages.ts:61-64`の`Pages.argChk_page(hArg, 'fore')`）。bluesnovel側のコメント・
-      `test/Log.test.ts:170`の「page既定は'back'（本家同様）」という前提は、`[button]`が
-      `LayerMng.ts:1100`で明示的に`Pages.argChk_page(hArg, 'back')`と指定する別物と混同した
-      誤りの可能性が高い。2026-08-24、sn_galleryの`3d_base`実機比較（`[clear_lay layer=3d]`＝
-      page省略のはずが裏面しか消えず、表のキューブが残る）で発覚。修正は`[clear_lay]`を使う
-      全シナリオ・複数テスト（`test/Log.test.ts`/`test/ScriptEngine_lay.test.ts`/
-      `test/store_lay.test.ts`/`test/e2e/lay.e2e.ts`/`test/e2e/kinsoku.e2e.ts`等）に影響するため
-      別タスクとして扱う（ユーザー判断、2026-08-24）
-
-## アセット・基盤
-
-## 優先度低
-
-- [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
-- [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
-- [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
-- [ ] 文字レイヤの既定幅70%（本家はステージ幅いっぱい）：`ch_button`/`sound`/`import`のsn_gallery実機比較で繰り返し発見された意図的な既定差。`import`では実際にリンクがクリック不能になる実害を確認済みだが、全プロジェクトの文字レイヤに影響するため見送り継続。
-      2026-08-24、`line_breaking_rules`（縦書き）の本家比較でも同じ原因による症状を確認：
-      `TxtLayer.tsx`の箱は`left:0`起点＋この既定70%幅のままなので、縦書き（右→左に読む）だと
-      箱の右側の余白がステージ右端側に残り、結果として文章全体がステージ左寄りに見える
-      （本家のmasume表示は箱がステージ幅いっぱいに達するため起きない）。原因はこの項目と同一で
-      新規バグではないため、対応もこの項目の見送り解除とセットで検討する
 
 ## 要検証（出自不確か・追跡工数を投じない）
 
@@ -199,3 +177,24 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       `max_row`は本家でも死んでいる属性と判明済みのため道連れの実装機会も無い）か、先頭に
       来るケース自体を折返し計算で避ける、といった対応が無い限りこれ以上は縮まらないため
       凍結継続（詳細はセッション2026-08-10・2026-08-12・2026-08-18のCHANGELOG.md参照）
+- [ ] **縦書きで`〈`/`〉`（U+3008/3009）だけ90°回転しない（本家と異なる動作のまま凍結）**：
+      2026-08-24、`line_breaking_rules`の本家比較で発覚・原因特定済み。**bluesnovelのコードの
+      バグではなく、ブラウザ（Chromium）とHiragino Sans系フォントの組み合わせに起因する外部
+      バグ**：`font-feature-settings: "pwid"`（プロポーショナル幅グリフ）を指定すると、
+      Chromiumの縦書き自動回転（`text-orientation: mixed`のフォールバック回転）が`〈`/`〉`
+      にだけ効かなくなる（`【`/`】`は影響されない）。bluesnovel非依存の最小HTML
+      （`writing-mode: vertical-rl`＋`font-family: 'Hiragino Sans', …`のみ）で再現：`ffs`無し／
+      `palt`→両方正しく回転、`pwid`→`〈〉`だけ回転しない。Unicode `VerticalOrientation.txt`では
+      両コードポイントとも同じ`Tr`分類（unicode.orgのUCDで確認済み）なので分類差ではない。
+      本家（skynovel_esm）で起きないのは、テキストをライブDOMとして直接ブラウザに描画せず、
+      HTMLをSVGの`<foreignObject>`へ埋め込んで`<img>`として一度デコードしてから
+      `canvas.drawImage()`でラスタライズし、pixi.jsのテクスチャにしているため
+      （`htm2tx.ts:334-349`。同じChromiumでも「ライブDOMの描画パイプライン」と「SVG data URIを
+      imgとして読み込むオフスクリーンのデコード経路」ではテキストシェイピングの内部コードパスが
+      異なるらしく、後者はこのバグを踏まない）。本家ギャラリー（GitHub Pages、既定で縦書き・
+      `pwid`）で`〈〈`/`〉`が正しく回転することを実機確認済み。bluesnovelはpixi.js非依存でテキストを
+      ライブDOM描画する設計上の選択の副作用としてこのブラウザバグを直接踏む。**対応：この挙動を
+      受け入れて凍結**（ユーザー判断、2026-08-24）。`line_breaking_rules`の画面にはffsを切り替える
+      デフォルト/palt/pwidボタンがあり、触るユーザーには`pwid`由来の副作用と伝わる想定のため、
+      「回転は付けない」という現行方針（`TxtLayer.tsx`のコメント参照）を崩してまで対症療法の
+      個別回転を入れる必要は無いと判断。本家と異なる動作のまま完了

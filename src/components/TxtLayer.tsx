@@ -99,7 +99,7 @@ type T_TXTARG = T_LAY_CMN & {
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
 	b_src?	: string | undefined;	// [lay b_pic=…]の解決済みURL。**あればb_colorより優先**（本家 TxtLayer.ts:393）
 	styTxt?	: string | undefined;	// [lay style="..."]。文字レイヤへそのまま足すCSS（既定スタイルを上書きする）
-	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（1em/1.5em）のまま
+	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（16px）のまま
 	pl?		: number | undefined;
 	pr?		: number | undefined;
 	pt?		: number | undefined;
@@ -159,7 +159,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
 				...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
 			: sty),
-		// [lay pl=/pr=/pt=/pb=]。指定された辺だけ既定のCSS padding（1em/1.5em）を上書きする
+		// [lay pl=/pr=/pt=/pb=]。指定された辺だけ既定のCSS padding（16px）を上書きする
 		...(pl !== undefined ? {paddingLeft: `${String(pl)}px`} : {}),
 		...(pr !== undefined ? {paddingRight: `${String(pr)}px`} : {}),
 		...(pt !== undefined ? {paddingTop: `${String(pt)}px`} : {}),
@@ -212,7 +212,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// masumeガイド枠の内側（padding込みを除いた表示領域＝本家 TxtStage.ts:336-341
 	//	cntInsidePadding相当）。bluesnovelはpaddingをboxRef自身のCSS paddingで直接持つ
 	//	（本家のような入れ子コンテナが無い）ので、算出paddingぶんだけ絶対配置のinsetを開けて描く。
-	//	pl/pr/pt/pbが未指定（既定の1em/1.5em）でも狂わないよう、propの生値でなくgetComputedStyle
+	//	pl/pr/pt/pbが未指定（既定の16px）でも狂わないよう、propの生値でなくgetComputedStyle
 	//	で実測する
 	useLayoutEffect(()=> {
 		if (! CmnLib.masume) return;	// offなら測定・DOM書き込みとも一切行わない
@@ -515,7 +515,19 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
 			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
 		isolation: isolate;
-		padding: 1em 1.5em;
+		/* **明示が要る**：sn_galleryなどBootstrapを読み込むホストは全称セレクタで
+			box-sizing: border-box をグローバルに敷いており、何も書かなければこちらが
+			それをそのまま継承してしまう（E2Eの自前テストアプリにはBootstrapが無いため
+			気付かれなかった）。[lay width=/height=]は常に「中身の寸法」という設計
+			（test/e2e/argdef.e2e.ts「pl/pr/pt/pbは文字表示領域の内側余白」参照）なので、
+			border-boxのままだと明示指定時にpx値の意味が変わってしまう（2026-08-25発覚） */
+		box-sizing: content-box;
+		/* 本家 TxtLayer.ts:271-272（const padding = 16;）に合わせ4辺均一の16px。
+			以前は1em 1.5em（上下24px・左右36px、非対称）だったが、本家と数値が食い違っており、
+			masumeガイド枠（CmnLib.masume）の見え方が本家（緑と青がほぼ重なり太い青一色に
+			見える）とbluesnovel（緑と青の間に明確な余白がある）で違って見える一因になっていた
+			（2026-08-25、実機比較で発覚） */
+		padding: 16px;
 		/* 背景色に[lay b_alpha=...]をアルファチャンネルで反映。
 			要素全体のopacityではなく背景色のアルファのみを下げるので、子要素（文字）の透過度には影響しない
 			（レイヤ全体を透かしたい場合は[lay alpha=...]） */
@@ -540,8 +552,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		/* [add_lay class=txt]直後、[lay style=…]を一度も受けていない状態の既定フォントサイズ。
 			本家 TxtLayer.ts:272 のコンストラクタ既定（24px）に合わせる。xxx-large（≒48px）のままだと
-			widthのCSS既定70%（test/argdef_parity.test.ts A_CSS_DEF、本家と意図的に違えた値）との
-			組み合わせで本文が箱から大きくはみ出す（sn_galleryのtopプロジェクトで発覚） */
+			下のwidthとの組み合わせで本文が箱から大きくはみ出す（sn_galleryのtopプロジェクトで発覚） */
 		font-size: 24px;
 		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
 			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
@@ -553,7 +564,27 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
 			本家にも対応する概念が無い試作期の置き土産だった） */
 		top: 0;
-		width: 70%;
+		/* width/heightの既定は本家 TxtLayer.ts:272 のコンストラクタ既定に合わせステージいっぱい。
+			widthは以前意図的に70%へ違えていたが、ch_button/sound/importでリンクがクリック不能になる
+			実害や縦書き（line_breaking_rules）で本文がステージ左寄りに見える不具合の原因だったため、
+			本家準拠へ戻した（2026-08-25）。heightは元々CSS既定のauto（＝内容量ぶんだけの高さ）の
+			ままで、widthだけ直した直後の実機比較でmasumeガイド枠がステージ下端に届かない食い違いが
+			見つかったため同時に揃えた。
+			**widthプロパティ自体は指定せず、right: 0（下のheightも同様にbottom: 0）で表す**：
+			bluesnovelのwidth/heightは常に「中身（文字表示領域）の寸法」で、paddingはその外側に
+			足す設計（test/e2e/argdef.e2e.ts「pl/pr/pt/pbは文字表示領域の内側余白」参照）。
+			width: calc(100% - 3em)のようにpaddingを差し引く固定値でも一度試したが、
+			[lay style="padding-bottom: …px;"]でpaddingを個別変更するプロジェクト
+			（sn_galleryのline_breaking_rules）でズレて逆にステージをはみ出した。
+			right: 0ならtop/left:0と合わせて要素の外形が常にcontaining block（ステージ）
+			いっぱいになり、paddingがどんな値でもbox-sizingに関わらず内側に自動で確保される
+			（box-sizing: border-boxでpadding込み外形をステージに合わせる案も試したが、
+			[lay width=/height=]やb_picの自然サイズ調整の「常に中身の寸法」という意味が
+			壊れるため撤回した）。
+			[lay width=/height=]明示時はLay.tsのstyLay()がインラインでpx指定するので、
+			left+width+rightが揃うCSSの規則でrightは自動的に無視される（衝突しない） */
+		right: 0;
+		bottom: 0;
 		white-space: pre-wrap;
 		/* 文字色の既定は白（本家 TxtLayer.ts:272 のコンストラクタ既定styleがcolor: white）。
 			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が

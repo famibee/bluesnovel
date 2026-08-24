@@ -185,7 +185,7 @@ export type T_CHGBACKCLEAR = {
 export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	b_color?: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?	: string;	// 文字レイヤへそのまま足すCSS
-	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（1em/1.5em）のまま
+	// [lay pl=/pr=/pt=/pb=]。文字表示領域の内側余白（px）。未指定は既定のCSS値（16px）のまま
 	pl?		: number;
 	pr?		: number;
 	pt?		: number;

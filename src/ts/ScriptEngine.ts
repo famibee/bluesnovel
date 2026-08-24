@@ -77,7 +77,7 @@ export type T_LAY_STY_ARG = {
 	b_color?	: number;	// 文字レイヤ背景色（0xRRGGBB）
 	style?		: string;	// 文字レイヤへそのまま足すCSS
 	// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb。px指定）。
-	//	**未指定は既定のCSS値（1em/1.5em）のまま**（他の見た目属性と同じ「書かれた属性だけ」原則）
+	//	**未指定は既定のCSS値（16px）のまま**（他の見た目属性と同じ「書かれた属性だけ」原則）
 	pl?			: number;
 	pr?			: number;
 	pt?			: number;
