@@ -13,7 +13,7 @@
 //	・[stop_tsy]／[wait_tsy]中のクリックが、必ず終了状態へ送ること
 
 import {expect, test, type Page} from '@playwright/test';
-import {gotoSn, layNum, mesStr, waitIdle} from './snPage';
+import {gotoSn, layNum, mesStr, snap, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'tsy')});
 
@@ -144,4 +144,30 @@ test('[tsy width=/height=]は[lay width=/height=]で寸法を明示したレイ�
 	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('すんぽう');
 	expect(await layNum(page, 'base', 'width')).toBe(300);
 	expect(await layNum(page, 'base', 'height')).toBe(150);
+});
+
+test('相対path=だけでtop/leftを動かしても寄せ(align_y/align_x)は消えない（[fg2_squat]等の回帰）', async ({page})=> {
+	// [fg2_squat]/[fg2_shake]/[fg2_sidestep]はどれも[tsy path='(,=…) (,=0)']のように
+	//	現在位置から相対に動かすだけ。だが立ち絵は[lay pos=]相当（bottom基準＝align_y='bottom'）で
+	//	置かれているため、chgLayの「align無しのtop更新は古い寄せを消す」処理（[tsy left=]で
+	//	絶対位置へ再配置するfg2_dsp向けの仕様）に相対の揺らしまで巻き込まれると、
+	//	寄せを失って画面外へ落ちてしまっていた（Issue: gallery ext_fg2）
+	await toPathScene(page);
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('けいろ');
+	await waitIdle(page);
+
+	await page.keyboard.press('Space');	// chain=（tw_a→tw_b）
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('つなげた');
+	await waitIdle(page);
+
+	await page.keyboard.press('Space');	// [tsy width=/height=]
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('すんぽう');
+	await waitIdle(page);
+
+	// [lay bottom=50] → [tsy path='(,=100) (,=0)']（相対のみ）
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('すえおき');
+	expect(await layNum(page, 'base', 'top')).toBe(50);
+	expect((await snap(page)).aLay.find(l=> l.nm === 'base')?.align_y).toBe('bottom');
 });

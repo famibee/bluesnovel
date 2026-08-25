@@ -779,15 +779,31 @@ export class ScriptMng {
 		//	（addLayer/[trans]）もJSON化（しおり）も落ちていた。motion（Tw）は対象へそうした
 		//	痕跡を残さないが、fromはpath区間ごとに使い回す作業用オブジェクトでもあるので、
 		//	ストアに載せる値は引き続きこの形で明示的に切り出す
+		//
+		// left/topを動かす区間が**全て相対指定（'='付き）**なら、寄せ（align_x/align_y）を
+		//	現在値のままsty へも含める。store.chgLay()はleft/topが来てalign_x/align_yが
+		//	伴わないと「もう寸法込みの絶対位置」とみなして古い寄せを消す（[fg2]がキャラを
+		//	絶対x座標へ再配置する[tsy left=x-width/2]のための仕様。ARCHITECTURE.md参照）。
+		//	だが[fg_squat]/[fg_shake]/[fg_sidestep]のように現在位置から相対に揺らすだけの
+		//	[tsy path='(,=50) (,=0)']等はその「絶対位置」ではないので、寄せまで消えると
+		//	bottom寄せ（立ち絵の設置基準）を失って画面外へずれ落ちる（本Issue: [fg2_squat]等で
+		//	立ち絵が消える）。絶対指定（'='無し）が1区間でもあれば従来通り寄せを道連れにしない
+		const aHTo = [act.hTo, ...act.aPath ?? []];
+		const relOnly = (k: string)=> aHTo.every(h=> ! h[k] || h[k]!.rel);
+		const withAlign = (sty: T_LAY_STY_ARG)=> {
+			if (aPrp.includes('left') && relOnly('left') && cur.align_x !== undefined) sty.align_x = cur.align_x;
+			if (aPrp.includes('top') && relOnly('top') && cur.align_y !== undefined) sty.align_y = cur.align_y;
+			return sty;
+		};
 		this.#runTsy(act, from, aTo, ()=> {
 			const sty: T_LAY_STY_ARG = {};
 			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
-			this.$fncs.chgLay({nm: act.nm, page: act.page, sty});
+			this.$fncs.chgLay({nm: act.nm, page: act.page, sty: withAlign(sty)});
 		}, act.backlay ? ()=> {
 			// [tsy backlay=true]：終了時の最終値を反対側のページにも反映する（本家 CmnTween.ts backlay）
 			const sty: T_LAY_STY_ARG = {};
 			for (const k of aPrp) Object.assign(sty, {[k]: from[k]});
-			this.$fncs.chgLay({nm: act.nm, page: act.page === 'fore' ? 'back' : 'fore', sty});
+			this.$fncs.chgLay({nm: act.nm, page: act.page === 'fore' ? 'back' : 'fore', sty: withAlign(sty)});
 		} : undefined);
 	}
 

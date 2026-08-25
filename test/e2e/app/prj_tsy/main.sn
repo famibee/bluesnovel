@@ -52,4 +52,13 @@
 [lay layer=base width=100 height=50]
 [tsy layer=base time=200 width=300 height=150]
 [wait_tsy layer=base]
-すんぽう[s]
+すんぽう[p]
+
+; [lay bottom=]で立てたalign_y（立ち絵のようにbottom基準で置いたレイヤ）が、
+;	相対指定だけのpath=（[fg2_squat]等と同じ形）で動かしても消えないことの確認。
+;	本家準拠のalign無し更新クリア（chgLay）は絶対再配置向けの仕様で、相対の
+;	揺らしまで巻き込むと立ち絵がbottom寄せを失って画面外へ落ちる不具合があった
+[lay layer=base bottom=50]
+[tsy layer=base time=200 path='(,=100) (,=0)']
+[wait_tsy layer=base]
+すえおき[s]

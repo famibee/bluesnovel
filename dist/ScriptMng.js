@@ -6720,14 +6720,14 @@ var ss = class t {
 			let t = n[e] ?? fe[e];
 			if (t === void 0) throw `[tsy] ${e} は [lay ${e}=…] で寸法を明示したレイヤにしか使えません`;
 			return t;
-		});
+		}), o = [e.hTo, ...e.aPath ?? []], s = (e) => o.every((t) => !t[e] || t[e].rel), c = (e) => (a.includes("left") && s("left") && n.align_x !== void 0 && (e.align_x = n.align_x), a.includes("top") && s("top") && n.align_y !== void 0 && (e.align_y = n.align_y), e);
 		this.#ae(e, r, i, () => {
 			let t = {};
 			for (let e of a) Object.assign(t, { [e]: r[e] });
 			this.$fncs.chgLay({
 				nm: e.nm,
 				page: e.page,
-				sty: t
+				sty: c(t)
 			});
 		}, e.backlay ? () => {
 			let t = {};
@@ -6735,7 +6735,7 @@ var ss = class t {
 			this.$fncs.chgLay({
 				nm: e.nm,
 				page: e.page === "fore" ? "back" : "fore",
-				sty: t
+				sty: c(t)
 			});
 		} : void 0);
 	}
