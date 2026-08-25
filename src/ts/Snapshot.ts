@@ -12,7 +12,9 @@
 //	外部ライブラリ（html2canvas等）を足さずに済むかわり、SVG化には以下の制約がある。
 //	どれもブラウザ側の仕様なので回避策ではなく前提として扱う：
 //	・<img>としてロードされたSVGは**外部リソースを一切取りにいけない**。よって画像は
-//	  data URIへ埋め込んでから入れる（inlineImgs）。
+//	  data URIへ埋め込んでから入れる（inlineImgs）。CSSのbackground-image（[button pic=/b_pic=]の
+//	  枠画像。インラインstyleとemotionの<style>ルールの両方）にも同じ制約が掛かるので、
+//	  こちらもurl(...)をdata URIへ差し替える（inlineCssUrls）。
 //	・CSSも同じ理由で外から読めないので、ページ側のスタイルシートを文字列にして中へ入れる
 //	  （collectCss）。emotionが挿す<style>もここで拾える。
 //	・iframe（[add_frame]のHTMLフレーム）の中身は描かれない。本家もweb版はpixiのステージだけを
@@ -47,7 +49,9 @@ export function mimeOfFn(fn: string): string {
 //	拡張子でフォーマットを選べるのは userdata:/ 側だけになっていた。こちらは**日時を拡張子の前**へ
 //	入れて、どちらの行き先でも tag.html どおり拡張子でフォーマットが決まるようにする
 export function dlFn(fn: string): string {
-	const dt = getDateStr('-', '_', '');	// 本家 LayerMng.ts:339 と同じ並び（2026-07-26_1830）
+	// 本家 LayerMng.ts:339 と同じ並び・同じ引数（2026-07-26_1830_190）。ミリ秒まで含めるのは
+	//	連投（短時間に複数回撮る）で同名上書きにならないようにするため
+	const dt = getDateStr('-', '_', '', '_');
 	const m = /\.\w+$/.exec(fn);
 	return m ? fn.slice(0, m.index) + dt + m[0] : `${fn}${dt}.png`;
 }
@@ -74,11 +78,12 @@ export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
 	await inlineImgs(clone);
 
 	// <foreignObject>の中はXHTML。属性値のエスケープはXMLSerializerに任せる
-	const body = new XMLSerializer().serializeToString(clone);
+	const body = await inlineCssUrls(new XMLSerializer().serializeToString(clone));
+	const css = await inlineCssUrls(collectCss());
 	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(o.sw)}" height="${String(o.sh)}">`
 		+ `<foreignObject x="0" y="0" width="100%" height="100%">`
 		+ `<div xmlns="http://www.w3.org/1999/xhtml">`
-		+ `<style>${collectCss()}</style>${body}`
+		+ `<style>${css}</style>${body}`
 		+ `</div></foreignObject></svg>`;
 
 	const img = await loadImg(
@@ -128,6 +133,41 @@ async function inlineImgs(root: HTMLElement) {
 		catch {im.remove()}
 	}));
 }
+// CSS文字列（インラインstyle属性・<style>のcssText、両方に使う）の中の**background-imageのurl(...)**
+//	だけをdata URIへ差し替える。<img>のsrcと同じ制約（SVG内から外部リソースを取りにいけない）が、
+//	[button pic=/b_pic=]のbackground-image（枠画像）にも掛かるが、そちらはinlineImgs()（<img>専用）
+//	では救えない。picはstyBtnArg()がインラインstyleへ、b_picはBtnLayer.tsxの`&::before`ルールとして
+//	emotionの<style>（collectCss()で拾う側）へ、それぞれ別の経路で置かれるため、両方の文字列に対して
+//	同じ関数を通す（ch_buttonサンプルで枠だけ消える不具合の原因）。
+//	**background系の宣言だけに絞る**のがポイント：url()全部を対象にすると@font-face（フォント
+//	アイコン等）のsrc:url(...)まで拾って無意味にfetchしてしまう（実機確認で404が積み上がるのを確認）。
+//	**引用符は`&quot;`も見る**：picはインラインstyle属性経由でXMLSerializerを通るため、
+//	属性値中の`"`が`&quot;`へエスケープされる（b_picはCSSOMのcssText経由でエスケープされない
+//	ので気づきにくい。b_picは直っていてもpicだけ枠が出ない、という形で発覚）。
+//	**宣言の区切り`[^;]+`は`&quot;`を1つの塊として避けて通す**必要がある：`&quot;`自体が
+//	実体参照の終端として`;`を含む（&quot**;**）ため、素の`[^;]+`だとurl(&quot;...の直後で
+//	止まってしまい、閉じ`)`まで届かず宣言ごと取りこぼす（実機確認で発覚。pic=側だけ効かない
+//	原因がこれだった）
+async function inlineCssUrls(text: string): Promise<string> {
+	const reDecl = /background(?:-image)?\s*:\s*(?:&quot;|[^;])+/g;
+	const reUrl = /url\((&quot;|['"])?([^'")]+)\1\)/g;
+
+	const aFound = [...text.matchAll(reDecl)]
+		.flatMap(d=> [...d[0].matchAll(reUrl)].map(m=> m[2]));
+	const aUrl = [...new Set(aFound)].filter((u): u is string=> !! u && ! u.startsWith('data:'));
+	if (! aUrl.length) return text;
+
+	const mUrl = new Map<string, string>();
+	await Promise.all(aUrl.map(async u=> {
+		try {mUrl.set(u, await toDataUri(u))}
+		catch {/* 取得できない画像は元のURLのまま残す（1枚のせいで撮影ごと失敗させない） */}
+	}));
+	if (! mUrl.size) return text;
+
+	return text.replace(reDecl, decl=> decl.replace(reUrl,
+		(m, q: string, u: string)=> mUrl.has(u) ? `url(${q}${mUrl.get(u)}${q})` : m));
+}
+
 // sys.fetch は通さない：ここで読むのは既に画面へ出ている<img>のsrcで、暗号化構成でも
 //	その時点で復号済みのBlob/data URLになっている（二重復号を避ける）
 async function toDataUri(url: string): Promise<string> {

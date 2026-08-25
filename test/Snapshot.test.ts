@@ -27,8 +27,9 @@ it('dlFn_日時は拡張子の前に入る', ()=> {
 	// 本家は `fn + 日時 + '.png'` 固定なのでダウンロード名は常にpngになっていた
 	expect(dlFn('shot.jpg')).toMatch(/^shot[\d_-]+\.jpg$/);
 	expect(dlFn('shot')).toMatch(/^shot[\d_-]+\.png$/);
-	// 日時は本家 getDateStr('-', '_', '') と同じ並び（2026-07-26_1830）
-	expect(dlFn('x.png')).toMatch(/^x\d{4}-\d{2}-\d{2}_\d{4}\.png$/);
+	// 日時は本家 getDateStr('-', '_', '', '_') と同じ並び（2026-07-26_1830_190）。ミリ秒まで
+	//	含むのは連投（短時間に複数回撮る）で同名上書きにならないようにするため
+	expect(dlFn('x.png')).toMatch(/^x\d{4}-\d{2}-\d{2}_\d{4}_\d{1,3}\.png$/);
 });
 
 it('rgbaOf_高2桁がアルファ', ()=> {
