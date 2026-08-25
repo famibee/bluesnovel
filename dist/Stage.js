@@ -10074,7 +10074,7 @@ function wu(e, t) {
 }
 function Tu(e, t) {
 	let n = {};
-	(e.left !== void 0 || e.top !== void 0 || e.s_right !== void 0 || e.s_bottom !== void 0) && (n.position = "absolute", n.margin = 0, e.s_right === void 0 ? n.left = `${String(e.left ?? 0)}px` : n.right = `${String(e.s_right)}px`, e.s_bottom === void 0 ? n.top = `${String(e.top ?? 0)}px` : n.bottom = `${String(e.s_bottom)}px`), (e.align_x !== void 0 || e.align_y !== void 0) && (n.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`);
+	(e.left !== void 0 || e.top !== void 0 || e.s_right !== void 0 || e.s_bottom !== void 0) && (n.position = "absolute", n.margin = 0, e.s_right === void 0 ? n.left = `${String((e.left ?? 0) - (e.pivot_x ?? 0))}px` : n.right = `${String(e.s_right)}px`, e.s_bottom === void 0 ? n.top = `${String((e.top ?? 0) - (e.pivot_y ?? 0))}px` : n.bottom = `${String(e.s_bottom)}px`), (e.align_x !== void 0 || e.align_y !== void 0) && (n.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`);
 	{
 		let { w: r, h: i } = wu(e, t);
 		r > 0 && (n.width = `${String(r)}px`), i > 0 && (n.height = `${String(i)}px`), e.pic || (n.fontSize = `${String(Cu(e).h)}px`, n.lineHeight = 1), n.boxSizing = "border-box";

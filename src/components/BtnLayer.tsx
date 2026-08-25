@@ -60,10 +60,12 @@ function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null): CSSProp
 		sty.position = 'absolute';
 		sty.margin = 0;
 		// 横位置：left（＋center/rightの寄せ）か、ステージ右端からのs_rightか（本家も else if で排他。[lay]と同じ）
+		//	left/topはpivot分を引いて箱の左上へ変換する（本家ButtonもContainerでpivotがx/yの
+		//	基準点を兼ねるため。下のtransformOrigin＝pivotとセットでpixiの動きに一致する。Lay.ts styLay()と同じ理由）
 		if (o.s_right !== undefined) sty.right = `${String(o.s_right)}px`;
-		else sty.left = `${String(o.left ?? 0)}px`;
+		else sty.left = `${String((o.left ?? 0) - (o.pivot_x ?? 0))}px`;
 		if (o.s_bottom !== undefined) sty.bottom = `${String(o.s_bottom)}px`;
-		else sty.top = `${String(o.top ?? 0)}px`;
+		else sty.top = `${String((o.top ?? 0) - (o.pivot_y ?? 0))}px`;
 	}
 	// 中央寄せ・右端合わせ（本家「表示物の幅を引く」）は独立translateプロパティで表現する。
 	//	transformとは別プロパティなので、下のrotation/scaleと衝突しない。

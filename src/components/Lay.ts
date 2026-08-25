@@ -56,8 +56,11 @@ export type T_LAY_STY = {
 	scale_y?	: number;
 	// 回転・拡縮の原点（本家 Layer.lay() のpivot_x/pivot_y＝pixiのDisplayObject.pivot）。
 	//	既定は左上＝CSSの transform-origin: 0 0 と同じなので、そのまま対応が付く。
-	//	**pixiのpivotは表示位置そのものもずらす**が、こちらはCSSのtransform-originなので
-	//	原点を変えるだけ。回転・拡縮の中心を動かす用途では同じ絵になる
+	//	**pixiのpivotはleft/top（＝pixiのx/y）の基準点も兼ねる**：pixiは
+	//	「pivotで指した箱内の点をx/yの位置へ置く」ので、箱の左上は(x-pivot_x, y-pivot_y)になる。
+	//	styLay()はtransform-originをpivotに合わせた上でleft/topからpivot分を引き、この関係を
+	//	CSSでも再現する（sn_gallery tag_tsy で発覚：pivot_x=pivot_y=56で中心を原点にx=56,y=56へ
+	//	寄せても左上にぴったり収まらず空白が残っていた）
 	pivot_x?	: number;
 	pivot_y?	: number;
 	blendmode?	: string;	// CSSのmix-blend-mode値（[lay blendmode=…]がここへ変換して入れる）
@@ -90,14 +93,17 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 	//	styChild（Stage.tsx）がクラスCSSで left: 0; top: 0; を固定しているため、s_right/s_bottom側では
 	//	leftを明示的に'auto'で打ち消す必要がある。さもないと left:0（クラス）と right:20px（インライン）
 	//	が両方効いてしまい、絶対配置はleft+widthを優先してrightを無視する（＝s_rightが効かなくなる）
+	// left/topはpivot分を引いて箱の左上へ変換する（pixiはpivotで指した点をx/y＝left/topへ
+	//	置くため。下のtransformOriginをpivotへ合わせるのとセットで、pixiの「pivot点を中心に
+	//	回転・拡縮しつつその点をleft/topへ固定する」動きに一致する）
 	if (l.s_right !== undefined) {
 		sty.right = `${String(l.s_right)}px`;
 		sty.left = 'auto';
-	} else if (l.left !== undefined) sty.left = `${String(l.left)}px`;
+	} else if (l.left !== undefined) sty.left = `${String(l.left - (l.pivot_x ?? 0))}px`;
 	if (l.s_bottom !== undefined) {
 		sty.bottom = `${String(l.s_bottom)}px`;
 		sty.top = 'auto';
-	} else if (l.top !== undefined) sty.top = `${String(l.top)}px`;
+	} else if (l.top !== undefined) sty.top = `${String(l.top - (l.pivot_y ?? 0))}px`;
 	// 寄せは独立translateプロパティで。transformと別なので回転・拡縮と混ざらない
 	if (l.align_x !== undefined || l.align_y !== undefined) {
 		const tx = l.align_x === 'center' ? '-50%' : l.align_x === 'right' ? '-100%' : '0';
