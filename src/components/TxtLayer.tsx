@@ -1000,7 +1000,20 @@ function elGraph(box: HTMLElement, src: string, o: Pick<T_CH, 'gw' | 'gh' | 'gx'
 	});
 }
 
-// [link]区間の1単位をクリックできるようにする。
+// [link]区間全体を1つの当たり判定・1つの見た目として扱うためのグルーピング。
+//	禁則処理のため文字ごとに個別のspanへ分けている（elCh呼び出し元）ので、素朴に
+//	文字単位でmouseenter/mouseleaveを掛けると本家と違い1文字ずつ独立にホバー・
+//	押下してしまう（本家はTextクラス1個＝[link]区間全体が1つの当たり判定）。
+//	同じlnk参照（[link]〜[endlink]の間は同一オブジェクト。Txt.ts splitCh()参照）を
+//	共有する文字をここへ集約し、状態は区間全体へ同期して効かせる（sn_galleryで
+//	「1文字ずつ色が変わる」と指摘され発覚。2026-08-25）。
+//	文字は文字送り演出で後から1文字ずつ追加されるため、membersは「今後も増える」
+//	前提で都度pushし、クロージャは配列参照を持つことで後から増えた分にも自動対応する
+type T_LNK_MEMBER = {el: HTMLElement; sty: string; rt?: HTMLElement; rSty: string};
+type T_LNK_GROUP = {members: T_LNK_MEMBER[]; hoverCnt: number};
+const hLnkGroup = new WeakMap<T_LNK, T_LNK_GROUP>();
+
+// [link]区間の1文字ぶんをクリックできるようにする。
 //	**Reactの外で作るDOM**（文字送り演出のためTxtLayerが直接組み立てている）なので、
 //	BtnLayerのようなJSXではなくここでリスナを付ける。読み進めへ伝播させない点は同じ
 function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | undefined, rSty: string,
@@ -1012,35 +1025,66 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | unde
 		if (lnk.clickse) onSe(lnk.clickse, lnk.clicksebuf ?? 'SYS');
 		onLink(lnk);
 	});
-	// ツールチップ（[link hint=…]）とstyle_hover。どちらも乗っている間だけ
+
+	let group = hLnkGroup.get(lnk);
+	if (! group) {group = {members: [], hoverCnt: 0}; hLnkGroup.set(lnk, group)}
+	const g = group;
+	g.members.push({el, sty, rt, rSty});
+
+	// ツールチップ（[link hint=…]）とstyle_hover。どちらも「区間のどこかに」乗っている間だけ
 	//	効果音（本家 EventMng.ts:465-491、[button]と同じ形。enabled=falseの間は
 	//	CSSのpointer-events:noneでイベント自体が来ないので、ここでの判定は不要）
 	el.addEventListener('mouseenter', ()=> {
-		if (lnk.sh) el.style.cssText = sty + lnk.sh;
-		if (rt && lnk.rsh) rt.style.cssText = rSty + lnk.rsh;
+		g.hoverCnt++;
+		if (g.hoverCnt > 1) return;	// 既に区間内の隣接文字がホバー中：跨いだだけなので何もしない
+		for (const m of g.members) {
+			if (lnk.sh) m.el.style.cssText = m.sty + lnk.sh;
+			if (m.rt && lnk.rsh) m.rt.style.cssText = m.rSty + lnk.rsh;
+		}
 		if (lnk.hint) hintMng.show(el, lnk.hint, lnk.hs, lnk.ho);
 		if (lnk.enterse) onSe(lnk.enterse, lnk.entersebuf ?? 'SYS');
 	});
 	el.addEventListener('mouseleave', ()=> {
-		if (lnk.sh) {el.style.cssText = sty; el.style.cursor = 'pointer'}
-		if (rt && lnk.rsh) rt.style.cssText = rSty;
-		hintMng.hide();
-		if (lnk.leavese) onSe(lnk.leavese, lnk.leavesebuf ?? 'SYS');
+		g.hoverCnt--;
+		// 区間内の隣接文字へ跨いだだけなら、そちらのmouseenterが同じタスク内で
+		//	先に走ってhoverCntを戻しているはず。マイクロタスクへ回して確定させる
+		//	（本当に区間の外へ出た時だけhoverCntが0のまま残る）
+		queueMicrotask(()=> {
+			if (g.hoverCnt > 0) return;
+			for (const m of g.members) {
+				if (lnk.sh) {m.el.style.cssText = m.sty; m.el.style.cursor = 'pointer'}
+				if (m.rt && lnk.rsh) m.rt.style.cssText = m.rSty;
+			}
+			hintMng.hide();
+			if (lnk.leavese) onSe(lnk.leavese, lnk.leavesebuf ?? 'SYS');
+		});
 	});
 	// 押し下げ中（style_clicked/r_style_clicked）。CSSの:activeが素直に使えない
 	//	（本文DOMをReactの外で直接組むため、BtnLayerのようなemotionの&:activeが書けない）ので、
-	//	mousedownで乗せ、mouseup／mouseleaveでホバー状態（乗っていればsh、居なければsty）へ戻す
+	//	mousedownで区間全体へ乗せ、mouseup／mouseleaveで戻す。**style_clickedは省略時
+	//	`args.style`がデフォルトで入る**（ScriptEngine.ts:1743 `args.style_clicked ??= args.style`）
+	//	ため、style_hoverだけ指定したリンクでも`lnk.sc`は常にtruthyになる。戻す先は
+	//	`g.hoverCnt`（実際のホバー状態）で判定する——「lnk.shの有無だけでホバー色へ」戻す
+	//	実装だと、実際のホバー状態を見ずに常にホバー色を再適用してしまい、外れても
+	//	色が戻らないバグになる（sn_gallery ch_button で発覚）
 	if (lnk.sc || lnk.rsc) {
-		const restore = ()=> {
-			if (lnk.sc) {el.style.cssText = lnk.sh ? sty + lnk.sh : sty; el.style.cursor = 'pointer'}
-			if (rt && lnk.rsc) rt.style.cssText = lnk.rsh ? rSty + lnk.rsh : rSty;
-		};
 		el.addEventListener('mousedown', ()=> {
-			if (lnk.sc) el.style.cssText = sty + lnk.sc;
-			if (rt && lnk.rsc) rt.style.cssText = rSty + lnk.rsc;
+			for (const m of g.members) {
+				if (lnk.sc) m.el.style.cssText = m.sty + lnk.sc;
+				if (m.rt && lnk.rsc) m.rt.style.cssText = m.rSty + lnk.rsc;
+			}
 		});
-		el.addEventListener('mouseup', restore);
-		el.addEventListener('mouseleave', restore);
+		const release = ()=> {
+			for (const m of g.members) {
+				if (lnk.sc) {
+					m.el.style.cssText = g.hoverCnt > 0 && lnk.sh ? m.sty + lnk.sh : m.sty;
+					m.el.style.cursor = 'pointer';
+				}
+				if (m.rt && lnk.rsc) m.rt.style.cssText = g.hoverCnt > 0 && lnk.rsh ? m.rSty + lnk.rsh : m.rSty;
+			}
+		};
+		el.addEventListener('mouseup', release);
+		el.addEventListener('mouseleave', ()=> queueMicrotask(release));
 	}
 }
 

@@ -273,11 +273,18 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
 			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
 		${sty?.style ?? ''}
-		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
-			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
+		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:384 は pointerout で
+			isFocus(ctnBtn) ? hv() : nr() と、フォーカスが残っている間だけホバー色を保つ）。
+			ただし本家のisFocusはキー操作（Tab/ゲームパッド）でしか立たない——マウスクリックは
+			pointerdownでhv()を呼ぶだけでフォーカスの輪には乗せない。一方bluesnovelはspan自身が
+			DOM上でtabIndexを持つため、クリックしただけでネイティブのfocusが乗ってしまい、
+			素の:focusで判定すると「クリック後マウスを離しても色が戻らない」ことになる
+			（sn_gallery ch_buttonで発覚）。キー操作由来かどうかはFocusMng.tsがmodalityを見て
+			付け外しするdata-focus-ringで判別できる（TxtLayer.tsxの待ちマーカーと同じ仕組み）ので、
+			ここでも:focus単体でなく[data-focus-ring]:focusに絞る。
 			既定のフォーカスリングは画面に合わないので消す。
 			既定のホバーは本家 style_hover の fill:'white' 相当 */
-		&:hover, &:focus {${sty?.style_hover ?? 'color: white;'}}
+		&:hover, &[data-focus-ring]:focus {${sty?.style_hover ?? 'color: white;'}}
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
 		&:active {${sty?.style_clicked ?? 'text-shadow: none;'}}

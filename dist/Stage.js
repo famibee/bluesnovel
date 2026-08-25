@@ -10187,11 +10187,18 @@ function Eu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
 			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
 		${s?.style ?? ""}
-		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:435 は FocusMng へ
-			hv()／nr() を渡し、フォーカスの出入りでホバー状態を切り替える）。
+		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:384 は pointerout で
+			isFocus(ctnBtn) ? hv() : nr() と、フォーカスが残っている間だけホバー色を保つ）。
+			ただし本家のisFocusはキー操作（Tab/ゲームパッド）でしか立たない——マウスクリックは
+			pointerdownでhv()を呼ぶだけでフォーカスの輪には乗せない。一方bluesnovelはspan自身が
+			DOM上でtabIndexを持つため、クリックしただけでネイティブのfocusが乗ってしまい、
+			素の:focusで判定すると「クリック後マウスを離しても色が戻らない」ことになる
+			（sn_gallery ch_buttonで発覚）。キー操作由来かどうかはFocusMng.tsがmodalityを見て
+			付け外しするdata-focus-ringで判別できる（TxtLayer.tsxの待ちマーカーと同じ仕組み）ので、
+			ここでも:focus単体でなく[data-focus-ring]:focusに絞る。
 			既定のフォーカスリングは画面に合わないので消す。
 			既定のホバーは本家 style_hover の fill:'white' 相当 */
-		&:hover, &:focus {${s?.style_hover ?? "color: white;"}}
+		&:hover, &[data-focus-ring]:focus {${s?.style_hover ?? "color: white;"}}
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
 		&:active {${s?.style_clicked ?? "text-shadow: none;"}}
@@ -10445,7 +10452,7 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 	}, Ve = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, He = F.filter((e) => !Ve(e)), Ue = F.filter(Ve), We = Su`
 		isolation: isolate;
 		${N ? "" : "pointer-events: none;"}
-	`, { r: Ge, g: Ke, b: qe } = Pu(S), Je = b((e) => e.backAlpha), Ye = C * (w ? 1 : Je), Xe = Ye === 0 || S === void 0, Ze = Su`
+	`, { r: Ge, g: Ke, b: qe } = Fu(S), Je = b((e) => e.backAlpha), Ye = C * (w ? 1 : Je), Xe = Ye === 0 || S === void 0, Ze = Su`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
 			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
 			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
@@ -10808,7 +10815,7 @@ function ju({ c: e, r: t, ra: n, s: r, rs: i, tcy: a, lnk: o, src: s, gw: c, gh:
 		let r = n ?? f;
 		x.style.cssText = (r ? Au(e, t, r) : "") + (i ?? ""), x.textContent = t, v.appendChild(x);
 	}
-	return o && Nu(v, o, r ?? "", x, i ?? "", p, h), v;
+	return o && Pu(v, o, r ?? "", x, i ?? "", p, h), v;
 }
 function Mu(e, t, n) {
 	if ((n.gw !== void 0 || n.gh !== void 0) && (e.style.display = "inline-block", e.style.verticalAlign = "text-bottom", n.gw !== void 0 && (e.style.width = `${String(n.gw)}px`), n.gh !== void 0 && (e.style.height = `${String(n.gh)}px`)), (n.gx !== void 0 || n.gy !== void 0) && (e.style.translate = `${String(n.gx ?? 0)}px ${String(n.gy ?? 0)}px`), !t.endsWith(".json")) {
@@ -10828,23 +10835,45 @@ function Mu(e, t, n) {
 		}
 	});
 }
-function Nu(e, t, n, r, i, a, o) {
-	if (e.style.cursor = "pointer", e.addEventListener("click", (e) => {
+var Nu = /* @__PURE__ */ new WeakMap();
+function Pu(e, t, n, r, i, a, o) {
+	e.style.cursor = "pointer", e.addEventListener("click", (e) => {
 		e.stopPropagation(), bu.hide(), t.clickse && o(t.clickse, t.clicksebuf ?? "SYS"), a(t);
+	});
+	let s = Nu.get(t);
+	s || (s = {
+		members: [],
+		hoverCnt: 0
+	}, Nu.set(t, s));
+	let c = s;
+	if (c.members.push({
+		el: e,
+		sty: n,
+		rt: r,
+		rSty: i
 	}), e.addEventListener("mouseenter", () => {
-		t.sh && (e.style.cssText = n + t.sh), r && t.rsh && (r.style.cssText = i + t.rsh), t.hint && bu.show(e, t.hint, t.hs, t.ho), t.enterse && o(t.enterse, t.entersebuf ?? "SYS");
+		if (c.hoverCnt++, !(c.hoverCnt > 1)) {
+			for (let e of c.members) t.sh && (e.el.style.cssText = e.sty + t.sh), e.rt && t.rsh && (e.rt.style.cssText = e.rSty + t.rsh);
+			t.hint && bu.show(e, t.hint, t.hs, t.ho), t.enterse && o(t.enterse, t.entersebuf ?? "SYS");
+		}
 	}), e.addEventListener("mouseleave", () => {
-		t.sh && (e.style.cssText = n, e.style.cursor = "pointer"), r && t.rsh && (r.style.cssText = i), bu.hide(), t.leavese && o(t.leavese, t.leavesebuf ?? "SYS");
+		c.hoverCnt--, queueMicrotask(() => {
+			if (!(c.hoverCnt > 0)) {
+				for (let e of c.members) t.sh && (e.el.style.cssText = e.sty, e.el.style.cursor = "pointer"), e.rt && t.rsh && (e.rt.style.cssText = e.rSty);
+				bu.hide(), t.leavese && o(t.leavese, t.leavesebuf ?? "SYS");
+			}
+		});
 	}), t.sc || t.rsc) {
-		let a = () => {
-			t.sc && (e.style.cssText = t.sh ? n + t.sh : n, e.style.cursor = "pointer"), r && t.rsc && (r.style.cssText = t.rsh ? i + t.rsh : i);
-		};
 		e.addEventListener("mousedown", () => {
-			t.sc && (e.style.cssText = n + t.sc), r && t.rsc && (r.style.cssText = i + t.rsc);
-		}), e.addEventListener("mouseup", a), e.addEventListener("mouseleave", a);
+			for (let e of c.members) t.sc && (e.el.style.cssText = e.sty + t.sc), e.rt && t.rsc && (e.rt.style.cssText = e.rSty + t.rsc);
+		});
+		let n = () => {
+			for (let e of c.members) t.sc && (e.el.style.cssText = c.hoverCnt > 0 && t.sh ? e.sty + t.sh : e.sty, e.el.style.cursor = "pointer"), e.rt && t.rsc && (e.rt.style.cssText = c.hoverCnt > 0 && t.rsh ? e.rSty + t.rsh : e.rSty);
+		};
+		e.addEventListener("mouseup", n), e.addEventListener("mouseleave", () => queueMicrotask(n));
 	}
 }
-function Pu(e) {
+function Fu(e) {
 	return e === void 0 ? {
 		r: 127,
 		g: 255,
@@ -10857,7 +10886,7 @@ function Pu(e) {
 }
 //#endregion
 //#region src/components/PlgLayer.tsx
-function Fu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, attach: i }) {
+function Iu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, attach: i }) {
 	return /* @__PURE__ */ P(lu, {
 		styChild: e,
 		isDesignMode: t,
@@ -10877,9 +10906,9 @@ function Fu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, attach: i })
 }
 //#endregion
 //#region src/ts/Trans.ts
-var Iu = .04, Lu = 1e6;
-function Ru(e, t = Iu) {
-	let n = t > 0 ? Math.min(1 / (2 * t), Lu) : Lu;
+var Lu = .04, Ru = 1e6;
+function zu(e, t = Lu) {
+	let n = t > 0 ? Math.min(1 / (2 * t), Ru) : Ru;
 	return {
 		slope: n,
 		intercept: .5 - n * e
@@ -10887,14 +10916,14 @@ function Ru(e, t = Iu) {
 }
 //#endregion
 //#region src/ts/Swipe.ts
-function zu(e, t, n, r) {
+function Bu(e, t, n, r) {
 	let i = Math.abs(e), a = Math.abs(t), o = Math.max(25, Math.floor(.15 * n)), s = Math.max(25, Math.floor(.15 * r));
 	if (i > o && i >= a) return e < 0 ? "swipeleft" : "swiperight";
 	if (a > s && a > i) return t < 0 ? "swipeup" : "swipedown";
 }
 //#endregion
 //#region src/components/Stage.tsx
-function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
+function Vu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
 	let c = b((e) => e.aPage), f = b((e) => e.foreIdx), h = b((e) => e.trans), _ = (0, V.useRef)(null), C = (0, V.useRef)(null), w = [_, C], T = (0, V.useRef)(null), E = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
 		T.current !== null && cancelAnimationFrame(T.current), T.current = null;
@@ -10913,7 +10942,7 @@ function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		let t = (e) => {
 			let t = E.current;
 			if (!t) return;
-			let { slope: n, intercept: r } = Ru(e, h.vague);
+			let { slope: n, intercept: r } = zu(e, h.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
@@ -10938,14 +10967,14 @@ function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		};
 		k.current = requestAnimationFrame(r);
 	}, [O]);
-	let M = e.parentElement !== document.body, [N, F] = (0, V.useState)(Hu(e, M));
+	let M = e.parentElement !== document.body, [N, F] = (0, V.useState)(Uu(e, M));
 	oe(() => {
 		function t() {
-			F(Hu(e, M));
+			F(Uu(e, M));
 		}
 		return globalThis.addEventListener("resize", t), () => globalThis.removeEventListener("resize", t);
 	});
-	let { cvsScale: R } = Vu(N, M), { stageW: z, stageH: B } = i, ee = (0, V.useRef)(null), te = b((e) => e.fullScr), re = b((e) => e.setFullScr), H = b((e) => e.toggleFullScr);
+	let { cvsScale: R } = Hu(N, M), { stageW: z, stageH: B } = i, ee = (0, V.useRef)(null), te = b((e) => e.fullScr), re = b((e) => e.setFullScr), H = b((e) => e.toggleFullScr);
 	U((0, V.useRef)(e), te, { onClose: () => re(!1) });
 	let [ie, W] = (0, V.useState)(() => !!document.fullscreenElement);
 	(0, V.useEffect)(() => {
@@ -11036,7 +11065,7 @@ function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 	function _e(e) {
 		let t = he.current;
 		if (he.current = null, !t || pe) return;
-		let r = ee.current.getBoundingClientRect(), i = zu(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
+		let r = ee.current.getBoundingClientRect(), i = Bu(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
 		i && (L(), n.fireEvent((e.pointerType === "mouse" ? A(e.nativeEvent) : "") + i));
 	}
 	let ve = (() => {
@@ -11205,7 +11234,7 @@ function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 							onActivate: (e, t, r, i) => n.jumpToLabelAndGo(e, t, r, i),
 							onNavigate: (e) => n.navigateTo(e),
 							onSe: (e, t) => n.playButtonSe(e, t)
-						}, e.nm) : /* @__PURE__ */ P(Fu, {
+						}, e.nm) : /* @__PURE__ */ P(Iu, {
 							cmn: be.cmn,
 							sty: r,
 							nm: e.nm,
@@ -11223,7 +11252,7 @@ function Bu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		]
 	});
 }
-function Vu({ width: e, height: t }, a) {
+function Hu({ width: e, height: t }, a) {
 	let o = 0, s = 0, c = 1;
 	return a ? (o = Math.min(e, i.stageW), s = n(i.stageH / i.stageW * o), c = o / i.stageW) : r(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = n(i.stageW / i.stageH * t)) : (o = e, s = n(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
 		cvsScale: c,
@@ -11231,7 +11260,7 @@ function Vu({ width: e, height: t }, a) {
 		cvsHeight: s
 	};
 }
-function Hu(e, t) {
+function Uu(e, t) {
 	if (t && e.parentElement) return {
 		width: e.parentElement.clientWidth,
 		height: 0
@@ -11243,6 +11272,6 @@ function Hu(e, t) {
 	};
 }
 //#endregion
-export { Bu as default };
+export { Vu as default };
 
 //# sourceMappingURL=Stage.js.map
