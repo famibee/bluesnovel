@@ -681,6 +681,18 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.4.1](https://github.com/famibee/bluesnovel/compare/v0.4.0...v0.4.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **sn:** [button]/[link]でホバー色がマウスアウトしても戻らない不具合を修正 ([8d03d7c](https://github.com/famibee/bluesnovel/commit/8d03d7cf4d1ab412b5077b4ef6bd349f796ca852))
+* **sn:** [button]でtext+b_pic時、left/topの基準が文字でなく背景画像になる不具合を修正 ([a8aca3d](https://github.com/famibee/bluesnovel/commit/a8aca3dc73aa5bd5c8d8c2da58a0b133ac57d989))
+* **sn:** [clear_lay]のpage省略時デフォルトをforeに修正（本家準拠） ([8ab35c3](https://github.com/famibee/bluesnovel/commit/8ab35c3338bf24ddbf8ea933ef0cd156de8af456))
+* **sn:** [fg2_squat]等の相対path=移動で立ち絵の寄せ(align)が消える不具合を修正 ([f6ba145](https://github.com/famibee/bluesnovel/commit/f6ba1454e1f650cdcbddab5a1a326b530dfab952))
+* **sn:** [lay]/[button]のpivot_x/pivot_y指定時にleft/topへ空白が残る不具合を修正 ([4d76a64](https://github.com/famibee/bluesnovel/commit/4d76a64e50d092e34f462fb78275f46b86f652d1))
+* **sn:** 文字レイヤの既定サイズ・paddingを本家準拠へ変更 ([6c7db10](https://github.com/famibee/bluesnovel/commit/6c7db10ba6b9120df880f1c90710408402db18e1))
+
 ## [0.4.0](https://github.com/famibee/bluesnovel/compare/v0.3.4...v0.4.0) (2026-08-24)
 
 
