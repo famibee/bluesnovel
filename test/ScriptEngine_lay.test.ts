@@ -241,10 +241,11 @@ it('lay_kinsokuIsNotPushedWhenUnspecified', ()=> {
 
 // ============ [clear_lay] ============
 
-it('clearLay_defaultsToBackPage', ()=> {
-	// 既定は'back'（本家 LayerMng.ts:1100。裏を組む用途が主なため）
+it('clearLay_defaultsToForePage', ()=> {
+	// 既定は'fore'（本家 LayerMng.ts:528 #clear_lay()。素のPages.getPage(hArg)を呼び、
+	//	Pages.argChk_page(hArg, 'fore')が既定。'back'既定なのは[button]（LayerMng.ts:1100）だけ）
 	expect(acts(`${LAYS}[clear_lay layer=mes][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', aLayNm: ['mes'], page: 'back'});
+		.toEqual({t: 'clearLay', aLayNm: ['mes'], page: 'fore'});
 });
 
 it('clearLay_page', ()=> {
@@ -256,14 +257,14 @@ it('clearLay_page', ()=> {
 
 it('clearLay_multipleLayers', ()=> {
 	expect(acts(`${LAYS}[clear_lay layer="base,mes"][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', aLayNm: ['base', 'mes'], page: 'back'});
+		.toEqual({t: 'clearLay', aLayNm: ['base', 'mes'], page: 'fore'});
 });
 
 it('clearLay_layerOmittedIsAllLayers', ()=> {
 	// layer省略＝全レイヤ（本家 LayerMng.#getLayers()）。エンジンはレイヤ一覧を持たないので、
 	//	[trans]/[dump_lay]と同じくnullのまま渡し、「全部」の解決はストア側
 	expect(acts(`${LAYS}[clear_lay][s]`).find(v=> v.t === 'clearLay'))
-		.toEqual({t: 'clearLay', aLayNm: null, page: 'back'});
+		.toEqual({t: 'clearLay', aLayNm: null, page: 'fore'});
 });
 
 it('clearLay_emptyLayerThrows', ()=> {
@@ -272,7 +273,7 @@ it('clearLay_emptyLayerThrows', ()=> {
 });
 
 it('clearLay_invalidPageThrows', ()=> {
-	expect(()=> acts(`${LAYS}[clear_lay layer=mes page=all][s]`)).toThrow('属性 page【all】が不正です');
+	expect(()=> acts(`${LAYS}[clear_lay layer=mes page=all][s]`)).toThrow('[clear_lay] 属性 page【all】が不正です');
 });
 
 it('clearLay_alsoClearsAccumulatedText', ()=> {

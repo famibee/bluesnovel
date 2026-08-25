@@ -47,17 +47,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 
 ## タグ・変数の残り
 
-- [ ] `[clear_lay]`のpage省略時デフォルトが本家と逆：bluesnovelは`args.page ?? 'back'`
-      （`ScriptEngine.ts`の`case 'clear_lay'`）だが、本家`skynovel_esm`の`#clear_lay()`
-      （`LayerMng.ts:528`）は素の`Pages.getPage(hArg)`を呼んでおり、その既定は`'fore'`
-      （`Pages.ts:61-64`の`Pages.argChk_page(hArg, 'fore')`）。bluesnovel側のコメント・
-      `test/Log.test.ts:170`の「page既定は'back'（本家同様）」という前提は、`[button]`が
-      `LayerMng.ts:1100`で明示的に`Pages.argChk_page(hArg, 'back')`と指定する別物と混同した
-      誤りの可能性が高い。2026-08-24、sn_galleryの`3d_base`実機比較（`[clear_lay layer=3d]`＝
-      page省略のはずが裏面しか消えず、表のキューブが残る）で発覚。修正は`[clear_lay]`を使う
-      全シナリオ・複数テスト（`test/Log.test.ts`/`test/ScriptEngine_lay.test.ts`/
-      `test/store_lay.test.ts`/`test/e2e/lay.e2e.ts`/`test/e2e/kinsoku.e2e.ts`等）に影響するため
-      別タスクとして扱う（ユーザー判断、2026-08-24）
 - [ ] **フィルターの残り**：本家22種のうち`noise`以外の21種に対応済み（`src/ts/Filter.ts`）。サンプル <https://github.com/famibee/SKYNovel_gallery/tree/master/public/prj/filter>
   - [ ] `predator`/`color_tone`は実機比較でやや色味に差が出た（優先度低）。2026-08-12に行列自体を
         再確認：`src/ts/Filter.ts`の数値は`@pixi/filter-color-matrix`の`predator()`/`colorTone()`と

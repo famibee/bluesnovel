@@ -170,8 +170,9 @@ it('log_[current]が同じレイヤなら区切らない', ()=> {
 it('log_[clear_lay]は既定文字レイヤの表を消すときだけ確定させる', ()=> {
 	expect(fixed(logOf('いち[clear_lay layer=mes page=fore]に'))).toEqual(['いち']);
 	expect(logOf('いち[clear_lay layer=sub page=fore]に')).toEqual([{text: 'いちに'}]);
-	// [clear_lay]のpage既定は'back'（裏を組む用途が主）なので、素で書いても履歴には触らない
-	expect(logOf('いち[clear_lay layer=mes]に')).toEqual([{text: 'いちに'}]);
+	// [clear_lay]のpage既定は'fore'（本家 Pages.argChk_page(hArg, 'fore')と同じ。
+	//	2026-08-24、todo.mdの指摘どおり'back'既定は誤りと判明し修正）なので、素で書くと表を消す＝確定する
+	expect(fixed(logOf('いち[clear_lay layer=mes]に'))).toEqual(['いち']);
 });
 
 it('log_[ch record=false]は履歴に残さない', ()=> {

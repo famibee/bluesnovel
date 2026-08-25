@@ -1408,10 +1408,11 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）
-			// pageの既定は本家同様'back'（LayerMng.ts:1100 の[button]と同じく、裏を組む用途が主なため）。
+			// pageの既定は本家同様'fore'（#clear_lay()は素のPages.getPage(hArg)を呼び、
+			//	Pages.argChk_page(hArg, 'fore')が既定。'back'既定なのは[button]（LayerMng.ts:1100）
+			//	だけで、[clear_lay]とは別物。2026-08-24、sn_galleryの3d_base実機比較で発覚）。
 			//	page=bothで両面まとめて消せる（本家 LayerMng.ts:535）
-			const sPage = args.page ?? 'back';
-			if (sPage !== 'fore' && sPage !== 'back' && sPage !== 'both') throw `属性 page【${sPage}】が不正です`;
+			const sPage = ScriptEngine.#argPageBoth('clear_lay', args, 'fore');
 			// layerはカンマ区切りで複数可。省略時は全レイヤ（＝null）。
 			//	エンジンはレイヤ一覧を持たないので、[trans]/[dump_lay]と同じくnullのまま渡して
 			//	「全部」の解決はストア側に任せる

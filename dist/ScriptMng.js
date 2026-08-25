@@ -1853,9 +1853,7 @@ var Ne = class {
 				enabled: (i.enabled ?? "true") !== "false"
 			}), "skip";
 			case "clear_lay": {
-				let e = i.page ?? "back";
-				if (e !== "fore" && e !== "back" && e !== "both") throw `属性 page【${e}】が不正です`;
-				let t = n.#c(i.layer);
+				let e = n.#h("clear_lay", i, "fore"), t = n.#c(i.layer);
 				if (i.layer !== void 0 && t === null) throw "[clear_lay] layer属性が空です";
 				if (e !== "back") {
 					if ((!t || t.includes(this.#v)) && this.#de(), t) for (let e of t) this.#y[e] = "";
