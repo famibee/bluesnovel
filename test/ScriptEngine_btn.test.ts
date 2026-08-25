@@ -196,11 +196,10 @@ it('btn_bPicKeepsText', ()=> {
 	// b_picは文字の背後に敷く絵（本家 Button.ts:249）。文字は消えない
 	const a = btn('[button b_pic=waku text=おす label=*a]');
 	expect(a?.text).toBe('おす');
-	expect(a?.sty).toMatchObject({b_pic: 'waku'});
-	// picと同じくb_picも寸法の既定を埋めない（本家もtxt.width/heightは100/30に固定したまま、
-	//	コンテナの#o.width/heightだけがb_pic読み込み後に絵の実寸へ広がる＝Button.ts:174-176）。
-	//	ここで埋めてしまうとBtnLayerが持つ「絵の実寸で箱を測る」ロジック（btnBoxSize）がo.widthの
-	//	??に阻まれて働かず、b_pic枠が100x30に切り詰められる（sn_gallery ch_button で発覚した不具合）
-	expect('width' in a!.sty!).toBe(false);
-	expect('height' in a!.sty!).toBe(false);
+	// b_picはpicと違い、left/topの基準点である**文字の箱**を絵の実寸へ広げない（本家 Button.ts:
+	//	80-81,249-257。left/top＝container.x/yはtxtの原点で、spはtxt基準に中央合わせで後付け
+	//	されるだけ）。よってpic無しの通常ボタンと同じくここで既定値(100x30)が埋まる。
+	//	埋めなかった頃はBtnLayerのbtnBoxSizeが箱をb_picの実寸へ広げてしまい、left/topの基準点が
+	//	「文字位置」から「背景画像位置」へすり替わる不具合があった（sn_gallery ch_button #19 で発覚）
+	expect(a?.sty).toMatchObject({...DEF, b_pic: 'waku'});
 });

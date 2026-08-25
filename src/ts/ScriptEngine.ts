@@ -2037,15 +2037,15 @@ export class ScriptEngine {
 			//	他の配置・変形属性を埋めないのは、下流のCSSが本家と同じ既定を持っているから
 			//	（left/top=0・rotation=0・scale=1・alpha=1）。ボタンにはその受け皿が無い。
 			//	本家も #o へ確定値を記録する（dump・セーブに乗る）ので、ストアにも実寸で載せる
-			//	**画像ボタン（pic）・背景画像ボタン（b_pic）は別**：本家も pic 側の分岐では埋めず、
-			//	絵の実寸（pic は横3コマ分の1/3）をそのまま箱の大きさにする（Button.ts:280）。
-			//	b_picも同様——本家はテキストのcontainerへ絵をSpriteとして足す（#loaded_b_pic）ため、
-			//	絵がテキストより大きければcontainerのwidth/height（#o.width/height）は絵の実寸へ
-			//	広がる（Button.ts:174-176）。ここでwidth/heightを埋めてしまうとBtnLayerが持つ
-			//	「読み込み後に絵の実寸で測る」ロジック（btnBoxSize）がo.widthの?? に阻まれて働かず、
-			//	b_pic枠が100x30に切り詰められて縁が見えなくなる（sn_gallery ch_button で発覚）。
-			//	実寸を知れるのはDOM側だけなのでBtnLayerが読み込み後に測る
-			if (! pic && ! args.b_pic) {
+			//	**画像ボタン（pic）は別**：本家も pic 側の分岐では埋めず、絵の実寸（pic は横3コマ分の
+			//	1/3）をそのまま箱の大きさにする（Button.ts:280）。実寸を知れるのはDOM側だけなので
+			//	BtnLayerが読み込み後に測る（btnBoxSize）。
+			//	**b_picはpicと違い箱を絵の実寸へ広げない**（本家 Button.ts:80-81,249-257。left/top＝
+			//	container.x/yが指すのは常にtxtの原点で、sp（背景画像）はtxt基準に中央合わせで
+			//	後付けされるだけ）。よってb_picも通常の文字ボタンと同じくここで既定値を埋めてよい
+			//	（sn_gallery ch_button #19：箱をb_picの実寸へ広げていた頃はleft/topの基準点が
+			//	「文字位置」から「背景画像位置」へすり替わっていた）
+			if (! pic) {
 				sty.width ??= BTN_DEF_W;
 				sty.height ??= BTN_DEF_H;
 			}

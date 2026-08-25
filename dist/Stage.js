@@ -10063,25 +10063,23 @@ function Cu(e) {
 		h: e?.height ?? 30
 	};
 }
-function wu(e, t, n) {
-	if (!e) return {
+function wu(e, t) {
+	return e ? e.pic ? {
+		w: e.width ?? t?.w ?? 0,
+		h: e.height ?? t?.h ?? 0
+	} : Cu(e) : {
 		w: 100,
 		h: 30
 	};
-	let r = e.pic ? t : e.b_pic ? n : null;
-	return e.pic || e.b_pic ? {
-		w: e.width ?? r?.w ?? 0,
-		h: e.height ?? r?.h ?? 0
-	} : Cu(e);
 }
-function Tu(e, t, n) {
-	let r = {};
-	(e.left !== void 0 || e.top !== void 0 || e.s_right !== void 0 || e.s_bottom !== void 0) && (r.position = "absolute", r.margin = 0, e.s_right === void 0 ? r.left = `${String(e.left ?? 0)}px` : r.right = `${String(e.s_right)}px`, e.s_bottom === void 0 ? r.top = `${String(e.top ?? 0)}px` : r.bottom = `${String(e.s_bottom)}px`), (e.align_x !== void 0 || e.align_y !== void 0) && (r.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`);
+function Tu(e, t) {
+	let n = {};
+	(e.left !== void 0 || e.top !== void 0 || e.s_right !== void 0 || e.s_bottom !== void 0) && (n.position = "absolute", n.margin = 0, e.s_right === void 0 ? n.left = `${String(e.left ?? 0)}px` : n.right = `${String(e.s_right)}px`, e.s_bottom === void 0 ? n.top = `${String(e.top ?? 0)}px` : n.bottom = `${String(e.s_bottom)}px`), (e.align_x !== void 0 || e.align_y !== void 0) && (n.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`);
 	{
-		let { w: i, h: a } = wu(e, t, n);
-		i > 0 && (r.width = `${String(i)}px`), a > 0 && (r.height = `${String(a)}px`), e.pic || (r.fontSize = `${String(Cu(e).h)}px`, r.lineHeight = 1), r.boxSizing = "border-box";
+		let { w: r, h: i } = wu(e, t);
+		r > 0 && (n.width = `${String(r)}px`), i > 0 && (n.height = `${String(i)}px`), e.pic || (n.fontSize = `${String(Cu(e).h)}px`, n.lineHeight = 1), n.boxSizing = "border-box";
 	}
-	return e.pic && e.src && (r.backgroundImage = `url("${e.src}")`, r.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", r.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (r.opacity = e.alpha), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (r.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, r.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (r.mixBlendMode = e.blendmode), e.enabled === !1 && (r.color = "gray", r.pointerEvents = "none"), r;
+	return e.pic && e.src && (n.backgroundImage = `url("${e.src}")`, n.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", n.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (n.opacity = e.alpha), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (n.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, n.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
 function Eu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onActivate: l, onSe: u }) {
 	let d = c && s?.enabled !== !1, f = b((e) => e.btnFont), p = (0, V.useRef)(null);
@@ -10208,13 +10206,16 @@ function Eu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
 		${s?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
 		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
-			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
+			（Button.ts:249-257：sp位置はtxtの原点基準、pivotに(sp-txt)/2を使うことでtxt中心に
+			絵を揃える）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
 			（scale）は本体（箱）ではなく文字だけを包むtxtRef側に掛けているので、背景をtxtRefの
 			中ではなく箱側の::beforeに置くことで、fitに引きずられず絵の実寸のまま中央に留まる
 			（逆倍率で打ち消す必要は無い。以前はfitが箱側にもあったため打ち消しが要ったが、
-			2026-08-24のfit二重スケール修正で箱側から抜いた） */
+			2026-08-24のfit二重スケール修正で箱側から抜いた）。
+			ow/ohは**箱＝文字の既定サイズ**（btnBoxSizeはb_picでは広げない、上のコメント参照）。
+			本家のtxt.width/heightに当たる */
 		${s?.b_pic && s.b_src ? (() => {
-		let e = x?.w ?? 0, t = x?.h ?? 0, { w: n, h: r } = wu(s, _, x), i = (n - e) / 2, a = (r - t) / 2;
+		let e = x?.w ?? 0, t = x?.h ?? 0, { w: n, h: r } = wu(s, _), i = (n - e) / 2, a = (r - t) / 2;
 		return `
 				&::before {
 					content: '';
@@ -10244,7 +10245,7 @@ function Eu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 	};
 	return /* @__PURE__ */ D("span", {
 		css: T,
-		style: s ? Tu(s, _, x) : void 0,
+		style: s ? Tu(s, _) : void 0,
 		ref: p,
 		role: "button",
 		tabIndex: d ? 0 : -1,

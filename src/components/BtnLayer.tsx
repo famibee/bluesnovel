@@ -40,17 +40,21 @@ type T_BTNARG = {
 function btnSize(o: T_BTN_STY | undefined): {w: number; h: number} {
 	return {w: o?.width ?? BTN_DEF_W, h: o?.height ?? BTN_DEF_H};
 }
-// 箱の実際の大きさ。画像ボタン（pic）・背景画像ボタン（b_pic）は絵の実寸が箱の大きさになる
-//	（本家 Button.ts:280／249）。width/heightが書かれていればそちらが勝つ（本家も同様）。
-//	どちらの絵も未読込のうちは0（呼び出し側が0pxで置かないようガードする）
-function btnBoxSize(o: T_BTN_STY | undefined, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): {w: number; h: number} {
+// 箱の実際の大きさ。**画像ボタン（pic）だけ**絵の実寸が箱の大きさになる（本家 Button.ts:280）。
+//	width/heightが書かれていればそちらが勝つ（本家も同様）。絵が未読込のうちは0（呼び出し側が
+//	0pxで置かないようガードする）。
+//	b_picは対象外：left/topが位置決めするのは**文字の箱**（本家もcontainer.x/y＝txt原点で、
+//	sp（背景画像）はtxtを基準に中央合わせで後付けされるだけ。Button.ts:80-81,249-257）。
+//	ここをpic同様に絵の実寸へ広げると、left/topの基準点が「文字位置」から「背景画像位置」へ
+//	すり替わってしまう（sn_gallery ch_button #19 で発覚：本家で文字位置だった座標が分家では
+//	背景画像の左上になっていた）
+function btnBoxSize(o: T_BTN_STY | undefined, natPic: {w: number; h: number} | null): {w: number; h: number} {
 	if (! o) return {w: BTN_DEF_W, h: BTN_DEF_H};
-	const natSrc = o.pic ? natPic : o.b_pic ? natBPic : null;
-	return (o.pic || o.b_pic)
-		? {w: o.width ?? natSrc?.w ?? 0, h: o.height ?? natSrc?.h ?? 0}
+	return o.pic
+		? {w: o.width ?? natPic?.w ?? 0, h: o.height ?? natPic?.h ?? 0}
 		: btnSize(o);
 }
-function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null, natBPic: {w: number; h: number} | null): CSSProperties {
+function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null): CSSProperties {
 	const sty: CSSProperties = {};
 	if (o.left !== undefined || o.top !== undefined || o.s_right !== undefined || o.s_bottom !== undefined) {
 		sty.position = 'absolute';
@@ -73,7 +77,7 @@ function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null, natBPic:
 	{
 		// 画像ボタンは絵の実寸が箱の大きさ。読み込むまでは値を書かない
 		//	——0pxで置くと一瞬潰れて見えるため
-		const {w, h} = btnBoxSize(o, natPic, natBPic);
+		const {w, h} = btnBoxSize(o, natPic);
 		if (w > 0) sty.width = `${String(w)}px`;
 		if (h > 0) sty.height = `${String(h)}px`;
 		if (! o.pic) {
@@ -298,14 +302,17 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 			&:active {background-position-x: 50%;}
 		` : ''}
 		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
-			（Button.ts:249）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
+			（Button.ts:249-257：sp位置はtxtの原点基準、pivotに(sp-txt)/2を使うことでtxt中心に
+			絵を揃える）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
 			（scale）は本体（箱）ではなく文字だけを包むtxtRef側に掛けているので、背景をtxtRefの
 			中ではなく箱側の::beforeに置くことで、fitに引きずられず絵の実寸のまま中央に留まる
 			（逆倍率で打ち消す必要は無い。以前はfitが箱側にもあったため打ち消しが要ったが、
-			2026-08-24のfit二重スケール修正で箱側から抜いた） */
+			2026-08-24のfit二重スケール修正で箱側から抜いた）。
+			ow/ohは**箱＝文字の既定サイズ**（btnBoxSizeはb_picでは広げない、上のコメント参照）。
+			本家のtxt.width/heightに当たる */
 		${sty?.b_pic && sty.b_src ? (()=> {
 			const bw = natBPic?.w ?? 0, bh = natBPic?.h ?? 0;
-			const {w: ow, h: oh} = btnBoxSize(sty, natPic, natBPic);
+			const {w: ow, h: oh} = btnBoxSize(sty, natPic);
 			const left = (ow - bw) / 2, top = (oh - bh) / 2;
 			return `
 				&::before {
@@ -382,7 +389,7 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 	//	この要素が持つ position/width/rotation/tabIndex 等を読むE2Eテストが失敗するようになった
 	//	（2026-08-24発覚）。role="button"を付けてpage.getByRole('button', {name:…})で
 	//	名指しできるようにし、内部のtxtRef分割に関わらずクリック可能な本体を一意に取れるようにする
-	return <span css={styBtn} style={sty ? styBtnArg(sty, natPic, natBPic) : undefined} ref={ref}
+	return <span css={styBtn} style={sty ? styBtnArg(sty, natPic) : undefined} ref={ref}
 		role="button" tabIndex={isEnabled ? 0 : -1} onClick={onClick} onKeyDown={onKeyDown}
 		onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
 		onFocus={showHint} onBlur={()=> hintMng.hide()}>
