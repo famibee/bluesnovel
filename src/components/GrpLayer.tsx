@@ -67,16 +67,42 @@ function useSheet(src: string, isSheet: boolean): T_SHEET | undefined {
 	return sheet;
 }
 
+// srcが指す画像をImage()で事前ロードし、decode()完了を待ってからのみ返す（本家がpixiの
+//	テクスチャとしてロードするのと同じ待ち方）。<img>をDOMへ即挿入してブラウザのネイティブ
+//	非同期デコードへ任せると、ダウンロード／デコードが終わる前の途中経過（画像の一部だけ
+//	描画された状態）がそのまま画面に出てしまう（2026-08-23、sn_galleryの実機比較で発覚。
+//	todo.md参照）。srcが変わってもロード完了までは前回ロード済みのsrcを返し続けるため、
+//	新しい絵に完全に差し替わるまで古い絵のまま止まる（＝pixiテクスチャと同じ「前の絵のまま」）
+function useLoadedImg(src: string): string {
+	const [loadedSrc, setLoadedSrc] = useState('');
+	useEffect(()=> {
+		if (! src) {setLoadedSrc(''); return}
+
+		let alive = true;
+		const img = new Image;
+		img.src = src;
+		img.decode().then(()=> {
+			if (! alive) return;
+			setNatSize(src, img.naturalWidth, img.naturalHeight);
+			setLoadedSrc(src);
+		}).catch(()=> {/* デコード失敗（壊れた画像等）は前の絵のまま留める */});
+		return ()=> {alive = false};
+	}, [src]);
+	return loadedSrc;
+}
+
 // 差分絵（face）1枚分。基本画像と同じくisSheetならCSSアニメ再生のdiv、そうでなければimgで描く。
 //	dx,dyでdiv0基準の絶対配置、blendmodeはmix-blend-modeへそのまま渡す
 function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_SRC) {
 	const sheet = useSheet(faceSrc, isSheet);
+	const loadedSrc = useLoadedImg(isSheet ? '' : faceSrc);
 	if (! faceSrc) return null;
 
 	const styPos: CSSProperties = {position: 'absolute', left: dx, top: dy, mixBlendMode: blendmode as CSSProperties['mixBlendMode']};
 	if (sheet) return <div className={aniSpriteClass(sheet)} style={styPos} data-fn={faceFn}/>;
 	if (isSheet) return null;	// シート読み込み中はまだ描かない（基本画像と同じ挙動）
-	return <img src={faceSrc} data-fn={faceFn} style={styPos}/>;
+	if (! loadedSrc) return null;	// デコード完了まで描かない
+	return <img src={loadedSrc} data-fn={faceFn} style={styPos}/>;
 }
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
@@ -101,6 +127,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	fn（論理名。例："anime"）は拡張子を持たないためここでは判定できず、
 	//	crypto構成ではsrcもBlob URLに化けて拡張子情報を失う
 	const sheet = useSheet(src, isSheet);
+
+	// 基本画像もアニメpngシートと同じくuseLoadedImgでdecode完了を待ってから描く
+	//	（isSheet/isMovie時はここでロード不要なので''を渡してスキップ）
+	const loadedSrc = useLoadedImg(isSheet || isMovie ? '' : src);
 
 	// 動画（[lay fn=movie.mp4/.webm]）はisMovie propsで判定（上記isSheetと同じ理由でfnからは
 	//	判定できない。`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）。
@@ -133,12 +163,12 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true} onMouseDown={onMouseDown}>
 		{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 			（Reactがページ全体再ダウンロードの可能性を警告するため）。
-			アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない） */}
+			アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない）。
+			基本画像はuseLoadedImgでdecode完了を待ってから描く（読み込み中は前の絵のまま） */}
 		{sheet && <div className={aniSpriteClass(sheet)}/>}
 		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
-		{src && ! isSheet && ! isMovie && <img src={src} style={styFit}
-			onLoad={e=> {setNatSize(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}}/>}
+		{loadedSrc && ! isSheet && ! isMovie && <img src={loadedSrc} style={styFit}/>}
 		{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

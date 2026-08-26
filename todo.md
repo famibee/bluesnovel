@@ -81,17 +81,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
   - [ ] 復活したら`eslint-plugin-import`（2.32.0のまま更新停止、ESLint 10対応PRが未マージ）を`eslint-plugin-import-x`へ切替。peerDependencyがESLint 10を公式サポート済みで移行も軽微（このリポジトリの`import/no-unresolved: 'off'`1行だけ`import-x/`にプレフィックスを変える程度）。本家`skynovel_esm`もeslint関連が全く同じバージョン構成・同じ1行なので同時に対応可能
 - [ ] `test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は再開時に再利用可能
-- [ ] **画像レイヤ、ロード中の途中経過が画面に見えてしまう**：`GrpLayer.tsx`は`<img src=…>`を
-      DOMへ即座に挿入しブラウザのネイティブ非同期デコードへ任せているため、ダウンロード／
-      デコードが終わる前の状態（画像の上半分だけ描画され下半分はまだ何も無い、等）がそのまま
-      画面に出ることがある。加えて`width: max-content`（`GrpLayer.tsx:137`）は自然サイズが
-      確定するまで箱ごと縮小されうる。本家はpixi(WebGL)のテクスチャとしてロードするため、
-      完全ロードまで前の絵のまま止まり、この過渡状態は見えない。2026-08-23、sn_galleryの
-      topプロジェクト実機比較でユーザーが発見（`localhost:8082`のスクショで背景画像が右下に
-      小さく縮小＋黒帯／上半分だけ白いまま、という形で顕在化。`bluesnovel.png`参照）。
-      ローカル環境ではほぼ発生しないため優先度低いが再現条件は明確：`Image()`で事前に
-      デコード完了を待ってから`<img>`をDOMへ入れる（本家のテクスチャロードと同じ待ち方）か、
-      少なくとも`opacity: 0→1`のフェードインで途中経過を隠す、のどちらかで直せる見込み
 
 ## 凍結
 
