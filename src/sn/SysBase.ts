@@ -162,7 +162,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			addLayCls,
 			searchPath	: (fn, extptn)=> this.cfg.searchPath(fn, extptn),
 			getVal		: (nm, def)=> scrMng.getVal(nm, def),
-			// resumeはaddLayCls（[lay]のisWait対応。未実装）とaddTagの両方が使う共通の再開口。
+			// resumeはaddLayCls（[lay]のisWait対応）とaddTagの両方が使う共通の再開口。
 			//	addTag側はresumePlg()でないと#procingが下りず無視される（ScriptMng.resumePlg()参照）
 			resume		: ()=> {scrMng.resumePlg()},
 			// pixi.js専用（DisplayObjectのRenderTexture焼き）。bluesnovelはDOMへ直接描くので不要

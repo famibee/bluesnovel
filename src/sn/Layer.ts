@@ -36,8 +36,9 @@ export class Layer {
 
 	destroy() {this.ctn.remove()}
 
-	// 戻り値は本家の isWait（trueなら[lay]でシナリオを止め、pia.resume()での再開を待つ）。
-	//	bluesnovel側の実配線は未対応（PITFALLS/todo.md参照）で、現状は常にfalse扱いで進む
+	// 戻り値は本家の isWait（trueなら[lay]でシナリオを止め、pia.resume()での再開を待つ。
+	//	実配線はScriptEngine.tsの'lay'/'add_lay'ケースとScriptMng.ts#procPlgLay()）。
+	//	既定はfalse（同期完了）。ロード待ち等が要るサブクラスだけoverrideしてtrueを返す
 	lay(_hArg: TArg): boolean {return false}
 	clearLay(_hArg: TArg): void { /* empty */ }
 	record(): T_RecordPlayBack_lay {return {name: this.layname, idx: 0}}

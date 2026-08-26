@@ -13,7 +13,7 @@
 //	つまりブラウザでしか確かめられない部分だけ
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, pressKey, waitIdle, waitTransDone, waitTransRunning} from './snPage';
+import {gotoSn, pressKey, pressKeyToWaitMark, waitIdle, waitTransDone, waitTransRunning} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'plg')});
 
@@ -38,6 +38,13 @@ test('addLayClsで登録したプラグインレイヤーが実DOMへ現れ、[l
 	const left = await page.locator('#skynovel [data-page="fore"] [data-lay="x"]').evaluate(e=> (e as HTMLElement).style.left);
 	expect(left).toBe('10px');
 
+	// [lay layer=x dmy_wait=true]：[lay]のisWait対応。DmyLayer.lay()がtrueを返した直後は
+	//	まだ待機中（#procing=true）で、その間のクリックは#goSafe()に捨てられるため、
+	//	50ms後にpia.resume()が呼ばれ「待った。[l]」の本物の停止点へ着くまでpressKeyToWaitMark()で待つ
+	await pressKeyToWaitMark(page, 'Space');
+	await expect.poll(async ()=> ctn.getAttribute('data-lay-wait')).toBe('done');
+	await expect.poll(async ()=> ctn.textContent()).toBe(JSON.stringify({layer: 'x', dmy_wait: 'true'}));
+
 	// [clear_lay layer=x page=both]でLayer.clearLay()が呼ばれ、中身が消える
 	await pressKey(page, 'Space');	// [l]から[s]まで進める
 	await expect.poll(async ()=> page.locator(dmyCtn()).getAttribute('data-cleared')).toBe('true');
@@ -47,7 +54,10 @@ test('addTagで登録したタグが実行され、属性ハッシュとisWait/r
 	await waitIdle(page);
 
 	// [l]から[s]までの間に[dmy_tag foo=1 bar=2][dmy_tag_async]が挟まる（main.sn参照）。
-	//	dmy_tagは即座に完了（isWait=false）、dmy_tag_asyncは50ms後にpia.resume()で再開する
+	//	間に挟まる[lay layer=x dmy_wait=true]のisWait（#procing中はクリックが捨てられる）を
+	//	pressKeyToWaitMark()で安全に越えてから「待った。[l]」に着く
+	await pressKeyToWaitMark(page, 'Space');
+	// dmy_tagは即座に完了（isWait=false）、dmy_tag_asyncは50ms後にpia.resume()で再開する
 	//	（isWait=true）ので、[s]（本当のシナリオ終端。[s]の停止はクリックでは越えられない）へ
 	//	着く前に両方が実行されているはず
 	await pressKey(page, 'Space');
@@ -62,7 +72,10 @@ test('addTagで登録したタグが実行され、属性ハッシュとisWait/r
 //	[trans]後に「新しい裏（＝元の表）」が「新しい表」の値へ複製されているかを見る
 //	（本家 Pages.transPage() の back.copy(fore) 相当。PlgLayMng.finishTrans()の役目）
 test('[trans]でプラグインレイヤーの中身が新しい裏へ複製される（演出なし・time=0）', async ({page})=> {
-	await pressKey(page, 'Space');	// [l]から「消した。[l]」まで進める
+	await pressKeyToWaitMark(page, 'Space');	// [l]から「待った。[l]」（[lay dmy_wait=true]のisWait）まで進める
+	// 「消した。[l]」まで進める。この間の[dmy_tag_async]もisWaitで#procing中はクリックが
+	//	捨てられるため、続けてもう一度押す以上pressKeyToWaitMark()で本物の停止点を確認する
+	await pressKeyToWaitMark(page, 'Space');
 	// [lay layer=y val=A]（表）／[lay layer=y val=B page=back]（裏）→[trans layer=y time=0]
 	await pressKey(page, 'Space');
 
@@ -74,7 +87,8 @@ test('[trans]でプラグインレイヤーの中身が新しい裏へ複製さ�
 });
 
 test('[trans]でプラグインレイヤーの中身が新しい裏へ複製される（演出あり・タイマー駆動の#finishTrans経由）', async ({page})=> {
-	await pressKey(page, 'Space');	// 消した。[l]
+	await pressKeyToWaitMark(page, 'Space');	// 待った。[l]（[lay dmy_wait=true]のisWait）
+	await pressKeyToWaitMark(page, 'Space');	// 消した。[l]（[dmy_tag_async]のisWait）
 	await pressKey(page, 'Space');	// 1回目の[trans layer=y time=0]
 
 	// [lay layer=y val=C page=back]→[trans layer=y time=100][wt]

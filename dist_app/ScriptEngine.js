@@ -1822,16 +1822,17 @@ var re = class e {
 				if (!e) throw "[add_lay] layerは必須です（試作仕様）";
 				let t = (i.class ?? "txt").toLowerCase();
 				if (!u(t)) throw `[add_lay] 属性 class【${t}】が不正です。レイヤクラスが登録されていません`;
+				let n = t !== "grp" && t !== "txt";
 				this.#w[e] = t, this.#y[e] = "", this.#b[e] = "", t === "txt" && this.#k.setNochk(`save:const.sn.layer.${e}.enabled`, !0), l.push({
 					t: "addLay",
 					cls: t,
 					nm: e
 				});
-				let n = i.layer === void 0 ? {
+				let r = i.layer === void 0 ? {
 					...i,
 					layer: e
 				} : i;
-				return this.#ee(n, l, "fore", !0), this.#ee(n, l, "back", !0), this.#te(n, l), "skip";
+				return this.#ee(r, l, "fore", !0), this.#ee(r, l, "back", !0), this.#te(r, l), n ? "stop" : "skip";
 			}
 			case "current": {
 				let e = i.layer ?? i.nm ?? this.#v;
@@ -1850,7 +1851,9 @@ var re = class e {
 			}
 			case "lay": {
 				let t = e.argPage(i, "fore");
-				return this.#ee(i, l, t), this.#te(i, l), "skip";
+				this.#ee(i, l, t), this.#te(i, l);
+				let n = this.#w[i.layer ?? ""] ?? "txt";
+				return n !== "grp" && n !== "txt" ? "stop" : "skip";
 			}
 			case "add_filter": return l.push({
 				t: "addFilter",

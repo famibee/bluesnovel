@@ -87,26 +87,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       上記「依存の付け替え」参照）だと`[add_lay layer=3d class=3d]`が`Cannot set properties of
       undefined (setting 'position')`で例外になる（本家`Layer.ctn`はpixi.jsのSprite、
       `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
-- [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
-      本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
-
-## 要検証（出自不確か・追跡工数を投じない）
-
-**縦書きグリフ描画不具合**：2026-08-17、上記の改行位置ズレ調査中に**Claude自身が実機比較の
-スクリーンショット目視で発見・自己判定**した現象（禁則で次列へ送られた対の2文字目のグリフが
-描画されない）。**ユーザーによる観測報告は一度もない**（本人へ確認したところ「今初めて聞いた」
-とのこと）。根拠は目視1回のみで、以後の追試（手動3回・フォント読み込み遅延注入17回・実アプリ
-自動周回80回、累計100試行超）は**すべて非再現**。観測アーティファクト（Claudeの誤認）である
-可能性を排除できていないため、**ユーザーまたは第三者が実機で再現を確認するまで追跡工数を
-投じない**。詳細はCHANGELOG.md 2026-08-17の該当エントリ群を参照。
-
-対策として行ったGSAP→Web Animations API置換（コミット`3b7eeb2`）は**取り消さない**：動機は
-誤っていたが、副次的に実バグ2件（`sty4Moveable`の恒等transform常時適用、ルビ`marginBlockStart`の
-`getBoundingClientRect`誤用）を修正済みで、E2E・単体テストとも回帰なしを実機確認済みのため
-
-`test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・
-`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は
-再開時に再利用可能
 
 ## 保留
 
@@ -118,6 +98,7 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
   - [ ] グループ位置指定/移動（face合成した画像群を1つの単位として、デザインモードで位置調整・移動する仕様の検討）。再設計時、Moveableリサイズで差分画像（face）の`dx`/`dy`が絶対px指定のため拡大縮小に追随しない問題（`GrpLayer.tsx`）も併せて直す（書き戻し先が無いため今は保留。2026-08-10調査）
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
   - [ ] 復活したら`eslint-plugin-import`（2.32.0のまま更新停止、ESLint 10対応PRが未マージ）を`eslint-plugin-import-x`へ切替。peerDependencyがESLint 10を公式サポート済みで移行も軽微（このリポジトリの`import/no-unresolved: 'off'`1行だけ`import-x/`にプレフィックスを変える程度）。本家`skynovel_esm`もeslint関連が全く同じバージョン構成・同じ1行なので同時に対応可能
+- [ ] `test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は再開時に再利用可能
 - [ ] **画像レイヤ、ロード中の途中経過が画面に見えてしまう**：`GrpLayer.tsx`は`<img src=…>`を
       DOMへ即座に挿入しブラウザのネイティブ非同期デコードへ任せているため、ダウンロード／
       デコードが終わる前の状態（画像の上半分だけ描画され下半分はまだ何も無い、等）がそのまま

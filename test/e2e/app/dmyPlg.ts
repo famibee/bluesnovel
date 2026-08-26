@@ -14,11 +14,24 @@ import {Layer} from '../../../src/web';
 import type {T_RecordPlayBack_lay} from '../../../src/sn/Layer';
 
 class DmyLayer extends Layer {
-	constructor() {
+	constructor(private readonly pia: T_PluginInitArg) {
 		super();
 		this.ctn.dataset.dmy = 'ctn';	// attachBox()でPlgLayer.tsxの箱へ入った後、E2E側がこれで検出する
 	}
 	override lay(hArg: TArg): boolean {
+		// dmy_wait=true：[lay]のisWait対応（本家 Pages.lay()の戻り値相当。glTFロード待ち等の
+		//	最小例）。50ms後にpia.resume()で再開する。addTag側のdmy_tag_asyncと同じ形。
+		//	属性名はwaitにしない：TArg.waitは既に汎用の待ち時間(msec)属性として予約済みのため。
+		//	TArgはT_HTagの定義済み属性しか型で持たないので、独自属性の参照は生ハッシュへキャストする
+		if ((hArg as unknown as {[k: string]: string}).dmy_wait === 'true') {
+			this.ctn.dataset.layWait = 'waiting';
+			setTimeout(()=> {
+				this.ctn.textContent = JSON.stringify(hArg);
+				this.ctn.dataset.layWait = 'done';
+				this.pia.resume();
+			}, 50);
+			return true;
+		}
 		// 受け取った属性ハッシュ丸ごとをtextContentへ（layPlgが本当に「属性ハッシュそのもの」を
 		//	渡しているかをE2E側から検証できるように）
 		this.ctn.textContent = JSON.stringify(hArg);
@@ -41,7 +54,7 @@ class DmyLayer extends Layer {
 
 // hPlg.dmyPlg = await import('./dmyPlg') とそのままT_Pluginとして使う（snsys_pre.tsと同じ形）
 export async function init(pia: T_PluginInitArg) {
-	pia.addLayCls('dmy', ()=> new DmyLayer());
+	pia.addLayCls('dmy', ()=> new DmyLayer(pia));
 
 	// addTagの疎通確認：即座に完了するタグ（isWait=false）。属性ハッシュが丸ごと渡ることを
 	//	DOMへ書き込んでE2E側から検証する

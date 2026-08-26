@@ -30,7 +30,9 @@ afterEach(()=> {
 it('add_lay_pluginClsRegistersAndEmitsLayPlgTwice', ()=> {
 	// [add_lay]は本家 Pages コンストラクタ（f.lay/b.lay）と同じく表裏2回ぶんlayPlgを積む。
 	//	位置・寸法系属性を一つも書いていないので、プラグインレイヤーの既定（箱をステージ全体へ
-	//	フィット）のchgLayも表裏それぞれに挟まる（window.width/heightはテスト環境に無いのでNaN）
+	//	フィット）のchgLayも表裏それぞれに挟まる（window.width/heightはテスト環境に無いのでNaN）。
+	//	isPlgの[add_lay]はisWait対応のためstep()をここで打ち切る（'stop'）ので、[s]は
+	//	次のstep()呼び出しに回る
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][s]');
 	const a = se.step();
 	expect(a).toEqual([
@@ -39,8 +41,8 @@ it('add_lay_pluginClsRegistersAndEmitsLayPlgTwice', ()=> {
 		{t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', class: 'dmy'}},
 		{t: 'chgLay', nm: 'x', page: 'back', sty: {left: 0, top: 0, width: NaN, height: NaN}},
 		{t: 'layPlg', nm: 'x', page: 'back', hArg: {layer: 'x', class: 'dmy'}},
-		{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'},
 	]);
+	expect(se.step()).toEqual([{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'}]);
 });
 
 it('add_lay_unknownClsThrows', ()=> {
@@ -50,21 +52,26 @@ it('add_lay_unknownClsThrows', ()=> {
 
 it('lay_pluginLayer_emitsLayPlgWithRawAttrs_notChgPic', ()=> {
 	// [lay layer=x foo=1 fn=model.gltf]：fn=はプラグイン独自解釈（本家[lay type=gltf fn=…]相当）
-	//	なので、grp専用のchgPicを積んではいけない（積むとstore側でfindLay(…,'grp')が例外になる）
+	//	なので、grp専用のchgPicを積んではいけない（積むとstore側でfindLay(…,'grp')が例外になる）。
+	//	isPlgの[add_lay]/[lay]はそれぞれstep()を打ち切るので、[lay]の分は2回目のstep()に出る
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][lay layer=x foo=1 fn=model.gltf][s]');
-	const a = se.step();
-	const aLayPlg = a.filter(v=> v.t === 'layPlg');
+	const a1 = se.step();
+	const a2 = se.step();
+	const aLayPlg = [...a1, ...a2].filter(v=> v.t === 'layPlg');
 	expect(aLayPlg).toEqual([
 		{t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', class: 'dmy'}},
 		{t: 'layPlg', nm: 'x', page: 'back', hArg: {layer: 'x', class: 'dmy'}},
 		{t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', foo: '1', fn: 'model.gltf'}},
 	]);
-	expect(a.some(v=> v.t === 'chgPic')).toBe(false);
+	expect(a1.some(v=> v.t === 'chgPic')).toBe(false);
+	expect(a2.some(v=> v.t === 'chgPic')).toBe(false);
 });
 
 it('lay_pluginLayer_commonStyStillApplies', ()=> {
-	// 共通の見た目（left/alpha等）は「箱」（components/Layer.tsx）が持つのでプラグインにも効く
+	// 共通の見た目（left/alpha等）は「箱」（components/Layer.tsx）が持つのでプラグインにも効く。
+	//	[add_lay]で1回step()を消費するので、[lay]の結果は2回目のstep()を見る
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][lay layer=x left=10 alpha=0.5][s]');
+	se.step();
 	const a = se.step();
 	expect(a).toContainEqual({t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 10, alpha: 0.5}});
 	expect(a).toContainEqual({t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', left: '10', alpha: '0.5'}});
@@ -76,8 +83,9 @@ it('lay_pluginLayer_txtOnlyAttrsIgnoredNotThrown', ()=> {
 	//	 プラグイン向けはそもそもchgLayのstyに積まない設計）。
 	//	[add_lay]自身が積む既定サイズのchgLay（表裏2つ）はb_colorと無関係なので対象外
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][lay layer=x b_color=0xffffff][s]');
-	const a = se.step();
-	const aChgLay = a.filter(v=> v.t === 'chgLay');
+	const a1 = se.step();
+	const a2 = se.step();
+	const aChgLay = [...a1, ...a2].filter(v=> v.t === 'chgLay');
 	expect(aChgLay).toHaveLength(2);	// [add_lay]の表裏ぶんのみ
 	expect(aChgLay.every(v=> ! ('b_color' in v.sty))).toBe(true);
 });

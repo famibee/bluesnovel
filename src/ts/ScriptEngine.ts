@@ -1350,6 +1350,7 @@ export class ScriptEngine {
 			//	プラグインcls（[add_lay class=3d]等）を受け付けるにはタイポと未登録プラグインを
 			//	見分ける必要があるため、ここで検査する
 			if (! hasLayCls(cls)) throw `[add_lay] 属性 class【${cls}】が不正です。レイヤクラスが登録されていません`;
+			const isPlg = cls !== 'grp' && cls !== 'txt';
 			this.#hLayCls[nm] = cls;
 			this.#hTxt[nm] = '';
 			this.#hTxtBk[nm] = '';
@@ -1367,7 +1368,9 @@ export class ScriptEngine {
 			this.#applyLayPage(argsL, aAct, 'fore', true);
 			this.#applyLayPage(argsL, aAct, 'back', true);
 			this.#applyLayOrder(argsL, aAct);
-			return 'skip';
+			// プラグインレイヤーはisWait対応のため、この[add_lay]をstep()の末尾にする
+			//	（本家 Pages.lay()の戻り値相当。ScriptMng.#procPlgLay()が実際の呼び出しと待ち合わせを行う）
+			return isPlg ? 'stop' : 'skip';
 		}
 		case 'current': {	// デフォルト文字レイヤ切替（試作簡略：layer属性のみ）
 			// 切替**前**に履歴を確定させる（本家 LayerMng.ts:956「カレント変更前に現在の履歴を保存」）。
@@ -1398,7 +1401,10 @@ export class ScriptEngine {
 			const page = ScriptEngine.argPage(args, 'fore');	// 書き込み先のページ（本家 Pages.argChk_page(hArg, 'fore')）
 			this.#applyLayPage(args, aAct, page);
 			this.#applyLayOrder(args, aAct);
-			return 'skip';
+			// プラグインレイヤーはisWait対応のため、この[lay]をstep()の末尾にする
+			//	（本家 Pages.lay()の戻り値相当。ScriptMng.#procPlgLay()が実際の呼び出しと待ち合わせを行う）
+			const cls = this.#hLayCls[args.layer ?? ''] ?? 'txt';
+			return cls !== 'grp' && cls !== 'txt' ? 'stop' : 'skip';
 		}
 
 		// ---- フィルター（本家 LayerMng.ts:836 #add_filter() 他） ----

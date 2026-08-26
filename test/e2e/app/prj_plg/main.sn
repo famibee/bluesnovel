@@ -1,10 +1,13 @@
 ; E2E用シナリオ（plg.e2e.ts）。プラグイン（[add_lay class=dmy]/addTag）の疎通確認。
-;	class=dmy・dmy_tag・dmy_tag_asyncはtest/e2e/app/dmyPlg.tsが起動時に登録するダミー
+;	class=dmy・dmy_tag・dmy_tag_asyncはtest/e2e/app/dmyPlg.tsが起動時に登録するダミー。
+;	[lay layer=x dmy_wait=true]は[lay]のisWait対応（DmyLayer.lay()が50ms後にpia.resume()で再開）
 [add_lay layer=mes class=txt]
 [current layer=mes]
 [add_lay layer=x class=dmy]
 [lay layer=x foo=bar left=10]
 プラグインレイヤーを追加した。[l]
+[lay layer=x dmy_wait=true]
+待った。[l]
 [clear_lay layer=x page=both]
 [dmy_tag foo=1 bar=2]
 [dmy_tag_async]
