@@ -370,18 +370,29 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	本文に戻れず読み進められなくなる」不具合対応）。[enable_event enabled=false]の間は
 	//	クリックも受けないレイヤなので、BtnLayer.tsxと同じ理由でフォーカス対象からも外す
 	const canFocusWait = wantWaitEl && enabled;
+	// 縦書きか（本家 TxtStage.ts:263 も算出スタイルで見る）。[lay style=…]でしか変わらないので
+	//	そのCSS文字列とインラインstyleが変わったときだけ測り直す
+	const [isTate, setIsTate] = useState(false);
+	useLayoutEffect(()=> {
+		const el = boxRef.current;
+		setIsTate(!! el && globalThis.getComputedStyle(el).writingMode.startsWith('vertical'));
+	}, [sCss, sty]);
 	const styWaitMark = css`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
-		/* **回転は付けない**。横書き用に描かれた▶（次の行の方向を指す絵）は、writing-modeを
-			継承したinline-block（この要素自身）が縦書きコンテナ内でorthogonal flowとして
-			扱われる結果、明示的なrotateを足さなくても▶→◀（次の行＝左方向を指す）へ自動的に
-			回って見える（実機確認2026-08-23：sn_galleryトップの左端マーク。rotateを足すと
-			この暗黙の回転に上乗せされて二重に回ってしまう＝一時的にrotate:90deg/180degを
-			試して混乱した経緯がある。詳細はコミットログ参照） */
+		/* **縦書きでは書字方向に合わせてマークも回す**（-90°）。背景画像も<img>も
+			writing-modeでは回らないので、横書き用に描かれた▼（次の行の方向を指す絵）が
+			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
+			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
+			置いているため、向きが本文と食い違うと目立つ。
+			**一度「writing-modeの継承だけで自動的に回って見える」と誤認してrotateを外したことが
+			あるが、実機検証で回転していないことを確認済み（inline-blockの中身は横書きのまま描画
+			される。orthogonal flowが効くのは子要素自身がwriting-modeを持つ場合で、この要素は
+			継承しているだけなので該当しない）。2026-08-26 復元 */
+		${isTate ? 'rotate: -90deg;' : ''}
 		/* [waitclick]用プロキシ、および[l]/[p]でbreakline/breakpage未指定のときは中身が空
 			（マーカーなし、本家準拠）。中身が無いinline-blockは0x0になりFocusMng.#canFocus()の
 			getClientRects()判定に落ちてフォーカスできなくなるため、widthやheightが明示されて
@@ -1029,7 +1040,7 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | unde
 	let group = hLnkGroup.get(lnk);
 	if (! group) {group = {members: [], hoverCnt: 0}; hLnkGroup.set(lnk, group)}
 	const g = group;
-	g.members.push({el, sty, rt, rSty});
+	g.members.push({el, sty, rSty, ...(rt !== undefined ? {rt} : {})});
 
 	// ツールチップ（[link hint=…]）とstyle_hover。どちらも「区間のどこかに」乗っている間だけ
 	//	効果音（本家 EventMng.ts:465-491、[button]と同じ形。enabled=falseの間は

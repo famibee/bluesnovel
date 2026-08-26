@@ -14,8 +14,9 @@
 //	・[button]（表示中ずっと。ボタン1 / ボタン2）
 //	これに加え、bluesnovel独自の4経路目として[l]待ちマーカー自身も輪に入る（todo.md「本文で
 //	左右キーでシステムボタンにフォーカスが移った後、本文に戻れず読み進められなくなる」対策）。
-//	'ふぉーかす[l]'の停止中はこのシナリオに breakline/breakpage 画像が無いので絵文字🩷になり、
-//	focused()の表示は`btn:🩷`（iframe/HTML要素ではないのでbtn:分岐に落ちる）
+//	'ふぉーかす[l]'の停止中はこのシナリオに breakline/breakpage 画像が無いので中身の無いプロキシ
+//	要素になり（TxtLayer.tsx styWaitMark参照）、focused()の表示は`wait-marker`（data-wait-focus
+//	属性で見分ける。textContentが空なのでbtn:分岐では判別できない）
 
 import {expect, test, type Page} from '@playwright/test';
 import {gotoSn, mesStr, pressKey, waitIdle} from './snPage';
@@ -30,14 +31,17 @@ const advance = async (page: Page, to: string)=> {
 	await page.keyboard.press('Space');
 	await seeText(page, to);
 };
-// 今フォーカスされているものの見分け（フレーム内ならそのid、ステージ上のボタンならその文字）
+// 今フォーカスされているものの見分け（フレーム内ならそのid、ステージ上のボタンならその文字、
+//	[l]/[p]待ちマーカーのプロキシならdata-wait-focus属性で判別）
 const focused = (page: Page)=> page.evaluate(()=> {
 	const a = document.activeElement;
 	if (a instanceof HTMLIFrameElement) {
 		const b = a.contentDocument?.activeElement;
 		return b && b !== a.contentDocument?.body ? `frm:${b.id}` : '(frame)';
 	}
-	return a && a !== document.body ? `btn:${a.textContent ?? ''}` : '(none)';
+	if (! a || a === document.body) return '(none)';
+	if ((a as HTMLElement).dataset.waitFocus !== undefined) return 'wait-marker';
+	return `btn:${a.textContent ?? ''}`;
 });
 
 // [set_focus]の並ぶところまで進める
@@ -69,7 +73,7 @@ test('[set_focus to=next]が輪を順に巡る', async ({page})=> {
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
 
 	await page.keyboard.press('ArrowRight');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 
 	// 一周して先頭へ戻る
 	await page.keyboard.press('ArrowRight');
@@ -81,7 +85,7 @@ test('[set_focus to=prev]は逆順に巡る', async ({page})=> {
 
 	// 誰も選んでいない状態からのprevは末尾（[l]待ちマーカー）へ
 	await page.keyboard.press('ArrowLeft');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 
 	await page.keyboard.press('ArrowLeft');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
@@ -98,7 +102,7 @@ test('[l]待ちマーカーへフォーカスしてEnterで読み進められる
 
 	// 末尾（[l]待ちマーカー）へ一手で移動
 	await page.keyboard.press('ArrowLeft');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 
 	await page.keyboard.press('Enter');
 	// [l]なのでクリアされず積み増し。次の[l]（'ぱっど'）まで進む
@@ -118,18 +122,18 @@ test('[l]待ちマーカーから移動して戻ってきてもフォーカス�
 
 	// 末尾（[l]待ちマーカー）へ一手で移動
 	await page.keyboard.press('ArrowLeft');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 
 	// 隣（ボタン2）へ離れて、また戻る
 	await page.keyboard.press('ArrowLeft');
 	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:ボタン2');
 	await page.keyboard.press('ArrowRight');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 
 	// マーカー上での足踏み（前後移動を挟まず同じ場所への再訪）でも見失わない
 	await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('ArrowRight');
-	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('btn:🩷');
+	await expect.poll(async ()=> focused(page), {timeout: 5_000}).toBe('wait-marker');
 });
 
 test('[set_focus to=null]でフォーカスが外れる', async ({page})=> {

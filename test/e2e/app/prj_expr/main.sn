@@ -7,7 +7,7 @@
 ;	test/ScriptEngine*.test.ts が受け持つので、ここでは扱わない
 [add_lay layer=mes class=txt]
 [current layer=mes]
-[lay layer=mes b_alpha=0.4]
+[lay layer=mes b_alpha=0.4 b_color=0x7FFFD4]
 [let name=game:name text=ゆかり]
 [trace text=&game:name]
 

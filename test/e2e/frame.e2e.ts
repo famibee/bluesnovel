@@ -154,7 +154,13 @@ test('別フレームに前面から覆われている間、[frame disabled=]無
 	const frmActiveId = ()=> page.evaluate(
 		()=> (document.getElementById('yesno') as HTMLIFrameElement)
 			.contentDocument?.activeElement?.id || null);
-	const activeText = ()=> page.evaluate(()=> document.activeElement?.textContent ?? null);
+	// [l]/[p]待ちマーカーのプロキシ（TxtLayer.tsx）はtextContentが空なので、data-wait-focus
+	//	属性で見分けて分かりやすい印に置き換える
+	const activeText = ()=> page.evaluate(()=> {
+		const a = document.activeElement;
+		if (a instanceof HTMLElement && a.dataset.waitFocus !== undefined) return '(wait-marker)';
+		return a?.textContent ?? null;
+	});
 
 	await waitIdle(page);
 
@@ -173,11 +179,11 @@ test('別フレームに前面から覆われている間、[frame disabled=]無
 
 	// 覆われている間：8回動かしてもyesnoフレーム内には一度も入らず、b1/b2と
 	//	現在の[p]待ちマーカー自身（bluesnovel独自の4経路目。todo.md対応。breakline/breakpage
-	//	画像が無いこのシナリオでは絵文字✅）だけを回る
+	//	画像が無いこのシナリオでは中身の無いプロキシ＝(wait-marker)）だけを回る
 	for (let i = 0; i < 8; ++i) {
 		await page.keyboard.press('ArrowRight');
 		expect(await frmActiveId()).toBeNull();
-		expect(await activeText()).toMatch(/^(ボタン[12]|✅)$/);
+		expect(await activeText()).toMatch(/^(ボタン[12]|\(wait-marker\))$/);
 	}
 	await page.keyboard.press('Escape');
 

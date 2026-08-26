@@ -23,8 +23,10 @@ test('[trace]がデバッグ表示へ出力される', async ({page})=> {
 });
 
 test('[lay b_alpha=…]が文字レイヤ背景の不透明度へ反映される', async ({page})=> {
-	// TxtLayer.tsx が背景色 rgba(127, 255, 212, b_alpha × sys:TextLayer.Back.Alpha) として描く
-	//	（本家 TxtLayer.ts:388。sys:の既定は0.5なので 0.4 × 0.5 = 0.2）
+	// TxtLayer.tsx が背景色 rgba(b_color, b_alpha × sys:TextLayer.Back.Alpha) として描く
+	//	（本家 TxtLayer.ts:388。sys:の既定は0.5なので 0.4 × 0.5 = 0.2）。
+	//	**[lay b_color=…]が無い層は背景自体を描かない**（本家準拠。2026-08-23）ので、
+	//	この検証のためmain.snでb_color=0x7FFFD4（aquamarine=127,255,212）を明示している
 	expect(await txtBoxStyle(page, 'background-color')).toBe('rgba(127, 255, 212, 0.2)');
 
 	const {aLay} = await snap(page);

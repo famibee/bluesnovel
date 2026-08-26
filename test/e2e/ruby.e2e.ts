@@ -86,9 +86,9 @@ test('[span]/[ch]/[ruby2]のstyle・r_styleが実際の色になる', async ({pa
 	expect(await mesStr(page)).toBe('赤黒緑蜊');
 	expect(await aColor(page)).toEqual([
 		'赤:rgb(255, 0, 0)',	// [span style=…]から
-		'黒:rgb(0, 0, 0)',		// 属性なしの[span]で解除された
+		'黒:rgb(255, 255, 255)',		// 属性なしの[span]で解除された（既定色はwhite。本家 TxtLayer.ts:272）
 		'緑:rgb(0, 128, 0)',	// [ch style=…]はそのtextの間だけ
-		'蜊:rgb(0, 0, 0)/あさり:rgb(0, 0, 255)',	// [ruby2 r_style=…]はルビ側だけ
+		'蜊:rgb(255, 255, 255)/あさり:rgb(0, 0, 255)',	// [ruby2 r_style=…]はルビ側だけ
 	]);
 	expect((await snap(page)).wait).toEqual({nm: 'mes', kind: 'l'});
 });
@@ -100,8 +100,8 @@ test('[link]はクリックでジャンプし、argを飛び先へ渡す', async
 	// リンク区間の文字だけがクリックできる（[link style=…]も当たっている）
 	expect(await aColor(page)).toEqual([
 		'リ:rgb(0, 0, 255)', 'ン:rgb(0, 0, 255)', 'ク:rgb(0, 0, 255)',
-		'と:rgb(0, 0, 0)',
-		'628:rgb(0, 0, 0)/炎:rgb(0, 0, 0)',	// [tcy]はルビ付きで1単位
+		'と:rgb(255, 255, 255)',	// 既定色はwhite（本家 TxtLayer.ts:272）
+		'628:rgb(255, 255, 255)/炎:rgb(255, 255, 255)',	// [tcy]はルビ付きで1単位
 	]);
 	// 縦中横はCSSのtext-combine-uprightで組む（横書きなので見た目は変わらないが指定はされる）
 	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby > span`,

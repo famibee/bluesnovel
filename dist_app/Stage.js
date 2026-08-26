@@ -10402,18 +10402,27 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			e = !1;
 		};
 	}, [Se, Ce]);
-	let Ee = a && !te && !re && W !== null && W.nm === r, De = Ee && W.kind !== "waitclick", Oe = De && (!!we || !!Se && !Ce), ke = Ee && N, Ae = Su`
+	let Ee = a && !te && !re && W !== null && W.nm === r, De = Ee && W.kind !== "waitclick", Oe = De && (!!we || !!Se && !Ce), ke = Ee && N, [Ae, je] = (0, V.useState)(!1);
+	(0, V.useLayoutEffect)(() => {
+		let e = de.current;
+		je(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
+	}, [E, n]);
+	let Me = Su`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
 			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
 		margin-inline-start: 0.15em;
-		/* **回転は付けない**。横書き用に描かれた▶（次の行の方向を指す絵）は、writing-modeを
-			継承したinline-block（この要素自身）が縦書きコンテナ内でorthogonal flowとして
-			扱われる結果、明示的なrotateを足さなくても▶→◀（次の行＝左方向を指す）へ自動的に
-			回って見える（実機確認2026-08-23：sn_galleryトップの左端マーク。rotateを足すと
-			この暗黙の回転に上乗せされて二重に回ってしまう＝一時的にrotate:90deg/180degを
-			試して混乱した経緯がある。詳細はコミットログ参照） */
+		/* **縦書きでは書字方向に合わせてマークも回す**（-90°）。背景画像も<img>も
+			writing-modeでは回らないので、横書き用に描かれた▼（次の行の方向を指す絵）が
+			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
+			固定位置で置くのでこの問題が出ないが、こちらは本文の流れの中（ぶら下げ位置）に
+			置いているため、向きが本文と食い違うと目立つ。
+			**一度「writing-modeの継承だけで自動的に回って見える」と誤認してrotateを外したことが
+			あるが、実機検証で回転していないことを確認済み（inline-blockの中身は横書きのまま描画
+			される。orthogonal flowが効くのは子要素自身がwriting-modeを持つ場合で、この要素は
+			継承しているだけなので該当しない）。2026-08-26 復元 */
+		${Ae ? "rotate: -90deg;" : ""}
 		/* [waitclick]用プロキシ、および[l]/[p]でbreakline/breakpage未指定のときは中身が空
 			（マーカーなし、本家準拠）。中身が無いinline-blockは0x0になりFocusMng.#canFocus()の
 			getClientRects()判定に落ちてフォーカスできなくなるため、widthやheightが明示されて
@@ -10427,34 +10436,34 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			outline: 2px solid Highlight;
 			outline-offset: 2px;
 		}
-	`, je = (0, V.useRef)(null), Me = (0, V.useRef)(!1);
+	`, Ne = (0, V.useRef)(null), Pe = (0, V.useRef)(!1);
 	(0, V.useEffect)(() => {
-		let e = je.current;
-		if (!(!e || !ke)) return o.add(e), Me.current && (Me.current = !1, e.focus()), () => {
-			Me.current = o.isFocus(e), o.remove(e);
+		let e = Ne.current;
+		if (!(!e || !ke)) return o.add(e), Pe.current && (Pe.current = !1, e.focus()), () => {
+			Pe.current = o.isFocus(e), o.remove(e);
 		};
 	}, [ke]);
-	let Ne = (e) => {
-		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), je.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
-	}, Pe = {
+	let Fe = (e) => {
+		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), Ne.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
+	}, Ie = {
 		...W?.width === void 0 ? {} : { width: `${String(W.width)}px` },
 		...W?.height === void 0 ? {} : { height: `${String(W.height)}px` },
 		...W?.x !== void 0 || W?.y !== void 0 ? { translate: `${String(W?.x ?? 0)}px ${String(W?.y ?? 0)}px` } : {}
-	}, Fe = Su`
+	}, Le = Su`
 		display: flex;
 		flex-wrap: wrap;
 		top: 70%;
 		isolation: isolate;
 		${N ? "" : "pointer-events: none;"}
-	`, { display: Ie, opacity: Le, mixBlendMode: Re, filter: ze } = n, Be = {
-		...Ie === void 0 ? {} : { display: Ie },
-		...Le === void 0 ? {} : { opacity: Le },
-		...Re === void 0 ? {} : { mixBlendMode: Re },
-		...ze === void 0 ? {} : { filter: ze }
-	}, Ve = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, He = F.filter((e) => !Ve(e)), Ue = F.filter(Ve), We = Su`
+	`, { display: Re, opacity: ze, mixBlendMode: Be, filter: Ve } = n, He = {
+		...Re === void 0 ? {} : { display: Re },
+		...ze === void 0 ? {} : { opacity: ze },
+		...Be === void 0 ? {} : { mixBlendMode: Be },
+		...Ve === void 0 ? {} : { filter: Ve }
+	}, Ue = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, We = F.filter((e) => !Ue(e)), Ge = F.filter(Ue), Ke = Su`
 		isolation: isolate;
 		${N ? "" : "pointer-events: none;"}
-	`, { r: Ge, g: Ke, b: qe } = Fu(b), Je = S((e) => e.backAlpha), Ye = C * (w ? 1 : Je), Xe = Ye === 0 || b === void 0, Ze = Su`
+	`, { r: qe, g: Je, b: Ye } = Fu(b), Xe = S((e) => e.backAlpha), Ze = C * (w ? 1 : Xe), Qe = Ze === 0 || b === void 0, $e = Su`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
 			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
 			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
@@ -10482,8 +10491,8 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${Xe || T ? "transparent" : `rgba(${Ge}, ${Ke}, ${qe}, ${Ye})`};
-		border: ${Xe || T ? "none" : "dotted 6px #ffa500"};
+		background-color: ${Qe || T ? "transparent" : `rgba(${qe}, ${Je}, ${Ye}, ${Ze})`};
+		border: ${Qe || T ? "none" : "dotted 6px #ffa500"};
 		${T ? `
 		&::before {
 			content: '';
@@ -10492,7 +10501,7 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			background-image: url(${JSON.stringify(T)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${Ye};
+			opacity: ${Ze};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10550,7 +10559,7 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
 		${te ? ne : ""}
-	`, Qe = Su`
+	`, et = Su`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10605,14 +10614,14 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [$e, et] = (0, V.useState)("");
-	(0, V.useEffect)(() => et(s), [s]);
-	let tt = (0, V.useRef)(null), nt = (e, t) => {
+	`, [tt, nt] = (0, V.useState)("");
+	(0, V.useEffect)(() => nt(s), [s]);
+	let rt = (0, V.useRef)(null), it = (e, t) => {
 		g(), e.transform = t;
 	};
 	return /* @__PURE__ */ D(j, { children: [
 		/* @__PURE__ */ D("span", {
-			css: [e, Ze],
+			css: [e, $e],
 			ref: de,
 			"data-lay": r,
 			style: ue,
@@ -10636,12 +10645,12 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 					}
 				})] }),
 				Ee && /* @__PURE__ */ P("span", {
-					ref: je,
-					css: Ae,
-					style: Pe,
+					ref: Ne,
+					css: Me,
+					style: Ie,
 					...ke ? {
 						tabIndex: 0,
-						onKeyDown: Ne,
+						onKeyDown: Fe,
 						"data-wait-focus": !0
 					} : {},
 					children: De ? we ? /* @__PURE__ */ P("span", { className: ee(we) }) : Se && !Ce ? /* @__PURE__ */ P("img", {
@@ -10657,11 +10666,11 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				})
 			]
 		}),
-		He.length > 0 && /* @__PURE__ */ P("span", {
-			css: [e, Fe],
+		We.length > 0 && /* @__PURE__ */ P("span", {
+			css: [e, Le],
 			"data-lay": r,
-			style: Be,
-			children: He.map((e) => /* @__PURE__ */ P(Eu, {
+			style: He,
+			children: We.map((e) => /* @__PURE__ */ P(Eu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10673,11 +10682,11 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				onSe: z
 			}, e.nm))
 		}),
-		Ue.length > 0 && /* @__PURE__ */ P("span", {
-			css: [e, We],
+		Ge.length > 0 && /* @__PURE__ */ P("span", {
+			css: [e, Ke],
 			"data-lay": r,
-			style: Be,
-			children: Ue.map((e) => /* @__PURE__ */ P(Eu, {
+			style: He,
+			children: Ge.map((e) => /* @__PURE__ */ P(Eu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10693,37 +10702,37 @@ function Du({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: de,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => nt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => it(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				nt(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				it(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => nt(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => it(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				nt(e, n), e.transformOrigin = t;
+				it(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ D(j, { children: [/* @__PURE__ */ D("label", {
-			css: Qe,
-			ref: tt,
+			css: et,
+			ref: rt,
 			children: ["テキスト入力", /* @__PURE__ */ P("textarea", {
 				rows: 3,
-				value: $e,
-				onChange: (e) => et(e.target.value)
+				value: tt,
+				onChange: (e) => nt(e.target.value)
 			})]
 		}), /* @__PURE__ */ P(cu, {
-			target: tt,
+			target: rt,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => nt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => it(e, t),
 			preventDefault: !1
 		})] })
 	] });
@@ -10851,8 +10860,8 @@ function Pu(e, t, n, r, i, a, o) {
 	if (c.members.push({
 		el: e,
 		sty: n,
-		rt: r,
-		rSty: i
+		rSty: i,
+		...r === void 0 ? {} : { rt: r }
 	}), e.addEventListener("mouseenter", () => {
 		if (c.hoverCnt++, !(c.hoverCnt > 1)) {
 			for (let e of c.members) t.sh && (e.el.style.cssText = e.sty + t.sh), e.rt && t.rsh && (e.rt.style.cssText = e.rSty + t.rsh);

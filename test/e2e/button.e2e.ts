@@ -10,7 +10,7 @@
 //	「クリックイベントがStageの読み進めへ伝播しないこと」までブラウザ上で確かめるのが目的。
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, snap, waitIdle} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, snap, waitIdle} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'button')});
 
@@ -23,20 +23,23 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 	//	**width/heightだけは省略時も既定が入る**（本家 Button.ts:123/:152。CSSの既定＝文字なりの幅が
 	//	本家の既定と食い違うため、エンジンの入口で埋めている）
 	const DEF = {width: 100, height: 30};
+	// fnも省略時に既定が入る属性の1つ：[button]のfnは「省略時は現在のスクリプト」
+	//	（本家 hArg.fn ??= scriptFn。ScriptEngine.ts 1995行目付近）なので、このシナリオ自身
+	//	（main.sn）のボタンは明示していなくても fn: 'main' を持つ
 	expect(mes?.aBtn).toEqual([
-		{nm: 'btn_call', text: 'サブルーチンを呼ぶ', label: '*sub', call: true, sty: DEF},
-		{nm: 'btn_jump', text: 'ジャンプする', label: '*goal', call: false, sty: DEF},
+		{nm: 'btn_call', text: 'サブルーチンを呼ぶ', label: '*sub', call: true, fn: 'main', sty: DEF},
+		{nm: 'btn_jump', text: 'ジャンプする', label: '*goal', call: false, fn: 'main', sty: DEF},
 		{nm: 'btn_fcall', text: '別ファイルを呼ぶ', label: '*fcall', call: true, fn: 'sub2', sty: DEF},
 		{nm: 'btn_fjump', text: '別ファイルへ飛ぶ', label: '*fjump', call: false, fn: 'sub2', sty: DEF},
-		{nm: 'btn_pos', text: '座標指定', label: '*goal', call: false,
+		{nm: 'btn_pos', text: '座標指定', label: '*goal', call: false, fn: 'main',
 			sty: {left: 250, top: 360, width: 90, height: 30, rotation: 15}},
-		{nm: 'btn_off', text: '無効', label: '*goal', call: false, sty: {...DEF, enabled: false}},
-		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, sty: {...DEF,
+		{nm: 'btn_off', text: '無効', label: '*goal', call: false, fn: 'main', sty: {...DEF, enabled: false}},
+		{nm: 'btn_hint', text: 'ヒント付き', label: '*goal', call: false, fn: 'main', sty: {...DEF,
 			hint: 'せつめい', hint_style: 'color: rgb(0, 255, 0);', hint_opt: '{"placement": "bottom"}'}},
-		{nm: 'btn_sty', text: '見た目', label: '*goal', call: false, sty: {...DEF,
+		{nm: 'btn_sty', text: '見た目', label: '*goal', call: false, fn: 'main', sty: {...DEF,
 			style: 'color: rgb(255, 0, 0);', style_hover: 'color: rgb(0, 128, 0);', style_clicked: 'color: rgb(0, 0, 255);'}},
 		// JSON指定はエンジンがCSSへ読み替えるので、ストアに入る時点でCSS
-		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, sty: {...DEF, style: 'color: rgb(255, 0, 255);'}},
+		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, fn: 'main', sty: {...DEF, style: 'color: rgb(255, 0, 255);'}},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();
@@ -53,7 +56,9 @@ test('[button call=true]→[return]で、[l]のイベント待ち状態へ戻る
 	const {wait, isReadBack} = await snap(page);
 	expect(wait).toEqual({nm: 'mes', kind: 'l'});	// [l]待ちへ戻っている
 	expect(isReadBack).toBe(false);					// ボタンは「読み進め」扱いにしない
-	await expect(page.getByText('🩷')).toBeVisible();
+	// このプロジェクトにbreakline/breakpage素材は無いので、待ちマーク自体は何も描かない
+	//	（本家準拠。TxtLayer.tsx styWaitMark参照）。それでもフォーカス用のプロキシ要素は居る
+	await expect(page.locator(`${SEL_FORE} span[data-lay="mes"] [data-wait-focus]`)).toBeVisible();
 });
 
 test('[button]クリックで1回しか進まない（Stageの読み進めへ伝播しない）', async ({page})=> {
@@ -193,7 +198,13 @@ test('[button style=/style_hover=]はCSSとして当たる（ホバー・フォ�
 	await page.mouse.move(0, 0);
 	await seeColor('rgb(255, 0, 0)');
 
-	// フォーカスでもホバーと同じ見た目（本家 EventMng.ts:435 の hv／nr 相当）
+	// フォーカスでもホバーと同じ見た目（本家 EventMng.ts:435 の hv／nr 相当）。
+	//	ただし効くのは**キー操作由来**のフォーカスだけ（FocusMng.tsのmodality判定。data-focus-ring。
+	//	クリックでのフォーカス残留がホバー色を固定してしまう不具合の対策。8d03d7c参照）なので、
+	//	素の`.focus()`（プログラム的フォーカス）だけでは付かない。実際のkeydownを一度挟んで
+	//	modalityをキー操作扱いにしてから focus() する
+	await page.keyboard.down('Shift');
+	await page.keyboard.up('Shift');
 	await btn.focus();
 	await seeColor('rgb(0, 128, 0)');
 	expect(await btn.evaluate(el=> getComputedStyle(el).outlineStyle)).toBe('none');

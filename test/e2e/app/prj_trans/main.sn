@@ -8,20 +8,23 @@
 ;	・[er]が表裏どちらの文字も消すこと
 ;	画像アセットは使わない。表裏の違いは文字レイヤ背景の不透明度（b_alpha）で見分ける
 ;	（[trans]は文字を裏へ持っていかないので、交換後は[er]で消してから次の文を出す）
-[add_lay layer=mes class=txt]
+; b_colorが無いと背景自体を描かない（本家準拠）ので、b_alphaを算出CSSで判別するために
+;	[add_lay]の時点で明示しておく（表裏両方に効く。本家 Pages コンストラクタと同じ扱い）
+[add_lay layer=mes class=txt b_color=0x7FFFD4]
 [current layer=mes]
 
 おもて[l]
 
-; 演出あり（600ms）。裏ページのb_alphaを変えておき、表に出たら算出CSSで判別する
-[lay layer=mes b_alpha=0.2 page=back]
+; 演出あり（600ms）。裏ページのb_alphaを変えておき、表に出たら算出CSSで判別する。
+;	b_colorが無いと背景自体を描かない（本家準拠）ので、判別用に明示している
+[lay layer=mes b_alpha=0.2 b_color=0x7FFFD4 page=back]
 [trans time=600]
 [wt]
 [er]
 うら[l]
 
 ; 裏ページを組む（不透明度＋ボタン）。この停止点ではまだ表に出ていない
-[lay layer=mes b_alpha=0.9 page=back]
+[lay layer=mes b_alpha=0.9 b_color=0x7FFFD4 page=back]
 [button page=back text=うらボタン label=*btn]
 [l]
 
@@ -36,7 +39,7 @@
 みっつめ[p]
 
 ; [finish_trans]：長い演出を待たずに今すぐ終わらせる（表裏の交換まで済ませる）
-[lay layer=mes b_alpha=0.4 page=back]
+[lay layer=mes b_alpha=0.4 b_color=0x7FFFD4 page=back]
 [trans time=9000]
 [finish_trans]
 [er]

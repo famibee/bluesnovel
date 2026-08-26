@@ -79,12 +79,24 @@ test('画像レイヤ：書かなかった表示属性の既定が本家と同�
 	//	デザインモードのMoveable用の下地（Stage.tsx sty4Moveable）が恒等変換を書くので
 	//	算出値は 'none' ではなく単位行列になる。**見た目は等倍・無回転**で本家と同じ
 	expect(IDENTITY).toContain(s!.transform);
-	// left=0・top=0（本家 Layer.ts:513 の x/y 初期値）
-	expect(s!.dx).toBe(0);
-	expect(s!.dy).toBe(0);
 	// blendmode=normal・フィルタ無し（[add_filter]未使用）
 	expect(s!.mixBlendMode).toBe('normal');
 	expect(s!.filter).toBe('none');
+});
+
+// [lay fn=…]で絵を出す画像レイヤは、位置属性（left/center/right/s_right/top/middle/bottom/
+//	s_bottom）を一つも書かなければ下端中央へ自動配置される（本家 Layer.setXY() の isGrp 専用
+//	フォールバック。ScriptEngine.ts #applyLayPage参照。iPhone6など中途半端な画面サイズで
+//	縦位置が異常になるのを防ぐための分岐だが、bluesnovelでは単に「位置未指定の画像レイヤは
+//	ステージ左上(0,0)基準」になってしまっており、[fg]等の初回表示が左上に出る不具合の原因
+//	だった＝2026-08-23対応）。**本家Layer.ts:513の初期値(x=0,y=0)がそのまま出るのはfn/pic/face
+//	をどれも指定していないときだけ**なので、上のテストとは分けて検証する
+test('画像レイヤ：fn指定時に位置を書かなければ下端中央へ自動配置される', async ({page})=> {
+	const b = await layBox(page, 'base');
+	// 中央寄せ：画像の水平中心がステージの水平中心に一致する
+	expect(Math.abs(b.box.cx - (b.stage.left + b.stage.width / 2))).toBeLessThan(1);
+	// 下端寄せ：画像の下端がステージの下端に一致する
+	expect(Math.abs(b.box.bottom - b.stage.bottom)).toBeLessThan(1);
 });
 
 test('文字レイヤ：書かなかった表示属性の既定が本家と同じ', async ({page})=> {
@@ -102,12 +114,15 @@ test('文字レイヤ：書かなかった表示属性の既定が本家と同�
 
 test('表示属性を書かなければストアにも入らない（埋めていないことの確認）', async ({page})=> {
 	// 上の算出値が「CSSの既定」であって「エンジンが埋めた値」ではないことを裏取りする。
-	//	ここに値が入り始めたら、それはCSSに任せる方針から外れた合図
+	//	ここに値が入り始めたら、それはCSSに任せる方針から外れた合図。
+	//	**left/top/align_x/align_yは対象外**：'base'はfn指定のある画像レイヤなので、
+	//	下端中央への自動配置（上のテスト参照。2026-08-23）でこの2つだけはエンジンが明示的に
+	//	埋める。それ以外の属性は依然として「書いた分だけ」のはずなので、ここで見張る
 	const sty = await page.evaluate(()=> {
 		const s = (globalThis as any).__sn.store.getState();
 		const e = s.aPage[s.foreIdx].find((l: any)=> l.nm === 'base');
 		const h: Record<string, unknown> = {};
-		for (const k of ['visible', 'alpha', 'left', 'top', 'rotation', 'scale_x', 'scale_y', 'blendmode']) {
+		for (const k of ['visible', 'alpha', 'rotation', 'scale_x', 'scale_y', 'blendmode']) {
 			if (e[k] !== undefined) h[k] = e[k];
 		}
 		return h;

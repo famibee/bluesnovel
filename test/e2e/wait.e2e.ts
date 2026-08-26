@@ -8,19 +8,23 @@
 // [l]/[p]/[s]の停止と待ちマーカー表示の検証（シナリオ：e2e/app/prj_basic/main.sn）
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, mesStr, pressKey, snap} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, snap} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'basic')});
 
-test('[l]で停止し、行末クリック待ちマーカー（🩷）を表示する', async ({page})=> {
+// このプロジェクト（prj_basic）はbreakline/breakpage素材を持たないため、待ちマーク自体は
+//	何も描かない（本家準拠。TxtLayer.tsx styWaitMark参照）。それでも、フォーカスの輪へ乗せる
+//	ための当たり判定つきプロキシ要素（data-wait-focus）は常に居る——絵の有無に見た目は左右
+//	されないので、ここではそのプロキシの有無で「待ち状態か」を見る
+test('[l]で停止し、行末クリック待ち用のフォーカス可能なプロキシ要素を表示する', async ({page})=> {
 	expect(await mesStr(page)).toBe('一ページ目のいち。');
 
 	const {wait} = await snap(page);
 	expect(wait).toEqual({nm: 'mes', kind: 'l'});
-	await expect(page.getByText('🩷')).toBeVisible();
+	await expect(page.locator(`${SEL_FORE} span[data-lay="mes"] [data-wait-focus]`)).toBeVisible();
 });
 
-test('[p]で停止し、改ページ待ちマーカー（✅）を表示する', async ({page})=> {
+test('[p]で停止し、改ページ待ち用のフォーカス可能なプロキシ要素を表示する', async ({page})=> {
 	await pressKey(page, 'Space');
 
 	// [p]までは同じページなので、文字は消えずに積み上がる
@@ -28,10 +32,10 @@ test('[p]で停止し、改ページ待ちマーカー（✅）を表示する',
 
 	const {wait} = await snap(page);
 	expect(wait).toEqual({nm: 'mes', kind: 'p'});
-	await expect(page.getByText('✅')).toBeVisible();
+	await expect(page.locator(`${SEL_FORE} span[data-lay="mes"] [data-wait-focus]`)).toBeVisible();
 });
 
-test('[s]で停止し、待ちマーカーは表示しない', async ({page})=> {
+test('[s]で停止し、待ち用プロキシ要素は出ない', async ({page})=> {
 	await pressKey(page, 'Space');	// -> [p]
 	await pressKey(page, 'Space');	// -> [l]
 	await pressKey(page, 'Space');	// -> [s]
@@ -40,8 +44,7 @@ test('[s]で停止し、待ちマーカーは表示しない', async ({page})=> 
 
 	const {wait} = await snap(page);
 	expect(wait).toBeNull();		// [s]はマーカーなし
-	await expect(page.getByText('🩷')).toHaveCount(0);
-	await expect(page.getByText('✅')).toHaveCount(0);
+	await expect(page.locator(`${SEL_FORE} span[data-lay="mes"] [data-wait-focus]`)).toHaveCount(0);
 });
 
 test('[s]の後はクリックしても進まない', async ({page})=> {
