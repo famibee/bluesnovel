@@ -114,6 +114,19 @@ export class PlgLayMng {
 		}
 	}
 
+	// [trans]完了時、交換対象のプラグインレイヤーについて新しい裏へ新しい表を写す
+	//	（本家 Pages.transPage() の back.copy(fore) 相当）。storeのfinTrans()（store.tsx）は
+	//	aPageのT_LAY（位置・スタイル等のメタ情報）を交換するだけで、3Dシーン等の実体（Layer.ctn配下）は
+	//	store外のためここまで手が届かない。oldForeIdxは反転前のforeIdx
+	//	（呼び出し側がstore側のfinishTrans()/startTrans()を呼ぶ**前**に読んでおくこと）
+	finishTrans(aLayNm: string[] | null, oldForeIdx: 0 | 1, aPrm: Promise<void>[]): void {
+		const bi = (1 - oldForeIdx) as 0 | 1;	// 新しい表の物理index（store側finTransのbiと同じ）
+		for (const nm of Object.keys(this.#hCls)) {
+			if (aLayNm && ! aLayNm.includes(nm)) continue;	// 交換対象外はここでは何もしない
+			this.#hLay[`${nm}:${String(oldForeIdx)}`]?.copy(this.#hLay[`${nm}:${String(bi)}`]!, aPrm);
+		}
+	}
+
 	// SysBase.stop()/run()からのプロジェクト切替時（ScriptMng.destroy()経由）。
 	//	全Layerインスタンスを破棄し、次のプロジェクトへ古いWebGLコンテキスト等を持ち越さない
 	destroy(): void {

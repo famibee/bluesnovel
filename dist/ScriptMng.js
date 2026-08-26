@@ -235,6 +235,10 @@ var S = class e {
 			e in this.#t || this.add(e, r), this.#e[`${e}:0`].playback(i, t), this.#e[`${e}:1`].playback(a, t);
 		}
 	}
+	finishTrans(e, t, n) {
+		let r = 1 - t;
+		for (let i of Object.keys(this.#t)) e && !e.includes(i) || this.#e[`${i}:${String(t)}`]?.copy(this.#e[`${i}:${String(r)}`], n);
+	}
 	destroy() {
 		for (let e of Object.values(this.#e)) e.destroy();
 		for (let e of Object.keys(this.#e)) delete this.#e[e];
@@ -3923,7 +3927,9 @@ var bo = class f {
 	#U() {
 		clearTimeout(this.#R), this.#R = void 0;
 		let e = this.#z;
-		this.#z = !1, this.$fncs.finishTrans(), e && this.#r?.transDone(this.#V), this.#B && (this.#B = void 0, this.#j());
+		this.#z = !1;
+		let t = this.$fncs.getForeIdx();
+		this.$fncs.finishTrans(), e && (this.#r?.transDone(this.#V), this.#w.finishTrans(this.#V, t, [])), this.#B && (this.#B = void 0, this.#j());
 	}
 	#W(e) {
 		if (this.#z) {
@@ -4567,14 +4573,17 @@ var bo = class f {
 			case "finishTrans":
 				this.#U();
 				break;
-			case "trans":
-				this.#U(), this.$fncs.startTrans({
+			case "trans": {
+				this.#U();
+				let t = this.$fncs.getForeIdx();
+				this.$fncs.startTrans({
 					aLayNm: e.aLayNm,
 					time: e.time,
 					...e.rule ? { ruleSrc: this.#Ve("trans", e.rule) } : {},
 					...e.vague === void 0 ? {} : { vague: e.vague }
-				}), this.#H(e.time, e.aLayNm);
+				}), e.time <= 0 && this.#w.finishTrans(e.aLayNm, t, []), this.#H(e.time, e.aLayNm);
 				break;
+			}
 			case "waitTrans": break;
 			case "plgTag": break;
 			case "chgStr":

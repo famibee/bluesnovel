@@ -8,4 +8,22 @@
 [clear_lay layer=x page=both]
 [dmy_tag foo=1 bar=2]
 [dmy_tag_async]
-消した。[s]
+消した。[l]
+
+; [trans]でプラグインレイヤーの中身（DOM実体）が新しい裏へ複製されるか
+;	（todo.md「[trans]でプラグインレイヤーの中身が裏へコピーされない」）。storeのfinTrans()
+;	（store.tsx）はaPageのメタ情報（位置等）を交換するだけで、DOM実体（Layer.ctn配下）は
+;	store外のため関知しない。表裏で別の値を入れておき、[trans]後に新しい裏（＝元の表）が
+;	新しい表の値で上書きされているかを見る（PlgLayMng.finishTrans()の役目）
+[add_lay layer=y class=dmy]
+[lay layer=y val=A]
+[lay layer=y val=B page=back]
+[trans layer=y time=0]
+[l]
+
+; 演出ありの経路（タイマー駆動の#finishTrans）でも同じくコピーされること
+[lay layer=y val=C page=back]
+[trans layer=y time=100]
+[wt]
+[l]
+[s]

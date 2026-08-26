@@ -705,10 +705,14 @@ export class ScriptMng {
 		this.#transTimer = undefined;
 		const wasRunning = this.#transRunning;
 		this.#transRunning = false;
+		const oldForeIdx = this.$fncs.getForeIdx();	// flip前に読む（PlgLayMng.finishTrans()の引数）
 		this.$fncs.finishTrans();	// zustandのsetは同期＝この行の後は書き込み先が新しい表ページになる
 		// 演出中だった分だけエンジンの本文蓄積も追随させる（動いている演出が無ければ何もしない。
 		//	store側のfinishTransが s.trans が無ければ何もしないのと同じ理屈）
-		if (wasRunning) this.#engine?.transDone(this.#transALayNm);
+		if (wasRunning) {
+			this.#engine?.transDone(this.#transALayNm);
+			this.#plgLayMng.finishTrans(this.#transALayNm, oldForeIdx, []);
+		}
 
 		if (! this.#transWaiting) return;
 		this.#transWaiting = undefined;
@@ -1609,7 +1613,7 @@ export class ScriptMng {
 			// [finish_trans]。動いている演出が無ければ何も起きない
 			this.#finishTrans();
 			break;
-		case 'trans':
+		case 'trans': {
 			// 前の[trans]がまだ演出中なら、まず終わらせて表裏を確定させる（本家 ScriptIterator.ts:504
 			//	#setTag2FinishTrans）。そうしないと交換されないまま次の[trans]が同じ裏ページを
 			//	書き換え、前のシーンが表に出ないまま消える。
@@ -1617,14 +1621,20 @@ export class ScriptMng {
 			//	[quake]が[trans]と同じトゥイーン枠を使い回す都合であって意図ではないので、
 			//	枠を分けたこちらでは[trans]自身と[finish_trans]だけに掛ける
 			this.#finishTrans();
+			const oldForeIdx = this.$fncs.getForeIdx();	// flip前に読む（PlgLayMng.finishTrans()の引数）
 			// time=0ならstartTrans()の中で即交換される（演出無し＝待つものも残らない）。
 			//	ルール画像のパス解決はここ（[lay fn=]等と同じ。見つからなければ知らせてクロスフェードへ落ちる）
 			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time,
 				...act.rule ? {ruleSrc: this.#searchPic('trans', act.rule)} : {},
 				...act.vague !== undefined ? {vague: act.vague} : {},
 			});
+			// time<=0はstartTrans()の中で即finTrans()される（#finishTrans()を経由しない）ので、
+			//	プラグインレイヤーのコピーもここで揃える（#beginTrans()がengine.transDone()を
+			//	直接呼ぶのと同じ理屈）
+			if (act.time <= 0) this.#plgLayMng.finishTrans(act.aLayNm, oldForeIdx, []);
 			this.#beginTrans(act.time, act.aLayNm);
 			break;
+		}
 		case 'waitTrans':
 			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い
 			break;

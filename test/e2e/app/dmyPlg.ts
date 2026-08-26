@@ -11,6 +11,7 @@
 
 import type {T_PluginInitArg, TArg} from '../../../src/web';
 import {Layer} from '../../../src/web';
+import type {T_RecordPlayBack_lay} from '../../../src/sn/Layer';
 
 class DmyLayer extends Layer {
 	constructor() {
@@ -26,6 +27,15 @@ class DmyLayer extends Layer {
 	override clearLay(): void {
 		this.ctn.textContent = '';
 		this.ctn.dataset.cleared = 'true';
+	}
+	// [trans]でLayer.copy()（record/playback経由）が実際に中身を複製するかをE2E側から
+	//	確かめるためのoverride（plg.e2e.ts参照）。しおり（save/load）でも同じ経路を通る
+	override record(): T_RecordPlayBack_lay {
+		return {...super.record(), mark: this.ctn.textContent};
+	}
+	override playback(hLay: T_RecordPlayBack_lay, aPrm: Promise<void>[]): void {
+		super.playback(hLay, aPrm);
+		this.ctn.textContent = (hLay.mark as string | undefined) ?? '';
 	}
 }
 

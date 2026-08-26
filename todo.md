@@ -89,8 +89,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
 - [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
       本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
-- [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/
-      `Layer.copy()`相当が未実装。`src/ts/PlgLayMng.ts`にコメントで場所だけ残してある）
 
 ## 要検証（出自不確か・追跡工数を投じない）
 

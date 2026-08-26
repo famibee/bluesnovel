@@ -181,6 +181,10 @@ var a = "skynovel", o = class {
 		};
 	}
 	playback(e, t) {}
+	copy(e, t) {
+		let n = this.name_;
+		this.playback(e.record(), t), this.name = n;
+	}
 	dump() {
 		return "";
 	}

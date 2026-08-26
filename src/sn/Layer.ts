@@ -42,5 +42,13 @@ export class Layer {
 	clearLay(_hArg: TArg): void { /* empty */ }
 	record(): T_RecordPlayBack_lay {return {name: this.layname, idx: 0}}
 	playback(_hLay: T_RecordPlayBack_lay, _aPrm: Promise<void>[]): void { /* empty */ }
+	// [trans]完了時、交換相手のLayerから中身を写す（本家 Layer.ts:433 copy()）。
+	//	record()/playback()を経由する既定実装で足りる（サブクラスがrecord/playbackを
+	//	overrideしていれば、ここを直さなくても正しい相手の状態を写せる）
+	copy(fromLayer: Layer, aPrm: Promise<void>[]): void {
+		const orgName = this.name_;
+		this.playback(fromLayer.record(), aPrm);
+		this.name = orgName;
+	}
 	dump(): string {return ''}
 }

@@ -13,12 +13,14 @@
 //	つまりブラウザでしか確かめられない部分だけ
 
 import {expect, test} from '@playwright/test';
-import {gotoSn, pressKey, waitIdle} from './snPage';
+import {gotoSn, pressKey, waitIdle, waitTransDone, waitTransRunning} from './snPage';
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'plg')});
 
 // PlgLayer.tsx（箱）の子に、DmyLayer.ctn（中身）がattachBox()経由で入っているか
 const dmyCtn = () => '#skynovel [data-page="fore"] [data-lay="x"] [data-dmy="ctn"]';
+// レイヤyの表/裏それぞれのDOM実体（[trans]の複製確認用。dmyCtn()と違い表裏どちらも見る）
+const dmyCtnY = (page: 'fore' | 'back') => `#skynovel [data-page="${page}"] [data-lay="y"] [data-dmy="ctn"]`;
 
 test('addLayClsで登録したプラグインレイヤーが実DOMへ現れ、[lay]の属性を受け取る', async ({page})=> {
 	await waitIdle(page);
@@ -52,4 +54,37 @@ test('addTagで登録したタグが実行され、属性ハッシュとisWait/r
 	const body = page.locator('body');
 	await expect.poll(()=> body.getAttribute('data-dmy-tag')).toBe(JSON.stringify({foo: '1', bar: '2'}));
 	await expect.poll(()=> body.getAttribute('data-dmy-tag-async')).toBe('done');
+});
+
+// todo.md「[trans]でプラグインレイヤーの中身が裏へコピーされない」の回帰テスト。
+//	storeのfinTrans()（store.tsx）はaPage（位置等のメタ情報）しか交換せず、DOM実体
+//	（PlgLayMngが抱えるLayer.ctn配下）はstore外のため関知しない。表裏で別の値を仕込んでおき、
+//	[trans]後に「新しい裏（＝元の表）」が「新しい表」の値へ複製されているかを見る
+//	（本家 Pages.transPage() の back.copy(fore) 相当。PlgLayMng.finishTrans()の役目）
+test('[trans]でプラグインレイヤーの中身が新しい裏へ複製される（演出なし・time=0）', async ({page})=> {
+	await pressKey(page, 'Space');	// [l]から「消した。[l]」まで進める
+	// [lay layer=y val=A]（表）／[lay layer=y val=B page=back]（裏）→[trans layer=y time=0]
+	await pressKey(page, 'Space');
+
+	const fore = page.locator(dmyCtnY('fore'));
+	const back = page.locator(dmyCtnY('back'));
+	// 新しい表＝元の裏（val=B）。新しい裏＝元の表（val=A）だが、新しい表の値へ複製済みのはず
+	await expect(fore).toHaveText(JSON.stringify({layer: 'y', val: 'B', page: 'back'}));
+	await expect(back).toHaveText(JSON.stringify({layer: 'y', val: 'B', page: 'back'}));
+});
+
+test('[trans]でプラグインレイヤーの中身が新しい裏へ複製される（演出あり・タイマー駆動の#finishTrans経由）', async ({page})=> {
+	await pressKey(page, 'Space');	// 消した。[l]
+	await pressKey(page, 'Space');	// 1回目の[trans layer=y time=0]
+
+	// [lay layer=y val=C page=back]→[trans layer=y time=100][wt]
+	await page.keyboard.press('Space');
+	await waitTransRunning(page);
+	await waitTransDone(page);
+	await waitIdle(page);
+
+	const fore = page.locator(dmyCtnY('fore'));
+	const back = page.locator(dmyCtnY('back'));
+	await expect(fore).toHaveText(JSON.stringify({layer: 'y', val: 'C', page: 'back'}));
+	await expect(back).toHaveText(JSON.stringify({layer: 'y', val: 'C', page: 'back'}));
 });
