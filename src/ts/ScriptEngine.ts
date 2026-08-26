@@ -14,7 +14,7 @@
 
 import {VarStore, type T_CAST, type T_VAL_D} from './VarStore';
 import {ExprEval} from './ExprEval';
-import {splitAmpersand, tagToken2Name_Args} from '../sn/Grammar';
+import {splitAmpersand, tagToken2Name_Args, type TTag} from '../sn/Grammar';
 import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {RubySpliter} from '../sn/RubySpliter';
@@ -31,6 +31,7 @@ import {A_PAGE_TO, type T_PAGE_TO} from './PageLog';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
 import {hasLayCls} from '../sn/LayCls';
+import {addPlgTag, getPlgTagNames, hasPlgTag} from '../sn/PlgTag';
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像(fn)の左上を原点(0,0)とした相対座標
 //	（本家 skynovel_esm/src/sn/SpritesMng.ts の Iface 型に対応。blendmodeはCSSのmix-blend-modeへそのまま渡す想定）
@@ -110,6 +111,9 @@ export type T_ENGINE_ACTION =
 	//	（本家 Pages.lay() が hArg をそのまま Layer サブクラスの lay() へ流すのと同じ設計。
 	//	中身の解釈はプラグインの責務で、エンジンは何も知らないでよい）
 	| {t: 'layPlg'; nm: string; page: T_PAGE; hArg: {[k: string]: string}}
+	// プラグインが addTag で登録したタグ（本家 SysBase.addTag→hTag相当）。実際の関数呼び出しは
+	//	ScriptMng側で行う（src/sn/PlgTag.ts参照。ScriptEngine.step()の純粋性を保つため）
+	| {t: 'plgTag'; name: string; hArg: {[k: string]: string}}
 	| {t: 'chgPic'; nm: string; page: T_PAGE; fn: string; aFace?: T_FACE[]}	// aFaceは[lay face=...]で重ねる差分絵（重なり順＝配列順、後の要素ほど上）。face属性省略時はundefined＝直前のfaceを維持（本家 GrpLayer.ts:76-85）。face=""で明示的にクリア
 	| {t: 'chgBAlpha'; nm: string; page: T_PAGE; b_alpha?: number; isFixed?: boolean}	// [lay b_alpha=/b_alpha_isfixed=]。文字レイヤ背景の不透明度（0.0～1.0）。背景のみを透過させ、文字は透過しない。isFixed=falseならsys:TextLayer.Back.Alphaとの掛け算になる（本家 TxtLayer.ts:388）
 	| {t: 'chgBPic'; nm: string; page: T_PAGE; fn: string}	// [lay b_pic=…]。文字レイヤ背後の枠画像。指定するとb_colorは無視される（本家 TxtLayer.ts:393）。fn=''で画像をやめて単色塗りへ戻す
@@ -588,8 +592,17 @@ export class ScriptEngine {
 	#hTagNames(): {[nm: string]: boolean} {
 		const h: {[nm: string]: boolean} = Object.create(null);
 		for (const nm of ScriptEngine.RESERVED_TAGS) h[nm] = true;
+		for (const nm of getPlgTagNames()) h[nm] = true;
 		for (const nm in this.#hMacro) h[nm] = true;
 		return h;
+	}
+
+	// プラグインのaddTagが実際に呼ぶ登録口（本家 SysBase.ts:180-183 hTag[name]=tag_fnc 相当）。
+	//	既存タグ名との衝突検査はここで行う（RESERVED_TAGSを持つのがScriptEngineのため。
+	//	本家 `if (name in hTag) throw` と同じ意図）
+	static registerPlgTag(name: string, fnc: TTag): void {
+		if (ScriptEngine.RESERVED_TAGS.has(name)) throw `[${name}]は既存タグ名のため、プラグインタグとして登録できません`;
+		addPlgTag(name, fnc);
 	}
 
 	// 第一引数はスクリプト名＋ソース、またはパース済みScript。
@@ -2674,7 +2687,16 @@ export class ScriptEngine {
 			return 'stop';
 		}
 
-		default: {	// 未対応タグは無視するが、マクロ名として登録されていれば呼び出す
+		default: {	// 未対応タグは無視するが、プラグインタグ／マクロ名として登録されていれば呼び出す
+			// プラグイン（addTag）が登録したタグ名か（本家は動的にhTagへ足すだけだが、試作は
+			//	switch文のためモジュールレベルのレジストリ（src/sn/PlgTag.ts）を引く形にしている）。
+			//	実際のタグ関数呼び出しは行わず、属性ハッシュを丸ごとaAct化してScriptMngへ渡す
+			//	（layPlgと同じ設計：中身の解釈も副作用もプラグインの責務で、エンジンは関知しない）
+			if (hasPlgTag(name)) {
+				aAct.push({t: 'plgTag', name, hArg: {...args}});
+				return 'stop';
+			}
+
 			// （本家はマクロ名をhTagへ動的登録して呼び出すが、試作はswitch文のため、
 			// ここでマクロ登録テーブル#hMacroを直接参照する形にしている）
 			const to = this.#hMacro[name];

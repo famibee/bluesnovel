@@ -17,6 +17,7 @@ import {Script} from './Script';
 import {easeFn, H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {PlgLayMng} from './PlgLayMng';
+import {getPlgTag} from '../sn/PlgTag';
 import {focusMng} from './FocusMng';
 import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
@@ -394,6 +395,16 @@ export class ScriptMng {
 
 	// 現在の実行位置から次の停止点（[l][p][s]、またはスクリプト終端）まで進める
 	go() { /* attachTsx/load 完了後、上でthis.goとして差し替えられる */ }
+
+	// addTagで登録したタグ関数がisWait=trueを返した後、プラグインが処理完了を知らせるために
+	//	呼ぶ再開口（T_PluginInitArg.resume。本家 Pages.lay()のisWait/pia.resume()相当）。
+	//	#procingを下ろしてからgoSafe()する点がただのgo()と違う（#procPlgTag()がisWait=trueの
+	//	間は#procing=trueのままにしてあるので、下ろさずgoSafe()だけ呼んでも「DOM絡みの
+	//	非同期処理中」判定（#goSafe()の#procingチェック）に引っかかって無視されてしまう）
+	resumePlg() {
+		this.#procing = false;
+		this.#goSafe();
+	}
 
 	// [button]クリック時のJSX側から呼ばれる：指定ラベルへ直接ジャンプしてそのまま進行する。
 	//	Main.tsxのnext()（クリックでの読み進め）とは別系統。CaretakerのprevKey/nextKeyや
@@ -1220,6 +1231,9 @@ export class ScriptMng {
 					this.#procPage(last.to).catch(this.#catchErr);
 					return;
 				}
+				// プラグインが addTag で登録したタグ。同期で完了するかisWait（要resume）かは
+				//	呼んでみないと分からないので、#procPlgTag()内で判定する
+				if (last?.t === 'plgTag') {this.#procPlgTag(last); return}
 				if (last?.t !== 'loadScript') {
 					if (engine.atEnd) this.myTrace(`スクリプト終端です fn:${engine.fn}`, 'I');
 					// 停止点で読んでいる間に、次に必要になりそうな画像を先に温めておく
@@ -1239,6 +1253,27 @@ export class ScriptMng {
 			this.#busy = false;
 			if (this.#cntResv > 0) {--this.#cntResv; this.#goSafe()}
 		}
+	}
+
+	// addTagで登録されたタグの実行（本家 hTag[name](hArg) 相当の唯一の呼び出し口。
+	//	ScriptEngine.step()はhasPlgTag()で名前の存在だけ見て純粋なままplgTagアクションを
+	//	返すので、実際の関数呼び出し＝副作用が起きうる場所はここに閉じ込める）。
+	//	戻り値isWait（本家 Pages.lay()の戻り値、[lay]のisWait対応と同じ枠組み）がtrueなら
+	//	#procing=trueのまま待ち、プラグインが後でresumePlg()を呼ぶまで進めない
+	#procPlgTag(act: Extract<T_ENGINE_ACTION, {t: 'plgTag'}>) {
+		const fnc = getPlgTag(act.name);
+		if (! fnc) {this.#goSafe(); return}	// 想定外（テスト間でレジストリをクリアした等）。無言で止まるのを避ける
+
+		this.#procing = true;
+		let isWait: boolean;
+		try {
+			isWait = fnc(act.hArg as unknown as TArg);
+		} catch (e) {
+			this.#procing = false;
+			this.myTrace(`[${act.name}] エラー ${String(e)}`, 'ET');
+			return;
+		}
+		if (! isWait) {this.#procing = false; this.#goSafe()}
 	}
 
 	// [add_frame]/[let_frame]：DOMを触り、その結果を組み込み変数へ書き戻してから続きを回す。
@@ -1585,6 +1620,9 @@ export class ScriptMng {
 			break;
 		case 'waitTrans':
 			// 実処理は#runStep()側（#waitTrans()）。表示への影響は無い
+			break;
+		case 'plgTag':
+			// 実処理は#runStep()側（#procPlgTag()）。表示への影響は無い
 			break;
 		case 'chgStr':
 			{	// シナリオが書いた生の文字列をここで表示単位へ割る（ルビ記法。Txt.ts）。

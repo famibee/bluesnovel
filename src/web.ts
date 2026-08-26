@@ -7,8 +7,8 @@
 
 import type {T_HPlugin, T_Plugin, T_PluginInitArg} from './sn/CmnInterface';
 export type {T_HPlugin, T_Plugin, T_PluginInitArg};
-import type {TArg} from './sn/Grammar';
-export type {TArg};
+import type {TArg, TTag} from './sn/Grammar';
+export type {TArg, TTag};
 
 import {SysBase} from './sn/SysBase';
 import type {T_SysBaseParams, T_SysBaseLoadedParams} from './sn/CmnInterface';

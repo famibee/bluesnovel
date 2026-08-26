@@ -29,8 +29,10 @@ export type T_PropParser = {
 // 本家（skynovel_esm）は暗号化・改竄検査のロジック自体を秘匿するため、プラグイン（snsys_pre）が
 //	SysBase.loaded()経由でsetDec/setEnc/getHashを注入する設計を取る。bluesnovelもこれを踏襲する。
 //	一般プラグイン（3D/Live2D系。sn_galleryの3d_layer/cubism3_layer/emote_layer）向けの
-//	addLayCls/getInfo/searchPath/getVal/resumeはSysBase.#initPlg()で実際に配線済み
-//	（todo.md「sn_galleryをbluesnovel駆動にする」参照）。addTag/renderは未対応（後述）。
+//	addLayCls/addTag/getInfo/searchPath/getVal/resumeはSysBase.#initPlg()で実際に配線済み
+//	（todo.md「sn_galleryをbluesnovel駆動にする」参照）。renderは未対応（後述）。
+//	addTagはScriptEngineがタグをswitchで捌く構造のため、本家のようにhTagへ直接足す口が
+//	無く、src/sn/PlgTag.tsのモジュールレベルレジストリ経由になる（詳細は同ファイル参照）。
 //	renderの引数はpixi.jsのDisplayObject/RenderTexture相当だが、bluesnovelはpixi.jsに
 //	依存しないためanyへ緩めている。Electron専用のgetStK（本家はelectron-storeの
 //	encryptionKeyに使うが、bluesnovelはセーブ暗号化をweb/app版で統一しenc()一本にするため
@@ -44,7 +46,8 @@ export type T_PLUGIN_INFO = {
 export type {T_LayerFactory};
 export type T_PluginInitArg = {
 	getInfo(): T_PLUGIN_INFO;
-	// ScriptEngineがタグをswitchで捌く構造のため未対応（呼ぶとthrow。#initPlg()参照）
+	// src/sn/PlgTag.tsのレジストリへ登録する（実処理はScriptMng側。#initPlg()参照）。
+	//	tag_fncの戻り値はisWait（本家 Pages.lay()相当）：trueなら処理完了後にresume()を呼ぶこと
 	addTag(tag_name: string, tag_fnc: TTag): void;
 	addLayCls(cls: string, fnc: T_LayerFactory): void;
 	searchPath: T_SEARCHPATH;

@@ -152,16 +152,19 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		const aPlg = Object.values(this.hPlg);
 		if (aPlg.length === 0) return;
 
-		const {addLayCls} = await import('./LayCls');
+		const [{addLayCls}, {ScriptEngine}] = await Promise.all([import('./LayCls'), import('../ts/ScriptEngine')]);
 		await Promise.all(aPlg.map(v=> v.init({
 			getInfo		: ()=> ({window: {width: CmnLib.stageW, height: CmnLib.stageH}}),
-			// ScriptEngineがタグをswitchで捌く構造のため未対応（本家のように動的にhTagへ足す口が無い）。
-			//	sn_galleryの3D/Live2D系プラグインはaddLayClsしか使わないため後回し
-			addTag		: nm=> {throw `プラグインのaddTag('${nm}')は未対応です`},
+			// ScriptEngineがタグをswitchで捌く構造のため、hTagのような辞書に直接足す口は無い。
+			//	代わりにモジュールレベルのレジストリ（src/sn/PlgTag.ts）へ登録し、ScriptEngine側は
+			//	名前の存在だけを見て純粋なままplgTagアクションを返す（実行はScriptMng側が行う）
+			addTag		: (name, fnc)=> ScriptEngine.registerPlgTag(name, fnc),
 			addLayCls,
 			searchPath	: (fn, extptn)=> this.cfg.searchPath(fn, extptn),
 			getVal		: (nm, def)=> scrMng.getVal(nm, def),
-			resume		: ()=> {scrMng.go()},
+			// resumeはaddLayCls（[lay]のisWait対応。未実装）とaddTagの両方が使う共通の再開口。
+			//	addTag側はresumePlg()でないと#procingが下りず無視される（ScriptMng.resumePlg()参照）
+			resume		: ()=> {scrMng.resumePlg()},
 			// pixi.js専用（DisplayObjectのRenderTexture焼き）。bluesnovelはDOMへ直接描くので不要
 			render		: ()=> { /* empty */ },
 			// snsys_pre専用のフック。一般プラグインからは使わない想定（本家 SysBase.ts:196-200も同じくno-op）

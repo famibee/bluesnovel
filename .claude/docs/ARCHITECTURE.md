@@ -102,9 +102,29 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
     という型ガード関数を経由して絞り込む（`e.cls === 'grp'` のようなインライン比較では、
     `(string & {})` を含む緩い判別プロパティを TS が正しく絞り込めないため）。
   - `SysBase.#initPlg()`（`run()` 内、`Config.generate()` の後・`initMain()` の前）が `hPlg` の
-    各プラグインの `init()` を一括実行し、`T_PluginInitArg.addLayCls` を実際に機能させる。
-    `addTag`/`render` は未対応（呼ぶと明示的に throw／no-op）。
+    各プラグインの `init()` を一括実行し、`T_PluginInitArg.addLayCls`/`addTag` を実際に機能させる。
+    `render` は未対応（no-op。pixi.js 専用の RenderTexture 焼きなので bluesnovel に消費先が無い）。
+  - `src/sn/PlgTag.ts`（2026-08-26）— プラグインが `addTag` で足すタグ名 → 処理関数のレジストリ。
+    本家 `hTag[name] = tag_fnc` に相当するが、`ScriptEngine.step()` がタグ名を `switch` で捌く
+    構造のため、`hTag` のような「呼べば済む辞書」に乗せられない。`LayCls.ts` と同じ形で
+    モジュールレベルの `Map` に置き、`ScriptEngine`（名前の存在検査だけ）・`ScriptMng`
+    （実際の関数呼び出し）・`SysBase.#initPlg()`（登録口）の 3 者から見えるようにしてある。
+    - `ScriptEngine.#execTag()` の `default` ケースが `hasPlgTag(name)` で存在を検査し、真なら
+      属性ハッシュを丸ごと `{t: 'plgTag', name, hArg}` として `aAct` に積んで `'stop'` を返す
+      （`layPlg` と同じ設計：中身の解釈もタグ関数の呼び出し＝副作用も、エンジンでなく
+      `ScriptMng` 側に閉じ込める。`step()` の純粋性はここで保たれる）。
+    - `ScriptEngine.registerPlgTag(name, fnc)`（静的メソッド）が `addTag` の実際の登録口。
+      `RESERVED_TAGS`（既存タグ名の一覧を持つのは `ScriptEngine` 側）との衝突検査をしてから
+      `PlgTag.addPlgTag()` へ委譲する（本家 `if (name in hTag) throw` と同じ意図）。
+    - `ScriptMng.#procPlgTag()` が唯一の実行口。タグ関数の戻り値は本家同様 isWait（`[lay]` の
+      isWait 対応・`Pages.lay()` 相当）で、`true` なら `#procing` を立てたまま処理完了を待ち、
+      プラグインが `T_PluginInitArg.resume`（`ScriptMng.resumePlg()`）を呼ぶまで再開しない。
+      `resumePlg()` は `#procing` を下ろしてから `#goSafe()` する点が素の `go()` と違う
+      （`#procing` が立ったままだと `#goSafe()` の「DOM 絡みの非同期処理中はクリックを
+      捨てる」判定に引っかかって無視されてしまうため）。
   - E2E 疎通確認は `test/e2e/plg.e2e.ts`（`test/e2e/app/prj_plg/` ＋ `test/e2e/app/dmyPlg.ts`）。
+    `[s]`（シナリオ本当の終端）の停止はクリックでは越えられないため、`addTag` のテストタグは
+    `[l]`〜`[s]` の間（クリック 1 回で通過する区間）に置いてある。
 
 **本家由来ファイルは本家のテストを無改変で持っている**（`test/Grammar.test.ts`,
 `test/ExprEval.test.ts`, `test/VarStore.test.ts` の後半）。これらを触るときはまず

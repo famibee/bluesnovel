@@ -3,6 +3,7 @@ import { n as e } from "./rolldown-runtime.js";
 var t = /* @__PURE__ */ e({
 	A_BUILTIN_LAY_CLS: () => n,
 	addLayCls: () => i,
+	clearPlgLayCls: () => s,
 	getLayCls: () => a,
 	hasLayCls: () => o
 }), n = ["grp", "txt"], r = new Map(n.map((e) => [e, null]));
@@ -15,6 +16,10 @@ function a(e) {
 }
 function o(e) {
 	return r.has(e);
+}
+function s() {
+	r.clear();
+	for (let e of n) r.set(e, null);
 }
 //#endregion
 export { a as n, o as r, t };

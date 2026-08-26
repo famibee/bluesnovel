@@ -86,17 +86,13 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       なお`ThreeDLayer.ts`はDOM版へ書き換え済みのため、依存が本家`skynovel_esm`のまま（現状維持、
       上記「依存の付け替え」参照）だと`[add_lay layer=3d class=3d]`が`Cannot set properties of
       undefined (setting 'position')`で例外になる（本家`Layer.ctn`はpixi.jsのSprite、
-      `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。実機確認は
-      依存を一時的に`file:../bluesnovel`へ切替＋`bun install`してから行うこと（確認後は
-      `file:../skynovel_esm`へ戻す。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
+      `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
 - [ ] `[lay]`のisWait対応（glTFロード待ち等でシナリオを止め、`pia.resume()`で再開する仕組み。
       本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
 - [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/
       `Layer.copy()`相当が未実装。`src/ts/PlgLayMng.ts`にコメントで場所だけ残してある）
 - [ ] しおり（save/load）にプラグインレイヤーの中身が乗らない（`Layer.record()`/`playback()`の
       実配線は未接続。基底クラスにAPIは残してある）
-- [ ] `addTag`（プラグインからのタグ追加）は未対応。`ScriptEngine`がタグをswitchで捌く構造のため
-      動的な登録口が無く、呼ぶと明示的にthrowする（`SysBase.#initPlg()`参照）
 
 ## 要検証（出自不確か・追跡工数を投じない）
 

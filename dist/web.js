@@ -95,20 +95,18 @@ var a = "skynovel", o = class {
 		this.#n = !0;
 		let t = Object.values(this.hPlg);
 		if (t.length === 0) return;
-		let { addLayCls: n } = await import("./LayCls.js").then((e) => e.t);
+		let [{ addLayCls: n }, { ScriptEngine: i }] = await Promise.all([import("./LayCls.js").then((e) => e.t), import("./ScriptEngine.js")]);
 		await Promise.all(t.map((t) => t.init({
 			getInfo: () => ({ window: {
 				width: r.stageW,
 				height: r.stageH
 			} }),
-			addTag: (e) => {
-				throw `プラグインのaddTag('${e}')は未対応です`;
-			},
+			addTag: (e, t) => i.registerPlgTag(e, t),
 			addLayCls: n,
 			searchPath: (e, t) => this.cfg.searchPath(e, t),
 			getVal: (t, n) => e.getVal(t, n),
 			resume: () => {
-				e.go();
+				e.resumePlg();
 			},
 			render: () => {},
 			setDec: () => {},

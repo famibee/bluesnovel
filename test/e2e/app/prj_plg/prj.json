@@ -7,7 +7,7 @@
 		"cre_url": "",
 		"publisher": "famibee",
 		"pub_url": "",
-		"detail": "本家互換プラグイン機構（addLayCls）の疎通確認用E2Eシナリオ",
+		"detail": "本家互換プラグイン機構（addLayCls/addTag）の疎通確認用E2Eシナリオ",
 		"version": "1.0"
 	},
 	"log": {"max_len": 64},
