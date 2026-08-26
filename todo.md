@@ -59,7 +59,7 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
         これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
 - [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
 - [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
-- [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。`[span]`は`wait`/`r_align`も未対応。`[graph]`は`wait`（`id`属性はGrammar.tsにも本家にも見当たらず出自不明、対象外とする）、`[tcy]`は`wait`が未対応。いずれも2026-08-20、`docs/tag.html`整理時に理由未記載のまま放置されていたのを発見。実装要否・理由の調査はこれから
+- [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。
 - [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
 
 ## アセット・基盤
@@ -69,24 +69,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 - [ ] フィルターの`noise`はCSSにもSVGの単純な組合せにも無いので、対応するならcanvas等で別途。<https://ics.media/entry/241122/> が参考になるかも
 - [ ] 【現状不使用・優先順位低】アニメpng（スプライトシート）：文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今はCSSの背景画像に直接URLを入れているので、.jsonが来ると絵が出ない
 - [ ] フレーム内幅が本家960に対しこちら1024なので bootstrap の`row-cols`が1列多くなる（不具合ではない）。合わせるならステージ実寸とフレーム幅の関係を再検討
-- [ ] sn_gallery側の3D/Live2D系プラグイン本体の移植（`cubism3_layer`/`emote_layer`）。
-      `3d_layer`は2026-08-24にDOM版へ書き換え済み（`sn_gallery/src/plugin/3d_layer/ThreeDLayer.ts`。
-      pixi.jsのSprite/Textureブリッジを外し、three.jsのWebGLRendererのcanvasを直接
-      `this.ctn.appendChild()`する形に変更）。`3d_base`/`3d_gltf`で実機確認：グリッド表示・
-      立方体の生成/移動/追加/個別削除、gltfモデルの表示・アニメ切替まで正常動作。本家(pixi版)との
-      実機比較で見た目のスケールが完全一致することも画像diffで確認済み（同日、ユーザー実機の
-      devicePixelRatio=2環境で「サイズが違う」報告を受けて追跡：原因は`this.ctn`（position:relative）
-      にwidth/height未指定だったため、中身のcanvas（position:absolute）が通常のフロー計算に
-      参加せず`ctn`の高さが0のままになり、canvasの`top:50%`中央寄せの基準がずれて実際より
-      上にオフセットして描画されていたこと。`this.ctn.style.width/height = '100%'`を追加して解決。
-      3D自体のカメラ・投影計算にバグは無かった＝dpr起因の疑いやthree.jsのsetSize/setPixelRatio
-      呼び出し順序は無関係と確認済み）。ビルドは`sn_gallery`単体で`vite build`が通る。
-      残るcubism3_layer/emote_layerも同じ方針（three.js/Live2D本体の依存はbluesnovel本体には
-      追加しない方針＝ユーザー判断なので、sn_gallery側で個別にインストールし、DOM版へ書き換える）。
-      なお`ThreeDLayer.ts`はDOM版へ書き換え済みのため、依存が本家`skynovel_esm`のまま（現状維持、
-      上記「依存の付け替え」参照）だと`[add_lay layer=3d class=3d]`が`Cannot set properties of
-      undefined (setting 'position')`で例外になる（本家`Layer.ctn`はpixi.jsのSprite、
-      `ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM前提でアクセスするため）。2026-08-24、`[add_lay]`例外報告を機に発覚・確認）
 
 ## 保留
 
@@ -160,3 +142,48 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       デフォルト/palt/pwidボタンがあり、触るユーザーには`pwid`由来の副作用と伝わる想定のため、
       「回転は付けない」という現行方針（`TxtLayer.tsx`のコメント参照）を崩してまで対症療法の
       個別回転を入れる必要は無いと判断。本家と異なる動作のまま完了
+- [ ] **sn_gallery側のcubism3_layer/emote_layerプラグイン、本家で動作させる動機が薄いため凍結**
+      （cubism3は元から無効化済み、emote_layerも2026-08-26に同じ判断とする）。
+      - [emote_layer] 現状はエラー gallery/?cur=emote_layer
+      - 2026-08-26調査：公式SDKはCheeseWare E-mote（有限会社エムツー、<https://emote.mtwo.co.jp/download/sdk/>）。
+        `sn_gallery/src/plugin/emote_layer/EmoteLayer.ts`が使う`plugin_lib/emoteplayer.min.js`＋
+        `emotedriver.js`（1.0MB、`ccall`/`Module._malloc`ありEmscripten生成）は、同ページで配布されている
+        「WebGL」向けサンプルSDKのビルドと見られる＝pixi.js非依存で元々素のWebGLで動くため、3d_layer
+        （three.js）と同じく「呼び出し側だけ書き換えてpixi依存を外す」方針自体は技術的に成立しそう。
+        ただし3d_layerより1段複雑：E-moteは`EmotePlayer.createRenderCanvas()`で**単一のグローバル
+        共有canvas**にWebGLコンテキストを1つだけ持つ設計（three.jsのようにレイヤーごとに個別canvasを
+        持てない）。複数キャラ・複数レイヤーを出すには共有canvasの中身を都度各レイヤー用にコピーする
+        処理が必須で、現状はpixiの`RenderTexture`＋`Sprite`＋`Texture(new BaseTexture(cvs))`がその役目。
+        DOM版に置き換える場合もこのコピー処理（`<canvas>`2Dコンテキストへの`drawImage`等）は必要。
+        ライセンス（`最初にお読み下さい.txt`、ダウンロードページ双方）は個人・同人利用限定／商用利用
+        禁止／解析・リバースエンジニアリング禁止と明記。SDK内部（emoteplayer.min.js/emotedriver.js）
+        への深入りした解析は避け、呼び出し側の書き換えに留める必要がある
+      - 2026-08-26調査：E-mote相当（パーツ差分の自動切替＋まばたき/口パク＋パーツ単位の簡易変形・
+        物理揺れ）を実現できるフリーOSSライブラリを比較。Live2D Cubismが最も近い設計思想（メッシュ
+        変形＋パラメータ駆動の表情・まばたき・物理演算）で、Core/FrameworkのSDKは無料配布、
+        pixi.js用ランタイム`pixi-live2d-display`もMIT。DragonBones（Tencent製、完全無料OSS）は
+        ボーン+メッシュ変形だが開発が事実上停止しメンテナンスリスクあり。Spineはランタイム
+        （`spine-ts`等）のみMIT/OSSでエディタ（データ制作ツール）が有料。Riveはランタイム
+        （`@rive-app/canvas`等）がMIT/OSSで活発に更新されているが、ベクターシェイプ+ボーン中心で
+        E-moteの「静止画パーツをそのまま差し替える」設計とは性質が異なる。結論：emote_layerを
+        新規にDOM移植するより、sn_galleryに既に存在するcubism3_layerを先に検討する方が投資対効果が
+        高い可能性がある（表情差分・まばたき目的ならLive2Dで代替できる見込みのため）。ただし
+        着手するかは要判断、現状はどちらも凍結のまま
+      - `3d_layer`は2026-08-24にDOM版へ書き換え済み（`sn_gallery/src/plugin/3d_layer/ThreeDLayer.ts`。
+        pixi.jsのSprite/Textureブリッジを外し、three.jsのWebGLRendererのcanvasを直接
+        `this.ctn.appendChild()`する形に変更）。`3d_base`/`3d_gltf`で実機確認：グリッド表示・
+        立方体の生成/移動/追加/個別削除、gltfモデルの表示・アニメ切替まで正常動作。本家(pixi版)との
+        実機比較で見た目のスケールが完全一致することも画像diffで確認済み（同日、ユーザー実機の
+        devicePixelRatio=2環境で「サイズが違う」報告を受けて追跡：原因は`this.ctn`（position:relative）
+        にwidth/height未指定だったため、中身のcanvas（position:absolute）が通常のフロー計算に
+        参加せず`ctn`の高さが0のままになり、canvasの`top:50%`中央寄せの基準がずれて実際より
+        上にオフセットして描画されていたこと。`this.ctn.style.width/height = '100%'`を追加して解決。
+        3D自体のカメラ・投影計算にバグは無かった＝dpr起因の疑いやthree.jsのsetSize/setPixelRatio
+        呼び出し順序は無関係と確認済み）。ビルドは`sn_gallery`単体で`vite build`が通る。
+        残るcubism3_layer/emote_layerも同じ方針（three.js/Live2D本体の依存はbluesnovel本体には
+        追加しない方針＝ユーザー判断なので、sn_gallery側で個別にインストールし、DOM版へ書き換える）。
+        なお`ThreeDLayer.ts`はDOM版へ書き換え済みのため、依存が本家`skynovel_esm`のまま（現状維持、
+        「sn_galleryをbluesnovel駆動にする」の「依存の付け替え」参照）だと`[add_lay layer=3d
+        class=3d]`が`Cannot set properties of undefined (setting 'position')`で例外になる
+        （本家`Layer.ctn`はpixi.jsのSprite、`ThreeDLayer.ts`は`this.ctn.style.position=…`とDOM
+        前提でアクセスするため）。2026-08-24、`[add_lay]`例外報告を機に発覚・確認

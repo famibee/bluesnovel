@@ -1037,89 +1037,89 @@ function B(e) {
 	}
 }
 function V(e) {
-	let t = [], n = "", r = "", i, a, o, s, c, l = [], u = (e, l, u, d) => {
-		let f = n + (s?.style ?? "") + (u?.style ?? ""), p = r + (s?.r_style ?? "") + (u?.r_style ?? ""), m = u?.ch_in_style ?? s?.ch_in_style ?? i, h = u?.ch_out_style ?? s?.ch_out_style ?? a, g = z(u?.wait) ?? z(s?.wait) ?? o, { ra: _, ruby: v } = l ? G(l) : {
+	let t = [], n = "", r = "", i, a, o, s, c, l, u = [], d = (e, u, d, f) => {
+		let p = n + (c?.style ?? "") + (d?.style ?? ""), m = r + (c?.r_style ?? "") + (d?.r_style ?? ""), h = d?.ch_in_style ?? c?.ch_in_style ?? i, g = d?.ch_out_style ?? c?.ch_out_style ?? a, _ = z(d?.wait) ?? z(c?.wait) ?? o, { ra: v, ruby: y } = u ? G(u) : {
 			ra: void 0,
 			ruby: void 0
-		};
+		}, b = v ?? s;
 		t.push({
 			c: e,
-			...v ? { r: v } : {},
-			..._ ? { ra: _ } : {},
-			...f ? { s: f } : {},
-			...p ? { rs: p } : {},
-			...d ? { tcy: d } : {},
-			...c ? { lnk: c } : {},
-			...m === void 0 ? {} : { cis: m },
-			...h === void 0 ? {} : { cos: h },
-			...g === void 0 ? {} : { w: g }
+			...y ? { r: y } : {},
+			...b ? { ra: b } : {},
+			...p ? { s: p } : {},
+			...m ? { rs: m } : {},
+			...f ? { tcy: f } : {},
+			...l ? { lnk: l } : {},
+			...h === void 0 ? {} : { cis: h },
+			...g === void 0 ? {} : { cos: g },
+			..._ === void 0 ? {} : { w: _ }
 		});
-	}, d = new w();
-	return d.init((e, d) => {
-		let f = d ? B(d) : void 0;
-		if (!f) {
-			u(e, d);
+	}, f = new w();
+	return f.init((e, f) => {
+		let p = f ? B(f) : void 0;
+		if (!p) {
+			d(e, f);
 			return;
 		}
-		let { o: p } = f;
-		switch (f.cmd) {
+		let { o: m } = p;
+		switch (p.cmd) {
 			case "span":
-				n = p.style ?? "", r = p.r_style ?? "", i = p.ch_in_style, a = p.ch_out_style, o = z(p.wait);
+				n = m.style ?? "", r = m.r_style ?? "", i = m.ch_in_style, a = m.ch_out_style, o = z(m.wait), m.r_align && (s = m.r_align);
 				break;
 			case "add":
-				s = p;
+				c = m;
 				break;
 			case "add_close":
-				s = void 0;
+				c = void 0;
 				break;
 			case "link":
-				l.push({
+				u.push({
 					sty: n,
 					rSty: r
-				}), n += p.style ?? "", r += p.r_style ?? "", c = {
-					label: p.label ?? "",
-					fn: p.fn ?? "",
-					call: p.call === "true",
-					arg: p.arg ?? "",
-					...p.url ? { url: p.url } : {},
-					...p.style_hover ? { sh: p.style_hover } : {},
-					...p.style_clicked ? { sc: p.style_clicked } : {},
-					...p.r_style_hover ?? p.style_hover ? { rsh: p.r_style_hover ?? p.style_hover } : {},
-					...p.r_style_clicked ?? p.r_style ? { rsc: p.r_style_clicked ?? p.r_style } : {},
-					...p.hint ? { hint: p.hint } : {},
-					...p.hint_style ? { hs: p.hint_style } : {},
-					...p.hint_opt ? { ho: p.hint_opt } : {},
-					...p.clickse ? {
-						clickse: p.clickse,
-						clicksebuf: p.clicksebuf
+				}), n += m.style ?? "", r += m.r_style ?? "", l = {
+					label: m.label ?? "",
+					fn: m.fn ?? "",
+					call: m.call === "true",
+					arg: m.arg ?? "",
+					...m.url ? { url: m.url } : {},
+					...m.style_hover ? { sh: m.style_hover } : {},
+					...m.style_clicked ? { sc: m.style_clicked } : {},
+					...m.r_style_hover ?? m.style_hover ? { rsh: m.r_style_hover ?? m.style_hover } : {},
+					...m.r_style_clicked ?? m.r_style ? { rsc: m.r_style_clicked ?? m.r_style } : {},
+					...m.hint ? { hint: m.hint } : {},
+					...m.hint_style ? { hs: m.hint_style } : {},
+					...m.hint_opt ? { ho: m.hint_opt } : {},
+					...m.clickse ? {
+						clickse: m.clickse,
+						clicksebuf: m.clicksebuf
 					} : {},
-					...p.enterse ? {
-						enterse: p.enterse,
-						entersebuf: p.entersebuf
+					...m.enterse ? {
+						enterse: m.enterse,
+						entersebuf: m.entersebuf
 					} : {},
-					...p.leavese ? {
-						leavese: p.leavese,
-						leavesebuf: p.leavesebuf
+					...m.leavese ? {
+						leavese: m.leavese,
+						leavesebuf: m.leavesebuf
 					} : {}
 				};
 				break;
 			case "endlink": {
-				let e = l.pop();
-				e && (n = e.sty, r = e.rSty), c = void 0;
+				let e = u.pop();
+				e && (n = e.sty, r = e.rSty), l = void 0;
 				break;
 			}
 			case "tcy":
-				u(p.t ?? "", p.r, p, !0);
+				d(m.t ?? "", m.r, m, !0);
 				break;
-			case "grp": p.pic && (u("　", p.r, p), Object.assign(t.at(-1), {
-				pic: p.pic,
-				...z(p.width) === void 0 ? {} : { gw: z(p.width) },
-				...z(p.height) === void 0 ? {} : { gh: z(p.height) },
-				...z(p.x) === void 0 ? {} : { gx: z(p.x) },
-				...z(p.y) === void 0 ? {} : { gy: z(p.y) }
+			case "grp": m.pic && (d("　", m.r, m), Object.assign(t.at(-1), {
+				pic: m.pic,
+				...z(m.width) === void 0 ? {} : { gw: z(m.width) },
+				...z(m.height) === void 0 ? {} : { gh: z(m.height) },
+				...z(m.x) === void 0 ? {} : { gx: z(m.x) },
+				...z(m.y) === void 0 ? {} : { gy: z(m.y) }
 			}));
 		}
-	}), d.putTxt(e), t;
+	}), f.putTxt(e), t;
 }
 function H(e) {
 	return e.map((e) => e.c).join("");
@@ -2045,6 +2045,7 @@ var re = class n {
 				clearFilter: i.clear_filter === "true"
 			}), "skip";
 			case "span": {
+				if (i.r_align !== void 0 && !W.includes(i.r_align)) throw `[span] r_alignの値が不正です：${i.r_align}`;
 				let { nm: e, page: t } = this.#le(i);
 				return this.#ue(l, n.#ce("span", {
 					...i,

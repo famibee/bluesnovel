@@ -1336,13 +1336,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
-<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟢 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>pic</code>（アニメpng＝スプライトシートも可）・<code>r</code>（ルビ）・
-	<code>style</code>／<code>r_style</code>・<code>layer</code>／<code>page</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く。<br/>
+	<code>style</code>／<code>r_style</code>・<code>wait</code>・<code>layer</code>／<code>page</code>に対応。本文としては<b>全角空白1つぶんの場所</b>を占め、そこへ画像を敷く。<br/>
 	<code>width</code>／<code>height</code>／<code>x</code>／<code>y</code>に対応：<b>書いた時だけ当てる</b>——省略すれば全角空白1つぶんの枠に収まる。
-	<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、行の高さや隣の文字の位置は動かさない。<br/>
-	（bluesnovel）未対応：<code>id</code>。</p>
+	<code>x</code>／<code>y</code>は<b>本文の流れの中の位置からのずらし</b>で、行の高さや隣の文字の位置は動かさない。</p>
 <p>※省略時は画像サイズになるが、ロード完了直後に文字配置を決めるのでちらつく。それを嫌う際に指定する<br/>
 	※特にモバイルなどでゲーム画面が自動で拡大縮小される場合、省略したらその時の本文文字サイズとして扱われる。なるべくサイズ指定を推奨。</p>
 
@@ -1556,7 +1555,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>layer</td><td></td><td>デフォルト文字レイヤ</td><td>文字レイヤ名</td><td>文字を表示するレイヤ</td></tr>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
-<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟢 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 <tr><td>style</td><td></td><td>全てクリア</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	このタグ以降の文字表示に適用される。
@@ -1567,11 +1566,12 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>🟡 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名<br/>（bluesnovel）未対応</td></tr>
 <tr><td>🟡 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名<br/>（bluesnovel）未対応</td></tr>
-<tr><td>🟡 r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照<br/>（bluesnovel）未対応
+<tr><td>🟢 r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
 </td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
-	（次の[span]まで効き、属性なしの[span]で解除）。
+<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>wait</code>・<code>r_align</code>・<code>layer</code>／<code>page</code>に対応
+	（次の[span]まで効き、属性なしの[span]で解除。ただし<code>r_align</code>だけは本家同様、
+	指定時のみ上書きし属性なしの[span]でも解除しない）。
 	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。</p>
 
 </p>
@@ -1592,9 +1592,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
-<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟢 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時</td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>・<code>layer</code>／<code>page</code>に対応
+<p class="mb2 px1"><b>bluesnovel</b>：<code>t</code>・<code>r</code>・<code>style</code>・<code>r_style</code>・<code>wait</code>・<code>layer</code>／<code>page</code>に対応
 	（CSSの<code>text-combine-upright: all</code>で組む）。縦書き（<code>writing-mode</code>）の詰めは別項目。</p>
 
 </p>

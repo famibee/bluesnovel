@@ -87,6 +87,7 @@ type T_CMD_ARG = {
 	leavese?: string; leavesebuf?: string;	// [link]の効果音
 	ch_in_style?: string; ch_out_style?: string;	// 文字出現・消去演出（ChStyle.ts）
 	wait?: string;	// この文字ぶんの待ち時間（ミリ秒）
+	r_align?: string;	// [span r_align=…]。値は事前にScriptEngine側でA_R_ALIGNへ検証済み
 };
 // 属性の数値化。**壊れた値は「指定なし」として捨てる**（本文の表示を止めないため。
 //	タグ側の検査を抜けてくる値ではないので、ここは寛容でよい）
@@ -118,6 +119,8 @@ export function splitCh(raw: string): T_CH[] {
 	let cis: string | undefined;
 	let cos: string | undefined;
 	let wait: number | undefined;
+	// [span r_align=…]。style/waitと違い、属性なしの[span]では解除しない（本家 TxtLayer.ts:792,811）
+	let rAlign: T_R_ALIGN | undefined;
 	let add: T_CMD_ARG | undefined;	// [ch]／[ruby2]のstyle・r_style。add_closeまでの間だけ効く
 
 	let lnk: T_LNK | undefined;	// [link]〜[endlink]の区間
@@ -132,7 +135,9 @@ export function splitCh(raw: string): T_CH[] {
 		const ci = o?.ch_in_style ?? add?.ch_in_style ?? cis;
 		const co = o?.ch_out_style ?? add?.ch_out_style ?? cos;
 		const w = num(o?.wait) ?? num(add?.wait) ?? wait;
-		const {ra, ruby} = r ? splitRubyAlign(r) : {ra: undefined, ruby: undefined};
+		// ルビ位置は記法内指定（`位置｜ルビ`）が最優先、次に[span r_align=]、最後は[lay r_align=]（TxtLayer側）
+		const {ra: raInline, ruby} = r ? splitRubyAlign(r) : {ra: undefined, ruby: undefined};
+		const ra = raInline ?? rAlign;
 		aCh.push({c,
 			...(ruby ? {r: ruby} : {}),
 			...(ra ? {ra} : {}),
@@ -158,6 +163,7 @@ export function splitCh(raw: string): T_CH[] {
 			case 'span':
 				sty = o.style ?? ''; rSty = o.r_style ?? '';
 				cis = o.ch_in_style; cos = o.ch_out_style; wait = num(o.wait);
+				if (o.r_align) rAlign = o.r_align as T_R_ALIGN;
 				break;
 			case 'add':		add = o;	break;
 			case 'add_close':	add = undefined;	break;

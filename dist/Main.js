@@ -450,9 +450,7 @@ function Ee(e) {
 		case 40:
 			e === 41 && Ee(e);
 			break;
-		case 92:
-			K();
-			break;
+		case 92: K();
 	}
 	return H;
 }

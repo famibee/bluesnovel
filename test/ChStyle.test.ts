@@ -165,6 +165,31 @@ it('waitが数値でなければ「指定なし」として捨てる', ()=> {
 	expect(chs('[span wait=いち]あ')[0]?.w).toBeUndefined();
 });
 
+it('[graph]/[tcy]のwaitも同じ経路で乗る', ()=> {
+	expect(chs('[graph pic=x wait=333]')[0]?.w).toBe(333);
+	expect(chs('[tcy t=あい wait=444]')[0]?.w).toBe(444);
+});
+
+it('span_r_alignは記法内指定が無い文字へ落ちる', ()=> {
+	const a = chs('[span r_align=center]あ');
+	expect(a[0]?.ra).toBe('center');
+});
+
+it('span_r_alignは属性なしの[span]でも解除されない（本家 #mergePushSpan と異なり）', ()=> {
+	const a = chs('[span r_align=center]あ[span]い');
+	expect(a[0]?.ra).toBe('center');
+	expect(a[1]?.ra).toBe('center');
+});
+
+it('span_r_alignよりルビ記法内の位置指定が勝つ', ()=> {
+	const a = chs('[span r_align=center]漢字《right｜かんじ》');
+	expect(a[0]?.ra).toBe('right');
+});
+
+it('span_r_alignの値が不正なら[span]自体がthrow', ()=> {
+	expect(()=> acts('[span r_align=bogus]あ')).toThrow();
+});
+
 
 // ============ [autowc]（文字ごとのウェイト）============
 

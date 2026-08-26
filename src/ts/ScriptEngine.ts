@@ -1741,6 +1741,9 @@ export class ScriptEngine {
 		//	（エンジンは相変わらず「文字列を貯める」だけで済み、chgStrの形も変わらない）
 		case 'span': {	// インラインスタイル設定（本家 LayerMng.ts:1053 #span()）
 			//	属性なしの[span]は指定の解除（本家 #mergePushSpan の「どちらも指定されてなければクリア」）
+			//	r_alignだけは本家同様「指定時のみ上書き、無指定でも解除しない」（[lay r_align=]と同じ値域）
+			if (args.r_align !== undefined && ! (A_R_ALIGN as readonly string[]).includes(args.r_align))
+				throw `[span] r_alignの値が不正です：${args.r_align}`;
 			const {nm, page} = this.#txtTarget(args);
 			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', {...args, layer: undefined, page: undefined}), true, nm, page);
 			return 'skip';
