@@ -17,8 +17,14 @@
 
 import type {TArg} from '../sn/Grammar';
 import {getLayCls} from '../sn/LayCls';
-import type {Layer} from '../sn/Layer';
+import type {Layer, T_RecordPlayBack_lay} from '../sn/Layer';
 import type {T_PAGE_BOTH} from '../store/store';
+
+// しおり（T_MARK.hPlgLay）1件分の形。1レイヤ名につきfore/back 2個分のrecord()結果を持つ
+//	（本家 LayerMng.record()の戻り値相当）
+export type T_RecordPlayBack_plgLay = {
+	[nm: string]: {cls: string; fore: T_RecordPlayBack_lay; back: T_RecordPlayBack_lay};
+};
 
 
 export class PlgLayMng {
@@ -71,6 +77,41 @@ export class PlgLayMng {
 
 	dump(nm: string, pageIdx: 0 | 1): string {
 		return this.#hLay[`${nm}:${String(pageIdx)}`]?.dump() ?? '';
+	}
+
+	// [record_place]／[save]。本家 LayerMng.record()相当。管理下の全プラグインレイヤーの
+	//	fore/back分をLayer.record()で読み取って集約する（store外の状態なのでしおりへは別経路で運ぶ）
+	record(): T_RecordPlayBack_plgLay {
+		const h: T_RecordPlayBack_plgLay = {};
+		for (const nm of Object.keys(this.#hCls)) {
+			h[nm] = {
+				cls		: this.#hCls[nm]!,
+				fore	: this.#hLay[`${nm}:0`]!.record(),
+				back	: this.#hLay[`${nm}:1`]!.record(),
+			};
+		}
+		return h;
+	}
+
+	// [load]／ページ移動の演じ直し。本家 LayerMng.playback()相当。
+	//	hに無い（＝しおり側で消えている）プラグインレイヤーは破棄し、hにあるものは無ければadd()して
+	//	から書き戻す（store側のaPage丸ごと置換で消える/現れるのと同じ結果にする）
+	playback(h: T_RecordPlayBack_plgLay | undefined, aPrm: Promise<void>[]): void {
+		const hh = h ?? {};
+		for (const nm of Object.keys(this.#hCls)) {
+			if (nm in hh) continue;
+			this.#hLay[`${nm}:0`]?.destroy();
+			this.#hLay[`${nm}:1`]?.destroy();
+			delete this.#hLay[`${nm}:0`];
+			delete this.#hLay[`${nm}:1`];
+			delete this.#hCls[nm];
+		}
+		for (const nm of Object.keys(hh)) {
+			const {cls, fore, back} = hh[nm]!;
+			if (! (nm in this.#hCls)) this.add(nm, cls);
+			this.#hLay[`${nm}:0`]!.playback(fore, aPrm);
+			this.#hLay[`${nm}:1`]!.playback(back, aPrm);
+		}
 	}
 
 	// SysBase.stop()/run()からのプロジェクト切替時（ScriptMng.destroy()経由）。

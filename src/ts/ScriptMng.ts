@@ -298,6 +298,7 @@ export class ScriptMng {
 			engine.restoreMarkPart(ent.mark);
 			engine.clearOnResume = ent.clearOnResume;
 			this.$fncs.replace(ent.mark.sPages);
+			this.#plgLayMng.playback(ent.mark.hPlgLay, []);
 			this.#stopped = false;
 			this.#pageStart = undefined;	// 演じ直しの先頭は積んだときの位置のまま
 			engine.switchScript(await this.#getScript(ent.fn), '', ent.idx);
@@ -367,7 +368,12 @@ export class ScriptMng {
 	// しおり1件を組み立てる（本家 ScriptIterator #record_place() の後半）。
 	//	エンジン側（save:変数・ifスタック）とストア側（表裏ページ）の合成
 	#mkMark(json: {[k: string]: string} = {}): T_MARK {
-		return {...this.#engine!.nowMarkPart(), sPages: this.$fncs.getPagesJson(), json};
+		return {
+			...this.#engine!.nowMarkPart(),
+			sPages	: this.$fncs.getPagesJson(),
+			hPlgLay	: this.#plgLayMng.record(),
+			json,
+		};
 	}
 	// 直近の[record_place]で覚えたしおり。[save]はこれを保存する（本家 #mark）
 	#mark?: T_MARK;
@@ -1307,6 +1313,7 @@ export class ScriptMng {
 			engine.restoreMarkPart(mark);
 			this.#restoreLoopSnd(engine);		// BGM等の復元（本家 SoundMng.playLoopFromSaveObj()）
 			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
+			this.#plgLayMng.playback(mark.hPlgLay, []);
 			this.#pageLog.clear();				// 読み戻し履歴は繋がらないので捨てる
 			this.#pageStart = undefined;
 			this.#stopped = false;

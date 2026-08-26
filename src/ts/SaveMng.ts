@@ -16,6 +16,7 @@
 //	「ストアから貰う分」（表裏ページのJSON）を合わせて組み立てる（ScriptMng #mkMark()）。
 
 import type {T_H_Areas} from '../sn/Areas';
+import type {T_RecordPlayBack_plgLay} from './PlgLayMng';
 import type {T_VAL_D} from './VarStore';
 
 
@@ -30,6 +31,9 @@ export type T_MARK = {
 	hTxt?	: {[nm: string]: string};
 	// 同上、裏ページ分（layer=/page=対応で追加。**更に古いしおりには無い**ので optional）
 	hTxtBk?	: {[nm: string]: string};
+	// プラグインレイヤー（[add_lay class=…]）の中身。DOM側（PlgLayMng）が持つのでストアの
+	//	sPagesには乗らず、ここで別途運ぶ（**プラグイン機構導入前のしおりには無い**ので optional）
+	hPlgLay?: T_RecordPlayBack_plgLay;
 	json	: {[k: string]: string};	// [save]タグの属性（タイトル・サムネイル等）。const.sn.bookmark.jsonが返す中身
 };
 

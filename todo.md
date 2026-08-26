@@ -91,8 +91,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       本家 `Pages.lay()`の戻り値相当。現状は常にfalse扱いで進む）
 - [ ] `[trans]`でプラグインレイヤーの中身が裏へコピーされない（本家 `Pages.transPage()`/
       `Layer.copy()`相当が未実装。`src/ts/PlgLayMng.ts`にコメントで場所だけ残してある）
-- [ ] しおり（save/load）にプラグインレイヤーの中身が乗らない（`Layer.record()`/`playback()`の
-      実配線は未接続。基底クラスにAPIは残してある）
 
 ## 要検証（出自不確か・追跡工数を投じない）
 

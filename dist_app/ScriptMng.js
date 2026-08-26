@@ -219,6 +219,23 @@ var C = class e {
 	dump(e, t) {
 		return this.#e[`${e}:${String(t)}`]?.dump() ?? "";
 	}
+	record() {
+		let e = {};
+		for (let t of Object.keys(this.#t)) e[t] = {
+			cls: this.#t[t],
+			fore: this.#e[`${t}:0`].record(),
+			back: this.#e[`${t}:1`].record()
+		};
+		return e;
+	}
+	playback(e, t) {
+		let n = e ?? {};
+		for (let e of Object.keys(this.#t)) e in n || (this.#e[`${e}:0`]?.destroy(), this.#e[`${e}:1`]?.destroy(), delete this.#e[`${e}:0`], delete this.#e[`${e}:1`], delete this.#t[e]);
+		for (let e of Object.keys(n)) {
+			let { cls: r, fore: i, back: a } = n[e];
+			e in this.#t || this.add(e, r), this.#e[`${e}:0`].playback(i, t), this.#e[`${e}:1`].playback(a, t);
+		}
+	}
 	destroy() {
 		for (let e of Object.values(this.#e)) e.destroy();
 		for (let e of Object.keys(this.#e)) delete this.#e[e];
@@ -3567,7 +3584,7 @@ var go = class p {
 				this.#f(), this.#N = !1;
 				return;
 			}
-			this.#d = !0, this.#f(), t.restoreMarkPart(n.mark), t.clearOnResume = n.clearOnResume, this.$fncs.replace(n.mark.sPages), this.#M = !1, this.#l = void 0, t.switchScript(await this.#b(n.fn), "", n.idx);
+			this.#d = !0, this.#f(), t.restoreMarkPart(n.mark), t.clearOnResume = n.clearOnResume, this.$fncs.replace(n.mark.sPages), this.#w.playback(n.mark.hPlgLay, []), this.#M = !1, this.#l = void 0, t.switchScript(await this.#b(n.fn), "", n.idx);
 		} catch (e) {
 			this.#d = !1, this.#N = !1, this.myTrace(`[page] ${String(e)}`, "ET");
 			return;
@@ -3597,6 +3614,7 @@ var go = class p {
 		return {
 			...this.#r.nowMarkPart(),
 			sPages: this.$fncs.getPagesJson(),
+			hPlgLay: this.#w.record(),
 			json: e
 		};
 	}
@@ -4202,7 +4220,7 @@ var go = class p {
 		try {
 			let n = e.t === "reloadScript" ? this.#y : this.#m.getMark(e.place);
 			if (!n) throw e.t === "reloadScript" ? "[record_place]がまだ実行されていません" : `place=${String(e.place)} は存在しません`;
-			if (t.restoreMarkPart(n), this.#de(t), this.$fncs.replace(n.sPages), this.#c.clear(), this.#l = void 0, this.#M = !1, e.t === "load" && e.doRec !== !1 && (this.#y = { ...n }), e.t === "load" && e.index !== void 0) {
+			if (t.restoreMarkPart(n), this.#de(t), this.$fncs.replace(n.sPages), this.#w.playback(n.hPlgLay, []), this.#c.clear(), this.#l = void 0, this.#M = !1, e.t === "load" && e.doRec !== !1 && (this.#y = { ...n }), e.t === "load" && e.index !== void 0) {
 				let n = await this.#b(e.fn || t.fn);
 				t.switchScript(n, "", e.index), this.#N = !1, this.#j();
 				return;
