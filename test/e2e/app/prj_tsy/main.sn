@@ -5,6 +5,7 @@
 ;	・[stop_tsy]が即座に終了状態へ送ること
 ;	・[wait_tsy]中のクリックで打ち切れ、その場合も必ず終了状態になること
 ;	・path=（経路）が区間を順に辿ること／chain=が他トゥイーンの終了に繋がること
+;	・[clear_lay]/[er]で走行中の[tsy]が畳まれ、以後レイヤ属性が動かなくなること
 [add_lay layer=base class=grp]
 [add_lay layer=base2 class=grp]
 [add_lay layer=mes class=txt]
@@ -61,4 +62,21 @@
 [lay layer=base bottom=50]
 [tsy layer=base time=200 path='(,=100) (,=0)']
 [wait_tsy layer=base]
-すえおき[s]
+すえおき[p]
+
+; [clear_lay]で走行中の[tsy]が畳まれること（回帰。ScriptMng.#stopTsyByLayer()）。
+;	本家 Layer.clearLay() はトゥイーンに中断を伝えないため、クリアで初期値へ戻した見た目を
+;	トゥイーンが毎フレーム上書きし続ける。9秒トゥイーンの途中で[clear_lay]し、
+;	以後 top が目標(400)へ向かって動かないことを見る（[wait_tsy]は打たない＝畳まれていれば
+;	そもそも待つトゥイーンが無い）
+[add_lay layer=clr class=grp]
+[lay layer=clr left=0 top=0 alpha=1]
+[tsy layer=clr time=9000 top=400]
+[clear_lay layer=clr]
+かたづけ[p]
+
+; [er]でも同様（現在レイヤ＝mes の走行中[tsy]を畳む。ハンドラは clearTxtLay 経由）
+[lay layer=mes top=0]
+[tsy layer=mes time=9000 top=400]
+[er]
+けし[s]

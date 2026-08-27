@@ -31,14 +31,6 @@
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
       近似余地（いずれも優先度低・未実機検証）。詳細 [filters.md](filters.md)
 
-## テスト追加待ち
-
-- [ ] `[er]`/`[clear_lay]`/ページ演じ直し で走行中 `[tsy]` が畳まれる回帰テスト（e2e）。
-      実装は `ScriptMng.#stopTsyByLayer()`（`clearLay`/`clearTxtLay`/`replace()` に配線済み）。
-      `test/e2e/app/prj_tsy/main.sn` に「`[tsy time=9000]` → `[clear_lay]` → 値が動かなくなる」
-      シーンを足して `test/e2e/tsy.e2e.ts` で検証する。本家 `skynovel_esm` 側は未修正
-      （`skynovel_esm/TODO.md` に記載）
-
 ## アニメpng（スプライトシート）
 
 - [ ] 【現状不使用・優先度低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今は CSS の

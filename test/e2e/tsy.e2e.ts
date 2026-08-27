@@ -171,3 +171,46 @@ test('相対path=だけでtop/leftを動かしても寄せ(align_y/align_x)は�
 	expect(await layNum(page, 'base', 'top')).toBe(50);
 	expect((await snap(page)).aLay.find(l=> l.nm === 'base')?.align_y).toBe('bottom');
 });
+
+// 'すえおき'（[fg2_squat]回帰シーンの直後）まで進める
+async function toSueoki(page: Page) {
+	await toPathScene(page);	// 'うちきり'
+	for (const s of ['けいろ', 'つなげた', 'すんぽう', 'すえおき']) {
+		await page.keyboard.press('Space');
+		await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe(s);
+		await waitIdle(page);
+	}
+}
+
+// 走行中トゥイーンが畳まれたか＝「もう値が動かない」の確認。
+//	『動かないこと』は本質的に時間を置いて見るしかないので、ここだけ意図的に待つ
+//	（waitIdle等の同期待ちでは「変化が無い」は判定できない）。未修正なら 9000ms で 400 まで
+//	動くトゥイーンが生き残り、この待ちの間に top が数十px 進んで v0 と一致しなくなる
+async function expectTweenFolded(page: Page, nm: string) {
+	const v0 = await layNum(page, nm, 'top') ?? 0;
+	await page.waitForTimeout(2_000);
+	const v1 = await layNum(page, nm, 'top') ?? 0;
+	expect(v1).toBe(v0);			// 畳まれていれば 1frame も動いていない
+	expect(v1).toBeLessThan(100);	// 目標(400)へ向かっていない（初期値へ戻ったまま）
+}
+
+test('[clear_lay]は走行中の[tsy]を畳む（クリア後もトゥイーンが見た目を上書きし続けない）', async ({page})=> {
+	await toSueoki(page);
+
+	// [tsy layer=clr time=9000 top=400] の途中で [clear_lay layer=clr]
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('かたづけ');
+	await expectTweenFolded(page, 'clr');
+});
+
+test('[er]も走行中の[tsy]を畳む（clearTxtLay 経由で現在レイヤ分を止める）', async ({page})=> {
+	await toSueoki(page);
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('かたづけ');
+	await waitIdle(page);
+
+	// [tsy layer=mes time=9000 top=400] の途中で [er]（現在レイヤ＝mes）
+	await page.keyboard.press('Space');
+	await expect.poll(async ()=> mesStr(page), {timeout: 5_000}).toBe('けし');
+	await expectTweenFolded(page, 'mes');
+});
