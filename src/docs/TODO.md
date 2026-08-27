@@ -26,8 +26,6 @@
 
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
-- [ ] `[tsy]` の `render` 未対応（`[trans]` のように絵を合成してから不透明度を適用。pixi 前提の
-      合成方式のため）。詳細 [tag-notes.md](tag-notes.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
       詳細 [filters.md](filters.md)
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`

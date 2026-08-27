@@ -1070,9 +1070,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	　JSON解析失敗はスイッチにかかわらず出力する。<br/>
 
 </td></tr>
-<tr><td>🟡 render</td><td></td><td>false</td><td>true、false</td><td>
+<tr><td>🟢 render</td><td></td><td>false</td><td>true、false</td><td>
 	trueを指定すると[trans]のように絵を合成してから不透明度を適用するように（半透明時に差分境界が見えなくなる）<br/>
-	（bluesnovel）未対応：pixi前提の合成方式のため
+	（bluesnovel）属性は無視するが、不透明度を下げる[tsy]ではCSSのopacityが子要素をグループ合成してから透過するため、本家render=trueと同じ結果になる
 </td></tr>
 <tr><td>filter</td><td></td><td>なにもしない</td><td>フィルター名</td><td>レイヤに指定するフィルター名。その他必要な属性は適宜指定する。詳細は<a href="tag.html#add_filter" target="_blank" rel="noopener">[add_filter]</a>参照。ただし[add_filter]のような追加ではなく上書き。トゥイーン開始と同時に一度だけ適用する（値自体をアニメーションさせるわけではない）</td></tr>
 <tr><td>enable_filter</td><td></td><td>true</td><td>true、false</td><td>フィルターを有効にするか</td></tr>
