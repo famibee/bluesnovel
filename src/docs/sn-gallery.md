@@ -13,9 +13,10 @@
 - `sn_gallery/public/prj/<機能>/` を本家ギャラリーの同名プロジェクトと1つずつ突き合わせる
   フェーズは 2026-08-23 に完了（`simple_novel` はユーザー判断により対象外）。発見した不具合は
   すべて都度修正済み（凍結・保留と判定したもの以外）。経緯・詳細は各修正コミットのメッセージ参照。
-- 本家互換のプラグイン機構（`[add_lay class=…]` → `addLayCls`。3D/Live2D 等の Pixi 前提
-  プラグインを sn_gallery から移植できるようにする土台）は 2026-08-24 に実装・実行時配線まで
-  完了。実装メモは [plugin-layer.md](plugin-layer.md)。
+- 本家互換のプラグイン機構（`[add_lay class=…]` → `addLayCls`。本家では Pixi 前提の 3D/Live2D
+  等のプラグインを sn_gallery から DOM 版へ書き換えて移植できるようにする土台）は 2026-08-24 に
+  実装・実行時配線まで完了。3d_layer は 2026-08-24、live2d_layer は 2026-08-27 に移植・実機確認
+  済み。実装メモは [plugin-layer.md](plugin-layer.md)。
 
 ## 残りの行動項目（[TODO.md](TODO.md) にも記載）
 

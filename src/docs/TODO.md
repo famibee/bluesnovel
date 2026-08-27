@@ -21,8 +21,6 @@
 - [ ] 依存の付け替え（`sn_gallery/package.json` の
       `"@famibee/skynovel_esm": "file:../bluesnovel"` という本家のフリをどうするか）は
       本格移行時に改めて判断（2026-08-21時点は現状維持と決定）。詳細 [sn-gallery.md](sn-gallery.md)
-- [ ] `live2d_layer`（sn_gallery。`cubism3_layer` から切り出し）：Live2D 本体依存は sn_gallery
-      側のみ、3d_layer と同じく DOM 版へ書き換え。詳細 [plugin-layer.md](plugin-layer.md)
 
 ## タグ・変数の残り
 

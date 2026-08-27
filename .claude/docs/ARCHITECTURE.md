@@ -81,8 +81,9 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 - **`src/ts/Swipe.ts`** — スワイプ判定（`swipeleft`/`swiperight`/`swipeup`/`swipedown`）の純粋関数
   `detectSwipe`。本家は `tinygesture` の一括処理だが、bluesnovel は tap/longpress を React 標準/
   `react-use` で代替済みのため未実装だったスワイプ判定だけを自作した（2026-08-19）。
-- **本家互換プラグイン機構（`[add_lay class=…]`→`addLayCls`）** — 3D/Live2D 等 Pixi 前提のプラグイン
-  （`sn_gallery/src/plugin/3d_layer` 等）を移植できるようにする土台（2026-08-24）。
+- **本家互換プラグイン機構（`[add_lay class=…]`→`addLayCls`）** — 本家では Pixi 前提の 3D/Live2D 等の
+  プラグイン（`sn_gallery/src/plugin/3d_layer`・`live2d_layer` 等）を DOM 版へ書き換えて移植できる
+  ようにする土台（2026-08-24）。
   - `src/sn/LayCls.ts` — cls 名（`grp`/`txt`/プラグイン独自名）→ Layer 工場のレジストリ。本家
     `SysBase.hFactoryCls` 相当だが、`ScriptEngine`（`sys` を持たない）・`Stage.tsx`・`SysBase`
     の 3 者から見えるようモジュールレベルの `Map` にしてある。

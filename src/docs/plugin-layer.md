@@ -30,21 +30,32 @@ three.js の WebGLRenderer の canvas を直接 `this.ctn.appendChild()` する�
 追加して解決。3D 自体のカメラ・投影計算にバグは無く、dpr 起因や three.js の
 setSize/setPixelRatio 呼び出し順序は無関係と確認済み。
 
-残る emote_layer/live2d_layer も同じ方針（three.js/Live2D 本体の依存は bluesnovel 本体には
-追加しない＝ユーザー判断。sn_gallery 側で個別にインストールし DOM 版へ書き換える）。
+残る emote_layer も同じ方針（E-mote 本体の依存は bluesnovel 本体には追加しない＝ユーザー判断。
+sn_gallery 側で個別にインストールし DOM 版へ書き換える）。
 
-## live2d_layer（保留）
+## live2d_layer（DOM 版へ移植・2026-08-27）
 
-`cubism3_layer` から切り出し（同名だったが emote_layer とは別物）。表情差分・まばたき目的なら
-emote_layer の代替になる見込み。Live2D 本体依存は sn_gallery 側のみに入れ、3d_layer と同じく
-DOM 版へ書き換える方針。
+`sn_gallery/src/plugin/live2d_layer/Live2DLayer.ts`。凍結中だった旧 `cubism3_layer`（pixi.js v6
+Loader ＋ 非公式ラッパー `LIVE2DCUBISMPIXI`/`LIVE2DCUBISMFRAMEWORK` 前提で、Cubism 5 系 Core とは
+非互換＝動かない）は廃止・削除し、公式 Cubism SDK for Web 5-r.5（`live2d_layer/framework/` 配下に
+同梱）を直接呼ぶ形で作り直した。3d_layer と同じ DOM 直描画（`PlgLayer` の素 div へ canvas を
+appendChild）＋ Layer インスタンス毎に独立した canvas + WebGL2 コンテキスト（公式サンプルの
+「1 canvas を複数モデルで共有」設計は複数キャラ表示でコンテキストが競合するため不採用）。API
+呼び出し順序・行列計算は公式サンプル `CubismWebSamples` を参照して移植。表情(Expression)・
+ポーズ・リップシンク・ドラッグ追従・当たり判定などは対象モデルで未使用のため省略。
+
+まばたき・呼吸・クリックでのモーション切替まで bluesnovel 実機（`sn_gallery` を
+`file:../bluesnovel` へ切替、`prj/live2d`）で確認済み（2026-08-27、`feat(sn): プラグインレイヤ
+基底 PlgLayer シムを追加、3D/Live2D を bluesnovel で実機確認`）。`[snapshot]` 時の WebGL canvas
+合成（`toDataURL`→`<img>` 差し替え）も 0 エラー。
 
 ## emote_layer（凍結・2026-08-26 判断）
 
 本家で動作させる動機が薄いため凍結。
 
 - 現状 `gallery/?cur=emote_layer` はエラー。2026-08-27、`sn_gallery/index.html` 左サイドバーの
-  導線をコメントアウトして非表示化済み（`cubism3_layer` は元からサイドバーに導線が無かった）。
+  導線をコメントアウトして非表示化済み（旧 `cubism3_layer` は 2026-08-27 に廃止・削除、その枠は
+  `live2d_layer` のサイドバー導線「Live2Dレイヤ（技術デモ）」＝`?cur=live2d` が置き換えた）。
   `?cur=emote_layer` 直指定では引き続き動く（エラーになるだけで到達は可能）。
 - 2026-08-26 調査：公式 SDK は CheeseWare E-mote（有限会社エムツー、
   <https://emote.mtwo.co.jp/download/sdk/>）。`EmoteLayer.ts` が使う
@@ -65,5 +76,5 @@ DOM 版へ書き換える方針。
   のみ MIT/OSS でエディタ（データ制作ツール）が有料。Rive はランタイム（`@rive-app/canvas` 等）
   が MIT/OSS で活発に更新されているが、ベクターシェイプ+ボーン中心で E-mote の「静止画パーツを
   そのまま差し替える」設計とは性質が異なる。結論：emote_layer を新規に DOM 移植するより、
-  表情差分・まばたき目的なら Live2D で代替できる見込み（上記 live2d_layer）。emote_layer 自体は
+  表情差分・まばたき目的なら Live2D で代替する（上記 live2d_layer で実装済み）。emote_layer 自体は
   凍結のまま。
