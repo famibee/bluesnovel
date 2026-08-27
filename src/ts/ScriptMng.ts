@@ -12,7 +12,7 @@ import type {T_INIT_FNCS} from '../store/store';
 import {CmnLib, getDateStr} from '../sn/CmnLib';
 import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
-import {ScriptEngine, type T_ENGINE_ACTION, type T_PAGE} from './ScriptEngine';
+import {ScriptEngine, type T_ENGINE_ACTION, type T_PAGE, type T_PAGE_BOTH} from './ScriptEngine';
 import {Script} from './Script';
 import {easeFn, H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
@@ -297,6 +297,7 @@ export class ScriptMng {
 
 			engine.restoreMarkPart(ent.mark);
 			engine.clearOnResume = ent.clearOnResume;
+			this.#stopTsyByLayer(null, 'both');	// 演じ直しでレイヤ配列ごと差し替わる＝[clear_lay]同様に走行中[tsy]を畳む
 			this.$fncs.replace(ent.mark.sPages);
 			this.#plgLayMng.playback(ent.mark.hPlgLay, []);
 			this.#stopped = false;
@@ -779,7 +780,8 @@ export class ScriptMng {
 	//	[trans]のレイヤ複製が演出前の古い値を拾ってしまうため、こちらはストア経由にした。
 	//	副作用として本家のarrive属性（終了時に目標値を確実に入れる）は常時ONと同じ挙動になる。
 	//	トゥイーン名（tw_nm）はname省略時レイヤ名（本家 CmnTween.#tw_nm()）
-	readonly #hTw: {[tw_nm: string]: {tw: Tw; end: ()=> void; next?: ()=> void}} = Object.create(null);
+	//	nm/pageは[er]/[clear_lay]でそのレイヤのトゥイーンを畳むための紐付け（[tsy_frame]はnm無し）
+	readonly #hTw: {[tw_nm: string]: {tw: Tw; end: ()=> void; next?: ()=> void; nm?: string; page?: T_PAGE}} = Object.create(null);
 	#tsyWaiting	: {tw_nm: string; canskip: boolean} | undefined;	// [wait_tsy]で待っている最中か
 
 	#beginTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy'}>) {
@@ -860,6 +862,9 @@ export class ScriptMng {
 
 	// トゥイーン本体の組み立て（[tsy]/[tsy_frame]共通）。fromを動かし、毎フレームapply()で反映する
 	#runTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy' | 'tsyFrame'}>, from: {[k: string]: number}, aTo: {[k: string]: number}[], apply: ()=> void, onEnd?: ()=> void) {
+		// [tsy]はレイヤ名／ページを控える（[er]/[clear_lay]での畳み込み用）。[tsy_frame]は紐付け無し
+		const lay = act.t === 'tsy' ? {nm: act.nm, page: act.page} : {};
+
 		// 同名のトゥイーンが動いていたら畳んでから始める。本家は#hTwInfを上書きするだけで
 		//	古いトゥイーンはGroupに残ったまま動き続けてしまうので、そこだけ変えている
 		this.#hTw[act.tw_nm]?.tw.kill();
@@ -890,7 +895,7 @@ export class ScriptMng {
 			.repeat(act.repeat)
 			.yoyo(act.yoyo)
 			.onUpdate(apply);
-			seg.onStart(()=> {this.#hTw[act.tw_nm] = {end, tw: seg}});
+			seg.onStart(()=> {this.#hTw[act.tw_nm] = {end, tw: seg, ...lay}});
 			return seg;
 		});
 		for (let i = 0; i < aSeg.length; ++i) {
@@ -901,7 +906,7 @@ export class ScriptMng {
 		const tw = aSeg[0]!;
 		aSeg[aSeg.length - 1]!.onComplete(()=> {end(); this.#onTsyEnd(act.tw_nm)});
 
-		this.#hTw[act.tw_nm] = {end, tw};
+		this.#hTw[act.tw_nm] = {end, tw, ...lay};
 		// chain指定時は始めず、繋ぎ元の終了時に動かし始める（本家 CmnTween.ts:219）
 		if (! act.chain) {tw.start(); return}
 
@@ -928,6 +933,22 @@ export class ScriptMng {
 		const ti = this.#hTw[tw_nm];
 		if (ti) {ti.tw.kill(); ti.end()}
 		this.#onTsyEnd(tw_nm);
+	}
+	// [er]/[clear_lay]でレイヤが片付くとき、そのレイヤを動かしている[tsy]も畳む。
+	//	本家（LayerMng.#er()／#clear_lay() → Layer.clearLay()）はこれをせず、クリアで初期化した
+	//	見た目をトゥイーンが上書きし続ける（本家 TODO.md に既知不具合として記載。分家で先に対処）。
+	//	[stop_tsy]と違い最終値の畳み込み（end()）は呼ばない——レイヤは既定へ戻される最中なので、
+	//	トゥイーンの最終値を入れ直すと打ち消し合う。chain先も道連れ（kill()が辿る／nextは発火しない）。
+	//	[wait_tsy]待機中は#runStep()が止まり[er]/[clear_lay]が来ないので#tsyWaitingは触らなくてよい
+	#stopTsyByLayer(aLayNm: readonly string[] | null, page: T_PAGE_BOTH) {
+		for (const [tw_nm, ti] of Object.entries(this.#hTw)) {
+			if (ti.nm === undefined) continue;	// [tsy_frame]はレイヤに紐付かない
+			if (aLayNm && ! aLayNm.includes(ti.nm)) continue;
+			if (page !== 'both' && ti.page !== page) continue;
+			ti.tw.kill();
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+			delete this.#hTw[tw_nm];
+		}
 	}
 	// [wait_tsy]：動いているトゥイーンが無ければ待たずに続きへ（本家 wait_tsy() も false を返す）
 	#waitTsy(tw_nm: string, canskip: boolean) {
@@ -1700,10 +1721,12 @@ export class ScriptMng {
 			this.$fncs.setAutowc({enabled: act.enabled, h: act.hWait});
 			break;
 		case 'clearLay':
+			this.#stopTsyByLayer(act.aLayNm, act.page);
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			this.#plgLayMng.clearLay(act.aLayNm, act.page, this.$fncs.getForeIdx());
 			break;
 		case 'clearTxtLay':
+			this.#stopTsyByLayer([act.nm], act.page);
 			this.$fncs.clearTxtLay({nm: act.nm, page: act.page, clearFilter: act.clearFilter});
 			break;
 		case 'addFilter':

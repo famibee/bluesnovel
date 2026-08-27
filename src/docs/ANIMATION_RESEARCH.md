@@ -196,11 +196,163 @@ GLSL だけ借りる**が確定。
 (b) face 合成の 1 ステップ、(c) エフェクト適用レイヤごとに WebGL コンテキスト + rAF ループ
 （数枚なら可、数十枚は重い）。
 
+### タグインターフェイス案 — `[add_filter]` の対象指定 + `[tsy]` のライフサイクル
+
+**着眼**：「アニメのライフサイクルを持つ」＝ `[add_filter]`（静的値）より `[tsy]` に近い。
+`[tsy]` 一族はライフサイクル語彙をすでに完備している（[ScriptEngine.ts:1536-1600](../../src/ts/ScriptEngine.ts#L1536)）：
+`[tsy]` 開始（待たない・`skip` を返す）／`[wait_tsy name=]` 終了待ち／`[stop_tsy name=]` 中断／
+`[pause_tsy]`・`[resume_tsy]`。`name=` で個体を識別（`tsyName()`）。**この形をそのまま借りる。**
+
+一方、対象レイヤの選び方（`layer=` + `page=`）と「スタック可能な記述子配列」は `[add_filter]` の
+`aFlt` seam が持つ。fx はこの 2 つの折衷になる：
+
+```
+[add_fx    layer=me name=w fx=wave amp=4 freq=1.5 speed=0.8]   ; 常時ゆらぎ（time= 省略＝無限）
+[add_fx    layer=me name=g fx=glitch intensity=0.6 time=400]   ; time>0 で one-shot
+[wait_fx   layer=me name=g]                                    ; me の g の終了待ち（[wait_tsy] と同形）
+[wait_fx   name=shake]                                         ; どのレイヤであれ shake 全部が終わるまで
+[wait_fx   layer=me]                                           ; me に載っている fx 全部の終了待ち
+[add_fx    layer=me glsl=&mySrc]                               ; 生シェーダ
+[enable_fx name=shake enabled=false]                           ; 全レイヤの shake を一時停止（= pause）
+[enable_fx layer=me enabled=true]                              ; me の fx 全部を再開
+[clear_fx  layer=me]                                           ; 全部剥がす（= stop + 撤去）
+```
+
+**タグは 4 つ**。`wait=true` 属性は作らず、`[tsy]` の流儀どおり別タグ `[wait_fx]` にする
+（コードベースの一貫性。`[tsy]` にも `wait=` は無い）：
+
+| fx タグ | 対応する既存概念 |
+|---|---|
+| `[add_fx]` | `[tsy]` 開始 ＋ `[add_filter]`（`aFx[]` へ push） |
+| `[clear_fx]` | `[stop_tsy]` ＋ `aFx[]` からの撤去（記述子を消せば rAF ループも止まる） |
+| `[enable_fx]` | `[pause_tsy]`／`[resume_tsy]`（記述子は残し描画だけ止める） |
+| `[wait_fx]` | `[wait_tsy]`（`ScriptMng` が `waitFx` アクションを持つ。`waitTsy` と同じ ~15 行） |
+
+#### 内部モデル：`aFx` はレイヤのレコード内、名前はレイヤスコープ
+
+`aFlt?: T_FLT[]`（[Lay.ts:67](../../src/components/Lay.ts#L67)）が今レイヤの store レコードに直接ぶら下がって
+いるのと同じく、`aFx: T_FX[]` も**各レイヤのレコードの中**にある。だから「layer スコープ」は別レジストリ
+ではなく、**配列がそのレイヤに格納されている**というだけ。`[tsy]` のような単一トゥイーンレジストリ
+（`tsyName()`）は持たない。
+
+- 各 `T_FX` は `name: string` を持つ。同定は **「どのレイヤの `aFx` にいるか」＋ `name`**。
+  → 別レイヤに同じ `name` を持てる（`[add_fx layer=me name=shake]` と `[add_fx layer=you name=shake]`
+  は別物。同じレシピを複数キャラに使える）。
+- `[add_fx name=w …]` の再指定は**同レイヤの同名要素を置換**（`[tsy]` の「同名で再開」と同じ）。
+- `[add_fx …]`（`name=` 省略） → store の `chgFx` が**そのレイヤ内で**一意な `#fx1`, `#fx2` … を採番
+  （`#` 前置＝人間が `name=` に書かない字。`[tsy_frame]` の `frm\nID` と同じ衝突回避）。カウンタは
+  store 状態に持たせ `[save]`/`[load]` で復元。`[trans]` の両ページ複製は `aFlt` 同様に自動追随
+  （各ページのレイヤコピーが同名の `aFx` を持つ）。
+
+`[wait_fx]`/`[enable_fx]`/`[clear_fx]` のセレクタは、この `aFx` 群に対する **AND で効く 2 フィルタ**
+（少なくとも一方は必須）：
+
+| 指定 | 対象 |
+|---|---|
+| `name=x,y`（`layer=` 省略） | 全レイヤの `aFx` から `name ∈ {x,y}` |
+| `layer=A,B`（`name=` 省略） | レイヤ A・B の `aFx` 全要素（`#argLayNames` 共用）。無名 fx に触れる手段 |
+| `layer=A name=x` | A の x だけ |
+| `layer=A,B name=x,y` | {A,B} × {x,y} の一致分すべて |
+
+- `[wait_fx]` は一致集合**全部**の終了通知が揃うまで `ScriptMng` が保持（`waitFx` アクションが
+  一致キー配列を持つ。`waitTsy` の単数版を配列化しただけ）。「マージして待つ」＝この**結果集合の和**を
+  待つという意味。`[wait_fx name=shake]` で「全員シェイク → 揃うまで待つ」が 1 行。
+- `[enable_fx]` は加えて `index=`（`[enable_filter]` 由来。`layer=` 併用でそのレイヤの N 番目）も可。
+- **無名 fx は `name=` でアドレスできない**（`#fx7` は生成順依存で予測不能。シナリオからは書かない）。
+  後で個別に止めたい/待ちたい fx には `name=` を付ける。付けなければ「このレイヤの fx は `layer=` で
+  まとめて管理する」という意思表示。
+- `page=` は `[add_fx]` のみ（`#argPageBoth`。既定 `fore`）。
+
+#### レイヤクリア（`[er]`／`[clear_lay]`）との関係 — `aFlt` に完全に倣う
+
+前提として **fx は grp レイヤ（立ち絵）専用**（§7 は GrpLayer の `<img>`→`<canvas>` 差し替えが土台。
+TxtLayer は別コンポーネントで seam が無い）。だから `[er]`（文字レイヤ操作。grp には触れない）は
+そもそも fx に無関係。
+
+`aFlt` の既存挙動をそのまま踏襲する：
+
+| タグ | `aFlt` の今の挙動（[store.tsx:528-548](../../src/store/store.tsx#L528)） | `aFx` もこうする |
+|---|---|---|
+| `[er]` | `clearTxtLay`。`clear_filter=true` の時だけ `aFlt` を落とす（既定は残す） | 文字レイヤに fx を許すなら `clearFx` を `clearFilter` と並べる。grp 専用のうちは無関係 |
+| `[clear_lay]` | `clearLay`。`A_LAY_STY_KEY`（**`'aFlt'` を含む**）を `visible` 以外全部 delete＝**無条件で `aFlt` が消える**。grp は `fn`/`src`/`aFace` も空に | `A_LAY_STY_KEY` に `'aFx'` を足す＝`[clear_lay]` で無条件に落ちる |
+
+- **ユーザーの記憶（「`[tsy]`/`[add_filter]` は何もしなかった」）の内訳**：`[er]` については正しい
+  （`aFlt` は残る）。`[clear_lay]` は違い、`aFlt` は `A_LAY_STY_KEY` 経由で既に無条件クリアされる。
+  `[tsy]` は本家では `[er]`/`[clear_lay]` のどちらでも走行中トゥイーンを止めず、初期化した見た目を
+  上書きし続ける（トゥイーン実体が `ScriptMng`/motion 側で store 外）。**分家では
+  `#stopTsyByLayer()` を `clearLay`/`clearTxtLay`/ページ演じ直しの `replace()` に配線して修正済み**
+  （本家 `skynovel_esm/TODO.md` に既知不具合として記載）。fx はこの配線に相乗りする——記述子撤去で
+  `<FxCanvas>` が unmount するので追加の帳簿は不要（前述）。
+- **fx の後始末は `[tsy]` と違って自動**：記述子が `aFx` から消える（`[clear_fx]`／`[clear_lay]`／
+  `[trans]` のページ置換）と `<FxCanvas>` が unmount → `useEffect` cleanup が WebGL コンテキストと
+  rAF ループを破棄する。`[stop_tsy]` のような明示 `.stop()` の帳簿を `ScriptMng` に持たせる必要が
+  ない。だから「クリアされたレイヤに rAF が残る」リークは構造的に起きない。
+- `[clear_lay]` が grp の `src` を空にしたのに `aFx` だけ残ると「テクスチャ源の無い canvas」に
+  なるので、`A_LAY_STY_KEY` への追加は必須（任意ではない）。
+
+#### `[add_filter]` から増える属性（`[add_fx]`）
+
+- `name=`（任意。**そのレイヤの `aFx` 内で**一意な識別子。省略時は上記の内部採番。`[tsy]` と違い
+  レイヤ名は既定にしない——`[tsy]` は 1 レイヤ 1 トゥイーンだが `aFx` はスタックなので衝突する）。
+- `time=`（ms。省略/`0`=無限＝常時ゆらぎ、正数=one-shot）、`speed=` / `loop=`。one-shot 完了時は
+  記述子を `aFx` から自動撤去（＝canvas/コンテキストも解放。`[add_filter]` の「消すまで永続」とは
+  逆）。`keep=true` で最終フレームのまま凍結（撤去せず `enabled` を保つ）。`[wait_fx]` は撤去/凍結の
+  どちらでも「完了」で待ちを解く。
+- `fx=wave|rgbShift|glitch|pixelate…` or `glsl=&src`。生 GLSL の契約は `[trans glsl=]` と同じく
+  **本家サンプル準拠**（`uSampler` / `vTextureCoord` / `tick`）。
+- プリセット固有パラメータ `amp=` `freq=` `shift=` 等（`[add_filter blur_x=]` と同じノリ）。
+
+store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・`[trans]` の両ページ複製に自動追随。
+
+> 初稿は `[enable_fx layer=]` だけ書いて `[wait_fx]` を `name=` 限定にしていたが、理由の無い非対称
+> だった。3 タグとも `name=`（複数・全対象）／`layer=`（そのレイヤの fx 全部）を同じく受ける。
+
+**本家には導入しない。** `[add_fx]` 一族・`aFx` seam は分家（bluesnovel）だけの新機能。本家
+（`skynovel_esm`）へ逆輸入はしない（[CLAUDE.md](../../CLAUDE.md) 冒頭の方針）。よって `[trans glsl=]` の
+ように「本家サンプルが動く」実利は無く、純粋に分家独自の演出強化。この点は推奨度に反映済み（下記）。
+
+### 規模の内訳
+
+| 部位 | 行数目安 | 備考 |
+|---|---|---|
+| コア seam（`aFx: T_FX[]`／`chgFx`／`[add_fx]`等 4 タグ／`T_ENGINE_ACTION`／Grammar 型） | ~170 | `aFlt` の seam ＋ `[wait_tsy]` の `waitFx` 版（`ScriptMng` ~15 行）。ほぼ定型 |
+| GrpLayer 分岐 + `<FxCanvas>` コンポーネント | ~80 | `aFx` 非空で `<img>` を canvas に差し替え。サイズ同期・mount/unmount |
+| lazy WebGL ランナー（`src/ts/FxRunner.ts`） | ~150–250 | `TransGlsl.ts`（~230 行）が土台。テクスチャ／コンパイル／rAF／uniform／破棄／終了通知（`[wait_fx]` 用） |
+| プリセット GLSL（`src/ts/fxPresets.ts`） | ~150–250 | vfx-js（MIT）から移植。1 個 20–50 行 × 数個 |
+| face 合成（offscreen 2D canvas で base+face を 1 枚に） | ~30 | |
+| Snapshot 連携／`[trans]` 2 コンテキスト | ~0 | [Snapshot.ts:80](../../src/ts/Snapshot.ts#L80) の canvas→toDataURL がそのまま効く。`preserveDrawingBuffer:true` 必須 |
+
+**コア ~250 行 + lazy モジュール ~350–530 行（うち半分はプリセット）**。`[trans glsl=]`（~230 行・
+純粋 lazy）の 2〜3 倍。
+
+### プラグイン化は可能か — 3 経路
+
+| 経路 | 可否 | 評価 |
+|---|---|---|
+| **A. `addLayCls` で専用レイヤ class**（`[add_lay class=fx]`。3d_layer / live2d_layer と同型） | ○ | `PlgLayMng` が record/playback/trans/destroy を丸ごと持つのでコア無改変。**欠点**：既存 grp レイヤ（`[ch]` で置いた立ち絵）に**後がけできない**。エフェクト対象は最初から `class=fx` で置く約束を `.sn` に強いる。`aFace`（face 差分）も grp の機能なので fx レイヤ側に再実装が要る |
+| **B. `addTag` だけで既存レイヤの `<img>` に canvas をかぶせる**（`[add_frame]`/FrameMng 発想） | △ | 位置問題は消えるが、`<img>` を React（GrpLayer）が所有しているため `[lay fn=]`／`[trans]`／`[hide]` のたびに MutationObserver で追う羽目に。§6 で vfx-js を落とした 4 問題が「React 所有 img との同期」の形で戻る。しおり・`[snapshot]` も自前。**非推奨** |
+| **C. コア seam（`aFx`）+ ランナー/プリセットのみ lazy 外部モジュール**（§7 の本線） | ◎ | GrpLayer に恒久的な ~20 行の分岐が入る＝純粋プラグインではない。が重い部分は全部 lazy import で、`[add_fx]` 未使用時のバンドル影響はコア seam 数十行のみ。`[add_filter]` と同じ運用（後がけ可・face そのまま・clear/enable・しおり自動） |
+
+「addTag だけの完全プラグイン」は B で技術的には可能だが同期地獄。A は綺麗にプラグイン化できるが
+運用モデルが変わる。**C が費用対効果最良**（コアの傷は GrpLayer の 1 分岐だけ）。
+
+### 推奨度
+
+- `[trans glsl=]`（実装済み）：**★★★★☆**。純粋 lazy・リスク低・本家サンプルがそのまま動く実利。
+- 立ち絵シェーダ（C 方式）：**★★☆☆☆**。理由：(a) GrpLayer に恒久 seam、(b) face 合成の 1 ステップ、
+  (c) レイヤごと WebGL コンテキスト + rAF（数枚可・数十枚は重い）、(d) プリセット GLSL のメンテ、
+  (e) **本家に無い＝分家独自機能**なので本家サンプル互換という後ろ盾が無く、演出強化の価値だけで
+  ペイさせる必要がある。加えて §5 の結論どおり「小気味よく動く」だけなら `[tsy path=]` で足りており、
+  シェーダが要るのは glitch / wave / RGB ずらし等「画素を歪める」系のみ。**実際に要求が出てから**、
+  プリセット 2〜3 個（wave / rgbShift / glitch）で試作 → sn_gallery に実演を置いて費用対効果を測る。
+
 ### まとめ
 
-| | 実現性 | 方式 | 規模 |
-|---|---|---|---|
-| `[trans] glsl=` | ○ | Snapshot.ts で表裏 2 ページをラスタライズ → GL Transitions GLSL → rAF。lazy モジュール | 中（~200 行） |
-| 立ち絵シェーダ | ○ | `aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL は vfx-js から移植、パッケージ非依存 | 中〜大（コア seam + 外部モジュール） |
+| | 実現性 | 方式 | 規模 | 推奨度 |
+|---|---|---|---|---|
+| `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
+| 立ち絵シェーダ | ○ | `[add_fx]`/`[clear_fx]`/`[enable_fx]`/`[wait_fx]`（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL は vfx-js（MIT）から移植、パッケージ非依存。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★☆（要求が出てから） |
 
-どちらも gl-react / R3F は不要。まず立ち絵側をプリセット 2〜3 個で試作するのが費用対効果が高い。
+どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
+再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。
+着手するならプリセット 2〜3 個で試作 → sn_gallery で実演。

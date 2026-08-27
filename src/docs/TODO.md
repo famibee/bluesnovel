@@ -31,6 +31,14 @@
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
       近似余地（いずれも優先度低・未実機検証）。詳細 [filters.md](filters.md)
 
+## テスト追加待ち
+
+- [ ] `[er]`/`[clear_lay]`/ページ演じ直し で走行中 `[tsy]` が畳まれる回帰テスト（e2e）。
+      実装は `ScriptMng.#stopTsyByLayer()`（`clearLay`/`clearTxtLay`/`replace()` に配線済み）。
+      `test/e2e/app/prj_tsy/main.sn` に「`[tsy time=9000]` → `[clear_lay]` → 値が動かなくなる」
+      シーンを足して `test/e2e/tsy.e2e.ts` で検証する。本家 `skynovel_esm` 側は未修正
+      （`skynovel_esm/TODO.md` に記載）
+
 ## アニメpng（スプライトシート）
 
 - [ ] 【現状不使用・優先度低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今は CSS の
@@ -40,11 +48,16 @@
 
 コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
 
-- [ ] 立ち絵シェーダエフェクト（wave/rgbShift/glitch 等のプリセット＋任意 GLSL）：`[add_filter]` と
-      同型のコア seam（`aFlt` に倣った `aFx`）＋ lazy import の外部モジュール。エフェクト canvas は
-      **対象レイヤの DOM サブツリー内**に置き `styLay()` の transform/opacity/z 順を継承させる方式。
-      GLSL は vfx-js（MIT）から移植、パッケージ非依存。**まずプリセット 2〜3 個で試作**（費用対効果が最も高い）。
-      `[trans] glsl=` で作った `src/ts/TransGlsl.ts`（生 WebGL・表裏画像の合成）が実装の下敷きになる
+- [ ] 立ち絵シェーダエフェクト（wave/rgbShift/glitch 等のプリセット＋任意 GLSL）：`[add_fx]`/
+      `[clear_fx]`/`[enable_fx]`/`[wait_fx]` の 4 タグ。対象指定（`layer=`+`page=`）は `[add_filter]`、
+      開始/中断/一時停止/終了待ちのライフサイクルは `[tsy]` 一族に倣う（`wait=` 属性は作らず別タグ
+      `[wait_fx]`）。増える属性は name=/time=/speed=/loop= と fx=/glsl= とプリセット固有パラメータ。
+      `aFlt` に倣ったコア seam `aFx` ＋ lazy import の外部モジュール。エフェクト canvas は**対象レイヤの
+      DOM サブツリー内**に置き `styLay()` の transform/opacity/z 順を継承させる。GLSL は vfx-js（MIT）
+      から移植、パッケージ非依存。規模はコア ~250 行 + lazy ~350–530 行。**本家には入れない分家独自
+      機能**（本家サンプル互換の後ろ盾なし＝演出価値だけでペイさせる。推奨度 ★★☆、要求が出てから）。
+      **まずプリセット 2〜3 個で試作**。`src/ts/TransGlsl.ts`（生 WebGL・表裏画像の合成）が下敷き。
+      タグ案・規模内訳・プラグイン化 3 経路・推奨度は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7
 
 ## 保留
 
