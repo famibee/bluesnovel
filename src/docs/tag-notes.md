@@ -26,6 +26,12 @@
 WebGL を使わないため実現しようがないので対象外。`delay=`・`ease=` はタグリファレンスから属性
 説明ごと削除して対応済み（2026-08-27）。
 
+もし将来やるなら道筋は gl-react 等の React コンポジタではなく、`gl-transitions` の GLSL
+トランジション集（MIT）のソース ＋ 表裏 2 ページのラスタライズ結果を一時 canvas へ描く生 WebGL
+100 行程度のパス。トランジション中だけ走らせて破棄し、`[trans]` を差し替える自己完結の
+プラグインタグにする（`addTag`）。中規模・フレームワーク依存なし。評価の詳細は
+[ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6。
+
 ## `max_row`（凍結・本家自体が死んだ属性）
 
 最大行数を超えたら自動改ページする想定の属性。本家 `skynovel_esm` でも `Grammar.ts` に
