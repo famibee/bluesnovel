@@ -21,16 +21,14 @@
 `l.alpha` 直前のコメント参照）。位置・拡縮のみで親が不透明なケースはグループ化されないが、
 その場合は境界の二重透け自体が起きないので実害なし。2026-08-20 発見、2026-08-27 決着。
 
-## `[trans]` の `glsl=`（自前シェーダ・対象外）
+## `[trans]` の `glsl=`（実装済み 2026-08-28）
 
-WebGL を使わないため実現しようがないので対象外。`delay=`・`ease=` はタグリファレンスから属性
-説明ごと削除して対応済み（2026-08-27）。
-
-もし将来やるなら道筋は gl-react 等の React コンポジタではなく、`gl-transitions` の GLSL
-トランジション集（MIT）のソース ＋ 表裏 2 ページのラスタライズ結果を一時 canvas へ描く生 WebGL
-100 行程度のパス。トランジション中だけ走らせて破棄し、`[trans]` を差し替える自己完結の
-プラグインタグにする（`addTag`）。中規模・フレームワーク依存なし。評価の詳細は
-[ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6。
+`src/ts/TransGlsl.ts`（lazy import の生 WebGL モジュール）で実装。表・裏ページを `Snapshot.ts` で
+1 枚ずつ画像化 → 全画面クワッドに裏を下地、user フラグメントシェーダ経由の表をアルファ合成 → rAF で
+`tick` 0→1。本家サンプル `glsl_slide` の契約（`uSampler`／`tick`／`vTextureCoord`、rule 併用時は
+`rule`／`vague`）をそのまま受ける。`delay=`・`ease=` はタグリファレンスから属性説明ごと削除済み
+（2026-08-27）。設計の経緯は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7、制約（iframe・動画が
+写らない等）は `TransGlsl.ts` 冒頭コメント。
 
 ## `max_row`（凍結・本家自体が死んだ属性）
 

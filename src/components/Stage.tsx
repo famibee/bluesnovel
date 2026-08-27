@@ -12,7 +12,7 @@ import PlgLayer from './PlgLayer';
 import {clearDrag, isDragging, isGrpLay, isTxtLay, styLay, type T_LAY_CMN} from './Lay';
 import {modKeyName, suppressClick, setDesignMode, type T_ARG} from './Main';
 import {useStore} from '../store/store';
-import {ruleMaskFunc} from '../ts/Trans';
+import {ruleMaskFunc, VAGUE_DEF} from '../ts/Trans';
 import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
 import {detectSwipe} from '../ts/Swipe';
 
@@ -45,6 +45,8 @@ export default function Stage({
 	const pgRef0 = useRef<HTMLDivElement>(null);
 	const pgRef1 = useRef<HTMLDivElement>(null);
 	const aPgRef = [pgRef0, pgRef1];
+	// [trans glsl=]のWebGL canvas 置き場（下の JSX の空div）。実体は TransGlsl.ts（lazy import）が足す
+	const glslHolderRef = useRef<HTMLDivElement>(null);
 	// ルール画像ワイプ（[trans rule=…]）の進度を刻むrAFの後始末用。クロスフェード側は
 	//	WAAPI（Element.animate()）任せなので専用のrefは要らない（下のgetAnimations()参照）
 	const transRafRef = useRef<number | null>(null);
@@ -75,6 +77,38 @@ export default function Stage({
 		const el = aPgRef[foreIdx]!.current;
 		if (! el) return;
 
+		// [trans glsl=]：フラグメントシェーダ合成。重い WebGL 一式は**使われた時だけ** lazy import
+		//	（src/ts/TransGlsl.ts。未使用時のバンドル影響ゼロ）。ここは演出の駆動だけで、表裏の確定は
+		//	ScriptMng #finishTrans が別途行う（[trans]全体の役割分担どおり）。rule 画像ワイプ（下の分岐）
+		//	とは排他——glsl 指定時は rule= もシェーダの uniform（sampler2D rule）として渡す。
+		//	シェーダの文法エラーは runGlslTrans が infoLog 付きで throw → .catch で myTrace 表示
+		if (trans.glslSrc) {
+			const {glslSrc, time, vague, ruleSrc, aLayNm} = trans;
+			const t0 = performance.now();
+			const holder = glslHolderRef.current;
+			const stageEl = stageRef.current;
+			// 遷移先（裏ページ）に出るはずの画像 src。部分 trans は「交換対象だけ裏・他は表」の合成
+			//	（上の aLay 生成と同じ規則）。runGlslTrans がこれらの <img> が出そろうのを待ってから撮る
+			const backIdx = (1 - foreIdx) as 0 | 1;
+			const destLays = aLayNm
+				? aPage[backIdx].map(e=> aLayNm.includes(e.nm)
+					? e : aPage[foreIdx].find(f=> f.nm === e.nm) ?? e)
+				: aPage[backIdx];
+			const backSrcs = destLays.filter(isGrpLay)
+				.flatMap(l=> [l.src, ...l.aFace.map(f=> f.src)].filter(s=> s !== ''));
+			let dispose: (()=> void) | null = null;
+			let cancelled = false;
+			if (holder && stageEl) {
+				import('../ts/TransGlsl').then(async ({runGlslTrans})=> {
+					const d = await runGlslTrans({stageEl, holder, glslSrc, time, backSrcs,
+						vague: vague ?? VAGUE_DEF, ...ruleSrc ? {ruleSrc} : {}, t0});
+					if (cancelled) d(); else dispose = d;
+				}).catch((e: unknown)=> scrMng.myTrace(
+					`[trans glsl=] ${e instanceof Error ? e.message : String(e)}`, 'E'));
+			}
+			return ()=> {cancelled = true; dispose?.()};
+		}
+
 		if (! trans.ruleSrc) {	// 既定＝クロスフェード
 			el.animate([{opacity: 1}, {opacity: 0}], {duration: trans.time, easing: 'linear', fill: 'forwards'});
 			return;
@@ -97,6 +131,7 @@ export default function Stage({
 			if (tick < 1) transRafRef.current = requestAnimationFrame(step);
 		};
 		transRafRef.current = requestAnimationFrame(step);
+		return;	// glsl 分岐だけ後始末関数を返すので、他の経路も明示的に return（noImplicitReturns）
 	}, [trans]);
 
 	// [quake]の画面揺らし。[trans]と同じ役割分担で、**ここは見た目を動かすだけ**。
@@ -241,6 +276,14 @@ export default function Stage({
 		z-index: 2;
 		pointer-events: none;
 	`;
+	// [trans glsl=]のWebGL canvas 置き場（styFrames と同じ「空div」方式）。canvas 自身が
+	//	position:absolute/inset:0/100% を持つので、この div は座標を与えるだけ
+	const styTransGlsl = css`
+		position: absolute; top: 0; left: 0;
+		width: 100%; height: 100%;
+		z-index: 1;
+		pointer-events: none;
+	`;
 	// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
 	//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
 	//	不透明にしておくことで、画像の無い部分はbg_colorで塗り潰される（本家は#fore/#back
@@ -372,7 +415,7 @@ export default function Stage({
 			・feFuncA：Trans.tsが出すslope/interceptで「R→不透明度」の一次変換（結果は0〜1へクランプ）
 			色空間はsRGB固定。既定のlinearRGBだと赤チャンネルの値が変換されてしまい、
 			テクスチャを素で読む本家シェーダと合わなくなる */}
-		{trans?.ruleSrc && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+		{trans?.ruleSrc && ! trans.glslSrc && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
 			<defs>
 				<filter id="sn_rule_flt" colorInterpolationFilters="sRGB">
 					<feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"/>
@@ -436,7 +479,7 @@ export default function Stage({
 			pointerEvents	: i === foreIdx ? 'auto' : 'none',
 			// ルール画像ワイプは**表ページを部分的に消していく**（下から裏が出る）。
 			//	クロスフェードがopacityでやることを、画素ごとの不透明度に置き換えたもの
-			...trans?.ruleSrc && i === foreIdx ? {mask: 'url(#sn_rule_msk)'} : {},
+			...trans?.ruleSrc && ! trans.glslSrc && i === foreIdx ? {mask: 'url(#sn_rule_msk)'} : {},
 		}}>
 			{aLay.map(l=> {
 				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
@@ -455,6 +498,11 @@ export default function Stage({
 			})}
 		</div>;
 		})}
+		{/* [trans glsl=]のWebGL canvas 置き場。FrameMng（[add_frame]）と同じく「JSXでは子を持たない
+			空div、実体（canvas）は Stage 側 useEffect が lazy import した src/ts/TransGlsl.ts 経由で
+			appendChild」。Reactは自分が作った子しか触らないので衝突しない。z-index は表ページ（1）と
+			同値かつ DOM 上で後ろ＝表の上に乗り、HTMLフレーム（2）より下 */}
+		<div ref={glslHolderRef} css={styTransGlsl}/>
 		<div ref={frmRef} css={styFrames}/>
 	</div>;
 };

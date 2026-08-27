@@ -1896,13 +1896,13 @@ var re = class n {
 				if (t?.length === 0) throw "[trans] layer属性が空です";
 				let r = Number(i.time ?? "0");
 				if (!Number.isFinite(r) || r < 0) throw `[trans] timeの値が不正です：${i.time ?? ""}`;
-				if (i.glsl !== void 0) throw "[trans] glsl=はサポートされません（WebGLシェーダを使わないため）";
 				return l.push({
 					t: "trans",
 					aLayNm: t,
 					time: this.skipEnabled ? 0 : r,
 					...i.rule === void 0 ? {} : { rule: i.rule },
-					...i.vague === void 0 ? {} : { vague: n.#n("trans", "vague", i.vague) }
+					...i.vague === void 0 ? {} : { vague: n.#n("trans", "vague", i.vague) },
+					...i.glsl === void 0 ? {} : { glsl: i.glsl }
 				}), "skip";
 			}
 			case "wt": return l.push({

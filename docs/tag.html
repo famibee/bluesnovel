@@ -738,13 +738,15 @@
 <tr><td>time</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化にかける時間</td></tr>
 <tr><td>rule</td><td></td><td>画面全体ピクセルで同時にクロスフェードする</td><td>画像ファイル名</td><td>指定した場合はルール画像として、ピクセル単位でクロスフェードするタイミングをずらす。<br/>ルール画像の黒いピクセル（と同じ位置にあるピクセル）が先に処理され、白が最後になる。ステージ全面へ引き伸ばして使う</td></tr>
 <tr><td>vague</td><td></td><td>0.04</td><td>0.0〜1.0</td><td>トランジション期間全体を1とした値。表レイヤと裏レイヤの境界を曖昧にぼかす度合い</td></tr>
-<tr><td>🟡 glsl</td><td></td><td></td><td>シェーダー記述言語GLSL</td><td>
+<tr><td>🟢 glsl</td><td></td><td></td><td>シェーダー記述言語GLSL</td><td>
 動作サンプルがありますので、詳細はそちらで。<br/>機能ギャラリー【[フラグメントシェーダで[trans]](https://famibee.github.io/SKYNovel_gallery/?cur=glsl_slide)】<br/>
 	ざっくり説明すると、<br/>
-	【vTextureCoord】がピクセルの位置、<br/>
-	【uSampler】が一ピクセル単位の画像データ、<br/>
-	【tick】が時間経過、です。<br/>
-	（bluesnovel）未対応：WebGLを使わないシェーダー非依存の実装のため、指定するとエラーになる<br/>
+	【vTextureCoord】がピクセルの位置（画面左上が原点）、<br/>
+	【uSampler】が表ページ画像、<br/>
+	【tick】が時間経過（0.0〜1.0）、です。<br/>
+	rule= を併用すると 【rule】（sampler2D）と 【vague】（float）もシェーダへ渡ります。<br/>
+	（bluesnovel）表・裏ページを1枚ずつ画像化して生WebGLで合成します（[snapshot] と同じ画像化のため、iframe＝[add_frame] や再生中の動画は写りません）。<br/>
+	pixi 由来のグローバル（inputPixel／outputFrame／getUV()）は渡していません。GLSL の文法エラーはデバッグ表示に出ます。<br/>
 </td></tr>
 </table>
 

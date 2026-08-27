@@ -134,13 +134,15 @@ export type T_PAGE_BOTH = T_PAGE | 'both';
 // 進行中の[trans]。seqは「新しい[trans]が来た」ことをStage側のuseEffectへ伝えるための通し番号
 //	（timeが同じ値だと参照が変わってもeffectを撃ち直せないため）
 //	ruleSrc指定時はクロスフェードではなくルール画像によるワイプ（Trans.ts）
+//	glslSrc指定時は表ページ画像を渡すフラグメントシェーダで合成（Stage.tsxがsrc/ts/TransGlsl.tsをlazy import）
 //	aLayNmを持ち回るのは、演出終了時に「交換したレイヤだけ」新しい裏へ写し直すため（finishTrans）
-export type T_TRANS = {seq: number; aLayNm: string[] | null; time: number; ruleSrc?: string; vague?: number} | null;
+export type T_TRANS = {seq: number; aLayNm: string[] | null; time: number; ruleSrc?: string; vague?: number; glslSrc?: string} | null;
 export type T_STARTTRANS = {
 	aLayNm	: string[] | null;	// 交換するレイヤ名。nullは全レイヤ
 	time	: number;			// ミリ秒。0なら演出せず即交換
 	ruleSrc?: string;			// ルール画像の解決済みURL（パス解決はScriptMng）
 	vague?	: number;			// 境界のぼかし幅（0.0〜1.0）
+	glslSrc?: string;			// [trans glsl=]のフラグメントシェーダソース（&変数展開済み）
 }
 // 進行中の[quake]。seqの意味は[trans]と同じ（同じ揺れ方を続けて指定されても撃ち直せるように）
 export type T_QUAKE = {seq: number; hmax: number; vmax: number} | null;
@@ -663,13 +665,14 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	//	（実機テンプレで「場面転換のたびに一瞬真っ黒がちらつく」の正体）。
 	//	演出中の「交換対象レイヤは裏・それ以外は表」という合成は Stage.tsx が描画時に行う
 	//	（本家 LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore` と同じ）
-	startTrans	: ({aLayNm, time, ruleSrc, vague}: T_STARTTRANS)=> set(s=> {
+	startTrans	: ({aLayNm, time, ruleSrc, vague, glslSrc}: T_STARTTRANS)=> set(s=> {
 		// time=0（または既読スキップ中）は演出せず即完了。transはnullのままなのでStageは何もしない
 		if (time <= 0) return finTrans(s, aLayNm);
 
 		return {trans: {seq: (s.trans?.seq ?? 0) + 1, aLayNm, time,
 			...ruleSrc !== undefined ? {ruleSrc} : {},
 			...vague !== undefined ? {vague} : {},
+			...glslSrc !== undefined ? {glslSrc} : {},
 		}};
 	}),
 	// 演出終了。**本家 LayerMng.ts:612 comp() と Pages.ts:74 transPage() の移植**。

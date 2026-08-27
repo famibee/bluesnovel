@@ -126,7 +126,12 @@ vfx-js の旧版。GitHub リポジトリはリンク切れ。npm の `react-vfx
 
 ## 7. 実現性の詳細（2026-08-28、コードを追って確認）
 
-### `[trans] glsl=` — 実現できる（中規模・フレームワーク不要）
+### `[trans] glsl=` — 実装済み（2026-08-28、`src/ts/TransGlsl.ts`）
+
+以下は着手前の実現性検討。実装は方針どおり生 WebGL の lazy モジュールで行った。ただし GLSL の契約は
+「GL Transitions 仕様」ではなく**本家サンプル `glsl_slide` の契約**（`uSampler`／`tick`／
+`vTextureCoord`、rule 併用時 `rule`／`vague`）をそのまま採用した——移植の目的は本家サンプルが動くこと
+なので、既存 `.sn` のシェーダをそのまま流用できる方を優先した。
 
 難所とされる 2 つがすでにこのコードベースに実装済み：
 

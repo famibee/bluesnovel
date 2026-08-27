@@ -387,12 +387,13 @@ var O = b()((e, t) => ({
 		return a(s), w(e, o, s);
 	}),
 	trans: null,
-	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i }) => e((e) => n <= 0 ? T(e, t) : { trans: {
+	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i, glslSrc: a }) => e((e) => n <= 0 ? T(e, t) : { trans: {
 		seq: (e.trans?.seq ?? 0) + 1,
 		aLayNm: t,
 		time: n,
 		...r === void 0 ? {} : { ruleSrc: r },
-		...i === void 0 ? {} : { vague: i }
+		...i === void 0 ? {} : { vague: i },
+		...a === void 0 ? {} : { glslSrc: a }
 	} }),
 	finishTrans: () => e((e) => e.trans ? T(e, e.trans.aLayNm) : {}),
 	quake: null,

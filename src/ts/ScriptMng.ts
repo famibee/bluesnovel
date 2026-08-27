@@ -1655,6 +1655,7 @@ export class ScriptMng {
 			this.$fncs.startTrans({aLayNm: act.aLayNm, time: act.time,
 				...act.rule ? {ruleSrc: this.#searchPic('trans', act.rule)} : {},
 				...act.vague !== undefined ? {vague: act.vague} : {},
+				...act.glsl !== undefined ? {glslSrc: act.glsl} : {},
 			});
 			// time<=0はstartTrans()の中で即finTrans()される（#finishTrans()を経由しない）ので、
 			//	プラグインレイヤーのコピーもここで揃える（#beginTrans()がengine.transDone()を

@@ -264,11 +264,15 @@ it('trans_ruleVagueNotNumber', ()=> {
 		.toThrow('[trans] vagueの値が不正です');
 });
 
-it('trans_glslThrows', ()=> {
-	// 自前シェーダの差し替えはWebGLを使わないこちらでは実現しようがない。
-	//	黙って無視すると「指定したのに違う絵が出る」ので、フィルターと同じくその場で知らせる
-	expect(()=> acts(`${LAYS}[trans time=500 glsl=xxx][s]`))
-		.toThrow('[trans] glsl=はサポートされません');
+it('trans_glsl', ()=> {
+	// glsl= はフラグメントシェーダソースをそのまま積む（中身の検証はしない＝GLSLの
+	//	文法エラーは実行時に Stage 側 lazy モジュールが infoLog 付きで知らせる）。
+	//	rule=/vague= と併用でき、その場合はシェーダの uniform（sampler2D rule / float vague）へ渡る
+	const src = 'void main(){ gl_FragColor = vec4(0); }';
+	expect(acts(`${LAYS}[trans time=500 glsl="${src}"][s]`).find(v=> v.t === 'trans'))
+		.toEqual({t: 'trans', aLayNm: null, time: 500, glsl: src});
+	expect(acts(`${LAYS}[trans time=500 rule=w vague=0.2 glsl="${src}"][s]`).find(v=> v.t === 'trans'))
+		.toEqual({t: 'trans', aLayNm: null, time: 500, rule: 'w', vague: 0.2, glsl: src});
 });
 
 

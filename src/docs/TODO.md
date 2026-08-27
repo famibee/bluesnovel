@@ -43,10 +43,8 @@
 - [ ] 立ち絵シェーダエフェクト（wave/rgbShift/glitch 等のプリセット＋任意 GLSL）：`[add_filter]` と
       同型のコア seam（`aFlt` に倣った `aFx`）＋ lazy import の外部モジュール。エフェクト canvas は
       **対象レイヤの DOM サブツリー内**に置き `styLay()` の transform/opacity/z 順を継承させる方式。
-      GLSL は vfx-js（MIT）から移植、パッケージ非依存。**まずプリセット 2〜3 個で試作**（費用対効果が最も高い）
-- [ ] `[trans] glsl=`：`Snapshot.ts` で表裏 2 ページをラスタライズ → GL Transitions 仕様の GLSL
-      （[gl-transitions](https://github.com/gl-transitions/gl-transitions)、MIT）→ rAF で progress。
-      lazy import のオプションモジュール（~200 行）。下の「凍結」から復帰候補
+      GLSL は vfx-js（MIT）から移植、パッケージ非依存。**まずプリセット 2〜3 個で試作**（費用対効果が最も高い）。
+      `[trans] glsl=` で作った `src/ts/TransGlsl.ts`（生 WebGL・表裏画像の合成）が実装の下敷きになる
 
 ## 保留
 
@@ -67,9 +65,6 @@
 
 - `max_row` / `sys:sn.tagCh.canskip`：本家自体が未接続の死んだ属性 → [tag-notes.md](tag-notes.md)
 - `[ch_out_style]` の消去アニメ適用 → [text-rendering.md](text-rendering.md)
-- `[trans]` の `glsl=`：当初 WebGL 非使用で対象外としたが 2026-08-28 に実現性を再確認（`Snapshot.ts`
-  で表裏ページをラスタライズすれば生 WebGL で可能）。上の「WebGL エフェクト」へ復帰候補として移動 →
-  [tag-notes.md](tag-notes.md)・[ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7
 - ルビ付き行の行間不揃い（行頭にルビが来る場合のみ残存） → [text-rendering.md](text-rendering.md)
 - 縦書きで `〈`/`〉` だけ90°回転しない（Chromium + Hiragino の外部バグ） → [text-rendering.md](text-rendering.md)
 - sn_gallery の emote_layer プラグイン（本家で動かす動機が薄い） → [plugin-layer.md](plugin-layer.md)
