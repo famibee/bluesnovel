@@ -157,7 +157,7 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 **属性ごとの詳細と実装状況は `docs/tag.html`**（変数は `docs/dev.html`）。名前に
 🟢実装済 / 🟡一部 / 🔴未実装 のマークが付いており、bluesnovel 固有の相違・メモは各タグの詳細部に
 書く。**タグや変数を実装・変更したらこのマークを更新する**（「何が動くか」の唯一の情報源。おかげで
-`todo.md` は状況一覧でなく作業計画のままでいられる）。
+`src/docs/TODO.md` は状況一覧でなく作業計画のままでいられる）。
 
 `jump`/`call`/`return`/`button` は `fn=` でファイルを跨げる。マクロは定義元と別ファイルからも
 呼べる。マクロ名は `ScriptEngine.RESERVED_TAGS` と `REG_NG4MAC_NM` で弾く。`[macro]` の入れ子は
