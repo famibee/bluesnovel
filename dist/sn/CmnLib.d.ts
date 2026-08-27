@@ -21,6 +21,7 @@ export declare class CmnLib {
     static stageH: number;
     static bgColor: string;
     static debugLog: boolean;
+    static masume: boolean;
     static platform: string;
     static plat_desc: string;
     static isSafari: boolean;

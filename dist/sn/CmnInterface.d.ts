@@ -2,7 +2,7 @@ import type { TArg, TTag } from './Grammar';
 import type { Areas, T_H_Areas } from './Areas';
 import type { T_H_VAL_MP } from './CallStack';
 import type { T_SEARCHPATH } from './ConfigBase';
-import type { Layer } from './Layer';
+import type { T_LayerFactory } from './LayCls';
 export interface IMyTrace {
     (txt: string, lvl?: string, fnline?: boolean, adjust_line?: number): void;
 }
@@ -16,7 +16,7 @@ export type T_PLUGIN_INFO = {
         height: number;
     };
 };
-export type T_LayerFactory = () => Layer;
+export type { T_LayerFactory };
 export type T_PluginInitArg = {
     getInfo(): T_PLUGIN_INFO;
     addTag(tag_name: string, tag_fnc: TTag): void;

@@ -27,7 +27,7 @@ export declare const BTN_DEF_W = 100;
 export declare const BTN_DEF_H = 30;
 export declare const A_LAY_STY_KEY: readonly ["visible", "alpha", "left", "top", "align_x", "align_y", "s_right", "s_bottom", "width", "height", "rotation", "scale_x", "scale_y", "pivot_x", "pivot_y", "blendmode", "aFlt"];
 export type T_LAY_IDX = T_LAY_STY & {
-    cls: 'grp' | 'txt';
+    cls: 'grp' | 'txt' | (string & {});
     nm: string;
 };
 export declare function styLay(l: T_LAY_STY): CSSProperties;
@@ -40,7 +40,14 @@ export type T_LAY_CMN = {
         visible?: boolean;
     };
 };
-export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA;
+export type T_PLGLAY_DATA = T_LAY_IDX & {
+    cls: string;
+    plg: true;
+};
+export type T_LAY = T_GRPLAY_DATA | T_TXTLAY_DATA | T_PLGLAY_DATA;
+export declare function isGrpLay(l: T_LAY): l is T_GRPLAY_DATA;
+export declare function isTxtLay(l: T_LAY): l is T_TXTLAY_DATA;
+export declare function isPlgLay(l: T_LAY): l is T_PLGLAY_DATA;
 export declare const noticeDrag: () => void;
 export declare const clearDrag: () => void;
 export declare const isDragging: () => boolean;

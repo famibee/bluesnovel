@@ -1,4 +1,5 @@
 import { type T_VAL_D } from './VarStore';
+import { type TTag } from '../sn/Grammar';
 import { Script } from './Script';
 import { type T_H_Areas } from '../sn/Areas';
 import { type T_TSY_TO } from './Tsy';
@@ -58,8 +59,21 @@ export type T_MARK_STY = {
 };
 export type T_ENGINE_ACTION = {
     t: 'addLay';
-    cls: 'grp' | 'txt';
+    cls: string;
     nm: string;
+} | {
+    t: 'layPlg';
+    nm: string;
+    page: T_PAGE;
+    hArg: {
+        [k: string]: string;
+    };
+} | {
+    t: 'plgTag';
+    name: string;
+    hArg: {
+        [k: string]: string;
+    };
 } | {
     t: 'chgPic';
     nm: string;
@@ -421,6 +435,7 @@ export declare class ScriptEngine {
     get chWait(): number;
     static readonly REG_NG4MAC_NM: RegExp;
     static readonly RESERVED_TAGS: Set<string>;
+    static registerPlgTag(name: string, fnc: TTag): void;
     constructor(fn: string | Script, src?: string);
     setFullScr(b: boolean): void;
     setKeyDown(key: string, down: boolean): void;

@@ -16,6 +16,7 @@ export declare class SysBase implements T_SysRoots, T_SysBase {
     cfg: T_Config;
     setMain(cfg: T_Config): void;
     scrMng: ScriptMng | undefined;
+    protected titleSub(_txt: string): void;
     protected run(): Promise<void>;
     stop(): Promise<void>;
     protected $path_downloads: string;

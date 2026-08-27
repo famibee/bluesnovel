@@ -195,7 +195,19 @@ var a = "skynovel", o = class {
 	dump() {
 		return "";
 	}
-}, c = class extends o {
+}, c = class extends s {
+	static setup(...e) {}
+	get htm() {
+		return this.ctn;
+	}
+	snapshot(e, t) {
+		t();
+	}
+	snapshot_end() {}
+	snapshotByCanvas(e, t, n) {
+		n();
+	}
+}, l = class extends o {
 	#e;
 	constructor(...[e = {}, t = {
 		cur: "prj/",
@@ -238,6 +250,6 @@ var a = "skynovel", o = class {
 	}
 };
 //#endregion
-export { s as Layer, c as SysWeb, t as argChk_Boolean, n as argChk_Num };
+export { s as Layer, c as PlgLayer, l as SysWeb, t as argChk_Boolean, n as argChk_Num };
 
 //# sourceMappingURL=web.js.map

@@ -15,9 +15,12 @@ export declare class ScriptMng {
     page(to: T_PAGE_TO): void;
     setWinInf(x: number, y: number, w: number, h: number): void;
     go(): void;
+    resumePlg(): void;
     navigateTo(url: string): void;
     jumpToLabelAndGo(label: string, call: boolean, fn?: string, arg?: string): void;
     attachFrameBox(el: HTMLElement): void;
+    attachPlgBox(nm: string, pageIdx: 0 | 1, el: HTMLElement | null): void;
+    getVal(nm: string, def?: number | string): string | number | boolean | undefined;
     unlockAudio(): void;
     needClick2Play(): boolean;
     playButtonSe(fn: string, buf: string): void;
