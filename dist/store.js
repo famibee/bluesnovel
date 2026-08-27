@@ -374,6 +374,41 @@ var O = b()((e, t) => ({
 		let { idx: l, aLay: u } = C(e, n);
 		return c(u), w(e, l, u);
 	}),
+	chgFx: ({ aLayNm: t, page: n, mode: r, fx: a, names: o }) => e((e) => {
+		let s = (e) => {
+			if (!i(e)) {
+				if (r === "add") throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
+				return;
+			}
+			if (r === "clear") {
+				if (!o) {
+					delete e.aFx;
+					return;
+				}
+				let t = (e.aFx ?? []).filter((e) => !e.name || !o.includes(e.name));
+				t.length > 0 ? e.aFx = t : delete e.aFx;
+				return;
+			}
+			let t = [...e.aFx ?? []], n = a.name ? t.findIndex((e) => e.name === a.name) : -1;
+			n >= 0 ? t[n] = a : t.push(a), e.aFx = t;
+		}, c = (e) => {
+			if (!t) {
+				e.forEach(s);
+				return;
+			}
+			for (let n of t) {
+				let t = e.find((e) => e.nm === n);
+				if (!t) throw `存在しないレイヤ ${n} です`;
+				s(t);
+			}
+		};
+		if (n === "both") return { aPage: e.aPage.map((e) => {
+			let t = [...e];
+			return c(t), t;
+		}) };
+		let { idx: l, aLay: u } = C(e, n);
+		return c(u), w(e, l, u);
+	}),
 	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
 		let a = (e) => {
 			let n = D(e, t, "txt");

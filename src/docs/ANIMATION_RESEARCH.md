@@ -163,7 +163,25 @@ vfx-js の旧版。GitHub リポジトリはリンク切れ。npm の `react-vfx
   無理に合わせている部分）。
 - 部分レイヤ trans（`aLayNm` 指定）+ glsl の合成はエッジケース。全画面クロスフェード置換が主用途。
 
-### 立ち絵シェーダエフェクト — 実現できる。個別コンポーネント方式が正解
+### 立ち絵シェーダエフェクト — 最小スパイクを実装済み（2026-08-28）
+
+以下は着手前の実現性検討。**C 方式の最小スパイク**を実装した（`[add_fx]`/`[clear_fx]` の 2 タグ、
+プリセット wave / rgbShift の 2 個）：
+
+- `src/ts/Fx.ts`（純粋・エンジンから呼ぶ `bldFx()`。fx 名/パラメータの検査＋既定値の 1 箇所）
+- `src/store/store.tsx` の `chgFx`（`chgFilter` と同じ骨格。`aFx` は `A_LAY_STY_KEY` に載せたので
+  `[clear_lay]`・`[save]`/`[load]`・`[trans]` 複製に自動追随。grp レイヤ専用）
+- `src/components/GrpLayer.tsx` の `<FxImg>`（`aFx` 非空で `<img>`→レイヤ実寸 `<canvas>` へ分岐。
+  `styLay()` の transform/opacity/z 順を自動継承。**src/aFx が変わるたび canvas ごと作り直す**——
+  `WEBGL_lose_context.loseContext()` 後の同一 canvas からは生きたコンテキストを取り直せない）
+- `src/ts/FxRunner.ts` + `src/ts/fxPresets.ts`（lazy。`TransGlsl.ts` が下敷き。スタックは 2 枚 FBO で
+  ping-pong、`time=` の one-shot は経過後そのパスを素通しへ切り替えて rAF 停止＝凍結）
+
+未実装：`[enable_fx]`/`[wait_fx]`、生 `glsl=`、face 合成、無名 fx のレイヤスコープ採番。
+手動確認フィクスチャは `test/e2e/app/prj_fx/`（`.e2e.ts` はまだ無い）。詳細な残りは
+[TODO.md](TODO.md) の該当項目。以下は当初の検討メモ（設計の背景として残す）。
+
+#### 個別コンポーネント方式が正解
 
 「単一オーバーレイ canvas」で潰れた 4 つの問題（§6 の 1〜4：層間合成・フィルタパイプライン・
 `[trans]`・`[snapshot]`）は、**エフェクト canvas を対象レイヤの DOM サブツリー内に置く**と全部消える：

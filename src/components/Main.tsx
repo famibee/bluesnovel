@@ -64,6 +64,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	const clearTxtLay = useStore(s=> s.clearTxtLay);
 	const moveLay = useStore(s=> s.moveLay);
 	const chgFilter = useStore(s=> s.chgFilter);	// [lay float=/index=/dive=]のレイヤ重なり順
+	const chgFx = useStore(s=> s.chgFx);	// [add_fx]/[clear_fx]（立ち絵シェーダエフェクトの試作）
 	const enableEvent = useStore(s=> s.enableEvent);
 	const addBtn = useStore(s=> s.addBtn);
 	const setReadBack = useStore(s=> s.setReadBack);
@@ -85,7 +86,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getForeIdx, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging, isTyping: ()=> isTypingRef.current}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getForeIdx, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, chgFx, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging, isTyping: ()=> isTypingRef.current}, hTag);
 
 		inited();
 

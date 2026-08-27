@@ -997,12 +997,48 @@ function I(e, t) {
 	return n;
 }
 //#endregion
+//#region src/ts/Fx.ts
+var L = ["wave", "rgbShift"], R = {
+	wave: {
+		amp: 6,
+		freq: 2
+	},
+	rgbShift: { shift: 4 }
+}, z = [
+	"amp",
+	"freq",
+	"shift"
+];
+function B(e, t, n) {
+	let r = e[t];
+	if (r === void 0) return n;
+	let i = Number(r);
+	if (!Number.isFinite(i)) throw `[add_fx] ${t} の値が不正です：${r}`;
+	return i;
+}
+function V(e) {
+	let t = e.fx ?? "", n = e.glsl ?? "";
+	if (!t && !n) throw "[add_fx] fx= か glsl= のどちらかが必要です";
+	if (n) throw "[add_fx] glsl= は未対応です（試作。プリセット fx= のみ）";
+	if (!L.includes(t)) throw `[add_fx] fx【${t}】は未対応です（対応：${L.join(" / ")}）`;
+	let r = { ...R[t] };
+	for (let t of z) e[t] !== void 0 && (r[t] = B(e, t, 0));
+	return {
+		name: e.name ?? "",
+		fx: t,
+		glsl: n,
+		time: B(e, "time", 0),
+		speed: B(e, "speed", 1),
+		params: r
+	};
+}
+//#endregion
 //#region src/ts/Txt.ts
-function L(e) {
+function H(e) {
 	w.setEscape(e);
 }
-L("");
-var R = [
+H("");
+var U = [
 	"span",
 	"add",
 	"add_close",
@@ -1013,16 +1049,16 @@ var R = [
 	"del",
 	"gotxt"
 ];
-function z(e) {
+function W(e) {
 	if (e === void 0) return;
 	let t = Number(e);
 	return Number.isFinite(t) ? t : void 0;
 }
-function B(e) {
+function G(e) {
 	let t = e.indexOf("｜");
 	if (t < 1) return;
 	let n = e.slice(0, t);
-	if (!R.includes(n)) return;
+	if (!U.includes(n)) return;
 	let r = e.slice(t + 1);
 	try {
 		return {
@@ -1036,9 +1072,9 @@ function B(e) {
 		};
 	}
 }
-function V(e) {
+function K(e) {
 	let t = [], n = "", r = "", i, a, o, s, c, l, u = [], d = (e, u, d, f) => {
-		let p = n + (c?.style ?? "") + (d?.style ?? ""), m = r + (c?.r_style ?? "") + (d?.r_style ?? ""), h = d?.ch_in_style ?? c?.ch_in_style ?? i, g = d?.ch_out_style ?? c?.ch_out_style ?? a, _ = z(d?.wait) ?? z(c?.wait) ?? o, { ra: v, ruby: y } = u ? G(u) : {
+		let p = n + (c?.style ?? "") + (d?.style ?? ""), m = r + (c?.r_style ?? "") + (d?.r_style ?? ""), h = d?.ch_in_style ?? c?.ch_in_style ?? i, g = d?.ch_out_style ?? c?.ch_out_style ?? a, _ = W(d?.wait) ?? W(c?.wait) ?? o, { ra: v, ruby: y } = u ? ee(u) : {
 			ra: void 0,
 			ruby: void 0
 		}, b = v ?? s;
@@ -1056,7 +1092,7 @@ function V(e) {
 		});
 	}, f = new w();
 	return f.init((e, f) => {
-		let p = f ? B(f) : void 0;
+		let p = f ? G(f) : void 0;
 		if (!p) {
 			d(e, f);
 			return;
@@ -1064,7 +1100,7 @@ function V(e) {
 		let { o: m } = p;
 		switch (p.cmd) {
 			case "span":
-				n = m.style ?? "", r = m.r_style ?? "", i = m.ch_in_style, a = m.ch_out_style, o = z(m.wait), m.r_align && (s = m.r_align);
+				n = m.style ?? "", r = m.r_style ?? "", i = m.ch_in_style, a = m.ch_out_style, o = W(m.wait), m.r_align && (s = m.r_align);
 				break;
 			case "add":
 				c = m;
@@ -1113,21 +1149,21 @@ function V(e) {
 				break;
 			case "grp": m.pic && (d("　", m.r, m), Object.assign(t.at(-1), {
 				pic: m.pic,
-				...z(m.width) === void 0 ? {} : { gw: z(m.width) },
-				...z(m.height) === void 0 ? {} : { gh: z(m.height) },
-				...z(m.x) === void 0 ? {} : { gx: z(m.x) },
-				...z(m.y) === void 0 ? {} : { gy: z(m.y) }
+				...W(m.width) === void 0 ? {} : { gw: W(m.width) },
+				...W(m.height) === void 0 ? {} : { gh: W(m.height) },
+				...W(m.x) === void 0 ? {} : { gx: W(m.x) },
+				...W(m.y) === void 0 ? {} : { gy: W(m.y) }
 			}));
 		}
 	}), f.putTxt(e), t;
 }
-function H(e) {
+function q(e) {
 	return e.map((e) => e.c).join("");
 }
-function U(e) {
-	return H(V(e));
+function J(e) {
+	return q(K(e));
 }
-var W = [
+var Y = [
 	"start",
 	"left",
 	"center",
@@ -1137,11 +1173,11 @@ var W = [
 	"even",
 	"1ruby"
 ];
-function G(e) {
+function ee(e) {
 	let t = e.indexOf("｜");
 	if (t > 0) {
 		let n = e.slice(0, t);
-		if (W.includes(n)) return {
+		if (Y.includes(n)) return {
 			ra: n,
 			ruby: e.slice(t + 1)
 		};
@@ -1150,28 +1186,28 @@ function G(e) {
 }
 //#endregion
 //#region src/ts/Log.ts
-var K = 64, q = (e) => e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"), J = (e) => q(e).replaceAll("'", "&#39;");
-function Y(e) {
-	return X(V(e));
+var te = 64, X = (e) => e.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"), Z = (e) => X(e).replaceAll("'", "&#39;");
+function Q(e) {
+	return ne(K(e));
 }
-function X(e) {
+function ne(e) {
 	let t = "";
 	for (let n of e) {
 		if (n.c === "\n") {
 			t += "<br/>";
 			continue;
 		}
-		let e = q(n.c), r = n.r ? `<ruby>${e}<rt${n.rs ? ` style='${J(n.rs)}'` : ""}>${q(n.r)}</rt></ruby>` : e, i = (n.s ?? "") + (n.tcy ? "text-combine-upright: all;" : "");
-		t += i ? `<span style='${J(i)}'>${r}</span>` : r;
+		let e = X(n.c), r = n.r ? `<ruby>${e}<rt${n.rs ? ` style='${Z(n.rs)}'` : ""}>${X(n.r)}</rt></ruby>` : e, i = (n.s ?? "") + (n.tcy ? "text-combine-upright: all;" : "");
+		t += i ? `<span style='${Z(i)}'>${r}</span>` : r;
 	}
 	return t;
 }
-var Z = class {
+var re = class {
 	maxLen;
 	#e = [];
 	#t = "";
 	#n = {};
-	constructor(e = () => K) {
+	constructor(e = () => te) {
 		this.maxLen = e;
 	}
 	add(e) {
@@ -1181,7 +1217,7 @@ var Z = class {
 		this.#n = e;
 	}
 	pagebreak() {
-		let e = Y(this.#t);
+		let e = Q(this.#t);
 		this.#t = "";
 		let t = this.#n;
 		if (this.#n = {}, !e) return;
@@ -1197,7 +1233,7 @@ var Z = class {
 	json() {
 		return JSON.stringify([...this.#e, {
 			...this.#n,
-			text: Y(this.#t)
+			text: Q(this.#t)
 		}]);
 	}
 	playback(e) {
@@ -1209,23 +1245,23 @@ var Z = class {
 		}
 		this.#t = "", this.#n = {};
 	}
-}, Q = /* @__PURE__ */ new Map();
-function $(e, t) {
-	if (Q.has(e)) throw `すでに定義済みのタグ[${e}]です`;
-	Q.set(e, t);
+}, $ = /* @__PURE__ */ new Map();
+function ie(e, t) {
+	if ($.has(e)) throw `すでに定義済みのタグ[${e}]です`;
+	$.set(e, t);
 }
-function ee(e) {
-	return Q.get(e);
+function ae(e) {
+	return $.get(e);
 }
-function te(e) {
-	return Q.has(e);
+function oe(e) {
+	return $.has(e);
 }
-function ne() {
-	return [...Q.keys()];
+function se() {
+	return [...$.keys()];
 }
 //#endregion
 //#region src/ts/ScriptEngine.ts
-var re = class n {
+var ce = class n {
 	static #e = new v();
 	static parseTag(e) {
 		let [t, r] = b(e);
@@ -1403,7 +1439,7 @@ var re = class n {
 	#j() {
 		return !!this.#k.get("mp:const.sn.macro");
 	}
-	#M = new Z(() => {
+	#M = new re(() => {
 		let e = Number(this.#k.get("tmp:const.sn.config.log.max_len"));
 		return Number.isFinite(e) && e > 0 ? e : 64;
 	});
@@ -1428,20 +1464,20 @@ var re = class n {
 	#B = !1;
 	#V = Object.create(null);
 	static REG_NG4MAC_NM = /["'#;\\\]　]+/;
-	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.if.elsif.else.endif.r.er.trace.log.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.ch.endlink.graph.link.ruby2.span.tcy.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
+	static RESERVED_TAGS = /* @__PURE__ */ new Set(/* @__PURE__ */ "add_lay.current.add_face.lay.clear_lay.trans.wt.finish_trans.set_cancel_skip.let.let_ml.endlet_ml.let_abs.let_char_at.let_index_of.let_length.let_replace.let_round.let_search.let_substr.tsy.tsy_frame.wait_tsy.stop_tsy.pause_tsy.resume_tsy.quake.stop_quake.wq.title.toggle_full_screen.dump_lay.dump_val.dump_stack.pop_stack.clear_text.rec_ch.rec_r.reset_rec.ch_in_style.ch_out_style.autowc.navigate_to.loadplugin.snapshot.close.update_check.window.record_place.save.load.reload_script.copybookmark.erasebookmark.export.import.add_frame.frame.set_frame.let_frame.set_focus.add_filter.clear_filter.enable_filter.add_fx.clear_fx.if.elsif.else.endif.r.er.trace.log.jump.call.return.macro.endmacro.char2macro.bracket2macro.button.event.clear_event.enable_event.clearvar.clearsysvar.page.wait.waitclick.l.p.s.ch.endlink.graph.link.ruby2.span.tcy.fadebgm.fadeoutbgm.fadeoutse.fadese.playbgm.playse.stop_allse.stopbgm.stopfadese.stopse.volume.wb.wf.wl.ws.xchgbuf.wv".split("."));
 	#H() {
 		let e = Object.create(null);
 		for (let t of n.RESERVED_TAGS) e[t] = !0;
-		for (let t of ne()) e[t] = !0;
+		for (let t of se()) e[t] = !0;
 		for (let t in this.#V) e[t] = !0;
 		return e;
 	}
 	static registerPlgTag(e, t) {
 		if (n.RESERVED_TAGS.has(e)) throw `[${e}]は既存タグ名のため、プラグインタグとして登録できません`;
-		$(e, t);
+		ie(e, t);
 	}
 	constructor(t, n = "") {
-		this.#g = t instanceof C ? t : new C(t, n), this.#k.defBuiltin("const.sn.scriptFn", () => this.fn), this.#k.defBuiltin("const.sn.isKidoku", () => this.#B), this.#k.defBuiltin("const.sn.displayState", () => this.#U), this.#k.defBuiltin("const.Date.getDateStr", () => e()), this.#k.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#k.defBuiltin("const.sn.last_page_plain_text", () => U(this.#y[this.#v] ?? "")), this.#k.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#k.defBuiltin("const.sn.log.json", () => this.#M.json()), this.#k.defBuiltin("const.sn.key.alternate", () => this.#W.Alt === !0), this.#k.defBuiltin("const.sn.key.command", () => this.#W.Meta === !0), this.#k.defBuiltin("const.sn.key.control", () => this.#W.Control === !0), this.#k.defBuiltin("const.sn.key.end", () => this.#W.End === !0), this.#k.defBuiltin("const.sn.key.escape", () => this.#W.Escape === !0), this.#k.defBuiltin("const.sn.key.back", () => !1), this.#k.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#k.defBuiltin("const.sn.aIfStk.length", () => this.#F.length), this.#k.defBuiltin("const.sn.vctCallStk.length", () => this.#I.length), this.#k.setNochk("save:const.sn.mesLayer", this.#v);
+		this.#g = t instanceof C ? t : new C(t, n), this.#k.defBuiltin("const.sn.scriptFn", () => this.fn), this.#k.defBuiltin("const.sn.isKidoku", () => this.#B), this.#k.defBuiltin("const.sn.displayState", () => this.#U), this.#k.defBuiltin("const.Date.getDateStr", () => e()), this.#k.defBuiltin("const.Date.getTime", () => (/* @__PURE__ */ new Date()).getTime()), this.#k.defBuiltin("const.sn.last_page_plain_text", () => J(this.#y[this.#v] ?? "")), this.#k.defBuiltin("const.sn.last_page_text", () => this.#y[this.#v] ?? ""), this.#k.defBuiltin("const.sn.log.json", () => this.#M.json()), this.#k.defBuiltin("const.sn.key.alternate", () => this.#W.Alt === !0), this.#k.defBuiltin("const.sn.key.command", () => this.#W.Meta === !0), this.#k.defBuiltin("const.sn.key.control", () => this.#W.Control === !0), this.#k.defBuiltin("const.sn.key.end", () => this.#W.End === !0), this.#k.defBuiltin("const.sn.key.escape", () => this.#W.Escape === !0), this.#k.defBuiltin("const.sn.key.back", () => !1), this.#k.defBuiltin("const.sn.Math.PI", () => Math.PI), this.#k.defBuiltin("const.sn.aIfStk.length", () => this.#F.length), this.#k.defBuiltin("const.sn.vctCallStk.length", () => this.#I.length), this.#k.setNochk("save:const.sn.mesLayer", this.#v);
 	}
 	#U = !1;
 	setFullScr(e) {
@@ -1769,7 +1805,7 @@ var re = class n {
 		}
 		if (i && l && !("left" in u) && !("s_right" in u) && !("top" in u) && !("s_bottom" in u) && e.width === void 0 && e.height === void 0 && (u.left = 0, u.top = 0, u.width = Number(this.#k.get("tmp:const.sn.config.window.width")), u.height = Number(this.#k.get("tmp:const.sn.config.window.height"))), e.width !== void 0 && (u.width = n.#n("lay", "width", e.width)), e.height !== void 0 && (u.height = n.#n("lay", "height", e.height)), e.rotation !== void 0 && (u.rotation = n.#n("lay", "rotation", e.rotation)), e.scale_x !== void 0 && (u.scale_x = n.#n("lay", "scale_x", e.scale_x)), e.scale_y !== void 0 && (u.scale_y = n.#n("lay", "scale_y", e.scale_y)), e.pivot_x !== void 0 && (u.pivot_x = n.#n("lay", "pivot_x", e.pivot_x)), e.pivot_y !== void 0 && (u.pivot_y = n.#n("lay", "pivot_y", e.pivot_y)), e.blendmode !== void 0 && (u.blendmode = a(e.blendmode)), !l) {
 			if (e.b_color !== void 0 && e.back_clear !== "true" && (u.b_color = n.#n("lay", "b_color", e.b_color)), e.style !== void 0 && (u.style = e.style), e.pl !== void 0 && (u.pl = n.#n("lay", "pl", e.pl)), e.pr !== void 0 && (u.pr = n.#n("lay", "pr", e.pr)), e.pt !== void 0 && (u.pt = n.#n("lay", "pt", e.pt)), e.pb !== void 0 && (u.pb = n.#n("lay", "pb", e.pb)), e.ffs !== void 0 && (u.ffs = e.ffs), e.noffs !== void 0 && (u.noffs = e.noffs), e.bura !== void 0 && (u.bura = e.bura !== "false"), e.kinsoku_sol !== void 0 && (u.kinsoku_sol = e.kinsoku_sol), e.kinsoku_eol !== void 0 && (u.kinsoku_eol = e.kinsoku_eol), e.kinsoku_dns !== void 0 && (u.kinsoku_dns = e.kinsoku_dns), e.kinsoku_bura !== void 0 && (u.kinsoku_bura = e.kinsoku_bura), w.setting(e), e.r_align !== void 0) {
-				if (!W.includes(e.r_align)) throw `[lay] r_alignの値が不正です：${e.r_align}`;
+				if (!Y.includes(e.r_align)) throw `[lay] r_alignの値が不正です：${e.r_align}`;
 				u.r_align = e.r_align;
 			}
 			e.in_style !== void 0 && (u.in_style = e.in_style), e.out_style !== void 0 && (u.out_style = e.out_style);
@@ -1873,6 +1909,18 @@ var re = class n {
 				page: n.#h("enable_filter", i, "fore"),
 				index: n.#i("enable_filter", "index", i.index, 0),
 				enabled: (i.enabled ?? "true") !== "false"
+			}), "skip";
+			case "add_fx": return l.push({
+				t: "addFx",
+				aLayNm: n.#c(i.layer),
+				page: n.#h("add_fx", i, "fore"),
+				fx: V(i)
+			}), "skip";
+			case "clear_fx": return l.push({
+				t: "clearFx",
+				aLayNm: n.#c(i.layer),
+				page: n.#h("clear_fx", i, "fore"),
+				names: n.#c(i.name)
 			}), "skip";
 			case "clear_lay": {
 				let e = n.#h("clear_lay", i, "fore"), t = n.#c(i.layer);
@@ -2045,7 +2093,7 @@ var re = class n {
 				clearFilter: i.clear_filter === "true"
 			}), "skip";
 			case "span": {
-				if (i.r_align !== void 0 && !W.includes(i.r_align)) throw `[span] r_alignの値が不正です：${i.r_align}`;
+				if (i.r_align !== void 0 && !Y.includes(i.r_align)) throw `[span] r_alignの値が不正です：${i.r_align}`;
 				let { nm: e, page: t } = this.#le(i);
 				return this.#ue(l, n.#ce("span", {
 					...i,
@@ -2688,7 +2736,7 @@ var re = class n {
 				}), "stop";
 			}
 			default: {
-				if (te(e)) return l.push({
+				if (oe(e)) return l.push({
 					t: "plgTag",
 					name: e,
 					hArg: { ...i }
@@ -2811,6 +2859,6 @@ var re = class n {
 	}
 };
 //#endregion
-export { re as ScriptEngine, O as a, S as c, V as i, H as n, F as o, L as r, C as s, ee as t };
+export { ce as ScriptEngine, O as a, S as c, K as i, q as n, F as o, H as r, C as s, ae as t };
 
 //# sourceMappingURL=ScriptEngine.js.map

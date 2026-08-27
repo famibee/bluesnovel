@@ -461,7 +461,8 @@ var g = [
 	"pivot_x",
 	"pivot_y",
 	"blendmode",
-	"aFlt"
+	"aFlt",
+	"aFx"
 ];
 function _(e) {
 	let t = {};

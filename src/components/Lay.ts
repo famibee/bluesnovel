@@ -15,6 +15,7 @@
 
 import type {SysBase} from '../sn/SysBase';
 import {styFilter, blendmodeOf, type T_FLT} from '../ts/Filter';
+import type {T_FX} from '../ts/Fx';
 import type {T_GRPLAY_DATA} from './GrpLayer';
 import type {T_TXTLAY_DATA} from './TxtLayer';
 
@@ -65,6 +66,11 @@ export type T_LAY_STY = {
 	pivot_y?	: number;
 	blendmode?	: string;	// CSSのmix-blend-mode値（[lay blendmode=…]がここへ変換して入れる）
 	aFlt?		: T_FLT[];	// [add_filter]で重ねたフィルター（重なり順＝配列順）
+	// [add_fx]で重ねたシェーダエフェクト（分家独自の試作。ANIMATION_RESEARCH.md §7）。
+	//	grp レイヤ専用（GrpLayerが <img> の代わりに <canvas> を描く分岐で使う）。
+	//	aFltと同型にしてあるので[clear_lay]（下のA_LAY_STY_KEY経由で無条件クリア）・
+	//	[save]/[load]（structuredClone/JSON）・[trans]の両ページ複製に自動追随する
+	aFx?		: T_FX[];
 };
 // 文字ボタンの箱の大きさの既定（本家 Button.ts:123 height=30 / :152 width=100）。
 //	pixiの Text.width/height は文字スプライトそのものを拡縮するので、本家のボタンは
@@ -74,7 +80,7 @@ export type T_LAY_STY = {
 export const BTN_DEF_W = 100;
 export const BTN_DEF_H = 30;
 
-export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt'] as const;
+export const A_LAY_STY_KEY = ['visible', 'alpha', 'left', 'top', 'align_x', 'align_y', 's_right', 's_bottom', 'width', 'height', 'rotation', 'scale_x', 'scale_y', 'pivot_x', 'pivot_y', 'blendmode', 'aFlt', 'aFx'] as const;
 
 // `(string & {})`はリテラル候補（'grp'|'txt'）の補完を保ったまま任意文字列も許すTSのイディオム。
 //	本家[add_lay class=…]と同じく、プラグイン（3D/Live2D等）が独自clsのレイヤーを

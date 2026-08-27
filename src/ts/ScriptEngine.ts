@@ -23,6 +23,7 @@ import {getDateStr, int, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
+import {bldFx, type T_FX} from './Fx';
 import {argBlendmode} from './Blendmode';
 import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
@@ -135,6 +136,8 @@ export type T_ENGINE_ACTION =
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
 	| {t: 'clearFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_filter]
 	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
+	| {t: 'addFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; fx: T_FX}	// [add_fx]。立ち絵へシェーダエフェクトを重ねる（分家独自の試作。aFx[]へpush／同名は置換）
+	| {t: 'clearFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; names: string[] | null}	// [clear_fx]。namesはカンマ区切り名前リスト（null＝そのレイヤのfx全部）
 	| {t: 'close'}	// [close]。アプリの終了（アプリ版のみ）
 	| {t: 'updateCheck'; url: string}	// [update_check]。更新チェック（アプリ版のみ）
 	| {t: 'window'; centering: boolean; x: number; y: number; w: number; h: number}	// [window]。アプリウインドウ設定（アプリ版のみ）
@@ -575,6 +578,7 @@ export class ScriptEngine {
 		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
+		'add_fx', 'clear_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace', 'log',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -1424,6 +1428,18 @@ export class ScriptEngine {
 				page: ScriptEngine.#argPageBoth('enable_filter', args, 'fore'),
 				index: ScriptEngine.#argNumDef('enable_filter', 'index', args.index, 0),
 				enabled: (args.enabled ?? 'true') !== 'false'});
+			return 'skip';
+
+		// ---- 立ち絵シェーダエフェクト（分家独自の試作。ANIMATION_RESEARCH.md §7。[add_filter]に倣う） ----
+		case 'add_fx':	// bldFx()がfx名・パラメータの書き間違いをここで例外にする
+			aAct.push({t: 'addFx', aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.#argPageBoth('add_fx', args, 'fore'), fx: bldFx(args)});
+			return 'skip';	// [add_fx]自体は待たない（[tsy]と同じ。[wait_fx]は試作では未実装）
+
+		case 'clear_fx':	// name=はカンマ区切りで複数可（[add_filter]のlayer=と同じ#argLayNamesを流用）
+			aAct.push({t: 'clearFx', aLayNm: ScriptEngine.#argLayNames(args.layer),
+				page: ScriptEngine.#argPageBoth('clear_fx', args, 'fore'),
+				names: ScriptEngine.#argLayNames(args.name)});
 			return 'skip';
 
 		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）

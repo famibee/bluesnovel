@@ -4484,6 +4484,22 @@ var co = class p {
 					enabled: e.enabled
 				});
 				break;
+			case "addFx":
+				this.$fncs.chgFx({
+					aLayNm: e.aLayNm,
+					page: e.page,
+					mode: "add",
+					fx: e.fx
+				});
+				break;
+			case "clearFx":
+				this.$fncs.chgFx({
+					aLayNm: e.aLayNm,
+					page: e.page,
+					mode: "clear",
+					names: e.names
+				});
+				break;
 			case "moveLay":
 				this.$fncs.moveLay({
 					nm: e.nm,

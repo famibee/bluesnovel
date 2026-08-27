@@ -1,0 +1,22 @@
+; 手動確認用（立ち絵シェーダエフェクト試作 [add_fx]/[clear_fx]）
+[add_lay layer=base class=grp]
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+そのまま[l]
+
+[add_fx layer=base fx=wave amp=10 freq=3]
+wave[l]
+
+[add_fx layer=base name=rgb fx=rgbShift shift=12]
+wave+rgbShift[l]
+
+[clear_fx layer=base name=rgb]
+waveだけ[l]
+
+[add_fx layer=base fx=rgbShift time=1500 shift=20]
+rgbShift one-shot 1.5秒[l]
+
+[clear_fx layer=base]
+全部クリア[s]

@@ -7,6 +7,7 @@
 
 import {A_LAY_STY_KEY, isGrpLay, isTxtLay, type T_LAY, type T_LAY_STY} from '../components/Lay';
 import type {T_FLT} from '../ts/Filter';
+import type {T_FX} from '../ts/Fx';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import type {T_CH, T_R_ALIGN} from '../ts/Txt';
@@ -48,6 +49,7 @@ type T_STATE = {
 	clearTxtLay: (arg: T_CLEARTXTLAY)=> void,
 	moveLay	: (arg: T_MOVELAY)=> void,
 	chgFilter: (arg: T_CHGFILTER)=> void,
+	chgFx	: (arg: T_CHGFX)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
 	addBtn	: (arg: T_ADDBTN)=> void,
 
@@ -250,6 +252,15 @@ export type T_CHGFILTER = {
 	index?	: number;		// enable用
 	enabled?: boolean;		// enable用
 }
+// [add_fx]/[clear_fx]（分家独自の試作。ANIMATION_RESEARCH.md §7）。対象の選び方は
+//	[add_filter]と同じ（aLayNm=nullは全レイヤ、page=bothで両面）。grpレイヤ専用。
+export type T_CHGFX = {
+	aLayNm	: string[] | null;
+	page	: T_PAGE_BOTH;
+	mode	: 'add' | 'clear';
+	fx?		: T_FX;				// add用
+	names?	: string[] | null;	// clear用。null＝そのレイヤのfx全部
+}
 // [lay float=/index=/dive=]：レイヤの重なり順。**表裏とも同じ順に動かす**ので、page指定は無い
 //	（本家 LayerMng.ts:489 も#fore/#backの両方をsetChildIndexする）
 export type T_MOVELAY = {
@@ -283,7 +294,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'chgFx'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
 	// 文字送り演出（Web Animations API）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
 	//	演出完了まで遅らせるため（ScriptMng#scheduleResume）。isTypingはstateの値そのものだと
 	//	attachTsx時点のスナップショットで固まってしまうので、関数越しに読む
@@ -621,6 +632,44 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 				break;
 			}
 			}
+		};
+		const chg = (aLay: T_LAY[])=> {
+			if (! aLayNm) {aLay.forEach(chg1); return}
+
+			for (const nm of aLayNm) {
+				const e = aLay.find(e=> e.nm === nm);
+				if (! e) throw `存在しないレイヤ ${nm} です`;
+				chg1(e);
+			}
+		};
+		if (page === 'both') return {aPage: s.aPage.map(a=> {
+			const aLay = [...a]; chg(aLay); return aLay;
+		}) as [T_LAY[], T_LAY[]]};
+
+		const {idx, aLay} = pickPage(s, page);
+		chg(aLay);
+		return putPage(s, idx, aLay);
+	}),
+	// [add_fx]/[clear_fx]（分家独自の試作。ANIMATION_RESEARCH.md §7）。chgFilterと同じ骨格。
+	//	fxはgrpレイヤ専用なので、対象がgrpでなければ黙って飛ばす（[clear_lay]相当のミスで
+	//	txtレイヤに来ても実害が無いように。逆に[add_fx]でtxtを指定したときは例外にする）
+	chgFx: ({aLayNm, page, mode, fx, names}: T_CHGFX)=> set(s=> {
+		const chg1 = (e: T_LAY)=> {
+			if (! isGrpLay(e)) {
+				if (mode === 'add') throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
+				return;	// [clear_fx]は非grpを素通し
+			}
+			if (mode === 'clear') {
+				if (! names) {delete e.aFx; return}
+				const a = (e.aFx ?? []).filter(f=> ! f.name || ! names.includes(f.name));
+				if (a.length > 0) e.aFx = a; else delete e.aFx;
+				return;
+			}
+			// add：name指定があれば同名を置換（[tsy]の「同名で再開」と同じ）、無名は常に追加
+			const a = [...e.aFx ?? []];
+			const i = fx!.name ? a.findIndex(f=> f.name === fx!.name) : -1;
+			if (i >= 0) a[i] = fx!; else a.push(fx!);
+			e.aFx = a;
 		};
 		const chg = (aLay: T_LAY[])=> {
 			if (! aLayNm) {aLay.forEach(chg1); return}

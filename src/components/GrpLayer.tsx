@@ -9,7 +9,9 @@ import {type T_LAY_IDX, type T_LAY_CMN} from './Lay';
 import Layer from './Layer';
 import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET} from '../ts/Sprite';
 
-import {type CSSProperties, MouseEvent, useEffect, useState} from 'react';
+import type {T_FX} from '../ts/Fx';
+
+import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
 
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像（fn）の左上を原点(0,0)とした相対座標
@@ -40,6 +42,7 @@ type T_GRPARG = T_LAY_CMN & {
 	//	（onSeと同じ流儀。値そのものはReactの状態に持たない）
 	isMovie			: boolean;
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
+	aFx		: T_FX[];	// [add_fx]で重ねたシェーダエフェクト（分家独自の試作）。非空なら<img>を<canvas>へ差し替える
 	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
 	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
 };
@@ -105,7 +108,36 @@ function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_
 	return <img src={loadedSrc} data-fn={faceFn} style={styPos}/>;
 }
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play}: T_GRPARG) {
+// [add_fx]（立ち絵シェーダエフェクトの試作。ANIMATION_RESEARCH.md §7 の「C 方式」最小スパイク）。
+//	aFxが非空のとき、基本画像の<img>の代わりにレイヤ実寸の<canvas>（WebGL）を描く。
+//	styLay()が与えるtransform/opacity/z順/blendmodeはこのcanvasにも自動で継承される
+//	（<img>と同じ位置なので）。重い部分（WebGLランナー・プリセットGLSL）はlazy importで、
+//	[add_fx]が使われた回にはじめて src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
+//	試作の割り切り：face差分合成（aFace）は通さない＝基本画像だけにかかる
+function FxImg({src, aFx, styFit}: {src: string; aFx: T_FX[]; styFit: CSSProperties}) {
+	const ref = useRef<HTMLCanvasElement>(null);
+	// aFxは配列なので参照が毎回変わる。中身で張り替え判定する（filterのstyFilterと同じ発想）。
+	//	src/aFxが変わったら**canvasごと作り直す**（key）：WEBGL_lose_context.loseContext()を
+	//	呼んだ後の同一canvasからは生きたWebGLコンテキストを取り直せない（コンパイルが空ログで
+	//	失敗する）ため、破棄する側は使い捨てにして新しいcanvasで開き直す
+	const key = `${src}\n${JSON.stringify(aFx)}`;
+	useEffect(()=> {
+		const cvs = ref.current;
+		if (! cvs || ! src) return;
+
+		let alive = true;
+		let dispose: (()=> void) | undefined;
+		void import('../ts/FxRunner').then(({runFx})=> runFx({canvas: cvs, src, aFx}))
+			.then(d=> {if (alive) dispose = d; else d()})
+			.catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
+		return ()=> {alive = false; dispose?.()};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [key]);
+
+	return <canvas key={key} ref={ref} style={styFit}/>;
+}
+
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -168,7 +200,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		{sheet && <div className={aniSpriteClass(sheet)}/>}
 		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
-		{loadedSrc && ! isSheet && ! isMovie && <img src={loadedSrc} style={styFit}/>}
+		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
+			&& <FxImg src={loadedSrc} aFx={aFx} styFit={styFit}/>}
+		{loadedSrc && ! isSheet && ! isMovie && aFx.length === 0
+			&& <img src={loadedSrc} style={styFit}/>}
 		{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

@@ -36,20 +36,35 @@
 - [ ] 【現状不使用・優先度低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今は CSS の
       背景画像に直接 URL を入れているので、`.json` が来ると絵が出ない
 
-## WebGL エフェクト（実現性確認済み・着手判断待ち）
+## WebGL エフェクト
 
 コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
+`[trans] glsl=` は実装済み（`src/ts/TransGlsl.ts`。§7）。
 
-- [ ] 立ち絵シェーダエフェクト（wave/rgbShift/glitch 等のプリセット＋任意 GLSL）：`[add_fx]`/
-      `[clear_fx]`/`[enable_fx]`/`[wait_fx]` の 4 タグ。対象指定（`layer=`+`page=`）は `[add_filter]`、
-      開始/中断/一時停止/終了待ちのライフサイクルは `[tsy]` 一族に倣う（`wait=` 属性は作らず別タグ
-      `[wait_fx]`）。増える属性は name=/time=/speed=/loop= と fx=/glsl= とプリセット固有パラメータ。
-      `aFlt` に倣ったコア seam `aFx` ＋ lazy import の外部モジュール。エフェクト canvas は**対象レイヤの
-      DOM サブツリー内**に置き `styLay()` の transform/opacity/z 順を継承させる。GLSL は vfx-js（MIT）
-      から移植、パッケージ非依存。規模はコア ~250 行 + lazy ~350–530 行。**本家には入れない分家独自
-      機能**（本家サンプル互換の後ろ盾なし＝演出価値だけでペイさせる。推奨度 ★★☆、要求が出てから）。
-      **まずプリセット 2〜3 個で試作**。`src/ts/TransGlsl.ts`（生 WebGL・表裏画像の合成）が下敷き。
-      タグ案・規模内訳・プラグイン化 3 経路・推奨度は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7
+### 立ち絵シェーダエフェクト（`[add_fx]` 一族）
+
+C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。タグ案・規模内訳・プラグイン化 3 経路・
+推奨度は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。**推奨度 ★★☆＝本家サンプル互換の後ろ盾が
+無い分家独自機能。残りは要求が出てから着手。**
+
+- [x] 最小スパイク（2026-08-28）：`[add_fx]`/`[clear_fx]` の 2 タグ、`aFx: T_FX[]` seam
+      （`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL）、
+      GrpLayer が `aFx` 非空で `<img>`→`<canvas>` 分岐、`A_LAY_STY_KEY` 登録で
+      `[clear_lay]`/しおり/`[trans]` 複製に追随
+- [x] プリセット wave / rgbShift の 2 個
+- [x] スタック（2 枚 FBO で ping-pong）／`time=` one-shot は経過後そのパス素通し＝凍結
+- [x] 手動確認フィクスチャ `test/e2e/app/prj_fx/`
+- [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
+- [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
+- [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
+- [ ] `name=` 無名時のレイヤスコープ採番（`#fx1`…。今は無名は常に push、`[clear_fx]` は
+      `layer=` 単位のみ）／`[save]`/`[load]`・`[trans]` 複製の実挙動確認
+- [ ] プリセット追加（glitch / pixelate 等）
+- [ ] `test/e2e/app/prj_fx/` に対応する `.e2e.ts`（今は手動確認のみ）
+- [ ] sn_gallery に実演を置いて費用対効果を測定
+- [ ] `docs/tag.html` への追記（🟡）＋ [ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧へ追加
+- [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
+      測定の結果「試作止まり」と判断したら凍結として [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) へ集約）
 
 ## 保留
 

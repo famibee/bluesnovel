@@ -1738,6 +1738,15 @@ export class ScriptMng {
 		case 'enableFilter':
 			this.$fncs.chgFilter({aLayNm: act.aLayNm, page: act.page, mode: 'enable', index: act.index, enabled: act.enabled});
 			break;
+		// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）。
+		//	後始末（WebGLコンテキスト/rAF破棄）は記述子がaFxから消える→GrpLayerの<canvas>が
+		//	unmountする→useEffect cleanupが担うので、[tsy]の#stopTsyByLayerのような帳簿は不要
+		case 'addFx':
+			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
+			break;
+		case 'clearFx':
+			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'clear', names: act.names});
+			break;
 		case 'moveLay':
 			this.$fncs.moveLay({nm: act.nm, mode: act.mode, ...(act.index !== undefined ? {index: act.index} : {}), ...(act.dive !== undefined ? {dive: act.dive} : {})});
 			break;
