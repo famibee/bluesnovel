@@ -681,6 +681,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.6.0](https://github.com/famibee/bluesnovel/compare/v0.5.0...v0.6.0) (2026-08-27)
+
+
+### Features
+
+* **sn:** [add_fx]/[clear_fx] 立ち絵シェーダエフェクトの最小スパイク ([18902d0](https://github.com/famibee/bluesnovel/commit/18902d0d396dbeb08ffab80ecdd018260c56c960))
+
 ## [0.5.0](https://github.com/famibee/bluesnovel/compare/v0.4.1...v0.5.0) (2026-08-27)
 
 
