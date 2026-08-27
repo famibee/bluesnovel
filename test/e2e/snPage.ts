@@ -38,6 +38,8 @@ export type T_LAY_SNAP = {
 	pivot_x?: number;
 	pivot_y?: number;
 	blendmode?: string;
+	// [add_fx]（立ち絵シェーダエフェクトの試作）。src/ts/Fx.ts の T_FX と同形（plain data）
+	aFx?	: {name: string; fx: string; glsl: string; time: number; speed: number; params: {[k: string]: number}}[];
 };
 export type T_SNAP = {
 	aLay		: T_LAY_SNAP[];	// 表ページのレイヤ群（store.aPage[foreIdx]）
@@ -48,7 +50,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'crypto' | 'derive' | 'event' | 'expr' | 'filter' | 'frame' | 'grp' | 'kinsoku' | 'lay' | 'log' | 'movie' | 'mulev' | 'multi' | 'page' | 'pic' | 'plg' | 'quake' | 'resize' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'transflash' | 'tsy' | 'uc' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnpic' | 'button' | 'chstyle' | 'crypto' | 'derive' | 'event' | 'expr' | 'filter' | 'frame' | 'fx' | 'grp' | 'kinsoku' | 'lay' | 'log' | 'movie' | 'mulev' | 'multi' | 'page' | 'pic' | 'plg' | 'quake' | 'resize' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'transflash' | 'tsy' | 'uc' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

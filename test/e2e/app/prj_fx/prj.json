@@ -7,7 +7,7 @@
 		"cre_url": "",
 		"publisher": "famibee",
 		"pub_url": "",
-		"detail": "path.jsonを通した画像表示（[lay fn=…]・[add_face]）を検証するE2E用シナリオ",
+		"detail": "立ち絵シェーダエフェクト[add_fx]/[clear_fx]のseam（<img>↔<canvas>差し替え・aFx追随）を検証するE2E用シナリオ",
 		"version": "1.0"
 	},
 	"log": {"max_len": 64},

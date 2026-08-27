@@ -1,4 +1,9 @@
-; 手動確認用（立ち絵シェーダエフェクト試作 [add_fx]/[clear_fx]）
+; 立ち絵シェーダエフェクト（[add_fx]/[clear_fx]）の回帰確認用（fx.e2e.ts）。
+;	見るのは「基本画像 <img> ↔ WebGL <canvas> の差し替え seam」と、
+;	aFx が A_LAY_STY_KEY 経由で [clear_lay]・page=both 複製へ追随するか。
+;	WebGL の描画結果そのもの（波形・ずれ量）はヘッドレスの GL 実装差が大きいので見ない
+;	（絵の手動確認は playwright-cli スキルで）。
+;	各ステップの手前で [er]（文字レイヤだけ消す。grp には触れない）してから本文を出す。
 [add_lay layer=base class=grp]
 [add_lay layer=mes class=txt]
 [current layer=mes]
@@ -7,16 +12,23 @@
 そのまま[l]
 
 [add_fx layer=base fx=wave amp=10 freq=3]
-wave[l]
+[er]wave[l]
 
 [add_fx layer=base name=rgb fx=rgbShift shift=12]
-wave+rgbShift[l]
+[er]wave+rgb[l]
 
 [clear_fx layer=base name=rgb]
-waveだけ[l]
+[er]waveのみ[l]
+
+[add_fx layer=base page=both name=both fx=wave amp=4]
+[er]both[l]
+
+[clear_lay layer=base]
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+[er]clear_lay後[l]
 
 [add_fx layer=base fx=rgbShift time=1500 shift=20]
-rgbShift one-shot 1.5秒[l]
+[er]oneshot[l]
 
 [clear_fx layer=base]
-全部クリア[s]
+[er]ぜんぶクリア[s]

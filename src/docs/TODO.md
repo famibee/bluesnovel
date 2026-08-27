@@ -54,16 +54,27 @@ C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。�
 - [x] プリセット wave / rgbShift の 2 個
 - [x] スタック（2 枚 FBO で ping-pong）／`time=` one-shot は経過後そのパス素通し＝凍結
 - [x] 手動確認フィクスチャ `test/e2e/app/prj_fx/`
-- [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
-- [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
-- [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
-- [ ] `name=` 無名時のレイヤスコープ採番（`#fx1`…。今は無名は常に push、`[clear_fx]` は
-      `layer=` 単位のみ）／`[save]`/`[load]`・`[trans]` 複製の実挙動確認
-- [ ] プリセット追加（glitch / pixelate 等）
-- [ ] `test/e2e/app/prj_fx/` に対応する `.e2e.ts`（今は手動確認のみ）
-- [ ] sn_gallery に実演を置いて費用対効果を測定
-- [ ] `docs/tag.html` への追記（🟡）＋ [ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧へ追加
-- [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
+- [x] 回帰を固める（2026-08-28）：`test/ScriptEngine_fx.test.ts`（`bldFx()` の検査・既定値・
+      アクション。`ScriptEngine_filter.test.ts` と同じ役割分担）＋ `test/e2e/fx.e2e.ts`
+      （`<img>`↔`<canvas>` 差し替え seam、`[clear_lay]` で `aFx` が落ちる、`page=both` で表裏複製、
+      one-shot 記述子）。WebGL の描画結果そのものは見ない（ヘッドレスの GL 実装差）
+
+残りは**スパイク順**（＝「正式化するか凍結するか」の判断へ最短で届く順。安い・低リスクを先に、
+本家サンプル契約が要る重いものを後に）：
+
+1. [ ] `name=` 無名時のレイヤスコープ採番（`#fx1`…。今は無名は常に push、`[clear_fx]` は
+      `layer=` 単位のみ）。※gallery 測定で「無名 fx を個別に止めたい要求は出ない」と判れば不要。
+      `[save]`/`[load]` の round-trip 実挙動確認もここで（今は seam＝`A_LAY_STY_KEY` 経由の追随のみ
+      確認済み）
+2. [ ] `docs/tag.html` への追記（🟡）＋ [ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧へ追加
+      （「何が動くか」の可視化。ここまでで landed 分は一通り固まる）
+3. [ ] sn_gallery に実演を置いて費用対効果を測定 ← **正式化 / 凍結の判断ゲート**。以下は
+      「正式化」判断が出てから着手する（それぞれ実コスト大）
+4. [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
+5. [ ] プリセット追加（glitch / pixelate 等）
+6. [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
+7. [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
+8. [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
       測定の結果「試作止まり」と判断したら凍結として [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) へ集約）
 
 ## 保留
