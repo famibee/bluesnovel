@@ -681,6 +681,28 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.5.0](https://github.com/famibee/bluesnovel/compare/v0.4.1...v0.5.0) (2026-08-27)
+
+
+### Features
+
+* **sn:** [lay]/[add_lay]のプラグインレイヤーにisWait対応を追加 ([d35064c](https://github.com/famibee/bluesnovel/commit/d35064cf63c4714a37a912a096ac9cdb826f55c1))
+* **sn:** [span]のr_alignに対応、wait系の実装済み確認とdocs更新 ([e9f6065](https://github.com/famibee/bluesnovel/commit/e9f6065e66bcb324360516d8f6fa8b39d29e8ac0))
+* **sn:** [trans] glsl= を実装（生WebGLの lazy モジュール） ([dd36ed9](https://github.com/famibee/bluesnovel/commit/dd36ed92489df6984a2f2e6bdefd655c0b8670b8))
+* **sn:** しおり（save/load）にプラグインレイヤーの中身を乗せる ([423d01f](https://github.com/famibee/bluesnovel/commit/423d01f505a794cd0baecb72331cbd4ae15712e9))
+* **sn:** プラグインからのタグ追加（addTag）に対応 ([28ee7a3](https://github.com/famibee/bluesnovel/commit/28ee7a32a9c70c8f3653ea52d45ac760363f50c7))
+* **sn:** プラグインレイヤ基底 PlgLayer シムを追加、3D/Live2D を bluesnovel で実機確認 ([c10ed4a](https://github.com/famibee/bluesnovel/commit/c10ed4a4cb6f4bff08bbe246ccf19fc04f4a42cf))
+
+
+### Bug Fixes
+
+* **sn:** [er]/[clear_lay]/演じ直しで走行中[tsy]を畳む ([130949c](https://github.com/famibee/bluesnovel/commit/130949c276bcf2c3db8331707bc6fe068fba165d))
+* **sn:** [trans]でプラグインレイヤーの中身が裏へコピーされない不具合を修正 ([200494a](https://github.com/famibee/bluesnovel/commit/200494ab5cc233a5870327c197ba9697b4bdebc8))
+* **sn:** TxtLayer.tsx mkLink()のexactOptionalPropertyTypes違反を修正 ([3639472](https://github.com/famibee/bluesnovel/commit/36394726d68267172a7512cb01992649ff95e1a0))
+* **sn:** 存在しないプロジェクト指定時にタイトルとコンソールへエラーを表示 ([4bcc3a3](https://github.com/famibee/bluesnovel/commit/4bcc3a3f28ce649e59bbf7a724819631425a1e53))
+* **sn:** 画像レイヤのロード中に途中経過が画面に見えてしまう不具合を修正 ([b334072](https://github.com/famibee/bluesnovel/commit/b334072899f4c19907357e38b883d1be3c488003))
+* **sn:** 縦書き待ちマークの-90°回転が効かなくなっていた不具合を修正 ([3639472](https://github.com/famibee/bluesnovel/commit/36394726d68267172a7512cb01992649ff95e1a0))
+
 ## [0.4.1](https://github.com/famibee/bluesnovel/compare/v0.4.0...v0.4.1) (2026-08-25)
 
 
