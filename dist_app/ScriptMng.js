@@ -248,7 +248,6 @@ var C = class e {
 }, T = /* @__PURE__ */ new Set([
 	"IFRAME",
 	"SCRIPT",
-	"CANVAS",
 	"VIDEO"
 ]);
 function ee(e) {
@@ -263,28 +262,47 @@ function ne(e) {
 	return `rgba(${String(e >> 16 & 255)}, ${String(e >> 8 & 255)}, ${String(e & 255)}, ${String(t)})`;
 }
 async function re(e) {
-	let t = e.el.cloneNode(!0);
-	t.style.transform = "none", t.style.width = `${String(e.sw)}px`, t.style.height = `${String(e.sh)}px`, ie(t, e.page, e.aLayNm), await ae(t);
-	let n = await oe(new XMLSerializer().serializeToString(t)), r = await oe(ce()), i = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${r}</style>${n}</div></foreignObject></svg>`, a = await le(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(i)}`), o = document.createElement("canvas");
-	o.width = e.width, o.height = e.height;
-	let s = o.getContext("2d");
-	if (!s) throw "canvasの2Dコンテキストが取れません";
-	return s.imageSmoothingEnabled = e.smoothing, s.fillStyle = e.bgColor, s.fillRect(0, 0, e.width, e.height), s.drawImage(a, 0, 0, e.width, e.height), o.toDataURL(e.mime);
+	let t = [...e.el.querySelectorAll("canvas")].map((e) => {
+		try {
+			return e.toDataURL("image/png");
+		} catch {
+			return null;
+		}
+	}), n = e.el.cloneNode(!0);
+	n.style.transform = "none", n.style.width = `${String(e.sw)}px`, n.style.height = `${String(e.sh)}px`, ie(n, e.page, e.aLayNm, t), await ae(n);
+	let r = await oe(new XMLSerializer().serializeToString(n)), i = await oe(ce()), a = `<svg xmlns="http://www.w3.org/2000/svg" width="${String(e.sw)}" height="${String(e.sh)}"><foreignObject x="0" y="0" width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${i}</style>${r}</div></foreignObject></svg>`, o = await le(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(a)}`), s = document.createElement("canvas");
+	s.width = e.width, s.height = e.height;
+	let c = s.getContext("2d");
+	if (!c) throw "canvasの2Dコンテキストが取れません";
+	return c.imageSmoothingEnabled = e.smoothing, c.fillStyle = e.bgColor, c.fillRect(0, 0, e.width, e.height), c.drawImage(o, 0, 0, e.width, e.height), s.toDataURL(e.mime);
 }
-function ie(e, t, n) {
-	for (let r of [...e.querySelectorAll("*")]) {
-		if (T.has(r.tagName)) {
-			r.remove();
+function ie(e, t, n, r) {
+	let i = 0;
+	for (let a of [...e.querySelectorAll("*")]) {
+		if (a.tagName === "CANVAS") {
+			let e = r[i++];
+			if (!e) {
+				a.remove();
+				continue;
+			}
+			let t = document.createElement("img");
+			t.src = e, t.className = a.className;
+			let n = a.getAttribute("style");
+			n && t.setAttribute("style", n), a.replaceWith(t);
 			continue;
 		}
-		let e = r.dataset.page;
+		if (T.has(a.tagName)) {
+			a.remove();
+			continue;
+		}
+		let e = a.dataset.page;
 		if (e !== void 0 && e !== t) {
-			r.remove();
+			a.remove();
 			continue;
 		}
-		e === t && (r.style.visibility = "visible", r.style.opacity = "1");
-		let i = r.dataset.lay;
-		i !== void 0 && n && !n.includes(i) && r.remove();
+		e === t && (a.style.visibility = "visible", a.style.opacity = "1");
+		let o = a.dataset.lay;
+		o !== void 0 && n && !n.includes(o) && a.remove();
 	}
 }
 async function ae(e) {

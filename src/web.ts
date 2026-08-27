@@ -39,7 +39,10 @@ export class SysWeb extends SysBase {
 		const cur = new URLSearchParams(location.search).get('cur');
 		if (cur) arg.cur = this.#path_base + cur + '/';
 
-		await super.loaded(hPlg, arg);	// cfg.oCfgはこの後で使える
+		await super.loaded(hPlg, arg);	// cfg.oCfgはこの後で使える……はずだが、run()内でConfig.generate()が
+			// 失敗した場合はtitleSub()でエラー表示だけしてthis.cfgを設定せずに戻ってくる
+			// （SysBase.ts:run()参照）。super.loaded()自体は例外を投げず正常終了するため、
+			// 以降は毎回this.cfgの有無を見る必要がある
 
 		// ギャラリーのプロジェクト切替導線（本家 SysWeb.ts:31-41）。data-prjはページ遷移なしで
 		//	別プロジェクトへ切替え、data-reloadは今のプロジェクトを最初からやり直す。
@@ -53,11 +56,20 @@ export class SysWeb extends SysBase {
 		);
 
 		// debug.devtool=falseの時だけ警告オーバーレイのガードを有効化（本家 devtools-detect相当。
-		//	理由・仕組みは DevToolsGuard.ts 参照。Electronアプリ版は appMain_cmn.ts が別途対応済み）
-		if (! this.cfg.oCfg.debug.devtool) {
+		//	理由・仕組みは DevToolsGuard.ts 参照。Electronアプリ版は appMain_cmn.ts が別途対応済み）。
+		//	this.cfgが無い＝run()内でプロジェクト読み込みが失敗した場合は、エラー確認のため
+		//	devtoolを塞がない（ガード自体を初期化しない）
+		if (this.cfg && ! this.cfg.oCfg.debug.devtool) {
 			const {initDevToolsGuard} = await import('./ts/DevToolsGuard');
 			initDevToolsGuard();
 		}
+	}
+
+	// プロジェクト読み込み失敗時にdocument.titleへ直接反映する（本家 SysWeb.ts:246-249 titleSub）。
+	//	[data-title]要素も合わせて更新するのはMain.tsx（通常経路）と同じ挙動に揃えるため
+	protected override titleSub(txt: string) {
+		document.title = txt;
+		document.querySelectorAll('[data-title]').forEach(v=> {v.textContent = txt});
 	}
 
 	// プロジェクト切替（本家 SysWeb.ts:60-67）。#now_prjは同じリンクの連打で二重に

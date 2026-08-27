@@ -736,27 +736,8 @@
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可能）</td><td>クロスフェードするレイヤ。指定以外のレイヤは変化させない</td></tr>
 <tr><td>time</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化にかける時間</td></tr>
-<tr><td>🟡 delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>変化する前に待機する遅延時間<br/>（bluesnovel）未対応</td></tr>
 <tr><td>rule</td><td></td><td>画面全体ピクセルで同時にクロスフェードする</td><td>画像ファイル名</td><td>指定した場合はルール画像として、ピクセル単位でクロスフェードするタイミングをずらす。<br/>ルール画像の黒いピクセル（と同じ位置にあるピクセル）が先に処理され、白が最後になる。ステージ全面へ引き伸ばして使う</td></tr>
 <tr><td>vague</td><td></td><td>0.04</td><td>0.0〜1.0</td><td>トランジション期間全体を1とした値。表レイヤと裏レイヤの境界を曖昧にぼかす度合い</td></tr>
-<tr><td>🟡 ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>
-指定できる値は以下の通り。<br/>
-Back.In、Back.InOut、Back.Out<br/>
-Bounce.In、Bounce.InOut、Bounce.Out<br/>
-Circular.In、Circular.InOut、Circular.Out<br/>
-Cubic.In、Cubic.InOut、Cubic.Out<br/>
-Elastic.In、Elastic.InOut、Elastic.Out<br/>
-Exponential.In、Exponential.InOut、Exponential.Out<br/>
-Linear.None<br/>
-Quadratic.In、Quadratic.InOut、Quadratic.Out<br/>
-Quartic.In、Quartic.InOut、Quartic.Out<br/>
-Quintic.In、Quintic.InOut、Quintic.Out<br/>
-Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
-<br/>
-・<a href="https://github.com/tweenjs/tween.js/blob/master/README.md" target="_blank" rel="noopener">tween.js/README.md at master · tweenjs/tween.js</a><br/>
-・<a href="https://ics.media/tutorial-createjs/tween/" target="_blank" rel="noopener">CreateJS でのトゥイーンの作成方法 - ICS MEDIA</a><br/>
-（bluesnovel）未対応：進度は常に等速<br/>
-</td></tr>
 <tr><td>🟡 glsl</td><td></td><td></td><td>シェーダー記述言語GLSL</td><td>
 動作サンプルがありますので、詳細はそちらで。<br/>機能ギャラリー【[フラグメントシェーダで[trans]](https://famibee.github.io/SKYNovel_gallery/?cur=glsl_slide)】<br/>
 	ざっくり説明すると、<br/>
@@ -2701,10 +2682,6 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr class="y"><td>time</td><td>y</td><td></td><td>0〜；ミリ秒</td><td>揺らす時間</td></tr>
 <tr><td>hmax</td><td></td><td>10</td><td>0〜</td><td>横方向の最大揺らし幅。幅はランダム値を取る</td></tr>
 <tr><td>vmax</td><td></td><td>10</td><td>0〜</td><td>縦方向の最大揺らし幅。幅はランダム値を取る</td></tr>
-<tr><td>🟡 delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>トゥイーンを始める前の、何もしない待ち時間<br/>（bluesnovel）未対応（凍結）</td></tr>
-<tr><td>🟡 repeat</td><td></td><td>1</td><td>0〜</td><td>繰返し回数。0以下で無限ループ。1を設定すると「繰り返しなし」、2を設定すると「二回同じ動き」を行なう<br/>（bluesnovel）未対応（凍結）</td></tr>
-<tr><td>🟡 ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>指定できる値は<a href="tag.html#tsy" target="_blank" rel="noopener">[tsy]</a>を参照<br/>（bluesnovel）未対応（凍結）：本家でも揺れ幅はランダムなのでイージングは効かない</td></tr>
-<tr><td>🟡 yoyo</td><td></td><td>false</td><td>true、false</td><td>（暫定）ヨーヨーのように逆方向に戻って繰り返す<br/>（bluesnovel）未対応（凍結）</td></tr>
 </table>
 
 <p class="mb2 px1"><b>bluesnovel</b>：揺れ幅はステージ座標のpxで、毎フレーム<code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code>のランダム位置へ跳ぶ（補間しない）。<code>time=0</code>と既読スキップ中は揺らさない。<br/>

@@ -66,6 +66,12 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	}
 	scrMng: ScriptMng | undefined;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
 
+	// プロジェクト読み込み失敗時のタイトル表示用（本家 SysBase.ts:477 titleSub）。
+	//	通常の[title]タグはstore経由（ScriptMng.ts）でReactのuseTitle()が描画するが、
+	//	Config.generate()失敗時はReactツリーがまだ（または既に）存在しないため、
+	//	SysWeb側でdocument.titleを直接書き換える手段として使う
+	protected titleSub(_txt: string) { /* empty */ }
+
 	// 起動、および SysWeb.runSN() によるプロジェクト切替の両方から呼ばれる（本家 SysBase.run()。
 	//	skynovel_esm/src/sn/SysBase.ts:73-89）。2回目以降は前のプロジェクトを完全に畳んでから
 	//	作り直す：Reactツリー（#root）・zustandストア・ScriptMngが個別に抱えるタイマー/トゥイーン/
@@ -95,7 +101,18 @@ export class SysBase implements T_SysRoots, T_SysBase {
 		}
 
 		// React 初期表示
-		const cfg = await Config.generate(this);
+		let cfg: T_Config;
+		try {
+			cfg = await Config.generate(this);
+		} catch (e) {
+			// 本家 Main.ts:26-38（Main.generate内のcatch）に相当。本家は「失敗してもMainインスタンスは
+			//	必ず返る」設計だが、こちらはrun()自体がConfig.generate()の戻り値をそのまま使うため、
+			//	ここで捕まえてearly returnする（前段の畳み込みは既に済んでいるので、失敗時は
+			//	「何も表示されていない」状態のまま止まる）
+			console.error('SysBase.run err e:%o', e);
+			this.titleSub(e instanceof Error ? e.message : String(e));
+			return;
+		}
 		this.setMain(cfg);
 
 		// 初回だけ：ホストHTMLの既存要素があればそれをそのままマウント先にし、無ければdivを新設する。

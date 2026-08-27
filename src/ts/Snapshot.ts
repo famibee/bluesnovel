@@ -19,12 +19,18 @@
 //	  （collectCss）。emotionが挿す<style>もここで拾える。
 //	・iframe（[add_frame]のHTMLフレーム）の中身は描かれない。本家もweb版はpixiのステージだけを
 //	  撮る＝フレームは写らないので、結果としては同じ絵になる。
+//	・<canvas>（3d_layer/live2d_layer等のプラグインレイヤーが直接appendChildするWebGL）は
+//	  素の複製・除去では済ませられない特別扱い：タグを残しても複製先には描画結果が乗らず
+//	  （foreignObject内は静的マークアップとして解釈されるだけでcanvasの再描画は起きない）、
+//	  さりとて一律で除去すると当該レイヤーが写らないままになる。prune()内でtoDataURL()の
+//	  結果を<img>へ差し替える形で解決している（下記snapshotToPng()参照）
 
 import {getDateStr} from '../sn/CmnLib';
 
 
-// 撮影対象からiframeを外すためのタグ名（中身が描かれず白い矩形になるだけなので落とす）
-const A_DROP_TAG = new Set(['IFRAME', 'SCRIPT', 'CANVAS', 'VIDEO']);
+// 撮影対象から外すためのタグ名（中身が描かれず白い矩形になるだけなので落とす）。
+//	CANVASはここでは落とさず、prune()内で<img>へ差し替える特別扱い
+const A_DROP_TAG = new Set(['IFRAME', 'SCRIPT', 'VIDEO']);
 
 export type T_SNAP_ARG = {
 	el		: HTMLElement;	// 撮る元。ステージの内箱（等倍。transform: scaleが掛かる前の寸法で読む）
@@ -66,6 +72,16 @@ export function rgbaOf(c: number): string {
 
 // 撮影して data URL（image/png）を返す
 export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
+	// <canvas>（3d_layer/live2d_layer等のプラグインレイヤーが直接描くWebGL）は複製しても
+	//	中身のピクセルまでは複製されない（<canvas>タグ自体は空の器で、描画結果はGPU/canvas内部
+	//	バッファにしかない）。複製前に「今見えている絵」をtoDataURL()で焼いておき、
+	//	prune()側で<img>に差し替える（要素の並び順＝document順で対応付けるため、
+	//	複製前のo.el基準で集めておく必要がある）
+	const aCvsUri = [...o.el.querySelectorAll('canvas')].map(cvs=> {
+		try {return cvs.toDataURL('image/png')}
+		catch {return null}	// クロスオリジン汚染等で読めない場合は諦めて従来通り除去する
+	});
+
 	const clone = o.el.cloneNode(true) as HTMLElement;
 
 	// 拡縮（transform: scale）は撮影には邪魔なので外し、論理サイズで固定する。
@@ -74,7 +90,7 @@ export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
 	clone.style.width	= `${String(o.sw)}px`;
 	clone.style.height	= `${String(o.sh)}px`;
 
-	prune(clone, o.page, o.aLayNm);
+	prune(clone, o.page, o.aLayNm, aCvsUri);
 	await inlineImgs(clone);
 
 	// <foreignObject>の中はXHTML。属性値のエスケープはXMLSerializerに任せる
@@ -106,9 +122,25 @@ export async function snapshotToPng(o: T_SNAP_ARG): Promise<string> {
 	return cvs.toDataURL(o.mime);
 }
 
-// 撮らない要素を落とす。ページ（data-page）とレイヤ（data-lay）はStage.tsx/各Layerが出している
-function prune(root: HTMLElement, page: 'fore' | 'back', aLayNm: string[] | null) {
+// 撮らない要素を落とす。ページ（data-page）とレイヤ（data-lay）はStage.tsx/各Layerが出している。
+//	aCvsUriはo.el（複製前の実物）から同じdocument順で集めたtoDataURL()結果（snapshotToPng()参照）。
+//	querySelectorAll()は複製前後で同じ木構造・同じ順序を辿るため、CANVASに出会うたびに先頭から
+//	1件ずつ消費するだけで元のcanvasと正しく対応する
+function prune(root: HTMLElement, page: 'fore' | 'back', aLayNm: string[] | null, aCvsUri: (string | null)[]) {
+	let cvsIdx = 0;
 	for (const e of [...root.querySelectorAll<HTMLElement>('*')]) {
+		if (e.tagName === 'CANVAS') {
+			const uri = aCvsUri[cvsIdx++];
+			if (! uri) {e.remove(); continue}	// クロスオリジン汚染等でtoDataURL()できなかった分は従来通り除去
+
+			const img = document.createElement('img');
+			img.src = uri;
+			img.className = e.className;
+			const style = e.getAttribute('style');
+			if (style) img.setAttribute('style', style);
+			e.replaceWith(img);
+			continue;
+		}
 		if (A_DROP_TAG.has(e.tagName)) {e.remove(); continue}
 
 		const p = e.dataset.page;

@@ -5,9 +5,14 @@ var i = "userdata:/", a = "downloads:/", o = class i extends r {
 	sys;
 	static async generate(e) {
 		let t = new i(e), n = e.arg.cur + "prj.json", r = await e.fetch(n);
-		if (!r.ok) throw Error(r.statusText);
-		let a = await e.dec(n, await r.text());
-		return await t.load(JSON.parse(a)), t;
+		if (!r.ok) throw Error(`プロジェクトが見つかりません: ${n} (${r.status} ${r.statusText})`);
+		let a = await e.dec(n, await r.text()), o;
+		try {
+			o = JSON.parse(a);
+		} catch {
+			throw Error(`プロジェクトが見つかりません（JSONとして解析できませんでした）: ${n}`);
+		}
+		return await t.load(o), t;
 	}
 	constructor(e) {
 		super(e), this.sys = e;

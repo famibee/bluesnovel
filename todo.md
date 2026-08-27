@@ -57,8 +57,19 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
         アルファのun-premultiply/premultiply（`c.a>0`時`c.rgb/=c.a`→行列適用→`rgb*=result.a`）と
         SVG `feColorMatrix`側のアルファ処理の違い、またはWebGLとSVGのラスタライズパイプライン差だが、
         これは実機でのピクセル値比較でしか切り分けられないため優先度低のまま保留
+  - [ ] `[add_filter]`の`blur`が持つpixi専用パラメータのうち`quality`/`resolution`/`kernel_size`は
+        WebGLレンダーパイプライン内部の実装詳細（ぼかしのパス数・内部レンダーテクスチャ解像度・
+        ボックスぼかし近似のカーネル幅）で、CSSの`filter: blur()`にもSVGの`feGaussianBlur`にも
+        対応する差し込み口が無いため対応不可と判明（2026-08-27調査、本家`Layer.ts:115-127`と
+        `src/ts/Filter.ts`を突き合わせ）。`repeat_edge_pixels`（既定`false`。`true`でエッジを
+        クランプ＝引き伸ばす）だけはSVG`feGaussianBlur`の`edgeMode`属性（`"duplicate"`/`"none"`）
+        で近似できる余地があるが、`blur_x`/`blur_y`指定時（SVGの`feGaussianBlur`経路。
+        `src/ts/Filter.ts:254-257`）でしか効かせられない：`blur_x`/`blur_y`未指定時に使う
+        CSSの`blur()`関数はCSS Filter Effects仕様上常に`edgeMode="duplicate"`相当に固定されており、
+        本家の既定`repeat_edge_pixels=false`（エッジ透明）とは異なる見た目になっている可能性がある
+        （未実機検証）。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見
+        （`noise`のみ上記フィルターの残りに記載済みだった）。優先度低いため保留
 - [ ] `break_fixed`系。禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家`Hyphenation.ts`を移植して対応済み（`src/ts/Hyphenation.ts`）。`break_fixed`系は`[l]`/`[p]`待ちマーカーの位置決め用だが、bluesnovelは待ちマーカーをReactの兄弟spanで別管理しているため用途が無く対象外。`r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"`で代替できるため専用属性は追加しない
-- [ ] `[add_filter]`の`quality`/`kernel_size`/`resolution`/`repeat_edge_pixels`（`blur`のpixi専用パラメータ）未対応。2026-08-20、`docs/tag.html`整理時に`noise`の陰に隠れていたのを発見（`noise`のみ上記フィルターの残りに記載済みだった）
 - [ ] `[ch]`/`[span]`の`ch_in_style`/`ch_out_style`未対応（定義自体は`[ch_in_style]`/`[ch_out_style]`で受け付けるが、`[ch]`/`[span]`側の属性としては未接続）。
 - [ ] `[tsy]`の`render`未対応（[trans]のように絵を合成してから不透明度を適用する機能。pixi前提の合成方式のため）。2026-08-20、`docs/tag.html`整理時に発見
 
@@ -81,7 +92,6 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
 - [ ] **ESLintは塩漬け中**。`typescript-eslint`（8.65.0時点で最新）がTS 7非対応と明示的にthrowする（[issue #10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)）ため、`eslint.config.mts`を置いてもVSCode拡張は動かない。パーサが無いと`.ts`を解析できないので回避策も無し。TS 7.1対応が出たら復活する。`@typescript/typescript6`は`import ts6 from '@typescript/typescript6'`と明示的に書けるツールにしか効かず、`require('typescript')`決め打ちのtypescript-eslintには届かない（bunの`resolutions`によるネスト解決も無視される）
   - [ ] 復活したら`eslint-plugin-import`（2.32.0のまま更新停止、ESLint 10対応PRが未マージ）を`eslint-plugin-import-x`へ切替。peerDependencyがESLint 10を公式サポート済みで移行も軽微（このリポジトリの`import/no-unresolved: 'off'`1行だけ`import-x/`にプレフィックスを変える程度）。本家`skynovel_esm`もeslint関連が全く同じバージョン構成・同じ1行なので同時に対応可能
 - [ ] `test/e2e/app/prj_vertglyph/`のフィクスチャ（`ipamjm.ttf`は46MBのため**未コミット・`.gitignore`対象**、`tmp_blues/doc/prj/script/ipamjm.ttf`からローカルコピーすれば動く）は再開時に再利用可能
-
 ## 凍結
 
 - [ ] `max_row`（最大行数を超えたら自動改ページ）：本家`skynovel_esm`でも`Grammar.ts`に
@@ -91,8 +101,7 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       同じ構図で、本家自体が未接続のため bluesnovel 側で先行実装するのは移植の範囲を超えるとして
       見送り
 - [ ] `[ch_out_style]`の適用（定義と`[lay out_style=]`・`[span ch_out_style=]`は受け付けるが、消去のアニメをまだ行なっていない＝本家の既定`wait=0`と同じ結果）。文字が消えるのはページ切替や`[er]`でReactが要素を捨てる場面なので、消えていく間だけ古い文字を生かす仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる
-- [ ] `[trans]`の`delay=`・`ease=`（進度は常に等速）・`glsl=`（自前シェーダ）：現状使用していないため未実装のまま凍結。`glsl=`はWebGLを使わないため実現しようがないので対象外
-- [ ] `[quake]`の`delay`/`repeat`/`ease`/`yoyo`は本家でも揺れ幅がランダムで効かないため見送り
+- [ ] `[trans]`の`glsl=`（自前シェーダ）：WebGLを使わないため実現しようがないので対象外（`delay=`・`ease=`はタグリファレンスから属性説明ごと削除して対応済み、2026-08-27）
 - [ ] `sys:sn.tagCh.canskip`（クリック等でのテキストスキップ可否）：本家でも読み書きできる変数として
       定義されているだけで、実際のクリックスキップ処理（`TxtLayer.ts:816-818`の`click()`）はこの値を
       参照せず無条件にスキップする。`msecWait`等の兄弟変数のように起動時キャッシュへ読み込む処理も
@@ -131,9 +140,12 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
       デフォルト/palt/pwidボタンがあり、触るユーザーには`pwid`由来の副作用と伝わる想定のため、
       「回転は付けない」という現行方針（`TxtLayer.tsx`のコメント参照）を崩してまで対症療法の
       個別回転を入れる必要は無いと判断。本家と異なる動作のまま完了
-- [ ] **sn_gallery側のcubism3_layer/emote_layerプラグイン、本家で動作させる動機が薄いため凍結**
-      （cubism3は元から無効化済み、emote_layerも2026-08-26に同じ判断とする）。
-      - [emote_layer] 現状はエラー gallery/?cur=emote_layer
+- [ ] **sn_gallery側のemote_layerプラグイン、本家で動作させる動機が薄いため凍結**
+      （2026-08-26判断。`cubism3_layer`は同名プラグインだったが別物のため`live2d_layer`として
+      「保留」へ切り出し済み）。
+      - [emote_layer] 現状はエラー gallery/?cur=emote_layer。2026-08-27、`sn_gallery/index.html`
+        左サイドバーの導線をコメントアウトして非表示化済み（`cubism3_layer`は元からサイドバーに
+        導線が無かった）。`?cur=emote_layer`直指定では引き続き動く（エラーになるだけで到達は可能）
       - 2026-08-26調査：公式SDKはCheeseWare E-mote（有限会社エムツー、<https://emote.mtwo.co.jp/download/sdk/>）。
         `sn_gallery/src/plugin/emote_layer/EmoteLayer.ts`が使う`plugin_lib/emoteplayer.min.js`＋
         `emotedriver.js`（1.0MB、`ccall`/`Module._malloc`ありEmscripten生成）は、同ページで配布されている
@@ -148,16 +160,13 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
         禁止／解析・リバースエンジニアリング禁止と明記。SDK内部（emoteplayer.min.js/emotedriver.js）
         への深入りした解析は避け、呼び出し側の書き換えに留める必要がある
       - 2026-08-26調査：E-mote相当（パーツ差分の自動切替＋まばたき/口パク＋パーツ単位の簡易変形・
-        物理揺れ）を実現できるフリーOSSライブラリを比較。Live2D Cubismが最も近い設計思想（メッシュ
-        変形＋パラメータ駆動の表情・まばたき・物理演算）で、Core/FrameworkのSDKは無料配布、
-        pixi.js用ランタイム`pixi-live2d-display`もMIT。DragonBones（Tencent製、完全無料OSS）は
+        物理揺れ）を実現できるフリーOSSライブラリを比較。DragonBones（Tencent製、完全無料OSS）は
         ボーン+メッシュ変形だが開発が事実上停止しメンテナンスリスクあり。Spineはランタイム
         （`spine-ts`等）のみMIT/OSSでエディタ（データ制作ツール）が有料。Riveはランタイム
         （`@rive-app/canvas`等）がMIT/OSSで活発に更新されているが、ベクターシェイプ+ボーン中心で
         E-moteの「静止画パーツをそのまま差し替える」設計とは性質が異なる。結論：emote_layerを
-        新規にDOM移植するより、sn_galleryに既に存在するcubism3_layerを先に検討する方が投資対効果が
-        高い可能性がある（表情差分・まばたき目的ならLive2Dで代替できる見込みのため）。ただし
-        着手するかは要判断、現状はどちらも凍結のまま
+        新規にDOM移植するより表情差分・まばたき目的ならLive2Dで代替できる見込みのため、詳細は
+        「保留」の`live2d_layer`項目を参照。emote_layer自体は凍結のまま
       - `3d_layer`は2026-08-24にDOM版へ書き換え済み（`sn_gallery/src/plugin/3d_layer/ThreeDLayer.ts`。
         pixi.jsのSprite/Textureブリッジを外し、three.jsのWebGLRendererのcanvasを直接
         `this.ctn.appendChild()`する形に変更）。`3d_base`/`3d_gltf`で実機確認：グリッド表示・
@@ -169,7 +178,7 @@ fore/back 2個持つ管理クラス）・`src/components/PlgLayer.tsx`（React�
         上にオフセットして描画されていたこと。`this.ctn.style.width/height = '100%'`を追加して解決。
         3D自体のカメラ・投影計算にバグは無かった＝dpr起因の疑いやthree.jsのsetSize/setPixelRatio
         呼び出し順序は無関係と確認済み）。ビルドは`sn_gallery`単体で`vite build`が通る。
-        残るcubism3_layer/emote_layerも同じ方針（three.js/Live2D本体の依存はbluesnovel本体には
+        残るemote_layer/live2d_layerも同じ方針（three.js/Live2D本体の依存はbluesnovel本体には
         追加しない方針＝ユーザー判断なので、sn_gallery側で個別にインストールし、DOM版へ書き換える）。
         なお`ThreeDLayer.ts`はDOM版へ書き換え済みのため、依存が本家`skynovel_esm`のまま（現状維持、
         「sn_galleryをbluesnovel駆動にする」の「依存の付け替え」参照）だと`[add_lay layer=3d

@@ -60,6 +60,7 @@ var a = "skynovel", o = class {
 		this.cfg = e;
 	}
 	scrMng;
+	titleSub(e) {}
 	#e;
 	#t;
 	async run() {
@@ -72,7 +73,13 @@ var a = "skynovel", o = class {
 			import("./store.js")
 		]);
 		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
-		let u = await i.generate(this);
+		let u;
+		try {
+			u = await i.generate(this);
+		} catch (e) {
+			console.error("SysBase.run err e:%o", e), this.titleSub(e instanceof Error ? e.message : String(e));
+			return;
+		}
 		this.setMain(u);
 		let d = document.getElementById(a), f = this.#t ??= d instanceof HTMLCanvasElement ? (() => {
 			let e = document.createElement("div");
@@ -208,10 +215,15 @@ var a = "skynovel", o = class {
 			}, { passive: !0 });
 		}), document.querySelectorAll("[data-reload]").forEach((e) => e.addEventListener("click", () => {
 			this.run();
-		}, { passive: !0 })), !this.cfg.oCfg.debug.devtool) {
+		}, { passive: !0 })), this.cfg && !this.cfg.oCfg.debug.devtool) {
 			let { initDevToolsGuard: e } = await import("./DevToolsGuard.js");
 			e();
 		}
+	}
+	titleSub(e) {
+		document.title = e, document.querySelectorAll("[data-title]").forEach((t) => {
+			t.textContent = e;
+		});
 	}
 	#t = ":";
 	async runSN(e) {

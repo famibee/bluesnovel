@@ -61,6 +61,7 @@ var i = "skynovel", a = class {
 		this.cfg = e;
 	}
 	scrMng;
+	titleSub(e) {}
 	#e;
 	#t;
 	async run() {
@@ -73,7 +74,13 @@ var i = "skynovel", a = class {
 			import("./store.js")
 		]);
 		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
-		let u = await a.generate(this);
+		let u;
+		try {
+			u = await a.generate(this);
+		} catch (e) {
+			console.error("SysBase.run err e:%o", e), this.titleSub(e instanceof Error ? e.message : String(e));
+			return;
+		}
 		this.setMain(u);
 		let d = document.getElementById(i), f = this.#t ??= d instanceof HTMLCanvasElement ? (() => {
 			let e = document.createElement("div");

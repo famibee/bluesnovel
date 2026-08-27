@@ -18,10 +18,19 @@ export class Config extends ConfigBase {
 		const c = new Config(sys);
 		const fn = sys.arg.cur +'prj.json';
 		const res = await sys.fetch(fn);
-		if (! res.ok) throw Error(res.statusText);
+		if (! res.ok) throw Error(`プロジェクトが見つかりません: ${fn} (${res.status} ${res.statusText})`);
 
 		const dec = await sys.dec(fn, await res.text());
-		await c.load(<T_CFG_RAW>JSON.parse(dec));
+		let raw: T_CFG_RAW;
+		try {
+			raw = <T_CFG_RAW>JSON.parse(dec);
+		} catch {
+			// devサーバ（vite等）はSPAフォールバックでres.ok=trueのままindex.htmlを返すことがあり、
+			//	存在しないプロジェクト名でもres.okチェックだけでは検出できない。JSON解析自体の
+			//	失敗をここで捕まえて分かりやすいメッセージに変える
+			throw Error(`プロジェクトが見つかりません（JSONとして解析できませんでした）: ${fn}`);
+		}
+		await c.load(raw);
 		return c;
 	}
 
