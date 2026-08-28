@@ -31,4 +31,10 @@
 [er]oneshot[l]
 
 [clear_fx layer=base]
-[er]ぜんぶクリア[s]
+[er]ぜんぶクリア[l]
+
+; [wait_fx]：[add_fx time>0] の経過待ち（ScriptMng がタイマーを持つ。[wait_tsy] と同形）
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+[add_fx layer=base name=short fx=rgbShift time=400 shift=8]
+[wait_fx layer=base name=short]
+[er]wait_fx完了[s]

@@ -94,4 +94,29 @@ it('clearFx_name はカンマ区切りで複数可（省略はそのレイヤの
 it('fxTags_はマクロ名に使えない', ()=> {
 	expect(()=> acts('[macro name=add_fx]'))
 		.toThrow('[add_fx]はタグ名のため、マクロ名として使用できません');
+	expect(()=> acts('[macro name=wait_fx]'))
+		.toThrow('[wait_fx]はタグ名のため、マクロ名として使用できません');
+});
+
+
+// ============ [wait_fx]（実際に待つのは ScriptMng。ここはアクションの形だけ） ============
+
+it('waitFx_layer= / name= を受ける（[wait_tsy] と同形。page= は受けない）', ()=> {
+	// name= はカンマ区切り複数可（#argLayNames 流用）。canskip 既定 true
+	expect(acts('[wait_fx layer=base]').at(-1))
+		.toEqual({t: 'waitFx', aLayNm: ['base'], names: null, canskip: true});
+	expect(acts('[wait_fx name=a,b]').at(-1))
+		.toEqual({t: 'waitFx', aLayNm: null, names: ['a', 'b'], canskip: true});
+	expect(acts('[wait_fx layer=base name=g canskip=false]').at(-1))
+		.toEqual({t: 'waitFx', aLayNm: ['base'], names: ['g'], canskip: false});
+});
+
+it('waitFx_layer= も name= も無ければ throw（最低一方必須）', ()=> {
+	expect(()=> acts('[wait_fx]')).toThrow('[wait_fx] layer= か name= のどちらかが必要です');
+});
+
+it('waitFx_自体で step() が止まる（[s] まで進まない＝stop を返す）', ()=> {
+	const a = acts('[add_fx layer=base fx=wave time=500][wait_fx layer=base]');
+	expect(a.at(-1)!.t).toBe('waitFx');	// [s] の stop アクションはここには来ない
+	expect(a.some(v=> v.t === 'addFx')).toBe(true);
 });

@@ -298,6 +298,7 @@ export class ScriptMng {
 			engine.restoreMarkPart(ent.mark);
 			engine.clearOnResume = ent.clearOnResume;
 			this.#stopTsyByLayer(null, 'both');	// 演じ直しでレイヤ配列ごと差し替わる＝[clear_lay]同様に走行中[tsy]を畳む
+			this.#dropFxTimers(()=> true);	// [add_fx time>0] の [wait_fx] タイマーも全部落とす（aFxはreplace()で差し替わる）
 			this.$fncs.replace(ent.mark.sPages);
 			this.#plgLayMng.playback(ent.mark.hPlgLay, []);
 			this.#stopped = false;
@@ -602,6 +603,10 @@ export class ScriptMng {
 		}
 		if (this.#tsyWaiting && ! viaCall) {
 			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
+			return;
+		}
+		if (this.#fxWaiting && ! viaCall) {	// viaCall（[button call=]/[event]）は[wait_tsy]と同じく素通し
+			if (this.#fxWaiting.canskip) this.#skipFxWait();		//	（#waitFx は存在チェックだけの冪等実装なので[return]後に再実行されても待ちに戻るだけ）
 			return;
 		}
 		if (this.#quakeWaiting) {
@@ -957,6 +962,73 @@ export class ScriptMng {
 		this.#tsyWaiting = {tw_nm, canskip};
 	}
 
+	// ===== fx one-shot 終了待ち（[wait_fx]。[add_fx time>0] のタイマー） =====
+	//	分家独自の試作（ANIMATION_RESEARCH.md §7 step 2）。WebGL ランナー（FxRunner）からの
+	//	終了通知は作らず、ScriptMng が [add_fx time=…] の time= をそのままタイマーにする（[quake]
+	//	と同型）。ランナーの実際の凍結との数 ms のズレは許容（[add_fx] は通常 [lay] 直後で画像
+	//	ロード済み）。fx は store 経由なので撤去（[clear_fx]/[clear_lay]/ページ演じ直し）で
+	//	<canvas> が unmount → rAF ごと片付く。ここが持つのは「待ち合わせ」だけ（[wait_tsy] と同じ役回り）。
+	//
+	//	name は名前付き fx のみ（無名の #fxN は store 内で採番されエンジンからは見えない＝'' 扱い。
+	//	無名 fx は [wait_fx layer=…] でまとめて待つ）。レイヤ照合は具体レイヤ名へ解決せず、
+	//	[add_fx] 側の layer= セレクタ（省略=全レイヤ=null）同士の交差で判定する（試作の割り切り。
+	//	[add_fx layer=省略] のあと [wait_fx layer=me] は「me にも載っている」とみなして待つ）
+	#aFxTimer: {id: number; timer: ReturnType<typeof setTimeout>; aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string}[] = [];
+	#fxTimerSeq = 0;
+	#fxWaiting: {ids: Set<number>; canskip: boolean} | undefined;	// [wait_fx]で待っている最中か（[wait_tsy]の複数版）
+
+	// [add_fx time>0] で1件張る。time=0（無限＝常時ゆらぎ）は終わりが無いので [wait_fx] の対象外
+	#addFxTimer(act: Extract<T_ENGINE_ACTION, {t: 'addFx'}>) {
+		if (act.fx.time <= 0) return;
+		const id = ++this.#fxTimerSeq;
+		const timer = setTimeout(()=> this.#endFxTimer(id), act.fx.time);
+		this.#aFxTimer.push({id, timer, aLayNm: act.aLayNm, page: act.page, name: act.fx.name});
+	}
+	#endFxTimer(id: number) {
+		const i = this.#aFxTimer.findIndex(t=> t.id === id);
+		if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
+
+		if (! this.#fxWaiting) return;
+		this.#fxWaiting.ids.delete(id);
+		if (this.#fxWaiting.ids.size > 0) return;
+		this.#fxWaiting = undefined;
+		setTimeout(()=> this.#goSafe(), 0);	// #onTsyEnd() と同じく #busy が下りてから回す
+	}
+	// [clear_fx]/[clear_lay]/ページ演じ直しの replace() でタイマーも落とす。
+	//	[wait_fx]待機中は #runStep() が止まり [clear_fx] 等は来ないので #fxWaiting は触らない
+	//	（[tsy] の #stopTsyByLayer と同じ前提。ANIMATION_RESEARCH.md §7）
+	#dropFxTimers(match: (t: {aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string})=> boolean) {
+		for (let i = this.#aFxTimer.length; --i >= 0;) {
+			const t = this.#aFxTimer[i]!;
+			if (! match(t)) continue;
+			clearTimeout(t.timer);
+			this.#aFxTimer.splice(i, 1);
+		}
+	}
+	// [wait_fx]：セレクタ一致の未経過タイマーが無ければ待たずに続きへ（[wait_tsy] と同じ）
+	#waitFx(aLayNm: readonly string[] | null, names: readonly string[] | null, canskip: boolean) {
+		const hit = this.#aFxTimer.filter(t=> ScriptMng.#fxMatch(t, aLayNm, names));
+		if (hit.length === 0) {setTimeout(()=> this.#goSafe(), 0); return}
+
+		this.#fxWaiting = {ids: new Set(hit.map(t=> t.id)), canskip};
+	}
+	// [wait_fx]/[clear_fx] のセレクタ照合。qNames/qLayNm は null で「全部」
+	static #fxMatch(t: {aLayNm: readonly string[] | null; name: string}, qLayNm: readonly string[] | null, qNames: readonly string[] | null): boolean {
+		if (qNames && (! t.name || ! qNames.includes(t.name))) return false;	// name=指定時は名前付きの一致だけ
+		if (qLayNm && t.aLayNm && ! t.aLayNm.some(n=> qLayNm.includes(n))) return false;	// 両方具体ならレイヤ名の交差
+		return true;
+	}
+	// [wait_fx canskip=true]中のクリック：残りタイマーを全部畳んで続行（#endWait と同じ考え方）
+	#skipFxWait() {
+		if (! this.#fxWaiting) return;
+		for (const id of this.#fxWaiting.ids) {
+			const i = this.#aFxTimer.findIndex(t=> t.id === id);
+			if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
+		}
+		this.#fxWaiting = undefined;
+		this.#goSafe();
+	}
+
 	// ===== ＢＧＭ・効果音（[playse]/[playbgm]・[ws]/[wl]・[fadese]系・[wf]/[wb]） =====
 	//	実際にAudioContext/GainNodeを操作するのはSndMng（ts/SndMng.ts）。ここは[trans]/[tsy]と同じ
 	//	「待ち合わせを持つのはScriptMngで、ScriptEngineは属性の解釈と変数の帳簿付けだけ」という
@@ -1227,6 +1299,7 @@ export class ScriptMng {
 				if (last?.t === 'waitTrans') {this.#waitTrans(last.canskip); return}
 				if (last?.t === 'wait') {this.#beginWait(last.msec, last.canskip); return}
 				if (last?.t === 'waitTsy') {this.#waitTsy(last.tw_nm, last.canskip); return}
+				if (last?.t === 'waitFx') {this.#waitFx(last.aLayNm, last.names, last.canskip); return}
 				if (last?.t === 'waitQuake') {this.#waitQuake(last.canskip); return}
 				if (last?.t === 'waitSnd') {this.#waitSndPlay(last.buf, last.canskip, last.stop); return}
 				if (last?.t === 'waitFade') {this.#waitFadeSnd(last.buf, last.canskip); return}
@@ -1722,6 +1795,8 @@ export class ScriptMng {
 			break;
 		case 'clearLay':
 			this.#stopTsyByLayer(act.aLayNm, act.page);
+			this.#dropFxTimers(t=> (act.page === 'both' || t.page === 'both' || t.page === act.page)
+				&& ScriptMng.#fxMatch(t, act.aLayNm, null));	// aFxは A_LAY_STY_KEY 経由で消えるので[wait_fx]タイマーも畳む
 			this.$fncs.clearLay({aLayNm: act.aLayNm, page: act.page});
 			this.#plgLayMng.clearLay(act.aLayNm, act.page, this.$fncs.getForeIdx());
 			break;
@@ -1743,9 +1818,12 @@ export class ScriptMng {
 		//	unmountする→useEffect cleanupが担うので、[tsy]の#stopTsyByLayerのような帳簿は不要
 		case 'addFx':
 			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
+			this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る
 			break;
 		case 'clearFx':
 			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'clear', names: act.names});
+			this.#dropFxTimers(t=> (act.page === 'both' || t.page === 'both' || t.page === act.page)
+				&& ScriptMng.#fxMatch(t, act.aLayNm, act.names));
 			break;
 		case 'moveLay':
 			this.$fncs.moveLay({nm: act.nm, mode: act.mode, ...(act.index !== undefined ? {index: act.index} : {}), ...(act.dive !== undefined ? {dive: act.dive} : {})});
@@ -1773,6 +1851,9 @@ export class ScriptMng {
 			break;
 		case 'waitTsy':
 			// 実処理は#runStep()側（#waitTsy()）。表示への影響は無い
+			break;
+		case 'waitFx':
+			// 実処理は#runStep()側（#waitFx()）。表示への影響は無い
 			break;
 		case 'stopTsy':
 			this.#endTsy(act.tw_nm);

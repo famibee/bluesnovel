@@ -138,6 +138,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
 	| {t: 'addFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; fx: T_FX}	// [add_fx]。立ち絵へシェーダエフェクトを重ねる（分家独自の試作。aFx[]へpush／同名は置換）
 	| {t: 'clearFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; names: string[] | null}	// [clear_fx]。namesはカンマ区切り名前リスト（null＝そのレイヤのfx全部）
+	| {t: 'waitFx'; aLayNm: string[] | null; names: string[] | null; canskip: boolean}	// [wait_fx]。fx one-shot（[add_fx time>0]）の終了待ち。実際に待つのはScriptMng（[add_fx]で張ったタイマー。WebGLランナーからの終了通知は作らない。ANIMATION_RESEARCH.md §7）。page=は受けない（セレクタはlayer=＋name=、最低一方必須）
 	| {t: 'close'}	// [close]。アプリの終了（アプリ版のみ）
 	| {t: 'updateCheck'; url: string}	// [update_check]。更新チェック（アプリ版のみ）
 	| {t: 'window'; centering: boolean; x: number; y: number; w: number; h: number}	// [window]。アプリウインドウ設定（アプリ版のみ）
@@ -578,7 +579,7 @@ export class ScriptEngine {
 		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
-		'add_fx', 'clear_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
+		'add_fx', 'clear_fx', 'wait_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace', 'log',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -1434,13 +1435,22 @@ export class ScriptEngine {
 		case 'add_fx':	// bldFx()がfx名・パラメータの書き間違いをここで例外にする
 			aAct.push({t: 'addFx', aLayNm: ScriptEngine.#argLayNames(args.layer),
 				page: ScriptEngine.#argPageBoth('add_fx', args, 'fore'), fx: bldFx(args)});
-			return 'skip';	// [add_fx]自体は待たない（[tsy]と同じ。[wait_fx]は試作では未実装）
+			return 'skip';	// [add_fx]自体は待たない（[tsy]と同じ。time>0のone-shotは[wait_fx]で待てる）
 
 		case 'clear_fx':	// name=はカンマ区切りで複数可（[add_filter]のlayer=と同じ#argLayNamesを流用）
 			aAct.push({t: 'clearFx', aLayNm: ScriptEngine.#argLayNames(args.layer),
 				page: ScriptEngine.#argPageBoth('clear_fx', args, 'fore'),
 				names: ScriptEngine.#argLayNames(args.name)});
 			return 'skip';
+
+		case 'wait_fx': {	// fx one-shot（[add_fx time>0]）の終了待ち（[wait_tsy]と同形。実際に待つのはScriptMng）
+			// name=はclear_fxと同じく#argLayNamesを流用。page=は受けない（doc「page= は [add_fx] のみ」）
+			const aLayNm = ScriptEngine.#argLayNames(args.layer);
+			const names = ScriptEngine.#argLayNames(args.name);
+			if (! aLayNm && ! names) throw '[wait_fx] layer= か name= のどちらかが必要です';
+			aAct.push({t: 'waitFx', aLayNm, names, canskip: (args.canskip ?? 'true') !== 'false'});
+			return 'stop';
+		}
 
 		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）
 			// pageの既定は本家同様'fore'（#clear_lay()は素のPages.getPage(hArg)を呼び、

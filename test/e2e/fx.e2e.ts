@@ -116,9 +116,21 @@ test('[add_fx time=] の one-shot 記述子も aFx に載る（撤去は [clear_
 	expect(a[0]).toMatchObject({fx: 'rgbShift', time: 1500});
 	expect(await draw(page)).toBe('canvas');
 
-	// [clear_fx layer=base]（name 無し）→ そのレイヤの fx 全部。[s] は待ちマークを立てない
-	await pressKey(page, 'Space');
-	await expect.poll(async ()=> mesStr(page)).toBe('ぜんぶクリア');
+	// [clear_fx layer=base]（name 無し）→ そのレイヤの fx 全部
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('ぜんぶクリア');
 	expect(await afx(page)).toBeUndefined();
 	expect(await draw(page)).toBe('img');
+});
+
+test('[wait_fx] は [add_fx time>0] の経過を待ってから続きへ', async ({page})=> {
+	for (let i = 0; i < 7; ++i) await pressKeyToWaitMark(page, 'Space');	// 「ぜんぶクリア」まで
+	expect(await mesStr(page)).toBe('ぜんぶクリア');
+
+	// [add_fx time=400] → [wait_fx] → 本文。実際に待つのは ScriptMng のタイマー（[wait_tsy] と同型。
+	//	WebGL ランナーからの終了通知は作らない。ANIMATION_RESEARCH.md §7 step 2）
+	const t0 = Date.now();
+	await pressKey(page, 'Space');
+	await expect.poll(async ()=> mesStr(page)).toBe('wait_fx完了');
+	expect(Date.now() - t0).toBeGreaterThanOrEqual(300);	// time=400 のタイマー分は待った（余裕をみて 300）
 });

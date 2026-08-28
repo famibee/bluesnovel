@@ -46,8 +46,11 @@ sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを�
 
 実装順（2→3→4→5→7→8→6。6 は終わりのない作業なので最後・随時）：
 
-- [ ] 2. `[enable_fx]`（pause/resume）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）。
-      `[tsy]` 一族（`[pause_tsy]`/`[resume_tsy]`/`[wait_tsy]`）に倣う
+- [ ] 2. `[pause_fx]`/`[resume_fx]`（描画を止める/戻す。記述子は残す）。`[pause_tsy]`/`[resume_tsy]`
+      に倣う（`enable` はイベント語彙・`stop` は不可逆なので不採用）。`FxRunner` に制御ハンドルを
+      持たせ、canvas を作り直さず rAF を停止/再開（`enabled` 切替で `key` 再生成すると tick=0 へ
+      戻ってしまう）。この「再生成せず止める/戻す」機構を 5（不可視 back ページ停止）が流用。
+      ※`[wait_fx]`（終了待ち）は実装済み（`ScriptMng` が `[add_fx time>0]` のタイマーを持つ）
 - [ ] 3. 生 `glsl=` を有効化（今は `throw`）。契約名を `[trans glsl=]` と統一
       （`src`→`uSampler`、`vUv`→`vTextureCoord`、`time`→`tick`。プリセット 2 本も書き直し）
 - [ ] 4. face 差分合成（`aFace`）を通す。まず静止画（差分変化時のみ offscreen 2D canvas で合成）、

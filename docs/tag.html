@@ -157,6 +157,7 @@
 		<li class="mb1"><a href="#enable_filter">🟢 [enable_filter] フィルター個別切替</a></li>
 		<li class="mb1"><a href="#add_fx">🟡 [add_fx] 立ち絵シェーダエフェクト（bluesnovel独自・試作）</a></li>
 		<li class="mb1"><a href="#clear_fx">🟡 [clear_fx] 立ち絵シェーダエフェクト撤去（bluesnovel独自・試作）</a></li>
+		<li class="mb1"><a href="#wait_fx">🟢 [wait_fx] 立ち絵シェーダエフェクト終了待ち（bluesnovel独自・試作）</a></li>
 	</ul>
 	<p>トゥイーンアニメ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -962,8 +963,8 @@
 	フラグメントシェーダを重ねる。対象の選び方（<code>layer=</code>／<code>page=</code>）と記述子の
 	スタックは<a href="#add_filter">[add_filter]</a>に倣う。現状の割り切り：<br/>
 	・プリセット <code>fx=wave</code> / <code>fx=rgbShift</code> の2種のみ。生 GLSL（<code>glsl=</code>）は未対応<br/>
-	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）の2タグだけ。
-	pause/resume・終了待ちに当たるタグは無い<br/>
+	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）／
+	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）。pause/resume に当たるタグは未実装<br/>
 	・face 差分合成は通さない＝基本画像（<code>fn=</code>）だけにかかる<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>
@@ -1009,6 +1010,24 @@
 <tr><td>name</td><td></td><td>そのレイヤのfx全部</td><td>識別子（カンマ区切りで複数可）</td><td>指定した名前のfxだけ撤去する。省略するとそのレイヤのfxを全撤去。自動採番された無名fx（<code>#fxN</code>）は名前で狙えないので、無名fxを消すには<code>name=</code>を省略する</td></tr>
 </table>
 
+</p>
+
+<h2 id="wait_fx" class="w-heading">[wait_fx]立ち絵シェーダエフェクト終了待ち</h2>
+<h4><code>[add_fx time&gt;0]</code> の one-shot エフェクトが経過するまで待ち、再開する。</h4>
+<p class="mb2 px1">
+
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>layer</td><td></td><td></td><td>レイヤ名（カンマ区切りで複数可）</td><td>このレイヤに載っている fx を待つ。<code>name=</code>と併用でそのレイヤの一致名だけ。無名fxを待つ手段</td></tr>
+<tr><td>name</td><td></td><td></td><td>識別子（カンマ区切りで複数可）</td><td>この名前の fx を（どのレイヤであれ）待つ</td></tr>
+<tr><td>canskip</td><td></td><td>true</td><td>true、false</td><td>クリックなどでウエイトをキャンセルできるか</td></tr>
+</table>
+
+　<code>layer=</code>／<code>name=</code>は最低どちらか一方が必須（両方指定でAND）。一致するセレクタの
+　<code>[add_fx time&gt;0]</code>が全部経過するまで待つ。一致が無ければ待たずに続行（<a href="#wait_tsy">[wait_tsy]</a>と同じ）。<br/>
+　<code>time=0</code>（無限＝常時ゆらぎ）は終わりが無いので待ちの対象外。<code>page=</code>は受けない。<br/>
+　実際に待つのは <b>ScriptMng</b>（<code>[add_fx]</code>の<code>time=</code>をそのままタイマーにする。<a href="#wait_tsy">[wait_tsy]</a>と
+　同じ設計で、WebGLランナーからの終了通知は作らない）。<a href="#clear_fx">[clear_fx]</a>／<a href="#clear_lay">[clear_lay]</a>／
+　ページ演じ直しでタイマーも畳む。
 </p>
 
 
