@@ -969,7 +969,8 @@
 	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）／
 	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）／<code>[pause_fx]</code>・<code>[resume_fx]</code>
 	（描画を止める/戻す）。<a href="#tsy">[tsy]</a>一族に倣う<br/>
-	・face 差分合成は通さない＝基本画像（<code>fn=</code>）だけにかかる<br/>
+	・静止 face 差分は基本画像へ合成してシェーダに通す（差分が変わった時だけ 2D canvas で再合成）。
+	アニメpngシート／動画 face はまだ未対応＝従来どおり手前に重なる<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>
 

@@ -262,6 +262,17 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
   `store.tsx`（`chgFx` の enable モード）／`FxRunner.ts`＋`GrpLayer.tsx`（`T_FX_HANDLE`）／
   `test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
 
+#### step 4（face 差分合成）— 静止 face 分は完了（2026-08-28）
+
+`GrpLayer.tsx` の `FxImg` が、基本画像＋**静止** face を offscreen 2D canvas へ `drawImage` で
+1 枚に合成し（`compositeFace()`。blendmode→`globalCompositeOperation` は
+`plus-lighter`→`lighter` / `multiply` / `screen` / 既定 `source-over`）、その canvas を
+`FxRunner.runFx({source})` へ渡す。`runFx` の `source` は `string | HTMLCanvasElement | HTMLImageElement`。
+合成は `structKey`（`src`＋face の `src@dx,dy,blendmode`＋シェーダ構成）が変わった時だけ＝毎フレームではない。
+合成した静止 face は DOM オーバーレイから外す（`GrpLayer` の描画分岐）。**sheet／動画 face は未対応**＝
+従来どおり手前に DOM で重なる（毎フレーム転写は残り）。外部ドメイン画像は 2D canvas を汚染し
+`texImage2D` が落ちる（`[snapshot]` と同じ制約）。
+
 #### 用途カタログ（背景演出中心。ギャラリー実演の母集団）
 
 主に背景（bg grp レイヤ）に積む想定。**Shadertoy 既定ライセンスは CC BY-NC-SA 3.0（非商用）**

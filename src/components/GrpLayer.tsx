@@ -108,30 +108,69 @@ function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_
 	return <img src={loadedSrc} data-fn={faceFn} style={styPos}/>;
 }
 
-// [add_fx]（立ち絵シェーダエフェクトの試作。ANIMATION_RESEARCH.md §7 の「C 方式」最小スパイク）。
+// 画像1枚をロード（decodeまで待たずonloadで十分＝直後にcanvasへdrawImageするだけ）。
+//	FxRunner.ts の同名関数と同じ（あちらはlazyモジュール側なので共有せず各々持つ）
+function loadImg(src: string): Promise<HTMLImageElement> {
+	return new Promise((re, rj)=> {
+		const im = new Image;
+		im.onload = ()=> re(im);
+		im.onerror = ()=> rj(new Error(`画像が読めません: ${src.slice(0, 64)}`));
+		im.src = src;
+	});
+}
+
+// blendmode（CSSのmix-blend-mode値。Blendmode.ts）→ 2D canvas の globalCompositeOperation。
+//	face が取りうるのは normal/plus-lighter/multiply/screen の4種だけ（Blendmode.ts H_BLENDMODE）
+const H_GCO: {readonly [css: string]: GlobalCompositeOperation} = {
+	'plus-lighter': 'lighter', multiply: 'multiply', screen: 'screen',
+};
+
+// 基本画像＋静止 face を1枚のoffscreen 2D canvasへ合成（fxのテクスチャ源にする）。
+//	差分（src/dx/dy/blendmode）が変わった時だけ呼ばれる＝毎フレームではない（ANIMATION_RESEARCH.md §7 step 4）
+async function compositeFace(baseSrc: string, aFace: readonly T_FACE_SRC[]): Promise<HTMLCanvasElement> {
+	const [base, ...faces] = await Promise.all([loadImg(baseSrc), ...aFace.map(f=> loadImg(f.src))]);
+	const cvs = document.createElement('canvas');
+	cvs.width = Math.max(1, base.naturalWidth);
+	cvs.height = Math.max(1, base.naturalHeight);
+	const ctx = cvs.getContext('2d');
+	if (! ctx) throw new Error('2Dコンテキストが取得できません');
+	ctx.drawImage(base, 0, 0);
+	aFace.forEach((f, i)=> {
+		ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
+		ctx.drawImage(faces[i]!, f.dx, f.dy);	// dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる
+	});
+	return cvs;
+}
+
+// [add_fx]（立ち絵シェーダエフェクトの試作。ANIMATION_RESEARCH.md §7 の「C 方式」）。
 //	aFxが非空のとき、基本画像の<img>の代わりにレイヤ実寸の<canvas>（WebGL）を描く。
 //	styLay()が与えるtransform/opacity/z順/blendmodeはこのcanvasにも自動で継承される
 //	（<img>と同じ位置なので）。重い部分（WebGLランナー・プリセットGLSL）はlazy importで、
 //	[add_fx]が使われた回にはじめて src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
-//	試作の割り切り：face差分合成（aFace）は通さない＝基本画像だけにかかる
-function FxImg({src, aFx, styFit}: {src: string; aFx: T_FX[]; styFit: CSSProperties}) {
+//	aFaceStatic（静止 face）は基本画像へ合成してシェーダに通す。sheet face は呼び出し側でDOMへ残す
+function FxImg({src, aFaceStatic, aFx, styFit}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; styFit: CSSProperties}) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const handle = useRef<{update(a: T_FX[]): void; dispose(): void} | null>(null);
-	// canvasごと作り直すのは**シェーダ構成が変わったとき**だけ（fx名/glsl/パス数）：
-	//	WEBGL_lose_context.loseContext()を呼んだ後の同一canvasからは生きたコンテキストを
-	//	取り直せない（コンパイルが空ログで失敗する）ため、破棄する側は使い捨てにして開き直す。
-	//	プリセットパラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）は handle.update()で
-	//	ホットスワップ＝再生成すると tick=0 へ戻ってしまう（ANIMATION_RESEARCH.md §7 step 2）
-	const structKey = `${src}\n${aFx.map(f=> `${f.fx}|${f.glsl}`).join(',')}`;
+	// canvasごと作り直すのは**シェーダ構成 or テクスチャ源が変わったとき**（fx名/glsl/パス数、
+	//	基本画像、face差分）：WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを
+	//	取り直せないため使い捨てにして開き直す。プリセットパラメータ・speed・time・enabled
+	//	（[pause_fx]/[resume_fx]）だけの変化は handle.update() でホットスワップ＝再生成すると
+	//	tick=0 へ戻ってしまう（ANIMATION_RESEARCH.md §7 step 2）
+	const faceKey = aFaceStatic.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode}`).join(';');
+	const structKey = `${src}\n${faceKey}\n${aFx.map(f=> `${f.fx}|${f.glsl}`).join(',')}`;
 	const contentKey = JSON.stringify(aFx);
 	useEffect(()=> {
 		const cvs = ref.current;
 		if (! cvs || ! src) return;
 
 		let alive = true;
-		void import('../ts/FxRunner').then(({runFx})=> runFx({canvas: cvs, src, aFx}))
-			.then(h=> {if (alive) handle.current = h; else h.dispose()})
-			.catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
+		void (async ()=> {
+			const source = aFaceStatic.length > 0 ? await compositeFace(src, aFaceStatic) : src;
+			if (! alive) return;
+			const {runFx} = await import('../ts/FxRunner');
+			const h = await runFx({canvas: cvs, source, aFx});
+			if (alive) handle.current = h; else h.dispose();
+		})().catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
 		return ()=> {alive = false; handle.current?.dispose(); handle.current = null};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [structKey]);
@@ -208,9 +247,12 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
-			&& <FxImg src={loadedSrc} aFx={aFx} styFit={styFit}/>}
+			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} styFit={styFit}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length === 0
 			&& <img src={loadedSrc} style={styFit}/>}
-		{aFace.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
+		{/* fx有効時（基本画像が静止画）は静止 face を FxImg が合成済み＝ここには sheet face だけ残す。
+			それ以外（fx無効／基本画像が sheet・動画）は全 face を従来どおり DOM オーバーレイで重ねる */}
+		{(aFx.length > 0 && loadedSrc && ! isSheet && ! isMovie ? aFace.filter(f=> f.isSheet) : aFace)
+			.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

@@ -151,11 +151,25 @@ test('[add_fx glsl=] は生シェーダをそのまま描く（契約は [trans 
 	for (let i = 0; i < 10; ++i) await pressKeyToWaitMark(page, 'Space');	// 「resume_fx」まで
 	expect(await mesStr(page)).toBe('resume_fx');
 
-	// [clear_fx] → [add_fx name=g glsl="…"] → [er]raw_glsl[s]
-	await pressKey(page, 'Space');
-	await expect.poll(async ()=> mesStr(page)).toBe('raw_glsl');
+	// [clear_fx] → [add_fx name=g glsl="…"] → [er]raw_glsl[l]
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('raw_glsl');
 	const g = (await afx(page))!.find(f=> f.name === 'g')!;
 	expect(g).toMatchObject({fx: '', enabled: true});
 	expect(g.glsl).toContain('gl_FragColor');
 	expect(await draw(page)).toBe('canvas');	// コンパイル成功で <canvas>（失敗なら console.error だけ出て絵は出ない）
+});
+
+test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す（face の <img> は DOM から消える）', async ({page})=> {
+	for (let i = 0; i < 11; ++i) await pressKeyToWaitMark(page, 'Space');	// 「raw_glsl」まで
+	expect(await mesStr(page)).toBe('raw_glsl');
+	// この時点では face 無し
+	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
+
+	// [add_face f] → [lay face=f] → [add_fx fx=wave]
+	await pressKey(page, 'Space');
+	await expect.poll(async ()=> mesStr(page)).toBe('face合成');
+	expect(await draw(page)).toBe('canvas');
+	// 静止 face は FxImg が基本画像へ合成済み＝レイヤ内に face の <img data-fn> は無い
+	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
 });

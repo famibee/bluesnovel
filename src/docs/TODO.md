@@ -46,10 +46,12 @@ sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを�
 
 実装順（4→5→7→8→6。6 は終わりのない作業なので最後・随時）。2026-08-28 完了：
 2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）、
-3（生 `glsl=` 有効化＋契約名を `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`）。
+3（生 `glsl=` 有効化＋契約名を `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`）、
+4 の静止 face 分（`FxImg` が基本画像＋静止 face を offscreen 2D canvas で合成→`runFx({source})`）。
 
-- [ ] 4. face 差分合成（`aFace`）を通す。まず静止画（差分変化時のみ offscreen 2D canvas で合成）、
-      次に sheet/動画（毎フレーム転写）。`FxImg` の `! isSheet && ! isMovie` 条件を緩める
+- [ ] 4. （残り）sheet／動画 face を fx のテクスチャへ毎フレーム転写。`FxImg` の
+      `! isSheet && ! isMovie`（＝基本画像が sheet/動画のとき FxImg を出さない）条件も緩める。
+      静止 face の合成は済み（`compositeFace()`）
 - [ ] 5. 不可視 back ページで rAF 停止（`[trans]` 後の表裏 2 canvas の裏側）。`FxImg` に
       「表ページか / trans 中か」を渡す。止める/戻す機構は 2 で入った `FxRunner` 制御ハンドル
       （`update()` の `active` 引数を足す）を流用

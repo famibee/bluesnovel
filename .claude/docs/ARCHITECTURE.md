@@ -143,7 +143,8 @@ WebGL シェーダを重ねる。`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`�
 （`FxRunner` は `T_FX_HANDLE`＝`{update,dispose}` を返し、パラメータ・`enabled` は canvas を作り直さず
 ホットスワップ）。`wait_fx` は `ScriptMng` が `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。
 プリセット wave/rgbShift または生 `glsl=`（契約は `[trans glsl=]` と統一＝`uSampler`/`vTextureCoord`/`tick`）。
-face 合成なし。詳細は `src/docs/ANIMATION_RESEARCH.md` §7），
+静止 face は `GrpLayer` が 2D canvas で合成して `runFx({source})` へ（sheet/動画 face は未対応）。
+詳細は `src/docs/ANIMATION_RESEARCH.md` §7），
 `tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`,
 `let`, `let_ml`/`endlet_ml`, `let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/
 `let_substr`/`let_replace`/`let_search`, `if`/`elsif`/`else`/`endif`, `r`, `er`, `trace`,

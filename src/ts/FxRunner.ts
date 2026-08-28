@@ -18,7 +18,9 @@
 //	・[pause_fx]/[resume_fx]（fx.enabled）は canvas を作り直さず update() でホットスワップ
 //	  （key 再生成すると tick=0 へ戻ってしまう）。無効パスは自分の tick を凍結して描画は続ける
 //	  （前段パスの出力が動いていれば入力は変わるため）。全パス無効なら rAF ごと止める。
-//	・face 差分合成（aFace）は通さない＝基本画像だけにかかる（試作の割り切り）。
+//	・source は基本画像 URL か、GrpLayer.tsx が基本画像＋静止 face を合成した offscreen 2D canvas
+//	  （差分が変わった時だけ作り直す）。sheet/動画 face はまだ通さず DOM オーバーレイのまま。
+//	  外部ドメインの画像は 2D canvas を汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
 //	・preserveDrawingBuffer:true は [snapshot]（Snapshot.ts の canvas→toDataURL 差し替え）対策で
 //	  3d_layer / live2d_layer と同じ理由。
 
@@ -26,7 +28,8 @@ import type {T_FX} from './Fx';
 import {V_SRC, PASSTHRU_SRC, H_FX_FRAG} from './fxPresets';
 
 
-type T_ARG = {canvas: HTMLCanvasElement; src: string; aFx: T_FX[]};
+type T_SOURCE = string | HTMLCanvasElement | HTMLImageElement;
+type T_ARG = {canvas: HTMLCanvasElement; source: T_SOURCE; aFx: T_FX[]};
 
 // <FxImg>（GrpLayer.tsx）が握る制御ハンドル。シェーダ構成（fx 名/glsl/パス数）が変わらない限り
 //	canvas は作り直さず、enabled・プリセットパラメータ・speed・time は update() で差し替える
@@ -95,9 +98,9 @@ function mkTex(gl: WebGLRenderingContext, img: TexImageSource | null, w: number,
 
 // 演出を開始し、**制御ハンドルを返す**（<FxImg> が update()／useEffect cleanup で dispose() を呼ぶ）
 export async function runFx(o: T_ARG): Promise<T_FX_HANDLE> {
-	const img = await loadImg(o.src);
-	const w = Math.max(1, img.naturalWidth);
-	const h = Math.max(1, img.naturalHeight);
+	const img = typeof o.source === 'string' ? await loadImg(o.source) : o.source;
+	const w = Math.max(1, img instanceof HTMLImageElement ? img.naturalWidth : img.width);
+	const h = Math.max(1, img instanceof HTMLImageElement ? img.naturalHeight : img.height);
 	const cvs = o.canvas;
 	cvs.width = w;
 	cvs.height = h;
@@ -129,7 +132,7 @@ type T_PASS = {
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
 };
 
-function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: HTMLImageElement, w: number, h: number): T_FX_HANDLE {
+function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: TexImageSource, w: number, h: number): T_FX_HANDLE {
 	const vs = compile(gl, gl.VERTEX_SHADER, V_SRC);
 	const mkPass = (fsSrc: string, fx: T_FX): T_PASS => {
 		const pg = link(gl, vs, fsSrc);

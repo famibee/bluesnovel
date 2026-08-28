@@ -47,7 +47,7 @@ function a(e, t, n, r) {
 	return e.bindTexture(e.TEXTURE_2D, i), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_WRAP_S, e.CLAMP_TO_EDGE), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_WRAP_T, e.CLAMP_TO_EDGE), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_MIN_FILTER, e.LINEAR), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_MAG_FILTER, e.LINEAR), t ? (e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !0), e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, e.RGBA, e.UNSIGNED_BYTE, t), e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !1)) : e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, n, r, 0, e.RGBA, e.UNSIGNED_BYTE, null), i;
 }
 async function o(e) {
-	let t = await n(e.src), r = Math.max(1, t.naturalWidth), i = Math.max(1, t.naturalHeight), a = e.canvas;
+	let t = typeof e.source == "string" ? await n(e.source) : e.source, r = Math.max(1, t instanceof HTMLImageElement ? t.naturalWidth : t.width), i = Math.max(1, t instanceof HTMLImageElement ? t.naturalHeight : t.height), a = e.canvas;
 	a.width = r, a.height = i;
 	let o = a.getContext("webgl", {
 		premultipliedAlpha: !1,

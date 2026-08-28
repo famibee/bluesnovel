@@ -49,4 +49,12 @@
 ; 生 glsl=（契約は [trans glsl=] と統一：uSampler / vTextureCoord / tick）。1 行で書ける最小シェーダ
 [clear_fx layer=base]
 [add_fx layer=base name=g glsl="precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;uniform float tick;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord)*(0.6+0.4*sin(tick));}"]
-[er]raw_glsl[s]
+[er]raw_glsl[l]
+
+; 静止 face 差分を fx のテクスチャへ合成（offscreen 2D canvas。sheet/動画は未対応＝DOMのまま）。
+;	pic.png 自身を face に使う（別アセット不要）。合成されれば face の <img data-fn> は DOM から消える
+[clear_fx layer=base]
+[add_face name=f fn=pic dx=30 dy=20]
+[lay layer=base fn=pic face=f]
+[add_fx layer=base fx=wave]
+[er]face合成[s]
