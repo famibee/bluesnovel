@@ -1,20 +1,20 @@
 //#region src/ts/fxPresets.ts
-var e = "\nprecision mediump float;\nvarying vec2 vUv;\nuniform sampler2D src;\nuniform float time;\nuniform vec2 resolution;", t = {
+var e = "\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nuniform float tick;\nuniform vec2 resolution;", t = {
 	wave: `${e}
 uniform float amp;
 uniform float freq;
 void main() {
-	vec2 uv = vUv;
-	uv.x += sin(uv.y * freq * 6.2831853 + time * 3.0) * (amp / resolution.x);
-	gl_FragColor = texture2D(src, uv);
+	vec2 uv = vTextureCoord;
+	uv.x += sin(uv.y * freq * 6.2831853 + tick * 3.0) * (amp / resolution.x);
+	gl_FragColor = texture2D(uSampler, uv);
 }`,
 	rgbShift: `${e}
 uniform float shift;
 void main() {
-	float d = shift / resolution.x * (0.35 + 0.65 * abs(sin(time * 2.0)));
-	float r = texture2D(src, vUv + vec2(d, 0.0)).r;
-	vec4  g = texture2D(src, vUv);
-	float b = texture2D(src, vUv - vec2(d, 0.0)).b;
+	float d = shift / resolution.x * (0.35 + 0.65 * abs(sin(tick * 2.0)));
+	float r = texture2D(uSampler, vTextureCoord + vec2(d, 0.0)).r;
+	vec4  g = texture2D(uSampler, vTextureCoord);
+	float b = texture2D(uSampler, vTextureCoord - vec2(d, 0.0)).b;
 	gl_FragColor = vec4(r, g.g, b, g.a);
 }`
 };
@@ -62,25 +62,25 @@ async function o(e) {
 	}
 }
 function s(e, n, o, s, c) {
-	let l = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vUv;\nvoid main() {\n	vUv = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), u = (t, n) => {
+	let l = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), u = (t, n) => {
 		let r = i(e, l, t);
 		return {
 			pg: r,
 			fx: n,
 			pausedAccMs: 0,
 			pausedAt: 0,
-			uSrc: e.getUniformLocation(r, "src"),
-			uTime: e.getUniformLocation(r, "time"),
+			uSampler: e.getUniformLocation(r, "uSampler"),
+			uTick: e.getUniformLocation(r, "tick"),
 			uRes: e.getUniformLocation(r, "resolution"),
 			uAmp: e.getUniformLocation(r, "amp"),
 			uFreq: e.getUniformLocation(r, "freq"),
 			uShift: e.getUniformLocation(r, "shift")
 		};
 	}, d = n.map((e) => {
-		let n = t[e.fx];
+		let n = e.glsl || t[e.fx];
 		if (!n) throw Error(`未知の fx: ${e.fx}`);
 		return u(n, e);
-	}), f = u("\nprecision mediump float;\nvarying vec2 vUv;\nuniform sampler2D src;\nvoid main() { gl_FragColor = texture2D(src, vUv); }", {});
+	}), f = u("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {});
 	e.deleteShader(l);
 	let p = e.createBuffer();
 	e.bindBuffer(e.ARRAY_BUFFER, p), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
@@ -102,7 +102,7 @@ function s(e, n, o, s, c) {
 	});
 	e.bindFramebuffer(e.FRAMEBUFFER, null), e.viewport(0, 0, s, c), e.disable(e.DEPTH_TEST), e.disable(e.BLEND);
 	let g = (t, n, r, i) => {
-		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSrc && e.uniform1i(t.uSrc, 0), t.uTime && e.uniform1f(t.uTime, i), t.uRes && e.uniform2f(t.uRes, s, c), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
+		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSampler && e.uniform1i(t.uSampler, 0), t.uTick && e.uniform1f(t.uTick, i), t.uRes && e.uniform2f(t.uRes, s, c), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
 	}, _ = performance.now(), v = 0, y = !0, b = () => {
 		let e = performance.now(), t = e - _, n = !1;
 		for (let r = 0; r < d.length; ++r) {

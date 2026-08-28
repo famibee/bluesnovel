@@ -45,8 +45,14 @@ it('bldFx_fx も glsl も無ければ throw', ()=> {
 	expect(()=> bldFx({})).toThrow('fx= か glsl= のどちらかが必要です');
 });
 
-it('bldFx_生 glsl は試作では未対応', ()=> {
-	expect(()=> bldFx({glsl: 'void main(){}'})).toThrow('glsl= は未対応です');
+it('bldFx_生 glsl= を受ける（fx="" / glsl に文字列 / params は空。契約は [trans glsl=] と統一）', ()=> {
+	const src = 'precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';
+	expect(bldFx({glsl: src})).toEqual({
+		name: '', fx: '', glsl: src, time: 0, speed: 1, enabled: true, params: {}});
+});
+
+it('bldFx_fx= と glsl= の同時指定は throw', ()=> {
+	expect(()=> bldFx({fx: 'wave', glsl: 'void main(){}'})).toThrow('fx= と glsl= は同時に指定できません');
 });
 
 it('bldFx_未知のプリセット名は対応一覧つきで throw', ()=> {
@@ -79,6 +85,13 @@ it('addFx_不正な page は throw', ()=> {
 it('addFx_自体は待たない（[tsy] と同じく skip を返す）', ()=> {
 	// step() が [s] まで一気に到達している＝[add_fx] で止まっていない
 	expect(acts('[add_fx layer=base fx=wave]').some(v=> v.t === 'addFx')).toBe(true);
+});
+
+it('addFx_glsl= は生シェーダをそのまま記述子へ（fx="", params={}）', ()=> {
+	const src = 'precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';
+	expect(acts(`[add_fx layer=base glsl="${src}"]`).find(v=> v.t === 'addFx'))
+		.toEqual({t: 'addFx', aLayNm: ['base'], page: 'fore',
+			fx: {name: '', fx: '', glsl: src, time: 0, speed: 1, enabled: true, params: {}}});
 });
 
 

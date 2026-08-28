@@ -5,16 +5,26 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// [add_fx]/[clear_fx]：立ち絵（grp レイヤ）へシェーダエフェクトを重ねる**分家独自の試作**。
-//	ANIMATION_RESEARCH.md §7 の「C 方式」の最小スパイク版。
+// [add_fx]/[clear_fx]/[wait_fx]/[pause_fx]/[resume_fx]：立ち絵（grp レイヤ）へシェーダエフェクトを
+//	重ねる**分家独自の試作**。ANIMATION_RESEARCH.md §7。
 //	・対象指定（layer=/page=）は [add_filter] に、記述子スタック（aFx[]）も [add_filter] の aFlt に倣う
-//	・ライフサイクルは [add_fx]（開始）／[clear_fx]（撤去）の 2 タグだけ（enable/wait は後回し）
+//	・fx=wave|rgbShift（プリセット）か、glsl=（生フラグメントシェーダ）のどちらか
 //	・face 差分合成（aFace）はまだ通さない＝基本画像（fn）だけにかかる
 //
 //	ここは DOM も WebGL も触らない純粋部分（本家 Filter.ts の bldFilter() と同じ役回り）。
 //	エンジンから呼べるので fx 名・パラメータの書き間違いをその場で例外にできる。
 //	GLSL 本体（プリセットのフラグメントシェーダ）と WebGL ランナーは lazy import の
 //	src/ts/fxPresets.ts / src/ts/FxRunner.ts 側にあり、[add_fx] が使われるまで読まれない。
+//
+//	生 glsl= の契約は [trans glsl=]（TransGlsl.ts、本家サンプル glsl_slide 準拠）と名前を揃える
+//	＝分家内で 1 回学べば両方書ける：
+//	  uniform sampler2D uSampler      … 入力画像（前パスの結果 or 基本画像）
+//	  varying vec2      vTextureCoord … 正規化 UV（0..1、y-up。※[trans] 側は y-down）
+//	  uniform float     tick          … 経過秒 × speed=（0 起点）
+//	  uniform vec2      resolution    … canvas 実ピクセルサイズ
+//	  ＋ プリセット固有 uniform（amp/freq/shift）
+//	シェーダは precision 宣言・varying/uniform 宣言まで自前で書く（[trans glsl=] と同じ。HEAD 注入はしない）。
+//	Shadertoy（iTime/iChannel0…）は開発時に手変換（マッピングは docs/tag.html）。
 
 // プリセット名。GLSL 実体は fxPresets.ts（lazy）が持つ。ここは名前の台帳だけ
 export const A_FX_PRESET = ['wave', 'rgbShift'] as const;
@@ -34,7 +44,8 @@ export type T_FX = {
 						//	`#fxN`（レイヤスコープ採番）を振る。#fxN はシナリオから書けない＝[clear_fx name=]
 						//	では実質狙えず、layer= 単位のクリアでのみ落ちる
 	fx		: string;	// プリセット名。glsl 指定時は ''
-	glsl	: string;	// 生フラグメントシェーダ（fx='' のとき）。本家サンプル準拠の契約は未対応（試作）＝現状は空のみ
+	glsl	: string;	// 生フラグメントシェーダ（fx='' のとき。契約は [trans glsl=] と同じ＝上のヘッダ参照）。
+						//	[add_filter] と同じ「消すまで永続」なので解決済み文字列をそのまま焼く（[save] にも載る）
 	time	: number;	// ms。0 で無限（常時ゆらぎ）。>0 で time 経過後は素通し（試作では記述子の自動撤去はしない）
 	speed	: number;	// 速度倍率
 	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
@@ -53,11 +64,12 @@ export function bldFx(args: {[k: string]: string}): T_FX {
 	const fx = args.fx ?? '';
 	const glsl = args.glsl ?? '';
 	if (! fx && ! glsl) throw '[add_fx] fx= か glsl= のどちらかが必要です';
-	if (glsl) throw '[add_fx] glsl= は未対応です（試作。プリセット fx= のみ）';
-	if (! (A_FX_PRESET as readonly string[]).includes(fx)) {
-		throw `[add_fx] fx【${fx}】は未対応です（対応：${A_FX_PRESET.join(' / ')}）`;
+	if (fx && glsl) throw '[add_fx] fx= と glsl= は同時に指定できません';
+	if (fx && ! (A_FX_PRESET as readonly string[]).includes(fx)) {
+		throw `[add_fx] fx【${fx}】は未対応です（対応：${A_FX_PRESET.join(' / ')}／または glsl=）`;
 	}
 
+	// 生 glsl= はプリセット固有の既定値を持たない（H_FX_DEF[''] は undefined ＝ params は {}）
 	const params: {[k: string]: number} = {...H_FX_DEF[fx]};
 	for (const k of A_FX_PARAM) if (args[k] !== undefined) params[k] = num(args, k, 0);
 

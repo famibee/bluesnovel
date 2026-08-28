@@ -44,4 +44,9 @@
 [pause_fx layer=base name=p]
 [er]pause_fx[l]
 [resume_fx layer=base]
-[er]resume_fx[s]
+[er]resume_fx[l]
+
+; 生 glsl=（契約は [trans glsl=] と統一：uSampler / vTextureCoord / tick）。1 行で書ける最小シェーダ
+[clear_fx layer=base]
+[add_fx layer=base name=g glsl="precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;uniform float tick;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord)*(0.6+0.4*sin(tick));}"]
+[er]raw_glsl[s]

@@ -44,11 +44,10 @@
 sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを通過し**正式化**。設計・用途
 カタログ・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7（推奨度 ★★★☆）。
 
-実装順（3→4→5→7→8→6。6 は終わりのない作業なので最後・随時）。
-2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）は 2026-08-28 完了。
+実装順（4→5→7→8→6。6 は終わりのない作業なので最後・随時）。2026-08-28 完了：
+2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）、
+3（生 `glsl=` 有効化＋契約名を `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`）。
 
-- [ ] 3. 生 `glsl=` を有効化（今は `throw`）。契約名を `[trans glsl=]` と統一
-      （`src`→`uSampler`、`vUv`→`vTextureCoord`、`time`→`tick`。プリセット 2 本も書き直し）
 - [ ] 4. face 差分合成（`aFace`）を通す。まず静止画（差分変化時のみ offscreen 2D canvas で合成）、
       次に sheet/動画（毎フレーム転写）。`FxImg` の `! isSheet && ! isMovie` 条件を緩める
 - [ ] 5. 不可視 back ページで rAF 停止（`[trans]` 後の表裏 2 canvas の裏側）。`FxImg` に

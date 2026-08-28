@@ -10,7 +10,9 @@
 //	（WebGL）へ基本画像＋シェーダを描く。コアのバンドルには載らない（[add_fx] が使われた回に
 //	はじめて読まれる）。TransGlsl.ts と同じ生 WebGL の骨格。
 //
-//	・aFx[] のスタックは順にパスとして適用（2 枚のフレームバッファで ping-pong）。
+//	・aFx[] のスタックは順にパスとして適用（2 枚のフレームバッファで ping-pong）。各パスは
+//	  プリセット（fxPresets.ts H_FX_FRAG）か fx.glsl（生シェーダ）。契約 uniform／varying は
+//	  [trans glsl=] と統一（uSampler / tick / vTextureCoord / resolution。詳細は Fx.ts ヘッダ）。
 //	・fx.time>0（one-shot）は経過後そのパスを素通しに切り替え、全パスが素通し／無効になったら
 //	  rAF を止めて凍結（＝基本画像そのまま）。記述子の撤去は [clear_fx]／[clear_lay] が行う。
 //	・[pause_fx]/[resume_fx]（fx.enabled）は canvas を作り直さず update() でホットスワップ
@@ -116,8 +118,8 @@ export async function runFx(o: T_ARG): Promise<T_FX_HANDLE> {
 
 type T_PASS = {
 	pg		: WebGLProgram;
-	uSrc	: WebGLUniformLocation | null;
-	uTime	: WebGLUniformLocation | null;
+	uSampler: WebGLUniformLocation | null;	// 契約名は [trans glsl=] と統一（src→uSampler / time→tick / vUv→vTextureCoord）
+	uTick	: WebGLUniformLocation | null;
 	uRes	: WebGLUniformLocation | null;
 	uAmp	: WebGLUniformLocation | null;
 	uFreq	: WebGLUniformLocation | null;
@@ -133,8 +135,8 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: HTMLImageElement, w:
 		const pg = link(gl, vs, fsSrc);
 		return {
 			pg, fx, pausedAccMs: 0, pausedAt: 0,
-			uSrc	: gl.getUniformLocation(pg, 'src'),
-			uTime	: gl.getUniformLocation(pg, 'time'),
+			uSampler: gl.getUniformLocation(pg, 'uSampler'),
+			uTick	: gl.getUniformLocation(pg, 'tick'),
 			uRes	: gl.getUniformLocation(pg, 'resolution'),
 			uAmp	: gl.getUniformLocation(pg, 'amp'),
 			uFreq	: gl.getUniformLocation(pg, 'freq'),
@@ -142,7 +144,8 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: HTMLImageElement, w:
 		};
 	};
 	const aPass = aFx.map(fx=> {
-		const fsSrc = H_FX_FRAG[fx.fx];
+		// glsl= 指定はその生シェーダ、そうでなければプリセット（fx 名は Fx.bldFx() で検査済み）
+		const fsSrc = fx.glsl || H_FX_FRAG[fx.fx];
 		if (! fsSrc) throw new Error(`未知の fx: ${fx.fx}`);
 		return mkPass(fsSrc, fx);
 	});
@@ -178,8 +181,8 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: HTMLImageElement, w:
 		gl.useProgram(p.pg);
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, inTex);
-		if (p.uSrc) gl.uniform1i(p.uSrc, 0);
-		if (p.uTime) gl.uniform1f(p.uTime, timeSec);
+		if (p.uSampler) gl.uniform1i(p.uSampler, 0);
+		if (p.uTick) gl.uniform1f(p.uTick, timeSec);
 		if (p.uRes) gl.uniform2f(p.uRes, w, h);
 		if (p.uAmp) gl.uniform1f(p.uAmp, p.fx.params?.amp ?? 0);
 		if (p.uFreq) gl.uniform1f(p.uFreq, p.fx.params?.freq ?? 0);

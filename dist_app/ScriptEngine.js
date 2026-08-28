@@ -1019,8 +1019,8 @@ function B(e, t, n) {
 function V(e) {
 	let t = e.fx ?? "", n = e.glsl ?? "";
 	if (!t && !n) throw "[add_fx] fx= か glsl= のどちらかが必要です";
-	if (n) throw "[add_fx] glsl= は未対応です（試作。プリセット fx= のみ）";
-	if (!L.includes(t)) throw `[add_fx] fx【${t}】は未対応です（対応：${L.join(" / ")}）`;
+	if (t && n) throw "[add_fx] fx= と glsl= は同時に指定できません";
+	if (t && !L.includes(t)) throw `[add_fx] fx【${t}】は未対応です（対応：${L.join(" / ")}／または glsl=）`;
 	let r = { ...R[t] };
 	for (let t of z) e[t] !== void 0 && (r[t] = B(e, t, 0));
 	return {

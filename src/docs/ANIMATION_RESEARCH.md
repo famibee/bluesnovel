@@ -202,7 +202,10 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 | `resolution`（vec2） | canvas 実ピクセルサイズ | `iResolution.xy` |
 | ＋プリセット固有（`amp`/`freq`/`shift`…） | 既定は [Fx.ts](../../src/ts/Fx.ts) の `H_FX_DEF` | — |
 
-現行スパイクの `src`/`vUv`/`time` は上記へリネーム（プリセット 2 本の書き直しのみ）。
+実装済み（2026-08-28、step 3）：スパイクの `src`/`vUv`/`time` を `uSampler`/`vTextureCoord`/`tick` へ
+リネーム（`fxPresets.ts` の頂点・素通し・wave・rgbShift、`FxRunner.ts` の uniform 取得）。生 `glsl=` は
+`Fx.bldFx()` が受理し（`fx=` と排他）、`FxRunner` が `fx.glsl || H_FX_FRAG[fx.fx]` でパスを組む。
+`FxImg` の `structKey` に `f.glsl` を含むのでシェーダ差し替えは canvas 再生成。y-up のまま（`[trans]` は y-down）。
 
 #### fx の 2 カテゴリ
 

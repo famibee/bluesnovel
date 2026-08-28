@@ -142,7 +142,20 @@ test('[pause_fx]/[resume_fx] は記述子の enabled を反転する', async ({p
 	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({fx: 'wave', enabled: false});
 	expect(await draw(page)).toBe('canvas');	// enabled=false でも <canvas> のまま（記述子は残る）
 
-	await pressKey(page, 'Space');	// [resume_fx layer=base] → [er]resume_fx[s]（[s]は待ちマークを立てない）
-	await expect.poll(async ()=> mesStr(page)).toBe('resume_fx');
+	await pressKeyToWaitMark(page, 'Space');	// [resume_fx layer=base]
+	expect(await mesStr(page)).toBe('resume_fx');
 	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({enabled: true});
+});
+
+test('[add_fx glsl=] は生シェーダをそのまま描く（契約は [trans glsl=] と統一）', async ({page})=> {
+	for (let i = 0; i < 10; ++i) await pressKeyToWaitMark(page, 'Space');	// 「resume_fx」まで
+	expect(await mesStr(page)).toBe('resume_fx');
+
+	// [clear_fx] → [add_fx name=g glsl="…"] → [er]raw_glsl[s]
+	await pressKey(page, 'Space');
+	await expect.poll(async ()=> mesStr(page)).toBe('raw_glsl');
+	const g = (await afx(page))!.find(f=> f.name === 'g')!;
+	expect(g).toMatchObject({fx: '', enabled: true});
+	expect(g.glsl).toContain('gl_FragColor');
+	expect(await draw(page)).toBe('canvas');	// コンパイル成功で <canvas>（失敗なら console.error だけ出て絵は出ない）
 });
