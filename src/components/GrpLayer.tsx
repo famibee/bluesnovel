@@ -7,7 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN} from './Lay';
 import Layer from './Layer';
-import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET} from '../ts/Sprite';
+import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET, type T_FRAME} from '../ts/Sprite';
 
 import type {T_FX} from '../ts/Fx';
 
@@ -126,21 +126,56 @@ const H_GCO: {readonly [css: string]: GlobalCompositeOperation} = {
 	'plus-lighter': 'lighter', multiply: 'multiply', screen: 'screen',
 };
 
-// 基本画像＋静止 face を1枚のoffscreen 2D canvasへ合成（fxのテクスチャ源にする）。
-//	差分（src/dx/dy/blendmode）が変わった時だけ呼ばれる＝毎フレームではない（ANIMATION_RESEARCH.md §7 step 4）
-async function compositeFace(baseSrc: string, aFace: readonly T_FACE_SRC[]): Promise<HTMLCanvasElement> {
-	const [base, ...faces] = await Promise.all([loadImg(baseSrc), ...aFace.map(f=> loadImg(f.src))]);
+// sheet face の現在フレーム（elapsedMs から一巡内の位置を出す。CSS アニメと同じ算式）
+function sheetFrame(sh: T_SHEET, elapsedMs: number): T_FRAME {
+	const k = sh.sec > 0 ? Math.floor(elapsedMs / 1000 / sh.sec * sh.cnt) % sh.cnt : 0;
+	return sh.frames[k] ?? sh.frames[0]!;
+}
+
+// 基本画像＋face を1枚のoffscreen 2D canvasへ合成した「fx のテクスチャ源」を作る（ANIMATION_RESEARCH.md §7 step 4）。
+//	・sheet face が無ければ**一度きり合成した <canvas>** を返す（従来。差分が変わった時だけ呼ばれる）
+//	・sheet face があれば**毎フレーム描き直す関数**を返す（FxRunner が rAF ごとに texImage2D で吸い上げる）
+//	dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる
+async function makeFxSource(baseSrc: string, aFace: readonly T_FACE_SRC[]): Promise<HTMLCanvasElement | (()=> HTMLCanvasElement)> {
+	const stat = aFace.filter(f=> ! f.isSheet);
+	const anim = aFace.filter(f=> f.isSheet);
+	const [base, ...statImgs] = await Promise.all([loadImg(baseSrc), ...stat.map(f=> loadImg(f.src))]);
+
 	const cvs = document.createElement('canvas');
 	cvs.width = Math.max(1, base.naturalWidth);
 	cvs.height = Math.max(1, base.naturalHeight);
 	const ctx = cvs.getContext('2d');
 	if (! ctx) throw new Error('2Dコンテキストが取得できません');
-	ctx.drawImage(base, 0, 0);
-	aFace.forEach((f, i)=> {
-		ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
-		ctx.drawImage(faces[i]!, f.dx, f.dy);	// dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる
-	});
-	return cvs;
+
+	const drawStatic = ()=> {
+		ctx.globalCompositeOperation = 'source-over';
+		ctx.drawImage(base, 0, 0);
+		stat.forEach((f, i)=> {
+			ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
+			ctx.drawImage(statImgs[i]!, f.dx, f.dy);
+		});
+	};
+
+	if (anim.length === 0) {drawStatic(); return cvs}
+
+	const sheets = await Promise.all(anim.map(async f=> {
+		const sh = await loadSheet(f.src);
+		if (! sh) throw new Error(`シート定義が読めません: ${f.src.slice(0, 64)}`);
+		return {sh, img: await loadImg(sh.img)};
+	}));
+	const t0 = performance.now();
+	return ()=> {
+		ctx.clearRect(0, 0, cvs.width, cvs.height);
+		drawStatic();
+		const elapsed = performance.now() - t0;
+		anim.forEach((f, i)=> {
+			const {sh, img} = sheets[i]!;
+			const fr = sheetFrame(sh, elapsed);
+			ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
+			ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, f.dx + fr.ox, f.dy + fr.oy, fr.w, fr.h);
+		});
+		return cvs;
+	};
 }
 
 // [add_fx]（立ち絵・背景シェーダエフェクト。ANIMATION_RESEARCH.md §7 の「C 方式」）。
@@ -148,9 +183,9 @@ async function compositeFace(baseSrc: string, aFace: readonly T_FACE_SRC[]): Pro
 //	styLay()が与えるtransform/opacity/z順/blendmodeは親div0経由でどちらにも効く。
 //	重い部分（WebGLランナー・プリセットGLSL）はlazy importで、[add_fx]が使われた回にはじめて
 //	src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
-//	aFaceStatic（静止 face）は基本画像へ合成してシェーダに通す。sheet face は呼び出し側でDOMへ残す。
+//	face（静止・sheet とも）は基本画像へ合成してシェーダに通す（sheet は毎フレーム再合成）。
 //	初回フレーム描画までは onReady(false)＝下の<img>が見える（構成切替時に一瞬消えない）
-function FxImg({src, aFaceStatic, aFx, active, onReady}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; onReady: (b: boolean)=> void}) {
+function FxImg({src, aFace, aFx, active, onReady}: {src: string; aFace: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; onReady: (b: boolean)=> void}) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
 	// canvasを作り直すのは**テクスチャ源が変わったとき**だけ（基本画像・静止 face）：
@@ -160,7 +195,7 @@ function FxImg({src, aFaceStatic, aFx, active, onReady}: {src: string; aFaceStat
 	//	以前は structKey で canvas ごと張り替えていて runFx 完了まで一瞬消えていた）。
 	//	パラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）も update() でホットスワップ
 	//	（再生成すると tick=0 へ戻る。ANIMATION_RESEARCH.md §7 step 2）
-	const faceKey = aFaceStatic.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode}`).join(';');
+	const faceKey = aFace.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode},${String(f.isSheet)}`).join(';');
 	const sourceKey = `${src}\n${faceKey}`;
 	const contentKey = JSON.stringify(aFx);
 	// sourceKeyのuseEffectを回さない値はmount時だけrefで拾う（activeとaFx。以後は下のupdate effect）
@@ -174,7 +209,7 @@ function FxImg({src, aFaceStatic, aFx, active, onReady}: {src: string; aFaceStat
 
 		let alive = true;
 		void (async ()=> {
-			const source = aFaceStatic.length > 0 ? await compositeFace(src, aFaceStatic) : src;
+			const source = aFace.length > 0 ? await makeFxSource(src, aFace) : src;
 			if (! alive) return;
 			const {runFx} = await import('../ts/FxRunner');
 			const h = await runFx({canvas: cvs, source, aFx: aFxRef.current, active: activeRef.current});
@@ -269,10 +304,10 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		{loadedSrc && ! isSheet && ! isMovie
 			&& <img src={loadedSrc} style={aFx.length > 0 && fxReady ? {...styFit, visibility: 'hidden'} : styFit}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
-			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
-		{/* fx有効時（基本画像が静止画）は静止 face を FxImg が合成済み＝ここには sheet face だけ残す。
+			&& <FxImg src={loadedSrc} aFace={aFace} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
+		{/* fx有効時（基本画像が静止画）は face（静止・sheet とも）を FxImg が合成済み＝DOM には出さない。
 			それ以外（fx無効／基本画像が sheet・動画）は全 face を従来どおり DOM オーバーレイで重ねる */}
-		{(aFx.length > 0 && loadedSrc && ! isSheet && ! isMovie ? aFace.filter(f=> f.isSheet) : aFace)
+		{(aFx.length > 0 && loadedSrc && ! isSheet && ! isMovie ? [] : aFace)
 			.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

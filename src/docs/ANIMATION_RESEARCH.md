@@ -262,16 +262,22 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
   `store.tsx`（`chgFx` の enable モード）／`FxRunner.ts`＋`GrpLayer.tsx`（`T_FX_HANDLE`）／
   `test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
 
-#### step 4（face 差分合成）— 静止 face 分は完了（2026-08-28）
+#### step 4（face 差分合成）— 静止＋アニメ png シート face は完了（2026-08-28）
 
-`GrpLayer.tsx` の `FxImg` が、基本画像＋**静止** face を offscreen 2D canvas へ `drawImage` で
-1 枚に合成し（`compositeFace()`。blendmode→`globalCompositeOperation` は
-`plus-lighter`→`lighter` / `multiply` / `screen` / 既定 `source-over`）、その canvas を
-`FxRunner.runFx({source})` へ渡す。`runFx` の `source` は `string | HTMLCanvasElement | HTMLImageElement`。
-合成は `structKey`（`src`＋face の `src@dx,dy,blendmode`＋シェーダ構成）が変わった時だけ＝毎フレームではない。
-合成した静止 face は DOM オーバーレイから外す（`GrpLayer` の描画分岐）。**sheet／動画 face は未対応**＝
-従来どおり手前に DOM で重なる（毎フレーム転写は残り）。外部ドメイン画像は 2D canvas を汚染し
-`texImage2D` が落ちる（`[snapshot]` と同じ制約）。
+`GrpLayer.tsx` の `makeFxSource()` が、基本画像＋face を offscreen 2D canvas へ `drawImage` で
+1 枚に合成する（blendmode→`globalCompositeOperation` は `plus-lighter`→`lighter` / `multiply` /
+`screen` / 既定 `source-over`）。
+
+- **静止 face のみ**：一度きり合成した `<canvas>` を返す（`sourceKey`＝`src`＋face が変わった時だけ）。
+- **sheet face がある**：`loadSheet()` でシート定義＋画像を読み、**毎フレーム描き直す関数**を返す。
+  `FxRunner.runFx({source})` の `source` が関数のとき、`render()` が rAF ごとに `dyn()` の canvas を
+  `gl.texImage2D` で `texSrc` へ吸い上げる（`UNPACK_FLIP_Y`）。現在フレームは `sheetFrame()` が
+  CSS アニメと同じ算式（`elapsedMs / sec` の一巡内位置）で出す。転写するのは可視ページだけ
+  （不可視 back では止まる）。sheet が動いている限り rAF は回り続ける（`[pause_fx]` でも
+  face は動く割り切り）。
+
+合成された face は DOM オーバーレイから外す（fx 有効時は `FaceImg` を出さない）。**動画レイヤ／
+動画 face はまだ非対応**。外部ドメイン画像は 2D canvas を汚染し `texImage2D` が落ちる（`[snapshot]` と同じ制約）。
 
 #### step 5（不可視 back ページで rAF 停止）— 完了（2026-08-28）
 
@@ -529,8 +535,8 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。プリセット wave/rgbShift/snow/rain＋生 `glsl=`（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。Shadertoy は開発時に手変換）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、静止 face 合成、不可視 back ページで rAF 凍結。残り＝sheet/動画 face の毎フレーム転写・プリセット追加（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
+| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。プリセット wave/rgbShift/snow/rain＋生 `glsl=`（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。Shadertoy は開発時に手変換）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、face 合成（静止＋アニメ png シート＝毎フレーム転写）、不可視 back ページで rAF 凍結、構成切替で継ぎ目なし。残り＝動画レイヤ／動画 face・プリセット追加（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~400–580 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。
-残りタスク（sheet/動画 face・プリセット追加・ギャラリー実演）は [TODO.md](TODO.md) の「シェーダエフェクト」節。
+残りタスク（動画レイヤ／動画 face・プリセット追加・ギャラリー実演）は [TODO.md](TODO.md) の「シェーダエフェクト」節。

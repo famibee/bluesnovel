@@ -1,4 +1,6 @@
 {
 	"main": {":cnt": 1, "sn": "main.sn"},
-	"pic": {":cnt": 1, "png": "pic.png"}
+	"pic": {":cnt": 1, "png": "pic.png"},
+	"anime": {":cnt": 1, "json": "anime.json"},
+	"anime.4x1": {":cnt": 1, "png": "anime.4x1.png"}
 }

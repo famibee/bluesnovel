@@ -74,4 +74,12 @@
 [clear_fx layer=base]
 [add_fx layer=base name=sn fx=snow]
 [add_fx layer=base name=rn fx=rain amp=2]
-[er]天候[s]
+[er]天候[l]
+
+; アニメ png シートの face を fx のテクスチャへ毎フレーム転写（GrpLayer makeFxSource が関数を返す）。
+;	合成されるので face の DOM オーバーレイ（div[data-fn]）は出ない
+[clear_fx layer=base]
+[add_face name=af fn=anime dx=8 dy=8]
+[lay layer=base fn=pic face=af]
+[add_fx layer=base fx=wave]
+[er]sheet_face[s]

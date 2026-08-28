@@ -145,7 +145,8 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 ＝`FxImg` の `key` は基本画像＋face のみ。切替時に空白が出ない）。`wait_fx` は `ScriptMng` が
 `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。
 プリセット wave/rgbShift/snow/rain または生 `glsl=`（契約は `[trans glsl=]` と統一＝`uSampler`/`vTextureCoord`/`tick`）。
-静止 face は `GrpLayer` が 2D canvas で合成して `runFx({source})` へ（sheet/動画 face は未対応）。
+face は `GrpLayer` の `makeFxSource()` が 2D canvas で合成して `runFx({source})` へ（静止＝一度きり、
+アニメ png シート＝毎フレーム描き直す関数を渡し `FxRunner` が rAF ごと `texImage2D`。動画は未対応）。
 `[trans]` 後の不可視 back ページは `Stage`→`GrpLayer` の `fxActive` で rAF 凍結。
 詳細は `src/docs/ANIMATION_RESEARCH.md` §7），
 `tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`,

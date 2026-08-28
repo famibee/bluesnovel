@@ -89,23 +89,25 @@ function a(e, t, n, r) {
 	return e.bindTexture(e.TEXTURE_2D, i), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_WRAP_S, e.CLAMP_TO_EDGE), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_WRAP_T, e.CLAMP_TO_EDGE), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_MIN_FILTER, e.LINEAR), e.texParameteri(e.TEXTURE_2D, e.TEXTURE_MAG_FILTER, e.LINEAR), t ? (e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !0), e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, e.RGBA, e.UNSIGNED_BYTE, t), e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !1)) : e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, n, r, 0, e.RGBA, e.UNSIGNED_BYTE, null), i;
 }
 async function o(e) {
-	let t = typeof e.source == "string" ? await n(e.source) : e.source, r = Math.max(1, t instanceof HTMLImageElement ? t.naturalWidth : t.width), i = Math.max(1, t instanceof HTMLImageElement ? t.naturalHeight : t.height), a = e.canvas;
-	a.width = r, a.height = i;
-	let o = a.getContext("webgl", {
+	let t = e.source, r;
+	r = typeof t == "function" ? t() : typeof t == "string" ? await n(t) : t;
+	let i = typeof t == "function" ? t : null, a = Math.max(1, r instanceof HTMLImageElement ? r.naturalWidth : r.width), o = Math.max(1, r instanceof HTMLImageElement ? r.naturalHeight : r.height), c = e.canvas;
+	c.width = a, c.height = o;
+	let l = c.getContext("webgl", {
 		premultipliedAlpha: !1,
 		preserveDrawingBuffer: !0,
 		alpha: !0
 	});
-	if (!o) throw Error("WebGLコンテキストが取得できません");
+	if (!l) throw Error("WebGLコンテキストが取得できません");
 	try {
-		return s(o, a, e.aFx, t, r, i, e.active);
+		return s(l, c, e.aFx, r, a, o, e.active, i);
 	} catch (e) {
-		throw o.getExtension("WEBGL_lose_context")?.loseContext(), e;
+		throw l.getExtension("WEBGL_lose_context")?.loseContext(), e;
 	}
 }
-function s(e, n, o, s, c, l, u) {
-	let d = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), f = (t, n) => {
-		let r = i(e, d, t);
+function s(e, n, o, s, c, l, u, d) {
+	let f = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), p = (t, n) => {
+		let r = i(e, f, t);
 		return {
 			pg: r,
 			fx: n,
@@ -118,12 +120,12 @@ function s(e, n, o, s, c, l, u) {
 			uFreq: e.getUniformLocation(r, "freq"),
 			uShift: e.getUniformLocation(r, "shift")
 		};
-	}, p = (e) => {
+	}, m = (e) => {
 		let n = e.glsl || t[e.fx];
 		if (!n) throw Error(`未知の fx: ${e.fx}`);
 		return n;
-	}, m = (e) => e.map((e) => `${e.fx}${e.glsl}`).join(""), h = o.map((e) => f(p(e), e)), g = m(o), _ = f("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {}), v = e.createBuffer();
-	e.bindBuffer(e.ARRAY_BUFFER, v), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
+	}, h = (e) => e.map((e) => `${e.fx}${e.glsl}`).join(""), g = o.map((e) => p(m(e), e)), _ = h(o), v = p("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {}), y = e.createBuffer();
+	e.bindBuffer(e.ARRAY_BUFFER, y), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
 		-1,
 		-1,
 		1,
@@ -133,7 +135,7 @@ function s(e, n, o, s, c, l, u) {
 		1,
 		1
 	]), e.STATIC_DRAW), e.enableVertexAttribArray(0), e.vertexAttribPointer(0, 2, e.FLOAT, !1, 0, 0);
-	let y = a(e, s, c, l), b = [0, 1].map(() => {
+	let b = a(e, s, c, l), x = [0, 1].map(() => {
 		let t = a(e, null, c, l), n = e.createFramebuffer();
 		return e.bindFramebuffer(e.FRAMEBUFFER, n), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, t, 0), {
 			tex: t,
@@ -141,51 +143,52 @@ function s(e, n, o, s, c, l, u) {
 		};
 	});
 	e.bindFramebuffer(e.FRAMEBUFFER, null), e.viewport(0, 0, c, l), e.disable(e.DEPTH_TEST), e.disable(e.BLEND);
-	let x = (t, n, r, i) => {
+	let S = (t, n, r, i) => {
 		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSampler && e.uniform1i(t.uSampler, 0), t.uTick && e.uniform1f(t.uTick, i), t.uRes && e.uniform2f(t.uRes, c, l), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
-	}, S = performance.now(), C = 0, w = !0, T = u, E = (e) => {
-		C === 0 != (e === 0) && (n.dataset.fxRunning = e === 0 ? "0" : "1"), C = e;
-	}, D = () => {
-		let e = performance.now(), t = e - S, n = !1;
-		for (let r = 0; r < h.length; ++r) {
-			let i = h[r], a = !i.fx.enabled || !T;
-			a && i.pausedAt === 0 ? i.pausedAt = e : !a && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
-			let o = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), s = i.fx.time > 0 && o >= i.fx.time;
-			!s && !a && (n = !0);
-			let c = r === 0 ? y : b[(r - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
-			x(s ? _ : i, c, b[r % 2].fb, l);
-		}
-		return x(_, b[(h.length - 1) % 2].tex, null, 0), n;
+	}, C = performance.now(), w = 0, T = !0, E = u, D = (e) => {
+		w === 0 != (e === 0) && (n.dataset.fxRunning = e === 0 ? "0" : "1"), w = e;
 	}, O = () => {
-		w && E(D() ? requestAnimationFrame(O) : 0);
+		let t = performance.now(), n = t - C, r = !1;
+		d && E && (e.bindTexture(e.TEXTURE_2D, b), e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !0), e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, e.RGBA, e.UNSIGNED_BYTE, d()), e.pixelStorei(e.UNPACK_FLIP_Y_WEBGL, !1), r = !0);
+		for (let e = 0; e < g.length; ++e) {
+			let i = g[e], a = !i.fx.enabled || !E;
+			a && i.pausedAt === 0 ? i.pausedAt = t : !a && i.pausedAt !== 0 && (i.pausedAccMs += t - i.pausedAt, i.pausedAt = 0);
+			let o = n - i.pausedAccMs - (i.pausedAt === 0 ? 0 : t - i.pausedAt), s = i.fx.time > 0 && o >= i.fx.time;
+			!s && !a && (r = !0);
+			let c = e === 0 ? b : x[(e - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
+			S(s ? v : i, c, x[e % 2].fb, l);
+		}
+		return S(v, x[(g.length - 1) % 2].tex, null, 0), r;
+	}, k = () => {
+		T && D(O() ? requestAnimationFrame(k) : 0);
 	};
-	return D(), E(requestAnimationFrame(O)), {
+	return O(), D(requestAnimationFrame(k)), {
 		update(t, n) {
-			if (!w) return;
-			T = n;
-			let r = m(t);
-			if (r !== g) try {
-				let n = t.map((e) => f(p(e), e));
-				for (let t of h) e.deleteProgram(t.pg);
-				let i = performance.now() - S;
+			if (!T) return;
+			E = n;
+			let r = h(t);
+			if (r !== _) try {
+				let n = t.map((e) => p(m(e), e));
+				for (let t of g) e.deleteProgram(t.pg);
+				let i = performance.now() - C;
 				for (let e of n) e.pausedAccMs = i;
-				h = n, g = r;
+				g = n, _ = r;
 			} catch (e) {
 				console.error(`[add_fx] ${String(e)}`);
 			}
-			else for (let e = 0; e < h.length; ++e) {
+			else for (let e = 0; e < g.length; ++e) {
 				let n = t[e];
-				n && (h[e].fx = n);
+				n && (g[e].fx = n);
 			}
-			C === 0 && E(requestAnimationFrame(O));
+			w === 0 && D(requestAnimationFrame(k));
 		},
 		dispose() {
-			if (w) {
-				w = !1, cancelAnimationFrame(C), e.deleteShader(d), e.deleteTexture(y);
-				for (let { tex: t, fb: n } of b) e.deleteTexture(t), e.deleteFramebuffer(n);
-				e.deleteBuffer(v);
-				for (let t of h) e.deleteProgram(t.pg);
-				e.deleteProgram(_.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+			if (T) {
+				T = !1, cancelAnimationFrame(w), e.deleteShader(f), e.deleteTexture(b);
+				for (let { tex: t, fb: n } of x) e.deleteTexture(t), e.deleteFramebuffer(n);
+				e.deleteBuffer(y);
+				for (let t of g) e.deleteProgram(t.pg);
+				e.deleteProgram(v.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
 			}
 		}
 	};

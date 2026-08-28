@@ -84,7 +84,7 @@ test('構成切替で fx canvas を作り直さない＝一瞬消えない（バ
 	//	fx canvas は absolute で <img> の上に重なるだけ＋シェーダ構成が変わっても同じ canvas 上で
 	//	プログラムだけ組み直す。data-fn 付きは face なので除外
 	const baseImg = page.locator(`${LAY} img:not([data-fn])`);
-	expect(await baseImg.count()).toBe(1);
+	await expect.poll(()=> baseImg.count()).toBe(1);
 
 	await pressKeyToWaitMark(page, 'Space');	// wave（fx canvas 出現）
 	expect(await mesStr(page)).toBe('wave');
@@ -220,4 +220,16 @@ test('天候プリセット snow / rain が 2 本重ねてコンパイル・描�
 	expect(a[1]!.params).toMatchObject({amp: 2});
 	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>（失敗なら絵が出ない）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 常時ゆらぎ＝回り続ける
+});
+
+test('アニメ png シートの face も fx のテクスチャへ通す（DOM オーバーレイは出ない）', async ({page})=> {
+	for (let i = 0; i < 15; ++i) await pressKeyToWaitMark(page, 'Space');	// 「天候」まで
+	await pressKey(page, 'Space');	// [add_face fn=anime]→[lay face=af]→[add_fx fx=wave]→[er]sheet_face[s]
+	await expect.poll(async ()=> mesStr(page)).toBe('sheet_face');
+
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// sheet face は makeFxSource が毎フレーム合成＝レイヤ内に face の DOM（div[data-fn]／img[data-fn]）は無い
+	expect(await page.locator(`${LAY} [data-fn]`).count()).toBe(0);
+	// アニメが動いている＝毎フレーム転写のため rAF は回り続ける
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
 });
