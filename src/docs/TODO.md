@@ -24,8 +24,11 @@
 
 ## タグ・変数の残り
 
-- [ ] 不可視 back ページの最適化調査。各種プラグインによる拡張レイヤ、[tsy]処理などを行っていないか。[trans]中のみ動かせばよいはず
-      （[add_fx] は対応済み＝Stage が GrpLayer へ `fxActive` を渡し FxRunner が rAF 凍結。2026-08-28）
+- 不可視 back ページの最適化（調査完了 2026-08-28。詳細・一覧・深刻度は [backpage-perf.md](backpage-perf.md)）：
+  - [ ] `[tsy]` 無限トゥイーン（`repeat=0`）を back ページで pause／fore 復帰で resume（`[add_fx]` 踏襲。bluesnovel 内で完結）
+  - [ ] プラグイン `Layer` に可視シグナル API（`setActive` 等）＝一番効く／一番重い。gallery プラグインとのクロスリポ
+  - [ ] 動画（`[lay fn=movie]`）の back ページ pause（`[wv]`・ループの意味論を決めてから）
+  - [ ] アニメ png シートの CSS `animation-play-state: paused`（軽微）
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
