@@ -24,6 +24,7 @@
 
 ## タグ・変数の残り
 
+- [ ] 不可視 back ページの最適化調査。各種プラグインによる拡張レイヤ、[tsy]処理などを行っていないか。[trans]中のみ動かせばよいはず
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
@@ -31,50 +32,40 @@
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
       近似余地（いずれも優先度低・未実機検証）。詳細 [filters.md](filters.md)
 
-## アニメpng（スプライトシート）
-
-- [ ] 【現状不使用・優先度低】文字レイヤの枠画像（`[lay b_pic=…]`）でのシート再生。今は CSS の
-      背景画像に直接 URL を入れているので、`.json` が来ると絵が出ない
-
 ## WebGL エフェクト
 
 コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
 `[trans] glsl=` は実装済み（`src/ts/TransGlsl.ts`。§7）。
 
-### シェーダエフェクト（`[add_fx]` 一族）
+### シェーダエフェクト（`[add_fx]` 一族）— 正式化決定（2026-08-28、判断ゲート通過）
 
-C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。タグ案・規模内訳・プラグイン化 3 経路・
-推奨度は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。**推奨度 ★★☆＝本家サンプル互換の後ろ盾が
-無い分家独自機能。残りは要求が出てから着手。**
+最小スパイク（`[add_fx]`/`[clear_fx]`、プリセット wave / rgbShift、`aFx: T_FX[]` seam、
+無名レイヤスコープ採番、`test/ScriptEngine_fx.test.ts`＋`test/e2e/fx.e2e.ts`）は実装済み。
+sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを通過し**正式化**。設計・用途
+カタログ・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7（推奨度 ★★★☆）。
 
-- [x] 最小スパイク（2026-08-28）：`[add_fx]`/`[clear_fx]` の 2 タグ、`aFx: T_FX[]` seam
-      （`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL）、
-      GrpLayer が `aFx` 非空で `<img>`→`<canvas>` 分岐、`A_LAY_STY_KEY` 登録で
-      `[clear_lay]`/しおり/`[trans]` 複製に追随
-- [x] プリセット wave / rgbShift の 2 個
-- [x] スタック（2 枚 FBO で ping-pong）／`time=` one-shot は経過後そのパス素通し＝凍結
-- [x] 手動確認フィクスチャ `test/e2e/app/prj_fx/`
-- [x] 回帰を固める（2026-08-28）：`test/ScriptEngine_fx.test.ts`（`bldFx()` の検査・既定値・
-      アクション。`ScriptEngine_filter.test.ts` と同じ役割分担）＋ `test/e2e/fx.e2e.ts`
-      （`<img>`↔`<canvas>` 差し替え seam、`[clear_lay]` で `aFx` が落ちる、`page=both` で表裏複製、
-      one-shot 記述子）。WebGL の描画結果そのものは見ない（ヘッドレスの GL 実装差）
-- [x] `name=` 無名時のレイヤスコープ採番（2026-08-28）：store の `chgFx` が既存 `#fxN` の最大+1 を
-      振る（別カウンタは持たない＝`aFx` の round-trip で採番も復元。`test/store_lay.test.ts`）。
-      `[save]`/`[load]` round-trip も同テストで確認
-- [x] `docs/tag.html`（🟡・`bluesnovel独自・試作` 節）＋ [ARCHITECTURE.md](ARCHITECTURE.md)
-      実装済みタグ一覧へ追加（2026-08-28）
+実装順（2→3→4→5→7→8→6。6 は終わりのない作業なので最後・随時）：
 
-残りは**スパイク順**（＝「正式化するか凍結するか」の判断へ最短で届く順。安い・低リスクを先に、
-本家サンプル契約が要る重いものを後に）：
+- [ ] 2. `[enable_fx]`（pause/resume）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）。
+      `[tsy]` 一族（`[pause_tsy]`/`[resume_tsy]`/`[wait_tsy]`）に倣う
+- [ ] 3. 生 `glsl=` を有効化（今は `throw`）。契約名を `[trans glsl=]` と統一
+      （`src`→`uSampler`、`vUv`→`vTextureCoord`、`time`→`tick`。プリセット 2 本も書き直し）
+- [ ] 4. face 差分合成（`aFace`）を通す。まず静止画（差分変化時のみ offscreen 2D canvas で合成）、
+      次に sheet/動画（毎フレーム転写）。`FxImg` の `! isSheet && ! isMovie` 条件を緩める
+- [ ] 5. 不可視 back ページで rAF 停止（`[trans]` 後の表裏 2 canvas の裏側）。`FxImg` に
+      「表ページか / trans 中か」を渡す
+- [ ] 7. プリセット追加（雪・雨・花火・タイルスクロール等）。MIT/CC0/商用可 明示のもの、
+      または技法から再実装。1 個 20–50 行
+- [ ] 8. `docs/tag.html` を 🟡→🟢、[ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧を更新、
+      §7 の実装順リストを畳む
+- [ ] 6. sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
+      動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
+      （全画面壮大風景は対象外）。**随時・終わりなし**
 
-1. [ ] sn_gallery に実演を置いて費用対効果を測定 ← **正式化 / 凍結の判断ゲート**。以下は
-      「正式化」判断が出てから着手する（それぞれ実コスト大）
-2. [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
-3. [ ] プリセット追加（glitch / pixelate 等）
-4. [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
-5. [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
-6. [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
-      測定の結果「試作止まり」と判断したら凍結として [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) へ集約）
+別件（本家 `[trans glsl=]` 契約側。§7 の棲み分け）：
+
+- [ ] ぼかし `[trans glsl=]`（ガウスぼかしのトランジション版）
+- [ ] モザイク `[trans glsl=]`
 
 ## 保留
 
@@ -99,3 +90,5 @@ C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。�
 - 縦書きで `〈`/`〉` だけ90°回転しない（Chromium + Hiragino の外部バグ） → [text-rendering.md](text-rendering.md)
 - sn_gallery の emote_layer プラグイン（本家で動かす動機が薄い） → [plugin-layer.md](plugin-layer.md)
 - フレーム内幅 960 vs 1024（不具合ではない） → [deferred-infra.md](deferred-infra.md)
+- 文字レイヤ枠画像（`[lay b_pic=…]`）のアニメpngシート再生：文字が読みづらくなるため非サポート確定
+  → [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7「fx でないもの」

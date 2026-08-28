@@ -163,23 +163,122 @@ vfx-js の旧版。GitHub リポジトリはリンク切れ。npm の `react-vfx
   無理に合わせている部分）。
 - 部分レイヤ trans（`aLayNm` 指定）+ glsl の合成はエッジケース。全画面クロスフェード置換が主用途。
 
-### 立ち絵シェーダエフェクト — 最小スパイクを実装済み（2026-08-28）
+### 立ち絵・背景シェーダエフェクト（`[add_fx]` 一族）— 正式化決定（2026-08-28）
 
-以下は着手前の実現性検討。**C 方式の最小スパイク**を実装した（`[add_fx]`/`[clear_fx]` の 2 タグ、
-プリセット wave / rgbShift の 2 個）：
+最小スパイク（`[add_fx]`/`[clear_fx]`、プリセット wave / rgbShift）を実装し sn_gallery
+（`prj/add_fx/`）で実機確認 → 費用対効果の判断ゲート（[TODO.md](TODO.md)）を通過。**正式化する。**
+当初 ★★☆ に置いた凍結寄りの各論点は、再検討でほぼ崩れた：
 
-- `src/ts/Fx.ts`（純粋・エンジンから呼ぶ `bldFx()`。fx 名/パラメータの検査＋既定値の 1 箇所）
-- `src/store/store.tsx` の `chgFx`（`chgFilter` と同じ骨格。`aFx` は `A_LAY_STY_KEY` に載せたので
-  `[clear_lay]`・`[save]`/`[load]`・`[trans]` 複製に自動追随。grp レイヤ専用）
-- `src/components/GrpLayer.tsx` の `<FxImg>`（`aFx` 非空で `<img>`→レイヤ実寸 `<canvas>` へ分岐。
-  `styLay()` の transform/opacity/z 順を自動継承。**src/aFx が変わるたび canvas ごと作り直す**——
-  `WEBGL_lose_context.loseContext()` 後の同一 canvas からは生きたコンテキストを取り直せない）
-- `src/ts/FxRunner.ts` + `src/ts/fxPresets.ts`（lazy。`TransGlsl.ts` が下敷き。スタックは 2 枚 FBO で
-  ping-pong、`time=` の one-shot は経過後そのパスを素通しへ切り替えて rAF 停止＝凍結）
+| 当初の凍結論拠 | 再評価 |
+|---|---|
+| face 合成が実コスト大 | オフスクリーン 2D canvas を 1 段挟むだけ（静止画は差分変化時のみ合成、sheet/動画は毎フレーム転写）。~30–50 行 |
+| 本家サンプル互換の後ろ盾なし | CLAUDE.md の禁止は「本家に足さない」「逆輸入しない」だけ。分家独自機能は方針通りで、むしろ本家→分家の移行動機になる |
+| シェーダが要るのは「画素を歪める」系だけ | 生 `glsl=` でこそ要る。天候（雪・雨）・花火・タイルスクロール等、背景演出に実用途が多数（下記カタログ） |
+| レイヤごと WebGL コンテキスト + rAF | 「数十枚は重い」は理論値。実運用は同時 1〜3。背景も grp レイヤなので既存 seam でそのまま効く（立ち絵専用ではない） |
+| プリセット GLSL のメンテ負担 | GLSL ES 1.00 は凍結仕様でシェーダは腐らない。増えるのはテスト・ドキュメントの面積のみ |
+| 外部要求がまだ無い | 新機能は作って「こう使える」と提示するもの。未使用時は lazy でコストゼロ、使用時コストはドキュメント明記で足りる |
 
-未実装：`[enable_fx]`/`[wait_fx]`、生 `glsl=`、face 合成、無名 fx のレイヤスコープ採番。
-手動確認フィクスチャは `test/e2e/app/prj_fx/`（`.e2e.ts` はまだ無い）。詳細な残りは
-[TODO.md](TODO.md) の該当項目。以下は当初の検討メモ（設計の背景として残す）。
+未使用時コスト＝lazy モジュール＋GrpLayer の 1 分岐（~30 行）のみ。恒久 seam の傷は小さい。
+
+#### GLSL 契約 — 分家ネイティブ（`[trans glsl=]` と名前を揃える）
+
+「Shadertoy 対応」はエンジンに入れない。Shadertoy は GLSL の方言ではなく、エントリポイント
+（`mainImage`）＋固定名 uniform（`iTime`/`iResolution`/`iChannel0`…）＋`main()` 自動連結という
+**お膳立て**にすぎない。ランナーにシムを持つと `i*` uniform 台帳・未対応機能
+（マルチパス/キューブマップ/音声）の踏み外し対策を抱える。
+
+方針：**実行時でなく開発時に変換する**。FxRunner は分家独自の素の GLSL ES 1.00 契約のままとし、
+Shadertoy シェーダはプリセット化・ギャラリー掲載時にこちらが手で移植する（1 本 ~5 行の機械置換）。
+生 `glsl=` を直に書く作者も同じ変換を行い、マッピング表を `docs/tag.html` に載せる。
+
+契約は `[trans glsl=]`（[TransGlsl.ts](../../src/ts/TransGlsl.ts)、本家 `glsl_slide` 契約）と名前を
+揃える＝分家内で 1 回学べば両方書ける：
+
+| uniform / varying | 意味 | Shadertoy 対応 |
+|---|---|---|
+| `uSampler`（sampler2D） | 入力画像（前パス結果 or レイヤ画像） | `iChannel0` |
+| `vTextureCoord`（vec2） | 正規化 UV（0..1、y-up） | `fragCoord / iResolution` |
+| `tick`（float） | 経過秒 × `speed=`（0 起点） | `iTime` |
+| `resolution`（vec2） | canvas 実ピクセルサイズ | `iResolution.xy` |
+| ＋プリセット固有（`amp`/`freq`/`shift`…） | 既定は [Fx.ts](../../src/ts/Fx.ts) の `H_FX_DEF` | — |
+
+現行スパイクの `src`/`vUv`/`time` は上記へリネーム（プリセット 2 本の書き直しのみ）。
+
+#### fx の 2 カテゴリ
+
+| 種別 | 例 | `uSampler` の扱い |
+|---|---|---|
+| 歪み系（transform） | wave / rgbShift / mosaic / blur アニメ | 読んで変形 |
+| 生成・重ね系（generative） | 雪 / 雨 / 花火 / タイル塗り＋スクロール | 主に生成し入力の上へ合成 |
+
+どちらも「シェーダが `uSampler` を読み出力を書く」で表現でき、生成系は入力をほぼ無視して
+上乗せするだけ。背景に雪＝bg（`class=grp`）の `aFx` へ積めば既存 seam でそのまま動く。
+「砂雨が立ち絵の形に避ける」はシーン全体を入力にする別物＝構想メモ止まり。
+
+#### セーブ・ロード
+
+`aFx` は `getPagesJson`/`replace` で round-trip 済み（`test/store_lay.test.ts`）。生 `glsl=` は
+**解決済み文字列を `T_FX.glsl` に焼いてセーブファイルへ**（`[add_filter]` と同じ「消すまで永続」。
+`[trans]` のような transient ではない）。1 シェーダ ~1K のセーブ肥大は許容とドキュメント明記。
+作者は `glsl=&mySnow` と変数経由で書く想定。
+
+#### 不可視 back ページで停止
+
+`[trans]` 後は fx レイヤごとに canvas が表裏 2 枚でき、裏は不可視なのに rAF+WebGL が回る。
+`FxImg` に「表ページか / trans 中か」を渡し、非表示なら rAF 停止（コンテキスト保持・最終フレーム
+凍結）、再表示で再開。[TODO.md](TODO.md) の「不可視 back ページの最適化調査」（プラグイン拡張
+レイヤ・`[tsy]` も同様に裏ページで走っていないか）と統合して見る。
+
+#### step 2（`[enable_fx]`/`[wait_fx]`）の実装方針
+
+- **`[wait_fx]` は `ScriptMng` が one-shot タイマーを持つ**（`[quake]` と同型。WebGL ランナーからの
+  終了通知は作らない）。`time=` はエンジンが知っているので `[add_fx time>0]` で `ScriptMng` が
+  `act.msec` のタイマーを張り、`[wait_fx]` はセレクタに一致する未経過タイマーが尽きるまで待つ
+  （`#tsyWaiting` の配列版 `#fxWaiting`）。`clearFx`/`clearLay`/ページ演じ直しの `replace()` で
+  タイマーも落とす。`canskip` はクリックで即完了（`#quakeWaiting`/`#tsyWaiting` と同じ）。
+  ランナーの凍結との数 ms のズレは許容（`[add_fx]` は通常 `[lay]` 直後で画像ロード済み）。
+- **`[enable_fx]` は canvas を作り直さない**。現行 `FxImg` は `aFx` 変化のたび `key` で canvas
+  ごと再生成するが、`enabled` 切替でそれをやると resume が tick=0 から復帰する。FxRunner に
+  制御ハンドル（`update(aFx, active)` / `dispose()`）を持たせ、`enabled`・プリセットパラメータ・
+  `active`（表ページか）はホットスワップ、シェーダ構成（fx 名/glsl/パス数）の変化時だけ再生成。
+  **この「再生成せず rAF を止める/戻す」機構を step 5（不可視 back ページ停止）がそのまま使う。**
+- 触るファイル：`Fx.ts`（`T_FX` に `enabled`）／`ScriptEngine.ts`（2 タグ＋アクション）／
+  `ScriptMng.ts`（`#waitFx`＋タイマー）／`store.tsx`（`chgFx` に `enable` モード）／
+  `FxRunner.ts`＋`GrpLayer.tsx`（制御ハンドル）／`test/ScriptEngine_fx.test.ts`＋
+  `test/e2e/fx.e2e.ts`＋`docs/tag.html`。`T_FX` に `enabled` を足すと `ScriptEngine_fx.test.ts`
+  の `toEqual` が全滅するので同時に直す。
+
+#### 用途カタログ（背景演出中心。ギャラリー実演の母集団）
+
+主に背景（bg grp レイヤ）に積む想定。**Shadertoy 既定ライセンスは CC BY-NC-SA 3.0（非商用）**
+なので、バンドル用は「作者が商用可を明示」か「技法から再実装」に限る。技術ブログ公開の
+GLSL/HTML/CSS は概ねフリー扱い可。
+
+- 天候
+  - 雪：[少](https://www.shadertoy.com/view/ldsGDn) / [多（codepen）](https://codepen.io/UstymUkhman/pen/jpZGZW) / [ふわっと降雪](https://www.shadertoy.com/view/4lfcz4) / `docs/simple snow.glsl`（自作の最小例）
+  - 雨：[弱い雨](https://www.shadertoy.com/view/M3GfDV) / 豪雨（弱い雨の落下速度・密度・筋長を上げる派生）/ [砂の雨](https://www.shadertoy.com/view/wdGSzw) / [真上からの水面波紋](https://www.shadertoy.com/view/ldfyzl) / [運転中の車窓の雨](https://www.shadertoy.com/view/MdfBRX) / [ガラスを流れる水滴（総本山）](https://webgl.souhonzan.org/entry/?v=0412) / [ガラス越しの雨＋稲光](https://www.shadertoy.com/view/ltffzl)（稲光は単体 fx にして重ねがけが良さそう）
+  - 花火：[Happy 2020!](https://www.shadertoy.com/view/tt3GRN) / [Fireworks Performance](https://www.shadertoy.com/view/tfXcz8)
+- タイル塗り＋スクロール：画像をタイル状に敷き詰めて一定方向に無限スクロール。雨・棚引く煙・霧の中に
+- 他エンジンで見るもの：ぼかしアニメ（`[add_filter] blur` に時間変化）／モザイク・ビットマップ状タイル塗り／Ren'Py・TyranoScript の公式プリセット相当
+
+#### fx でないもの（棲み分け）
+
+- **`[add_filter]` 候補**（動きが無い色加工）：夕焼け / 夜 / 月明かり
+- **マクロで足りるもの**：`[ext_fg]`/`[ext_fg2]`、漫画表現拡張（[blog](https://famibee.blog.fc2.com/blog-entry-565.html)）
+- **既にタグ化済み**：`[quake]`
+- **非サポート確定**：文字レイヤ枠画像のシート再生（[TODO.md](TODO.md) 旧・アニメpng節）——文字が読みづらくなる
+- 別件（本家 `[trans glsl=]` 契約側、TODO に独立項目）：ぼかし `[trans glsl=]` / モザイク `[trans glsl=]`
+
+#### ギャラリー実演の調査（実装後）
+
+- 全画面の壮大風景は対象外。雨・夕焼けのように**ノベル素材との組合せで役立つもの**だけ
+- ライセンスを明示（MIT/CC0/商用可か、技法からの再実装か）
+- 羅列でなく**動作確認できるページの URL 付き**（例：codepen / Shadertoy の該当ビュー）
+- 調査候補：[ghostty-shaders（MIT）](https://github.com/0xhckr/ghostty-shaders) / [WebGL 総本山](https://webgl.souhonzan.org/) / [Shadertoy](https://www.shadertoy.com/)（人間認証で見られない場合あり）
+
+---
+
+以下は当初（スパイク着手前）の検討メモ。設計の背景として残す。
 
 #### 個別コンポーネント方式が正解
 
@@ -359,20 +458,20 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 ### 推奨度
 
 - `[trans glsl=]`（実装済み）：**★★★★☆**。純粋 lazy・リスク低・本家サンプルがそのまま動く実利。
-- 立ち絵シェーダ（C 方式）：**★★☆☆☆**。理由：(a) GrpLayer に恒久 seam、(b) face 合成の 1 ステップ、
-  (c) レイヤごと WebGL コンテキスト + rAF（数枚可・数十枚は重い）、(d) プリセット GLSL のメンテ、
-  (e) **本家に無い＝分家独自機能**なので本家サンプル互換という後ろ盾が無く、演出強化の価値だけで
-  ペイさせる必要がある。加えて §5 の結論どおり「小気味よく動く」だけなら `[tsy path=]` で足りており、
-  シェーダが要るのは glitch / wave / RGB ずらし等「画素を歪める」系のみ。**実際に要求が出てから**、
-  プリセット 2〜3 個（wave / rgbShift / glitch）で試作 → sn_gallery に実演を置いて費用対効果を測る。
+- 立ち絵・背景シェーダ（C 方式）：**★★★☆☆**（2026-08-28、判断ゲート通過で ★★☆ から上方修正）。
+  恒久 seam は GrpLayer の 1 分岐（~30 行）のみ・未使用時 lazy でコストゼロ。face 合成は 1 段の
+  offscreen canvas で軽い。生 `glsl=` で天候・花火など背景演出に実用途があり（用途カタログ参照）、
+  「作者がシェーダを持ち込める」実利が出る。★★★★ に届かないのは (a) レイヤごと WebGL
+  コンテキスト + rAF（同時 1〜3 は可、それ以上は要注意）、(b) 本家サンプル互換の後ろ盾が無く
+  仕様を自前で保証、(c) プリセット GLSL のテスト・ドキュメント面積、の 3 点。
 
 ### まとめ
 
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵シェーダ | ○ | `[add_fx]`/`[clear_fx]`/`[enable_fx]`/`[wait_fx]`（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL は vfx-js（MIT）から移植、パッケージ非依存。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★☆（要求が出てから） |
+| 立ち絵・背景シェーダ | ○（正式化決定・実装中） | `[add_fx]`/`[clear_fx]`/`[enable_fx]`/`[wait_fx]`（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL 契約は `[trans glsl=]` と名前統一（`uSampler`/`vTextureCoord`/`tick`）、Shadertoy は開発時に手変換。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。
-着手するならプリセット 2〜3 個で試作 → sn_gallery で実演。
+実装順は [TODO.md](TODO.md) の「シェーダエフェクト」節。
