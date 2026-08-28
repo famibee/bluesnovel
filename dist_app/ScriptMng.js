@@ -4068,7 +4068,7 @@ var co = class p {
 			i.ended && n && this.#Re(i), this.#j();
 			return;
 		}
-		this.#Pe = {
+		i.paused && i.play().catch(() => {}), this.#Pe = {
 			fn: e,
 			canskip: t,
 			stop: n
@@ -4080,7 +4080,7 @@ var co = class p {
 				this.#Pe = void 0, t?.ended && n && this.#Re(t), this.#j();
 				return;
 			}
-			requestAnimationFrame(a);
+			t.paused && t.play().catch(() => {}), requestAnimationFrame(a);
 		};
 		requestAnimationFrame(a);
 	}

@@ -1244,6 +1244,10 @@ export class ScriptMng {
 			this.#goSafe();
 			return;
 		}
+		// GrpLayer は不可視 back ページの <video> を pause する（backpage-perf.md）。[wv] は
+		//	「終わるまで待つ」タグなので、待ち対象が止まっていたら可視状態に関わらず前へ進める
+		//	（本家は pixi Sprite が要素を握り続け常に再生完了する。その挙動へ寄せる）
+		if (ve.paused) void ve.play().catch(()=> {});
 
 		// 'ended'イベント購読ではなくrAFでの毎フレームポーリングにする。理由：
 		//	[trans layer=]は対象外レイヤ（動画含む）をback側divにも複製表示する
@@ -1264,6 +1268,7 @@ export class ScriptMng {
 				this.#goSafe();
 				return;
 			}
+			if (cur.paused) void cur.play().catch(()=> {});	// back ページ化で pause されても待ち中は進める
 			requestAnimationFrame(poll);
 		};
 		requestAnimationFrame(poll);

@@ -24,9 +24,10 @@
 
 ## タグ・変数の残り
 
-- 不可視 back ページの最適化（調査完了 2026-08-28。詳細・一覧・深刻度は [backpage-perf.md](backpage-perf.md)）：
-  - [ ] `[tsy]` 無限トゥイーン（`repeat=0`）を back ページで pause／fore 復帰で resume（`[add_fx]` 踏襲。bluesnovel 内で完結）
-  - [ ] 動画（`[lay fn=movie]`）の back ページ pause（`[wv]`・ループの意味論を決めてから）
+- 不可視 back ページの最適化（詳細・一覧・深刻度は [backpage-perf.md](backpage-perf.md)）：
+  `[add_fx]`／プラグイン拡張レイヤ／アニメ png シート／動画は対応済み（2026-08-28）。
+  残る `[tsy]` 無限トゥイーンは **保留**（`chgLay` の動的ページ解決と噛み合わず pause が
+  成立しない。[backpage-perf.md](backpage-perf.md) 参照）
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。

@@ -361,6 +361,18 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		ve.muted = needClick2Play();
 	};
 
+	// [trans] 後の不可視 back ページでは <video> のデコードを止める（backpage-perf.md）。
+	//	可視復帰で pause 点から再開（頭出しはしない）。fx 有効時（isMovie）は <video> が
+	//	visibility:hidden でも FxImg がテクスチャ源にするので、ここは「隠れているか」でなく
+	//	「ページが可視か」（fxActive＝表 or trans 中）で判定する。src を deps に入れて
+	//	「back ページに居るうちに [lay fn=] で別動画へ差し替わった」場合も正す
+	useEffect(()=> {
+		const v = videoRef.current;
+		if (! v || ! isMovie) return;
+		if (fxActive) void v.play().catch(()=> {/* 差し替え直後などの再生拒否は無視（次の可視化で再試行） */});
+		else v.pause();
+	}, [fxActive, isMovie, src]);
+
 	// [lay width=/height=]（本家 GrpLayer.ts:88-91 sp.width/height 相当）。div0（親）は
 	//	styLay()がpxで箱のサイズを決めるので、中身は**指定された軸だけ**100%を当てて箱に合わせる
 	//	（本家pixiのSprite.width/heightと同じくアスペクト比は無視。片方だけ指定時は他方auto＝

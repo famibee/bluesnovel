@@ -10080,7 +10080,16 @@ function bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 	}, [l.length]);
 	let v = (0, V.useRef)(null), y = (e) => {
 		v.current = e, e && (e.volume = d(), e.muted = f());
-	}, b = {
+	};
+	(0, V.useEffect)(() => {
+		let e = v.current;
+		!e || !s || (u ? e.play().catch(() => {}) : e.pause());
+	}, [
+		u,
+		s,
+		a
+	]);
+	let b = {
 		display: "block",
 		..."width" in n ? { width: "100%" } : {},
 		..."height" in n ? { height: "100%" } : {}

@@ -19,4 +19,20 @@
 [lay layer=base fn=movie2]
 [wv fn=movie2]
 うちきり[l]
+
+; 不可視 back ページでは <video> のデコードを止める（backpage-perf.md）。
+;	movie を表裏どちらの base にも置いてから [trans] で入れ替え、裏になった側が pause され
+;	currentTime が凍結すること／戻すと pause 点から再開することを見る（[wv] は挟まない）
+[lay layer=base fn=movie]
+[lay layer=base fn=movie page=back]
+[er]
+さいせいちゅう[l]
+[trans time=100]
+[wt]
+[er]
+うら停止[l]
+[trans time=100]
+[wt]
+[er]
+おもて再開[l]
 [s]
