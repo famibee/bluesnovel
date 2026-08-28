@@ -41,6 +41,14 @@ export class Layer {
 	//	既定はfalse（同期完了）。ロード待ち等が要るサブクラスだけoverrideしてtrueを返す
 	lay(_hArg: TArg): boolean {return false}
 	clearLay(_hArg: TArg): void { /* empty */ }
+
+	// このレイヤ（fore/back のどちらの物理インスタンスか）が**いま可視か**の通知。
+	//	`[trans]` 後の不可視 back ページで自前 rAF（3D/Live2D プラグイン等）を空回しさせない
+	//	ため、`PlgLayMng` が foreIdx／trans 状態から算出して呼ぶ（backpage-perf.md）。
+	//	既定は何もしない（rAF を持たない単純レイヤは無視してよい）。本家 skynovel_esm には
+	//	無いメソッドなので、プラグインの override 側は `super.setActive()` に依存しないこと
+	//	（本家では呼ばれない＝常に可視扱いのまま＝従来動作）
+	setActive(_active: boolean): void { /* empty */ }
 	record(): T_RecordPlayBack_lay {return {name: this.layname, idx: 0}}
 	playback(_hLay: T_RecordPlayBack_lay, _aPrm: Promise<void>[]): void { /* empty */ }
 	// [trans]完了時、交換相手のLayerから中身を写す（本家 Layer.ts:433 copy()）。

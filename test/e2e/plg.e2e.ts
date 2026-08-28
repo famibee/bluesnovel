@@ -102,3 +102,35 @@ test('[trans]でプラグインレイヤーの中身が新しい裏へ複製さ�
 	await expect(fore).toHaveText(JSON.stringify({layer: 'y', val: 'C', page: 'back'}));
 	await expect(back).toHaveText(JSON.stringify({layer: 'y', val: 'C', page: 'back'}));
 });
+
+// backpage-perf.md「プラグイン拡張レイヤの自前 rAF が不可視 back ページで回り続ける」対応。
+//	PlgLayMng が foreIdx／trans 状態から各 Layer の可視を算出し setActive() で通知、
+//	プラグイン（ここでは DmyLayer）が自前 rAF を止める。3d_layer / live2d_layer も同型の override
+test('[trans]後の不可視 back ページでプラグインの自前 rAF が止まる（data-active=0・data-frames 凍結）', async ({page})=> {
+	await pressKeyToWaitMark(page, 'Space');	// 待った。[l]
+	await pressKeyToWaitMark(page, 'Space');	// 消した。[l]
+	await pressKey(page, 'Space');			// [trans layer=y time=0] → 停止
+	await page.keyboard.press('Space');		// [lay y val=C page=back][trans layer=y time=100][wt]
+	await waitTransRunning(page);
+	await waitTransDone(page);
+	await waitIdle(page);
+	await pressKey(page, 'Space');			// [add_lay z][lay z dmy_loop=true] → 「loop開始」
+
+	const ctnZ = (pg: 'fore' | 'back')=>
+		page.locator(`#skynovel [data-page="${pg}"] [data-lay="z"] [data-dmy="ctn"]`);
+
+	// loop 稼働中：fore の z は可視でフレームが進む
+	await expect(ctnZ('fore')).toHaveAttribute('data-active', '1');
+	await expect.poll(async ()=> Number(await ctnZ('fore').getAttribute('data-frames') ?? 0))
+		.toBeGreaterThan(2);
+
+	// [trans time=0] で foreIdx 反転 → いま loop していた物理インスタンスは back へ回る
+	await pressKey(page, 'Space');			// 「trans後」
+	const backZ = ctnZ('back');
+	await expect(backZ).toHaveAttribute('data-active', '0');
+
+	await page.waitForTimeout(60);			// 実行中だった rAF が 1 フレームで止まるのを待つ
+	const g1 = Number(await backZ.getAttribute('data-frames') ?? 0);
+	await page.waitForTimeout(150);
+	expect(Number(await backZ.getAttribute('data-frames') ?? 0)).toBe(g1);	// 凍結している
+});

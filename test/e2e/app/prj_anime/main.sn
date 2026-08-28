@@ -27,3 +27,12 @@
 ;	向きが本文と食い違うと目立つ）
 [lay layer=mes style="writing-mode: vertical-rl;"]
 たて[l]
+
+[er]
+[lay layer=mes style="writing-mode: horizontal-tb;"]
+; 不可視 back ページではアニメ png シートのコマ送りを止める（backpage-perf.md）。
+;	表裏どちらの bg にも anime を置いてから [trans] で入れ替え、裏になった側が paused か見る
+[lay layer=bg fn=anime page=back]
+[trans]
+[wt]
+backページ停止[l]

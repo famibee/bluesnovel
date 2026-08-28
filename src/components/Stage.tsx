@@ -16,7 +16,7 @@ import {ruleMaskFunc, VAGUE_DEF} from '../ts/Trans';
 import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
 import {detectSwipe} from '../ts/Swipe';
 
-import {type PointerEvent, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, type PointerEvent, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css} from '@emotion/react';
 
@@ -477,6 +477,9 @@ export default function Stage({
 			zIndex			: i === foreIdx ? 1 : 0,
 			visibility		: i === foreIdx || trans ? 'visible' : 'hidden',
 			pointerEvents	: i === foreIdx ? 'auto' : 'none',
+			// 不可視 back ページ（trans 中は見えているので除く）ではアニメ png シートの CSS animation を
+			//	止める（backpage-perf.md）。子孫の全シートクラスが読む CSS 変数（Sprite.ts aniSpriteCss）
+			...({'--sn-ani-play': i === foreIdx || trans ? 'running' : 'paused'} as CSSProperties),
 			// ルール画像ワイプは**表ページを部分的に消していく**（下から裏が出る）。
 			//	クロスフェードがopacityでやることを、画素ごとの不透明度に置き換えたもの
 			...trans?.ruleSrc && ! trans.glslSrc && i === foreIdx ? {mask: 'url(#sn_rule_msk)'} : {},

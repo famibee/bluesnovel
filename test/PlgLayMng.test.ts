@@ -24,16 +24,25 @@ class DmyLayer {
 	name = '';
 	extra = 'init';
 	destroyed = false;
+	active = true;			// setActive() の最新値（不可視 back ページ検知の検証用）
+	aActive: boolean[] = [];	// 呼ばれた履歴
 	lay(): boolean {return false}
 	clearLay(): void { /* empty */ }
+	setActive(a: boolean): void {this.active = a; this.aActive.push(a)}
 	record(): T_RecordPlayBack_lay {return {name: this.layname, idx: 0, extra: this.extra}}
 	playback(h: T_RecordPlayBack_lay): void {this.extra = h.extra as string}
+	copy(from: DmyLayer): void {this.extra = from.extra}
 	dump(): string {return ''}
 	destroy(): void {this.destroyed = true}
 }
 
+// mng 内部の #hLay を触らず、record() の集約経由では見えない active を確かめるための覗き窓。
+//	add() 時に factory が返したインスタンスを捕まえる
+const aMade: DmyLayer[] = [];
+
 beforeEach(()=> {
-	addLayCls('dmy', ()=> new DmyLayer() as unknown as Layer);
+	aMade.length = 0;
+	addLayCls('dmy', ()=> {const l = new DmyLayer(); aMade.push(l); return l as unknown as Layer});
 });
 afterEach(()=> {
 	clearPlgLayCls();
@@ -101,4 +110,40 @@ it('playback_undefinedMarkTreatedAsEmpty', ()=> {
 	mng.playback(undefined, []);
 
 	expect(mng.record()).toEqual({});
+});
+
+// ── 不可視 back ページの検知（backpage-perf.md）───────────────────────────
+
+it('add時に現在の可視状態がsetActiveで伝わる（既定 foreIdx=0）', ()=> {
+	const mng = new PlgLayMng();
+	mng.add('x', 'dmy');
+	const [fore, back] = aMade;	// pageIdx 0, 1 の順で factory が呼ばれる
+	expect(fore!.active).toBe(true);	// foreIdx=0 なので pageIdx0 は可視
+	expect(back!.active).toBe(false);	// pageIdx1 は不可視
+});
+
+it('setPageStateでforeIdxを反転すると表裏のactiveが入れ替わる', ()=> {
+	const mng = new PlgLayMng();
+	mng.add('x', 'dmy');
+	const [p0, p1] = aMade;
+
+	mng.setPageState(1, false);
+	expect(p0!.active).toBe(false);
+	expect(p1!.active).toBe(true);
+
+	// trans 中は両ページ可視
+	mng.setPageState(1, true);
+	expect(p0!.active).toBe(true);
+	expect(p1!.active).toBe(true);
+});
+
+it('finishTransはforeIdx反転後の不可視backをsetActive(false)する', ()=> {
+	const mng = new PlgLayMng();
+	mng.add('x', 'dmy');
+	const [p0, p1] = aMade;
+
+	// oldForeIdx=0 で演出終了 → 新 foreIdx=1
+	mng.finishTrans(null, 0, []);
+	expect(p0!.active).toBe(false);	// 旧 fore＝新 back
+	expect(p1!.active).toBe(true);
 });

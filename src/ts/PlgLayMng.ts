@@ -32,6 +32,21 @@ export class PlgLayMng {
 	readonly #hLay: {[key: string]: Layer} = Object.create(null);
 	readonly #hCls: {[nm: string]: string} = Object.create(null);
 
+	// いまの表ページ物理index と、[trans]演出中か（演出中は裏ページも見えているので両方可視）。
+	//	ScriptMng が trans 開始／終了・foreIdx 反転のたびに setPageState() で更新する。
+	//	各 Layer には「自分のページが可視か」を setActive() で伝え、不可視 back ページの
+	//	プラグイン自前 rAF（3D/Live2D）を止められるようにする（backpage-perf.md）
+	#foreIdx		: 0 | 1 = 0;
+	#transActive	= false;
+	#isActive(pageIdx: 0 | 1): boolean {return this.#transActive || pageIdx === this.#foreIdx}
+	setPageState(foreIdx: 0 | 1, transActive: boolean): void {
+		this.#foreIdx = foreIdx;
+		this.#transActive = transActive;
+		for (const key of Object.keys(this.#hLay)) {
+			this.#hLay[key]!.setActive(this.#isActive(key.endsWith(':0') ? 0 : 1));
+		}
+	}
+
 	// [add_lay class=cls]。ScriptEngine側で既にhasLayCls()検査済みだが、二重に守る
 	//	（未登録ならレジストリ経由以外の呼び出し元があることになるため、本家同様throw）
 	add(nm: string, cls: string): void {
@@ -42,6 +57,7 @@ export class PlgLayMng {
 			l.layname = nm;
 			// 本家 Pages.ts:29-31（f.ctn.name = f.name = nm +'A'/'B'）相当。デバッグ表示・dump用の名前
 			l.name = `layer:${nm} cls:${cls} page:${i === 0 ? 'A' : 'B'}`;
+			l.setActive(this.#isActive(i));	// 生成直後に現在の可視状態を伝える（不可視 back で rAF を回さない）
 			this.#hLay[`${nm}:${String(i)}`] = l;
 		}
 		this.#hCls[nm] = cls;
@@ -111,6 +127,9 @@ export class PlgLayMng {
 			if (! (nm in this.#hCls)) this.add(nm, cls);
 			this.#hLay[`${nm}:0`]!.playback(fore, aPrm);
 			this.#hLay[`${nm}:1`]!.playback(back, aPrm);
+			// 演じ直しで rAF を再開しうるので、いまの可視状態を再通知（不可視 back は止める）
+			this.#hLay[`${nm}:0`]!.setActive(this.#isActive(0));
+			this.#hLay[`${nm}:1`]!.setActive(this.#isActive(1));
 		}
 	}
 
@@ -125,6 +144,8 @@ export class PlgLayMng {
 			if (aLayNm && ! aLayNm.includes(nm)) continue;	// 交換対象外はここでは何もしない
 			this.#hLay[`${nm}:${String(oldForeIdx)}`]?.copy(this.#hLay[`${nm}:${String(bi)}`]!, aPrm);
 		}
+		// 演出終了＝foreIdx は bi へ反転済み。新しい不可視 back（旧 fore）の rAF を止める
+		this.setPageState(bi, false);
 	}
 
 	// SysBase.stop()/run()からのプロジェクト切替時（ScriptMng.destroy()経由）。
@@ -133,5 +154,7 @@ export class PlgLayMng {
 		for (const l of Object.values(this.#hLay)) l.destroy();
 		for (const k of Object.keys(this.#hLay)) delete this.#hLay[k];
 		for (const k of Object.keys(this.#hCls)) delete this.#hCls[k];
+		this.#foreIdx = 0;
+		this.#transActive = false;
 	}
 }

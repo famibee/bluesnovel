@@ -1,4 +1,5 @@
 import { type T_LAY_IDX, type T_LAY_CMN } from './Lay';
+import type { T_FX } from '../ts/Fx';
 import { type CSSProperties } from 'react';
 export type T_FACE = {
     fn: string;
@@ -9,6 +10,7 @@ export type T_FACE = {
 export type T_FACE_SRC = T_FACE & {
     src: string;
     isSheet: boolean;
+    isMovie: boolean;
 };
 type T_GRPARG = T_LAY_CMN & {
     sty: CSSProperties;
@@ -18,6 +20,8 @@ type T_GRPARG = T_LAY_CMN & {
     isSheet: boolean;
     isMovie: boolean;
     aFace: T_FACE_SRC[];
+    aFx: T_FX[];
+    fxActive: boolean;
     getVideoVol: () => number;
     needClick2Play: () => boolean;
 };
@@ -30,5 +34,5 @@ export type T_GRPLAY_DATA = T_LAY_IDX & {
     aFace: T_FACE_SRC[];
 };
 export type T_GRPLAY = T_GRPLAY_DATA & T_LAY_CMN;
-export default function GrpLayer({ cmn: { styChild, isDesignMode }, sty, nm, fn, src, isSheet, isMovie, aFace, getVideoVol, needClick2Play }: T_GRPARG): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function GrpLayer({ cmn: { styChild, isDesignMode }, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, fxActive, getVideoVol, needClick2Play }: T_GRPARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};

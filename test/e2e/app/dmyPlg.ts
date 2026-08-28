@@ -18,6 +18,29 @@ class DmyLayer extends Layer {
 		super();
 		this.ctn.dataset.dmy = 'ctn';	// attachBox()でPlgLayer.tsxの箱へ入った後、E2E側がこれで検出する
 	}
+
+	// 本家 3d_layer / live2d_layer が持つ「自前 rAF ループ + #running ゲート」の最小再現。
+	//	不可視 back ページで空回しを止められるか（PlgLayMng.setPageState→Layer.setActive）を
+	//	E2E から確かめる（backpage-perf.md）。#tick は data-frames を増やし、data-active に
+	//	いまの可視状態を映す
+	#running = false;
+	#active = true;
+	#frames = 0;
+	#tick = ()=> {
+		if (! this.#running || ! this.#active) return;
+		this.ctn.dataset.frames = String(++this.#frames);
+		requestAnimationFrame(this.#tick);
+	};
+	#startLoop(): void {
+		if (this.#running) return;
+		this.#running = true;
+		requestAnimationFrame(this.#tick);
+	}
+	override setActive(active: boolean): void {
+		this.#active = active;
+		this.ctn.dataset.active = active ? '1' : '0';
+		if (active && this.#running) requestAnimationFrame(this.#tick);	// 止まっていたループを再開
+	}
 	override lay(hArg: TArg): boolean {
 		// dmy_wait=true：[lay]のisWait対応（本家 Pages.lay()の戻り値相当。glTFロード待ち等の
 		//	最小例）。50ms後にpia.resume()で再開する。addTag側のdmy_tag_asyncと同じ形。
@@ -32,6 +55,8 @@ class DmyLayer extends Layer {
 			}, 50);
 			return true;
 		}
+		// dmy_loop=true：本家プラグイン同様、初回[lay]で自前rAFループを起動する
+		if ((hArg as unknown as {[k: string]: string}).dmy_loop === 'true') this.#startLoop();
 		// 受け取った属性ハッシュ丸ごとをtextContentへ（layPlgが本当に「属性ハッシュそのもの」を
 		//	渡しているかをE2E側から検証できるように）
 		this.ctn.textContent = JSON.stringify(hArg);
@@ -40,6 +65,7 @@ class DmyLayer extends Layer {
 	override clearLay(): void {
 		this.ctn.textContent = '';
 		this.ctn.dataset.cleared = 'true';
+		this.#running = false;	// 自前rAFループの停止（本家プラグインの clearLay 相当）
 	}
 	// [trans]でLayer.copy()（record/playback経由）が実際に中身を複製するかをE2E側から
 	//	確かめるためのoverride（plg.e2e.ts参照）。しおり（save/load）でも同じ経路を通る

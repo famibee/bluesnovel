@@ -13,6 +13,7 @@ export declare class Layer {
     destroy(): void;
     lay(_hArg: TArg): boolean;
     clearLay(_hArg: TArg): void;
+    setActive(_active: boolean): void;
     record(): T_RecordPlayBack_lay;
     playback(_hLay: T_RecordPlayBack_lay, _aPrm: Promise<void>[]): void;
     copy(fromLayer: Layer, aPrm: Promise<void>[]): void;

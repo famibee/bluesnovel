@@ -11401,6 +11401,7 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 						zIndex: +(t === h),
 						visibility: t === h || g ? "visible" : "hidden",
 						pointerEvents: t === h ? "auto" : "none",
+						"--sn-ani-play": t === h || g ? "running" : "paused",
 						...g?.ruleSrc && !g.glslSrc && t === h ? { mask: "url(#sn_rule_msk)" } : {}
 					},
 					children: r.map((e) => {

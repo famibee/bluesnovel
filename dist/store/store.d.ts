@@ -1,5 +1,6 @@
 import { type T_LAY, type T_LAY_STY } from '../components/Lay';
 import type { T_FLT } from '../ts/Filter';
+import type { T_FX } from '../ts/Fx';
 import type { T_FACE_SRC } from '../components/GrpLayer';
 import type { T_BTN_STY } from '../components/TxtLayer';
 import type { T_CH, T_R_ALIGN } from '../ts/Txt';
@@ -29,6 +30,7 @@ type T_STATE = {
     clearTxtLay: (arg: T_CLEARTXTLAY) => void;
     moveLay: (arg: T_MOVELAY) => void;
     chgFilter: (arg: T_CHGFILTER) => void;
+    chgFx: (arg: T_CHGFX) => void;
     chgStr: (arg: T_CHGSTR) => void;
     addBtn: (arg: T_ADDBTN) => void;
     hChIn: {
@@ -87,12 +89,14 @@ export type T_TRANS = {
     time: number;
     ruleSrc?: string;
     vague?: number;
+    glslSrc?: string;
 } | null;
 export type T_STARTTRANS = {
     aLayNm: string[] | null;
     time: number;
     ruleSrc?: string;
     vague?: number;
+    glslSrc?: string;
 };
 export type T_QUAKE = {
     seq: number;
@@ -183,6 +187,15 @@ export type T_CHGFILTER = {
     index?: number;
     enabled?: boolean;
 };
+export type T_CHGFX = {
+    aLayNm: string[] | null;
+    page: T_PAGE_BOTH;
+    mode: 'add' | 'clear' | 'enable';
+    fx?: T_FX;
+    names?: string[] | null;
+    index?: number;
+    enabled?: boolean;
+};
 export type T_MOVELAY = {
     nm: string;
     mode: 'float' | 'index' | 'dive';
@@ -207,7 +220,7 @@ export type T_ADDBTN = {
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'chgBackClear' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getForeIdx' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake' | 'setReadBack' | 'setStyPaging'> & {
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'chgBackClear' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getForeIdx' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'chgFx' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake' | 'setReadBack' | 'setStyPaging'> & {
     isTyping: () => boolean;
 }>;
 export declare const useStore: import("zustand").UseBoundStore<import("zustand").StoreApi<T_STATE>>;

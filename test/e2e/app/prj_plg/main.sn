@@ -29,4 +29,14 @@
 [trans layer=y time=100]
 [wt]
 [l]
+
+; 不可視 back ページで自前 rAF ループを止める（PlgLayMng.setPageState → Layer.setActive）。
+;	dmy_loop=true で DmyLayer が自前 rAF を起動（本家 3d_layer / live2d_layer の #tick 相当）。
+;	[trans] で foreIdx が反転すると、旧 fore（＝新 back）の DmyLayer が data-active=0 になり
+;	data-frames が止まる
+[add_lay layer=z class=dmy]
+[lay layer=z dmy_loop=true]
+loop開始[l]
+[trans time=0]
+trans後[l]
 [s]

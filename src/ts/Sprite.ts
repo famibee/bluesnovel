@@ -167,5 +167,9 @@ ${aStep}
 	background-repeat: no-repeat;
 	background-position: 0 0;
 	animation: ${cls}_f ${String(sec)}s infinite;
+	/* 不可視 back ページではコマ送りを止める（backpage-perf.md）。既定は running。
+		Stage.tsx が back ページの div へ --sn-ani-play:paused を撒き、子孫の全シート
+		（grp 基本画像・face・[graph]・待ちマーク）へ一括で効かせる */
+	animation-play-state: var(--sn-ani-play, running);
 }`;
 }

@@ -143,3 +143,16 @@ test('縦書きでは待ちマークを-90°回す', async ({page})=> {
 	expect(await page.locator(`${SEL_FORE} span[data-lay="mes"]`)
 		.evaluate(e=> getComputedStyle(e).writingMode)).toBe('vertical-rl');
 });
+
+test('不可視 back ページではシートのコマ送りが止まる（animation-play-state: paused）', async ({page})=> {
+	for (let i = 0; i < 5; ++i) await pressKeyToWaitMark(page, 'Space');	// [trans][wt] を越えて「backページ停止」まで
+	expect(await mesStr(page)).toBe('backページ停止');
+
+	const playState = (pageSel: string)=> page
+		.locator(`${pageSel} div[data-lay="bg"] > div`)
+		.evaluate(el=> getComputedStyle(el).animationPlayState);
+
+	// trans 後：foreIdx 反転。新しい表は回り続け、旧表＝いまの裏ページは止まる
+	expect(await playState(SEL_FORE)).toBe('running');
+	expect(await playState('#skynovel [data-page="back"]')).toBe('paused');
+});

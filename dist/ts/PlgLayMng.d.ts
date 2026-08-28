@@ -9,6 +9,7 @@ export type T_RecordPlayBack_plgLay = {
 };
 export declare class PlgLayMng {
     #private;
+    setPageState(foreIdx: 0 | 1, transActive: boolean): void;
     add(nm: string, cls: string): void;
     lay(nm: string, pageIdx: 0 | 1, hArg: {
         [k: string]: string;

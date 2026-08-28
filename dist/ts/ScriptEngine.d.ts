@@ -5,6 +5,7 @@ import { type T_H_Areas } from '../sn/Areas';
 import { type T_TSY_TO } from './Tsy';
 import type { T_FRM_ORDER, T_FRM_STY } from './FrameMng';
 import { type T_FLT } from './Filter';
+import { type T_FX } from './Fx';
 import { type T_R_ALIGN } from './Txt';
 import { type T_CH_STYLE } from './ChStyle';
 import { type T_PAGE_TO } from './PageLog';
@@ -101,6 +102,7 @@ export type T_ENGINE_ACTION = {
     time: number;
     rule?: string;
     vague?: number;
+    glsl?: string;
 } | {
     t: 'waitTrans';
     canskip: boolean;
@@ -178,6 +180,27 @@ export type T_ENGINE_ACTION = {
     aLayNm: string[] | null;
     page: T_PAGE_BOTH;
     index: number;
+    enabled: boolean;
+} | {
+    t: 'addFx';
+    aLayNm: string[] | null;
+    page: T_PAGE_BOTH;
+    fx: T_FX;
+} | {
+    t: 'clearFx';
+    aLayNm: string[] | null;
+    page: T_PAGE_BOTH;
+    names: string[] | null;
+} | {
+    t: 'waitFx';
+    aLayNm: string[] | null;
+    names: string[] | null;
+    canskip: boolean;
+} | {
+    t: 'enableFx';
+    aLayNm: string[] | null;
+    names: string[] | null;
+    index: number | null;
     enabled: boolean;
 } | {
     t: 'close';

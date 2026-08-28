@@ -181,6 +181,7 @@ var a = "skynovel", o = class {
 		return !1;
 	}
 	clearLay(e) {}
+	setActive(e) {}
 	record() {
 		return {
 			name: this.layname,

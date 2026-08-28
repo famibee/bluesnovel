@@ -194,12 +194,21 @@ var te = class e {
 }, ne = class {
 	#e = Object.create(null);
 	#t = Object.create(null);
+	#n = 0;
+	#r = !1;
+	#i(e) {
+		return this.#r || e === this.#n;
+	}
+	setPageState(e, t) {
+		this.#n = e, this.#r = t;
+		for (let e of Object.keys(this.#e)) this.#e[e].setActive(this.#i(+!e.endsWith(":0")));
+	}
 	add(e, t) {
 		let n = f(t);
 		if (!n) throw `[add_lay] 属性 class【${t}】が不正です`;
 		for (let r of [0, 1]) {
 			let i = n();
-			i.layname = e, i.name = `layer:${e} cls:${t} page:${r === 0 ? "A" : "B"}`, this.#e[`${e}:${String(r)}`] = i;
+			i.layname = e, i.name = `layer:${e} cls:${t} page:${r === 0 ? "A" : "B"}`, i.setActive(this.#i(r)), this.#e[`${e}:${String(r)}`] = i;
 		}
 		this.#t[e] = t;
 	}
@@ -233,17 +242,19 @@ var te = class e {
 		for (let e of Object.keys(this.#t)) e in n || (this.#e[`${e}:0`]?.destroy(), this.#e[`${e}:1`]?.destroy(), delete this.#e[`${e}:0`], delete this.#e[`${e}:1`], delete this.#t[e]);
 		for (let e of Object.keys(n)) {
 			let { cls: r, fore: i, back: a } = n[e];
-			e in this.#t || this.add(e, r), this.#e[`${e}:0`].playback(i, t), this.#e[`${e}:1`].playback(a, t);
+			e in this.#t || this.add(e, r), this.#e[`${e}:0`].playback(i, t), this.#e[`${e}:1`].playback(a, t), this.#e[`${e}:0`].setActive(this.#i(0)), this.#e[`${e}:1`].setActive(this.#i(1));
 		}
 	}
 	finishTrans(e, t, n) {
 		let r = 1 - t;
 		for (let i of Object.keys(this.#t)) e && !e.includes(i) || this.#e[`${i}:${String(t)}`]?.copy(this.#e[`${i}:${String(r)}`], n);
+		this.setPageState(r, !1);
 	}
 	destroy() {
 		for (let e of Object.values(this.#e)) e.destroy();
 		for (let e of Object.keys(this.#e)) delete this.#e[e];
 		for (let e of Object.keys(this.#t)) delete this.#t[e];
+		this.#n = 0, this.#r = !1;
 	}
 };
 //#endregion
@@ -3627,7 +3638,7 @@ var po = class f {
 				this.#f(), this.#N = !1;
 				return;
 			}
-			this.#d = !0, this.#f(), t.restoreMarkPart(n.mark), t.clearOnResume = n.clearOnResume, this.#ce(null, "both"), this.#ge(() => !0), this.$fncs.replace(n.mark.sPages), this.#w.playback(n.mark.hPlgLay, []), this.#M = !1, this.#l = void 0, t.switchScript(await this.#b(n.fn), "", n.idx);
+			this.#d = !0, this.#f(), t.restoreMarkPart(n.mark), t.clearOnResume = n.clearOnResume, this.#ce(null, "both"), this.#ge(() => !0), this.$fncs.replace(n.mark.sPages), this.#w.setPageState(this.$fncs.getForeIdx(), !1), this.#w.playback(n.mark.hPlgLay, []), this.#M = !1, this.#l = void 0, t.switchScript(await this.#b(n.fn), "", n.idx);
 		} catch (e) {
 			this.#d = !1, this.#N = !1, this.myTrace(`[page] ${String(e)}`, "ET");
 			return;
@@ -3839,7 +3850,7 @@ var po = class f {
 	#B;
 	#V = null;
 	#H(e, t) {
-		clearTimeout(this.#R), this.#z = e > 0, this.#V = t, this.#R = this.#z ? setTimeout(() => this.#U(), e) : void 0, this.#z || this.#r?.transDone(t);
+		clearTimeout(this.#R), this.#z = e > 0, this.#V = t, this.#R = this.#z ? setTimeout(() => this.#U(), e) : void 0, this.#z ? this.#w.setPageState(this.$fncs.getForeIdx(), !0) : this.#r?.transDone(t);
 	}
 	#U() {
 		clearTimeout(this.#R), this.#R = void 0;
@@ -4359,7 +4370,7 @@ var po = class f {
 		try {
 			let n = e.t === "reloadScript" ? this.#y : this.#m.getMark(e.place);
 			if (!n) throw e.t === "reloadScript" ? "[record_place]がまだ実行されていません" : `place=${String(e.place)} は存在しません`;
-			if (t.restoreMarkPart(n), this.#Se(t), this.$fncs.replace(n.sPages), this.#w.playback(n.hPlgLay, []), this.#c.clear(), this.#l = void 0, this.#M = !1, e.t === "load" && e.doRec !== !1 && (this.#y = { ...n }), e.t === "load" && e.index !== void 0) {
+			if (t.restoreMarkPart(n), this.#Se(t), this.$fncs.replace(n.sPages), this.#w.setPageState(this.$fncs.getForeIdx(), !1), this.#w.playback(n.hPlgLay, []), this.#c.clear(), this.#l = void 0, this.#M = !1, e.t === "load" && e.doRec !== !1 && (this.#y = { ...n }), e.t === "load" && e.index !== void 0) {
 				let n = await this.#b(e.fn || t.fn);
 				t.switchScript(n, "", e.index), this.#N = !1, this.#j();
 				return;

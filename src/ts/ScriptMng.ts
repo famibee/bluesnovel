@@ -300,6 +300,7 @@ export class ScriptMng {
 			this.#stopTsyByLayer(null, 'both');	// 演じ直しでレイヤ配列ごと差し替わる＝[clear_lay]同様に走行中[tsy]を畳む
 			this.#dropFxTimers(()=> true);	// [add_fx time>0] の [wait_fx] タイマーも全部落とす（aFxはreplace()で差し替わる）
 			this.$fncs.replace(ent.mark.sPages);
+			this.#plgLayMng.setPageState(this.$fncs.getForeIdx(), false);	// 演じ直し後の foreIdx を先に伝える
 			this.#plgLayMng.playback(ent.mark.hPlgLay, []);
 			this.#stopped = false;
 			this.#pageStart = undefined;	// 演じ直しの先頭は積んだときの位置のまま
@@ -704,6 +705,9 @@ export class ScriptMng {
 		// time<=0はstore側のstartTrans()がその場でfinTrans()する（#finishTrans()を経由しない）ので、
 		//	エンジンの本文蓄積もここで揃える（ScriptEngine#transDone参照）
 		if (! this.#transRunning) this.#engine?.transDone(aLayNm);
+		// 演出中は裏ページも見えている＝両ページのプラグインレイヤーを可視扱いにする
+		//	（演出終了時に PlgLayMng.finishTrans() が新しい不可視 back を止め直す）。backpage-perf.md
+		else this.#plgLayMng.setPageState(this.$fncs.getForeIdx(), true);
 	}
 	// 演出終了：表裏を交換し、[wt]で待っていたなら続きを回す。
 	//	演出が途中でも必ず終了状態へ送るので、中途半端な見た目のまま止まることはない
@@ -1459,6 +1463,7 @@ export class ScriptMng {
 			engine.restoreMarkPart(mark);
 			this.#restoreLoopSnd(engine);		// BGM等の復元（本家 SoundMng.playLoopFromSaveObj()）
 			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
+			this.#plgLayMng.setPageState(this.$fncs.getForeIdx(), false);	// 復元後の foreIdx を先に伝える
 			this.#plgLayMng.playback(mark.hPlgLay, []);
 			this.#pageLog.clear();				// 読み戻し履歴は繋がらないので捨てる
 			this.#pageStart = undefined;

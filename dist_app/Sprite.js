@@ -104,6 +104,10 @@ ${r.map((e, t) => `\t${String(Math.round(t / i * 1e6) / 1e4)}% {${s(e)} animatio
 	background-repeat: no-repeat;
 	background-position: 0 0;
 	animation: ${o}_f ${String(a)}s infinite;
+	/* 不可視 back ページではコマ送りを止める（backpage-perf.md）。既定は running。
+		Stage.tsx が back ページの div へ --sn-ani-play:paused を撒き、子孫の全シート
+		（grp 基本画像・face・[graph]・待ちマーク）へ一括で効かせる */
+	animation-play-state: var(--sn-ani-play, running);
 }`;
 }
 //#endregion

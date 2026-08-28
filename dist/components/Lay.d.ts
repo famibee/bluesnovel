@@ -1,5 +1,6 @@
 import type { SysBase } from '../sn/SysBase';
 import { type T_FLT } from '../ts/Filter';
+import type { T_FX } from '../ts/Fx';
 import type { T_GRPLAY_DATA } from './GrpLayer';
 import type { T_TXTLAY_DATA } from './TxtLayer';
 import type { CSSProperties } from 'react';
@@ -22,10 +23,11 @@ export type T_LAY_STY = {
     pivot_y?: number;
     blendmode?: string;
     aFlt?: T_FLT[];
+    aFx?: T_FX[];
 };
 export declare const BTN_DEF_W = 100;
 export declare const BTN_DEF_H = 30;
-export declare const A_LAY_STY_KEY: readonly ["visible", "alpha", "left", "top", "align_x", "align_y", "s_right", "s_bottom", "width", "height", "rotation", "scale_x", "scale_y", "pivot_x", "pivot_y", "blendmode", "aFlt"];
+export declare const A_LAY_STY_KEY: readonly ["visible", "alpha", "left", "top", "align_x", "align_y", "s_right", "s_bottom", "width", "height", "rotation", "scale_x", "scale_y", "pivot_x", "pivot_y", "blendmode", "aFlt", "aFx"];
 export type T_LAY_IDX = T_LAY_STY & {
     cls: 'grp' | 'txt' | (string & {});
     nm: string;
