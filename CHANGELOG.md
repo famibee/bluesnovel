@@ -681,6 +681,34 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.7.0](https://github.com/famibee/bluesnovel/compare/v0.6.0...v0.7.0) (2026-08-28)
+
+
+### Features
+
+* **sn:** [add_fx glsl=] 生シェーダを有効化＋契約名を [trans glsl=] と統一 ([9a223f6](https://github.com/famibee/bluesnovel/commit/9a223f6b42ad8f2b3277df92ed6fe6288911e97a))
+* **sn:** [add_fx] アニメ png シートの face を fx のテクスチャへ毎フレーム転写 ([1023fd4](https://github.com/famibee/bluesnovel/commit/1023fd46abb2a7fb7cce4bedea815582da8cc4aa))
+* **sn:** [add_fx] に静止 face 差分の合成を通す ([69b1dc4](https://github.com/famibee/bluesnovel/commit/69b1dc4d2745d42b7106ee32e7122d6eeeb32c5e))
+* **sn:** [add_fx] プリセットに snow / rain を追加 ([638d8de](https://github.com/famibee/bluesnovel/commit/638d8decdf9fe965dde39846f71ac3d295693911))
+* **sn:** [add_fx] 動画レイヤ／動画 face／アニメ png シート基本画像を fx のテクスチャへ ([9b855f0](https://github.com/famibee/bluesnovel/commit/9b855f0c958530588e872f820ddbd00f126b6c4c))
+* **sn:** [add_fx] 無名 fx をレイヤスコープで #fxN 採番／docs 追記／上下反転を修正 ([5abb0f2](https://github.com/famibee/bluesnovel/commit/5abb0f2dcc86c90284aef88670d2b7786cf59a36))
+* **sn:** [add_fx] 無名 fx をレイヤスコープで #fxN 採番＋docs 追記 ([5abb0f2](https://github.com/famibee/bluesnovel/commit/5abb0f2dcc86c90284aef88670d2b7786cf59a36))
+* **sn:** [pause_fx]/[resume_fx] 実装（FxRunner に制御ハンドル） ([6f31c74](https://github.com/famibee/bluesnovel/commit/6f31c74e0643182fa8879658b84f5dac81f0c8c0))
+* **sn:** [trans glsl=blur/mosaic] プリセット・トランジション ([672dcff](https://github.com/famibee/bluesnovel/commit/672dcff34c37934eac789bc58b4954f521a647c6))
+* **sn:** [trans] 後の不可視 back ページで [add_fx] の rAF を凍結 ([6b25c5d](https://github.com/famibee/bluesnovel/commit/6b25c5dddf2d4d942d41af4a786afe5d2f8572a2))
+* **sn:** [wait_fx] 実装＋fx pause/resume を [pause_fx]/[resume_fx] に改名 ([76ac03b](https://github.com/famibee/bluesnovel/commit/76ac03b56a3ac8071f27c64303185fd75d63d319))
+
+
+### Bug Fixes
+
+* **sn:** [add_fx] 構成切替で立ち絵が一瞬消える不具合 ([f4cd45d](https://github.com/famibee/bluesnovel/commit/f4cd45dcda20ae538b43546c64114cf25e46f790))
+
+
+### Performance Improvements
+
+* **sn:** 不可視 back ページで &lt;video&gt; のデコードを止める ([24f7d62](https://github.com/famibee/bluesnovel/commit/24f7d62cbab0839db93f268093290dcf037e3c22))
+* **sn:** 不可視 back ページでアニメ png シートのコマ送りを止める ([b6947d2](https://github.com/famibee/bluesnovel/commit/b6947d219458ec3b506433f869ce655dab49c6ba))
+
 ## [0.6.0](https://github.com/famibee/bluesnovel/compare/v0.5.0...v0.6.0) (2026-08-27)
 
 
