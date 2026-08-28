@@ -24,9 +24,9 @@ function acts(src: string): T_ENGINE_ACTION[] {return new ScriptEngine('t1', `${
 
 it('bldFx_プリセットの既定値（既定は H_FX_DEF の1箇所）', ()=> {
 	expect(bldFx({fx: 'wave'})).toEqual({
-		name: '', fx: 'wave', glsl: '', time: 0, speed: 1, params: {amp: 6, freq: 2}});
+		name: '', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}});
 	expect(bldFx({fx: 'rgbShift'})).toEqual({
-		name: '', fx: 'rgbShift', glsl: '', time: 0, speed: 1, params: {shift: 4}});
+		name: '', fx: 'rgbShift', glsl: '', time: 0, speed: 1, enabled: true, params: {shift: 4}});
 });
 
 it('bldFx_属性で既定を上書き（拾うのは A_FX_PARAM の範囲だけ）', ()=> {
@@ -63,7 +63,7 @@ it('bldFx_数値でないパラメータは throw', ()=> {
 it('addFx_pushes（[add_filter] と同じ #argLayNames / #argPageBoth）', ()=> {
 	expect(acts('[add_fx layer=base fx=wave amp=10 freq=3]').find(v=> v.t === 'addFx'))
 		.toEqual({t: 'addFx', aLayNm: ['base'], page: 'fore',
-			fx: {name: '', fx: 'wave', glsl: '', time: 0, speed: 1, params: {amp: 10, freq: 3}}});
+			fx: {name: '', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 10, freq: 3}}});
 });
 
 it('addFx_layer省略は全レイヤ・page=bothで両面', ()=> {
@@ -119,4 +119,29 @@ it('waitFx_自体で step() が止まる（[s] まで進まない＝stop を返�
 	const a = acts('[add_fx layer=base fx=wave time=500][wait_fx layer=base]');
 	expect(a.at(-1)!.t).toBe('waitFx');	// [s] の stop アクションはここには来ない
 	expect(a.some(v=> v.t === 'addFx')).toBe(true);
+});
+
+
+// ============ [pause_fx]/[resume_fx]（[pause_tsy]/[resume_tsy] と同型） ============
+
+it('pauseFx/resumeFx_enabled を差し替えるアクション（page= は受けない）', ()=> {
+	expect(acts('[pause_fx layer=base]').find(v=> v.t === 'enableFx'))
+		.toEqual({t: 'enableFx', aLayNm: ['base'], names: null, index: null, enabled: false});
+	expect(acts('[resume_fx name=w]').find(v=> v.t === 'enableFx'))
+		.toEqual({t: 'enableFx', aLayNm: null, names: ['w'], index: null, enabled: true});
+	expect(acts('[pause_fx layer=base index=1]').find(v=> v.t === 'enableFx'))
+		.toEqual({t: 'enableFx', aLayNm: ['base'], names: null, index: 1, enabled: false});
+});
+
+it('pauseFx_layer= も name= も無ければ throw', ()=> {
+	expect(()=> acts('[pause_fx]')).toThrow('[pause_fx] layer= か name= のどちらかが必要です');
+	expect(()=> acts('[resume_fx]')).toThrow('[resume_fx] layer= か name= のどちらかが必要です');
+});
+
+it('pauseFx_index= は layer= 併用が要る', ()=> {
+	expect(()=> acts('[pause_fx name=w index=0]')).toThrow('[pause_fx] index= は layer= と併用してください');
+});
+
+it('pauseFx_自体は待たない（skip＝[s] まで到達）', ()=> {
+	expect(acts('[pause_fx layer=base]').at(-1)!.t).toBe('stop');
 });

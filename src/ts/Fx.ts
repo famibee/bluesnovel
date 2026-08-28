@@ -37,6 +37,7 @@ export type T_FX = {
 	glsl	: string;	// 生フラグメントシェーダ（fx='' のとき）。本家サンプル準拠の契約は未対応（試作）＝現状は空のみ
 	time	: number;	// ms。0 で無限（常時ゆらぎ）。>0 で time 経過後は素通し（試作では記述子の自動撤去はしない）
 	speed	: number;	// 速度倍率
+	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
 	params	: {[k: string]: number};	// プリセット固有（amp/freq/shift…）
 };
 
@@ -65,6 +66,7 @@ export function bldFx(args: {[k: string]: string}): T_FX {
 		fx, glsl,
 		time	: num(args, 'time', 0),
 		speed	: num(args, 'speed', 1),
+		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,
 	};
 }

@@ -67,6 +67,8 @@ function s(e, n, o, s, c) {
 		return {
 			pg: r,
 			fx: n,
+			pausedAccMs: 0,
+			pausedAt: 0,
 			uSrc: e.getUniformLocation(r, "src"),
 			uTime: e.getUniformLocation(r, "time"),
 			uRes: e.getUniformLocation(r, "resolution"),
@@ -102,24 +104,37 @@ function s(e, n, o, s, c) {
 	let g = (t, n, r, i) => {
 		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSrc && e.uniform1i(t.uSrc, 0), t.uTime && e.uniform1f(t.uTime, i), t.uRes && e.uniform2f(t.uRes, s, c), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
 	}, _ = performance.now(), v = 0, y = !0, b = () => {
-		let e = performance.now() - _, t = !1;
-		for (let n = 0; n < d.length; ++n) {
-			let r = d[n], i = r.fx.time > 0 && e >= r.fx.time;
-			i || (t = !0);
-			let a = n === 0 ? m : h[(n - 1) % 2].tex, o = e / 1e3 * (r.fx.speed || 1);
-			g(i ? f : r, a, h[n % 2].fb, o);
+		let e = performance.now(), t = e - _, n = !1;
+		for (let r = 0; r < d.length; ++r) {
+			let i = d[r];
+			!i.fx.enabled && i.pausedAt === 0 ? i.pausedAt = e : i.fx.enabled && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
+			let a = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), o = i.fx.time > 0 && a >= i.fx.time;
+			!o && i.fx.enabled && (n = !0);
+			let s = r === 0 ? m : h[(r - 1) % 2].tex, c = a / 1e3 * (i.fx.speed || 1);
+			g(o ? f : i, s, h[r % 2].fb, c);
 		}
-		return g(f, h[(d.length - 1) % 2].tex, null, 0), t;
+		return g(f, h[(d.length - 1) % 2].tex, null, 0), n;
 	}, x = () => {
-		y && b() && (v = requestAnimationFrame(x));
+		y && (v = b() ? requestAnimationFrame(x) : 0);
 	};
-	return b(), v = requestAnimationFrame(x), () => {
-		if (y) {
-			y = !1, cancelAnimationFrame(v), e.deleteTexture(m);
-			for (let { tex: t, fb: n } of h) e.deleteTexture(t), e.deleteFramebuffer(n);
-			e.deleteBuffer(p);
-			for (let t of d) e.deleteProgram(t.pg);
-			e.deleteProgram(f.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+	return b(), v = requestAnimationFrame(x), {
+		update(e) {
+			if (y) {
+				for (let t = 0; t < d.length; ++t) {
+					let n = e[t];
+					n && (d[t].fx = n);
+				}
+				v === 0 && (v = requestAnimationFrame(x));
+			}
+		},
+		dispose() {
+			if (y) {
+				y = !1, cancelAnimationFrame(v), e.deleteTexture(m);
+				for (let { tex: t, fb: n } of h) e.deleteTexture(t), e.deleteFramebuffer(n);
+				e.deleteBuffer(p);
+				for (let t of d) e.deleteProgram(t.pg);
+				e.deleteProgram(f.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+			}
 		}
 	};
 }

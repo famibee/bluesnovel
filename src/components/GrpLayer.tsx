@@ -116,25 +116,32 @@ function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_
 //	試作の割り切り：face差分合成（aFace）は通さない＝基本画像だけにかかる
 function FxImg({src, aFx, styFit}: {src: string; aFx: T_FX[]; styFit: CSSProperties}) {
 	const ref = useRef<HTMLCanvasElement>(null);
-	// aFxは配列なので参照が毎回変わる。中身で張り替え判定する（filterのstyFilterと同じ発想）。
-	//	src/aFxが変わったら**canvasごと作り直す**（key）：WEBGL_lose_context.loseContext()を
-	//	呼んだ後の同一canvasからは生きたWebGLコンテキストを取り直せない（コンパイルが空ログで
-	//	失敗する）ため、破棄する側は使い捨てにして新しいcanvasで開き直す
-	const key = `${src}\n${JSON.stringify(aFx)}`;
+	const handle = useRef<{update(a: T_FX[]): void; dispose(): void} | null>(null);
+	// canvasごと作り直すのは**シェーダ構成が変わったとき**だけ（fx名/glsl/パス数）：
+	//	WEBGL_lose_context.loseContext()を呼んだ後の同一canvasからは生きたコンテキストを
+	//	取り直せない（コンパイルが空ログで失敗する）ため、破棄する側は使い捨てにして開き直す。
+	//	プリセットパラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）は handle.update()で
+	//	ホットスワップ＝再生成すると tick=0 へ戻ってしまう（ANIMATION_RESEARCH.md §7 step 2）
+	const structKey = `${src}\n${aFx.map(f=> `${f.fx}|${f.glsl}`).join(',')}`;
+	const contentKey = JSON.stringify(aFx);
 	useEffect(()=> {
 		const cvs = ref.current;
 		if (! cvs || ! src) return;
 
 		let alive = true;
-		let dispose: (()=> void) | undefined;
 		void import('../ts/FxRunner').then(({runFx})=> runFx({canvas: cvs, src, aFx}))
-			.then(d=> {if (alive) dispose = d; else d()})
+			.then(h=> {if (alive) handle.current = h; else h.dispose()})
 			.catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
-		return ()=> {alive = false; dispose?.()};
+		return ()=> {alive = false; handle.current?.dispose(); handle.current = null};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [key]);
+	}, [structKey]);
+	// 構成そのままでパラメータ／enabledだけ変わったら、canvasを保ったまま差し替える
+	useEffect(()=> {
+		handle.current?.update(aFx);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [contentKey]);
 
-	return <canvas key={key} ref={ref} style={styFit}/>;
+	return <canvas key={structKey} ref={ref} style={styFit}/>;
 }
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, getVideoVol, needClick2Play}: T_GRPARG) {

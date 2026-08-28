@@ -257,9 +257,11 @@ export type T_CHGFILTER = {
 export type T_CHGFX = {
 	aLayNm	: string[] | null;
 	page	: T_PAGE_BOTH;
-	mode	: 'add' | 'clear';
+	mode	: 'add' | 'clear' | 'enable';
 	fx?		: T_FX;				// add用
-	names?	: string[] | null;	// clear用。null＝そのレイヤのfx全部
+	names?	: string[] | null;	// clear/enable用。null＝そのレイヤのfx全部
+	index?	: number;			// enable用（[enable_filter]由来。layer=併用でそのレイヤのN番目）
+	enabled?: boolean;			// enable用（[pause_fx]=false／[resume_fx]=true）
 }
 // [lay float=/index=/dive=]：レイヤの重なり順。**表裏とも同じ順に動かす**ので、page指定は無い
 //	（本家 LayerMng.ts:489 も#fore/#backの両方をsetChildIndexする）
@@ -650,19 +652,33 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		chg(aLay);
 		return putPage(s, idx, aLay);
 	}),
-	// [add_fx]/[clear_fx]（分家独自の試作。ANIMATION_RESEARCH.md §7）。chgFilterと同じ骨格。
-	//	fxはgrpレイヤ専用なので、対象がgrpでなければ黙って飛ばす（[clear_lay]相当のミスで
-	//	txtレイヤに来ても実害が無いように。逆に[add_fx]でtxtを指定したときは例外にする）
-	chgFx: ({aLayNm, page, mode, fx, names}: T_CHGFX)=> set(s=> {
+	// [add_fx]/[clear_fx]/[pause_fx]/[resume_fx]（分家独自の試作。ANIMATION_RESEARCH.md §7）。
+	//	chgFilterと同じ骨格。fxはgrpレイヤ専用なので、対象がgrpでなければ黙って飛ばす（[clear_lay]
+	//	相当のミスでtxtレイヤに来ても実害が無いように。逆に[add_fx]でtxtを指定したときは例外にする）
+	chgFx: ({aLayNm, page, mode, fx, names, index, enabled}: T_CHGFX)=> set(s=> {
 		const chg1 = (e: T_LAY)=> {
 			if (! isGrpLay(e)) {
 				if (mode === 'add') throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
-				return;	// [clear_fx]は非grpを素通し
+				return;	// [clear_fx]/[pause_fx]/[resume_fx]は非grpを素通し
 			}
 			if (mode === 'clear') {
 				if (! names) {delete e.aFx; return}
 				const a = (e.aFx ?? []).filter(f=> ! f.name || ! names.includes(f.name));
 				if (a.length > 0) e.aFx = a; else delete e.aFx;
+				return;
+			}
+			if (mode === 'enable') {
+				// [pause_fx]/[resume_fx]：記述子は残し enabled だけ差し替える（[enable_filter]と同じノリ）。
+				//	index= 指定はそのレイヤのN番目、name= 指定は名前付きの一致、どちらも省略なら全部
+				const a = e.aFx ?? [];
+				if (a.length === 0) return;	// fx が無ければ黙って素通し（[clear_fx]の非grp素通しと同じ緩さ）
+				const en = enabled ?? true;
+				if (index !== undefined) {
+					if (index < 0 || index >= a.length) throw `${e.nm} の fx の個数（${a.length}）を越えています`;
+					e.aFx = a.map((f, i)=> i === index ? {...f, enabled: en} : f);
+				}
+				else if (names) e.aFx = a.map(f=> f.name && names.includes(f.name) ? {...f, enabled: en} : f);
+				else e.aFx = a.map(f=> ({...f, enabled: en}));
 				return;
 			}
 			// add：name指定があれば同名を置換（[tsy]の「同名で再開」と同じ）。

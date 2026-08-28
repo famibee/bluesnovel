@@ -37,4 +37,11 @@
 [lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
 [add_fx layer=base name=short fx=rgbShift time=400 shift=8]
 [wait_fx layer=base name=short]
-[er]wait_fx完了[s]
+[er]wait_fx完了[l]
+
+; [pause_fx]/[resume_fx]：記述子の enabled が反転する（rAF 停止/再開そのものは playwright-cli で手動確認）
+[add_fx layer=base name=p fx=wave]
+[pause_fx layer=base name=p]
+[er]pause_fx[l]
+[resume_fx layer=base]
+[er]resume_fx[s]

@@ -158,6 +158,8 @@
 		<li class="mb1"><a href="#add_fx">🟡 [add_fx] 立ち絵シェーダエフェクト（bluesnovel独自・試作）</a></li>
 		<li class="mb1"><a href="#clear_fx">🟡 [clear_fx] 立ち絵シェーダエフェクト撤去（bluesnovel独自・試作）</a></li>
 		<li class="mb1"><a href="#wait_fx">🟢 [wait_fx] 立ち絵シェーダエフェクト終了待ち（bluesnovel独自・試作）</a></li>
+		<li class="mb1"><a href="#pause_fx">🟢 [pause_fx] 立ち絵シェーダエフェクト一時停止（bluesnovel独自・試作）</a></li>
+		<li class="mb1"><a href="#resume_fx">🟢 [resume_fx] 立ち絵シェーダエフェクト再開（bluesnovel独自・試作）</a></li>
 	</ul>
 	<p>トゥイーンアニメ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -964,7 +966,8 @@
 	スタックは<a href="#add_filter">[add_filter]</a>に倣う。現状の割り切り：<br/>
 	・プリセット <code>fx=wave</code> / <code>fx=rgbShift</code> の2種のみ。生 GLSL（<code>glsl=</code>）は未対応<br/>
 	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）／
-	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）。pause/resume に当たるタグは未実装<br/>
+	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）／<code>[pause_fx]</code>・<code>[resume_fx]</code>
+	（描画を止める/戻す）。<a href="#tsy">[tsy]</a>一族に倣う<br/>
 	・face 差分合成は通さない＝基本画像（<code>fn=</code>）だけにかかる<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>
@@ -1027,7 +1030,24 @@
 　<code>time=0</code>（無限＝常時ゆらぎ）は終わりが無いので待ちの対象外。<code>page=</code>は受けない。<br/>
 　実際に待つのは <b>ScriptMng</b>（<code>[add_fx]</code>の<code>time=</code>をそのままタイマーにする。<a href="#wait_tsy">[wait_tsy]</a>と
 　同じ設計で、WebGLランナーからの終了通知は作らない）。<a href="#clear_fx">[clear_fx]</a>／<a href="#clear_lay">[clear_lay]</a>／
-　ページ演じ直しでタイマーも畳む。
+　ページ演じ直しでタイマーも畳む。<code>[pause_fx]</code>で止めている間はこのタイマーも止まる（残時間を保持）。
+</p>
+
+<h2 id="pause_fx" class="w-heading">[pause_fx]立ち絵シェーダエフェクト一時停止</h2>
+<h2 id="resume_fx" class="w-heading" style="margin-top:0">[resume_fx]立ち絵シェーダエフェクト再開</h2>
+<h4>fx の描画（rAF）を止める／止めた続きから戻す。記述子は残る（<a href="#pause_tsy">[pause_tsy]</a>／<a href="#resume_tsy">[resume_tsy]</a>と同型）。</h4>
+<p class="mb2 px1">
+
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>layer</td><td></td><td></td><td>レイヤ名（カンマ区切りで複数可）</td><td>このレイヤの fx が対象。<code>name=</code>／<code>index=</code>と併用で絞り込み</td></tr>
+<tr><td>name</td><td></td><td></td><td>識別子（カンマ区切りで複数可）</td><td>この名前の fx が（どのレイヤであれ）対象</td></tr>
+<tr><td>index</td><td></td><td></td><td>0〜</td><td>そのレイヤの fx の何番目か（<code>layer=</code>併用時のみ。<a href="#enable_filter">[enable_filter]</a>由来）</td></tr>
+</table>
+
+　<code>layer=</code>／<code>name=</code>は最低どちらか一方が必須。<code>[pause_fx]</code>＝停止、<code>[resume_fx]</code>＝再開。
+　止めても記述子（<code>aFx</code>）は残る（<code>&lt;canvas&gt;</code>のまま）＝<a href="#save">[save]</a>／<a href="#trans">[trans]</a>に追随。撤去は<a href="#clear_fx">[clear_fx]</a>。<br/>
+　パスごとに tick を凍結して描画自体は続ける（前段パスが動いていれば入力は変わるため）。全パスが
+　停止／経過したら rAF ごと止めて凍結。<code>page=</code>は受けない（両ページの同名 fx に効く）。
 </p>
 
 

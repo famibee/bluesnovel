@@ -138,10 +138,11 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 
 `add_lay`, `current`, `add_face`, `lay`, `clear_lay`, `trans`/`wt`,
 `add_filter`/`clear_filter`/`enable_filter`,
-`add_fx`/`clear_fx`/`wait_fx`（**bluesnovel 独自の試作**。立ち絵 grp レイヤへ WebGL シェーダを重ねる。
-`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL。`wait_fx` は
-`ScriptMng` が `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。プリセット
-wave/rgbShift のみ・生 GLSL 未対応・pause/resume 系タグ無し・face 合成なし。詳細は
+`add_fx`/`clear_fx`/`wait_fx`/`pause_fx`/`resume_fx`（**bluesnovel 独自の試作**。立ち絵 grp レイヤへ
+WebGL シェーダを重ねる。`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL
+（`FxRunner` は `T_FX_HANDLE`＝`{update,dispose}` を返し、パラメータ・`enabled` は canvas を作り直さず
+ホットスワップ）。`wait_fx` は `ScriptMng` が `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。
+プリセット wave/rgbShift のみ・生 GLSL 未対応・face 合成なし。詳細は
 `src/docs/ANIMATION_RESEARCH.md` §7），
 `tsy`/`wait_tsy`/`stop_tsy`/`pause_tsy`/`resume_tsy`, `page`,
 `let`, `let_ml`/`endlet_ml`, `let_abs`/`let_round`/`let_length`/`let_char_at`/`let_index_of`/

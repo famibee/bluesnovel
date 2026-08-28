@@ -973,7 +973,7 @@ export class ScriptMng {
 	//	無名 fx は [wait_fx layer=…] でまとめて待つ）。レイヤ照合は具体レイヤ名へ解決せず、
 	//	[add_fx] 側の layer= セレクタ（省略=全レイヤ=null）同士の交差で判定する（試作の割り切り。
 	//	[add_fx layer=省略] のあと [wait_fx layer=me] は「me にも載っている」とみなして待つ）
-	#aFxTimer: {id: number; timer: ReturnType<typeof setTimeout>; aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string}[] = [];
+	#aFxTimer: {id: number; timer: ReturnType<typeof setTimeout>; endAt: number; paused: {remainMs: number} | null; aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string}[] = [];
 	#fxTimerSeq = 0;
 	#fxWaiting: {ids: Set<number>; canskip: boolean} | undefined;	// [wait_fx]で待っている最中か（[wait_tsy]の複数版）
 
@@ -982,7 +982,27 @@ export class ScriptMng {
 		if (act.fx.time <= 0) return;
 		const id = ++this.#fxTimerSeq;
 		const timer = setTimeout(()=> this.#endFxTimer(id), act.fx.time);
-		this.#aFxTimer.push({id, timer, aLayNm: act.aLayNm, page: act.page, name: act.fx.name});
+		this.#aFxTimer.push({id, timer, endAt: Date.now() + act.fx.time, paused: null,
+			aLayNm: act.aLayNm, page: act.page, name: act.fx.name});
+	}
+	// [pause_fx]/[resume_fx]：一致タイマーを止める/戻す（残時間を保持。FxRunner の rAF 凍結と対）
+	#pauseFxTimers(match: (t: {aLayNm: readonly string[] | null; name: string})=> boolean, paused: boolean) {
+		const now = Date.now();
+		for (const t of this.#aFxTimer) {
+			if (! match(t)) continue;
+			if (paused) {
+				if (t.paused) continue;
+				clearTimeout(t.timer);
+				t.paused = {remainMs: Math.max(0, t.endAt - now)};
+			}
+			else {
+				if (! t.paused) continue;
+				const {remainMs} = t.paused;
+				t.paused = null;
+				t.endAt = now + remainMs;
+				t.timer = setTimeout(()=> this.#endFxTimer(t.id), remainMs);
+			}
+		}
 	}
 	#endFxTimer(id: number) {
 		const i = this.#aFxTimer.findIndex(t=> t.id === id);
@@ -1824,6 +1844,13 @@ export class ScriptMng {
 			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'clear', names: act.names});
 			this.#dropFxTimers(t=> (act.page === 'both' || t.page === 'both' || t.page === act.page)
 				&& ScriptMng.#fxMatch(t, act.aLayNm, act.names));
+			break;
+		case 'enableFx':
+			// [pause_fx]/[resume_fx]：記述子は残しenabledだけ差し替える（page=は受けないのでbothで両面）。
+			//	描画（rAF）を止める/戻すのは FxRunner の制御ハンドル（GrpLayer.tsx の FxImg 経由）
+			this.$fncs.chgFx({aLayNm: act.aLayNm, page: 'both', mode: 'enable', names: act.names,
+				...(act.index !== null ? {index: act.index} : {}), enabled: act.enabled});
+			this.#pauseFxTimers(t=> ScriptMng.#fxMatch(t, act.aLayNm, act.names), ! act.enabled);
 			break;
 		case 'moveLay':
 			this.$fncs.moveLay({nm: act.nm, mode: act.mode, ...(act.index !== undefined ? {index: act.index} : {}), ...(act.dive !== undefined ? {dive: act.dive} : {})});

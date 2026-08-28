@@ -9929,26 +9929,28 @@ function fu({ fn: e, src: t, isSheet: n, dx: r, dy: i, blendmode: a }) {
 	});
 }
 function pu({ src: e, aFx: t, styFit: n }) {
-	let r = (0, V.useRef)(null), i = `${e}\n${JSON.stringify(t)}`;
+	let r = (0, V.useRef)(null), i = (0, V.useRef)(null), a = `${e}\n${t.map((e) => `${e.fx}|${e.glsl}`).join(",")}`, o = JSON.stringify(t);
 	return (0, V.useEffect)(() => {
 		let n = r.current;
 		if (!n || !e) return;
-		let i = !0, a;
+		let a = !0;
 		return import("./FxRunner.js").then(({ runFx: r }) => r({
 			canvas: n,
 			src: e,
 			aFx: t
 		})).then((e) => {
-			i ? a = e : e();
+			a ? i.current = e : e.dispose();
 		}).catch((e) => {
 			console.error(`[add_fx] ${String(e)}`);
 		}), () => {
-			i = !1, a?.();
+			a = !1, i.current?.dispose(), i.current = null;
 		};
-	}, [i]), /* @__PURE__ */ P("canvas", {
+	}, [a]), (0, V.useEffect)(() => {
+		i.current?.update(t);
+	}, [o]), /* @__PURE__ */ P("canvas", {
 		ref: r,
 		style: n
-	}, i);
+	}, a);
 }
 function mu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, aFx: l, getVideoVol: u, needClick2Play: d }) {
 	let f = (e) => {

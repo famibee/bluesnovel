@@ -130,7 +130,19 @@ test('[wait_fx] は [add_fx time>0] の経過を待ってから続きへ', async
 	// [add_fx time=400] → [wait_fx] → 本文。実際に待つのは ScriptMng のタイマー（[wait_tsy] と同型。
 	//	WebGL ランナーからの終了通知は作らない。ANIMATION_RESEARCH.md §7 step 2）
 	const t0 = Date.now();
-	await pressKey(page, 'Space');
-	await expect.poll(async ()=> mesStr(page)).toBe('wait_fx完了');
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('wait_fx完了');
 	expect(Date.now() - t0).toBeGreaterThanOrEqual(300);	// time=400 のタイマー分は待った（余裕をみて 300）
+});
+
+test('[pause_fx]/[resume_fx] は記述子の enabled を反転する', async ({page})=> {
+	for (let i = 0; i < 9; ++i) await pressKeyToWaitMark(page, 'Space');	// 「pause_fx」まで（途中 wait_fx で 400ms 待つ）
+	expect(await mesStr(page)).toBe('pause_fx');
+	// [add_fx name=p] のあと [pause_fx layer=base name=p]
+	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({fx: 'wave', enabled: false});
+	expect(await draw(page)).toBe('canvas');	// enabled=false でも <canvas> のまま（記述子は残る）
+
+	await pressKey(page, 'Space');	// [resume_fx layer=base] → [er]resume_fx[s]（[s]は待ちマークを立てない）
+	await expect.poll(async ()=> mesStr(page)).toBe('resume_fx');
+	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({enabled: true});
 });

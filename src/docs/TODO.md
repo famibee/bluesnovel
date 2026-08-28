@@ -44,19 +44,16 @@
 sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを通過し**正式化**。設計・用途
 カタログ・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7（推奨度 ★★★☆）。
 
-実装順（2→3→4→5→7→8→6。6 は終わりのない作業なので最後・随時）：
+実装順（3→4→5→7→8→6。6 は終わりのない作業なので最後・随時）。
+2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）は 2026-08-28 完了。
 
-- [ ] 2. `[pause_fx]`/`[resume_fx]`（描画を止める/戻す。記述子は残す）。`[pause_tsy]`/`[resume_tsy]`
-      に倣う（`enable` はイベント語彙・`stop` は不可逆なので不採用）。`FxRunner` に制御ハンドルを
-      持たせ、canvas を作り直さず rAF を停止/再開（`enabled` 切替で `key` 再生成すると tick=0 へ
-      戻ってしまう）。この「再生成せず止める/戻す」機構を 5（不可視 back ページ停止）が流用。
-      ※`[wait_fx]`（終了待ち）は実装済み（`ScriptMng` が `[add_fx time>0]` のタイマーを持つ）
 - [ ] 3. 生 `glsl=` を有効化（今は `throw`）。契約名を `[trans glsl=]` と統一
       （`src`→`uSampler`、`vUv`→`vTextureCoord`、`time`→`tick`。プリセット 2 本も書き直し）
 - [ ] 4. face 差分合成（`aFace`）を通す。まず静止画（差分変化時のみ offscreen 2D canvas で合成）、
       次に sheet/動画（毎フレーム転写）。`FxImg` の `! isSheet && ! isMovie` 条件を緩める
 - [ ] 5. 不可視 back ページで rAF 停止（`[trans]` 後の表裏 2 canvas の裏側）。`FxImg` に
-      「表ページか / trans 中か」を渡す
+      「表ページか / trans 中か」を渡す。止める/戻す機構は 2 で入った `FxRunner` 制御ハンドル
+      （`update()` の `active` 引数を足す）を流用
 - [ ] 7. プリセット追加（雪・雨・花火・タイルスクロール等）。MIT/CC0/商用可 明示のもの、
       または技法から再実装。1 個 20–50 行
 - [ ] 8. `docs/tag.html` を 🟡→🟢、[ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧を更新、

@@ -139,6 +139,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; fx: T_FX}	// [add_fx]。立ち絵へシェーダエフェクトを重ねる（分家独自の試作。aFx[]へpush／同名は置換）
 	| {t: 'clearFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; names: string[] | null}	// [clear_fx]。namesはカンマ区切り名前リスト（null＝そのレイヤのfx全部）
 	| {t: 'waitFx'; aLayNm: string[] | null; names: string[] | null; canskip: boolean}	// [wait_fx]。fx one-shot（[add_fx time>0]）の終了待ち。実際に待つのはScriptMng（[add_fx]で張ったタイマー。WebGLランナーからの終了通知は作らない。ANIMATION_RESEARCH.md §7）。page=は受けない（セレクタはlayer=＋name=、最低一方必須）
+	| {t: 'enableFx'; aLayNm: string[] | null; names: string[] | null; index: number | null; enabled: boolean}	// [pause_fx]（enabled=false）/[resume_fx]（enabled=true）。fxの描画を止める/戻す（記述子は残す。[pause_tsy]/[resume_tsy]と同型）。page=は受けない。index=はlayer=併用時のみ
 	| {t: 'close'}	// [close]。アプリの終了（アプリ版のみ）
 	| {t: 'updateCheck'; url: string}	// [update_check]。更新チェック（アプリ版のみ）
 	| {t: 'window'; centering: boolean; x: number; y: number; w: number; h: number}	// [window]。アプリウインドウ設定（アプリ版のみ）
@@ -579,7 +580,7 @@ export class ScriptEngine {
 		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
-		'add_fx', 'clear_fx', 'wait_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
+		'add_fx', 'clear_fx', 'wait_fx', 'pause_fx', 'resume_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace', 'log',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -1450,6 +1451,17 @@ export class ScriptEngine {
 			if (! aLayNm && ! names) throw '[wait_fx] layer= か name= のどちらかが必要です';
 			aAct.push({t: 'waitFx', aLayNm, names, canskip: (args.canskip ?? 'true') !== 'false'});
 			return 'stop';
+		}
+
+		case 'pause_fx':		// fxの描画を止める（[pause_tsy]と同型。記述子は残しrAFだけ止める＝tick凍結）
+		case 'resume_fx': {	// 止めたfxを再開（[resume_tsy]と同型。tickは止めた続きから）
+			const aLayNm = ScriptEngine.#argLayNames(args.layer);
+			const names = ScriptEngine.#argLayNames(args.name);
+			if (! aLayNm && ! names) throw `[${name}] layer= か name= のどちらかが必要です`;
+			const index = args.index === undefined ? null : ScriptEngine.#argNum(name, 'index', args.index);
+			if (index !== null && ! aLayNm) throw `[${name}] index= は layer= と併用してください`;
+			aAct.push({t: 'enableFx', aLayNm, names, index, enabled: name === 'resume_fx'});
+			return 'skip';	// [pause_tsy]同様それ自体は待たない
 		}
 
 		case 'clear_lay': {	// レイヤ設定の消去（本家 LayerMng.ts:528 #clear_lay()）

@@ -229,32 +229,35 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 凍結）、再表示で再開。[TODO.md](TODO.md) の「不可視 back ページの最適化調査」（プラグイン拡張
 レイヤ・`[tsy]` も同様に裏ページで走っていないか）と統合して見る。
 
-#### step 2（`[wait_fx]` ＝実装済み ／ `[pause_fx]`/`[resume_fx]` ＝残り）の実装方針
+#### step 2（`[wait_fx]` ＋ `[pause_fx]`/`[resume_fx]`）— 完了（2026-08-28）
 
-タグ名：pause/resume は `[pause_tsy]`/`[resume_tsy]` に倣って **`[pause_fx]`/`[resume_fx]`** とする
+タグ名：pause/resume は `[pause_tsy]`/`[resume_tsy]` に倣って **`[pause_fx]`/`[resume_fx]`** とした
 （初稿の `[enable_fx enabled=]` は不採用。`enable` はイベント語彙〈`[enable_event]`〉、`[enable_filter]`
 は「何番目を効かせるか」の選択で再生の一時停止ではない。`stop` は `[stop_tsy]` が不可逆の終了専用語）。
 
 - **`[wait_fx]` は `ScriptMng` が one-shot タイマーを持つ**（`[quake]` と同型。WebGL ランナーからの
-  終了通知は作らない）。実装済み（2026-08-28）：`[add_fx time>0]` で `ScriptMng` が `act.fx.time` の
-  タイマーを張り（`#aFxTimer[]`）、`[wait_fx]` はセレクタに一致する未経過タイマーが尽きるまで待つ
+  終了通知は作らない）。`[add_fx time>0]` で `ScriptMng` が `act.fx.time` のタイマーを張り
+  （`#aFxTimer[]`）、`[wait_fx]` はセレクタに一致する未経過タイマーが尽きるまで待つ
   （`#tsyWaiting` の複数版 `#fxWaiting`。ids の Set）。`clearFx`/`clearLay`/ページ演じ直しの `replace()`
   で `#dropFxTimers()` がタイマーも落とす。`canskip` はクリックで即完了（`#skipFxWait()`）。
   ランナーの凍結との数 ms のズレは許容（`[add_fx]` は通常 `[lay]` 直後で画像ロード済み）。
   セレクタ照合（`#fxMatch`）は `[add_fx]` の `layer=` を具体レイヤへ解決せず、セレクタ同士の交差で
   判定する割り切り（`layer=` 省略＝全レイヤ＝`null` は常に一致）。無名 fx の `#fxN` はエンジンから
   見えないので名前 `''` 扱い＝`[wait_fx layer=…]` でのみ待てる。
-- **`[pause_fx]`/`[resume_fx]` は canvas を作り直さない**（残り）。現行 `FxImg` は `aFx` 変化のたび
-  `key` で canvas ごと再生成するが、`enabled` 切替でそれをやると resume が tick=0 から復帰する。
-  FxRunner に制御ハンドル（`update(aFx, active)` / `dispose()`）を持たせ、`enabled`・プリセット
-  パラメータ・`active`（表ページか）はホットスワップ、シェーダ構成（fx 名/glsl/パス数）の変化時
-  だけ再生成。**この「再生成せず rAF を止める/戻す」機構を step 5（不可視 back ページ停止）がそのまま使う。**
-  一時停止中は `[wait_fx]` タイマーも止める（残時間を保持。`[pause_tsy]` と対のタグなので）。
-- 残りで触るファイル：`Fx.ts`（`T_FX` に `enabled`）／`ScriptEngine.ts`（2 タグ＋アクション）／
-  `ScriptMng.ts`（`#aFxTimer` の pause）／`store.tsx`（`chgFx` に `enable` モード）／
-  `FxRunner.ts`＋`GrpLayer.tsx`（制御ハンドル）／`test/ScriptEngine_fx.test.ts`＋
-  `test/e2e/fx.e2e.ts`＋`docs/tag.html`。`T_FX` に `enabled` を足すと `ScriptEngine_fx.test.ts`
-  の `toEqual` が全滅するので同時に直す。
+- **`[pause_fx]`/`[resume_fx]` は canvas を作り直さない**。`FxImg`（`GrpLayer.tsx`）の再生成 `key` を
+  「シェーダ構成（fx 名/glsl/パス数）」だけに絞り（`structKey`）、プリセットパラメータ・`speed`・
+  `time`・`enabled` は `FxRunner` の制御ハンドル `update(aFx)` でホットスワップ（`contentKey` の
+  変化で `useEffect`）。`FxRunner.setup()` は `()=>void` でなく `{update, dispose}`（`T_FX_HANDLE`）を
+  返す。パスごとに `pausedAccMs`/`pausedAt` を持ち、無効化中の経過を tick から差し引く（＝tick 凍結。
+  描画自体は続ける＝前段パスが動けば入力は変わる）。全パスが無効／経過なら `raf=0` にして停止、
+  `update()` で再開できる。**この「再生成せず rAF を止める/戻す」機構を step 5（不可視 back ページ
+  停止）が `update()` に `active` 引数を足して流用する。**
+  一時停止中は `[wait_fx]` タイマーも止める（`#pauseFxTimers()` が残時間を保持。`[pause_tsy]` と対の
+  タグなので）。`store.chgFx` に `mode:'enable'`（`index=`／`name=`／全部）。
+- 触ったファイル：`Fx.ts`（`T_FX.enabled`）／`ScriptEngine.ts`（`wait_fx`＋`pause_fx`/`resume_fx`＋
+  `waitFx`/`enableFx` アクション）／`ScriptMng.ts`（`#aFxTimer`＋`#fxWaiting`＋`#pauseFxTimers`）／
+  `store.tsx`（`chgFx` の enable モード）／`FxRunner.ts`＋`GrpLayer.tsx`（`T_FX_HANDLE`）／
+  `test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
 
 #### 用途カタログ（背景演出中心。ギャラリー実演の母集団）
 
@@ -350,8 +353,8 @@ GLSL だけ借りる**が確定。
 |---|---|
 | `[add_fx]` | `[tsy]` 開始 ＋ `[add_filter]`（`aFx[]` へ push） |
 | `[clear_fx]` | `[stop_tsy]` ＋ `aFx[]` からの撤去（記述子を消せば rAF ループも止まる） |
-| `[pause_fx]`／`[resume_fx]` | `[pause_tsy]`／`[resume_tsy]`（記述子は残し描画だけ止める）※残り |
-| `[wait_fx]` | `[wait_tsy]`（`ScriptMng` が `waitFx` アクションを持つ）※実装済み |
+| `[pause_fx]`／`[resume_fx]` | `[pause_tsy]`／`[resume_tsy]`（記述子は残し描画だけ止める） |
+| `[wait_fx]` | `[wait_tsy]`（`ScriptMng` が `waitFx` アクションを持つ） |
 
 #### 内部モデル：`aFx` はレイヤのレコード内、名前はレイヤスコープ
 
@@ -478,7 +481,7 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵・背景シェーダ | ○（正式化決定・実装中） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`（済）＋`[pause_fx]`/`[resume_fx]`（残り）（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL 契約は `[trans glsl=]` と名前統一（`uSampler`/`vTextureCoord`/`tick`）、Shadertoy は開発時に手変換。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
+| 立ち絵・背景シェーダ | ○（正式化決定・実装中） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]` 実装済（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL 契約は `[trans glsl=]` と名前統一（`uSampler`/`vTextureCoord`/`tick`）、Shadertoy は開発時に手変換。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。

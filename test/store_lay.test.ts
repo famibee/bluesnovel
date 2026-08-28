@@ -263,8 +263,8 @@ it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを�
 	useStore.setState({aPage: [[], []], foreIdx: 0});
 	S().replace(json);
 	expect(fxOf('a')).toEqual([
-		{name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1, params: {amp: 6, freq: 2}},
-		{name: 'rs', fx: 'rgbShift', glsl: '', time: 0, speed: 1, params: {shift: 4}},
+		{name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}},
+		{name: 'rs', fx: 'rgbShift', glsl: '', time: 0, speed: 1, enabled: true, params: {shift: 4}},
 	]);
 	// round-trip 後も採番が続く（#fx1 の次は #fx2）
 	addFx('a', {fx: 'wave'});
@@ -275,6 +275,23 @@ it('chgFx_page=both は表裏に同名の #fxN を複製', ()=> {
 	addFx('a', {fx: 'wave'}, 'both');
 	expect(fxOf('a', 0)!.map(f=> f.name)).toEqual(['#fx1']);
 	expect(fxOf('a', 1)!.map(f=> f.name)).toEqual(['#fx1']);
+});
+
+it('chgFx_enable モード（[pause_fx]/[resume_fx]）は enabled だけ差し替える', ()=> {
+	addFx('a', {fx: 'wave', name: 'w'});
+	addFx('a', {fx: 'rgbShift'});		// #fx1
+	// name= 指定：一致名だけ
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'enable', names: ['w'], enabled: false});
+	expect(fxOf('a')!.map(f=> f.enabled)).toEqual([false, true]);
+	// index= 指定：そのレイヤの N 番目
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'enable', index: 1, enabled: false});
+	expect(fxOf('a')!.map(f=> f.enabled)).toEqual([false, false]);
+	// name/index 省略：全部
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'enable', enabled: true});
+	expect(fxOf('a')!.map(f=> f.enabled)).toEqual([true, true]);
+	// index 範囲外は throw（[enable_filter] と同じ文言）
+	expect(()=> S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'enable', index: 5, enabled: false}))
+		.toThrow('の fx の個数（2）を越えています');
 });
 
 it('chgFx_[clear_lay] で aFx が落ちる（A_LAY_STY_KEY 経由）', ()=> {

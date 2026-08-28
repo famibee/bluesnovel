@@ -374,8 +374,8 @@ var O = b()((e, t) => ({
 		let { idx: l, aLay: u } = C(e, n);
 		return c(u), w(e, l, u);
 	}),
-	chgFx: ({ aLayNm: t, page: n, mode: r, fx: a, names: o }) => e((e) => {
-		let s = (e) => {
+	chgFx: ({ aLayNm: t, page: n, mode: r, fx: a, names: o, index: s, enabled: c }) => e((e) => {
+		let l = (e) => {
 			if (!i(e)) {
 				if (r === "add") throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
 				return;
@@ -389,6 +389,25 @@ var O = b()((e, t) => ({
 				t.length > 0 ? e.aFx = t : delete e.aFx;
 				return;
 			}
+			if (r === "enable") {
+				let t = e.aFx ?? [];
+				if (t.length === 0) return;
+				let n = c ?? !0;
+				if (s !== void 0) {
+					if (s < 0 || s >= t.length) throw `${e.nm} の fx の個数（${t.length}）を越えています`;
+					e.aFx = t.map((e, t) => t === s ? {
+						...e,
+						enabled: n
+					} : e);
+				} else e.aFx = o ? t.map((e) => e.name && o.includes(e.name) ? {
+					...e,
+					enabled: n
+				} : e) : t.map((e) => ({
+					...e,
+					enabled: n
+				}));
+				return;
+			}
 			let t = [...e.aFx ?? []], n = a;
 			if (!n.name) {
 				let e = t.reduce((e, t) => {
@@ -400,25 +419,25 @@ var O = b()((e, t) => ({
 					name: `#fx${e + 1}`
 				};
 			}
-			let s = t.findIndex((e) => e.name === n.name);
-			s >= 0 ? t[s] = n : t.push(n), e.aFx = t;
-		}, c = (e) => {
+			let l = t.findIndex((e) => e.name === n.name);
+			l >= 0 ? t[l] = n : t.push(n), e.aFx = t;
+		}, u = (e) => {
 			if (!t) {
-				e.forEach(s);
+				e.forEach(l);
 				return;
 			}
 			for (let n of t) {
 				let t = e.find((e) => e.nm === n);
 				if (!t) throw `存在しないレイヤ ${n} です`;
-				s(t);
+				l(t);
 			}
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
-			return c(t), t;
+			return u(t), t;
 		}) };
-		let { idx: l, aLay: u } = C(e, n);
-		return c(u), w(e, l, u);
+		let { idx: d, aLay: f } = C(e, n);
+		return u(f), w(e, d, f);
 	}),
 	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
 		let a = (e) => {
