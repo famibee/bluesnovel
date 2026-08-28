@@ -143,26 +143,31 @@ async function compositeFace(baseSrc: string, aFace: readonly T_FACE_SRC[]): Pro
 	return cvs;
 }
 
-// [add_fx]（立ち絵シェーダエフェクトの試作。ANIMATION_RESEARCH.md §7 の「C 方式」）。
-//	aFxが非空のとき、基本画像の<img>の代わりにレイヤ実寸の<canvas>（WebGL）を描く。
-//	styLay()が与えるtransform/opacity/z順/blendmodeはこのcanvasにも自動で継承される
-//	（<img>と同じ位置なので）。重い部分（WebGLランナー・プリセットGLSL）はlazy importで、
-//	[add_fx]が使われた回にはじめて src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
-//	aFaceStatic（静止 face）は基本画像へ合成してシェーダに通す。sheet face は呼び出し側でDOMへ残す
-function FxImg({src, aFaceStatic, aFx, active, styFit}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; styFit: CSSProperties}) {
+// [add_fx]（立ち絵・背景シェーダエフェクト。ANIMATION_RESEARCH.md §7 の「C 方式」）。
+//	基本画像の<img>（呼び出し側が常に敷く）へレイヤ実寸の<canvas>（WebGL）を絶対配置で重ねる。
+//	styLay()が与えるtransform/opacity/z順/blendmodeは親div0経由でどちらにも効く。
+//	重い部分（WebGLランナー・プリセットGLSL）はlazy importで、[add_fx]が使われた回にはじめて
+//	src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
+//	aFaceStatic（静止 face）は基本画像へ合成してシェーダに通す。sheet face は呼び出し側でDOMへ残す。
+//	初回フレーム描画までは onReady(false)＝下の<img>が見える（構成切替時に一瞬消えない）
+function FxImg({src, aFaceStatic, aFx, active, onReady}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; onReady: (b: boolean)=> void}) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
-	// canvasごと作り直すのは**シェーダ構成 or テクスチャ源が変わったとき**（fx名/glsl/パス数、
-	//	基本画像、face差分）：WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを
-	//	取り直せないため使い捨てにして開き直す。プリセットパラメータ・speed・time・enabled
-	//	（[pause_fx]/[resume_fx]）だけの変化は handle.update() でホットスワップ＝再生成すると
-	//	tick=0 へ戻ってしまう（ANIMATION_RESEARCH.md §7 step 2）
+	// canvasを作り直すのは**テクスチャ源が変わったとき**だけ（基本画像・静止 face）：
+	//	WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを取り直せないため
+	//	使い捨てにして開き直す。**シェーダ構成（fx名/glsl/パス数）が変わっても作り直さない**——
+	//	handle.update() が同じコンテキスト上でプログラムを組み直す（＝切替時に空白が出ない。
+	//	以前は structKey で canvas ごと張り替えていて runFx 完了まで一瞬消えていた）。
+	//	パラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）も update() でホットスワップ
+	//	（再生成すると tick=0 へ戻る。ANIMATION_RESEARCH.md §7 step 2）
 	const faceKey = aFaceStatic.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode}`).join(';');
-	const structKey = `${src}\n${faceKey}\n${aFx.map(f=> `${f.fx}|${f.glsl}`).join(',')}`;
+	const sourceKey = `${src}\n${faceKey}`;
 	const contentKey = JSON.stringify(aFx);
-	// activeはstructKeyのuseEffectを回さない（canvas再生成はしない）＝mount時の値だけrefで拾う
+	// sourceKeyのuseEffectを回さない値はmount時だけrefで拾う（activeとaFx。以後は下のupdate effect）
 	const activeRef = useRef(active);
 	activeRef.current = active;
+	const aFxRef = useRef(aFx);
+	aFxRef.current = aFx;
 	useEffect(()=> {
 		const cvs = ref.current;
 		if (! cvs || ! src) return;
@@ -172,20 +177,22 @@ function FxImg({src, aFaceStatic, aFx, active, styFit}: {src: string; aFaceStati
 			const source = aFaceStatic.length > 0 ? await compositeFace(src, aFaceStatic) : src;
 			if (! alive) return;
 			const {runFx} = await import('../ts/FxRunner');
-			const h = await runFx({canvas: cvs, source, aFx, active: activeRef.current});
-			if (alive) handle.current = h; else h.dispose();
+			const h = await runFx({canvas: cvs, source, aFx: aFxRef.current, active: activeRef.current});
+			if (alive) {handle.current = h; onReady(true)}	// 初回フレーム描画済み＝下の<img>を隠してよい
+			else h.dispose();
 		})().catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
-		return ()=> {alive = false; handle.current?.dispose(); handle.current = null};
+		return ()=> {alive = false; onReady(false); handle.current?.dispose(); handle.current = null};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [structKey]);
-	// 構成そのままで パラメータ／enabled（[pause_fx]）／active（不可視ページ）だけ変わったら、
-	//	canvasを保ったまま差し替える（不可視ページでは rAF ごと止まる）
+	}, [sourceKey]);
+	// シェーダ構成／パラメータ／enabled（[pause_fx]）／active（不可視ページ）の変化は
+	//	canvasを保ったまま handle.update() で反映（構成変化はプログラムだけ組み直す）
 	useEffect(()=> {
 		handle.current?.update(aFx, active);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [contentKey, active]);
 
-	return <canvas key={structKey} ref={ref} style={styFit}/>;
+	// 基本<img>の上に敷く（div0はposition:absolute＝これの包含ブロック。inset:0で<img>の箱いっぱいに）
+	return <canvas key={sourceKey} ref={ref} style={{position: 'absolute', inset: 0}}/>;
 }
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, fxActive, getVideoVol, needClick2Play}: T_GRPARG) {
@@ -214,6 +221,11 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	// 基本画像もアニメpngシートと同じくuseLoadedImgでdecode完了を待ってから描く
 	//	（isSheet/isMovie時はここでロード不要なので''を渡してスキップ）
 	const loadedSrc = useLoadedImg(isSheet || isMovie ? '' : src);
+
+	// [add_fx] の canvas が初回フレームを描いたか（FxImg が onReady で上げ下げ）。false の間は
+	//	基本 <img> を見せる＝構成切替・[clear_fx]直後に一瞬消えない。[clear_fx]で fx が無くなったら戻す
+	const [fxReady, setFxReady] = useState(false);
+	useEffect(()=> {if (aFx.length === 0) setFxReady(false)}, [aFx.length]);
 
 	// 動画（[lay fn=movie.mp4/.webm]）はisMovie propsで判定（上記isSheetと同じ理由でfnからは
 	//	判定できない。`ConfigBase.SEARCH_PATH_ARG_EXT.SP_GSM`にmp4|webmが登録済みなのでパス解決自体は既に通る）。
@@ -251,10 +263,13 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		{sheet && <div className={aniSpriteClass(sheet)}/>}
 		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
+		{/* 基本画像は fx の有無に関わらず常に敷く（＝div0 のサイズも決める）。fx 有効かつ canvas が
+			初回フレームを描くまで（fxReady=false）は見せ、描いたら隠す＝構成切替で一瞬消えない・
+			立ち絵の縁が二重に出ない。fx canvas は下の <FxImg> が absolute でこの上へ重ねる */}
+		{loadedSrc && ! isSheet && ! isMovie
+			&& <img src={loadedSrc} style={aFx.length > 0 && fxReady ? {...styFit, visibility: 'hidden'} : styFit}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
-			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} active={fxActive} styFit={styFit}/>}
-		{loadedSrc && ! isSheet && ! isMovie && aFx.length === 0
-			&& <img src={loadedSrc} style={styFit}/>}
+			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
 		{/* fx有効時（基本画像が静止画）は静止 face を FxImg が合成済み＝ここには sheet face だけ残す。
 			それ以外（fx無効／基本画像が sheet・動画）は全 face を従来どおり DOM オーバーレイで重ねる */}
 		{(aFx.length > 0 && loadedSrc && ! isSheet && ! isMovie ? aFace.filter(f=> f.isSheet) : aFace)

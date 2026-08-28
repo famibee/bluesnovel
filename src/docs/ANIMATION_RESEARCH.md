@@ -289,6 +289,24 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 生成系なので `uSampler` を読み、その上へ白い粒／スジを合成。`amp`＝落下速度、`freq`＝密度。
 透明部にも降るので**背景（bg）レイヤ向け**。次候補：花火・タイル塗り＋スクロール・桜。
 
+#### 構成切替で一瞬消えない（2026-08-28）
+
+gallery `?cur=add_fx` でボタン連打すると「切り替えるたびに立ち絵が一瞬消える」不具合。
+2 段構えで対策：
+
+1. **fx 名／生 glsl／パス数が変わっても canvas を作り直さない**。`FxImg` の `key` を
+   `sourceKey`（基本画像＋静止 face のみ）にし、シェーダ構成の変化は `handle.update()` が
+   **同じ WebGL コンテキスト上でプログラムだけ組み直す**（`FxRunner` の `structSig` 比較→
+   `gl.deleteProgram`＋再 link。旧フレームが `preserveDrawingBuffer` で残るので空白フレームが出ない。
+   新パスは `pausedAccMs` を「今」に合わせて tick 0 から）。gallery の `[clear_fx][add_fx X]` は
+   1 React コミット（`aFx` が `[old]→[new]`）なので `sourceKey` 不変＝canvas 据え置き＝完全に継ぎ目なし。
+2. 基本画像／face が変わった時（`sourceKey` 変化）と初回マウントは canvas を張り替える。その間は
+   `GrpLayer` が常に敷いている基本 `<img>` が見える（`FxImg` の `onReady(false)`／描画完了で
+   `visibility:hidden`。立ち絵の縁が二重に出ないように）。
+
+回帰は `fx.e2e.ts`「構成切替で fx canvas を作り直さない＝一瞬消えない」（canvas 要素に印を付けて
+構成変化後も残ることを確認）。
+
 #### 用途カタログ（背景演出中心。ギャラリー実演の母集団）
 
 主に背景（bg grp レイヤ）に積む想定。**Shadertoy 既定ライセンスは CC BY-NC-SA 3.0（非商用）**

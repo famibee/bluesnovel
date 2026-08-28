@@ -9948,44 +9948,53 @@ async function hu(e, t) {
 		a.globalCompositeOperation = mu[e.blendmode] ?? "source-over", a.drawImage(r[t], e.dx, e.dy);
 	}), i;
 }
-function gu({ src: e, aFaceStatic: t, aFx: n, active: r, styFit: i }) {
-	let a = (0, V.useRef)(null), o = (0, V.useRef)(null), s = `${e}\n${t.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode}`).join(";")}\n${n.map((e) => `${e.fx}|${e.glsl}`).join(",")}`, c = JSON.stringify(n), l = (0, V.useRef)(r);
-	return l.current = r, (0, V.useEffect)(() => {
-		let r = a.current;
-		if (!r || !e) return;
-		let i = !0;
+function gu({ src: e, aFaceStatic: t, aFx: n, active: r, onReady: i }) {
+	let a = (0, V.useRef)(null), o = (0, V.useRef)(null), s = `${e}\n${t.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode}`).join(";")}`, c = JSON.stringify(n), l = (0, V.useRef)(r);
+	l.current = r;
+	let u = (0, V.useRef)(n);
+	return u.current = n, (0, V.useEffect)(() => {
+		let n = a.current;
+		if (!n || !e) return;
+		let r = !0;
 		return (async () => {
 			let a = t.length > 0 ? await hu(e, t) : e;
-			if (!i) return;
+			if (!r) return;
 			let { runFx: s } = await import("./FxRunner.js"), c = await s({
-				canvas: r,
+				canvas: n,
 				source: a,
-				aFx: n,
+				aFx: u.current,
 				active: l.current
 			});
-			i ? o.current = c : c.dispose();
+			r ? (o.current = c, i(!0)) : c.dispose();
 		})().catch((e) => {
 			console.error(`[add_fx] ${String(e)}`);
 		}), () => {
-			i = !1, o.current?.dispose(), o.current = null;
+			r = !1, i(!1), o.current?.dispose(), o.current = null;
 		};
 	}, [s]), (0, V.useEffect)(() => {
 		o.current?.update(n, r);
 	}, [c, r]), /* @__PURE__ */ P("canvas", {
 		ref: a,
-		style: i
+		style: {
+			position: "absolute",
+			inset: 0
+		}
 	}, s);
 }
 function _u({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, aFx: l, fxActive: u, getVideoVol: d, needClick2Play: f }) {
 	let p = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, m = uu(a, o), h = du(o || s ? "" : a), g = (e) => {
+	}, m = uu(a, o), h = du(o || s ? "" : a), [g, _] = (0, V.useState)(!1);
+	(0, V.useEffect)(() => {
+		l.length === 0 && _(!1);
+	}, [l.length]);
+	let v = (e) => {
 		e && (e.volume = d(), e.muted = f());
-	}, _ = {
+	}, y = {
 		display: "block",
 		..."width" in n ? { width: "100%" } : {},
 		..."height" in n ? { height: "100%" } : {}
-	}, v = {
+	}, b = {
 		width: "max-content",
 		...n
 	};
@@ -9993,32 +10002,35 @@ function _u({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 		styChild: e,
 		isDesignMode: t,
 		nm: r,
-		sty: v,
+		sty: b,
 		keepRatio: !0,
 		onMouseDown: p,
 		children: [
 			m && /* @__PURE__ */ P("div", { className: ee(m) }),
 			a && s && /* @__PURE__ */ P("video", {
-				ref: g,
+				ref: v,
 				src: a,
 				autoPlay: !0,
 				playsInline: !0,
 				"data-fn": i,
-				style: _,
+				style: y,
 				onLoadedMetadata: (e) => {
 					z(a, e.currentTarget.videoWidth, e.currentTarget.videoHeight);
 				}
+			}),
+			h && !o && !s && /* @__PURE__ */ P("img", {
+				src: h,
+				style: l.length > 0 && g ? {
+					...y,
+					visibility: "hidden"
+				} : y
 			}),
 			h && !o && !s && l.length > 0 && /* @__PURE__ */ P(gu, {
 				src: h,
 				aFaceStatic: c.filter((e) => !e.isSheet),
 				aFx: l,
 				active: u,
-				styFit: _
-			}),
-			h && !o && !s && l.length === 0 && /* @__PURE__ */ P("img", {
-				src: h,
-				style: _
+				onReady: _
 			}),
 			(l.length > 0 && h && !o && !s ? c.filter((e) => e.isSheet) : c).map((e, t) => /* @__PURE__ */ P(fu, { ...e }, `${e.fn}_${String(t)}`))
 		]

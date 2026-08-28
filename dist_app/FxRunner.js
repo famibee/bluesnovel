@@ -118,14 +118,12 @@ function s(e, n, o, s, c, l, u) {
 			uFreq: e.getUniformLocation(r, "freq"),
 			uShift: e.getUniformLocation(r, "shift")
 		};
-	}, p = o.map((e) => {
+	}, p = (e) => {
 		let n = e.glsl || t[e.fx];
 		if (!n) throw Error(`未知の fx: ${e.fx}`);
-		return f(n, e);
-	}), m = f("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {});
-	e.deleteShader(d);
-	let h = e.createBuffer();
-	e.bindBuffer(e.ARRAY_BUFFER, h), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
+		return n;
+	}, m = (e) => e.map((e) => `${e.fx}${e.glsl}`).join(""), h = o.map((e) => f(p(e), e)), g = m(o), _ = f("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {}), v = e.createBuffer();
+	e.bindBuffer(e.ARRAY_BUFFER, v), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
 		-1,
 		-1,
 		1,
@@ -135,7 +133,7 @@ function s(e, n, o, s, c, l, u) {
 		1,
 		1
 	]), e.STATIC_DRAW), e.enableVertexAttribArray(0), e.vertexAttribPointer(0, 2, e.FLOAT, !1, 0, 0);
-	let g = a(e, s, c, l), _ = [0, 1].map(() => {
+	let y = a(e, s, c, l), b = [0, 1].map(() => {
 		let t = a(e, null, c, l), n = e.createFramebuffer();
 		return e.bindFramebuffer(e.FRAMEBUFFER, n), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, t, 0), {
 			tex: t,
@@ -143,42 +141,51 @@ function s(e, n, o, s, c, l, u) {
 		};
 	});
 	e.bindFramebuffer(e.FRAMEBUFFER, null), e.viewport(0, 0, c, l), e.disable(e.DEPTH_TEST), e.disable(e.BLEND);
-	let v = (t, n, r, i) => {
+	let x = (t, n, r, i) => {
 		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSampler && e.uniform1i(t.uSampler, 0), t.uTick && e.uniform1f(t.uTick, i), t.uRes && e.uniform2f(t.uRes, c, l), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
-	}, y = performance.now(), b = 0, x = !0, S = u, C = (e) => {
-		b === 0 != (e === 0) && (n.dataset.fxRunning = e === 0 ? "0" : "1"), b = e;
-	}, w = () => {
-		let e = performance.now(), t = e - y, n = !1;
-		for (let r = 0; r < p.length; ++r) {
-			let i = p[r], a = !i.fx.enabled || !S;
+	}, S = performance.now(), C = 0, w = !0, T = u, E = (e) => {
+		C === 0 != (e === 0) && (n.dataset.fxRunning = e === 0 ? "0" : "1"), C = e;
+	}, D = () => {
+		let e = performance.now(), t = e - S, n = !1;
+		for (let r = 0; r < h.length; ++r) {
+			let i = h[r], a = !i.fx.enabled || !T;
 			a && i.pausedAt === 0 ? i.pausedAt = e : !a && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
 			let o = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), s = i.fx.time > 0 && o >= i.fx.time;
 			!s && !a && (n = !0);
-			let c = r === 0 ? g : _[(r - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
-			v(s ? m : i, c, _[r % 2].fb, l);
+			let c = r === 0 ? y : b[(r - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
+			x(s ? _ : i, c, b[r % 2].fb, l);
 		}
-		return v(m, _[(p.length - 1) % 2].tex, null, 0), n;
-	}, T = () => {
-		x && C(w() ? requestAnimationFrame(T) : 0);
+		return x(_, b[(h.length - 1) % 2].tex, null, 0), n;
+	}, O = () => {
+		w && E(D() ? requestAnimationFrame(O) : 0);
 	};
-	return w(), C(requestAnimationFrame(T)), {
-		update(e, t) {
-			if (x) {
-				S = t;
-				for (let t = 0; t < p.length; ++t) {
-					let n = e[t];
-					n && (p[t].fx = n);
-				}
-				b === 0 && C(requestAnimationFrame(T));
+	return D(), E(requestAnimationFrame(O)), {
+		update(t, n) {
+			if (!w) return;
+			T = n;
+			let r = m(t);
+			if (r !== g) try {
+				let n = t.map((e) => f(p(e), e));
+				for (let t of h) e.deleteProgram(t.pg);
+				let i = performance.now() - S;
+				for (let e of n) e.pausedAccMs = i;
+				h = n, g = r;
+			} catch (e) {
+				console.error(`[add_fx] ${String(e)}`);
 			}
+			else for (let e = 0; e < h.length; ++e) {
+				let n = t[e];
+				n && (h[e].fx = n);
+			}
+			C === 0 && E(requestAnimationFrame(O));
 		},
 		dispose() {
-			if (x) {
-				x = !1, cancelAnimationFrame(b), e.deleteTexture(g);
-				for (let { tex: t, fb: n } of _) e.deleteTexture(t), e.deleteFramebuffer(n);
-				e.deleteBuffer(h);
-				for (let t of p) e.deleteProgram(t.pg);
-				e.deleteProgram(m.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+			if (w) {
+				w = !1, cancelAnimationFrame(C), e.deleteShader(d), e.deleteTexture(y);
+				for (let { tex: t, fb: n } of b) e.deleteTexture(t), e.deleteFramebuffer(n);
+				e.deleteBuffer(v);
+				for (let t of h) e.deleteProgram(t.pg);
+				e.deleteProgram(_.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
 			}
 		}
 	};

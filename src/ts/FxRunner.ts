@@ -15,10 +15,11 @@
 //	  [trans glsl=] と統一（uSampler / tick / vTextureCoord / resolution。詳細は Fx.ts ヘッダ）。
 //	・fx.time>0（one-shot）は経過後そのパスを素通しに切り替え、全パスが素通し／無効になったら
 //	  rAF を止めて凍結（＝基本画像そのまま）。記述子の撤去は [clear_fx]／[clear_lay] が行う。
-//	・[pause_fx]/[resume_fx]（fx.enabled）／可視判定（update() の active）は canvas を作り直さず
-//	  update() でホットスワップ（key 再生成すると tick=0 へ戻ってしまう）。凍結パスは自分の tick を
-//	  止めて描画は続ける（前段パスが動けば入力は変わるため）。全パス凍結／不可視なら rAF ごと止め、
-//	  凍結が解けたら続きから（[trans] 後の不可視 back ページの WebGL 空回しをこれで止める）。
+//	・update() は canvas/コンテキストを作り直さない。パラメータ・enabled（[pause_fx]/[resume_fx]）・
+//	  可視判定（active）はそのまま差し替え、**シェーダ構成（fx 名/生 glsl/パス数）が変わった時は
+//	  同じコンテキスト上でプログラムだけ組み直す**（旧フレームが残っているので切替時に空白が出ない）。
+//	  凍結パスは自分の tick を止めて描画は続ける（前段パスが動けば入力は変わるため）。全パス凍結／
+//	  不可視なら rAF ごと止め、凍結が解けたら続きから（[trans] 後の不可視 back ページの空回しを止める）。
 //	・source は基本画像 URL か、GrpLayer.tsx が基本画像＋静止 face を合成した offscreen 2D canvas
 //	  （差分が変わった時だけ作り直す）。sheet/動画 face はまだ通さず DOM オーバーレイのまま。
 //	  外部ドメインの画像は 2D canvas を汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
@@ -149,14 +150,18 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uShift	: gl.getUniformLocation(pg, 'shift'),
 		};
 	};
-	const aPass = aFx.map(fx=> {
-		// glsl= 指定はその生シェーダ、そうでなければプリセット（fx 名は Fx.bldFx() で検査済み）
+	// glsl= 指定はその生シェーダ、そうでなければプリセット（fx 名は Fx.bldFx() で検査済み）
+	const fsOf = (fx: T_FX)=> {
 		const fsSrc = fx.glsl || H_FX_FRAG[fx.fx];
 		if (! fsSrc) throw new Error(`未知の fx: ${fx.fx}`);
-		return mkPass(fsSrc, fx);
-	});
-	const pgPass = mkPass(PASSTHRU_SRC, {} as T_FX);	// 素通し（one-shot 経過後・最終ブリット用）
-	gl.deleteShader(vs);
+		return fsSrc;
+	};
+	// シェーダ構成（fx 名／生 glsl／パス数）の署名。これが変わらない限り update() でパスを作り直さない
+	const structSig = (a: readonly T_FX[])=> a.map(f=> `${f.fx}${f.glsl}`).join('');
+
+	let aPass = aFx.map(fx=> mkPass(fsOf(fx), fx));
+	let sig = structSig(aFx);
+	const pgPass = mkPass(PASSTHRU_SRC, {} as T_FX);	// 素通し（one-shot 経過後・最終ブリット用。作り直さない）
 
 	const buf = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -245,15 +250,33 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		update(newAFx: T_FX[], newActive: boolean) {
 			if (! live) return;
 			active = newActive;
-			for (let i = 0; i < aPass.length; ++i) {const f = newAFx[i]; if (f) aPass[i]!.fx = f}
-			// 止まっていた rAF を動かし直す（enabled／active が戻った等）。凍結のままなら step() が
-			//	1 フレームで raf=0 に戻すだけ（不可視ページで無駄回しにはならない）
+
+			const nextSig = structSig(newAFx);
+			if (nextSig !== sig) {
+				// シェーダ構成が変わった＝canvas は作り直さず**同じコンテキスト上でプログラムだけ組み直す**
+				//	（key 再生成による空白を無くす。ANIMATION_RESEARCH.md §7）。文法エラーは握って
+				//	旧構成のまま続ける（[add_fx] は Fx.bldFx() で検査済みなので通常起きない）
+				try {
+					const built = newAFx.map(fx=> mkPass(fsOf(fx), fx));
+					for (const p of aPass) gl.deleteProgram(p.pg);
+					const nowMs = performance.now() - t0;
+					for (const p of built) p.pausedAccMs = nowMs;	// 新しい効果の tick は 0 から
+					aPass = built;
+					sig = nextSig;
+				}
+				catch (e) {console.error(`[add_fx] ${String(e)}`)}
+			}
+			else for (let i = 0; i < aPass.length; ++i) {const f = newAFx[i]; if (f) aPass[i]!.fx = f}
+
+			// 止まっていた rAF を動かし直す（enabled／active／構成が変わった等）。凍結のままなら
+			//	step() が 1 フレームで raf=0 に戻すだけ（不可視ページで無駄回しにはならない）
 			if (raf === 0) setRaf(requestAnimationFrame(step));
 		},
 		dispose() {
 			if (! live) return;
 			live = false;
 			cancelAnimationFrame(raf);
+			gl.deleteShader(vs);
 			gl.deleteTexture(texSrc);
 			for (const {tex, fb} of ping) {gl.deleteTexture(tex); gl.deleteFramebuffer(fb)}
 			gl.deleteBuffer(buf);

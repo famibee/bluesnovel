@@ -42,8 +42,9 @@
 
 `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、プリセット wave / rgbShift /
 snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、静止 face 合成、`[trans]` 後の不可視
-back ページで rAF 凍結——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`
-＋`test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
+back ページで rAF 凍結、構成切替で一瞬消えない（fx 変化は canvas を作り直さず同コンテキストで
+プログラム組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`）。
+設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
 
 残り：
 
@@ -59,7 +60,9 @@ back ページで rAF 凍結——ここまで実装済み（`test/ScriptEngine_
 別件（本家 `[trans glsl=]` 契約側。§7 の棲み分け）：
 
 - [ ] ぼかし `[trans glsl=]`（ガウスぼかしのトランジション版）
-- [ ] モザイク `[trans glsl=]`
+      ギャラリーの glsl_slide/mat/main.sn に作例を追加
+- [x] モザイク `[trans glsl=]`
+      ギャラリーの glsl_slide/mat/main.sn#21 がそれだったので完了済み
 
 ## 保留
 

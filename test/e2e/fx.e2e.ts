@@ -47,13 +47,13 @@ async function afx(page: Page, back = false) {
 test('[add_fx] で <img> が WebGL <canvas> に替わり、[clear_fx] で戻る', async ({page})=> {
 	// fx 無し：基本画像そのまま
 	expect(await mesStr(page)).toBe('そのまま');
-	expect(await draw(page)).toBe('img');
+	await expect.poll(async ()=> draw(page)).toBe('img');
 	expect(await afx(page)).toBeUndefined();
 
 	// [add_fx layer=base fx=wave amp=10 freq=3]
 	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('wave');
-	expect(await draw(page)).toBe('canvas');
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
 	const a1 = (await afx(page))!;
 	expect(a1).toHaveLength(1);
 	// 無名 [add_fx] は store の chgFx が #fxN をレイヤスコープで採番（ANIMATION_RESEARCH.md §7）
@@ -68,7 +68,7 @@ test('[add_fx] で <img> が WebGL <canvas> に替わり、[clear_fx] で戻る'
 	expect(a2).toHaveLength(2);
 	expect(a2[1]).toMatchObject({name: 'rgb', fx: 'rgbShift'});
 	expect(a2[1]!.params).toMatchObject({shift: 12});
-	expect(await draw(page)).toBe('canvas');
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
 
 	// [clear_fx layer=base name=rgb]：name 指定は同名だけ剥がす
 	await pressKeyToWaitMark(page, 'Space');
@@ -76,7 +76,28 @@ test('[add_fx] で <img> が WebGL <canvas> に替わり、[clear_fx] で戻る'
 	const a3 = (await afx(page))!;
 	expect(a3).toHaveLength(1);
 	expect(a3[0]).toMatchObject({fx: 'wave'});
-	expect(await draw(page)).toBe('canvas');	// 無名 wave が残るので canvas のまま
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 無名 wave が残るので canvas のまま
+});
+
+test('構成切替で fx canvas を作り直さない＝一瞬消えない（バグの回帰）', async ({page})=> {
+	// そのまま（fx 無し）→ wave（1 パス）→ wave+rgb（2 パス）→ waveのみ（1 パス）。
+	//	fx canvas は absolute で <img> の上に重なるだけ＋シェーダ構成が変わっても同じ canvas 上で
+	//	プログラムだけ組み直す。data-fn 付きは face なので除外
+	const baseImg = page.locator(`${LAY} img:not([data-fn])`);
+	expect(await baseImg.count()).toBe(1);
+
+	await pressKeyToWaitMark(page, 'Space');	// wave（fx canvas 出現）
+	expect(await mesStr(page)).toBe('wave');
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// この canvas 要素に印を付ける。構成が変わっても作り直されなければ印は残る
+	await page.locator(`${LAY} canvas`).evaluate((c: any)=> {c.__fxMark = 1});
+
+	for (const mes of ['wave+rgb', 'waveのみ']) {
+		await pressKeyToWaitMark(page, 'Space');
+		expect(await mesStr(page)).toBe(mes);
+		expect(await baseImg.count()).toBe(1);			// 基本 <img> は在り続ける
+		expect(await page.locator(`${LAY} canvas`).evaluate((c: any)=> c.__fxMark)).toBe(1);	// 同じ canvas 要素
+	}
 });
 
 test('[add_fx page=both] は表裏どちらの base にも積まれる', async ({page})=> {
@@ -100,7 +121,7 @@ test('[clear_lay] は aFx も落とす（A_LAY_STY_KEY 経由）', async ({page}
 
 	// [clear_lay layer=base]（既定 page=fore）→ 直後に [lay fn=pic] で絵だけ戻す
 	expect(await afx(page)).toBeUndefined();
-	expect(await draw(page)).toBe('img');
+	await expect.poll(async ()=> draw(page)).toBe('img');
 
 	// 裏ページ（page=fore の [clear_lay] は触らない）には both が残っている
 	const back = (await afx(page, true))!;
@@ -114,13 +135,13 @@ test('[add_fx time=] の one-shot 記述子も aFx に載る（撤去は [clear_
 	const a = (await afx(page))!;
 	expect(a).toHaveLength(1);
 	expect(a[0]).toMatchObject({fx: 'rgbShift', time: 1500});
-	expect(await draw(page)).toBe('canvas');
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
 
 	// [clear_fx layer=base]（name 無し）→ そのレイヤの fx 全部
 	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('ぜんぶクリア');
 	expect(await afx(page)).toBeUndefined();
-	expect(await draw(page)).toBe('img');
+	await expect.poll(async ()=> draw(page)).toBe('img');
 });
 
 test('[wait_fx] は [add_fx time>0] の経過を待ってから続きへ', async ({page})=> {
@@ -140,7 +161,7 @@ test('[pause_fx]/[resume_fx] は記述子の enabled を反転する', async ({p
 	expect(await mesStr(page)).toBe('pause_fx');
 	// [add_fx name=p] のあと [pause_fx layer=base name=p]
 	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({fx: 'wave', enabled: false});
-	expect(await draw(page)).toBe('canvas');	// enabled=false でも <canvas> のまま（記述子は残る）
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// enabled=false でも <canvas> のまま（記述子は残る）
 
 	await pressKeyToWaitMark(page, 'Space');	// [resume_fx layer=base]
 	expect(await mesStr(page)).toBe('resume_fx');
@@ -157,7 +178,7 @@ test('[add_fx glsl=] は生シェーダをそのまま描く（契約は [trans 
 	const g = (await afx(page))!.find(f=> f.name === 'g')!;
 	expect(g).toMatchObject({fx: '', enabled: true});
 	expect(g.glsl).toContain('gl_FragColor');
-	expect(await draw(page)).toBe('canvas');	// コンパイル成功で <canvas>（失敗なら console.error だけ出て絵は出ない）
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// コンパイル成功で <canvas>（失敗なら console.error だけ出て絵は出ない）
 });
 
 test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す（face の <img> は DOM から消える）', async ({page})=> {
@@ -169,7 +190,7 @@ test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す�
 	// [add_face f] → [lay face=f] → [add_fx fx=wave]
 	await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('face合成');
-	expect(await draw(page)).toBe('canvas');
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
 	// 静止 face は FxImg が基本画像へ合成済み＝レイヤ内に face の <img data-fn> は無い
 	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
 });
@@ -197,6 +218,6 @@ test('天候プリセット snow / rain が 2 本重ねてコンパイル・描�
 	const a = (await afx(page))!;
 	expect(a.map(f=> f.fx)).toEqual(['snow', 'rain']);
 	expect(a[1]!.params).toMatchObject({amp: 2});
-	expect(await draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>（失敗なら絵が出ない）
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>（失敗なら絵が出ない）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 常時ゆらぎ＝回り続ける
 });
