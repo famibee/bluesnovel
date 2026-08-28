@@ -57,4 +57,15 @@
 [add_face name=f fn=pic dx=30 dy=20]
 [lay layer=base fn=pic face=f]
 [add_fx layer=base fx=wave]
-[er]face合成[s]
+[er]face合成[l]
+
+; [trans] 後の不可視 back ページで fx の rAF を止める（可視＝表ページ or trans中 のときだけ回す）。
+;	canvas の data-fx-running（0/1）で確認する
+[clear_fx layer=base]
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3 page=back]
+[add_fx layer=base page=both fx=wave]
+[er]trans前[l]
+[trans time=300]
+[wt]
+[er]trans後[s]

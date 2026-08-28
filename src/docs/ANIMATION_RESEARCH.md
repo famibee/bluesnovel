@@ -273,6 +273,15 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 従来どおり手前に DOM で重なる（毎フレーム転写は残り）。外部ドメイン画像は 2D canvas を汚染し
 `texImage2D` が落ちる（`[snapshot]` と同じ制約）。
 
+#### step 5（不可視 back ページで rAF 停止）— 完了（2026-08-28）
+
+`[trans]` で fx レイヤが両ページに複製されると canvas も表裏 2 枚でき、裏（不可視）でも rAF+WebGL が
+回っていた。`Stage.tsx` が `GrpLayer` へ `fxActive = (i === foreIdx || !! trans)` を渡し、`FxImg` が
+`handle.update(aFx, active)` の `active` へ流す。`FxRunner` は `active` を step 2 の凍結機構に相乗り
+させ（`frozen = ! p.fx.enabled || ! active`）、全パス凍結なら rAF を止め、可視に戻れば tick の続きから
+再開する。canvas に `data-fx-running`（0/1）を出す（devtools デバッグ＋`fx.e2e.ts` の検証用。状態変化時のみ書き込み）。
+[TODO.md](TODO.md) の「不可視 back ページの最適化調査」（プラグイン拡張レイヤ・`[tsy]`）は fx 分だけ済み。
+
 #### 用途カタログ（背景演出中心。ギャラリー実演の母集団）
 
 主に背景（bg grp レイヤ）に積む想定。**Shadertoy 既定ライセンスは CC BY-NC-SA 3.0（非商用）**

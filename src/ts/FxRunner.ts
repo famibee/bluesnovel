@@ -15,9 +15,10 @@
 //	  [trans glsl=] と統一（uSampler / tick / vTextureCoord / resolution。詳細は Fx.ts ヘッダ）。
 //	・fx.time>0（one-shot）は経過後そのパスを素通しに切り替え、全パスが素通し／無効になったら
 //	  rAF を止めて凍結（＝基本画像そのまま）。記述子の撤去は [clear_fx]／[clear_lay] が行う。
-//	・[pause_fx]/[resume_fx]（fx.enabled）は canvas を作り直さず update() でホットスワップ
-//	  （key 再生成すると tick=0 へ戻ってしまう）。無効パスは自分の tick を凍結して描画は続ける
-//	  （前段パスの出力が動いていれば入力は変わるため）。全パス無効なら rAF ごと止める。
+//	・[pause_fx]/[resume_fx]（fx.enabled）／可視判定（update() の active）は canvas を作り直さず
+//	  update() でホットスワップ（key 再生成すると tick=0 へ戻ってしまう）。凍結パスは自分の tick を
+//	  止めて描画は続ける（前段パスが動けば入力は変わるため）。全パス凍結／不可視なら rAF ごと止め、
+//	  凍結が解けたら続きから（[trans] 後の不可視 back ページの WebGL 空回しをこれで止める）。
 //	・source は基本画像 URL か、GrpLayer.tsx が基本画像＋静止 face を合成した offscreen 2D canvas
 //	  （差分が変わった時だけ作り直す）。sheet/動画 face はまだ通さず DOM オーバーレイのまま。
 //	  外部ドメインの画像は 2D canvas を汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
@@ -29,12 +30,14 @@ import {V_SRC, PASSTHRU_SRC, H_FX_FRAG} from './fxPresets';
 
 
 type T_SOURCE = string | HTMLCanvasElement | HTMLImageElement;
-type T_ARG = {canvas: HTMLCanvasElement; source: T_SOURCE; aFx: T_FX[]};
+type T_ARG = {canvas: HTMLCanvasElement; source: T_SOURCE; aFx: T_FX[]; active: boolean};
 
 // <FxImg>（GrpLayer.tsx）が握る制御ハンドル。シェーダ構成（fx 名/glsl/パス数）が変わらない限り
-//	canvas は作り直さず、enabled・プリセットパラメータ・speed・time は update() で差し替える
+//	canvas は作り直さず、enabled・プリセットパラメータ・speed・time・active は update() で差し替える
 export type T_FX_HANDLE = {
-	update(aFx: T_FX[]): void;	// 同じ長さ・同じ fx 構成の aFx（パラメータ・enabled だけ差分）
+	// aFx＝同じ長さ・同じ fx 構成（パラメータ・enabled だけ差分）。
+	// active＝可視ページか（[trans] 後の不可視 back ページでは false＝全パス凍結＋rAF 停止）
+	update(aFx: T_FX[], active: boolean): void;
 	dispose(): void;
 };
 
@@ -111,7 +114,7 @@ export async function runFx(o: T_ARG): Promise<T_FX_HANDLE> {
 	if (! gl) throw new Error('WebGLコンテキストが取得できません');
 
 	try {
-		return setup(gl, o.aFx, img, w, h);
+		return setup(gl, cvs, o.aFx, img, w, h, o.active);
 	}
 	catch (e) {
 		gl.getExtension('WEBGL_lose_context')?.loseContext();
@@ -132,7 +135,7 @@ type T_PASS = {
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
 };
 
-function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: TexImageSource, w: number, h: number): T_FX_HANDLE {
+function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], img: TexImageSource, w: number, h: number, active0: boolean): T_FX_HANDLE {
 	const vs = compile(gl, gl.VERTEX_SHADER, V_SRC);
 	const mkPass = (fsSrc: string, fx: T_FX): T_PASS => {
 		const pg = link(gl, vs, fsSrc);
@@ -196,6 +199,14 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: TexImageSource, w: n
 	const t0 = performance.now();
 	let raf = 0;
 	let live = true;
+	let active = active0;	// 可視ページか（[trans] 後の不可視 back ページでは false）
+
+	// rAF が回っているか（0/1）を canvas 属性に映す。devtools でのデバッグと E2E（fx.e2e.ts の
+	//	不可視 back ページ凍結テスト）用。状態が変わった時だけ書く＝毎フレーム書かない
+	const setRaf = (id: number)=> {
+		if ((raf === 0) !== (id === 0)) cvs.dataset.fxRunning = id === 0 ? '0' : '1';
+		raf = id;
+	};
 
 	const render = ()=> {
 		const now = performance.now();
@@ -205,13 +216,15 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: TexImageSource, w: n
 		// n パス（aPass 順）→ 最後に画面へ素通しブリット
 		for (let i = 0; i < aPass.length; ++i) {
 			const p = aPass[i]!;
-			// [pause_fx]/[resume_fx]：無効化されている間の経過を pausedAccMs に貯め、tick から差し引く
-			if (! p.fx.enabled && p.pausedAt === 0) p.pausedAt = now;
-			else if (p.fx.enabled && p.pausedAt !== 0) {p.pausedAccMs += now - p.pausedAt; p.pausedAt = 0}
+			// 凍結するのは [pause_fx] で無効化されたパス、または不可視ページ全体。
+			//	凍結中の経過を pausedAccMs に貯め、tick から差し引く（＝可視に戻ったら続きから）
+			const frozen = ! p.fx.enabled || ! active;
+			if (frozen && p.pausedAt === 0) p.pausedAt = now;
+			else if (! frozen && p.pausedAt !== 0) {p.pausedAccMs += now - p.pausedAt; p.pausedAt = 0}
 			const effMs = elapsedMs - p.pausedAccMs - (p.pausedAt !== 0 ? now - p.pausedAt : 0);
 
 			const expired = p.fx.time > 0 && effMs >= p.fx.time;
-			if (! expired && p.fx.enabled) anyActive = true;	// 無効パス・経過パスは rAF を回さない
+			if (! expired && ! frozen) anyActive = true;	// 凍結パス・経過パスは rAF を回さない
 			const inTex = i === 0 ? texSrc : ping[(i - 1) % 2]!.tex;
 			const timeSec = effMs / 1000 * (p.fx.speed || 1);
 			drawPass(expired ? pgPass : p, inTex, ping[i % 2]!.fb, timeSec);
@@ -222,17 +235,20 @@ function setup(gl: WebGLRenderingContext, aFx: T_FX[], img: TexImageSource, w: n
 
 	const step = ()=> {
 		if (! live) return;
-		raf = render() ? requestAnimationFrame(step) : 0;
-		// 全 one-shot 経過／全パス無効 → 最後の render() は凍結された絵。raf=0 にして停止（update() で再開できる）
+		setRaf(render() ? requestAnimationFrame(step) : 0);
+		// 全 one-shot 経過／全パス凍結／不可視 → 最後の render() は凍結された絵。raf=0 で停止（update() で再開）
 	};
 	render();
-	raf = requestAnimationFrame(step);
+	setRaf(requestAnimationFrame(step));
 
 	return {
-		update(newAFx: T_FX[]) {
+		update(newAFx: T_FX[], newActive: boolean) {
 			if (! live) return;
+			active = newActive;
 			for (let i = 0; i < aPass.length; ++i) {const f = newAFx[i]; if (f) aPass[i]!.fx = f}
-			if (raf === 0) raf = requestAnimationFrame(step);	// 止まっていた rAF を動かし直す（enabled が戻った等）
+			// 止まっていた rAF を動かし直す（enabled／active が戻った等）。凍結のままなら step() が
+			//	1 フレームで raf=0 に戻すだけ（不可視ページで無駄回しにはならない）
+			if (raf === 0) setRaf(requestAnimationFrame(step));
 		},
 		dispose() {
 			if (! live) return;

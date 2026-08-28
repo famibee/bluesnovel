@@ -56,14 +56,14 @@ async function o(e) {
 	});
 	if (!o) throw Error("WebGLコンテキストが取得できません");
 	try {
-		return s(o, e.aFx, t, r, i);
+		return s(o, a, e.aFx, t, r, i, e.active);
 	} catch (e) {
 		throw o.getExtension("WEBGL_lose_context")?.loseContext(), e;
 	}
 }
-function s(e, n, o, s, c) {
-	let l = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), u = (t, n) => {
-		let r = i(e, l, t);
+function s(e, n, o, s, c, l, u) {
+	let d = r(e, e.VERTEX_SHADER, "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}"), f = (t, n) => {
+		let r = i(e, d, t);
 		return {
 			pg: r,
 			fx: n,
@@ -76,14 +76,14 @@ function s(e, n, o, s, c) {
 			uFreq: e.getUniformLocation(r, "freq"),
 			uShift: e.getUniformLocation(r, "shift")
 		};
-	}, d = n.map((e) => {
+	}, p = o.map((e) => {
 		let n = e.glsl || t[e.fx];
 		if (!n) throw Error(`未知の fx: ${e.fx}`);
-		return u(n, e);
-	}), f = u("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {});
-	e.deleteShader(l);
-	let p = e.createBuffer();
-	e.bindBuffer(e.ARRAY_BUFFER, p), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
+		return f(n, e);
+	}), m = f("\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", {});
+	e.deleteShader(d);
+	let h = e.createBuffer();
+	e.bindBuffer(e.ARRAY_BUFFER, h), e.bufferData(e.ARRAY_BUFFER, new Float32Array([
 		-1,
 		-1,
 		1,
@@ -93,47 +93,50 @@ function s(e, n, o, s, c) {
 		1,
 		1
 	]), e.STATIC_DRAW), e.enableVertexAttribArray(0), e.vertexAttribPointer(0, 2, e.FLOAT, !1, 0, 0);
-	let m = a(e, o, s, c), h = [0, 1].map(() => {
-		let t = a(e, null, s, c), n = e.createFramebuffer();
+	let g = a(e, s, c, l), _ = [0, 1].map(() => {
+		let t = a(e, null, c, l), n = e.createFramebuffer();
 		return e.bindFramebuffer(e.FRAMEBUFFER, n), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, t, 0), {
 			tex: t,
 			fb: n
 		};
 	});
-	e.bindFramebuffer(e.FRAMEBUFFER, null), e.viewport(0, 0, s, c), e.disable(e.DEPTH_TEST), e.disable(e.BLEND);
-	let g = (t, n, r, i) => {
-		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSampler && e.uniform1i(t.uSampler, 0), t.uTick && e.uniform1f(t.uTick, i), t.uRes && e.uniform2f(t.uRes, s, c), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
-	}, _ = performance.now(), v = 0, y = !0, b = () => {
-		let e = performance.now(), t = e - _, n = !1;
-		for (let r = 0; r < d.length; ++r) {
-			let i = d[r];
-			!i.fx.enabled && i.pausedAt === 0 ? i.pausedAt = e : i.fx.enabled && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
-			let a = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), o = i.fx.time > 0 && a >= i.fx.time;
-			!o && i.fx.enabled && (n = !0);
-			let s = r === 0 ? m : h[(r - 1) % 2].tex, c = a / 1e3 * (i.fx.speed || 1);
-			g(o ? f : i, s, h[r % 2].fb, c);
+	e.bindFramebuffer(e.FRAMEBUFFER, null), e.viewport(0, 0, c, l), e.disable(e.DEPTH_TEST), e.disable(e.BLEND);
+	let v = (t, n, r, i) => {
+		e.bindFramebuffer(e.FRAMEBUFFER, r), e.clearColor(0, 0, 0, 0), e.clear(e.COLOR_BUFFER_BIT), e.useProgram(t.pg), e.activeTexture(e.TEXTURE0), e.bindTexture(e.TEXTURE_2D, n), t.uSampler && e.uniform1i(t.uSampler, 0), t.uTick && e.uniform1f(t.uTick, i), t.uRes && e.uniform2f(t.uRes, c, l), t.uAmp && e.uniform1f(t.uAmp, t.fx.params?.amp ?? 0), t.uFreq && e.uniform1f(t.uFreq, t.fx.params?.freq ?? 0), t.uShift && e.uniform1f(t.uShift, t.fx.params?.shift ?? 0), e.drawArrays(e.TRIANGLE_STRIP, 0, 4);
+	}, y = performance.now(), b = 0, x = !0, S = u, C = (e) => {
+		b === 0 != (e === 0) && (n.dataset.fxRunning = e === 0 ? "0" : "1"), b = e;
+	}, w = () => {
+		let e = performance.now(), t = e - y, n = !1;
+		for (let r = 0; r < p.length; ++r) {
+			let i = p[r], a = !i.fx.enabled || !S;
+			a && i.pausedAt === 0 ? i.pausedAt = e : !a && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
+			let o = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), s = i.fx.time > 0 && o >= i.fx.time;
+			!s && !a && (n = !0);
+			let c = r === 0 ? g : _[(r - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
+			v(s ? m : i, c, _[r % 2].fb, l);
 		}
-		return g(f, h[(d.length - 1) % 2].tex, null, 0), n;
-	}, x = () => {
-		y && (v = b() ? requestAnimationFrame(x) : 0);
+		return v(m, _[(p.length - 1) % 2].tex, null, 0), n;
+	}, T = () => {
+		x && C(w() ? requestAnimationFrame(T) : 0);
 	};
-	return b(), v = requestAnimationFrame(x), {
-		update(e) {
-			if (y) {
-				for (let t = 0; t < d.length; ++t) {
+	return w(), C(requestAnimationFrame(T)), {
+		update(e, t) {
+			if (x) {
+				S = t;
+				for (let t = 0; t < p.length; ++t) {
 					let n = e[t];
-					n && (d[t].fx = n);
+					n && (p[t].fx = n);
 				}
-				v === 0 && (v = requestAnimationFrame(x));
+				b === 0 && C(requestAnimationFrame(T));
 			}
 		},
 		dispose() {
-			if (y) {
-				y = !1, cancelAnimationFrame(v), e.deleteTexture(m);
-				for (let { tex: t, fb: n } of h) e.deleteTexture(t), e.deleteFramebuffer(n);
-				e.deleteBuffer(p);
-				for (let t of d) e.deleteProgram(t.pg);
-				e.deleteProgram(f.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+			if (x) {
+				x = !1, cancelAnimationFrame(b), e.deleteTexture(g);
+				for (let { tex: t, fb: n } of _) e.deleteTexture(t), e.deleteFramebuffer(n);
+				e.deleteBuffer(h);
+				for (let t of p) e.deleteProgram(t.pg);
+				e.deleteProgram(m.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
 			}
 		}
 	};

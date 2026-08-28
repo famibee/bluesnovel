@@ -485,7 +485,7 @@ export default function Stage({
 				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
 				//	そちらの値（sty4Moveable）より後ろに置いて優先させる
 				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
-				if (isGrpLay(l)) return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} isSheet={l.isSheet} isMovie={l.isMovie} aFace={l.aFace} aFx={l.aFx ?? []} getVideoVol={()=> scrMng.getMovieVolume()} needClick2Play={()=> scrMng.needClick2Play()}/>;
+				if (isGrpLay(l)) return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} isSheet={l.isSheet} isMovie={l.isMovie} aFace={l.aFace} aFx={l.aFx ?? []} fxActive={i === foreIdx || !! trans} getVideoVol={()=> scrMng.getMovieVolume()} needClick2Play={()=> scrMng.needClick2Play()}/>;
 				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
 				if (isTxtLay(l)) return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} kinsoku_sol={l.kinsoku_sol} kinsoku_eol={l.kinsoku_eol} kinsoku_dns={l.kinsoku_dns} kinsoku_bura={l.kinsoku_bura} r_align={l.r_align} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} pl={l.pl} pr={l.pr} pt={l.pt} pb={l.pb} enabled={l.enabled} aBtn={l.aBtn} in_style={l.in_style} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)} onSe={(fn, buf)=> scrMng.playButtonSe(fn, buf)}/>;
 				// プラグインレイヤー（[add_lay class=3d]等）。中身（3Dシーン等）はDOM側

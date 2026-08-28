@@ -9948,43 +9948,44 @@ async function hu(e, t) {
 		a.globalCompositeOperation = mu[e.blendmode] ?? "source-over", a.drawImage(r[t], e.dx, e.dy);
 	}), i;
 }
-function gu({ src: e, aFaceStatic: t, aFx: n, styFit: r }) {
-	let i = (0, V.useRef)(null), a = (0, V.useRef)(null), o = `${e}\n${t.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode}`).join(";")}\n${n.map((e) => `${e.fx}|${e.glsl}`).join(",")}`, s = JSON.stringify(n);
-	return (0, V.useEffect)(() => {
-		let r = i.current;
+function gu({ src: e, aFaceStatic: t, aFx: n, active: r, styFit: i }) {
+	let a = (0, V.useRef)(null), o = (0, V.useRef)(null), s = `${e}\n${t.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode}`).join(";")}\n${n.map((e) => `${e.fx}|${e.glsl}`).join(",")}`, c = JSON.stringify(n), l = (0, V.useRef)(r);
+	return l.current = r, (0, V.useEffect)(() => {
+		let r = a.current;
 		if (!r || !e) return;
-		let o = !0;
+		let i = !0;
 		return (async () => {
-			let i = t.length > 0 ? await hu(e, t) : e;
-			if (!o) return;
+			let a = t.length > 0 ? await hu(e, t) : e;
+			if (!i) return;
 			let { runFx: s } = await import("./FxRunner.js"), c = await s({
 				canvas: r,
-				source: i,
-				aFx: n
+				source: a,
+				aFx: n,
+				active: l.current
 			});
-			o ? a.current = c : c.dispose();
+			i ? o.current = c : c.dispose();
 		})().catch((e) => {
 			console.error(`[add_fx] ${String(e)}`);
 		}), () => {
-			o = !1, a.current?.dispose(), a.current = null;
+			i = !1, o.current?.dispose(), o.current = null;
 		};
-	}, [o]), (0, V.useEffect)(() => {
-		a.current?.update(n);
-	}, [s]), /* @__PURE__ */ P("canvas", {
-		ref: i,
-		style: r
-	}, o);
+	}, [s]), (0, V.useEffect)(() => {
+		o.current?.update(n, r);
+	}, [c, r]), /* @__PURE__ */ P("canvas", {
+		ref: a,
+		style: i
+	}, s);
 }
-function _u({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, aFx: l, getVideoVol: u, needClick2Play: d }) {
-	let f = (e) => {
+function _u({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, aFx: l, fxActive: u, getVideoVol: d, needClick2Play: f }) {
+	let p = (e) => {
 		e.button == 1 && console.log("fn:GrpLayer.tsx line:28 MIDDLE:");
-	}, p = uu(a, o), m = du(o || s ? "" : a), h = (e) => {
-		e && (e.volume = u(), e.muted = d());
-	}, g = {
+	}, m = uu(a, o), h = du(o || s ? "" : a), g = (e) => {
+		e && (e.volume = d(), e.muted = f());
+	}, _ = {
 		display: "block",
 		..."width" in n ? { width: "100%" } : {},
 		..."height" in n ? { height: "100%" } : {}
-	}, _ = {
+	}, v = {
 		width: "max-content",
 		...n
 	};
@@ -9992,33 +9993,34 @@ function _u({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 		styChild: e,
 		isDesignMode: t,
 		nm: r,
-		sty: _,
+		sty: v,
 		keepRatio: !0,
-		onMouseDown: f,
+		onMouseDown: p,
 		children: [
-			p && /* @__PURE__ */ P("div", { className: ee(p) }),
+			m && /* @__PURE__ */ P("div", { className: ee(m) }),
 			a && s && /* @__PURE__ */ P("video", {
-				ref: h,
+				ref: g,
 				src: a,
 				autoPlay: !0,
 				playsInline: !0,
 				"data-fn": i,
-				style: g,
+				style: _,
 				onLoadedMetadata: (e) => {
 					z(a, e.currentTarget.videoWidth, e.currentTarget.videoHeight);
 				}
 			}),
-			m && !o && !s && l.length > 0 && /* @__PURE__ */ P(gu, {
-				src: m,
+			h && !o && !s && l.length > 0 && /* @__PURE__ */ P(gu, {
+				src: h,
 				aFaceStatic: c.filter((e) => !e.isSheet),
 				aFx: l,
-				styFit: g
+				active: u,
+				styFit: _
 			}),
-			m && !o && !s && l.length === 0 && /* @__PURE__ */ P("img", {
-				src: m,
-				style: g
+			h && !o && !s && l.length === 0 && /* @__PURE__ */ P("img", {
+				src: h,
+				style: _
 			}),
-			(l.length > 0 && m && !o && !s ? c.filter((e) => e.isSheet) : c).map((e, t) => /* @__PURE__ */ P(fu, { ...e }, `${e.fn}_${String(t)}`))
+			(l.length > 0 && h && !o && !s ? c.filter((e) => e.isSheet) : c).map((e, t) => /* @__PURE__ */ P(fu, { ...e }, `${e.fn}_${String(t)}`))
 		]
 	});
 }
@@ -11302,6 +11304,7 @@ function Ku({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 							isMovie: e.isMovie,
 							aFace: e.aFace,
 							aFx: e.aFx ?? [],
+							fxActive: t === h || !!g,
 							getVideoVol: () => n.getMovieVolume(),
 							needClick2Play: () => n.needClick2Play()
 						}, e.nm) : u(e) ? /* @__PURE__ */ P(Mu, {

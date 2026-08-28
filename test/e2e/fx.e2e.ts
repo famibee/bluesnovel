@@ -167,9 +167,25 @@ test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す�
 	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
 
 	// [add_face f] → [lay face=f] → [add_fx fx=wave]
-	await pressKey(page, 'Space');
-	await expect.poll(async ()=> mesStr(page)).toBe('face合成');
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('face合成');
 	expect(await draw(page)).toBe('canvas');
 	// 静止 face は FxImg が基本画像へ合成済み＝レイヤ内に face の <img data-fn> は無い
 	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
+});
+
+const canvasRunning = (sel: string)=> (page: Page)=>
+	page.locator(`${sel} div[data-lay="base"] canvas`).getAttribute('data-fx-running');
+
+test('[trans] 後の不可視 back ページでは fx の rAF が止まる（data-fx-running=0）', async ({page})=> {
+	for (let i = 0; i < 13; ++i) await pressKeyToWaitMark(page, 'Space');	// 「trans前」まで
+	expect(await mesStr(page)).toBe('trans前');
+	// trans 前：表ページの fx canvas は回っている
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+
+	await pressKey(page, 'Space');	// [trans time=300][wt] → [er]trans後[s]（[s]は待ちマークを立てない）
+	await expect.poll(async ()=> mesStr(page)).toBe('trans後');
+	// trans 後：foreIdx 反転。新しい表ページは回り、旧表＝いまの裏ページは止まる（rAF 凍結）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+	await expect.poll(()=> canvasRunning('#skynovel [data-page="back"]')(page)).toBe('0');
 });

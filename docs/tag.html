@@ -971,6 +971,7 @@
 	（描画を止める/戻す）。<a href="#tsy">[tsy]</a>一族に倣う<br/>
 	・静止 face 差分は基本画像へ合成してシェーダに通す（差分が変わった時だけ 2D canvas で再合成）。
 	アニメpngシート／動画 face はまだ未対応＝従来どおり手前に重なる<br/>
+	・<a href="#trans">[trans]</a> 後の不可視 back ページでは rAF/WebGL を凍結（表ページ or trans 中だけ回す）<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>
 

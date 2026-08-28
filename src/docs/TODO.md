@@ -25,6 +25,7 @@
 ## タグ・変数の残り
 
 - [ ] 不可視 back ページの最適化調査。各種プラグインによる拡張レイヤ、[tsy]処理などを行っていないか。[trans]中のみ動かせばよいはず
+      （[add_fx] は対応済み＝Stage が GrpLayer へ `fxActive` を渡し FxRunner が rAF 凍結。2026-08-28）
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
@@ -44,17 +45,15 @@
 sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを通過し**正式化**。設計・用途
 カタログ・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7（推奨度 ★★★☆）。
 
-実装順（4→5→7→8→6。6 は終わりのない作業なので最後・随時）。2026-08-28 完了：
+実装順（7→8→6。6 は終わりのない作業なので最後・随時）。2026-08-28 完了：
 2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）、
 3（生 `glsl=` 有効化＋契約名を `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`）、
-4 の静止 face 分（`FxImg` が基本画像＋静止 face を offscreen 2D canvas で合成→`runFx({source})`）。
+4 の静止 face 分（`FxImg` が基本画像＋静止 face を offscreen 2D canvas で合成→`runFx({source})`）、
+5（`Stage`→`GrpLayer` の `fxActive`＝表 or trans中 を `FxRunner` の凍結機構に相乗り。`data-fx-running`）。
 
 - [ ] 4. （残り）sheet／動画 face を fx のテクスチャへ毎フレーム転写。`FxImg` の
       `! isSheet && ! isMovie`（＝基本画像が sheet/動画のとき FxImg を出さない）条件も緩める。
       静止 face の合成は済み（`compositeFace()`）
-- [ ] 5. 不可視 back ページで rAF 停止（`[trans]` 後の表裏 2 canvas の裏側）。`FxImg` に
-      「表ページか / trans 中か」を渡す。止める/戻す機構は 2 で入った `FxRunner` 制御ハンドル
-      （`update()` の `active` 引数を足す）を流用
 - [ ] 7. プリセット追加（雪・雨・花火・タイルスクロール等）。MIT/CC0/商用可 明示のもの、
       または技法から再実装。1 個 20–50 行
 - [ ] 8. `docs/tag.html` を 🟡→🟢、[ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧を更新、

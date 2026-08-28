@@ -43,6 +43,7 @@ type T_GRPARG = T_LAY_CMN & {
 	isMovie			: boolean;
 	aFace	: T_FACE_SRC[];	// [lay face=...]による差分合成。重なり順＝配列順（後の要素ほど上に重なる）
 	aFx		: T_FX[];	// [add_fx]で重ねたシェーダエフェクト（分家独自の試作）。非空なら<img>を<canvas>へ差し替える
+	fxActive: boolean;	// このページが可視か（表ページ or [trans]中）。不可視なら[add_fx]のrAF/WebGLを凍結
 	getVideoVol		: ()=> number;	// sys:sn.sound.movie_volume × global_volume（ScriptMng.getMovieVolume()）
 	needClick2Play	: ()=> boolean;	// 自動再生ブロック中なら初期muted（本家 SpritesMng.ts:288-296）
 };
@@ -148,9 +149,9 @@ async function compositeFace(baseSrc: string, aFace: readonly T_FACE_SRC[]): Pro
 //	（<img>と同じ位置なので）。重い部分（WebGLランナー・プリセットGLSL）はlazy importで、
 //	[add_fx]が使われた回にはじめて src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
 //	aFaceStatic（静止 face）は基本画像へ合成してシェーダに通す。sheet face は呼び出し側でDOMへ残す
-function FxImg({src, aFaceStatic, aFx, styFit}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; styFit: CSSProperties}) {
+function FxImg({src, aFaceStatic, aFx, active, styFit}: {src: string; aFaceStatic: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; styFit: CSSProperties}) {
 	const ref = useRef<HTMLCanvasElement>(null);
-	const handle = useRef<{update(a: T_FX[]): void; dispose(): void} | null>(null);
+	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
 	// canvasごと作り直すのは**シェーダ構成 or テクスチャ源が変わったとき**（fx名/glsl/パス数、
 	//	基本画像、face差分）：WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを
 	//	取り直せないため使い捨てにして開き直す。プリセットパラメータ・speed・time・enabled
@@ -159,6 +160,9 @@ function FxImg({src, aFaceStatic, aFx, styFit}: {src: string; aFaceStatic: T_FAC
 	const faceKey = aFaceStatic.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode}`).join(';');
 	const structKey = `${src}\n${faceKey}\n${aFx.map(f=> `${f.fx}|${f.glsl}`).join(',')}`;
 	const contentKey = JSON.stringify(aFx);
+	// activeはstructKeyのuseEffectを回さない（canvas再生成はしない）＝mount時の値だけrefで拾う
+	const activeRef = useRef(active);
+	activeRef.current = active;
 	useEffect(()=> {
 		const cvs = ref.current;
 		if (! cvs || ! src) return;
@@ -168,22 +172,23 @@ function FxImg({src, aFaceStatic, aFx, styFit}: {src: string; aFaceStatic: T_FAC
 			const source = aFaceStatic.length > 0 ? await compositeFace(src, aFaceStatic) : src;
 			if (! alive) return;
 			const {runFx} = await import('../ts/FxRunner');
-			const h = await runFx({canvas: cvs, source, aFx});
+			const h = await runFx({canvas: cvs, source, aFx, active: activeRef.current});
 			if (alive) handle.current = h; else h.dispose();
 		})().catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
 		return ()=> {alive = false; handle.current?.dispose(); handle.current = null};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [structKey]);
-	// 構成そのままでパラメータ／enabledだけ変わったら、canvasを保ったまま差し替える
+	// 構成そのままで パラメータ／enabled（[pause_fx]）／active（不可視ページ）だけ変わったら、
+	//	canvasを保ったまま差し替える（不可視ページでは rAF ごと止まる）
 	useEffect(()=> {
-		handle.current?.update(aFx);
+		handle.current?.update(aFx, active);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [contentKey]);
+	}, [contentKey, active]);
 
 	return <canvas key={structKey} ref={ref} style={styFit}/>;
 }
 
-export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, getVideoVol, needClick2Play}: T_GRPARG) {
+export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, fxActive, getVideoVol, needClick2Play}: T_GRPARG) {
 	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
 		if (e.button != 1) {
 			return
@@ -247,7 +252,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
-			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} styFit={styFit}/>}
+			&& <FxImg src={loadedSrc} aFaceStatic={aFace.filter(f=> ! f.isSheet)} aFx={aFx} active={fxActive} styFit={styFit}/>}
 		{loadedSrc && ! isSheet && ! isMovie && aFx.length === 0
 			&& <img src={loadedSrc} style={styFit}/>}
 		{/* fx有効時（基本画像が静止画）は静止 face を FxImg が合成済み＝ここには sheet face だけ残す。
