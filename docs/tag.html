@@ -982,7 +982,7 @@
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可）</td><td>非grpレイヤを指定するとエラー</td></tr>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back、both</td><td>ページの裏表（both指定で両面）</td></tr>
-<tr class="y"><td>fx</td><td>y<sup>*</sup></td><td></td><td>wave、rgbShift</td><td>プリセット名。<br/>wave …… 横方向の正弦波でゆらす（水面／陽炎）<br/>rgbShift …… RGBを左右にずらす（グリッチ／色収差）<br/><sup>*</sup> <code>glsl=</code>を指定する場合は不要（両方は不可）</td></tr>
+<tr class="y"><td>fx</td><td>y<sup>*</sup></td><td></td><td>wave、rgbShift、snow、rain</td><td>プリセット名。<br/>wave …… 横方向の正弦波でゆらす（水面／陽炎）<br/>rgbShift …… RGBを左右にずらす（グリッチ／色収差）<br/>snow …… 降雪を重ねる（<b>背景レイヤ向け</b>）<br/>rain …… 雨のスジを重ねる（<b>背景レイヤ向け</b>）<br/><sup>*</sup> <code>glsl=</code>を指定する場合は不要（両方は不可）</td></tr>
 <tr><td>glsl</td><td></td><td></td><td>フラグメントシェーダ文字列</td><td>生シェーダ（<code>fx=</code>の代わり）。<code>glsl=&amp;変数</code>で書く想定。契約（供給される uniform／varying）は下表。<a href="#trans">[trans]</a>の<code>glsl=</code>と同じ流儀。撤去するまで永続（<a href="#save">[save]</a>にも焼かれる）</td></tr>
 <tr><td>name</td><td></td><td>自動採番</td><td>識別子</td><td>そのレイヤの中で一意な名前。省略すると <code>#fx1</code>, <code>#fx2</code> … を自動採番する（<code>#</code>付きはシナリオから指定できない＝<code>[clear_fx name=]</code>では実質狙えず、<code>layer=</code>単位のクリアでのみ落ちる）。同名を再指定すると置換（<a href="#tsy">[tsy]</a>の「同名で再開」と同じ）</td></tr>
 <tr><td>time</td><td></td><td>0</td><td>0〜（ミリ秒）</td><td>0で無限（常時ゆらぎ）。正数を指定すると経過後そのパスは素通しに切り替わり凍結する（記述子の自動撤去はしない＝<code>[clear_fx]</code>／<code>[clear_lay]</code>で撤去）</td></tr>
@@ -999,6 +999,13 @@
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>shift</td><td></td><td>4</td><td>実数（px相当）</td><td>RGBの左右ずらし量（timeで脈動する）</td></tr>
 </table>
+
+<h4>プリセット「snow」「rain」に指定できる属性（背景レイヤ向け）</h4>
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>amp</td><td></td><td>1</td><td>実数</td><td>落下速度の倍率</td></tr>
+<tr><td>freq</td><td></td><td>snow:3 / rain:2</td><td>実数</td><td>密度（snowは重ねる層の数、rainは縦帯の本数の目安）</td></tr>
+</table>
+<p class="mb2 px1">snow / rain は<b>透明部にも降る</b>ので不透明な背景（bg）レイヤへ積む想定。立ち絵に積むと箱の形に降る。</p>
 
 <h4>生 <code>glsl=</code> の契約（<a href="#trans">[trans]</a> の <code>glsl=</code> と名前を統一）</h4>
 <p class="mb2 px1">

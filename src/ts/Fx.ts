@@ -27,13 +27,18 @@
 //	Shadertoy（iTime/iChannel0…）は開発時に手変換（マッピングは docs/tag.html）。
 
 // プリセット名。GLSL 実体は fxPresets.ts（lazy）が持つ。ここは名前の台帳だけ
-export const A_FX_PRESET = ['wave', 'rgbShift'] as const;
+export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain'] as const;
 
 // プリセット固有パラメータの既定値（**属性の既定値は 1 箇所**：ここがエンジン入口）。
-//	amp/shift は「px 相当」でランナーが解像度で割る。freq は縦方向の波の本数の目安
+//	amp/freq/shift はプリセットごとに意味が違う（tag.html 参照）：
+//	  wave  … amp=px 振幅 / freq=縦の波の本数
+//	  rgbShift … shift=px ずらし量
+//	  snow/rain … amp=落下速度倍率 / freq=密度（層数・帯数の目安）。背景（bg）レイヤ向け
 const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	wave		: {amp: 6, freq: 2},
 	rgbShift	: {shift: 4},
+	snow		: {amp: 1, freq: 3},
+	rain		: {amp: 1, freq: 2},
 };
 // プリセットが読むパラメータ名（この範囲だけ args から拾う）
 const A_FX_PARAM = ['amp', 'freq', 'shift'] as const;

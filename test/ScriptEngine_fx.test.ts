@@ -27,6 +27,10 @@ it('bldFx_プリセットの既定値（既定は H_FX_DEF の1箇所）', ()=> 
 		name: '', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}});
 	expect(bldFx({fx: 'rgbShift'})).toEqual({
 		name: '', fx: 'rgbShift', glsl: '', time: 0, speed: 1, enabled: true, params: {shift: 4}});
+	// 天候プリセット（背景向け）。amp=落下速度 / freq=密度
+	expect(bldFx({fx: 'snow'}).params).toEqual({amp: 1, freq: 3});
+	expect(bldFx({fx: 'rain'}).params).toEqual({amp: 1, freq: 2});
+	expect(bldFx({fx: 'rain', amp: '2', freq: '4'}).params).toEqual({amp: 2, freq: 4});
 });
 
 it('bldFx_属性で既定を上書き（拾うのは A_FX_PARAM の範囲だけ）', ()=> {

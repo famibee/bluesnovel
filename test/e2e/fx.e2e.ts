@@ -183,9 +183,20 @@ test('[trans] 後の不可視 back ページでは fx の rAF が止まる（dat
 	// trans 前：表ページの fx canvas は回っている
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
 
-	await pressKey(page, 'Space');	// [trans time=300][wt] → [er]trans後[s]（[s]は待ちマークを立てない）
-	await expect.poll(async ()=> mesStr(page)).toBe('trans後');
+	await pressKeyToWaitMark(page, 'Space');	// [trans time=300][wt] → [er]trans後[l]
+	expect(await mesStr(page)).toBe('trans後');
 	// trans 後：foreIdx 反転。新しい表ページは回り、旧表＝いまの裏ページは止まる（rAF 凍結）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
 	await expect.poll(()=> canvasRunning('#skynovel [data-page="back"]')(page)).toBe('0');
+});
+
+test('天候プリセット snow / rain が 2 本重ねてコンパイル・描画できる', async ({page})=> {
+	for (let i = 0; i < 14; ++i) await pressKeyToWaitMark(page, 'Space');	// 「trans後」まで
+	await pressKey(page, 'Space');	// [clear_fx]→[add_fx snow]→[add_fx rain]→[er]天候[s]
+	await expect.poll(async ()=> mesStr(page)).toBe('天候');
+	const a = (await afx(page))!;
+	expect(a.map(f=> f.fx)).toEqual(['snow', 'rain']);
+	expect(a[1]!.params).toMatchObject({amp: 2});
+	expect(await draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>（失敗なら絵が出ない）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 常時ゆらぎ＝回り続ける
 });

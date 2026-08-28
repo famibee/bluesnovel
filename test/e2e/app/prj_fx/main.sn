@@ -68,4 +68,10 @@
 [er]trans前[l]
 [trans time=300]
 [wt]
-[er]trans後[s]
+[er]trans後[l]
+
+; 天候プリセット（snow / rain。背景向け）。2 本重ねて ping-pong を通す＝GLSL コンパイル回帰
+[clear_fx layer=base]
+[add_fx layer=base name=sn fx=snow]
+[add_fx layer=base name=rn fx=rain amp=2]
+[er]天候[s]

@@ -16,6 +16,48 @@ void main() {
 	vec4  g = texture2D(uSampler, vTextureCoord);
 	float b = texture2D(uSampler, vTextureCoord - vec2(d, 0.0)).b;
 	gl_FragColor = vec4(r, g.g, b, g.a);
+}`,
+	snow: `${e}
+uniform float amp;
+uniform float freq;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
+void main() {
+	vec4 src = texture2D(uSampler, vTextureCoord);
+	vec2 uv = vTextureCoord;
+	uv.x *= resolution.x / max(resolution.y, 1.0);	// 正方セルにするアスペクト補正
+	float layers = clamp(freq, 1.0, 6.0);
+	float snow = 0.0;
+	for (float i = 0.0; i < 6.0; i++) {
+		if (i >= layers) break;
+		float scale = 8.0 + i * 6.0;
+		vec2 gv = uv * scale;
+		gv.y += tick * (0.3 + 0.15 * i) * amp * scale;	// 下へ流す
+		gv.x += sin((gv.y + i) * 0.5) * 0.5;				// 横ゆらぎ
+		vec2 id = floor(gv);
+		float rnd = hash(id + i * 13.0);
+		vec2 c = fract(gv) - 0.5 - (vec2(rnd, fract(rnd * 7.0)) - 0.5) * 0.6;
+		float flake = smoothstep(0.09 + 0.02 * i, 0.0, length(c)) * (0.4 + 0.6 * rnd);
+		snow += flake * (1.0 - i / 8.0);
+	}
+	snow = clamp(snow, 0.0, 1.0);
+	gl_FragColor = vec4(mix(src.rgb, vec3(1.0), snow), max(src.a, snow));
+}`,
+	rain: `${e}
+uniform float amp;
+uniform float freq;
+float hash(float x) { return fract(sin(x * 41.3) * 43758.5453); }
+void main() {
+	vec4 src = texture2D(uSampler, vTextureCoord);
+	vec2 uv = vTextureCoord;
+	uv.x *= resolution.x / max(resolution.y, 1.0);
+	float bands = 40.0 + freq * 20.0;
+	float col_id = floor(uv.x * bands);
+	float x = fract(uv.x * bands) - 0.5;
+	float rnd = hash(col_id);
+	float y = fract(uv.y * (2.0 + rnd) - tick * (1.2 + rnd) * amp);
+	float streak = smoothstep(1.0, 0.0, abs(x) * 12.0)
+		* smoothstep(0.0, 0.15, y) * smoothstep(0.9, 0.35, y);
+	gl_FragColor = vec4(mix(src.rgb, vec3(0.75, 0.80, 0.92), streak * 0.5), src.a);
 }`
 };
 //#endregion

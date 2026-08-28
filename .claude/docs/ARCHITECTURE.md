@@ -142,7 +142,7 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 WebGL シェーダを重ねる。`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL
 （`FxRunner` は `T_FX_HANDLE`＝`{update,dispose}` を返し、パラメータ・`enabled` は canvas を作り直さず
 ホットスワップ）。`wait_fx` は `ScriptMng` が `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。
-プリセット wave/rgbShift または生 `glsl=`（契約は `[trans glsl=]` と統一＝`uSampler`/`vTextureCoord`/`tick`）。
+プリセット wave/rgbShift/snow/rain または生 `glsl=`（契約は `[trans glsl=]` と統一＝`uSampler`/`vTextureCoord`/`tick`）。
 静止 face は `GrpLayer` が 2D canvas で合成して `runFx({source})` へ（sheet/動画 face は未対応）。
 `[trans]` 後の不可視 back ページは `Stage`→`GrpLayer` の `fxActive` で rAF 凍結。
 詳細は `src/docs/ANIMATION_RESEARCH.md` §7），

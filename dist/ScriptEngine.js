@@ -998,12 +998,25 @@ function I(e, t) {
 }
 //#endregion
 //#region src/ts/Fx.ts
-var L = ["wave", "rgbShift"], R = {
+var L = [
+	"wave",
+	"rgbShift",
+	"snow",
+	"rain"
+], R = {
 	wave: {
 		amp: 6,
 		freq: 2
 	},
-	rgbShift: { shift: 4 }
+	rgbShift: { shift: 4 },
+	snow: {
+		amp: 1,
+		freq: 3
+	},
+	rain: {
+		amp: 1,
+		freq: 2
+	}
 }, z = [
 	"amp",
 	"freq",
