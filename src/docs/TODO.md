@@ -44,16 +44,14 @@
 ### シェーダエフェクト（`[add_fx]` 一族）— 正式化（2026-08-28）
 
 `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、プリセット wave / rgbShift /
-snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、face 合成（静止＋アニメ png シート＝毎フレーム
-転写）、`[trans]` 後の不可視 back ページで rAF 凍結、構成切替で一瞬消えない（fx 変化は canvas を
-作り直さず同コンテキストでプログラム組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋
-`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
+snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画像は静止画・アニメ png シート・動画
+いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、`[trans]` 後の不可視 back
+ページで rAF 凍結、構成切替で一瞬消えない（fx 変化は canvas を作り直さず同コンテキストでプログラム
+組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋
+`test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
 
 残り：
 
-- [ ] 動画レイヤ／動画 face を fx のテクスチャへ（`<video>`→`drawImage` を毎フレーム）。`FxImg` の
-      `! isSheet && ! isMovie`（＝基本画像が sheet/動画のとき FxImg を出さない）条件も緩める。
-      アニメ png シート face の毎フレーム転写は済み（`GrpLayer.tsx` の `makeFxSource()`）
 - [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：花火／
       タイル塗り＋スクロール／桜（花びら）／ぼかしアニメ／モザイク
 - [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・

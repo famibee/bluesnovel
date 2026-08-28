@@ -82,4 +82,26 @@
 [add_face name=af fn=anime dx=8 dy=8]
 [lay layer=base fn=pic face=af]
 [add_fx layer=base fx=wave]
-[er]sheet_face[s]
+[er]sheet_face[l]
+
+; 動画レイヤを fx のテクスチャへ（GrpLayer makeFxSource が React 所有の <video> を毎フレーム転写）。
+;	<video data-fn> は DOM に残す（[wv]・音量制御の担当）。canvas がその上に重なる
+[clear_fx layer=base]
+[lay layer=base fn=movie face=""]
+[add_fx layer=base fx=wave]
+[er]movie_base[l]
+
+; 動画 face を fx へ合成（makeFxSource が detached な <video> を毎フレーム転写）。
+;	合成されるので face の DOM オーバーレイ（video[data-fn] 等）は出ない
+[clear_fx layer=base]
+[lay layer=base fn=pic face=""]
+[add_face name=mf fn=movie dx=4 dy=4]
+[lay layer=base fn=pic face=mf]
+[add_fx layer=base fx=wave]
+[er]movie_face[l]
+
+; アニメ png シートを基本画像に持つレイヤへ fx（従来は FxImg を出さなかった＝条件を緩めた）
+[clear_fx layer=base]
+[lay layer=base fn=anime face=""]
+[add_fx layer=base fx=wave]
+[er]sheet_base[s]

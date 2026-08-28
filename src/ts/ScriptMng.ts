@@ -1705,7 +1705,7 @@ export class ScriptMng {
 			//	（本家 SpritesMng.#csv2Sprites はcsvの各要素を拡張子で個別判定する。先頭限定ではない）
 			const aFace = act.aFace?.map(f=> {
 				const faceSrc = this.#searchPic('add_face', f.fn);
-				return {...f, src: faceSrc, isSheet: faceSrc.endsWith('.json')};
+				return {...f, src: faceSrc, isSheet: faceSrc.endsWith('.json'), isMovie: /\.(?:mp4|webm)$/i.test(faceSrc)};
 			});
 			// exactOptionalPropertyTypes: true のため、undefinedの時はaFaceキー自体を省略する
 			//	（chgPicはaFaceキー無しなら直前の値を維持する）

@@ -224,12 +224,46 @@ test('天候プリセット snow / rain が 2 本重ねてコンパイル・描�
 
 test('アニメ png シートの face も fx のテクスチャへ通す（DOM オーバーレイは出ない）', async ({page})=> {
 	for (let i = 0; i < 15; ++i) await pressKeyToWaitMark(page, 'Space');	// 「天候」まで
-	await pressKey(page, 'Space');	// [add_face fn=anime]→[lay face=af]→[add_fx fx=wave]→[er]sheet_face[s]
-	await expect.poll(async ()=> mesStr(page)).toBe('sheet_face');
+	await pressKeyToWaitMark(page, 'Space');	// [add_face fn=anime]→[lay face=af]→[add_fx fx=wave]→[er]sheet_face[l]
+	expect(await mesStr(page)).toBe('sheet_face');
 
 	await expect.poll(async ()=> draw(page)).toBe('canvas');
 	// sheet face は makeFxSource が毎フレーム合成＝レイヤ内に face の DOM（div[data-fn]／img[data-fn]）は無い
 	expect(await page.locator(`${LAY} [data-fn]`).count()).toBe(0);
 	// アニメが動いている＝毎フレーム転写のため rAF は回り続ける
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+});
+
+test('動画レイヤを基本画像に持つレイヤへも fx が乗る（<video> は DOM に残り canvas が重なる）', async ({page})=> {
+	for (let i = 0; i < 16; ++i) await pressKeyToWaitMark(page, 'Space');	// 「sheet_face」まで
+	await pressKeyToWaitMark(page, 'Space');	// [lay fn=movie]→[add_fx fx=wave]→[er]movie_base[l]
+	expect(await mesStr(page)).toBe('movie_base');
+
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// <video data-fn> は [wv]・音量制御の担当なので DOM に残る（makeFxSource の毎フレーム転写元）
+	await expect(page.locator(`${LAY} video[data-fn="movie"]`)).toHaveCount(1);
+	// 毎フレーム転写のため rAF は回り続ける
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+});
+
+test('動画 face を fx のテクスチャへ合成（DOM オーバーレイは出ない）', async ({page})=> {
+	for (let i = 0; i < 17; ++i) await pressKeyToWaitMark(page, 'Space');	// 「movie_base」まで
+	await pressKeyToWaitMark(page, 'Space');	// [add_face fn=movie]→[lay face=mf]→[add_fx fx=wave]→[er]movie_face[l]
+	expect(await mesStr(page)).toBe('movie_face');
+
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// 動画 face は makeFxSource が detached な <video> で合成＝レイヤ内に face の DOM（video 等）は無い
+	expect(await page.locator(`${LAY} [data-fn]`).count()).toBe(0);
+	expect(await page.locator(`${LAY} video`).count()).toBe(0);
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+});
+
+test('アニメ png シート基本画像のレイヤへ fx（従来は FxImg を出さなかった条件を緩めた）', async ({page})=> {
+	for (let i = 0; i < 18; ++i) await pressKeyToWaitMark(page, 'Space');	// 「movie_face」まで
+	await pressKey(page, 'Space');	// [lay fn=anime]→[add_fx fx=wave]→[er]sheet_base[s]
+	await expect.poll(async ()=> mesStr(page)).toBe('sheet_base');
+
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// シート div は div0 のサイズ担当として残るが animation-play-state:paused
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 毎フレーム転写
 });

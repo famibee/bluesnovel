@@ -188,7 +188,7 @@ function s(e, n, o, s, c, l, u, d) {
 				for (let { tex: t, fb: n } of x) e.deleteTexture(t), e.deleteFramebuffer(n);
 				e.deleteBuffer(y);
 				for (let t of g) e.deleteProgram(t.pg);
-				e.deleteProgram(v.pg), e.getExtension("WEBGL_lose_context")?.loseContext();
+				e.deleteProgram(v.pg), e.getExtension("WEBGL_lose_context")?.loseContext(), d?.dispose?.();
 			}
 		}
 	};

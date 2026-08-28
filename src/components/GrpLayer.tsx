@@ -28,7 +28,7 @@ export type T_FACE = {
 //	isSheetは基本画像（fn）と同じくScriptMngがBlob URL化前のsrc拡張子で判定済み
 //	（本家 SpritesMng.#csv2Sprites はcsvの各要素を等しくロードし、拡張子.jsonなら
 //	差分絵でもAnimatedSpriteにする＝先頭だけの特別扱いではない）
-export type T_FACE_SRC = T_FACE & {src: string; isSheet: boolean};
+export type T_FACE_SRC = T_FACE & {src: string; isSheet: boolean; isMovie: boolean};
 type T_GRPARG = T_LAY_CMN & {
 	sty		: CSSProperties;	// [lay]のvisible/alpha/left/top/rotation/scale_*（Stage.tsx styLay()）
 	nm		: string;	// レイヤ名。data-lay属性としてDOMへ出す（[snapshot layer=…]の絞り込み用）
@@ -97,12 +97,15 @@ function useLoadedImg(src: string): string {
 
 // 差分絵（face）1枚分。基本画像と同じくisSheetならCSSアニメ再生のdiv、そうでなければimgで描く。
 //	dx,dyでdiv0基準の絶対配置、blendmodeはmix-blend-modeへそのまま渡す
-function FaceImg({fn: faceFn, src: faceSrc, isSheet, dx, dy, blendmode}: T_FACE_SRC) {
+function FaceImg({fn: faceFn, src: faceSrc, isSheet, isMovie, dx, dy, blendmode}: T_FACE_SRC) {
 	const sheet = useSheet(faceSrc, isSheet);
-	const loadedSrc = useLoadedImg(isSheet ? '' : faceSrc);
+	const loadedSrc = useLoadedImg(isSheet || isMovie ? '' : faceSrc);
 	if (! faceSrc) return null;
 
 	const styPos: CSSProperties = {position: 'absolute', left: dx, top: dy, mixBlendMode: blendmode as CSSProperties['mixBlendMode']};
+	// 動画 face（.mp4/.webm）。fx 無効時の DOM オーバーレイ用（fx 有効時は FxImg が毎フレーム合成）。
+	//	音は鳴らさず無限ループ（差分絵なので [wv] の待ち対象にはしない＝data-fn も付けない）
+	if (isMovie) return <video src={faceSrc} autoPlay loop muted playsInline style={styPos}/>;
 	if (sheet) return <div className={aniSpriteClass(sheet)} style={styPos} data-fn={faceFn}/>;
 	if (isSheet) return null;	// シート読み込み中はまだ描かない（基本画像と同じ挙動）
 	if (! loadedSrc) return null;	// デコード完了まで描かない
@@ -132,50 +135,122 @@ function sheetFrame(sh: T_SHEET, elapsedMs: number): T_FRAME {
 	return sh.frames[k] ?? sh.frames[0]!;
 }
 
-// 基本画像＋face を1枚のoffscreen 2D canvasへ合成した「fx のテクスチャ源」を作る（ANIMATION_RESEARCH.md §7 step 4）。
-//	・sheet face が無ければ**一度きり合成した <canvas>** を返す（従来。差分が変わった時だけ呼ばれる）
-//	・sheet face があれば**毎フレーム描き直す関数**を返す（FxRunner が rAF ごとに texImage2D で吸い上げる）
-//	dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる
-async function makeFxSource(baseSrc: string, aFace: readonly T_FACE_SRC[]): Promise<HTMLCanvasElement | (()=> HTMLCanvasElement)> {
-	const stat = aFace.filter(f=> ! f.isSheet);
-	const anim = aFace.filter(f=> f.isSheet);
-	const [base, ...statImgs] = await Promise.all([loadImg(baseSrc), ...stat.map(f=> loadImg(f.src))]);
+// 毎フレーム描き直す動的ソース。FxRunner が rAF ごとに texImage2D で吸い上げ、
+//	dispose() で（あれば）内部リソース（detached な動画要素）を解放する
+type T_DYN_SOURCE = (()=> HTMLCanvasElement) & {dispose?: ()=> void};
+
+// 動画要素が最初のフレームを持つ（drawImage できる）まで待つ。読めなければ error でも先へ進む
+//	（videoWidth=0 のまま＝合成結果は透明。ハングさせない）
+function waitVideoFrame(v: HTMLVideoElement): Promise<void> {
+	if (v.videoWidth > 0 && v.readyState >= 2) return Promise.resolve();
+	return new Promise(re=> {
+		const ev = ['loadeddata', 'canplay', 'error'] as const;
+		const done = ()=> {for (const e of ev) v.removeEventListener(e, done); re()};
+		for (const e of ev) v.addEventListener(e, done);
+	});
+}
+
+// fx のテクスチャに使う detached な動画要素（動画 face 用。音は鳴らさず無限ループ）。
+//	基本画像が動画のときは React 所有の <video>（[wv]・音量制御の対象）をそのまま使うので作らない
+async function loadFaceVideo(src: string): Promise<HTMLVideoElement> {
+	const v = document.createElement('video');
+	v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+	v.src = src;
+	await waitVideoFrame(v);
+	try {await v.play()} catch {/* muted なので通常は通る。失敗しても drawImage は前フレームを使う */}
+	return v;
+}
+
+// 基本画像＋face を1枚のoffscreen 2D canvasへ合成した「fx のテクスチャ源」を作る（ANIMATION_RESEARCH.md §7 step 4・6）。
+//	・すべて静止画なら**一度きり合成した <canvas>** を返す（従来。差分が変わった時だけ呼ばれる）
+//	・基本画像か face のどれかが動的（アニメ png シート／動画）なら**毎フレーム描き直す関数**を返す
+//	  （FxRunner が rAF ごとに texImage2D で吸い上げる）。動画 face は detached な <video> を毎フレーム転写
+//	dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる。
+//	base.videoEl＝基本画像が動画のとき GrpLayer が握っている <video>（React 所有。dispose しない）
+async function makeFxSource(
+	base: {src: string; isSheet: boolean; isMovie: boolean; videoEl: HTMLVideoElement | null},
+	aFace: readonly T_FACE_SRC[],
+): Promise<HTMLCanvasElement | T_DYN_SOURCE> {
+	const stat = aFace.filter(f=> ! f.isSheet && ! f.isMovie);
+	const animF = aFace.filter(f=> f.isSheet);
+	const movF = aFace.filter(f=> f.isMovie);
+
+	// 基本画像の描画関数と自然サイズ（アニメ png シート／動画／静止画）
+	let baseW = 1, baseH = 1;
+	let drawBase: (ctx: CanvasRenderingContext2D)=> void;
+	if (base.isMovie) {
+		const v = base.videoEl;
+		if (! v) throw new Error('動画レイヤの<video>要素が取得できません');
+		await waitVideoFrame(v);
+		baseW = Math.max(1, v.videoWidth); baseH = Math.max(1, v.videoHeight);
+		drawBase = ctx=> {try {ctx.drawImage(v, 0, 0)} catch {/* まだフレーム無し＝前の内容のまま */}};
+	}
+	else if (base.isSheet) {
+		const sh = await loadSheet(base.src);
+		if (! sh) throw new Error(`シート定義が読めません: ${base.src.slice(0, 64)}`);
+		const img = await loadImg(sh.img);
+		baseW = sh.boxW; baseH = sh.boxH;
+		const bt0 = performance.now();
+		drawBase = ctx=> {
+			const fr = sheetFrame(sh, performance.now() - bt0);
+			ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, fr.ox, fr.oy, fr.w, fr.h);
+		};
+	}
+	else {
+		const img = await loadImg(base.src);
+		baseW = Math.max(1, img.naturalWidth); baseH = Math.max(1, img.naturalHeight);
+		drawBase = ctx=> {ctx.drawImage(img, 0, 0)};
+	}
 
 	const cvs = document.createElement('canvas');
-	cvs.width = Math.max(1, base.naturalWidth);
-	cvs.height = Math.max(1, base.naturalHeight);
+	cvs.width = baseW;
+	cvs.height = baseH;
 	const ctx = cvs.getContext('2d');
 	if (! ctx) throw new Error('2Dコンテキストが取得できません');
 
-	const drawStatic = ()=> {
+	const statImgs = await Promise.all(stat.map(f=> loadImg(f.src)));
+	const drawStatFaces = ()=> stat.forEach((f, i)=> {
+		ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
+		ctx.drawImage(statImgs[i]!, f.dx, f.dy);
+	});
+
+	// 全部静止（基本画像も静止画・動的 face 無し）＝従来どおり一度きり合成
+	if (! base.isSheet && ! base.isMovie && animF.length === 0 && movF.length === 0) {
 		ctx.globalCompositeOperation = 'source-over';
-		ctx.drawImage(base, 0, 0);
-		stat.forEach((f, i)=> {
-			ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
-			ctx.drawImage(statImgs[i]!, f.dx, f.dy);
-		});
-	};
+		drawBase(ctx);
+		drawStatFaces();
+		return cvs;
+	}
 
-	if (anim.length === 0) {drawStatic(); return cvs}
-
-	const sheets = await Promise.all(anim.map(async f=> {
+	const sheets = await Promise.all(animF.map(async f=> {
 		const sh = await loadSheet(f.src);
 		if (! sh) throw new Error(`シート定義が読めません: ${f.src.slice(0, 64)}`);
-		return {sh, img: await loadImg(sh.img)};
+		return {f, sh, img: await loadImg(sh.img)};
 	}));
+	const faceVids = await Promise.all(movF.map(f=> loadFaceVideo(f.src)));
 	const t0 = performance.now();
-	return ()=> {
+
+	const frame = (()=> {
 		ctx.clearRect(0, 0, cvs.width, cvs.height);
-		drawStatic();
+		ctx.globalCompositeOperation = 'source-over';
+		drawBase(ctx);
+		drawStatFaces();
 		const elapsed = performance.now() - t0;
-		anim.forEach((f, i)=> {
-			const {sh, img} = sheets[i]!;
+		sheets.forEach(({f, sh, img})=> {
 			const fr = sheetFrame(sh, elapsed);
 			ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
 			ctx.drawImage(img, fr.x, fr.y, fr.w, fr.h, f.dx + fr.ox, f.dy + fr.oy, fr.w, fr.h);
 		});
+		movF.forEach((f, i)=> {
+			ctx.globalCompositeOperation = H_GCO[f.blendmode] ?? 'source-over';
+			try {ctx.drawImage(faceVids[i]!, f.dx, f.dy)} catch {/* まだフレーム無し */}
+		});
 		return cvs;
+	}) as T_DYN_SOURCE;
+	if (faceVids.length > 0) frame.dispose = ()=> {
+		for (const v of faceVids) {v.pause(); v.removeAttribute('src'); v.load()}
 	};
+	return frame;
 }
 
 // [add_fx]（立ち絵・背景シェーダエフェクト。ANIMATION_RESEARCH.md §7 の「C 方式」）。
@@ -183,9 +258,14 @@ async function makeFxSource(baseSrc: string, aFace: readonly T_FACE_SRC[]): Prom
 //	styLay()が与えるtransform/opacity/z順/blendmodeは親div0経由でどちらにも効く。
 //	重い部分（WebGLランナー・プリセットGLSL）はlazy importで、[add_fx]が使われた回にはじめて
 //	src/ts/FxRunner.ts が読まれる（コアのバンドルに載らない）。
-//	face（静止・sheet とも）は基本画像へ合成してシェーダに通す（sheet は毎フレーム再合成）。
-//	初回フレーム描画までは onReady(false)＝下の<img>が見える（構成切替時に一瞬消えない）
-function FxImg({src, aFace, aFx, active, onReady}: {src: string; aFace: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; onReady: (b: boolean)=> void}) {
+//	基本画像は静止画・アニメ png シート・動画のいずれでもよい（sheet／動画と face は
+//	makeFxSource が offscreen 2D canvas へ毎フレーム合成してシェーダに通す）。
+//	初回フレーム描画までは onReady(false)＝下の<img>/<video>/シート div が見える（構成切替時に一瞬消えない）
+function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onReady}: {
+	baseSrc: string; isSheet: boolean; isMovie: boolean;
+	getVideoEl: ()=> HTMLVideoElement | null;
+	aFace: T_FACE_SRC[]; aFx: T_FX[]; active: boolean; onReady: (b: boolean)=> void;
+}) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
 	// canvasを作り直すのは**テクスチャ源が変わったとき**だけ（基本画像・静止 face）：
@@ -195,8 +275,8 @@ function FxImg({src, aFace, aFx, active, onReady}: {src: string; aFace: T_FACE_S
 	//	以前は structKey で canvas ごと張り替えていて runFx 完了まで一瞬消えていた）。
 	//	パラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）も update() でホットスワップ
 	//	（再生成すると tick=0 へ戻る。ANIMATION_RESEARCH.md §7 step 2）
-	const faceKey = aFace.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode},${String(f.isSheet)}`).join(';');
-	const sourceKey = `${src}\n${faceKey}`;
+	const faceKey = aFace.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode},${String(f.isSheet)},${String(f.isMovie)}`).join(';');
+	const sourceKey = `${baseSrc}\n${String(isSheet)}\n${String(isMovie)}\n${faceKey}`;
 	const contentKey = JSON.stringify(aFx);
 	// sourceKeyのuseEffectを回さない値はmount時だけrefで拾う（activeとaFx。以後は下のupdate effect）
 	const activeRef = useRef(active);
@@ -205,12 +285,16 @@ function FxImg({src, aFace, aFx, active, onReady}: {src: string; aFace: T_FACE_S
 	aFxRef.current = aFx;
 	useEffect(()=> {
 		const cvs = ref.current;
-		if (! cvs || ! src) return;
+		if (! cvs || ! baseSrc) return;
 
 		let alive = true;
 		void (async ()=> {
-			const source = aFace.length > 0 ? await makeFxSource(src, aFace) : src;
-			if (! alive) return;
+			// 基本画像が動的（sheet/動画）か face が付くなら 2D canvas で合成、
+			//	静止画のみ（従来）は URL をそのまま渡す（合成コストなし）
+			const source = isSheet || isMovie || aFace.length > 0
+				? await makeFxSource({src: baseSrc, isSheet, isMovie, videoEl: getVideoEl()}, aFace)
+				: baseSrc;
+			if (! alive) {if (typeof source === 'function') source.dispose?.(); return}
 			const {runFx} = await import('../ts/FxRunner');
 			const h = await runFx({canvas: cvs, source, aFx: aFxRef.current, active: activeRef.current});
 			if (alive) {handle.current = h; onReady(true)}	// 初回フレーム描画済み＝下の<img>を隠してよい
@@ -267,7 +351,11 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	// マウント時点の値だけ当てる（ref callback。本家 SpritesMng.ts:288-296 #charmVideoElm()と同じ
 	//	タイミング）。以後の変化（音量スライダ操作）はScriptMng.#applyMovieVolume()がステージ配下の
 	//	<video>を直接書き換える側で追随させる
+	//	fx 有効時（isMovie）は FxImg（makeFxSource）がこの <video> を毎フレーム転写元にするので
+	//	要素を保持する
+	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const onVideoRef = (ve: HTMLVideoElement | null)=> {
+		videoRef.current = ve;
 		if (! ve) return;
 		ve.volume = getVideoVol();
 		ve.muted = needClick2Play();
@@ -290,24 +378,34 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	1/3程度に縮んで表示された）。max-contentで常に内容の自然幅を使わせ、sty.widthの明示
 	//	（後勝ち）があればそちらを優先する
 	const styDiv0: CSSProperties = {width: 'max-content', ...sty};
+
+	// fx（[add_fx]）がこのレイヤで効いているか。基本画像は静止画・アニメ png シート・動画いずれも可。
+	//	fxSrc＝合成の起点（sheet/動画は素の src＝.json/.mp4 のURL、静止画は decode 済みの loadedSrc）
+	const fxSrc = isSheet || isMovie ? src : loadedSrc;
+	const fxOn = aFx.length > 0 && !! fxSrc;
+	// canvas が初回フレームを描いたら基本画像（<img>/<video>/シート div）を隠す＝構成切替で一瞬消えない。
+	//	ただし要素自体は残す（div0 のサイズを決める／<video> は [wv]・音量・音の担当）
+	const hideForFx = fxOn && fxReady;
+	const styHide: CSSProperties = hideForFx ? {visibility: 'hidden'} : {};
 	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true} onMouseDown={onMouseDown}>
 		{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 			（Reactがページ全体再ダウンロードの可能性を警告するため）。
 			アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない）。
 			基本画像はuseLoadedImgでdecode完了を待ってから描く（読み込み中は前の絵のまま） */}
-		{sheet && <div className={aniSpriteClass(sheet)}/>}
-		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={styFit}
+		{sheet && <div className={aniSpriteClass(sheet)}
+			style={hideForFx ? {visibility: 'hidden', animationPlayState: 'paused'} : undefined}/>}
+		{src && isMovie && <video ref={onVideoRef} src={src} autoPlay playsInline data-fn={fn} style={{...styFit, ...styHide}}
 			onLoadedMetadata={e=> {setNatSize(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight)}}/>}
 		{/* 基本画像は fx の有無に関わらず常に敷く（＝div0 のサイズも決める）。fx 有効かつ canvas が
 			初回フレームを描くまで（fxReady=false）は見せ、描いたら隠す＝構成切替で一瞬消えない・
 			立ち絵の縁が二重に出ない。fx canvas は下の <FxImg> が absolute でこの上へ重ねる */}
 		{loadedSrc && ! isSheet && ! isMovie
-			&& <img src={loadedSrc} style={aFx.length > 0 && fxReady ? {...styFit, visibility: 'hidden'} : styFit}/>}
-		{loadedSrc && ! isSheet && ! isMovie && aFx.length > 0
-			&& <FxImg src={loadedSrc} aFace={aFace} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
-		{/* fx有効時（基本画像が静止画）は face（静止・sheet とも）を FxImg が合成済み＝DOM には出さない。
-			それ以外（fx無効／基本画像が sheet・動画）は全 face を従来どおり DOM オーバーレイで重ねる */}
-		{(aFx.length > 0 && loadedSrc && ! isSheet && ! isMovie ? [] : aFace)
+			&& <img src={loadedSrc} style={{...styFit, ...styHide}}/>}
+		{fxOn && <FxImg baseSrc={fxSrc} isSheet={isSheet} isMovie={isMovie} getVideoEl={()=> videoRef.current}
+			aFace={aFace} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
+		{/* fx有効時は face（静止・sheet・動画とも）を FxImg が合成済み＝DOM には出さない。
+			fx 無効時は全 face を従来どおり DOM オーバーレイで重ねる */}
+		{(fxOn ? [] : aFace)
 			.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

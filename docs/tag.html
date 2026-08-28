@@ -972,8 +972,9 @@
 	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）／
 	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）／<code>[pause_fx]</code>・<code>[resume_fx]</code>
 	（描画を止める/戻す）。<a href="#tsy">[tsy]</a>一族に倣う<br/>
-	・face 差分（静止・アニメpngシートとも）は基本画像へ合成してシェーダに通す（静止は差分変化時のみ、
-	シートは毎フレーム再合成）。動画レイヤ／動画 face は未対応＝従来どおり手前に重なる<br/>
+	・基本画像は静止画・アニメpngシート・動画（<code>[lay fn=movie]</code>）のいずれでもよい。
+	face 差分（静止・アニメpngシート・動画とも）は基本画像へ合成してシェーダに通す（静止は差分変化時のみ、
+	シート・動画は毎フレーム再合成）。外部ドメインの画像・動画は不可（<a href="#snapshot">[snapshot]</a>と同じ制約）<br/>
 	・<a href="#trans">[trans]</a> 後の不可視 back ページでは rAF/WebGL を凍結（表ページ or trans 中だけ回す）<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>

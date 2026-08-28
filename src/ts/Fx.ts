@@ -9,7 +9,8 @@
 //	エフェクトを重ねる**分家独自機能**（2026-08-28 正式化）。ANIMATION_RESEARCH.md §7。
 //	・対象指定（layer=/page=）は [add_filter] に、記述子スタック（aFx[]）も [add_filter] の aFlt に倣う
 //	・fx=wave|rgbShift（プリセット）か、glsl=（生フラグメントシェーダ）のどちらか
-//	・face 差分合成（aFace）はまだ通さない＝基本画像（fn）だけにかかる
+//	・基本画像（静止画・アニメ png シート・動画）＋ face 差分合成（aFace）を GrpLayer の
+//	  makeFxSource() が 2D canvas へ合成してからシェーダへ通す（sheet/動画は毎フレーム）
 //
 //	ここは DOM も WebGL も触らない純粋部分（本家 Filter.ts の bldFilter() と同じ役回り）。
 //	エンジンから呼べるので fx 名・パラメータの書き間違いをその場で例外にできる。

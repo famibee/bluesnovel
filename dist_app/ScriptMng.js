@@ -4379,7 +4379,8 @@ var co = class p {
 					return {
 						...e,
 						src: t,
-						isSheet: t.endsWith(".json")
+						isSheet: t.endsWith(".json"),
+						isMovie: /\.(?:mp4|webm)$/i.test(t)
 					};
 				});
 				if (!this.sys.crypto) {

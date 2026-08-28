@@ -21,8 +21,9 @@
 //	  凍結パスは自分の tick を止めて描画は続ける（前段パスが動けば入力は変わるため）。全パス凍結／
 //	  不可視なら rAF ごと止め、凍結が解けたら続きから（[trans] 後の不可視 back ページの空回しを止める）。
 //	・source は基本画像 URL／GrpLayer.tsx が基本画像＋静止 face を合成した offscreen 2D canvas
-//	  （差分が変わった時だけ作り直す）／sheet face がある時は「毎フレーム描き直す関数」で、rAF ごとに
-//	  texImage2D で吸い上げる。動画レイヤ／動画 face はまだ非対応。外部ドメインの画像は 2D canvas を
+//	  （差分が変わった時だけ作り直す）／基本画像か face が動的（アニメ png シート／動画レイヤ／動画 face）
+//	  なら「毎フレーム描き直す関数」で、rAF ごとに texImage2D で吸い上げる。関数は dispose() を
+//	  持てる（動画 face 用の detached な <video> の解放）。外部ドメインの画像・動画は 2D canvas を
 //	  汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
 //	・preserveDrawingBuffer:true は [snapshot]（Snapshot.ts の canvas→toDataURL 差し替え）対策で
 //	  3d_layer / live2d_layer と同じ理由。
@@ -32,8 +33,10 @@ import {V_SRC, PASSTHRU_SRC, H_FX_FRAG} from './fxPresets';
 
 
 //	source が関数のときは「毎フレーム描き直される 2D canvas」＝rAF ごとに texImage2D で吸い上げる
-//	（アニメ png シートの face を fx に通す。GrpLayer.tsx makeFxSource）
-type T_SOURCE = string | HTMLCanvasElement | HTMLImageElement | (()=> TexImageSource);
+//	（アニメ png シート・動画レイヤ・動画 face を fx に通す。GrpLayer.tsx makeFxSource）。
+//	dispose() は内部リソース（動画 face 用の detached な <video>）の解放（あれば）
+type T_DYN_SOURCE = (()=> TexImageSource) & {dispose?: ()=> void};
+type T_SOURCE = string | HTMLCanvasElement | HTMLImageElement | T_DYN_SOURCE;
 type T_ARG = {canvas: HTMLCanvasElement; source: T_SOURCE; aFx: T_FX[]; active: boolean};
 
 // <FxImg>（GrpLayer.tsx）が握る制御ハンドル。シェーダ構成（fx 名/glsl/パス数）が変わらない限り
@@ -110,7 +113,7 @@ export async function runFx(o: T_ARG): Promise<T_FX_HANDLE> {
 	if (typeof s === 'function') img = s();
 	else if (typeof s === 'string') img = await loadImg(s);
 	else img = s;
-	const dyn: (()=> TexImageSource) | null = typeof s === 'function' ? s : null;	// 毎フレーム転写する動的ソース
+	const dyn: T_DYN_SOURCE | null = typeof s === 'function' ? s : null;	// 毎フレーム転写する動的ソース
 	// 呼び出し元は必ず HTMLImageElement か HTMLCanvasElement を渡す（GrpLayer.tsx）
 	const w = Math.max(1, img instanceof HTMLImageElement ? img.naturalWidth : (img as HTMLCanvasElement).width);
 	const h = Math.max(1, img instanceof HTMLImageElement ? img.naturalHeight : (img as HTMLCanvasElement).height);
@@ -145,7 +148,7 @@ type T_PASS = {
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
 };
 
-function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], img: TexImageSource, w: number, h: number, active0: boolean, dyn: (()=> TexImageSource) | null): T_FX_HANDLE {
+function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], img: TexImageSource, w: number, h: number, active0: boolean, dyn: T_DYN_SOURCE | null): T_FX_HANDLE {
 	const vs = compile(gl, gl.VERTEX_SHADER, V_SRC);
 	const mkPass = (fsSrc: string, fx: T_FX): T_PASS => {
 		const pg = link(gl, vs, fsSrc);
@@ -302,6 +305,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			for (const p of aPass) gl.deleteProgram(p.pg);
 			gl.deleteProgram(pgPass.pg);
 			gl.getExtension('WEBGL_lose_context')?.loseContext();
+			dyn?.dispose?.();	// 動画 face 用の detached な <video> を解放（あれば）
 		},
 	};
 }
