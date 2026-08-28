@@ -19,9 +19,13 @@
 //	     消す。表裏の確定（foreIdx 反転）は ScriptMng #finishTrans が別途行う——「見た目は Stage、
 //	     終了宣言は ScriptMng」という [trans] 全体の役割分担どおり（store.tsx trans のコメント）。
 //
-//	シェーダに渡すもの（本家 #trans() が Filter へ渡す uniform / varying と同じ名前）：
+//	glsl= には**プリセット名**（`blur` / `mosaic`。src/ts/transPresets.ts）も書ける。名前でなければ
+//	GLSL ソースそのものとして扱う（`[add_fx]` の fx=/glsl= 分岐と同じ考え方）。
+//
+//	シェーダに渡すもの（本家 #trans() が Filter へ渡す uniform / varying ＋ resolution）：
 //	  uniform sampler2D uSampler      … 表ページ画像（テクスチャ単位0）
 //	  uniform float     tick          … 進度 0.0〜1.0
+//	  uniform vec2      resolution    … ステージの実ピクセルサイズ
 //	  uniform sampler2D rule          … rule= 併用時のルール画像（未指定は 1x1 透明。単位1）
 //	  uniform float     vague         … 境界のぼかし幅（本家既定 0.04）
 //	  varying vec2      vTextureCoord … 画面左上=(0,0) の UV（頂点シェーダが供給）
@@ -36,6 +40,7 @@
 
 import {CmnLib} from '../sn/CmnLib';
 import {snapshotToPng, type T_SNAP_ARG} from './Snapshot';
+import {resolveTransGlsl} from './transPresets';
 
 
 export type T_GLSL_TRANS = {
@@ -197,7 +202,9 @@ function setup(
 
 	const vs = compile(gl, gl.VERTEX_SHADER, V_SRC);
 	const pgBack = link(gl, vs, BACKDROP_SRC);
-	const pgUser = link(gl, vs, o.glslSrc);	// ← user シェーダの文法エラーはここで throw
+	// glslSrc がプリセット名（blur/mosaic）ならそのシェーダ、そうでなければソースそのまま。
+	//	user シェーダ／プリセットの文法エラーはここで throw（.catch で myTrace 表示）
+	const pgUser = link(gl, vs, resolveTransGlsl(o.glslSrc));
 	gl.deleteShader(vs);
 
 	const buf = gl.createBuffer();
@@ -216,10 +223,11 @@ function setup(
 
 	const uBackSampler = gl.getUniformLocation(pgBack, 'uSampler');
 	const uUser = {
-		uSampler: gl.getUniformLocation(pgUser, 'uSampler'),
-		tick	: gl.getUniformLocation(pgUser, 'tick'),
-		rule	: gl.getUniformLocation(pgUser, 'rule'),
-		vague	: gl.getUniformLocation(pgUser, 'vague'),
+		uSampler	: gl.getUniformLocation(pgUser, 'uSampler'),
+		tick		: gl.getUniformLocation(pgUser, 'tick'),
+		resolution	: gl.getUniformLocation(pgUser, 'resolution'),
+		rule		: gl.getUniformLocation(pgUser, 'rule'),
+		vague		: gl.getUniformLocation(pgUser, 'vague'),
 	};
 
 	const draw = (tick: number)=> {
@@ -245,6 +253,7 @@ function setup(
 		gl.bindTexture(gl.TEXTURE_2D, texRule);
 		if (uUser.rule) gl.uniform1i(uUser.rule, 1);
 		if (uUser.tick) gl.uniform1f(uUser.tick, tick);
+		if (uUser.resolution) gl.uniform2f(uUser.resolution, stageW, stageH);
 		if (uUser.vague) gl.uniform1f(uUser.vague, o.vague);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	};

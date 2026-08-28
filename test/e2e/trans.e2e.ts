@@ -189,6 +189,31 @@ test('[er]を挟まない[trans]でも前の場面の文字が復活しない（
 	expect(await mesStr(page)).toBe('つぎ');
 });
 
+test('[trans glsl=mosaic/blur]（プリセット名）が解決・コンパイルされ、演出後に表裏交換される', async ({page})=> {
+	const errs: string[] = [];
+	page.on('console', m=> {if (m.type() === 'error') errs.push(m.text())});
+	page.on('pageerror', e=> errs.push(String(e)));
+
+	for (let i = 0; i < 7; ++i) {	// つぎ まで
+		await pressKeyToWaitMark(page, 'Space');
+		await waitTransDone(page);
+	}
+	expect(await mesStr(page)).toBe('つぎ');
+
+	for (const [tag, mes] of [['mosaic', 'glsl_mosaic'], ['blur', 'glsl_blur']] as const) {
+		await page.keyboard.press('Space');	// [er][lay page=back][trans time=400 glsl=<tag>][wt]
+		await waitTransRunning(page);
+		// glsl トランジション専用 canvas が出る＝transPresets の <tag> シェーダが link() を通った
+		//	（コンパイル失敗なら setup() が canvas を appendChild する前に throw する）
+		await expect(page.locator('#skynovel canvas')).toHaveCount(1);
+
+		await waitTransDone(page);
+		expect(await mesStr(page)).toBe(mes);
+		expect((await snap(page)).foreIdx).toBe(tag === 'mosaic' ? 1 : 0);	// 交換のたび反転
+	}
+	expect(errs).toEqual([]);	// シェーダのコンパイル／リンクエラーが出ていない
+});
+
 // ============ ルール画像によるワイプ（[trans rule=…]） ============
 //	**「時間を進める機構」と「進度→見た目」を切り離してある**（src/ts/Trans.ts のコメント）。
 //	進度→係数の計算は単体テスト（test/Trans.test.ts）が全域を押さえているので、ここでは
@@ -220,7 +245,7 @@ async function toRuleScene(page: Page) {
 	//	「ストアもDOMも一致して文字送りも終わっている」瞬間があり、waitTransDone()だけだと
 	//	そこで押したキーが進行に使われず失われる（Main.tsx next()）。5つとも[l]/[p]なので
 	//	マーカーが立つ
-	for (let i = 0; i < 7; ++i) {	// つぎ（回帰テスト用ブロックの終端）まで
+	for (let i = 0; i < 9; ++i) {	// glsl_blur（rule 場面の手前）まで
 		await pressKeyToWaitMark(page, 'Space');
 		await waitTransDone(page);
 	}

@@ -130,8 +130,9 @@ vfx-js の旧版。GitHub リポジトリはリンク切れ。npm の `react-vfx
 
 以下は着手前の実現性検討。実装は方針どおり生 WebGL の lazy モジュールで行った。ただし GLSL の契約は
 「GL Transitions 仕様」ではなく**本家サンプル `glsl_slide` の契約**（`uSampler`／`tick`／
-`vTextureCoord`、rule 併用時 `rule`／`vague`）をそのまま採用した——移植の目的は本家サンプルが動くこと
-なので、既存 `.sn` のシェーダをそのまま流用できる方を優先した。
+`vTextureCoord`、rule 併用時 `rule`／`vague`）＋分家で `resolution`（vec2）を採用した——移植の目的は
+本家サンプルが動くことなので、既存 `.sn` のシェーダをそのまま流用できる方を優先した。
+`glsl=` にはプリセット名（`blur`／`mosaic`。`src/ts/transPresets.ts`）も書ける（2026-08-28）。
 
 難所とされる 2 つがすでにこのコードベースに実装済み：
 
@@ -332,7 +333,10 @@ GLSL/HTML/CSS は概ねフリー扱い可。
 - **マクロで足りるもの**：`[ext_fg]`/`[ext_fg2]`、漫画表現拡張（[blog](https://famibee.blog.fc2.com/blog-entry-565.html)）
 - **既にタグ化済み**：`[quake]`
 - **非サポート確定**：文字レイヤ枠画像のシート再生（[TODO.md](TODO.md) 旧・アニメpng節）——文字が読みづらくなる
-- 別件（本家 `[trans glsl=]` 契約側、TODO に独立項目）：ぼかし `[trans glsl=]` / モザイク `[trans glsl=]`
+- 別件（`[trans glsl=]` 契約側）：ぼかし／モザイクは**エンジンのプリセット名**にした（2026-08-28）。
+  `[trans glsl=blur]` / `[trans glsl=mosaic]`（`src/ts/transPresets.ts`。`resolveTransGlsl()` が
+  「名前ならそのシェーダ、そうでなければソースそのもの」＝`[add_fx]` の fx=/glsl= 分岐と同じ考え方だが
+  `[trans]` は属性 1 つで兼ねる）。契約に `resolution`（vec2）を追加。どちらも定番手法の再実装（MIT 相当）
 
 #### ギャラリー実演の調査（実装後）
 

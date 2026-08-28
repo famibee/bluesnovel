@@ -54,6 +54,21 @@
 [wt]
 つぎ[l]
 
+; glsl プリセット・トランジション（[trans glsl=mosaic] / [trans glsl=blur]。分家独自。trans.e2e.ts）。
+;	名前を書くと transPresets.ts のシェーダが使われる（生 GLSL ソースも書ける）。
+;	演出中は専用 canvas が出て tick 0→1、終われば表裏交換
+[er]
+[lay layer=mes b_alpha=0.9 b_color=0x7FFFD4 page=back]
+[trans time=400 glsl=mosaic]
+[wt]
+[er]glsl_mosaic[l]
+
+[er]
+[lay layer=mes b_alpha=0.3 b_color=0x7FFFD4 page=back]
+[trans time=400 glsl=blur]
+[wt]
+[er]glsl_blur[l]
+
 ; ルール画像によるワイプ（[trans rule=…]）。表裏を**単色の板**で塗り分けておき、
 ;	境界の位置を画素で確かめられるようにする。rule_lrは左が黒・右が白の横グラデーションで、
 ;	暗い所から先に表ページが消える＝進度tickに応じて左から右へ赤が青へ入れ替わる。

@@ -26,9 +26,16 @@
 `src/ts/TransGlsl.ts`（lazy import の生 WebGL モジュール）で実装。表・裏ページを `Snapshot.ts` で
 1 枚ずつ画像化 → 全画面クワッドに裏を下地、user フラグメントシェーダ経由の表をアルファ合成 → rAF で
 `tick` 0→1。本家サンプル `glsl_slide` の契約（`uSampler`／`tick`／`vTextureCoord`、rule 併用時は
-`rule`／`vague`）をそのまま受ける。`delay=`・`ease=` はタグリファレンスから属性説明ごと削除済み
-（2026-08-27）。設計の経緯は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7、制約（iframe・動画が
-写らない等）は `TransGlsl.ts` 冒頭コメント。
+`rule`／`vague`）＋分家で `resolution`（vec2）を追加して受ける。`delay=`・`ease=` はタグリファレンス
+から属性説明ごと削除済み（2026-08-27）。
+
+`glsl=` には**プリセット名**も書ける（2026-08-28）：`blur`（ぼかしながら消える）／`mosaic`（ブロックが
+粗くなりながら消える）。実体は `src/ts/transPresets.ts`（`resolveTransGlsl()` が「名前ならそのシェーダ、
+そうでなければソースそのもの」を返す＝`[add_fx]` の fx=/glsl= 分岐と同じ考え方だが属性 1 つで兼ねる）。
+どちらも定番手法を再実装（MIT 相当）。回帰は `test/transPresets.test.ts`＋`test/e2e/trans.e2e.ts`。
+
+設計の経緯は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7、制約（iframe・動画が写らない等）は
+`TransGlsl.ts` 冒頭コメント。
 
 ## `max_row`（凍結・本家自体が死んだ属性）
 
