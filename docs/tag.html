@@ -155,6 +155,8 @@
 		<li class="mb1"><a href="#add_filter">🟡 [add_filter] フィルター追加</a></li>
 		<li class="mb1"><a href="#clear_filter">🟢 [clear_filter] フィルター全削除</a></li>
 		<li class="mb1"><a href="#enable_filter">🟢 [enable_filter] フィルター個別切替</a></li>
+		<li class="mb1"><a href="#add_fx">🟡 [add_fx] 立ち絵シェーダエフェクト（bluesnovel独自・試作）</a></li>
+		<li class="mb1"><a href="#clear_fx">🟡 [clear_fx] 立ち絵シェーダエフェクト撤去（bluesnovel独自・試作）</a></li>
 	</ul>
 	<p>トゥイーンアニメ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -949,6 +951,62 @@
 <tr><td>page</td><td></td><td>fore</td><td>fore、back、both</td><td>ページの裏表（both指定で両面）</td></tr>
 <tr><td>index</td><td></td><td>0</td><td>0〜</td><td>追加したフィルターの中で、有効・無効を変更するフィルターの番号。<br/>0が最初のフィルター。フィルターを重ねるたびに1加算したindexになる</td></tr>
 <tr><td>enabled</td><td></td><td>true</td><td>true、false</td><td>フィルターを有効にするか</td></tr>
+</table>
+
+</p>
+
+
+<h1><a id="立ち絵シェーダエフェクト"></a>立ち絵シェーダエフェクト（bluesnovel独自・試作）</h1>
+<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：
+	本家（SKYNovel）には無い分家独自の試作機能。grpレイヤ（立ち絵）の基本画像へ WebGL の
+	フラグメントシェーダを重ねる。対象の選び方（<code>layer=</code>／<code>page=</code>）と記述子の
+	スタックは<a href="#add_filter">[add_filter]</a>に倣う。現状の割り切り：<br/>
+	・プリセット <code>fx=wave</code> / <code>fx=rgbShift</code> の2種のみ。生 GLSL（<code>glsl=</code>）は未対応<br/>
+	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）の2タグだけ。
+	pause/resume・終了待ちに当たるタグは無い<br/>
+	・face 差分合成は通さない＝基本画像（<code>fn=</code>）だけにかかる<br/>
+	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
+</p>
+
+<h2 id="add_fx" class="w-heading">[add_fx]立ち絵シェーダエフェクト</h2>
+<h4>grpレイヤにシェーダエフェクトを重ねる。</h4>
+<p class="mb2 px1">
+
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可）</td><td>非grpレイヤを指定するとエラー</td></tr>
+<tr><td>page</td><td></td><td>fore</td><td>fore、back、both</td><td>ページの裏表（both指定で両面）</td></tr>
+<tr class="y"><td>fx</td><td>y</td><td></td><td>wave、rgbShift</td><td>プリセット名。<br/>wave …… 横方向の正弦波でゆらす（水面／陽炎）<br/>rgbShift …… RGBを左右にずらす（グリッチ／色収差）</td></tr>
+<tr><td>name</td><td></td><td>自動採番</td><td>識別子</td><td>そのレイヤの中で一意な名前。省略すると <code>#fx1</code>, <code>#fx2</code> … を自動採番する（<code>#</code>付きはシナリオから指定できない＝<code>[clear_fx name=]</code>では実質狙えず、<code>layer=</code>単位のクリアでのみ落ちる）。同名を再指定すると置換（<a href="#tsy">[tsy]</a>の「同名で再開」と同じ）</td></tr>
+<tr><td>time</td><td></td><td>0</td><td>0〜（ミリ秒）</td><td>0で無限（常時ゆらぎ）。正数を指定すると経過後そのパスは素通しに切り替わり凍結する（記述子の自動撤去はしない＝<code>[clear_fx]</code>／<code>[clear_lay]</code>で撤去）</td></tr>
+<tr><td>speed</td><td></td><td>1</td><td>実数</td><td>時間の進み方の倍率</td></tr>
+</table>
+
+<h4>プリセット「wave」に指定できる属性</h4>
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>amp</td><td></td><td>6</td><td>実数（px相当）</td><td>横ゆれの振幅</td></tr>
+<tr><td>freq</td><td></td><td>2</td><td>実数</td><td>縦方向の波の本数の目安</td></tr>
+</table>
+
+<h4>プリセット「rgbShift」に指定できる属性</h4>
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>shift</td><td></td><td>4</td><td>実数（px相当）</td><td>RGBの左右ずらし量（timeで脈動する）</td></tr>
+</table>
+
+<p class="mb2 px1">
+　<code>[add_fx]</code>自体は待たない（<a href="#tsy">[tsy]</a>と同じ）。記述子は store 経由なので
+　<a href="#add_filter">[add_filter]</a>同様、しおり（<a href="#save">[save]</a>／<a href="#load">[load]</a>）と
+　<a href="#trans">[trans]</a>の両ページ複製に自動追随する。
+</p>
+
+</p>
+<h2 id="clear_fx" class="w-heading">[clear_fx]立ち絵シェーダエフェクト撤去</h2>
+<h4>grpレイヤに重ねたシェーダエフェクトを撤去する。</h4>
+<p class="mb2 px1">
+
+<table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
+<tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可）</td><td></td></tr>
+<tr><td>page</td><td></td><td>fore</td><td>fore、back、both</td><td>ページの裏表（both指定で両面）</td></tr>
+<tr><td>name</td><td></td><td>そのレイヤのfx全部</td><td>識別子（カンマ区切りで複数可）</td><td>指定した名前のfxだけ撤去する。省略するとそのレイヤのfxを全撤去。自動採番された無名fx（<code>#fxN</code>）は名前で狙えないので、無名fxを消すには<code>name=</code>を省略する</td></tr>
 </table>
 
 </p>

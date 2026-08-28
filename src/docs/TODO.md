@@ -41,7 +41,7 @@
 コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
 `[trans] glsl=` は実装済み（`src/ts/TransGlsl.ts`。§7）。
 
-### 立ち絵シェーダエフェクト（`[add_fx]` 一族）
+### シェーダエフェクト（`[add_fx]` 一族）
 
 C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。タグ案・規模内訳・プラグイン化 3 経路・
 推奨度は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。**推奨度 ★★☆＝本家サンプル互換の後ろ盾が
@@ -58,23 +58,22 @@ C 方式（`aFlt` に倣った `aFx` コア seam ＋ lazy モジュール）。�
       アクション。`ScriptEngine_filter.test.ts` と同じ役割分担）＋ `test/e2e/fx.e2e.ts`
       （`<img>`↔`<canvas>` 差し替え seam、`[clear_lay]` で `aFx` が落ちる、`page=both` で表裏複製、
       one-shot 記述子）。WebGL の描画結果そのものは見ない（ヘッドレスの GL 実装差）
+- [x] `name=` 無名時のレイヤスコープ採番（2026-08-28）：store の `chgFx` が既存 `#fxN` の最大+1 を
+      振る（別カウンタは持たない＝`aFx` の round-trip で採番も復元。`test/store_lay.test.ts`）。
+      `[save]`/`[load]` round-trip も同テストで確認
+- [x] `docs/tag.html`（🟡・`bluesnovel独自・試作` 節）＋ [ARCHITECTURE.md](ARCHITECTURE.md)
+      実装済みタグ一覧へ追加（2026-08-28）
 
 残りは**スパイク順**（＝「正式化するか凍結するか」の判断へ最短で届く順。安い・低リスクを先に、
 本家サンプル契約が要る重いものを後に）：
 
-1. [ ] `name=` 無名時のレイヤスコープ採番（`#fx1`…。今は無名は常に push、`[clear_fx]` は
-      `layer=` 単位のみ）。※gallery 測定で「無名 fx を個別に止めたい要求は出ない」と判れば不要。
-      `[save]`/`[load]` の round-trip 実挙動確認もここで（今は seam＝`A_LAY_STY_KEY` 経由の追随のみ
-      確認済み）
-2. [ ] `docs/tag.html` への追記（🟡）＋ [ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧へ追加
-      （「何が動くか」の可視化。ここまでで landed 分は一通り固まる）
-3. [ ] sn_gallery に実演を置いて費用対効果を測定 ← **正式化 / 凍結の判断ゲート**。以下は
+1. [ ] sn_gallery に実演を置いて費用対効果を測定 ← **正式化 / 凍結の判断ゲート**。以下は
       「正式化」判断が出てから着手する（それぞれ実コスト大）
-4. [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
-5. [ ] プリセット追加（glitch / pixelate 等）
-6. [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
-7. [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
-8. [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
+2. [ ] `[enable_fx]`（pause/resume 相当）／`[wait_fx]`（終了待ち。`ScriptMng` に `waitFx`）
+3. [ ] プリセット追加（glitch / pixelate 等）
+4. [ ] face 差分合成（`aFace`）を通す（今は基本画像だけ）／RGB シフトの箱外にじみ（`overflow:visible`）
+5. [ ] 生 GLSL（`glsl=`。本家サンプル準拠の契約。今は `throw`）
+6. [ ] 上記すべて完了 → この節を TODO.md から削除（試作の段階を脱し正式機能化。または
       測定の結果「試作止まり」と判断したら凍結として [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) へ集約）
 
 ## 保留

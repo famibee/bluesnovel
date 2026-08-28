@@ -13,6 +13,7 @@
 
 import {useStore} from '../src/store/store';
 import {isGrpLay, isTxtLay} from '../src/components/Lay';
+import {bldFx} from '../src/ts/Fx';
 
 import {beforeEach, expect, it} from 'bun:test';
 
@@ -209,6 +210,77 @@ it('chgFilter_clearLayDropsFilters', ()=> {
 	S().chgFilter({aLayNm: ['a'], page: 'fore', mode: 'add', flt: FLT1});
 	S().clearLay({aLayNm: ['a'], page: 'fore'});
 	expect(aFltOf('a')).toBeUndefined();
+});
+
+
+// ============ 立ち絵シェーダエフェクト（[add_fx]/[clear_fx]。分家独自の試作） ============
+//	bldFx() の検査・既定値は test/ScriptEngine_fx.test.ts。ここは「現在の並び」が要るもの＝
+//	無名 fx の #fxN 採番（レイヤスコープ）と、しおり(getPagesJson/replace)の round-trip。
+
+const fxOf = (nm: string, page: 0 | 1 = 0)=>
+	useStore.getState().aPage[page].find(e=> e.nm === nm)?.aFx;
+const addFx = (nm: string, args: {[k: string]: string}, page: 'fore' | 'both' = 'fore')=>
+	S().chgFx({aLayNm: [nm], page, mode: 'add', fx: bldFx(args)});
+
+it('chgFx_無名はレイヤスコープで #fxN を採番', ()=> {
+	addFx('a', {fx: 'wave'});
+	addFx('a', {fx: 'rgbShift'});
+	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1', '#fx2']);
+	// 別レイヤは独立採番（同定は「どのレイヤの aFx か」＋ name）
+	addFx('b', {fx: 'wave'});
+	expect(fxOf('b')!.map(f=> f.name)).toEqual(['#fx1']);
+});
+
+it('chgFx_名前つきは同名置換・無名と混在できる', ()=> {
+	addFx('a', {fx: 'wave', name: 'w'});
+	addFx('a', {fx: 'rgbShift'});				// → #fx1
+	addFx('a', {fx: 'wave', name: 'w', amp: '20'});	// 'w' を置換
+	expect(fxOf('a')!.map(f=> f.name)).toEqual(['w', '#fx1']);
+	expect(fxOf('a')![0]).toMatchObject({params: {amp: 20}});
+});
+
+it('chgFx_採番は既存 #fxN の最大+1（クリアで空けた番号は詰めない）', ()=> {
+	addFx('a', {fx: 'wave'});		// #fx1
+	addFx('a', {fx: 'wave'});		// #fx2
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'clear', names: ['#fx1']});
+	addFx('a', {fx: 'wave'});		// 最大(2)+1 = #fx3
+	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx2', '#fx3']);
+});
+
+it('chgFx_clear name= は #fxN を実質狙えない（layer 単位でのみ落ちる）', ()=> {
+	addFx('a', {fx: 'wave'});			// #fx1（無名）
+	addFx('a', {fx: 'wave', name: 'w'});
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'clear', names: ['w']});
+	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1']);	// 無名は残る
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'clear', names: null});
+	expect(fxOf('a')).toBeUndefined();					// layer 単位なら全部
+});
+
+it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを持たない）', ()=> {
+	addFx('a', {fx: 'wave'});
+	addFx('a', {fx: 'rgbShift', name: 'rs'});
+	const json = S().getPagesJson();
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().replace(json);
+	expect(fxOf('a')).toEqual([
+		{name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1, params: {amp: 6, freq: 2}},
+		{name: 'rs', fx: 'rgbShift', glsl: '', time: 0, speed: 1, params: {shift: 4}},
+	]);
+	// round-trip 後も採番が続く（#fx1 の次は #fx2）
+	addFx('a', {fx: 'wave'});
+	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1', 'rs', '#fx2']);
+});
+
+it('chgFx_page=both は表裏に同名の #fxN を複製', ()=> {
+	addFx('a', {fx: 'wave'}, 'both');
+	expect(fxOf('a', 0)!.map(f=> f.name)).toEqual(['#fx1']);
+	expect(fxOf('a', 1)!.map(f=> f.name)).toEqual(['#fx1']);
+});
+
+it('chgFx_[clear_lay] で aFx が落ちる（A_LAY_STY_KEY 経由）', ()=> {
+	addFx('a', {fx: 'wave'});
+	S().clearLay({aLayNm: ['a'], page: 'fore'});
+	expect(fxOf('a')).toBeUndefined();
 });
 
 

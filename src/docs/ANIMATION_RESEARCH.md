@@ -258,8 +258,10 @@ GLSL だけ借りる**が確定。
   は別物。同じレシピを複数キャラに使える）。
 - `[add_fx name=w …]` の再指定は**同レイヤの同名要素を置換**（`[tsy]` の「同名で再開」と同じ）。
 - `[add_fx …]`（`name=` 省略） → store の `chgFx` が**そのレイヤ内で**一意な `#fx1`, `#fx2` … を採番
-  （`#` 前置＝人間が `name=` に書かない字。`[tsy_frame]` の `frm\nID` と同じ衝突回避）。カウンタは
-  store 状態に持たせ `[save]`/`[load]` で復元。`[trans]` の両ページ複製は `aFlt` 同様に自動追随
+  （`#` 前置＝人間が `name=` に書かない字。`[tsy_frame]` の `frm\nID` と同じ衝突回避）。**別カウンタは
+  持たず**、そのレイヤの既存 `#fxN` の最大 +1 を使う——`aFx` は `getPagesJson()`／`replace()` で
+  レイヤレコードごと round-trip するので、採番も `[save]`/`[load]` で自動的に復元される（実装 2026-08-28。
+  round-trip は `test/store_lay.test.ts`）。`[trans]` の両ページ複製は `aFlt` 同様に自動追随
   （各ページのレイヤコピーが同名の `aFx` を持つ）。
 
 `[wait_fx]`/`[enable_fx]`/`[clear_fx]` のセレクタは、この `aFx` 群に対する **AND で効く 2 フィルタ**

@@ -389,8 +389,19 @@ var O = b()((e, t) => ({
 				t.length > 0 ? e.aFx = t : delete e.aFx;
 				return;
 			}
-			let t = [...e.aFx ?? []], n = a.name ? t.findIndex((e) => e.name === a.name) : -1;
-			n >= 0 ? t[n] = a : t.push(a), e.aFx = t;
+			let t = [...e.aFx ?? []], n = a;
+			if (!n.name) {
+				let e = t.reduce((e, t) => {
+					let n = /^#fx(\d+)$/.exec(t.name);
+					return n ? Math.max(e, Number(n[1])) : e;
+				}, 0);
+				n = {
+					...n,
+					name: `#fx${e + 1}`
+				};
+			}
+			let s = t.findIndex((e) => e.name === n.name);
+			s >= 0 ? t[s] = n : t.push(n), e.aFx = t;
 		}, c = (e) => {
 			if (!t) {
 				e.forEach(s);

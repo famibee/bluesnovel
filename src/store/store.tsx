@@ -665,10 +665,22 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 				if (a.length > 0) e.aFx = a; else delete e.aFx;
 				return;
 			}
-			// add：name指定があれば同名を置換（[tsy]の「同名で再開」と同じ）、無名は常に追加
+			// add：name指定があれば同名を置換（[tsy]の「同名で再開」と同じ）。
+			//	無名（name='')はそのレイヤの aFx 内で #fxN を採番（人間が name= に書かない
+			//	`#` 前置。[tsy_frame] の `frm\nID` と同じ衝突回避）。カウンタは別に持たず
+			//	既存 #fxN の最大+1 を使う＝aFx がしおり(getPagesJson/replace)で丸ごと
+			//	round-trip するので採番も自動で復元される（ANIMATION_RESEARCH.md §7）
 			const a = [...e.aFx ?? []];
-			const i = fx!.name ? a.findIndex(f=> f.name === fx!.name) : -1;
-			if (i >= 0) a[i] = fx!; else a.push(fx!);
+			let f = fx!;
+			if (! f.name) {
+				const mx = a.reduce((m, x)=> {
+					const g = /^#fx(\d+)$/.exec(x.name);
+					return g ? Math.max(m, Number(g[1])) : m;
+				}, 0);
+				f = {...f, name: `#fx${mx + 1}`};
+			}
+			const i = a.findIndex(x=> x.name === f.name);
+			if (i >= 0) a[i] = f; else a.push(f);
 			e.aFx = a;
 		};
 		const chg = (aLay: T_LAY[])=> {

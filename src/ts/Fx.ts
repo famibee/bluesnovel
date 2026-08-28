@@ -30,7 +30,9 @@ const A_FX_PARAM = ['amp', 'freq', 'shift'] as const;
 
 // エフェクト記述子 1 件。plain data だけ（structuredClone／JSON 化を通すため。aFlt と同じ）
 export type T_FX = {
-	name	: string;	// そのレイヤの aFx 内で一意な識別子。''＝無名（[clear_fx name=] の対象外／同名置換もされない）
+	name	: string;	// そのレイヤの aFx 内で一意な識別子。''＝無名で、store の chgFx が
+						//	`#fxN`（レイヤスコープ採番）を振る。#fxN はシナリオから書けない＝[clear_fx name=]
+						//	では実質狙えず、layer= 単位のクリアでのみ落ちる
 	fx		: string;	// プリセット名。glsl 指定時は ''
 	glsl	: string;	// 生フラグメントシェーダ（fx='' のとき）。本家サンプル準拠の契約は未対応（試作）＝現状は空のみ
 	time	: number;	// ms。0 で無限（常時ゆらぎ）。>0 で time 経過後は素通し（試作では記述子の自動撤去はしない）

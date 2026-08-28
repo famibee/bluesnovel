@@ -69,7 +69,13 @@ function mkTex(gl: WebGLRenderingContext, img: TexImageSource | null, w: number,
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	if (img) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+	if (img) {
+		// 基本画像は y-up にして上げる（FBO と同じ向き）。頂点シェーダで反転しない代わり
+		//	＝ping-pong のパス数が奇数でも偶数でも上下が崩れない（fxPresets.ts V_SRC のコメント）
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+	}
 	else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 	return tx;
 }

@@ -56,7 +56,8 @@ test('[add_fx] で <img> が WebGL <canvas> に替わり、[clear_fx] で戻る'
 	expect(await draw(page)).toBe('canvas');
 	const a1 = (await afx(page))!;
 	expect(a1).toHaveLength(1);
-	expect(a1[0]).toMatchObject({name: '', fx: 'wave', glsl: '', time: 0, speed: 1});
+	// 無名 [add_fx] は store の chgFx が #fxN をレイヤスコープで採番（ANIMATION_RESEARCH.md §7）
+	expect(a1[0]).toMatchObject({name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1});
 	// プリセット固有パラメータ（既定は H_FX_DEF、上書きは属性どおり）
 	expect(a1[0]!.params).toMatchObject({amp: 10, freq: 3});
 
@@ -82,9 +83,9 @@ test('[add_fx page=both] は表裏どちらの base にも積まれる', async (
 	for (let i = 0; i < 4; ++i) await pressKeyToWaitMark(page, 'Space');	// 「both」まで
 	expect(await mesStr(page)).toBe('both');
 
-	// 表：直前までの無名 wave ＋ page=both の both
+	// 表：直前までの無名 wave（#fx1）＋ page=both の both
 	const fore = (await afx(page))!;
-	expect(fore.map(f=> f.name)).toEqual(['', 'both']);
+	expect(fore.map(f=> f.name)).toEqual(['#fx1', 'both']);
 
 	// 裏：page=both で複製された both だけ（表だけに積んだ無名 wave は来ない）
 	const back = (await afx(page, true))!;

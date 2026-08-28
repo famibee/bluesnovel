@@ -8,20 +8,23 @@
 // [add_fx]（立ち絵シェーダエフェクトの試作）のプリセット GLSL。
 //	src/ts/FxRunner.ts からのみ lazy import される（[add_fx] が使われるまで読まれない）。
 //	シェーダの契約（FxRunner が供給する uniform / varying）：
-//	  varying  vec2      vUv         … 画像左上=(0,0) の UV（頂点シェーダが供給）
+//	  varying  vec2      vUv         … 正規化 UV（0..1）。**左下=(0,0)／上=1**（素の GL 向き。
+//	                                   基本画像を UNPACK_FLIP_Y で上げて FBO と揃えているため）
 //	  uniform  sampler2D src         … 入力画像（前パスの結果 or 基本画像）
 //	  uniform  float     time        … 経過秒 × speed=（0 起点）
 //	  uniform  vec2      resolution  … canvas の実ピクセルサイズ
 //	  ＋ プリセット固有 uniform（amp / freq / shift。既定は src/ts/Fx.ts の H_FX_DEF）
 //	GLSL は vfx-js（MIT）の wave / rgbShift 相当を要点だけ書き直したもの。パッケージ非依存。
 
-// 全画像クワッドの頂点シェーダ。TransGlsl.ts と同じく UV.y を反転して
-//	texImage2D(image) の「先頭行＝上端」に合わせる
+// 全画像クワッドの頂点シェーダ。**UV.y は反転しない**（クリップ座標→UV 直結）。
+//	TransGlsl.ts は単一パスで頂点側で反転しているが、FxRunner は 2 枚 FBO の ping-pong を
+//	重ねるので頂点反転だと**パス数が奇数のとき上下が逆さ**になる。代わりに基本画像を
+//	UNPACK_FLIP_Y_WEBGL で上げて FBO と同じ y-up に揃え、どのパス数でも向きが崩れないようにする
 export const V_SRC = `
 attribute vec2 aPos;
 varying vec2 vUv;
 void main() {
-	vUv = vec2((aPos.x + 1.0) * 0.5, 1.0 - (aPos.y + 1.0) * 0.5);
+	vUv = (aPos + 1.0) * 0.5;
 	gl_Position = vec4(aPos, 0.0, 1.0);
 }`;
 
