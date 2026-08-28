@@ -5,8 +5,8 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// [add_fx]/[clear_fx]/[wait_fx]/[pause_fx]/[resume_fx]：立ち絵（grp レイヤ）へシェーダエフェクトを
-//	重ねる**分家独自の試作**。ANIMATION_RESEARCH.md §7。
+// [add_fx]/[clear_fx]/[wait_fx]/[pause_fx]/[resume_fx]：立ち絵・背景（grp レイヤ）へシェーダ
+//	エフェクトを重ねる**分家独自機能**（2026-08-28 正式化）。ANIMATION_RESEARCH.md §7。
 //	・対象指定（layer=/page=）は [add_filter] に、記述子スタック（aFx[]）も [add_filter] の aFlt に倣う
 //	・fx=wave|rgbShift（プリセット）か、glsl=（生フラグメントシェーダ）のどちらか
 //	・face 差分合成（aFace）はまだ通さない＝基本画像（fn）だけにかかる

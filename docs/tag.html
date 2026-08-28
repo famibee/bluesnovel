@@ -155,11 +155,11 @@
 		<li class="mb1"><a href="#add_filter">🟡 [add_filter] フィルター追加</a></li>
 		<li class="mb1"><a href="#clear_filter">🟢 [clear_filter] フィルター全削除</a></li>
 		<li class="mb1"><a href="#enable_filter">🟢 [enable_filter] フィルター個別切替</a></li>
-		<li class="mb1"><a href="#add_fx">🟡 [add_fx] 立ち絵シェーダエフェクト（bluesnovel独自・試作）</a></li>
-		<li class="mb1"><a href="#clear_fx">🟡 [clear_fx] 立ち絵シェーダエフェクト撤去（bluesnovel独自・試作）</a></li>
-		<li class="mb1"><a href="#wait_fx">🟢 [wait_fx] 立ち絵シェーダエフェクト終了待ち（bluesnovel独自・試作）</a></li>
-		<li class="mb1"><a href="#pause_fx">🟢 [pause_fx] 立ち絵シェーダエフェクト一時停止（bluesnovel独自・試作）</a></li>
-		<li class="mb1"><a href="#resume_fx">🟢 [resume_fx] 立ち絵シェーダエフェクト再開（bluesnovel独自・試作）</a></li>
+		<li class="mb1"><a href="#add_fx">🟢 [add_fx] 立ち絵シェーダエフェクト（bluesnovel独自）</a></li>
+		<li class="mb1"><a href="#clear_fx">🟢 [clear_fx] 立ち絵シェーダエフェクト撤去（bluesnovel独自）</a></li>
+		<li class="mb1"><a href="#wait_fx">🟢 [wait_fx] 立ち絵シェーダエフェクト終了待ち（bluesnovel独自）</a></li>
+		<li class="mb1"><a href="#pause_fx">🟢 [pause_fx] 立ち絵シェーダエフェクト一時停止（bluesnovel独自）</a></li>
+		<li class="mb1"><a href="#resume_fx">🟢 [resume_fx] 立ち絵シェーダエフェクト再開（bluesnovel独自）</a></li>
 	</ul>
 	<p>トゥイーンアニメ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -959,18 +959,18 @@
 </p>
 
 
-<h1><a id="立ち絵シェーダエフェクト"></a>立ち絵シェーダエフェクト（bluesnovel独自・試作）</h1>
-<p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：
-	本家（SKYNovel）には無い分家独自の試作機能。grpレイヤ（立ち絵）の基本画像へ WebGL の
-	フラグメントシェーダを重ねる。対象の選び方（<code>layer=</code>／<code>page=</code>）と記述子の
-	スタックは<a href="#add_filter">[add_filter]</a>に倣う。現状の割り切り：<br/>
-	・プリセット <code>fx=wave</code> / <code>fx=rgbShift</code> の2種、または生フラグメントシェーダ
+<h1><a id="立ち絵シェーダエフェクト"></a>立ち絵シェーダエフェクト（bluesnovel独自）</h1>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：
+	本家（SKYNovel）には無い分家独自機能（2026-08-28 正式化）。grpレイヤ（立ち絵・背景）の画像へ
+	WebGL のフラグメントシェーダを重ねる。対象の選び方（<code>layer=</code>／<code>page=</code>）と
+	記述子のスタックは<a href="#add_filter">[add_filter]</a>に倣う：<br/>
+	・プリセット <code>fx=wave</code> / <code>rgbShift</code> / <code>snow</code> / <code>rain</code>、または生フラグメントシェーダ
 	<code>glsl=</code>（契約は<a href="#trans">[trans]</a>の<code>glsl=</code>と統一。下の表）<br/>
 	・ライフサイクルは <code>[add_fx]</code>（開始）／<code>[clear_fx]</code>（撤去）／
 	<code>[wait_fx]</code>（<code>time&gt;0</code> の one-shot 終了待ち）／<code>[pause_fx]</code>・<code>[resume_fx]</code>
 	（描画を止める/戻す）。<a href="#tsy">[tsy]</a>一族に倣う<br/>
 	・静止 face 差分は基本画像へ合成してシェーダに通す（差分が変わった時だけ 2D canvas で再合成）。
-	アニメpngシート／動画 face はまだ未対応＝従来どおり手前に重なる<br/>
+	アニメpngシート／動画 face は未対応＝従来どおり手前に重なる<br/>
 	・<a href="#trans">[trans]</a> 後の不可視 back ページでは rAF/WebGL を凍結（表ページ or trans 中だけ回す）<br/>
 	詳細な設計は開発者向けドキュメント ANIMATION_RESEARCH.md §7。
 </p>

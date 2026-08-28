@@ -11,6 +11,7 @@
 | [filters.md](filters.md) | フィルタ22種の実装状況と保留分（`predator`/`color_tone`・`blur` 専用パラメータ・`noise`） |
 | [text-rendering.md](text-rendering.md) | テキスト描画（ルビ行間・縦書き回転・禁則・`ch_in_style`/`ch_out_style`） |
 | [tag-notes.md](tag-notes.md) | タグ／変数単位の凍結・保留・決着判断（`link`・`tsy render`・`max_row`・`canskip`・`trans glsl`） |
+| [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) | `[tsy]` の動きバリエーション検討（§1-5）と、`[trans glsl=]`／`[add_fx]` 一族（立ち絵・背景シェーダ。§6-7）の設計・GLSL 契約・実装記録 |
 | [deferred-infra.md](deferred-infra.md) | 着手保留の基盤（デザインモード・ESLint・moveable・vertglyph フィクスチャ・フレーム幅） |
 
 ⚠️ 決着・凍結した判断のうち対応コードがあるものは、そのソースのコメントへ書いてある

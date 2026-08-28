@@ -38,28 +38,21 @@
 コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
 `[trans] glsl=` は実装済み（`src/ts/TransGlsl.ts`。§7）。
 
-### シェーダエフェクト（`[add_fx]` 一族）— 正式化決定（2026-08-28、判断ゲート通過）
+### シェーダエフェクト（`[add_fx]` 一族）— 正式化（2026-08-28）
 
-最小スパイク（`[add_fx]`/`[clear_fx]`、プリセット wave / rgbShift、`aFx: T_FX[]` seam、
-無名レイヤスコープ採番、`test/ScriptEngine_fx.test.ts`＋`test/e2e/fx.e2e.ts`）は実装済み。
-sn_gallery `prj/add_fx/` の実演で費用対効果を測る判断ゲートを通過し**正式化**。設計・用途
-カタログ・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7（推奨度 ★★★☆）。
+`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、プリセット wave / rgbShift /
+snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、静止 face 合成、`[trans]` 後の不可視
+back ページで rAF 凍結——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`
+＋`test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
 
-実装順（7→8→6。6 は終わりのない作業なので最後・随時）。2026-08-28 完了：
-2（`[wait_fx]`＋`[pause_fx]`/`[resume_fx]`＝FxRunner 制御ハンドル）、
-3（生 `glsl=` 有効化＋契約名を `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`）、
-4 の静止 face 分（`FxImg` が基本画像＋静止 face を offscreen 2D canvas で合成→`runFx({source})`）、
-5（`Stage`→`GrpLayer` の `fxActive`＝表 or trans中 を `FxRunner` の凍結機構に相乗り。`data-fx-running`）。
+残り：
 
-- [ ] 4. （残り）sheet／動画 face を fx のテクスチャへ毎フレーム転写。`FxImg` の
+- [ ] sheet／動画 face を fx のテクスチャへ毎フレーム転写。`FxImg` の
       `! isSheet && ! isMovie`（＝基本画像が sheet/動画のとき FxImg を出さない）条件も緩める。
-      静止 face の合成は済み（`compositeFace()`）
-- [ ] 7. プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。
-      済み：`snow`／`rain`（2026-08-28）。候補：花火／タイル塗り＋スクロール／桜（花びら）／
-      ぼかしアニメ／モザイク
-- [ ] 8. `docs/tag.html` を 🟡→🟢、[ARCHITECTURE.md](ARCHITECTURE.md) 実装済みタグ一覧を更新、
-      §7 の実装順リストを畳む
-- [ ] 6. sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
+      静止 face の合成は済み（`GrpLayer.tsx` の `compositeFace()`）
+- [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：花火／
+      タイル塗り＋スクロール／桜（花びら）／ぼかしアニメ／モザイク
+- [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**
 

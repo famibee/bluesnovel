@@ -511,8 +511,8 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵・背景シェーダ | ○（正式化決定・実装中） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]` 実装済（対象指定は `[add_filter]`、ライフサイクルは `[tsy]` 一族に倣う）。`aFlt` と同型の `aFx` seam。GrpLayer が `<canvas>` 分岐。GLSL 契約は `[trans glsl=]` と名前統一（`uSampler`/`vTextureCoord`/`tick`）、Shadertoy は開発時に手変換。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
+| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。プリセット wave/rgbShift/snow/rain＋生 `glsl=`（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。Shadertoy は開発時に手変換）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、静止 face 合成、不可視 back ページで rAF 凍結。残り＝sheet/動画 face の毎フレーム転写・プリセット追加（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~350–530 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。
-実装順は [TODO.md](TODO.md) の「シェーダエフェクト」節。
+残りタスク（sheet/動画 face・プリセット追加・ギャラリー実演）は [TODO.md](TODO.md) の「シェーダエフェクト」節。

@@ -138,8 +138,8 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 
 `add_lay`, `current`, `add_face`, `lay`, `clear_lay`, `trans`/`wt`,
 `add_filter`/`clear_filter`/`enable_filter`,
-`add_fx`/`clear_fx`/`wait_fx`/`pause_fx`/`resume_fx`（**bluesnovel 独自の試作**。立ち絵 grp レイヤへ
-WebGL シェーダを重ねる。`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL
+`add_fx`/`clear_fx`/`wait_fx`/`pause_fx`/`resume_fx`（**bluesnovel 独自**、2026-08-28 正式化。立ち絵・
+背景 grp レイヤへ WebGL シェーダを重ねる。`src/ts/Fx.ts`＝純粋／`src/ts/FxRunner.ts`＋`src/ts/fxPresets.ts`＝lazy WebGL
 （`FxRunner` は `T_FX_HANDLE`＝`{update,dispose}` を返し、パラメータ・`enabled` は canvas を作り直さず
 ホットスワップ）。`wait_fx` は `ScriptMng` が `[add_fx time>0]` のタイマーを持つ（`wait_tsy` と同型）。
 プリセット wave/rgbShift/snow/rain または生 `glsl=`（契約は `[trans glsl=]` と統一＝`uSampler`/`vTextureCoord`/`tick`）。

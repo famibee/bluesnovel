@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// [add_fx]（立ち絵シェーダエフェクトの試作）のプリセット GLSL。
+// [add_fx]（立ち絵・背景シェーダエフェクト。分家独自）のプリセット GLSL。
 //	src/ts/FxRunner.ts からのみ lazy import される（[add_fx] が使われるまで読まれない）。
 //	シェーダの契約は [trans glsl=]（TransGlsl.ts、本家サンプル glsl_slide 準拠）と名前を揃える：
 //	  varying  vec2      vTextureCoord … 正規化 UV（0..1）。**左下=(0,0)／上=1**（素の GL 向き。

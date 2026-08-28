@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-// [add_fx]（立ち絵シェーダエフェクトの試作。ANIMATION_RESEARCH.md §7 の「C 方式」最小スパイク）。
+// [add_fx]（立ち絵・背景シェーダエフェクト。分家独自。ANIMATION_RESEARCH.md §7 の「C 方式」）。
 //	GrpLayer.tsx の <FxImg> が **このモジュールだけを lazy import** し、レイヤ実寸の <canvas>
 //	（WebGL）へ基本画像＋シェーダを描く。コアのバンドルには載らない（[add_fx] が使われた回に
 //	はじめて読まれる）。TransGlsl.ts と同じ生 WebGL の骨格。
