@@ -595,7 +595,13 @@ export class ScriptMng {
 		//	読み進め要求を「今すぐ待ちを打ち切って続行」に読み替える。
 		//	canskip=falseなら何も起きない（＝クリックでは飛ばせない）
 		if (this.#transWaiting) {
-			if (this.#transWaiting.canskip) this.#finishTrans();
+			if (this.#transWaiting.canskip) {
+				this.#finishTrans();
+				// クロスフェードを途中で畳んだので、消えかけの文字（[ch_out_style]のゴースト）も
+				//	終端へスナップさせる。requestSkipは本来タイプ演出用だが「本文表示を最終状態へ」
+				//	という意味は出現・消去どちらも同じ（TxtLayer.tsxの[skipReq]効果）
+				this.$fncs.requestSkip();
+			}
 			return;
 		}
 		if (this.#waiting) {

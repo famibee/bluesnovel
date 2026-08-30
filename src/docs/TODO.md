@@ -24,8 +24,6 @@
 
 ## タグ・変数の残り
 
-- [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
-      `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
       詳細 [filters.md](filters.md)
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
@@ -76,7 +74,6 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
 - `[quake]` の `delay`/`repeat`/`ease`/`yoyo`：本家が `[trans]` と同じトゥイーン枠を使い回す副産物。
   こちらは毎フレームのランダムジャンプ実装でイージング／ヨーヨーの概念が無い。必要なら `[tsy]` で
   → [tag-notes.md](tag-notes.md)
-- `[ch_out_style]` の消去アニメ適用 → [text-rendering.md](text-rendering.md)
 - ルビ付き行の行間不揃い（行頭にルビが来る場合のみ残存） → [text-rendering.md](text-rendering.md)
 - 縦書きで `〈`/`〉` だけ90°回転しない（Chromium + Hiragino の外部バグ） → [text-rendering.md](text-rendering.md)
 - sn_gallery の emote_layer プラグイン（本家で動かす動機が薄い） → [plugin-layer.md](plugin-layer.md)

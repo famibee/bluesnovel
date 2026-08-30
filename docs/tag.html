@@ -169,7 +169,7 @@
 		<li class="mb1"><a href="#pause_tsy">🟢 [pause_tsy] 一時停止</a></li>
 		<li class="mb1"><a href="#resume_tsy">🟢 [resume_tsy] 一時停止再開</a></li>
 		<li class="mb1"><a href="#stop_tsy">🟢 [stop_tsy] トゥイーン中断</a></li>
-		<li class="mb1"><a href="#tsy">🟡 [tsy] トゥイーン開始</a></li>
+		<li class="mb1"><a href="#tsy">🟢 [tsy] トゥイーン開始</a></li>
 		<li class="mb1"><a href="#wait_tsy">🟢 [wait_tsy] トゥイーン終了待ち</a></li>
 	</ul>
 	<p>文字・文字レイヤ</p>
@@ -177,7 +177,7 @@
 		<li class="mb1"><a href="#autowc">🟢 [autowc] 文字ごとのウェイト</a></li>
 		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🟢 [ch_in_style] 文字出現演出定義</a></li>
-		<li class="mb1"><a href="#ch_out_style">🟡 [ch_out_style] 文字消去演出定義</a></li>
+		<li class="mb1"><a href="#ch_out_style">🟢 [ch_out_style] 文字消去演出定義</a></li>
 		<li class="mb1"><a href="#clear_text">🟢 [clear_text] 文字消去</a></li>
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
@@ -1277,8 +1277,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る
 </td></tr>
-<tr><td>🟡 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名<br/>（bluesnovel）未対応</td></tr>
-<tr><td>🟡 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟢 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
+<tr><td>🟢 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>・
 	<code>record</code>・<code>layer</code>／<code>page</code>に対応。
@@ -1345,31 +1345,31 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>name</td><td>y</td><td></td><td>文字消去演出名</td><td>文字消去演出を特定する名前</td></tr>
-<tr><td>🟡 wait</td><td></td><td>500</td><td>0〜；ミリ秒</td><td>一時的な文字消去速度。0で瞬時<br/>（bluesnovel）未対応：<b>消去アニメ自体が未実装</b>のため、以下 name 以外の属性はすべて効果を持たない（文字は即座に消える＝本家の <code>wait=0</code> と同じ）</td></tr>
-<tr><td>🟡 alpha</td><td></td><td>0.0</td><td>0.0〜1.0</td><td>透過度。0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
-<tr><td>🟡 x</td><td></td><td>'=0'</td><td>実数か相対位置指定</td><td rowspan="2">
+<tr><td>🟢 wait</td><td></td><td>500</td><td>0〜；ミリ秒</td><td>一時的な文字消去速度。0で瞬時</td></tr>
+<tr><td>🟢 alpha</td><td></td><td>0.0</td><td>0.0〜1.0</td><td>透過度。0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
+<tr><td>🟢 x</td><td></td><td>'=0'</td><td>実数か相対位置指定</td><td rowspan="2">
 	変化の目標値。以下のような相対位置指定が出来る<br/>
 	500     ──　X位置を500に<br/>
 	'=500'  ──　文字位置を基準に+500加算した位置<br/>
 	'=-500' ──　文字位置を基準に-500加算した位置
 
 </td></tr>
-<tr><td>🟡 y</td><td></td><td>'=0'</td><td>実数か相対位置指定</td></tr>
+<tr><td>🟢 y</td><td></td><td>'=0'</td><td>実数か相対位置指定</td></tr>
 
-<tr><td>🟡 scale_x</td><td></td><td>1.0</td><td>実数</td><td>横方向を何倍に拡大／縮小するか。負の値ならレイヤを左右反転</td></tr>
-<tr><td>🟡 scale_y</td><td></td><td>1.0</td><td>実数</td><td>縦方向を何倍に拡大／縮小するか。負の値ならレイヤを上下反転</td></tr>
-<tr><td>🟡 rotate</td><td></td><td>0</td><td>実数</td><td>回転角度（単位：deg 度）、正の値は時計回り</td></tr>
-<tr><td>🟡 join</td><td></td><td>false</td><td>true、false</td><td>文字を順番に出すか（true）同時か（false）</td></tr>
-<tr><td>🟡 ease</td><td></td><td>'ease-out'</td><td></td><td>
+<tr><td>🟢 scale_x</td><td></td><td>1.0</td><td>実数</td><td>横方向を何倍に拡大／縮小するか。負の値ならレイヤを左右反転</td></tr>
+<tr><td>🟢 scale_y</td><td></td><td>1.0</td><td>実数</td><td>縦方向を何倍に拡大／縮小するか。負の値ならレイヤを上下反転</td></tr>
+<tr><td>🟢 rotate</td><td></td><td>0</td><td>実数</td><td>回転角度（単位：deg 度）、正の値は時計回り</td></tr>
+<tr><td>🟢 join</td><td></td><td>false</td><td>true、false</td><td>文字を順番に出すか（true）同時か（false）</td></tr>
+<tr><td>🟢 ease</td><td></td><td>'ease-out'</td><td></td><td>
 	<a href="https://developer.mozilla.org/ja/docs/Web/CSS/animation-timing-function" target="_blank" rel="noopener">CSSのanimation-timing-function プロパティ</a>
 </td></tr>
 </table>
 
 <p class="mb2 px1">
-	<b>bluesnovel：定義は受け付けるが、まだ消去のアニメを行なっていない</b>（文字は即座に消える＝
-	本家の既定<code>wait=0</code>と同じ結果）。文字を消すのはページ切替や
-	<a href="#er">[er]</a>で、Reactが要素を捨てる場面。消えていく間だけ古い文字を
-	生かしておく仕組みが要るため、出現演出とは別の作りになる
+	<b>bluesnovel</b>：本家 <code>TxtStage.#clearText()</code> の移植。消えていく文字を React 管理外の
+	ゴースト span へ移して <code>Element.animate()</code> でアニメし、終わったら捨てる。
+	<code>wait=0</code>（既定）はゴーストを作らず即座に消える（本家と同じ）。
+	<a href="#trans">[trans]</a> のクリックキャンセルで消えかけの文字も即座に終端へ送られる
 </p>
 </p>
 <h2 id="clear_text" class="w-heading">[clear_text]文字消去</h2>
@@ -1674,8 +1674,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグ以降のルビ表示に適用される。
 </td></tr>
-<tr><td>🟡 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名<br/>（bluesnovel）未対応</td></tr>
-<tr><td>🟡 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名<br/>（bluesnovel）未対応</td></tr>
+<tr><td>🟢 ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
+<tr><td>🟢 ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 <tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
 </td></tr>
 </table>

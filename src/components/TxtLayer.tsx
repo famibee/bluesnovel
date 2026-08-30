@@ -7,7 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
-import {CH_IN_DEF, chStyleAnim} from '../ts/ChStyle';
+import {CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleAnimOut} from '../ts/ChStyle';
 import {Kinsoku, type T_KIN_CH} from '../ts/Hyphenation';
 import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
@@ -113,6 +113,7 @@ type T_TXTARG = T_LAY_CMN & {
 	enabled	: boolean;	// [enable_event]。falseの間はこのレイヤのボタンと[link]がクリックを受けない
 	aBtn	: T_BTN[];
 	in_style?: string | undefined;	// [lay in_style=…]。[ch_in_style]で定義した文字出現演出名
+	out_style?: string | undefined;	// [lay out_style=…]。[ch_out_style]で定義した文字消去演出名
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onNavigate: (url: string)=> void;	// [link url=…]
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
@@ -132,7 +133,7 @@ export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura,
 	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
-	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, out_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -142,6 +143,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const skipping = useStore(s=> s.skipping);	// 既読スキップ中は文字送り演出を省いて瞬時表示する
 	const wait = useStore(s=> s.wait);
 	const hChIn = useStore(s=> s.hChIn);	// [ch_in_style]の定義表（画面ぜんぶで1つ）
+	const hChOut = useStore(s=> s.hChOut);	// [ch_out_style]の定義表（消去演出）
 	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
 	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
 
@@ -201,6 +203,58 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	直後の完了ハンドラ」が「新しいバッチが動き出した後」に呼ばれてisTypingを誤って下ろす競合を
 	//	防ぐため、実行のたびに世代を進め、完了ハンドラは自分の世代がまだ最新かを確認する
 	const genRef = useRef(0);
+	// 各spanの「出現時の累積ディレイ（ms）」。spansRef と並走。消去演出の join:true で
+	//	本家 #clearText と同じ順送りにするために控える（本家はタイプ時に付けた inline
+	//	animation-delay をそのまま消去アニメへ流用する。TxtLayer.ts:748）
+	const delaysRef = useRef<number[]>([]);
+	// 文字消去演出（[ch_out_style]）で「消えていく間だけ生かす」ゴーストspan。
+	//	本家 TxtStage.#clearText() が旧コンテナを live DOM に残して animate するのと同じ
+	//	（詳細 src/docs/text-rendering.md）。React 管理外の素の DOM ノード
+	const ghostRef = useRef<{el: HTMLSpanElement; anims: Animation[]} | null>(null);
+	const dropGhost = useCallback(()=> {
+		const g = ghostRef.current;
+		if (! g) return;
+		ghostRef.current = null;
+		for (const a of g.anims) a.cancel();
+		g.el.remove();
+	}, []);
+	// charsRef の現在の中身（禁則<br>ごと）をゴーストspanへ move して消去アニメを流す。
+	//	oldSpans/oldCh/oldDelays は move 前に控えたスナップショット（呼び出し側でリセットされる前の値）
+	const startErase = useCallback((oldSpans: HTMLSpanElement[], oldCh: T_CH[], oldDelays: number[])=> {
+		const box = boxRef.current, chars = charsRef.current;
+		if (! box || ! chars || oldSpans.length === 0) return;
+
+		dropGhost();	// 直前の消去が終わっていなければ畳む（pileup 回避。本家は積むがこちらは捨てる）
+
+		const ghost = document.createElement('span');
+		ghost.dataset.erase = '1';	// E2E の目印（charsRef・masume枠・待ちマーカーと見分ける）
+		ghost.style.position = 'absolute';
+		// 本文と同じ位置に重ねる（boxRef は position:absolute なので子の inset は padding-box 起点。
+		//	masume 内枠の useLayoutEffect と同じく getComputedStyle で実測）
+		const cs = globalThis.getComputedStyle(box);
+		ghost.style.inset = `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}`;
+		ghost.style.pointerEvents = 'none';
+		while (chars.firstChild) ghost.appendChild(chars.firstChild);
+		box.appendChild(ghost);
+
+		const anims: Animation[] = [];
+		oldSpans.forEach((sp, i)=> {
+			// 消去演出は [span ch_out_style=] → [lay out_style=] → 組み込み default の順（本家と同じ）
+			const chSty = hChOut[oldCh[i]?.cos ?? out_style ?? 'default'] ?? CH_OUT_DEF;
+			if (chSty.wait <= 0) {sp.style.display = 'none'; return}	// 本家 #clearText:745 と同じ即時
+			const {keyframes, options} = chStyleAnimOut(chSty);
+			// join:false は待たずに一斉、join:true は出現時と同じ順送り（本家 #clearText:748）
+			anims.push(sp.animate(keyframes, {...options, delay: chSty.join ? (oldDelays[i] ?? 0) : 0}));
+		});
+		if (anims.length === 0) {ghost.remove(); return}	// 全部 wait=0＝待つものが無い
+
+		ghostRef.current = {el: ghost, anims};
+		void Promise.allSettled(anims.map(a=> a.finished)).then(()=> {
+			if (ghostRef.current?.el === ghost) dropGhost();
+		});
+	}, [hChOut, out_style, dropGhost]);
+	// アンマウント時にゴーストを片づける
+	useEffect(()=> dropGhost, [dropGhost]);
 
 	// 文字詰め（本家 TxtLayer.ts:480 #fncFFSStyle）。**1文字ずつ当てる**必要があるのは
 	//	noffsで「この文字だけ詰めない」と外せる仕様のため（全角空白は本家も常に除く）
@@ -243,9 +297,20 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		let same = 0;
 		while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r
 			&& cacheCh[same]!.s === aCh[same]!.s && cacheCh[same]!.rs === aCh[same]!.rs) ++same;
+		// 文字消去演出（[ch_out_style]）：本文が丸ごと／別内容に置き換わる＝消える文字がある。
+		//	消えていく文字をゴーストspanへ移して animate してから、以下は素のクリアを続行
+		//	（本家 TxtStage.#clearText()。読み戻し・既読スキップ中は演出せず捨てるだけ）
+		if (spansRef.current.length > 0 && same < spansRef.current.length && ! isReadBack && ! skipping) {
+			startErase(spansRef.current, chRef.current, delaysRef.current);
+			spansRef.current = [];
+			chRef.current = [];
+			delaysRef.current = [];
+			el.textContent = '';
+		}
 		if (same < min) {
 			spansRef.current = [];
 			chRef.current = [];
+			delaysRef.current = [];
 			el.textContent = '';
 		}
 		// 前回の禁則処理で挿した<br>を一度削除（本家 TxtStage.ts:369）。文字が増えるたびに
@@ -294,6 +359,19 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		chRef.current = [...chRef.current, ...added];
 		cache.push(...newSpans);
 		el.appendChild(frag);
+
+		// 各文字の出現ディレイ（ms）を spansRef と並走で控える（消去 join:true の順送り用。
+		//	下の出現演出ループと同じ積み方＝本家 #cumDelay。読み戻し・スキップ経路でも
+		//	spansRef と長さがずれないよう、演出ループより前・ガードより前で必ず積む）
+		{
+			let d = 0;
+			for (const ch of added) {
+				const cs = hChIn[ch.cis ?? in_style ?? 'default'] ?? CH_IN_DEF;
+				const w = ch.w ?? (autowc.enabled ? autowc.h[ch.c.at(0) ?? ''] ?? 0 : chWait);
+				if (cs.join) d += w;	// 本家も使う前に足す
+				delaysRef.current.push(cs.join ? d : 0);
+			}
+		}
 
 		// 計測が祖先/自身のtransformで汚染されないうちに禁則を掛ける（Web Animations APIの
 		//	Animationはまだ1つも作っていない＝この時点でnewSpansは全て素のDOM既定値のまま）
@@ -344,9 +422,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
-	//	（.finish()でPromise.allSettledが解決し、setIsTyping(false)も自動で呼ばれる）
+	//	（.finish()でPromise.allSettledが解決し、setIsTyping(false)も自動で呼ばれる）。
+	//	消去演出のゴーストも同時に終端へ送る：本文表示を最終状態へスナップさせたいのは
+	//	出現・消去どちらも同じ。[trans]のクリックキャンセル（ScriptMng #finishTrans が
+	//	requestSkip を呼ぶ）で、クロスフェード中に消えかけの文字が残らないようにする
 	useEffect(()=> {
 		for (const a of animsRef.current) if (a.playState !== 'finished') a.finish();
+		const g = ghostRef.current;
+		if (g) for (const a of g.anims) if (a.playState !== 'finished') a.finish();
 	}, [skipReq]);
 
 	// [l]/[p]待ち中マーカーの画像（`breakline`/`breakpage`がプロジェクトにあるとき。ScriptMngが解決）。

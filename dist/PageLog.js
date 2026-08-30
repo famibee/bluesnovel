@@ -554,16 +554,32 @@ function M(e) {
 		}
 	};
 }
+function N(e) {
+	return {
+		keyframes: [{
+			opacity: 1,
+			transform: "none"
+		}, {
+			opacity: e.alpha,
+			transform: `translate(${k(e.x)}, ${k(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+		}],
+		options: {
+			duration: e.wait,
+			easing: j(e.ease),
+			fill: "forwards"
+		}
+	};
+}
 //#endregion
 //#region src/ts/PageLog.ts
-var N = [
+var P = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], P = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", F = class {
+], F = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", I = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -626,6 +642,6 @@ var N = [
 	}
 };
 //#endregion
-export { n as S, u as _, T as a, c as b, g as c, v as d, y as f, l as g, d as h, w as i, S as l, _ as m, P as n, M as o, x as p, F as r, O as s, N as t, C as u, p as v, f as x, s as y };
+export { n as C, f as S, l as _, T as a, s as b, O as c, C as d, v as f, d as g, _ as h, w as i, g as l, x as m, F as n, M as o, y as p, I as r, N as s, P as t, S as u, u as v, c as x, p as y };
 
 //# sourceMappingURL=PageLog.js.map

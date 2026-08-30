@@ -1,0 +1,32 @@
+; E2E用シナリオ（choutstyle.e2e.ts が使用）
+;	文字消去演出（[ch_out_style]＋[lay out_style=…]）。消えていく文字は React 管理外の
+;	ゴースト span（data-erase）へ移してアニメし、終わったら捨てる（本家 TxtStage.#clearText()）。
+;	属性の読み取り・値の翻訳は test/ChStyle.test.ts。ここで見るのは実際の見た目の側。
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+; 消去演出を定義（ゆっくり・全文字同時に透明へ）
+[ch_out_style name=fade wait=600 alpha=0 join=false]
+[lay layer=mes out_style=fade]
+
+; 場面1：本文を出す
+きえるよ[l]
+
+; 場面2：[er]で場面1を消す（fade で消えていく）。同じ手で新しい本文が入る
+[er]
+のこるぶん[l]
+
+; 場面3：wait=0 の消去演出は即消える＝ゴーストを作らない（現状維持の確認）
+[ch_out_style name=zero wait=0]
+[lay layer=mes out_style=zero]
+[er]
+そくじ[l]
+
+; 場面4：[trans]のクリックキャンセルで、消えかけの文字も即終了させる
+[lay layer=mes out_style=fade]
+[er]
+とらんす[l]
+[er]
+[trans time=3000]
+[wt]
+おわり[s]

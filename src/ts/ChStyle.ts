@@ -124,3 +124,22 @@ export function chStyleAnim(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: K
 		options: {duration: sty.wait, easing: chStyleEase(sty.ease), fill: 'backwards'},
 	};
 }
+
+// 消去演出（`[ch_out_style]`／`[lay out_style=]`／`[span ch_out_style=]`）→ `el.animate()`の引数。
+//	**出現の逆**：fromが素の表示状態、toが定義の値（本家 TxtLayer.ts:184-197 の @keyframes も
+//	`from { opacity:1 }` → `to { opacity:${alpha} … }`）。消去は要素をそのまま捨てるのでなく、
+//	消えていく間だけ生かした「ゴーストspan」に当てる（TxtLayer.tsx、text-rendering.md 参照）。
+//	`fill:'forwards'`で終端の見た目（透明・移動後）を保持したままDOMから外す
+export function chStyleAnimOut(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: KeyframeAnimationOptions} {
+	return {
+		keyframes: [
+			{opacity: 1, transform: 'none'},
+			{
+				opacity: sty.alpha,
+				transform: `translate(${chStylePos(sty.x)}, ${chStylePos(sty.y)}) `
+					+ `scale(${String(sty.scale_x)}, ${String(sty.scale_y)}) rotate(${String(sty.rotate)}deg)`,
+			},
+		],
+		options: {duration: sty.wait, easing: chStyleEase(sty.ease), fill: 'forwards'},
+	};
+}

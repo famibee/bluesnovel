@@ -1,6 +1,6 @@
 import { a as e, t } from "./CmnLib.js";
 import { t as n } from "./FocusMng.js";
-import { d as r, f as i, n as a, r as o } from "./PageLog.js";
+import { f as r, n as i, p as a, r as o } from "./PageLog.js";
 import { DEF_BTN_FONT as s } from "./store.js";
 import { o as c, r as l } from "./Sprite.js";
 import { n as u } from "./ConfigBase.js";
@@ -3559,7 +3559,7 @@ var po = class f {
 		this.go = () => this.#j(), this.$trgNext();
 	}
 	#s(e) {
-		let { oCfg: n } = this.sys.cfg, a = {
+		let { oCfg: n } = this.sys.cfg, i = {
 			"const.sn.config.window.width": () => t.stageW,
 			"const.sn.config.window.height": () => t.stageH,
 			"const.sn.config.book.title": () => n.book.title,
@@ -3581,17 +3581,17 @@ var po = class f {
 			"const.sn.isPaging": () => this.#c.isPaging,
 			"const.sn.aPageLog": () => this.#c.json()
 		};
-		for (let [t, n] of Object.entries(a)) e.defBuiltin(t, n);
+		for (let [t, n] of Object.entries(i)) e.defBuiltin(t, n);
 		e.defBuiltin("const.sn.lay", () => {
-			let { fore: e, back: n } = this.$fncs.getPages(), a = (e) => {
+			let { fore: e, back: n } = this.$fncs.getPages(), i = (e) => {
 				if (!e) return;
-				let n = e.left ?? 0, a = e.top ?? 0, o = r(e) ? (() => {
+				let n = e.left ?? 0, i = e.top ?? 0, o = r(e) ? (() => {
 					let t = l(e.src);
 					return {
 						w: t?.w ?? 0,
 						h: t?.h ?? 0
 					};
-				})() : i(e) ? {
+				})() : a(e) ? {
 					w: fo(e.style, "width") ?? t.stageW,
 					h: fo(e.style, "height") ?? t.stageH
 				} : {
@@ -3602,16 +3602,16 @@ var po = class f {
 					visible: e.visible !== !1,
 					alpha: e.alpha ?? 1,
 					x: n,
-					y: a,
+					y: i,
 					left: n,
-					top: a,
+					top: i,
 					width: e.width ?? o.w,
 					height: e.height ?? o.h
 				};
 			}, o = {};
 			for (let t of e) o[t.nm] = {
-				fore: a(t),
-				back: a(n.find((e) => e.nm === t.nm))
+				fore: i(t),
+				back: i(n.find((e) => e.nm === t.nm))
 			};
 			return JSON.stringify(o);
 		});
@@ -3781,7 +3781,7 @@ var po = class f {
 	#j(e = !1) {
 		if (!this.#M) {
 			if (this.#B) {
-				this.#B.canskip && this.#U();
+				this.#B.canskip && (this.#U(), this.$fncs.requestSkip());
 				return;
 			}
 			if (this.#Z) {
@@ -4875,7 +4875,7 @@ var po = class f {
 				this.sys.updateCheck(e.url);
 				break;
 			case "clearPageLog":
-				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", a), this.#f();
+				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", i), this.#f();
 				break;
 			case "pageStyle":
 				this.#r?.setValNochk("save:const.sn.styPaging", e.style), this.#f();

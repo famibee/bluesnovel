@@ -1,6 +1,6 @@
 import { r as e } from "./rolldown-runtime.js";
 import { t } from "./react.js";
-import { a as n, c as r, d as i, f as a, i as o, n as s } from "./PageLog.js";
+import { a as n, f as r, i, l as a, n as o, p as s } from "./PageLog.js";
 //#region src/ts/Hyphenation.ts
 var c = "、。，．）］｝〉」』】〕”〟ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ！？!?‼⁉・ーゝゞヽヾ々", l = {
 	sol: c,
@@ -185,7 +185,7 @@ var O = b()((e, t) => ({
 	clearTxt: () => e(() => ({ txt: "" })),
 	aPage: [[], []],
 	foreIdx: 0,
-	hChIn: { default: o },
+	hChIn: { default: i },
 	hChOut: { default: n },
 	defChStyle: ({ kind: t, nm: n, sty: r }) => e((e) => t === "in" ? { hChIn: {
 		...e.hChIn,
@@ -238,21 +238,21 @@ var O = b()((e, t) => ({
 		return delete a.b_color, a.b_alpha = 0, a.b_alpha_isfixed = !1, delete a.b_pic, delete a.b_src, w(e, r, i);
 	}),
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
-		let { idx: i, aLay: o } = C(e, n), s = o.find((e) => e.nm === t);
-		if (!s) throw `存在しないレイヤ ${t} です`;
-		if (!a(s) && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.break_fixed !== void 0 || r.break_fixed_left !== void 0 || r.break_fixed_top !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
-		a(s) && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && f(r.kinsoku_eol ?? s.kinsoku_eol ?? l.eol, r.kinsoku_dns ?? s.kinsoku_dns ?? l.dns, r.kinsoku_bura ?? s.kinsoku_bura ?? l.bura), r.left !== void 0 && r.align_x === void 0 && delete s.align_x, r.top !== void 0 && r.align_y === void 0 && delete s.align_y;
-		let c = a(s) && r.style !== void 0 ? {
+		let { idx: i, aLay: a } = C(e, n), o = a.find((e) => e.nm === t);
+		if (!o) throw `存在しないレイヤ ${t} です`;
+		if (!s(o) && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.break_fixed !== void 0 || r.break_fixed_left !== void 0 || r.break_fixed_top !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
+		s(o) && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && f(r.kinsoku_eol ?? o.kinsoku_eol ?? l.eol, r.kinsoku_dns ?? o.kinsoku_dns ?? l.dns, r.kinsoku_bura ?? o.kinsoku_bura ?? l.bura), r.left !== void 0 && r.align_x === void 0 && delete o.align_x, r.top !== void 0 && r.align_y === void 0 && delete o.align_y;
+		let c = s(o) && r.style !== void 0 ? {
 			...r,
-			style: r.style ? E(s.style, r.style) : ""
+			style: r.style ? E(o.style, r.style) : ""
 		} : r;
-		return Object.assign(s, c), w(e, i, o);
+		return Object.assign(o, c), w(e, i, a);
 	}),
 	getLaySty: (e, n) => {
-		let i = t(), a = i.aPage[n === "fore" ? i.foreIdx : 1 - i.foreIdx].find((t) => t.nm === e);
-		if (!a) throw `存在しないレイヤ ${e} です`;
+		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);
+		if (!i) throw `存在しないレイヤ ${e} です`;
 		let o = {};
-		for (let e of r) a[e] !== void 0 && Object.assign(o, { [e]: a[e] });
+		for (let e of a) i[e] !== void 0 && Object.assign(o, { [e]: i[e] });
 		return o;
 	},
 	getForeIdx: () => t().foreIdx,
@@ -289,26 +289,26 @@ var O = b()((e, t) => ({
 		return i(o), w(e, a, o);
 	}),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
-		let o = (e) => {
-			for (let t of r) t !== "visible" && delete e[t];
-			i(e) ? (e.fn = "", e.src = "", e.aFace = []) : a(e) && (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
-		}, s = (e) => {
+		let i = (e) => {
+			for (let t of a) t !== "visible" && delete e[t];
+			r(e) ? (e.fn = "", e.src = "", e.aFace = []) : s(e) && (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
+		}, o = (e) => {
 			if (!t) {
-				e.forEach(o);
+				e.forEach(i);
 				return;
 			}
 			for (let n of t) {
 				let t = e.find((e) => e.nm === n);
 				if (!t) throw `存在しないレイヤ ${n} です`;
-				o(t);
+				i(t);
 			}
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
-			return s(t), t;
+			return o(t), t;
 		}) };
 		let { idx: c, aLay: l } = C(e, n);
-		return s(l), w(e, c, l);
+		return o(l), w(e, c, l);
 	}),
 	moveLay: ({ nm: t, mode: n, index: r, dive: i }) => e((e) => {
 		let a = e.aPage[0], o = a.findIndex((e) => e.nm === t);
@@ -375,13 +375,13 @@ var O = b()((e, t) => ({
 		let { idx: l, aLay: u } = C(e, n);
 		return c(u), w(e, l, u);
 	}),
-	chgFx: ({ aLayNm: t, page: n, mode: r, fx: a, names: o, index: s, enabled: c }) => e((e) => {
+	chgFx: ({ aLayNm: t, page: n, mode: i, fx: a, names: o, index: s, enabled: c }) => e((e) => {
 		let l = (e) => {
-			if (!i(e)) {
-				if (r === "add") throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
+			if (!r(e)) {
+				if (i === "add") throw `[add_fx] ${e.nm} はgrpレイヤ（立ち絵）ではありません`;
 				return;
 			}
-			if (r === "clear") {
+			if (i === "clear") {
 				if (!o) {
 					delete e.aFx;
 					return;
@@ -390,7 +390,7 @@ var O = b()((e, t) => ({
 				t.length > 0 ? e.aFx = t : delete e.aFx;
 				return;
 			}
-			if (r === "enable") {
+			if (i === "enable") {
 				let t = e.aFx ?? [];
 				if (t.length === 0) return;
 				let n = c ?? !0;
@@ -476,7 +476,7 @@ var O = b()((e, t) => ({
 	toggleFullScr: () => e((e) => ({ fullScr: !e.fullScr })),
 	isReadBack: !1,
 	setReadBack: (t) => e(() => ({ isReadBack: t })),
-	styPaging: s,
+	styPaging: o,
 	setStyPaging: (t) => e(() => ({ styPaging: t })),
 	isTyping: !1,
 	setIsTyping: (t) => e(() => ({ isTyping: t })),

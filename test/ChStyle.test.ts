@@ -13,7 +13,7 @@
 //	Web Animations API（`Element.animate()`）のキーフレームへ翻訳する（src/ts/ChStyle.ts）。
 //	実際に文字が動く様子はE2E側。
 
-import {CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleEase, chStylePos, parseChStyle} from '../src/ts/ChStyle';
+import {CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleAnimOut, chStyleEase, chStylePos, parseChStyle} from '../src/ts/ChStyle';
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
 import {splitCh} from '../src/ts/Txt';
 
@@ -96,6 +96,17 @@ it('chStyleAnim_fromキーフレームが定義の値・toが素の表示状態'
 
 it('chStyleAnim_durationはミリ秒のまま（Web Animations APIの慣例。秒への変換は不要）', ()=> {
 	expect(chStyleAnim({...CH_OUT_DEF, wait: 250}).options.duration).toBe(250);
+});
+
+it('chStyleAnimOut_出現の逆（fromが素の表示状態・toが定義の値）でfill:forwards', ()=> {
+	// 本家 TxtLayer.ts:184-197 の @keyframes も `to { opacity:${alpha}; transform:… }` だけ置く。
+	//	消えていく文字はゴーストspanへ移して終端の見た目を保持したままDOMから外す
+	const {keyframes, options} = chStyleAnimOut({...CH_OUT_DEF, wait: 300, alpha: 0, x: '=0.5', rotate: 90});
+	expect(keyframes).toEqual([
+		{opacity: 1, transform: 'none'},
+		{opacity: 0, transform: 'translate(0.5em, 0em) scale(1, 1) rotate(90deg)'},
+	]);
+	expect(options).toEqual({duration: 300, easing: 'ease-out', fill: 'forwards'});
 });
 
 

@@ -21,12 +21,64 @@
 
 ## `ch_in_style` / `ch_out_style`
 
-- `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` **未接続**：定義自体は `[ch_in_style]`/
-  `[ch_out_style]` で受け付けるが、`[ch]`/`[span]` 側の属性としては未接続。（行動項目）
-- **`[ch_out_style]` の適用（凍結）**：定義と `[lay out_style=]`・`[span ch_out_style=]` は
-  受け付けるが、消去のアニメをまだ行なっていない＝本家の既定 `wait=0` と同じ結果。文字が消える
-  のはページ切替や `[er]` で React が要素を捨てる場面なので、消えていく間だけ古い文字を生かす
-  仕組みが要る。出現演出（`src/ts/ChStyle.ts`）とは別の作りになる。
+### 出現（`ch_in_style`）
+
+`[lay in_style=]`／`[span ch_in_style=]`／組み込み `default` の順で 1 文字ずつ Web Animations
+API（`el.animate()`）へ翻訳して適用。純粋部分は `src/ts/ChStyle.ts`、適用は `TxtLayer.tsx` の
+本文 effect。per-char は `T_CH.cis`（`Txt.ts` が載せる）。
+
+### 消去（`ch_out_style`）— ゴースト span 方式
+
+**2026-08-30 実装。** 本家 `TxtStage.#clearText()`
+（`skynovel_esm/src/sn/TxtStage.ts:710`）の移植。純粋部分 `chStyleAnimOut()`（`src/ts/ChStyle.ts`）、
+適用は `TxtLayer.tsx`。回帰は `test/ChStyle.test.ts` ＋ `test/e2e/choutstyle.e2e.ts`。
+
+本家の仕組み：消去時、空の兄弟 `<span>` を新設して以後の新規文字はそちらへ回し、**旧コンテナは
+live DOM に残したまま** 各 `.sn_ch` に `go_ch_out_<name>` の CSS アニメを当て、最後の子の
+`animationend` で旧コンテナを破棄する。`wait===0` の文字は即 `display:none`。新ノードを作るのは
+「消去中に同じレイヤへ届く新規文字」との衝突を避けるため。
+
+分家の実装方針：
+
+- **フック地点は `TxtLayer.tsx` 本文 effect の clear 検出 1 箇所**。条件は
+  `spansRef.current.length > 0 && same < spansRef.current.length`（＝キャッシュ済みの文字が
+  丸ごと／一部消える。`same < min` の分岐と、`aCh` が空になる場合の両方を拾う）。文字が消える
+  トリガ（`[er]`/`[cm]` の `chgStr({page:'both', str:''})`、`[p]`/`[c]` 再開時の
+  `#clearOnResume` → `chgStr({str:''})`、`[clear_lay]`、ページ切替の別内容差し替え）は
+  すべてここへ収束する。
+- `el.textContent = ''` の代わりに、`charsRef` の子ノード（禁則 `<br>` ごと）を命令的に作った
+  兄弟 `<span>`（React 管理外、`boxRef` 直下、`position:absolute` で本文位置に重ねる）へ move。
+  レイアウト済み DOM をそのまま生かすのでルビ・縦書き・縦中横・禁則の再計算は不要（本家と同じ理屈）。
+- per-char の out-style は **リセット直前の `chRef.current`（旧 `T_CH[]`）** から
+  `hChOut[ch.cos ?? out_style ?? 'default'] ?? CH_OUT_DEF` で引く（`cos` は `Txt.ts` が
+  既に載せている＝本家の `data-add` 相当。捕捉タイミングに注意：effect が走る時点で新 `aCh` は空）。
+- 純関数 `chStyleAnimOut(sty)` を `ChStyle.ts` に新設。出現の逆（`from {opacity:1,
+  transform:none}` → `to` が定義値）、`fill:'forwards'`。`join:true` は出現時の累積ディレイ
+  （`delaysRef`。`spansRef` と並走）をそのまま流用＝本家 `#clearText:748` が inline
+  `animation-delay` を残して使い回すのと同じ。`join:false` は全文字 delay 0。
+- ハンドルを `ghostRef` に保持。`Promise.allSettled(anims.map(a=>a.finished))` で ghost を DOM
+  除去。全 char が `wait<=0` なら ghost を作らず即除去＝**現状の瞬時消去の挙動を完全維持**
+  （オーバーヘッドゼロ。既定 `CH_OUT_DEF.wait=0`）。
+- ガード：`isReadBack`／`skipping` 中は消去アニメせず即除去（読み戻しの本文差し替えも
+  `same < min` を踏むため必須）。新しい clear が来たら既存 ghost は cancel+即除去（本家は旧
+  コンテナを積むが pileup を避けて捨てる）。effect/unmount の cleanup でも cancel。
+
+**却下した代替案（ストア遅延クリア）**：`chgStr('')` で `aCh` を即空にせず既存 span を in-place
+で animate → タイマーで空にする案。エンジンは既に `#hTxt` をクリアして先へ進んでおり、消去中に
+同じ fore レイヤへ新規文字が来ると衝突する。本家が新ノードを作るのはまさにこの回避。
+
+### `[trans]` クリックキャンセル時の即時終了
+
+`[er]` は `'skip'` で待たないので消去アニメは撃ちっぱなし、直後に `[trans]` のクロスフェードが
+被さる。`[wt]` 中クリックで `#finishTrans` が `foreIdx` を反転すると、消えかけ ghost が乗った
+旧 fore が裏（不可視）へ回り、クロスフェード中に「消去＋フェードアウト」が二重に見える。
+
+配線：既存の `skipReq` カウンタに相乗り。`TxtLayer.tsx` の `useEffect(… a.finish() …,
+[skipReq])`（出現アニメ用）を **ghost の消去アニメも `.finish()`** するよう拡張し、
+`ScriptMng.#goSafe()` の `[wt]` クリックキャンセル箇所（`#transWaiting.canskip` で
+`#finishTrans()` する所）で続けて `this.$fncs.requestSkip()` を呼ぶ。`requestSkip` の意味を
+「タイプ演出を終わらせる」から「本文表示を最終状態へスナップ（出現も消去も）」へ広げる解釈。
+時間切れでの自然終了は対象外＝消去アニメは最後まで再生される。
 
 ## ルビ付き行の行間不揃い（縮小して残存・凍結）
 
