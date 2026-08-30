@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不可視 back ページ 登場人物マップ</title>
+<meta name="description" content="bluesnovel のスクリプト→表示パイプラインと、不可視 back ページ最適化の検討資料">
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+	--ground:#e9ebee;
+	--surface:#fafbfc;
+	--surface-2:#f1f3f5;
+	--ink:#1b1c1e;
+	--muted:#63676d;
+	--hair:#ccd0d5;
+	--accent:#12667a;
+	--problem:#a8432a;
+	--ok:#2f7d57;
+	--tag:#8a5a12;
+}
+@media (prefers-color-scheme:dark){
+	:root:not([data-theme="light"]){
+		--ground:#15171a;
+		--surface:#1d2024;
+		--surface-2:#23272c;
+		--ink:#e6e8ea;
+		--muted:#9aa0a7;
+		--hair:#343a40;
+		--accent:#54b9cf;
+		--problem:#e2906f;
+		--ok:#74c99d;
+		--tag:#d7a35a;
+	}
+}
+:root[data-theme="dark"]{
+	--ground:#15171a;
+	--surface:#1d2024;
+	--surface-2:#23272c;
+	--ink:#e6e8ea;
+	--muted:#9aa0a7;
+	--hair:#343a40;
+	--accent:#54b9cf;
+	--problem:#e2906f;
+	--ok:#74c99d;
+	--tag:#d7a35a;
+}
+
+*{box-sizing:border-box}
+body{
+	background:var(--ground);
+	color:var(--ink);
+	font-family:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+	line-height:1.7;
+}
+.wrap{max-width:78ch;margin:0 auto;padding:56px 24px 96px}
+.fig-wide{max-width:1220px}
+
+h1{
+	font-family:"IBM Plex Sans",system-ui,sans-serif;
+	font-weight:600;
+	font-size:30px;
+	line-height:1.2;
+	letter-spacing:-0.01em;
+	text-wrap:balance;
+	margin:0 0 8px;
+}
+.sub{color:var(--muted);font-size:15px;margin:0 0 40px}
+
+h2{
+	font-family:"IBM Plex Sans",system-ui,sans-serif;
+	font-weight:600;
+	font-size:20px;
+	margin:56px 0 6px;
+	padding-top:24px;
+	border-top:1px solid var(--hair);
+	text-wrap:balance;
+}
+h2:first-of-type{border-top:0;padding-top:0}
+.eyebrow{
+	font-family:"IBM Plex Mono",ui-monospace,monospace;
+	font-size:11px;
+	font-weight:500;
+	letter-spacing:0.14em;
+	text-transform:uppercase;
+	color:var(--accent);
+	margin:0 0 20px;
+}
+p{margin:0 0 16px}
+strong{font-weight:500;color:var(--ink)}
+code{
+	font-family:"IBM Plex Mono",ui-monospace,monospace;
+	font-size:0.86em;
+	background:var(--surface-2);
+	padding:0.1em 0.4em;
+	border-radius:3px;
+}
+a{color:var(--accent)}
+
+/* 採番表 */
+.roster{
+	list-style:none;padding:0;margin:24px 0 0;
+	display:grid;grid-template-columns:1fr;gap:1px;
+	background:var(--hair);border:1px solid var(--hair);border-radius:6px;overflow:hidden;
+}
+.roster li{
+	background:var(--surface);
+	padding:12px 16px;
+	display:grid;
+	grid-template-columns:64px 1fr;
+	gap:4px 14px;
+	align-items:baseline;
+}
+.roster .n{
+	font-family:"IBM Plex Mono",ui-monospace,monospace;
+	font-weight:500;font-size:13px;color:var(--tag);
+}
+.roster .nm{font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:500;font-size:14px}
+.roster .desc{grid-column:2;color:var(--muted);font-size:13.5px;line-height:1.55}
+.roster .file{
+	font-family:"IBM Plex Mono",ui-monospace,monospace;
+	font-size:12px;color:var(--accent);
+}
+.roster .grp{grid-column:1 / -1;background:var(--surface-2);margin:0 -16px;padding:6px 16px;
+	font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:0.1em;
+	text-transform:uppercase;color:var(--muted)}
+
+figure{margin:32px 0 8px}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:20px}
+svg{display:block;max-width:100%;height:auto;color:var(--ink);min-width:640px}
+figcaption{color:var(--muted);font-size:13px;margin-top:12px;line-height:1.6}
+
+/* SVG 共通クラス */
+.box{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.box-2{fill:var(--surface-2);stroke:var(--hair);stroke-width:1.2}
+.box-ext{fill:var(--surface);stroke:var(--muted);stroke-width:1.2;stroke-dasharray:1 3}
+.box-hi{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.box-prob{fill:var(--surface);stroke:var(--problem);stroke-width:2}
+.lbl{fill:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12.5px}
+.lbl-s{fill:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:11px}
+.tag{fill:var(--tag);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;font-weight:500}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;fill:var(--muted)}
+.flow{fill:none;stroke:var(--ink);stroke-width:1.4}
+.sig{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 3}
+.prob{fill:none;stroke:var(--problem);stroke-width:2}
+.ok{fill:none;stroke:var(--ok);stroke-width:1.6;stroke-dasharray:5 3}
+.self{fill:none;stroke:var(--muted);stroke-width:1.4}
+.albl{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px}
+.albl-a{fill:var(--accent);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px}
+.albl-p{fill:var(--problem);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;font-weight:500}
+.albl-o{fill:var(--ok);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px}
+.band{fill:none;stroke:var(--hair);stroke-width:1;stroke-dasharray:2 3}
+.bandlbl{fill:var(--muted);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:0.1em}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px 22px;margin:18px 0 0;font-size:12.5px;color:var(--muted);
+	font-family:"IBM Plex Sans",system-ui,sans-serif}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:24px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+.li-flow{border-color:var(--ink)}
+.li-sig{border-color:var(--accent);border-top-style:dashed}
+.li-ok{border-color:var(--ok);border-top-style:dashed}
+.li-prob{border-color:var(--problem)}
+.li-self{border-color:var(--muted)}
+
+.notes li{margin:0 0 12px}
+.notes{padding-left:22px}
+.notes strong{color:var(--accent);font-weight:500}
+
+.cmp{width:100%;border-collapse:collapse;margin:24px 0 8px;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12.5px}
+.cmp th,.cmp td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--hair);vertical-align:top}
+.cmp thead th{font-weight:600;color:var(--muted);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1.5px solid var(--hair)}
+.cmp td code{font-size:0.86em}
+.cmp .need{color:var(--problem)}
+.cmp .noneed{color:var(--ok)}
+.scroll-x{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<p class="eyebrow">bluesnovel · 内部設計メモ</p>
+<h1>不可視 back ページ 登場人物マップ</h1>
+<p class="sub">スクリプト（上流）から画面（最下流）までの流れと、[trans] 後に不可視になった back ページの上で動き続けるもの。検討・対話用の資料。採番は 10 単位（間の番号は後の追加・変更用）。</p>
+
+<h2>登場人物（採番）</h2>
+<p>流れの順に番号を振った。<code>（NN）</code> は以降の図と本文で共通。</p>
+
+<ul class="roster">
+	<li class="grp">エンジン層 — ブラウザ非依存・単体テスト可</li>
+	<li><span class="n">(10)</span><span class="nm">スクリプト（.sn）</span><span class="desc"><span class="file">doc/prj/script/*.sn</span> — タグの並び。ここが上流。</span></li>
+	<li><span class="n">(20)</span><span class="nm">ScriptEngine.step()</span><span class="desc"><span class="file">src/ts/ScriptEngine.ts</span> — 純粋関数。トークンを読んで <code>T_ENGINE_ACTION[]</code> を返すだけ。DOM を知らない。</span></li>
+	<li><span class="n">(30)</span><span class="nm">ScriptMng</span><span class="desc"><span class="file">src/ts/ScriptMng.ts</span> — アクションを store へ適用（<code>#applyAction</code> / <code>$fncs.*</code>）。[tsy]・[trans]・[wait]・オート読みの待ち／演出状態を保持。</span></li>
+	<li><span class="n">(40)</span><span class="nm">Tw（motion）</span><span class="desc"><span class="file">src/ts/Tw.ts</span> — [tsy] / [tsy_frame] / 音声フェード。motion の <code>animate()</code> を<strong>内部 rAF で自走</strong>させる薄いラッパー（外部から時刻駆動できない）。</span></li>
+	<li><span class="n">(50)</span><span class="nm">FrameMng</span><span class="desc"><span class="file">src/ts/FrameMng.ts</span> — [add_frame] の iframe（<code>srcdoc</code>・same-origin）。意図的に store の<strong>外</strong>。</span></li>
+	<li><span class="n">(60)</span><span class="nm">SndMng / SndBuf</span><span class="desc"><span class="file">src/ts/SndMng.ts</span> — 自前 Web Audio 層。停止＝破棄。store の<strong>外</strong>。</span></li>
+
+	<li class="grp">状態</li>
+	<li><span class="n">(70)</span><span class="nm">zustand store</span><span class="desc"><span class="file">src/store/store.tsx</span> — <code>aPage[0]</code> / <code>aPage[1]</code>、<code>foreIdx</code>、<code>trans</code>、<code>txt</code>、<code>isTyping</code> …。画面の現在値はすべてここ。</span></li>
+
+	<li class="grp">React 購読層</li>
+	<li><span class="n">(80)</span><span class="nm">Main.tsx</span><span class="desc"><span class="file">src/components/Main.tsx</span> — <code>heStage</code> の <code>'ev_next'</code> を listen して <code>scrMng.go()</code>。文字送り完了を <code>onTypingDone()</code> で (30) へ通知。</span></li>
+	<li><span class="n">(90)</span><span class="nm">Stage.tsx</span><span class="desc"><span class="file">src/components/Stage.tsx</span> — store を購読。<strong>表裏 2 ページの <code>&lt;div&gt;</code> を常時マウント</strong>し、[trans] は <code>foreIdx</code> だけ切り替える。</span></li>
+
+	<li class="grp">ページ（表裏 2 枚）</li>
+	<li><span class="n">(100)</span><span class="nm">fore ページ &lt;div&gt;</span><span class="desc"><code>foreIdx</code> 側。クリックを受ける。<code>z-index:1</code>。</span></li>
+	<li><span class="n">(110)</span><span class="nm">back ページ &lt;div&gt;</span><span class="desc"><code>1−foreIdx</code> 側。通常 <code>visibility:hidden</code>（[trans] 中だけ可視）。<code>z-index:0</code>。中身の構成は表と同一。</span></li>
+
+	<li class="grp">レイヤ（各ページの中。表裏に同じ木ができる）</li>
+	<li><span class="n">(120)</span><span class="nm">TxtLayer</span><span class="desc"><span class="file">src/components/TxtLayer.tsx</span> — 文字レイヤ。React の外で DOM を直接組み、WAAPI で 1 文字ずつ文字送り。</span></li>
+	<li><span class="n">(130)</span><span class="nm">GrpLayer</span><span class="desc"><span class="file">src/components/GrpLayer.tsx</span> — 画像レイヤ。下の 4 つを内側に持つ。</span></li>
+	<li><span class="n">(140)</span><span class="nm">&lt;img&gt;</span><span class="desc">静止画。</span></li>
+	<li><span class="n">(150)</span><span class="nm">アニメ png シート &lt;div&gt;</span><span class="desc"><span class="file">src/ts/Sprite.ts</span> — CSS <code>@keyframes</code>。<code>animation-play-state: var(--sn-ani-play)</code>。</span></li>
+	<li><span class="n">(160)</span><span class="nm">&lt;video autoplay&gt;</span><span class="desc">動画レイヤ／face。ブラウザが<strong>自走でデコード継続</strong>。</span></li>
+	<li><span class="n">(170)</span><span class="nm">FxImg + FxRunner</span><span class="desc"><span class="file">src/ts/FxRunner.ts</span> — [add_fx]。<code>&lt;img&gt;</code> を WebGL <code>&lt;canvas&gt;</code> に差し替え、<strong>rAF で毎フレーム描画</strong>。</span></li>
+	<li><span class="n">(180)</span><span class="nm">PlgLayer</span><span class="desc"><span class="file">src/components/PlgLayer.tsx</span> — プラグイン用の箱 <code>&lt;div&gt;</code> だけを出す（中身は store 外）。</span></li>
+
+	<li class="grp">プラグイン（store 外・DOM 側が所有）</li>
+	<li><span class="n">(190)</span><span class="nm">PlgLayMng</span><span class="desc"><span class="file">src/ts/PlgLayMng.ts</span> — <code>Layer</code> インスタンスを表裏 2 個所有。<code>foreIdx</code> / <code>trans</code> から可視を算出。</span></li>
+	<li><span class="n">(200)</span><span class="nm">プラグイン Layer（3d_layer / live2d 等）</span><span class="desc">sn_gallery 側。自前の <code>#tick</code> で <code>renderer.render()</code> を<strong>rAF ループ</strong>。<code>setActive(false)</code> で止める／再開。</span></li>
+
+	<li class="grp">最下流</li>
+	<li><span class="n">(210)</span><span class="nm">画面</span><span class="desc">ブラウザの合成・ペイント。</span></li>
+</ul>
+
+<h2>図1 — 全体パイプライン</h2>
+
+<figure class="fig-wide">
+<div class="scroll">
+<svg viewBox="0 0 1180 1060" role="img" aria-label="スクリプトから画面までの流れ。ScriptEngine が純粋にアクション列を作り、ScriptMng が zustand store へ適用、Stage が購読して表裏 2 ページを描画、各ページに文字・画像・プラグインレイヤがぶら下がる。Tw・video・FxRunner・プラグイン Layer は自己ループの rAF で自走する。">
+	<defs>
+		<marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+		</marker>
+	</defs>
+
+	<!-- バンド区切り -->
+	<line class="band" x1="16" y1="268" x2="1164" y2="268"/>
+	<text class="bandlbl" x="20" y="262">ENGINE（非 React）</text>
+	<line class="band" x1="16" y1="360" x2="1164" y2="360"/>
+	<text class="bandlbl" x="20" y="354">STATE</text>
+	<line class="band" x1="16" y1="556" x2="1164" y2="556"/>
+	<text class="bandlbl" x="20" y="550">REACT（store 購読）</text>
+	<line class="band" x1="16" y1="960" x2="1164" y2="960"/>
+	<text class="bandlbl" x="20" y="954">PAINT</text>
+
+	<!-- (10) -->
+	<g><rect class="box" x="440" y="24" width="240" height="44" rx="4"/>
+		<text class="tag" x="452" y="42">(10)</text>
+		<text class="lbl" x="452" y="58">スクリプト（.sn タグ）</text></g>
+	<!-- (20) -->
+	<g><rect class="box" x="440" y="112" width="240" height="44" rx="4"/>
+		<text class="tag" x="452" y="130">(20)</text>
+		<text class="lbl" x="452" y="146">ScriptEngine.step()  純粋</text></g>
+	<!-- (30) -->
+	<g><rect class="box" x="440" y="200" width="240" height="44" rx="4"/>
+		<text class="tag" x="452" y="218">(30)</text>
+		<text class="lbl" x="452" y="234">ScriptMng（適用・待ち・演出）</text></g>
+	<!-- (40) -->
+	<g><rect class="box" x="740" y="200" width="180" height="44" rx="4"/>
+		<text class="tag" x="752" y="218">(40)</text>
+		<text class="lbl-s" x="752" y="234">Tw / motion（[tsy]）</text></g>
+	<!-- (50) -->
+	<g><rect class="box-ext" x="960" y="150" width="196" height="40" rx="4"/>
+		<text class="tag" x="972" y="167">(50)</text>
+		<text class="lbl-s" x="972" y="182">FrameMng（iframe・store外）</text></g>
+	<!-- (60) -->
+	<g><rect class="box-ext" x="960" y="204" width="196" height="40" rx="4"/>
+		<text class="tag" x="972" y="221">(60)</text>
+		<text class="lbl-s" x="972" y="236">SndMng（Web Audio・store外）</text></g>
+
+	<!-- (70) -->
+	<g><rect class="box" x="380" y="304" width="360" height="44" rx="4"/>
+		<text class="tag" x="392" y="322">(70)</text>
+		<text class="lbl-s" x="392" y="338">zustand store — aPage[0] / aPage[1] / foreIdx / trans / txt / isTyping</text></g>
+
+	<!-- (80) -->
+	<g><rect class="box" x="120" y="392" width="200" height="44" rx="4"/>
+		<text class="tag" x="132" y="410">(80)</text>
+		<text class="lbl" x="132" y="426">Main.tsx（進行駆動）</text></g>
+	<!-- (90) -->
+	<g><rect class="box" x="460" y="392" width="200" height="44" rx="4"/>
+		<text class="tag" x="472" y="410">(90)</text>
+		<text class="lbl" x="472" y="426">Stage.tsx（2 ページ描画）</text></g>
+
+	<!-- (100) / (110) -->
+	<g><rect class="box" x="300" y="470" width="170" height="44" rx="4"/>
+		<text class="tag" x="312" y="488">(100)</text>
+		<text class="lbl-s" x="312" y="504">fore ページ &lt;div&gt;（可視）</text></g>
+	<g><rect class="box-2" x="520" y="470" width="250" height="44" rx="4"/>
+		<text class="tag" x="532" y="488">(110)</text>
+		<text class="lbl-s" x="532" y="504">back ページ &lt;div&gt;  visibility:hidden</text></g>
+
+	<!-- レイヤ帯 -->
+	<g><rect class="box" x="96" y="576" width="150" height="42" rx="4"/>
+		<text class="tag" x="108" y="593">(120)</text>
+		<text class="lbl-s" x="108" y="609">TxtLayer</text></g>
+	<g><rect class="box" x="300" y="576" width="150" height="42" rx="4"/>
+		<text class="tag" x="312" y="593">(130)</text>
+		<text class="lbl-s" x="312" y="609">GrpLayer</text></g>
+	<g><rect class="box" x="560" y="576" width="150" height="42" rx="4"/>
+		<text class="tag" x="572" y="593">(180)</text>
+		<text class="lbl-s" x="572" y="609">PlgLayer（箱のみ）</text></g>
+	<g><rect class="box-ext" x="840" y="576" width="180" height="42" rx="4"/>
+		<text class="tag" x="852" y="593">(190)</text>
+		<text class="lbl-s" x="852" y="609">PlgLayMng（表裏 2 個）</text></g>
+
+	<!-- GrpLayer の子 -->
+	<g><rect class="box-2" x="150" y="672" width="120" height="40" rx="4"/>
+		<text class="tag" x="160" y="688">(140)</text><text class="lbl-s" x="160" y="703">&lt;img&gt;</text></g>
+	<g><rect class="box-2" x="284" y="672" width="120" height="40" rx="4"/>
+		<text class="tag" x="294" y="688">(150)</text><text class="lbl-s" x="294" y="703">png シート CSS</text></g>
+	<g><rect class="box-2" x="418" y="672" width="120" height="40" rx="4"/>
+		<text class="tag" x="428" y="688">(160)</text><text class="lbl-s" x="428" y="703">&lt;video&gt;</text></g>
+	<g><rect class="box-2" x="552" y="672" width="120" height="40" rx="4"/>
+		<text class="tag" x="562" y="688">(170)</text><text class="lbl-s" x="562" y="703">FxRunner</text></g>
+	<!-- (200) -->
+	<g><rect class="box-ext" x="840" y="672" width="180" height="40" rx="4"/>
+		<text class="tag" x="852" y="688">(200)</text>
+		<text class="lbl-s" x="852" y="703">プラグイン Layer  #tick</text></g>
+
+	<!-- (210) -->
+	<g><rect class="box" x="380" y="972" width="360" height="44" rx="4"/>
+		<text class="tag" x="392" y="990">(210)</text>
+		<text class="lbl" x="392" y="1006">画面（ブラウザ合成・ペイント）</text></g>
+
+	<!-- ==== 流れ矢印 ==== -->
+	<path class="flow" d="M560,68 L560,110" marker-end="url(#ah)"/>
+	<text class="albl" x="566" y="92">トークン列（trimStart しない）</text>
+
+	<path class="flow" d="M560,156 L560,198" marker-end="url(#ah)"/>
+	<text class="albl" x="566" y="180">T_ENGINE_ACTION[]</text>
+
+	<path class="flow" d="M540,244 L540,302" marker-end="url(#ah)"/>
+	<text class="albl" x="546" y="278">$fncs.* → store.set()</text>
+
+	<!-- (30)<->(40) -->
+	<path class="flow" d="M680,214 L738,214" marker-end="url(#ah)"/>
+	<text class="albl" x="684" y="208">[tsy] start()</text>
+	<path class="flow" d="M738,232 L682,232" marker-end="url(#ah)"/>
+	<text class="albl" x="684" y="246">onUpdate→apply()（毎フレーム）</text>
+	<!-- (40) self -->
+	<path class="self" d="M830,200 C824,176 900,176 894,200" marker-end="url(#ah)"/>
+	<text class="albl" x="838" y="172">内部 rAF</text>
+
+	<!-- (30)->(50)/(60) -->
+	<path class="flow" d="M680,206 C860,190 900,180 958,174" marker-end="url(#ah)"/>
+	<text class="albl" x="770" y="182">[add_frame]/[tsy_frame]</text>
+	<path class="flow" d="M680,224 C880,240 900,228 958,224" marker-end="url(#ah)"/>
+	<text class="albl" x="770" y="246">[bgm]/[se]/[fade*]</text>
+
+	<!-- (70)->(90) 購読 -->
+	<path class="flow" d="M540,348 L540,390" marker-end="url(#ah)"/>
+	<text class="albl" x="546" y="372">購読 aPage / foreIdx / trans</text>
+	<!-- (70)->(80) -->
+	<path class="flow" d="M380,332 C300,332 240,352 220,390" marker-end="url(#ah)"/>
+	<text class="albl" x="238" y="360">購読 isTyping ほか</text>
+
+	<!-- (80)->(30) イベント（上流へ） -->
+	<path class="sig" d="M180,392 C150,300 150,236 438,222" marker-end="url(#ah)"/>
+	<text class="albl-a" x="108" y="296">ev_next → go()</text>
+	<text class="albl-a" x="108" y="310">onTypingDone()</text>
+	<text class="albl-a" x="108" y="324">wait 完了（tsy/wv/wf/wt）</text>
+
+	<!-- (90)->(100)/(110) -->
+	<path class="flow" d="M520,436 C480,452 430,458 400,468" marker-end="url(#ah)"/>
+	<path class="flow" d="M600,436 C630,452 650,458 660,468" marker-end="url(#ah)"/>
+	<text class="albl" x="470" y="452">表裏を常時マウント</text>
+
+	<!-- (100)->子 -->
+	<path class="flow" d="M340,514 C260,536 200,552 175,574" marker-end="url(#ah)"/>
+	<path class="flow" d="M385,514 L378,574" marker-end="url(#ah)"/>
+	<path class="flow" d="M440,514 C520,536 600,552 620,574" marker-end="url(#ah)"/>
+	<text class="albl" x="330" y="548">子レイヤ</text>
+	<!-- (110)->子（同構成・不可視） -->
+	<path class="self" d="M600,514 C560,540 420,556 460,574" marker-end="url(#ah)"/>
+	<text class="albl" x="600" y="540">同じ木（不可視）</text>
+
+	<!-- (130)->子 -->
+	<path class="flow" d="M340,618 C280,640 220,652 210,670" marker-end="url(#ah)"/>
+	<path class="flow" d="M360,618 L344,670" marker-end="url(#ah)"/>
+	<path class="flow" d="M390,618 C450,640 470,652 478,670" marker-end="url(#ah)"/>
+	<path class="flow" d="M420,618 C540,644 580,652 612,670" marker-end="url(#ah)"/>
+
+	<!-- (180)->(190) -->
+	<path class="flow" d="M710,598 L838,598" marker-end="url(#ah)"/>
+	<text class="albl" x="716" y="592">attach（箱の DOM）</text>
+	<!-- (190)->(200) -->
+	<path class="flow" d="M930,618 L930,670" marker-end="url(#ah)"/>
+	<text class="albl" x="936" y="646">Layer.setActive(active)</text>
+	<!-- (200) self -->
+	<path class="self" d="M1020,678 C1050,672 1050,706 1022,702" marker-end="url(#ah)"/>
+	<text class="albl" x="1030" y="726">#tick rAF</text>
+
+	<!-- 可視シグナル（accent） -->
+	<path class="sig" d="M640,414 C760,430 720,548 626,574" marker-end="url(#ah)"/>
+	<text class="albl-a" x="666" y="470">prop fxActive</text>
+	<text class="albl-a" x="646" y="484">= (i===foreIdx || !!trans)</text>
+	<path class="sig" d="M660,420 C800,440 720,470 700,468" marker-end="url(#ah)"/>
+	<text class="albl-a" x="712" y="452">style --sn-ani-play（back=paused）</text>
+	<path class="sig" d="M680,210 C1120,150 1150,560 1022,592" marker-end="url(#ah)"/>
+	<text class="albl-a" x="1000" y="360">setPageState(foreIdx, trans)</text>
+
+	<!-- (160)/(170) self -->
+	<path class="self" d="M478,672 C472,650 538,650 532,672" marker-end="url(#ah)"/>
+	<text class="albl" x="486" y="646">デコード継続</text>
+	<path class="self" d="M612,672 C606,650 672,650 666,672" marker-end="url(#ah)"/>
+	<text class="albl" x="628" y="646">rAF</text>
+
+	<!-- レイヤ → 画面 -->
+	<path class="flow" d="M170,712 C160,860 300,940 400,970" marker-end="url(#ah)"/>
+	<path class="flow" d="M344,712 C344,860 400,940 470,970" marker-end="url(#ah)"/>
+	<path class="flow" d="M612,712 C612,860 600,940 560,970" marker-end="url(#ah)"/>
+	<path class="flow" d="M930,712 C930,880 780,940 690,970" marker-end="url(#ah)"/>
+	<text class="albl" x="360" y="900">DOM → ブラウザ描画</text>
+</svg>
+</div>
+<figcaption>太い実線＝データの流れ、青い破線＝ページ可視シグナル（表／裏の判定を配る）、灰＝自己ループ（rAF で自走）。(10)–(30) の ENGINE 帯はブラウザ非依存。(50)(60)(190)(200) だけが store の外に実体を持つ。進行は (30)→<code>heStage 'ev_next'</code>→(80)→<code>go()</code>→(30) の自己トリガ。</figcaption>
+</figure>
+
+<div class="legend">
+	<span><i class="li-flow"></i>データの流れ</span>
+	<span><i class="li-sig"></i>可視シグナル（fore/back 判定）</span>
+	<span><i class="li-ok"></i>停止できているシグナル</span>
+	<span><i class="li-prob"></i>未解決の経路</span>
+	<span><i class="li-self"></i>自己ループ（rAF 自走）</span>
+</div>
+
+<h2>図2 — 不可視 back ページで動き続けるもの</h2>
+<p>[trans] 後、back になったページ (110) は <code>visibility:hidden</code> でも DOM に残る。中で自走する 5 つのうち 4 つ（video・fx・CSS シート・プラグイン）は物理ページに固定された実体なので「可視シグナル」で止める必要があり、実際 2026-08-28 に対応済み。<strong>無限 [tsy] だけは書き先が役割相対で可視ページを追い続けるので、止める対象がそもそも無い</strong>——残るのは Stage の再描画コストだけ（図3・対照表）。</p>
+
+<figure class="fig-wide">
+<div class="scroll">
+<svg viewBox="0 0 1120 600" role="img" aria-label="不可視 back ページの中で自走する 5 つ。FxRunner・video・png シート CSS・プラグイン Layer は Stage または PlgLayMng からの可視シグナルで停止できる。無限 [tsy] の Tw だけは、書き先が実行時解決されるため停止できず、60fps で store.set と Stage 全再描画を起こし続ける。">
+	<defs>
+		<marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+		</marker>
+	</defs>
+
+	<!-- back ページ枠 -->
+	<rect x="36" y="52" width="560" height="512" rx="8" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="2 3"/>
+	<text class="tag" x="52" y="76">(110)</text>
+	<text class="lbl-s" x="90" y="76">不可視 back ページ  visibility:hidden</text>
+
+	<!-- 5 行 -->
+	<g><rect class="box" x="70" y="96" width="380" height="52" rx="4"/>
+		<text class="tag" x="82" y="114">(170)</text>
+		<text class="lbl-s" x="82" y="132">FxRunner — rAF + WebGL 描画</text></g>
+	<g><rect class="box" x="70" y="176" width="380" height="52" rx="4"/>
+		<text class="tag" x="82" y="194">(160)</text>
+		<text class="lbl-s" x="82" y="212">&lt;video autoplay&gt; — デコード継続</text></g>
+	<g><rect class="box" x="70" y="256" width="380" height="52" rx="4"/>
+		<text class="tag" x="82" y="274">(150)</text>
+		<text class="lbl-s" x="82" y="292">アニメ png シート — CSS @keyframes</text></g>
+	<g><rect class="box" x="70" y="336" width="380" height="52" rx="4"/>
+		<text class="tag" x="82" y="354">(200)</text>
+		<text class="lbl-s" x="82" y="372">プラグイン Layer — #tick rAF</text></g>
+	<g><rect class="box-prob" x="70" y="440" width="380" height="60" rx="4"/>
+		<text class="tag" x="82" y="459">(40)</text>
+		<text class="lbl-s" x="82" y="477">無限 [tsy]（repeat=0）— Tw 内部 rAF</text>
+		<text class="mono" x="82" y="493">既定 page=fore</text></g>
+
+	<!-- 自己ループ -->
+	<path class="self" d="M60,104 C36,98 36,140 58,134" marker-end="url(#ah2)"/>
+	<path class="self" d="M60,184 C36,178 36,220 58,214" marker-end="url(#ah2)"/>
+	<path class="self" d="M60,344 C36,338 36,380 58,374" marker-end="url(#ah2)"/>
+	<path class="self" d="M60,452 C36,446 36,492 58,486" marker-end="url(#ah2)"/>
+
+	<!-- 右の信号源 -->
+	<g><rect class="box" x="760" y="96" width="320" height="48" rx="4"/>
+		<text class="tag" x="772" y="114">(90)</text>
+		<text class="lbl-s" x="772" y="130">Stage.tsx</text></g>
+	<g><rect class="box-ext" x="760" y="316" width="320" height="48" rx="4"/>
+		<text class="tag" x="772" y="334">(190)</text>
+		<text class="lbl-s" x="772" y="350">PlgLayMng</text></g>
+	<g><rect class="box" x="760" y="392" width="320" height="44" rx="4"/>
+		<text class="tag" x="772" y="410">(30)</text>
+		<text class="lbl-s" x="772" y="424">ScriptMng</text></g>
+	<g><rect class="box" x="760" y="470" width="320" height="48" rx="4"/>
+		<text class="tag" x="772" y="488">(70)+(90)</text>
+		<text class="lbl-s" x="772" y="504">store.set() → Stage 全再描画</text></g>
+
+	<!-- 停止シグナル（ok） -->
+	<path class="ok" d="M760,116 C620,120 560,120 452,122" marker-end="url(#ah2)"/>
+	<text class="albl-o" x="470" y="110">fxActive=false ⇒ 全パス凍結 + rAF 停止</text>
+	<path class="ok" d="M760,126 C640,150 560,196 452,200" marker-end="url(#ah2)"/>
+	<text class="albl-o" x="470" y="172">fxActive=false ⇒ video.pause()</text>
+	<path class="ok" d="M760,136 C620,240 560,280 452,282" marker-end="url(#ah2)"/>
+	<text class="albl-o" x="470" y="248">--sn-ani-play:paused ⇒ @keyframes 停止</text>
+	<path class="ok" d="M760,340 C640,352 560,360 452,362" marker-end="url(#ah2)"/>
+	<text class="albl-o" x="470" y="330">setActive(false) ⇒ #tick 停止</text>
+	<path class="sig" d="M760,414 C700,414 660,380 620,364 L456,362" marker-end="url(#ah2)"/>
+	<text class="albl-a" x="612" y="400">setPageState(foreIdx, trans)</text>
+
+	<!-- 問題経路（problem） -->
+	<path class="prob" d="M452,470 C600,468 660,480 756,486" marker-end="url(#ah2)"/>
+	<text class="albl-p" x="470" y="460">onUpdate → chgLay({page:'fore'})</text>
+	<path class="prob" d="M760,494 C660,520 560,540 452,500" marker-end="url(#ah2)"/>
+	<text class="albl-p" x="470" y="540">✗ 可視シグナルで止まらない — 60fps で表裏とも再描画</text>
+</svg>
+</div>
+<figcaption>緑の破線＝実際に停止できているシグナル。(170)(160) は Stage の prop <code>fxActive</code>、(150) は Stage が back の <code>&lt;div&gt;</code> へ撒く CSS 変数、(200) は ScriptMng→PlgLayMng→<code>setActive()</code>。この 4 つは<strong>物理ページに固定</strong>された実体なので、反転後は誰にも見られず走り続ける＝pause が要る。赤＝未解決。無限 [tsy] は書き先が<strong>役割相対</strong>で可視ページへ自動追従するため止める対象が無く、残るのは <code>onUpdate</code>→<code>chgLay({page:'fore'})</code>→<code>store.set()</code>→ Stage 全再描画（memo 化なし）が 60fps という<strong>再描画コストだけ</strong>。詳細は下の対照表。</figcaption>
+</figure>
+
+<h2>図3 — なぜ [tsy] だけ pause できないか</h2>
+<p><code>chgLay</code> の <code>page:'fore'</code> は文字列で、store の <code>pickPage</code> が <strong><code>set()</code> 実行時点の <code>foreIdx</code></strong> で物理ページ 0/1 に解決する。つまりトゥイーンは <strong>物理ページにもレイヤオブジェクトにも束ねられておらず、fore / back という役割に束ねられている</strong>。[trans] で <code>foreIdx</code> が反転すると、同じトゥイーンの書き先が新しい表ページへ乗り移る。なお [trans] 自体はレイヤをクリアしないし走行中 [tsy] も kill しない（<code>finTrans</code> は役割の入れ替えと新 fore → 新 back の <code>structuredClone</code> だけ）。[tsy] を畳むのは <code>[clear_lay]</code> / <code>[er]</code> / <code>[stop_tsy]</code> / 読み戻り / スクリプトジャンプ。</p>
+
+<figure class="fig-wide">
+<div class="scroll">
+<svg viewBox="0 0 1060 430" role="img" aria-label="[trans] の前後で、同じ [tsy] トゥイーンの書き込み先が変わる。前は foreIdx=0 で aPage[0]（可視）へ書く。後は foreIdx=1 になり、同じトゥイーンが aPage[1]（新しい可視ページ）へ書く。つまりトゥイーンは常に可視ページを書いており、pause すると可視アニメが止まる。">
+	<defs>
+		<marker id="ah3" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+		</marker>
+	</defs>
+
+	<!-- パネル A -->
+	<rect x="24" y="44" width="440" height="356" rx="8" fill="none" stroke="var(--hair)" stroke-width="1.2"/>
+	<text class="bandlbl" x="40" y="34">[trans] 前 ・ foreIdx = 0</text>
+
+	<g><rect class="box" x="150" y="60" width="180" height="42" rx="4"/>
+		<text class="tag" x="162" y="77">(40)</text><text class="lbl-s" x="162" y="92">[tsy] Tw（#hTw）</text></g>
+	<g><rect class="box-2" x="130" y="150" width="220" height="42" rx="4"/>
+		<text class="lbl-s" x="142" y="176">pickPage(s): idx = foreIdx = 0</text></g>
+	<g><rect class="box-hi" x="44" y="256" width="190" height="52" rx="4"/>
+		<text class="lbl-s" x="56" y="278">aPage[0]</text><text class="mono" x="56" y="294">表・可視</text></g>
+	<g><rect class="box-2" x="256" y="256" width="190" height="52" rx="4"/>
+		<text class="lbl-s" x="268" y="278">aPage[1]</text><text class="mono" x="268" y="294">back・静止</text></g>
+
+	<path class="flow" d="M240,102 L240,148" marker-end="url(#ah3)"/>
+	<text class="albl" x="246" y="128">onUpdate→chgLay({page:'fore'})</text>
+	<path class="flow" d="M220,192 C180,214 150,232 140,254" marker-end="url(#ah3)"/>
+	<text class="albl" x="70" y="230">書き込み</text>
+
+	<!-- パネル間 -->
+	<path class="flow" d="M470,220 L588,220" marker-end="url(#ah3)"/>
+	<text class="albl" x="474" y="212">[trans]</text>
+	<text class="albl" x="474" y="238">foreIdx 反転</text>
+
+	<!-- パネル B -->
+	<rect x="596" y="44" width="440" height="356" rx="8" fill="none" stroke="var(--hair)" stroke-width="1.2"/>
+	<text class="bandlbl" x="612" y="34">[trans] 後 ・ foreIdx = 1</text>
+
+	<g><rect class="box" x="722" y="60" width="190" height="42" rx="4"/>
+		<text class="tag" x="734" y="77">(40)</text><text class="lbl-s" x="734" y="92">同じ Tw（#hTw）</text></g>
+	<g><rect class="box-2" x="702" y="150" width="230" height="42" rx="4"/>
+		<text class="lbl-s" x="714" y="176">pickPage(s): idx = foreIdx = 1</text></g>
+	<g><rect class="box-2" x="616" y="256" width="190" height="52" rx="4"/>
+		<text class="lbl-s" x="628" y="278">aPage[0]</text><text class="mono" x="628" y="294">旧表 → 新 back</text></g>
+	<g><rect class="box-prob" x="828" y="256" width="190" height="52" rx="4"/>
+		<text class="lbl-s" x="840" y="278">aPage[1]</text><text class="mono" x="840" y="294">新・表・可視</text></g>
+
+	<path class="flow" d="M817,102 L817,148" marker-end="url(#ah3)"/>
+	<path class="prob" d="M900,192 C940,214 940,232 925,254" marker-end="url(#ah3)"/>
+	<text class="albl-p" x="806" y="234">書き先が乗り移る</text>
+</svg>
+</div>
+<figcaption>トゥイーンは <code>page=back</code> を書いていない — 常に<strong>その時の可視ページ</strong>を書いている。だから「back になった <code>#hTw</code> を pause」しても、pause 対象は可視ページのアニメで、止めると画面のゆらゆらが凍る。純粋に不可視なのは <code>page=back</code> 明示のトゥイーンが [trans] 外のときだけ（ニッチ）。</figcaption>
+</figure>
+
+<h2>図4 — memo 化が飛ばすもの／飛ばさないもの</h2>
+<p>残るコストは「無限 [tsy] の <code>set()</code> で Stage が<strong>表裏とも</strong>再 render すること」だけ。React の既定では親が再 render すると子は props に関係なく全部呼び直される（そのあと diff して「DOM 変更なし」と分かる — が、その render 作業はもう済んでいる）。<code>React.memo</code> は、渡ってきた props が前回と全部 <code>===</code> なら<strong>その関数を呼ばずサブツリーごと再利用</strong>する。</p>
+
+<figure class="fig-wide">
+<div class="scroll">
+<svg viewBox="0 0 1060 400" role="img" aria-label="memo なしと Page を memo 化した場合の比較。どちらも store.set が 60fps で Stage を再 render させるが、memo なしでは back Page の全レイヤ関数が呼び直され DOM 変更なしの無駄作業になる。Page を memo 化すると back Page の props が全て参照同一なので React がそのサブツリーの再 render をスキップする。set・Stage 本体・fore Page は両方とも 60fps のまま。">
+	<defs>
+		<marker id="ah4" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+		</marker>
+	</defs>
+
+	<line x1="530" y1="24" x2="530" y2="330" class="band"/>
+
+	<!-- 左：memo なし -->
+	<text class="bandlbl" x="24" y="18">memo なし（現状）</text>
+	<g><rect class="box" x="120" y="30" width="290" height="40" rx="4"/>
+		<text class="lbl-s" x="132" y="54">[tsy] onUpdate → store.set()  60fps</text></g>
+	<g><rect class="box" x="150" y="104" width="230" height="38" rx="4"/>
+		<text class="lbl-s" x="162" y="127">Stage 再 render</text></g>
+	<g><rect class="box" x="24" y="180" width="200" height="38" rx="4"/>
+		<text class="lbl-s" x="36" y="203">fore Page 再 render</text></g>
+	<g><rect class="box-prob" x="256" y="180" width="240" height="38" rx="4"/>
+		<text class="lbl-s" x="268" y="203">back Page 再 render</text></g>
+	<g><rect class="box-2" x="236" y="250" width="280" height="52" rx="4"/>
+		<text class="lbl-s" x="248" y="270">GrpLayer / TxtLayer / PlgLayer</text>
+		<text class="mono" x="248" y="288">全部呼び直し → DOM 変更なし＝無駄</text></g>
+
+	<path class="flow" d="M265,70 L265,102" marker-end="url(#ah4)"/>
+	<path class="flow" d="M240,142 C180,158 140,164 128,178" marker-end="url(#ah4)"/>
+	<path class="flow" d="M300,142 C340,158 370,164 376,178" marker-end="url(#ah4)"/>
+	<path class="prob" d="M376,218 L376,248" marker-end="url(#ah4)"/>
+
+	<!-- 右：memo 化 -->
+	<text class="bandlbl" x="556" y="18">&lt;Page&gt; を React.memo 化</text>
+	<g><rect class="box" x="650" y="30" width="290" height="40" rx="4"/>
+		<text class="lbl-s" x="662" y="54">[tsy] onUpdate → store.set()  60fps</text></g>
+	<g><rect class="box" x="680" y="104" width="230" height="38" rx="4"/>
+		<text class="lbl-s" x="692" y="127">Stage 再 render</text></g>
+	<g><rect class="box" x="556" y="180" width="200" height="38" rx="4"/>
+		<text class="lbl-s" x="568" y="203">fore Page 再 render</text></g>
+	<g><rect class="box-ext" x="788" y="180" width="240" height="38" rx="4"/>
+		<text class="lbl-s" x="800" y="203">back Page（前回の出力を再利用）</text></g>
+	<g><rect class="box-ext" x="808" y="250" width="200" height="52" rx="4"/>
+		<text class="mono" x="820" y="270">サブツリー丸ごと</text>
+		<text class="mono" x="820" y="288">関数が呼ばれない</text></g>
+
+	<path class="flow" d="M795,70 L795,102" marker-end="url(#ah4)"/>
+	<path class="flow" d="M770,142 C710,158 680,164 668,178" marker-end="url(#ah4)"/>
+	<path class="ok" d="M900,142 C940,158 918,166 910,178" marker-end="url(#ah4)"/>
+	<text class="albl-o" x="812" y="160">props 全て === → skip</text>
+	<path class="self" d="M908,218 L908,248" marker-end="url(#ah4)"/>
+
+	<!-- 共通の但し書き -->
+	<rect x="120" y="342" width="820" height="40" rx="4" fill="var(--surface-2)" stroke="var(--hair)" stroke-width="1"/>
+	<text class="lbl-s" x="140" y="366">memo が消すのは back サブツリーの render のみ。store.set() / Stage 本体 / fore Page の再 render は両方とも 60fps のまま。</text>
+</svg>
+</div>
+<figcaption>効かせる前提：back Page に渡る props が参照安定であること。<code>aLay</code> は <code>putPage</code> が非対象ページの配列参照を保つので OK、<code>isFore</code>/<code>trans</code> も [trans] 外なら不変。ただし Stage が今 inline arrow で渡している <code>getVideoVol</code>/<code>onActivate</code>/<code>onSe</code>/<code>onNavigate</code> 等は毎 render 新規なので、<code>useCallback</code> 等で安定参照化する必要がある（これが実作業）。純粋な最適化で挙動は変わらず、安定化が不完全でも今日のコストに戻るだけ。</figcaption>
+</figure>
+
+<h2>読み解きメモ（論点）</h2>
+<ol class="notes">
+	<li><strong>太い流れ</strong>：(10)→(20)→(30)→(70)→(90)→ページ→レイヤ→(210)。(10)–(30) はブラウザ非依存で単体テストできる（<code>test/*.test.ts</code>）。</li>
+	<li><strong>状態は全部 (70)</strong>。ただし (50) FrameMng・(60) SndMng・(190) PlgLayMng だけは例外で store の外に実体を持つ（それぞれ理由あり：iframe の same-origin / howler を積まない自前 Web Audio / DOM 側の Layer インスタンス表裏 2 個）。</li>
+	<li><strong>逆流（イベント）</strong>：進行の自己トリガ (30)→<code>heStage 'ev_next'</code>→(80)→<code>go()</code>→(30)（DOM を挟んで疎結合）に加え、待ち合わせの完了もすべて (30) へ戻って <code>go()</code> を再開させる：文字送り完了 (120)→(70)→(80)→<code>onTypingDone()</code>、<code>[wait_tsy]</code>／<code>[wt]</code> のトゥイーン・演出完了（<code>#onTsyEnd</code>／<code>#finishTrans</code>）、<code>[wv]</code> の video <code>ended</code>（<code>#waitVideoPlay</code>）、<code>[wait_fx]</code> の FxRunner one-shot 完了（fx タイマー）、<code>[wf]</code>／<code>[wb]</code> の音声フェード完了（<code>#onSndFadeEnd</code>）。図1 は太い順流だけを描いている。</li>
+	<li><strong>自走するもの</strong>（図の自己ループ）：(40) Tw の内部 rAF、(160) video デコード、(170) FxRunner の rAF、(200) プラグインの <code>#tick</code>。表ページで動くぶんには問題なし。(200) の <code>#tick</code> は (40) Tw の一種ではない — Tw は数値プロパティの補間（エンジン所有）、<code>#tick</code> はプラグイン自前のレンダーループ（sn_gallery 側・不透明）。エンジンが渡すのは可視シグナル <code>setActive()</code> だけでよい。</li>
+	<li><strong>(40) Tw が (70) を直接触らない理由</strong>：書き込み対象が安定して存在しない。音声フェードの Tw は <code>new Tw(gn.gain)</code> で <strong>GainNode を直接書く</strong>（生オブジェクトで寿命が音と一致）。[tsy] のレイヤは <code>set()</code> のたび immutable update で作り直され [trans] で入れ替わるので、掴んだ参照は 1 フレームで陳腐化 → 毎フレーム <code>chgLay({nm, page})</code> で名前引きし直す。<code>apply()</code> がその「渡すクロージャ」そのもので、<code>#hTw</code> 台帳・<code>withAlign</code>・<code>backlay</code> を要するため (30) の中にしか置けない。</li>
+	<li><strong>可視シグナルは用途ごとに別経路</strong>（図2）。(170)(160) は (90)→(130) の <strong>React prop</strong> <code>fxActive</code>、(150) は (90)→(110) の <strong>CSS 変数</strong>（cascade で子孫へ）＝どちらも「状態を流して下流が振る舞いを変える」形。(200) だけ (30)→(190)→<code>setActive()</code> の out-of-tree なのは、プラグインの実体（Three.js / Live2D）が <strong>React ツリーに居ない</strong>（(180) は空の箱 <code>&lt;div&gt;</code> だけ、中身は <code>attachPlgBox()</code> が命令的に append）ため prop も cascade も届かないから。いずれも 2026-08-28 に対応済み。</li>
+	<li><strong>物理ページ固定 vs 役割相対</strong>（下表）。video / plugin / CSS シートは物理ページ index 0/1 に固定された DOM 実体で、[trans] 反転後は旧ページの実体が誰にも見られず走り続ける＝<strong>pause / setActive が必須</strong>。[tsy] は書き位置が store 経由の <code>page:'fore'</code>＝<strong>役割相対</strong>で、<code>pickPage</code> が毎フレーム今の <code>foreIdx</code> に解決するので<strong>可視ページへ自動追従</strong>する。だから [tsy] に可視 pause は道具として不適で、そもそも不要。</li>
+	<li><strong>[tsy] に残る作業は最適化 1 点だけ</strong>。正しさの問題ではない。<code>page=fore</code> の [tsy] は構造上つねに可視ページを書くので「止めるべき不可視アニメ」は無い（純粋不可視は <code>page=back</code> 明示 × [trans] 外というニッチのみ）。残るコストは <code>onUpdate</code>→<code>chgLay</code>→<code>set()</code>→ Stage が<strong>表裏とも 60fps 再描画</strong>すること。対処は <strong>(c) back ページ <code>&lt;div&gt;</code> の memo 化</strong>（<code>putPage</code> が非対象ページの配列参照を保つので back 側の再描画だけ確実に止まる）。(a) <code>page=back</code> 限定 pause は狭すぎ、(b) 作成時の物理ページへ束縛は <code>chgLay</code> の動的解決を変える中規模改修。</li>
+</ol>
+
+<div class="scroll-x">
+<table class="cmp">
+	<thead><tr><th>対象</th><th>書き先の束ね方</th><th>[trans] 反転後</th><th>可視 pause</th></tr></thead>
+	<tbody>
+		<tr><td>(160) &lt;video&gt;</td><td>物理ページ index に固定された DOM</td><td>旧ページの実体がデコード継続</td><td class="need">必須（<code>fxActive</code>→<code>pause()</code>）</td></tr>
+		<tr><td>(170) FxRunner</td><td>物理ページ index に固定された canvas</td><td>旧ページの rAF が回り続ける</td><td class="need">必須（<code>active</code>→全パス凍結）</td></tr>
+		<tr><td>(150) png シート CSS</td><td>物理ページの <code>&lt;div&gt;</code> 子孫</td><td>旧ページの <code>@keyframes</code> 継続</td><td class="need">必須（<code>--sn-ani-play</code>）</td></tr>
+		<tr><td>(200) プラグイン Layer</td><td>物理ページ index に 2 インスタンス</td><td>不可視側の <code>#tick</code> が回り続ける</td><td class="need">必須（<code>setActive(false)</code>）</td></tr>
+		<tr><td>(40) 無限 [tsy]</td><td><code>page:'fore'</code>＝<strong>役割相対</strong>（毎フレーム解決）</td><td>書き先が新しい可視ページへ自動追従</td><td class="noneed">不要（止めると可視アニメが凍る）</td></tr>
+	</tbody>
+</table>
+</div>
+
+</div>
+</body>
+</html>

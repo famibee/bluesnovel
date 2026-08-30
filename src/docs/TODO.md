@@ -26,14 +26,40 @@
 
 - 不可視 back ページの最適化（詳細・一覧・深刻度は [backpage-perf.md](backpage-perf.md)）：
   `[add_fx]`／プラグイン拡張レイヤ／アニメ png シート／動画は対応済み（2026-08-28）。
-  残る `[tsy]` 無限トゥイーンは **保留**（`chgLay` の動的ページ解決と噛み合わず pause が
-  成立しない。[backpage-perf.md](backpage-perf.md) 参照）
+  残る `[tsy]` 無限トゥイーンは下記「## 不可視 back ページ：[tsy] の memo 化」で対応（2026-08-30 方針決定）
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
       詳細 [filters.md](filters.md)
 - [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
       近似余地（いずれも優先度低・未実機検証）。詳細 [filters.md](filters.md)
+
+## 不可視 back ページ：[tsy] の memo 化
+
+方針・根拠は [backpage-perf.md](backpage-perf.md)「[tsy] 無限トゥイーンの結論（2026-08-30）」。
+要点：`[tsy]` に可視 pause は不適・不要（書き先が fore/back の役割相対で可視ページへ自動追従）。
+残るコストは無限 `[tsy]` 中の `set()` → **Stage が表裏とも 60fps 再描画**する 1 点だけ。
+純粋な最適化・挙動不変。`putPage` が非対象ページの配列参照を保つのが効く前提。
+
+- [ ] `Stage.tsx`：`aPage.map` の「1 ページぶん」（`<div data-page>` ＋ `aLay.map(l=> <GrpLayer/>/<TxtLayer/>/<PlgLayer/>)`）を
+      `<Page>` コンポーネントへ切り出す。props は `aLay` / `isFore` / `trans` / `cmn` /
+      各コールバック。trans マージ配列（`trans?.aLayNm && i !== foreIdx` の分岐）は `<Page>` の外で解決して `aLay` として渡す
+- [ ] `Stage.tsx`：`<Page>` へ渡す**毎 render 新規の関数**を安定参照化。
+      `getVideoVol` / `needClick2Play` / `onActivate` / `onNavigate` / `onSe` /
+      `getVideoVol`（GrpLayer）等の inline arrow を `useCallback` かモジュール定数へ、
+      または `scrMng` を渡してメソッド呼び出しは `<Page>` の内側で行う。
+      `c.cmn` と `sty4Moveable` 経路の参照安定性も確認（デザインモード OFF なら固定のはず）
+- [ ] `<Page>` を `React.memo` でくるむ。`page=fore` の `[tsy]` 更新時、back Page の
+      props（`aLay` = `aPage[backIdx]`、`isFore`、`trans=null`）が全て参照安定 →
+      back サブツリーの再 render がスキップされることを狙う。trans 中は back の `aLay` が
+      毎 render 変わる＝再 render される想定でよい（可視なので正しい）
+- [ ] 効果確認：無限 `[tsy]`（`[fg_sway]` / `[fg_squat]` 等、`sn_gallery` の作例）実行中に
+      back ページのレイヤコンポーネントが再 render されないことを確認。
+      `test/e2e/` の既存 tsy 系テストがあれば流用、無ければ React DevTools Profiler か
+      `<Page>` 内 `console.count` で目視。単体テスト側は store の `putPage` 参照維持を
+      `test/store_lay.test.ts` 系で担保（既にあれば追加不要）
+- [ ] 完了したら [backpage-perf.md](backpage-perf.md) 一覧表の `[tsy]` 行を「対応済み」へ、
+      本セクションを削除。コミットメッセージに経緯（pause 不採用の理由・memo が効く仕組み）を厚めに
 
 ## WebGL エフェクト
 
