@@ -283,6 +283,9 @@ export type T_CHGSTR = {
 	//	const.sn.last_page_plain_text と同じ物なので、テストや読み上げはこちらを見れば良い
 	str	: string;
 	aCh	: T_CH[];
+	// [clear_text]/[er]/[p]再開クリア由来か。本文が同じ内容で消去→再表示されても TxtLayer が
+	//	出現演出を撃ち直せるよう、そのレイヤの clrGen（消去世代）を +1 する
+	hard?: boolean;
 }
 // [button]タグで文字レイヤ（UIコンテナ）にボタンを乗せる（独立レイヤにはしない）
 export type T_ADDBTN = {
@@ -567,7 +570,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			if (isGrpLay(e)) {e.fn = ''; e.src = ''; e.aFace = []}
 			// bura/kinsoku_*は[clear_lay]で変更しない（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない。
 			//	docs/tag.htmlのbura欄も既定値「現在値」＝クリアしても引き継ぐ、と明記）
-			else if (isTxtLay(e)) {e.str = ''; e.aCh = []; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1; delete e.pl; delete e.pr; delete e.pt; delete e.pb}
+			else if (isTxtLay(e)) {e.str = ''; e.aCh = []; e.clrGen = (e.clrGen ?? 0) + 1; e.aBtn = []; delete e.b_color; delete e.style; delete e.ffs; delete e.noffs; delete e.r_align; delete e.b_pic; delete e.b_src; delete e.b_alpha_isfixed; e.b_alpha = 1; delete e.pl; delete e.pr; delete e.pt; delete e.pb}
 			// プラグインレイヤーはstoreに中身を持たない（中身の実体・クリアはDOM側 PlgLayMng が持つ）ので、
 			//	共通の見た目（上のA_LAY_STY_KEYループ）を戻すだけでよい
 		};
@@ -722,11 +725,12 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		chg(aLay);
 		return putPage(s, idx, aLay);
 	}),
-	chgStr	: ({nm, page, str, aCh}: T_CHGSTR)=> set(s=> {
+	chgStr	: ({nm, page, str, aCh, hard}: T_CHGSTR)=> set(s=> {
 		const put = (aLay: T_LAY[])=> {
 			const e = findLay(aLay, nm, 'txt');
 			e.str = str;
 			e.aCh = aCh;
+			if (hard) e.clrGen = (e.clrGen ?? 0) + 1;	// 消去世代を進める（TxtLayerが再アニメの判断に使う）
 		};
 		// [er]だけが'both'＝両面の文字を消す。片面だけだと[trans]で裏が表に出たときに
 		//	前の場面の文字が蘇ってしまう（本家 hTag.er「ページ両面の文字消去」）

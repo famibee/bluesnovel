@@ -256,13 +256,13 @@ it('dumpStack_showsPositionAndStacks', ()=> {
 it('clearText_clearsOnePageOfCurrentLayer', ()=> {
 	const a = acts('あいう[clear_text][s]');
 	expect(a.filter(v=> v.t === 'chgStr').at(-1))
-		.toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: ''});
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'fore', str: '', hard: true});
 });
 
 it('clearText_layerAndPage', ()=> {
 	const a = acts(`${LAYS}[clear_text layer=mes page=back][s]`);
 	expect(a.find(v=> v.t === 'chgStr'))
-		.toEqual({t: 'chgStr', nm: 'mes', page: 'back', str: ''});
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'back', str: '', hard: true});
 });
 
 it('clearText_resetsAccumulatedText', ()=> {

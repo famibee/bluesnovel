@@ -128,7 +128,7 @@ it('er_clearsBothPages', ()=> {
 	// タグ名のとおり「ページ両面の文字消去」（本家 hTag.er）。
 	//	片面だけだと、[trans]で裏が表に出たときに前の場面の文字が蘇る
 	expect(acts(`${LAYS}あ[er][s]`).find(v=> v.t === 'chgStr' && v.str === ''))
-		.toEqual({t: 'chgStr', nm: 'mes', page: 'both', str: ''});
+		.toEqual({t: 'chgStr', nm: 'mes', page: 'both', str: '', hard: true});
 });
 
 it('button_defaultsToBack', ()=> {

@@ -86,6 +86,10 @@ type T_TXTARG = T_LAY_CMN & {
 	isFore	: boolean;	// 表ページ側か。[l]/[p]の待ちマーカーは表にだけ出す（裏ページにも同名レイヤがあるため）
 	str		: string;	// ルビを除いた平文（見た目の判定用。実際に描くのはaCh）
 	aCh		: T_CH[];	// 表示単位の並び（ルビ記法を割った結果。Txt.ts splitCh）
+	// 文字消去の世代（[clear_text]/[er]/[clear_lay]/[p]再開クリアで +1）。**本文が同じ内容で
+	//	消去→再表示された場合の再アニメ用**：`chgStr('')` の中間状態は React がまとめて捨てるので
+	//	aCh の差分だけでは「消えて出直した」を検知できない。詳細 src/docs/text-rendering.md
+	clrGen?	: number | undefined;
 	ffs?	: string | undefined;	// [lay ffs=…]。文字詰め（font-feature-settingsの値）
 	noffs?	: string | undefined;	// [lay noffs=…]。ffsを効かせない文字の並び
 	bura?	: boolean | undefined;	// [lay bura=…]。ぶら下げ禁則
@@ -121,7 +125,7 @@ type T_TXTARG = T_LAY_CMN & {
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
 // ストア（zustand）に保存するデータだけの型（cmnはrender時のPropsのみなので不要）
-export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean;
+export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; clrGen?: number; ffs?: string; noffs?: string; bura?: boolean;
 	kinsoku_sol?: string; kinsoku_eol?: string; kinsoku_dns?: string; kinsoku_bura?: string;
 	r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
 	break_fixed?: boolean; break_fixed_left?: number; break_fixed_top?: number;	// [lay break_fixed*=]。[l]/[p]待ちマーカーの固定位置
@@ -131,7 +135,7 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; f
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 
-export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura,
+export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, clrGen, ffs, noffs, bura,
 	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
 	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, out_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
@@ -203,6 +207,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	直後の完了ハンドラ」が「新しいバッチが動き出した後」に呼ばれてisTypingを誤って下ろす競合を
 	//	防ぐため、実行のたびに世代を進め、完了ハンドラは自分の世代がまだ最新かを確認する
 	const genRef = useRef(0);
+	// 直近に見た消去世代（clrGen）。本文 effect でこれと違えば「消えて出直した」と判断する
+	const clrGenRef = useRef(clrGen);
 	// 各spanの「出現時の累積ディレイ（ms）」。spansRef と並走。消去演出の join:true で
 	//	本家 #clearText と同じ順送りにするために控える（本家はタイプ時に付けた inline
 	//	animation-delay をそのまま消去アニメへ流用する。TxtLayer.ts:748）
@@ -291,11 +297,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		for (const a of animsRef.current) a.cancel();
 		animsRef.current = [];
 
+		// [clear_text]等で消去世代が進んだ＝「消えて出直した」。本文が前と同じ内容でも
+		//	（`chgStr('')` の中間状態は React がまとめて捨てるので aCh 差分では検知できない）
+		//	キャッシュを捨てて全文字を新規表示扱いにし、出現演出を撃ち直す。詳細 text-rendering.md
+		const hardClear = clrGenRef.current !== clrGen;
+		clrGenRef.current = clrGen;
+
 		// 本当のページクリア（aChとキャッシュが互いに前方一致しない＝別内容）の場合のみ作り直す
 		const cacheCh = chRef.current;
 		const min = Math.min(cacheCh.length, aCh.length);
 		let same = 0;
-		while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r
+		if (! hardClear) while (same < min && cacheCh[same]!.c === aCh[same]!.c && cacheCh[same]!.r === aCh[same]!.r
 			&& cacheCh[same]!.s === aCh[same]!.s && cacheCh[same]!.rs === aCh[same]!.rs) ++same;
 		// 文字消去演出（[ch_out_style]）：本文が丸ごと／別内容に置き換わる＝消える文字がある。
 		//	消えていく文字をゴーストspanへ移して animate してから、以下は素のクリアを続行
@@ -419,7 +431,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			// 自分より新しいバッチが動き出していたら、この完了通知は無視する（上のgenRefのコメント参照）
 			if (genRef.current === gen) setIsTyping(false);
 		});
-	}, [aCh, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
+	}, [aCh, clrGen, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（.finish()でPromise.allSettledが解決し、setIsTyping(false)も自動で呼ばれる）。

@@ -1807,7 +1807,7 @@ export class ScriptMng {
 				// [graph]のインライン画像だけはパス解決が要る。**splitCh()を純粋なままにしたい**ので
 				//	割った後にここで流し込む（画像レイヤのfn→srcと同じ扱い）
 				for (const ch of aCh) if (ch.pic) ch.src = this.#searchPic('graph', ch.pic);
-				this.$fncs.chgStr({nm: act.nm, page: act.page, str: plainOf(aCh), aCh});
+				this.$fncs.chgStr({nm: act.nm, page: act.page, str: plainOf(aCh), aCh, ...(act.hard ? {hard: true} : {})});
 			}
 			break;
 		case 'addBtn': {

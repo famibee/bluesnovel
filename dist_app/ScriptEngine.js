@@ -1723,7 +1723,8 @@ var ce = class e {
 			t: "chgStr",
 			nm: this.#v,
 			page: "fore",
-			str: ""
+			str: "",
+			hard: !0
 		})); this.#_ < this.#g.len;) {
 			this.#G();
 			let t = this.#g.aToken[this.#_++], n = t.charCodeAt(0);
@@ -2123,7 +2124,8 @@ var ce = class e {
 				t: "chgStr",
 				nm: this.#v,
 				page: "both",
-				str: ""
+				str: "",
+				hard: !0
 			}), l.push({
 				t: "clearTxtLay",
 				nm: this.#v,
@@ -2133,10 +2135,21 @@ var ce = class e {
 			case "span": {
 				if (i.r_align !== void 0 && !Y.includes(i.r_align)) throw `[span] r_alignの値が不正です：${i.r_align}`;
 				let { nm: t, page: n } = this.#le(i);
+				if (i.in_style !== void 0 || i.out_style !== void 0) {
+					let e = {};
+					i.in_style !== void 0 && (e.in_style = i.in_style), i.out_style !== void 0 && (e.out_style = i.out_style), l.push({
+						t: "chgLay",
+						nm: t,
+						page: n,
+						sty: e
+					});
+				}
 				return this.#ue(l, e.#ce("span", {
 					...i,
 					layer: void 0,
-					page: void 0
+					page: void 0,
+					in_style: void 0,
+					out_style: void 0
 				}), !0, t, n), "skip";
 			}
 			case "link": {
@@ -2426,7 +2439,8 @@ var ce = class e {
 					t: "chgStr",
 					nm: t,
 					page: n,
-					str: ""
+					str: "",
+					hard: !0
 				}), "skip";
 			}
 			case "dump_val": return l.push({

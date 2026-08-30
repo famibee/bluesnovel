@@ -42,6 +42,18 @@ it('span_rubyStyle', ()=> {
 	]);
 });
 
+it('span_inStyle_outStyleはchgLayでレイヤ値へ書く', ()=> {
+	// 本家 TxtLayer.ts:357 #$ch_in_style（[lay in_style=]と同じインスタンス値）。本文ストリームの
+	//	埋め込み命令ではなくレイヤ状態なので[clear_text]をまたいで持続する（ch_in_out ギャラリー*ch_in）
+	const acts = new ScriptEngine('t1',
+		'[add_lay layer=mes class=txt][current layer=mes][span in_style=転がり入り out_style=左端へ]あ[clear_text]い[s]').step();
+	const chgLay = acts.filter(v=> v.t === 'chgLay');
+	expect(chgLay.at(-1)).toMatchObject({nm: 'mes', page: 'fore', sty: {in_style: '転がり入り', out_style: '左端へ'}});
+	// [clear_text]後の本文にも効かせたいので埋め込み命令側には in_style/out_style を残さない
+	const last = acts.filter(v=> v.t === 'chgStr').at(-1);
+	expect(last?.t === 'chgStr' && last.str).not.toContain('in_style');
+});
+
 it('ch_appendsTextWithItsOwnStyle', ()=> {
 	// [ch]のstyleはそのtextの間だけ効く
 	expect(units('あ[ch text=いう style="color: lime;"]え')).toEqual([

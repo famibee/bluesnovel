@@ -633,8 +633,8 @@
 	<amp-img src="pic/r_align.png" width="864" height="275" layout="responsive"></amp-img>
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
-<tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
+<tr><td>in_style</td><td></td><td>現在値</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名。このレイヤに以降表示される文字ぜんぶに効く（<code>[clear_text]</code>をまたいで持続）</td></tr>
+<tr><td>out_style</td><td></td><td>現在値</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 <tr><td>ffs</td><td></td><td>現在値</td><td>（コメントで解説）</td><td>
 	CSS の文字詰め font-feature-settingsでの「"pwid"」「"palt"」など指定できる。<br/>
 	（styleで指定してはいけない）<br/>
@@ -1674,15 +1674,20 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	ルビの CSS Style を指定する。<br/>
 	このタグ以降のルビ表示に適用される。
 </td></tr>
-<tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名</td></tr>
-<tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
+<tr><td>in_style</td><td></td><td>現在値</td><td>文字出現演出名</td><td><a href="tag.html#ch_in_style" target="_blank" rel="noopener">[ch_in_style]</a>で定義した文字出現演出名。<a href="tag.html#lay" target="_blank" rel="noopener">[lay in_style=]</a>と同じレイヤ状態を書き換える（<code>[clear_text]</code>をまたいで持続。<code>style</code>等と違い属性なしの[span]でも解除しない）</td></tr>
+<tr><td>out_style</td><td></td><td>現在値</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名。<code>in_style</code>と同様レイヤ状態</td></tr>
+<tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td>この[span]区間の文字だけに効く文字出現演出名（<code>in_style</code>はレイヤ全体、こちらは文字ごと）。次の[span]まで、属性なしの[span]で解除</td></tr>
+<tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td>この[span]区間の文字だけに効く文字消去演出名</td></tr>
 <tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
 </td></tr>
 </table>
-<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>wait</code>・<code>r_align</code>・<code>layer</code>／<code>page</code>に対応
+<p class="mb2 px1"><b>bluesnovel</b>：<code>style</code>・<code>r_style</code>・<code>wait</code>・<code>r_align</code>・<code>ch_in_style</code>・<code>ch_out_style</code>・<code>layer</code>／<code>page</code>に対応
 	（次の[span]まで効き、属性なしの[span]で解除。ただし<code>r_align</code>だけは本家同様、
 	指定時のみ上書きし属性なしの[span]でも解除しない）。
-	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。</p>
+	本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。<br/>
+	<code>in_style</code>／<code>out_style</code>は例外で本文ストリームに載せず<code>[lay]</code>と同じレイヤ状態
+	へ書く（本家 <code>TxtLayer.ts:357</code> <code>#$ch_in_style</code>。<code>[clear_text]</code>で本文が
+	捨てられても演出指定は残す＝<code>[span in_style=X][clear_text]</code>が効く）。</p>
 
 </p>
 <h2 id="tcy" class="w-heading">[tcy]縦中横を表示する</h2>

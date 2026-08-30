@@ -418,7 +418,7 @@ it('step_p_clearsOnResume', ()=> {
 
 	const a2 = se.step();
 	expect(a2).toEqual([
-		{t: 'chgStr', nm: 'mes', page: 'fore', str: ''},			// [p]の次の進行でまずクリアされる
+		{t: 'chgStr', nm: 'mes', page: 'fore', str: '', hard: true},			// [p]の次の進行でまずクリアされる（hard＝同内容でも再アニメ）
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'かきくけこ'},
 		{t: 'stop', kind: 's', key: 't1:5', nm: 'mes'},
 	]);

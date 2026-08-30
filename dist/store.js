@@ -291,7 +291,7 @@ var O = b()((e, t) => ({
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let i = (e) => {
 			for (let t of a) t !== "visible" && delete e[t];
-			r(e) ? (e.fn = "", e.src = "", e.aFace = []) : s(e) && (e.str = "", e.aCh = [], e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
+			r(e) ? (e.fn = "", e.src = "", e.aFace = []) : s(e) && (e.str = "", e.aCh = [], e.clrGen = (e.clrGen ?? 0) + 1, e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		}, o = (e) => {
 			if (!t) {
 				e.forEach(i);
@@ -440,17 +440,17 @@ var O = b()((e, t) => ({
 		let { idx: d, aLay: f } = C(e, n);
 		return u(f), w(e, d, f);
 	}),
-	chgStr: ({ nm: t, page: n, str: r, aCh: i }) => e((e) => {
-		let a = (e) => {
+	chgStr: ({ nm: t, page: n, str: r, aCh: i, hard: a }) => e((e) => {
+		let o = (e) => {
 			let n = D(e, t, "txt");
-			n.str = r, n.aCh = i;
+			n.str = r, n.aCh = i, a && (n.clrGen = (n.clrGen ?? 0) + 1);
 		};
 		if (n === "both") return { aPage: e.aPage.map((e) => {
 			let t = [...e];
-			return a(t), t;
+			return o(t), t;
 		}) };
-		let { idx: o, aLay: s } = C(e, n);
-		return a(s), w(e, o, s);
+		let { idx: s, aLay: c } = C(e, n);
+		return o(c), w(e, s, c);
 	}),
 	trans: null,
 	startTrans: ({ aLayNm: t, time: n, ruleSrc: r, vague: i, glslSrc: a }) => e((e) => n <= 0 ? T(e, t) : { trans: {

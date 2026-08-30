@@ -4486,7 +4486,8 @@ var co = class p {
 						nm: e.nm,
 						page: e.page,
 						str: v(t),
-						aCh: t
+						aCh: t,
+						...e.hard ? { hard: !0 } : {}
 					});
 				}
 				break;

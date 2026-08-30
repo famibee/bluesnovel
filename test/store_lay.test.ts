@@ -597,3 +597,22 @@ it('chgPic_aFaceEmptyArray_clearsFaceExplicitly', ()=> {
 	const e = useStore.getState().aPage[0].find(v=> v.nm === 'a');
 	expect(e && isGrpLay(e) ? e.aFace : undefined).toEqual([]);
 });
+
+// 消去世代 clrGen（本文が同じ内容で消去→再表示されても TxtLayer が出現演出を撃ち直せるよう、
+//	[clear_text]/[er]/[p]再開クリア＝chgStr hard と [clear_lay] で +1）。詳細 src/docs/text-rendering.md
+it('chgStr_hardで clrGen が進む（同内容の再表示でも再アニメできる）', ()=> {
+	S().addLayer({cls: 'txt', nm: 'mes', str: '', aCh: [], b_alpha: 1, enabled: true, aBtn: []});
+	const g0 = () => { const e = useStore.getState().aPage[0].find(v=> v.nm === 'mes'); return e && isTxtLay(e) ? e.clrGen : undefined; };
+
+	S().chgStr({nm: 'mes', page: 'fore', str: 'あ', aCh: [{c: 'あ'}]});
+	expect(g0()).toBeUndefined();	// 通常の本文表示では進めない
+
+	S().chgStr({nm: 'mes', page: 'fore', str: '', aCh: [], hard: true});	// [clear_text]
+	expect(g0()).toBe(1);
+
+	S().chgStr({nm: 'mes', page: 'fore', str: 'あ', aCh: [{c: 'あ'}], hard: true});	// clear→同内容の再emit
+	expect(g0()).toBe(2);
+
+	S().clearLay({aLayNm: ['mes'], page: 'fore'});	// [clear_lay]も +1
+	expect(g0()).toBe(3);
+});

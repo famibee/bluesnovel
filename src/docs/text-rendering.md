@@ -23,9 +23,32 @@
 
 ### 出現（`ch_in_style`）
 
-`[lay in_style=]`／`[span ch_in_style=]`／組み込み `default` の順で 1 文字ずつ Web Animations
-API（`el.animate()`）へ翻訳して適用。純粋部分は `src/ts/ChStyle.ts`、適用は `TxtLayer.tsx` の
-本文 effect。per-char は `T_CH.cis`（`Txt.ts` が載せる）。
+`[span ch_in_style=]`（per-char）／`[lay in_style=]`・`[span in_style=]`（レイヤ状態）／組み込み
+`default` の順で 1 文字ずつ Web Animations API（`el.animate()`）へ翻訳して適用。純粋部分は
+`src/ts/ChStyle.ts`、適用は `TxtLayer.tsx` の本文 effect。per-char は `T_CH.cis`（`Txt.ts` が載せる）。
+
+`in_style`/`out_style` は `[span]` に書いても **本文ストリームに埋め込まず** `chgLay` で
+ストアのレイヤ値へ書く（`ScriptEngine.ts` `case 'span'`）。本家 `TxtLayer.ts:357` の
+`#$ch_in_style`（`#mergePushSpan` → `#set_ch_in` が `[lay in_style=]` と同じインスタンス値を
+書き換え、`clearText()` も戻さない）に対応。埋め込み命令は `[clear_text]` で `#hTxt` ごと
+捨てられるため、`[span in_style=X][clear_text][jump]`（`ch_in_out` ギャラリー `*ch_in`）で
+演出指定が失われていた不具合の修正（回帰 `test/ScriptEngine_txt.test.ts`
+`span_inStyle_outStyleはchgLayでレイヤ値へ書く`）。
+
+### 消去世代 `clrGen` ―― 同内容の消去→再表示で演出を撃ち直す
+
+`[span in_style=X][clear_text][jump]` の 2 つめの問題：`[clear_text]` の `chgStr('')` と
+直後の再 `chgStr(本文)` は **同一の同期バッチ**で走り、React が中間の空状態をまとめて捨てる。
+`TxtLayer.tsx` 本文 effect は `chRef`（表示済みキャッシュ）と新 `aCh` の前方一致で「作り直すか」を
+決めるので、消去前と同じ本文が返ってくると差分ゼロ＝**出現演出を撃たない**（本家は
+`[clear_text]` が毎回 `#txs.reNew()` で実体を作り直すのでこの問題が無い）。
+
+対策：文字レイヤに `clrGen`（消去世代カウンタ）を持たせ、`[clear_text]`／`[er]`／`[p]` 再開クリア
+（`chgStr` の `hard` フラグ）と `[clear_lay]`（`clearLay` ストア関数）で +1 する。`TxtLayer.tsx` は
+前回見た `clrGen` を ref で覚え、変化していたら前方一致をスキップ（`same = 0`）してキャッシュを
+捨て、ゴースト消去＋全文字の新規出現アニメを走らせる。時間切れの自然終了や通常のページ送りは
+`hard` を立てないので従来どおり（差分だけアニメ）。回帰 `test/store_lay.test.ts`
+`chgStr_hardで clrGen が進む`。実機は `sn_gallery ?cur=ch_in_out` の色つきボタンで確認。
 
 ### 消去（`ch_out_style`）— ゴースト span 方式
 

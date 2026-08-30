@@ -130,7 +130,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'quake'; msec: number; hmax: number; vmax: number}	// [quake]。画面揺らし。揺れ幅はステージ座標のpx（0ならその向きには揺れない）。揺らすのも終了を決めるのもScriptMng側
 	| {t: 'stopQuake'}					// [stop_quake]。揺れを即座に終わらせる（本家は[finish_trans]と同じ処理）
 	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
-	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
+	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string; hard?: boolean}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す。hard=消去タグ由来（[clear_text]/[er]/[p]再開）＝同内容の再表示でも出現演出を撃ち直す
 	| {t: 'clearTxtLay'; nm: string; page: T_PAGE_BOTH; clearFilter: boolean}	// [er]。本文はchgStrが消すので、こちらはボタンの消去と変形まわりの属性の初期化（本家 Layer.ts:420）
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; arg?: string; url?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ。arg：クリック時に&sn.eventArgとして受け取れる。url指定時はラベルへ飛ばず[navigate_to]と同じ経路でURLを開く（本家 Main.ts:179 resumeByJumpOrCall）
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
@@ -1058,7 +1058,7 @@ export class ScriptEngine {
 			this.#clearOnResume = false;
 			this.#recPagebreak();	// 履歴の1ページ＝[p]区切り（本家も改ページ前に積む）
 			this.#hTxt[this.#curTxtLayer] = '';
-			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'fore', str: ''});
+			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'fore', str: '', hard: true});
 		}
 		// トークン数は毎回読み直す。[char2macro]/[bracket2macro]は定義位置より後ろの
 		//	トークンをその場で置換する＝実行中にトークン数が増減しうるため、キャッシュできない
@@ -1772,7 +1772,7 @@ export class ScriptEngine {
 			if ((args.rec_page_break ?? 'true') !== 'false') this.#recPagebreak();
 			this.#hTxt[this.#curTxtLayer] = '';
 			this.#hTxtBk[this.#curTxtLayer] = '';
-			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: ''});
+			aAct.push({t: 'chgStr', nm: this.#curTxtLayer, page: 'both', str: '', hard: true});
 			// **ボタンを消し、変形まわりの属性を既定へ戻す**。本家の[er]は
 			//	TxtLayer.clearLay()（TxtLayer.ts:857）を表裏に呼び、本文とボタンを捨てたうえで
 			//	Layer.clearLay()（:420）が alpha/blendmode/pivot/角度/拡縮 を初期値へ戻す。
@@ -1795,7 +1795,19 @@ export class ScriptEngine {
 			if (args.r_align !== undefined && ! (A_R_ALIGN as readonly string[]).includes(args.r_align))
 				throw `[span] r_alignの値が不正です：${args.r_align}`;
 			const {nm, page} = this.#txtTarget(args);
-			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', {...args, layer: undefined, page: undefined}), true, nm, page);
+			// in_style/out_styleはレイヤ状態（本家 TxtLayer.ts:357 #$ch_in_style。#mergePushSpanが
+			//	#set_ch_in(o)を呼び、[lay in_style=]と同じインスタンス値を書き換える）。本文ストリームの
+			//	埋め込み命令は[clear_text]で#hTxtごと捨てられるため、ここに載せると
+			//	`[span in_style=X][clear_text][jump]`（ch_in_out ギャラリーの*ch_in）で失われる。
+			//	chgLayでストアのレイヤ値へ書く＝clear_textをまたいで持続（本家 clearText()も
+			//	#$ch_in_styleを戻さない）
+			if (args.in_style !== undefined || args.out_style !== undefined) {
+				const sty: T_LAY_STY_ARG = {};
+				if (args.in_style !== undefined) sty.in_style = args.in_style;
+				if (args.out_style !== undefined) sty.out_style = args.out_style;
+				aAct.push({t: 'chgLay', nm, page, sty});
+			}
+			this.#appendTxt(aAct, ScriptEngine.#cmdTxt('span', {...args, layer: undefined, page: undefined, in_style: undefined, out_style: undefined}), true, nm, page);
 			return 'skip';
 		}
 
@@ -2295,7 +2307,7 @@ export class ScriptEngine {
 			// 履歴は既定文字レイヤの表ページだけが対象（本家 LayerMng.ts:995 も同じ条件）
 			if (nm === this.#curTxtLayer && pg === 'fore') this.#recPagebreak();
 			this.#hTxtOf(pg)[nm] = '';
-			aAct.push({t: 'chgStr', nm, page: pg, str: ''});
+			aAct.push({t: 'chgStr', nm, page: pg, str: '', hard: true});
 			return 'skip';
 		}
 

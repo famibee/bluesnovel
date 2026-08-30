@@ -4612,7 +4612,8 @@ var po = class f {
 						nm: e.nm,
 						page: e.page,
 						str: _(t),
-						aCh: t
+						aCh: t,
+						...e.hard ? { hard: !0 } : {}
 					});
 				}
 				break;
