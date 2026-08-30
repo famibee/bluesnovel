@@ -240,7 +240,7 @@ var O = b()((e, t) => ({
 	chgLay: ({ nm: t, page: n, sty: r }) => e((e) => {
 		let { idx: i, aLay: o } = C(e, n), s = o.find((e) => e.nm === t);
 		if (!s) throw `存在しないレイヤ ${t} です`;
-		if (!a(s) && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
+		if (!a(s) && (r.b_color !== void 0 || r.style !== void 0 || r.ffs !== void 0 || r.noffs !== void 0 || r.bura !== void 0 || r.r_align !== void 0 || r.kinsoku_sol !== void 0 || r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0 || r.break_fixed !== void 0 || r.break_fixed_left !== void 0 || r.break_fixed_top !== void 0 || r.pl !== void 0 || r.pr !== void 0 || r.pt !== void 0 || r.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
 		a(s) && (r.kinsoku_eol !== void 0 || r.kinsoku_dns !== void 0 || r.kinsoku_bura !== void 0) && f(r.kinsoku_eol ?? s.kinsoku_eol ?? l.eol, r.kinsoku_dns ?? s.kinsoku_dns ?? l.dns, r.kinsoku_bura ?? s.kinsoku_bura ?? l.bura), r.left !== void 0 && r.align_x === void 0 && delete s.align_x, r.top !== void 0 && r.align_y === void 0 && delete s.align_y;
 		let c = a(s) && r.style !== void 0 ? {
 			...r,

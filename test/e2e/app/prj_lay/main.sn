@@ -88,7 +88,14 @@
 
 ; [lay width=/height=]の明示があればそちらが勝つ（本家の順序依存の罠は持ち込まない）
 [lay layer=mes width=200 height=100]
-わくめいじ[s]
+わくめいじ[p]
+
+; [lay break_fixed=true]：[l]/[p]待ちマーカーを本文の流れでなく break_fixed_left/top の
+;	固定位置へ（本家 Hyphenation.ts:87-89 + TxtStage.ts #cntBreak.position.set()）。
+;	座標原点は文字表示領域の左上（padding 内側）＝算出 left/top は padding(16)＋指定値
+[lay layer=mes break_fixed=true break_fixed_left=100 break_fixed_top=60]
+かたまり[l]
+おわり[s]
 
 ; 到達しない：上の[button ... label=*btn_zorder]の飛び先を定義しておくだけ（未クリックのため実際は通らない）
 *btn_zorder

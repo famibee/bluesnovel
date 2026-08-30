@@ -239,3 +239,16 @@ test('[lay width=/height=]の明示はb_picの自動サイズより勝つ', asyn
 	expect(await txtBoxStyle(page, 'width', 'mes')).toBe('200px');
 	expect(await txtBoxStyle(page, 'height', 'mes')).toBe('100px');
 });
+
+test('[lay break_fixed=true]は[l]/[p]待ちマーカーを固定位置（padding＋break_fixed_left/top）へ絶対配置する', async ({page})=> {
+	for (let i = 0; i < 18; ++i) await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('かたまり');
+
+	// 待ちマーカーのプロキシ span（data-wait-focus）の算出スタイル。
+	//	原点は文字表示領域の左上＝padding(16px 既定)＋指定値 → left:116px / top:76px
+	const st = await page.$eval('#skynovel [data-page="fore"] span[data-lay="mes"] [data-wait-focus]',
+		el=> {const c = getComputedStyle(el); return {position: c.position, left: c.left, top: c.top}});
+	expect(st.position).toBe('absolute');
+	expect(st.left).toBe('116px');
+	expect(st.top).toBe('76px');
+});

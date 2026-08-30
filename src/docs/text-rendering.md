@@ -1,12 +1,20 @@
 # テキスト描画
 
-## 禁則・`break_fixed` 系（対応済み／対象外）
+## 禁則・`break_fixed` 系（対応済み）
 
 禁則文字の指定（`kinsoku_sol`/`kinsoku_eol`/`kinsoku_dns`/`kinsoku_bura`）は本家
 `Hyphenation.ts` を移植して対応済み（`src/ts/Hyphenation.ts`）。
 
-`break_fixed` 系は `[l]`/`[p]` 待ちマーカーの位置決め用だが、bluesnovel は待ちマーカーを
-React の兄弟 span で別管理しているため用途が無く**対象外**。
+`[lay break_fixed=/break_fixed_left=/break_fixed_top=]`（`[l]`/`[p]` 待ちマーカーの置き方）も
+対応済み（2026-08-30）。bluesnovel の待ちマーカーは本文 span の兄弟 span（`TxtLayer.tsx` の
+`waitRef`）で、既定（`break_fixed=false`）は `margin-inline-start` で「最後の文字の次」に流し込む
+＝本家の false 相当。`break_fixed=true` のときだけ `position:absolute` にして
+`break_fixed_left`/`break_fixed_top` の固定位置へ置く（本家 `Hyphenation.ts:87-89` ＋
+`TxtStage.ts` の `#cntBreak.position.set()`）。座標原点は文字表示領域の左上＝padding の内側なので、
+算出 `left`/`top` は `padding`（既定 16px、`pl`/`pt` 指定時はその値）＋指定値。属性は文字レイヤ専用
+（`store.tsx` の `chgLay` ガード）で、`[clear_lay]`/`[clear_text]` では変更しない（`kinsoku_*` と同じ。
+本家も `#clearLay()` は `Hyphenation` に触らない）。回帰は `test/ScriptEngine_lay.test.ts`＋
+`test/store_lay.test.ts`＋`test/e2e/lay.e2e.ts`。
 
 `r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"` で代替できるため専用属性は
 追加しない。

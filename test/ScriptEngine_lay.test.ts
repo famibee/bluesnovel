@@ -238,6 +238,24 @@ it('lay_kinsokuIsNotPushedWhenUnspecified', ()=> {
 	expect(styOf('[lay layer=mes alpha=0.5]')).toEqual({alpha: 0.5});
 });
 
+// ============ [l]/[p]待ちマーカーの置き方（[lay break_fixed=/break_fixed_left=/break_fixed_top=]） ============
+
+it('lay_breakFixed', ()=> {
+	// 本家 Hyphenation.ts:87-89。break_fixedは真偽値、left/topは数値。書かれた属性だけ積む
+	expect(styOf('[lay layer=mes break_fixed=true break_fixed_left=120 break_fixed_top=40]'))
+		.toEqual({break_fixed: true, break_fixed_left: 120, break_fixed_top: 40});
+	expect(styOf('[lay layer=mes break_fixed=false]')).toEqual({break_fixed: false});
+});
+
+it('lay_breakFixedIsNotPushedWhenUnspecified', ()=> {
+	// 未指定は現在値維持（既定 false/0,0 は消費側 TxtLayer.tsx が持つ。bura と同じ扱い）
+	expect(styOf('[lay layer=mes alpha=0.5]')).toEqual({alpha: 0.5});
+});
+
+it('lay_breakFixedLeft_throwsOnNonNumeric', ()=> {
+	expect(()=> acts(`${LAYS}[lay layer=mes break_fixed_left=xx][s]`)).toThrow();
+});
+
 
 // ============ [clear_lay] ============
 

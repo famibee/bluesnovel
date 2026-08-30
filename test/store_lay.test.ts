@@ -435,6 +435,13 @@ it('chgLay_paddingOnGrpLayerThrows', ()=> {
 	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {pb: 10}})).toThrow();
 });
 
+it('chgLay_breakFixedOnGrpLayerThrows', ()=> {
+	// [l]/[p]待ちマーカーの置き方も文字レイヤ専用（ffs/kinsoku_*と同じ扱い）
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {break_fixed: true}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {break_fixed_left: 100}})).toThrow();
+	expect(()=> S().chgLay({nm: 'a', page: 'fore', sty: {break_fixed_top: 40}})).toThrow();
+});
+
 it('clearLay_dropsPadding', ()=> {
 	// pl/pr/pt/pbはb_color/style等と同じ「見た目」扱いなので[clear_lay]で既定へ戻る
 	addMes();
@@ -450,10 +457,11 @@ it('clearLay_dropsPadding', ()=> {
 });
 
 it('clearLay_dropsFfsButKeepsBuraAndKinsoku', ()=> {
-	// ffs/noffsは[clear_lay]で消えるが、bura/kinsoku_*は現在値のまま引き継ぐ
+	// ffs/noffsは[clear_lay]で消えるが、bura/kinsoku_*/break_fixed*は現在値のまま引き継ぐ
 	//	（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない）
 	addMes();
-	S().chgLay({nm: 'mes', page: 'fore', sty: {ffs: '"palt"', noffs: '・', bura: true, kinsoku_eol: '「'}});
+	S().chgLay({nm: 'mes', page: 'fore', sty: {ffs: '"palt"', noffs: '・', bura: true, kinsoku_eol: '「',
+		break_fixed: true, break_fixed_left: 120, break_fixed_top: 40}});
 	S().clearLay({aLayNm: null, page: 'fore'});
 
 	const lay = useStore.getState().aPage[0].find(e=> e.nm === 'mes')!;
@@ -462,6 +470,9 @@ it('clearLay_dropsFfsButKeepsBuraAndKinsoku', ()=> {
 	expect(lay.noffs).toBeUndefined();
 	expect(lay.bura).toBe(true);
 	expect(lay.kinsoku_eol).toBe('「');
+	expect(lay.break_fixed).toBe(true);
+	expect(lay.break_fixed_left).toBe(120);
+	expect(lay.break_fixed_top).toBe(40);
 });
 
 it('chgLay_kinsokuMergesAndPersists', ()=> {

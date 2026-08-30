@@ -203,6 +203,10 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
 	kinsoku_dns?	: string;
 	kinsoku_bura?	: string;
 	r_align?: T_R_ALIGN;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
+	// [lay break_fixed=/break_fixed_left=/break_fixed_top=]。[l]/[p]待ちマーカーの置き方
+	break_fixed?	: boolean;
+	break_fixed_left?: number;
+	break_fixed_top?: number;
 	// [lay in_style=/out_style=]。[ch_in_style]/[ch_out_style]で定義した演出名
 	in_style?	: string;
 	out_style?	: string;
@@ -463,13 +467,14 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
-		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*）/pl・pr・pt・pbは文字レイヤ専用。画像・プラグインレイヤへ来たら黙って無視せず知らせる
+		// b_color/style/文字組み（ffs/noffs/bura/r_align/kinsoku_*/break_fixed*）/pl・pr・pt・pbは文字レイヤ専用。画像・プラグインレイヤへ来たら黙って無視せず知らせる
 		if (! isTxtLay(e) && (sty.b_color !== undefined || sty.style !== undefined
 			|| sty.ffs !== undefined || sty.noffs !== undefined || sty.bura !== undefined
 			|| sty.r_align !== undefined || sty.kinsoku_sol !== undefined || sty.kinsoku_eol !== undefined
 			|| sty.kinsoku_dns !== undefined || sty.kinsoku_bura !== undefined
+			|| sty.break_fixed !== undefined || sty.break_fixed_left !== undefined || sty.break_fixed_top !== undefined
 			|| sty.pl !== undefined || sty.pr !== undefined || sty.pt !== undefined || sty.pb !== undefined))
-			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/pl/pr/pt/pbは文字レイヤ専用）`;
+			throw `${nm} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
 
 		// 禁則の競合チェック（本家 Hyphenation.lay()。行頭禁則との重複はチェック対象外）。
 		//	マージ後の値（新規指定 → そのレイヤの現在値 → 既定）で判定する必要があるので、

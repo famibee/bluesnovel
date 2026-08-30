@@ -148,8 +148,8 @@
 		<li class="mb1"><a href="#finish_trans">🟢 [finish_trans] トランス強制終了</a></li>
 		<li class="mb1"><a href="#lay">🟢 [lay] レイヤ設定(共通)</a></li>
 		<li class="mb1"><a href="#blendMode">　blendModeの解説</a></li>
-		<li class="mb1"><a href="#txtlay">　🟡 レイヤ設定(文字レイヤ)</a></li>
-		<li class="mb1"><a href="#grplay">　🟡 レイヤ設定(画像レイヤ)</a></li>
+		<li class="mb1"><a href="#txtlay">　🟢 レイヤ設定(文字レイヤ)</a></li>
+		<li class="mb1"><a href="#grplay">　🟢 レイヤ設定(画像レイヤ)</a></li>
 		<li class="mb1"><a href="#trans">🟢 [trans] ページ裏表を交換</a></li>
 		<li class="mb1"><a href="#wt">🟢 [wt] トランス終了待ち</a></li>
 		<li class="mb1"><a href="#add_filter">🟡 [add_filter] フィルター追加</a></li>
@@ -601,13 +601,13 @@
 <tr><td>pr</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の右内側余白（padding-right）</td></tr>
 <tr><td>pt</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の上内側余白（padding-top）</td></tr>
 <tr><td>pb</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の下内側余白（padding-bottom）</td></tr>
-<tr><td>🟡 break_fixed</td><td rowspan="3"></td><td rowspan="3">現在値</td><td>true、false</td><td>
-	true：クリック待ちマークを固定位置に表示<br/>
-	false：最後に表示した文字の次、改行せずぶら下げ位置に表示<br/>
-	（bluesnovel）未対応：待ちマーカーをReactの兄弟spanで別管理しており本文の流れに依存しないため、位置決めの出番が無い
+<tr><td>break_fixed</td><td></td><td>現在値（初期 false）</td><td>true、false</td><td>
+	true：クリック待ちマークを <code>break_fixed_left</code>／<code>break_fixed_top</code> の固定位置に表示<br/>
+	false：最後に表示した文字の次（本文の流れの中）に表示<br/>
+	（bluesnovel）対応：true のとき待ちマーカーを絶対配置する（座標原点は文字表示領域の左上＝padding の内側）。false（既定）は従来どおり最後の文字の次。<code>[clear_lay]</code>／<code>[clear_text]</code>では変更しない（本家 Hyphenation と同じ）
 </td></tr>
-<tr><td>🟡 break_fixed_left</td><td rowspan="2">整数</td><td rowspan="2">クリック待ちマークの表示位置を指定する</td></tr>
-<tr><td>🟡 break_fixed_top</td></tr>
+<tr><td>break_fixed_left</td><td></td><td>現在値（初期 0）</td><td>整数（px）</td><td><code>break_fixed=true</code> のときのマーカー表示位置。文字表示領域の左上が原点</td></tr>
+<tr><td>break_fixed_top</td><td></td><td>現在値（初期 0）</td><td>整数（px）</td><td>同上（縦）</td></tr>
 <tr><td>style</td><td></td><td>何もしない</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	[span][ch]などで style を指定しない際のデフォルト値。<br/>
@@ -683,7 +683,7 @@
 </table>
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
-<tr class="y"><td>🔴 （以下は未作成）</td><td></td><td></td><td></td><td>（以下すべて bluesnovel 未対応）</td></tr>
+<tr class="y"><td>🔴 （以下は凍結）</td><td></td><td></td><td></td><td>ドラッグ・スクロール系。デザインモード（<a href="tag.html#lay">Moveable</a>）再開時にまとめて着手。それまで <b>bluesnovel 未対応・凍結</b>（この節が空になれば文字レイヤ [lay] は 🟢）</td></tr>
 
 <tr><td>draggable</td><td></td><td>false</td><td>true、false</td><td>true：テキスト背後の矩形をドラッグできる</td></tr>
 <tr><td>drag_x</td><td></td><td>0</td><td>画面左上を原点とする座標</td><td>ドラッグ範囲の左上始点</td></tr>
@@ -715,7 +715,7 @@
 	「face属性指定なし」は「何もしない」、つまり変化させないからです。<br/>[fg layer=upd fn="a" face="b"]<br/>[l]<br/>[fg layer=upd fn="a"]<br/>[l]<br/><br/>差分名称を無くしたい場合、明確に空文字（""）を指定します。<br/>[fg
 	layer=upd fn="a" face="b"]<br/>[l]<br/>[fg layer=upd fn="a" face=""]<br/>[l]</td></tr>
 
-<tr class="y"><td>🔴 （以下は未作成）</td><td></td><td></td><td></td><td>（以下すべて bluesnovel 未対応）</td></tr>
+<tr class="y"><td>🔴 （以下は凍結）</td><td></td><td></td><td></td><td>ドラッグ系。デザインモード（Moveable）再開時にまとめて着手。それまで <b>bluesnovel 未対応・凍結</b>（この節が空になれば画像レイヤ [lay] は 🟢）</td></tr>
 
 <tr><td>draggable</td><td></td><td>false</td><td>true、false</td><td>true：テキスト背後の矩形をドラッグできる</td></tr>
 <tr><td>drag_x</td><td></td><td>0</td><td>画面左上を原点とする座標</td><td>ドラッグ範囲の左上始点</td></tr>

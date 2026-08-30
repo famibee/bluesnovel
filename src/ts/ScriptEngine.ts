@@ -95,6 +95,11 @@ export type T_LAY_STY_ARG = {
 	kinsoku_dns?: string;
 	kinsoku_bura?: string;
 	r_align?	: T_R_ALIGN;	// ルビ位置の既定（本家 TxtLayer.ts:307）
+	// [l]/[p]待ちマーカーの置き方（本家 Hyphenation.ts:27-29,87-89）。**未指定は現在値維持**
+	//	（既定 false / 0,0 は消費側 TxtLayer.tsx が持つ。bura と同じ扱い → argdef_parity.test.ts）
+	break_fixed?	: boolean;	// true：break_fixed_left/top の固定位置に出す。false：最後の文字の次（本文の流れ）
+	break_fixed_left?: number;	// break_fixed=true のときの表示位置（文字表示領域の左上が原点。px）
+	break_fixed_top?: number;
 	// 文字出現・消去演出（本家 TxtLayer.ts:67 の in_style/out_style）。[ch_in_style]で定義した名前
 	in_style?	: string;
 	out_style?	: string;
@@ -1299,6 +1304,11 @@ export class ScriptEngine {
 			if (args.kinsoku_eol !== undefined) sty.kinsoku_eol = args.kinsoku_eol;
 			if (args.kinsoku_dns !== undefined) sty.kinsoku_dns = args.kinsoku_dns;
 			if (args.kinsoku_bura !== undefined) sty.kinsoku_bura = args.kinsoku_bura;
+			// [l]/[p]待ちマーカーの置き方（本家 Hyphenation.ts:87-89）。**未指定は現在値維持**
+			//	（既定 false/0,0 は TxtLayer.tsx 側。ffs等と同じ「書かれた属性だけ」原則）
+			if (args.break_fixed !== undefined) sty.break_fixed = args.break_fixed !== 'false';
+			if (args.break_fixed_left !== undefined) sty.break_fixed_left = ScriptEngine.#argNum('lay', 'break_fixed_left', args.break_fixed_left);
+			if (args.break_fixed_top !== undefined) sty.break_fixed_top = ScriptEngine.#argNum('lay', 'break_fixed_top', args.break_fixed_top);
 			// 傍点の文字（本家 TxtLayer.ts:303）。RubySpliterが静的に持つ設定なのでアクション化は不要。
 			//	プラグインの[lay]が傍点設定を巻き込まないよう文字レイヤ専用属性群の内側にする
 			RubySpliter.setting(args);

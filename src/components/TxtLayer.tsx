@@ -95,6 +95,11 @@ type T_TXTARG = T_LAY_CMN & {
 	kinsoku_dns?	: string | undefined;
 	kinsoku_bura?	: string | undefined;
 	r_align?: T_R_ALIGN | undefined;	// [lay r_align=…]。ルビ位置の既定（記法内指定があればそちらが勝つ）
+	// [lay break_fixed=/break_fixed_left=/break_fixed_top=]。[l]/[p]待ちマーカーの置き方。
+	//	true：break_fixed_left/top の固定位置（文字表示領域の左上が原点）。false（既定）：最後の文字の次
+	break_fixed?	: boolean | undefined;
+	break_fixed_left?: number | undefined;
+	break_fixed_top?	: number | undefined;
 	b_color?: number | undefined;	// [lay b_color=0xRRGGBB]。文字レイヤ背景色。未指定時は背景・枠を描かない（本家準拠）
 	b_alpha	: number;	// [lay b_alpha=...]。文字レイヤ背景の不透明度（0.0～1.0）。背景のアルファとしてのみ反映し、文字自体は常に不透明
 	b_alpha_isfixed?: boolean | undefined;	// [lay b_alpha_isfixed=true]。sys:TextLayer.Back.Alphaとの掛け算をせず、b_alphaをそのまま使う
@@ -118,6 +123,7 @@ export type T_ON_LINK = (lnk: T_LNK)=> void;
 export type T_TXTLAY_DATA = T_LAY_IDX & {cls: 'txt'; str: string; aCh: T_CH[]; ffs?: string; noffs?: string; bura?: boolean;
 	kinsoku_sol?: string; kinsoku_eol?: string; kinsoku_dns?: string; kinsoku_bura?: string;
 	r_align?: T_R_ALIGN; b_color?: number; b_alpha: number; b_alpha_isfixed?: boolean; b_pic?: string; b_src?: string; style?: string; enabled: boolean; aBtn: T_BTN[];
+	break_fixed?: boolean; break_fixed_left?: number; break_fixed_top?: number;	// [lay break_fixed*=]。[l]/[p]待ちマーカーの固定位置
 	pl?: number; pr?: number; pt?: number; pb?: number;
 	// 文字出現・消去演出の名前（[lay in_style=/out_style=]）。定義そのものはストアの hChIn/hChOut
 	in_style?: string; out_style?: string};
@@ -126,7 +132,7 @@ export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, ffs, noffs, bura,
 	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
-	r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, onActivate, onNavigate, onSe}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -382,8 +388,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
-			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる */
-		margin-inline-start: 0.15em;
+			margin-inline-start なら横書きでは左、縦書きでは上——どちらでも「直前の文字の次」になる。
+			**[lay break_fixed=true]（固定位置）のときは足さない**——絶対配置で座標を直に置くので
+			流れの中のアキは不要（本家も #cntBreak を position.set で置くだけ。Hyphenation.ts:223-225） */
+		${break_fixed ? '' : 'margin-inline-start: 0.15em;'}
 		/* **縦書きでは書字方向に合わせてマークも回す**（-90°）。背景画像も<img>も
 			writing-modeでは回らないので、横書き用に描かれた▼（次の行の方向を指す絵）が
 			縦書きでもそのまま下を向いてしまう。本家は待ちマークを本文とは別のpixiコンテナへ
@@ -455,9 +463,18 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// [l]/[p]に書かれた待ちマークの位置・寸法（本家 TxtStage.ts:685-688）。**書かれた時だけ**当てる。
 	//	省略時は本文の流れの中の位置・文字サイズなり（本家の既定もフォントサイズなので同じ絵）。
 	//	x/yは**ずらし**なので translate で表す——行の高さや隣の文字の位置を動かさないため
+	// [lay break_fixed=true]：流れの中でなく break_fixed_left/top の固定位置に置く（本家 Hyphenation.ts:
+	//	87-89 ＋ TxtStage.ts:507-509 #cntBreak.position.set()）。座標の原点は**文字表示領域の左上**
+	//	（padding の内側）。boxRef は position:absolute（styChild）なので子の absolute は padding-box 起点
+	//	＝padding ぶん足して content-box 起点に合わせる（pl/pt 未指定時は styTxt の既定 16px）
 	const styWaitPos: CSSProperties = {
 		...wait?.width !== undefined ? {width: `${String(wait.width)}px`} : {},
 		...wait?.height !== undefined ? {height: `${String(wait.height)}px`} : {},
+		...break_fixed ? {
+			position: 'absolute',
+			left: `${String((pl ?? 16) + (break_fixed_left ?? 0))}px`,
+			top: `${String((pt ?? 16) + (break_fixed_top ?? 0))}px`,
+		} : {},
 		...wait?.x !== undefined || wait?.y !== undefined
 			? {translate: `${String(wait?.x ?? 0)}px ${String(wait?.y ?? 0)}px`} : {},
 	};
