@@ -206,19 +206,20 @@ var O = b()((e, t) => ({
 		if (e.aPage[0].some((e) => e.nm === t.nm)) throw `レイヤ名 ${t.nm} は既に使用されています（既存の${e.aPage[0].find((e) => e.nm === t.nm).cls}レイヤと重複）`;
 		return { aPage: [[...e.aPage[0], structuredClone(t)], [...e.aPage[1], structuredClone(t)]] };
 	}),
-	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, arg: c, sty: l }) => e((e) => {
-		let { idx: u, aLay: d } = C(e, n), f = D(d, t, "txt");
-		if (r === void 0) r = `${a || s || "btn"}#${String(f.aBtn.length)}`;
-		else if (f.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
-		return f.aBtn = [...f.aBtn, {
+	addBtn: ({ layerNm: t, page: n, nm: r, text: i, label: a, call: o, fn: s, arg: c, url: l, sty: u }) => e((e) => {
+		let { idx: d, aLay: f } = C(e, n), p = D(f, t, "txt");
+		if (r === void 0) r = `${a || s || "btn"}#${String(p.aBtn.length)}`;
+		else if (p.aBtn.some((e) => e.nm === r)) throw `ボタン名 ${r} はレイヤ ${t} 内で既に使用されています`;
+		return p.aBtn = [...p.aBtn, {
 			nm: r,
 			text: i,
 			label: a,
 			...o === void 0 ? {} : { call: o },
 			...s === void 0 ? {} : { fn: s },
 			...c === void 0 ? {} : { arg: c },
-			...l === void 0 ? {} : { sty: l }
-		}], w(e, u, d);
+			...l === void 0 ? {} : { url: l },
+			...u === void 0 ? {} : { sty: u }
+		}], w(e, d, f);
 	}),
 	chgPic: ({ nm: t, page: n, fn: r, src: i, isSheet: a, isMovie: o, aFace: s }) => e((e) => {
 		let { idx: c, aLay: l } = C(e, n), u = D(l, t, "grp");

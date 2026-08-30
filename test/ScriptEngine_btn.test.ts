@@ -164,6 +164,16 @@ it('btn_textOrPicIsRequired', ()=> {
 	expect(()=> acts('[button pic=btn_ok label=*a]')).not.toThrow();
 });
 
+it('btn_url', ()=> {
+	// [button url=…]はラベルへ飛ばず別タブでURLを開く（本家 Main.ts:179 resumeByJumpOrCall。
+	//	fn・labelより優先。[link url=]/[event url=]と同じ扱い）。エンジンはaddBtnにurlを載せるだけで、
+	//	開くのはBtnLayer.tsxのクリック→ScriptMng.navigateTo()
+	expect(btn(`[button text=x url='https://example.com/']`))
+		.toMatchObject({t: 'addBtn', text: 'x', url: 'https://example.com/'});
+	// url未指定なら載せない（[lay]と同じ「書かれた属性だけ」の流儀）
+	expect('url' in (btn('[button text=x label=*a]') as Record<string, unknown>)).toBe(false);
+});
+
 // ============ 効果音（[button clickse=/enterse=/leavese=]）============
 //	本家 EventMng.ts:465-491。実際に鳴らす（ScriptMng.playButtonSe()経由）のはBtnLayer.tsxの
 //	クリック・マウスの乗り降りなのでE2E側（button.e2e.ts）。エンジンは論理ファイル名を運ぶだけ

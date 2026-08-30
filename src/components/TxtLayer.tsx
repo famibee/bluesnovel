@@ -77,6 +77,7 @@ export type T_BTN = {
 	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ
 	arg?	: string;	// [button arg=...]。クリック時に&sn.eventArgとして受け取れる
+	url?	: string;	// [button url=...]指定時：ラベルへ飛ばず別タブでURLを開く（fn・labelより優先）
 	sty?	: T_BTN_STY;
 };
 type T_TXTARG = T_LAY_CMN & {
@@ -708,10 +709,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			}</span>}
 		</span>
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} sty={b.sty} enabled={enabled} onActivate={onActivate} onSe={onSe}/>)}
+			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe}/>)}
 		</span>}
 		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} sty={b.sty} enabled={enabled} onActivate={onActivate} onSe={onSe}/>)}
+			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */

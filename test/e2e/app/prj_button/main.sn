@@ -15,6 +15,8 @@
 [button page=fore nm=btn_sty text="見た目" label=*goal style="color: rgb(255, 0, 0);" style_hover="color: rgb(0, 128, 0);" style_clicked="color: rgb(0, 0, 255);"]
 ; ギャラリーのサンプルのようなJSON指定も主要キーだけCSSへ読み替える
 [button page=fore nm=btn_sty2 text="JSON指定" label=*goal style='{"fill": "rgb(255, 0, 255)"}']
+; url指定はラベルへ飛ばず別タブでURLを開く（本家 Main.ts:179。[link url=]と同じ）
+[button page=fore nm=btn_url text="URLを開く" url='https://example.com/']
 選んでください。[l]
 ; [lay visible=false]は**ボタンも隠す**。本家はボタンが文字レイヤのコンテナの子なので
 ;	コンテナごと消えるが、こちらはボタンの箱を本文spanの兄弟にしているため橋渡しが要る。

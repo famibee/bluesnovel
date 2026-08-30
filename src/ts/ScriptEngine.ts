@@ -127,7 +127,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'waitQuake'; canskip: boolean}	// [wq]。揺れ終了待ち。[wt]と同じ形
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す
 	| {t: 'clearTxtLay'; nm: string; page: T_PAGE_BOTH; clearFilter: boolean}	// [er]。本文はchgStrが消すので、こちらはボタンの消去と変形まわりの属性の初期化（本家 Layer.ts:420）
-	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; arg?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ。arg：クリック時に&sn.eventArgとして受け取れる
+	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; arg?: string; url?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ。arg：クリック時に&sn.eventArgとして受け取れる。url指定時はラベルへ飛ばず[navigate_to]と同じ経路でURLを開く（本家 Main.ts:179 resumeByJumpOrCall）
 	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
 	| {t: 'defChStyle'; kind: 'in' | 'out'; nm: string; sty: T_CH_STYLE}	// [ch_in_style]/[ch_out_style]。文字出現・消去演出の定義。名前で引けるようストアが表に持つ
 	| {t: 'autowc'; enabled: boolean; hWait: {[ch: string]: number}}	// [autowc]。文字ごとのウェイト表（ミリ秒）。enabled=falseなら表を使わずsys:sn.tagCh.msecWaitへ落ちる
@@ -2138,6 +2138,9 @@ export class ScriptEngine {
 			aAct.push({t: 'addBtn', layerNm, page, text: pic ?'' :args.text ?? '', label, call,
 				...(nm === undefined ? {} : {nm}),
 				...(fn ? {fn} : {}),
+				// url：指定時はラベルへ飛ばず別タブでURLを開く（本家 Main.ts:179 resumeByJumpOrCall。
+				//	fn・labelより優先。[link url=]/[event url=]と同じ扱い）
+				...(args.url === undefined ? {} : {url: args.url}),
 				// arg：クリック時に&sn.eventArgとして受け取れる（本家 Main.ts:174、[event]/[link]と同じ仕組み）
 				...(args.arg === undefined ? {} : {arg: args.arg}),
 				...(Object.keys(sty).length > 0 ? {sty} : {})});

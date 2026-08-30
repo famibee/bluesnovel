@@ -24,8 +24,6 @@
 
 ## タグ・変数の残り
 
-- [ ] `[button url=]`：クリックで URL を開く。エンジンが `fn`/`label` しか見ていない。
-      `[link url=]`/`[event url=]` は対応済み（`ScriptMng.navigateTo()`）なので配線するだけの小改修
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。

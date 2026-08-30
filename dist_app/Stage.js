@@ -10272,67 +10272,67 @@ function Nu(e, t) {
 	}
 	return e.pic && e.src && (n.backgroundImage = `url("${e.src}")`, n.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", n.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (n.opacity = e.alpha), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (n.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, n.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
-function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onActivate: l, onSe: u }) {
-	let d = c && s?.enabled !== !1, f = S((e) => e.btnFont), p = (0, V.useRef)(null);
+function Pu({ text: e, label: t, call: n, fn: r, arg: a, url: s, sty: c, enabled: l, onActivate: u, onNavigate: d, onSe: f }) {
+	let p = l && c?.enabled !== !1, m = S((e) => e.btnFont), h = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
-		let e = p.current;
-		if (!(!e || !d)) return o.add(e), () => o.remove(e);
-	}, [d]);
-	let m = (0, V.useRef)(null), h = s?.pic ? s.src ?? "" : "", g = s?.enabled !== !1, [_, v] = (0, V.useState)(null);
+		let e = h.current;
+		if (!(!e || !p)) return o.add(e), () => o.remove(e);
+	}, [p]);
+	let g = (0, V.useRef)(null), _ = c?.pic ? c.src ?? "" : "", v = c?.enabled !== !1, [y, b] = (0, V.useState)(null);
 	(0, V.useEffect)(() => {
-		if (!h) {
-			v(null);
+		if (!_) {
+			b(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && v({
-				w: g ? t.naturalWidth / 3 : t.naturalWidth,
+			e && b({
+				w: v ? t.naturalWidth / 3 : t.naturalWidth,
 				h: t.naturalHeight
 			});
-		}, t.src = h, () => {
+		}, t.src = _, () => {
 			e = !1;
 		};
-	}, [h, g]);
-	let y = s?.b_pic ? s.b_src ?? "" : "", [b, x] = (0, V.useState)(null);
+	}, [_, v]);
+	let x = c?.b_pic ? c.b_src ?? "" : "", [C, w] = (0, V.useState)(null);
 	(0, V.useEffect)(() => {
-		if (!y) {
-			x(null);
+		if (!x) {
+			w(null);
 			return;
 		}
 		let e = !0, t = new Image();
 		return t.onload = () => {
-			e && x({
+			e && w({
 				w: t.naturalWidth,
 				h: t.naturalHeight
 			});
-		}, t.src = y, () => {
+		}, t.src = x, () => {
 			e = !1;
 		};
-	}, [y]);
-	let [C, w] = (0, V.useState)({
+	}, [x]);
+	let [T, E] = (0, V.useState)({
 		x: 1,
 		y: 1
 	});
 	(0, V.useLayoutEffect)(() => {
-		let e = m.current;
+		let e = g.current;
 		if (!e) {
-			w({
+			E({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
-		if (s?.pic) {
-			w({
+		if (c?.pic) {
+			E({
 				x: 1,
 				y: 1
 			});
 			return;
 		}
 		let t = () => {
-			let { w: t, h: r } = ju(s), i = e.offsetWidth, a = e.offsetHeight;
-			i > 0 && a > 0 && n.disconnect(), w({
+			let { w: t, h: r } = ju(c), i = e.offsetWidth, a = e.offsetHeight;
+			i > 0 && a > 0 && n.disconnect(), E({
 				x: i > 0 ? t / i : 1,
 				y: a > 0 ? r / a : 1
 			});
@@ -10340,11 +10340,11 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 		return n.observe(e), t(), () => n.disconnect();
 	}, [
 		e,
-		s?.width,
-		s?.height,
-		s?.pic
+		c?.width,
+		c?.height,
+		c?.pic
 	]);
-	let T = Au`
+	let O = Au`
 		position: relative;
 		z-index: 2;
 
@@ -10358,7 +10358,7 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 		justify-content: center;
 		box-sizing: border-box;
 		margin: 0.3em;
-		font-family: ${f};
+		font-family: ${m};
 		font-size: x-large;
 		/* 本家 Button.ts の TextStyle は fontWeight を指定しない＝normal。boldにすると線が太く重く見え、
 			渡されたjpg（本家の実描画）より太く・縦長に見えていた。normalへ戻して本家に合わせる */
@@ -10375,7 +10375,7 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 		transition: color 0.3s;
 		/* [button style=…]。**bluesnovelはCSSで書ける**（本家はpixiのTextStyle JSON。
 			波括弧で始まる値だけエンジンがCSSへ読み替える）。既定の後ろに置いて上書きさせる */
-		${s?.style ?? ""}
+		${c?.style ?? ""}
 		/* フォーカス時もホバーと同じ見た目にする（本家 EventMng.ts:384 は pointerout で
 			isFocus(ctnBtn) ? hv() : nr() と、フォーカスが残っている間だけホバー色を保つ）。
 			ただし本家のisFocusはキー操作（Tab/ゲームパッド）でしか立たない——マウスクリックは
@@ -10387,15 +10387,15 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 			ここでも:focus単体でなく[data-focus-ring]:focusに絞る。
 			既定のフォーカスリングは画面に合わないので消す。
 			既定のホバーは本家 style_hover の fill:'white' 相当 */
-		&:hover, &[data-focus-ring]:focus {${s?.style_hover ?? "color: white;"}}
+		&:hover, &[data-focus-ring]:focus {${c?.style_hover ?? "color: white;"}}
 		&:focus {outline: none;}
 		/* 押下中。本家の既定は style_hover ＋ dropShadow:false ＝影を消す */
-		&:active {${s?.style_clicked ?? "text-shadow: none;"}}
+		&:active {${c?.style_clicked ?? "text-shadow: none;"}}
 		/* 画像ボタンのコマ送り。絵は「通常｜押下｜ホバー」を横に3コマ並べた1枚で
 			（本家 Button.ts:269 が幅を3等分して張り替える）、背景を3倍幅に敷いてあるので
 			background-position-x の 0%／50%／100% がちょうど各コマの左端に当たる。
 			**上の状態別ルールより後ろに置く**（同じ強さなら後勝ち） */
-		${s?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
+		${c?.pic ? "\n			background-position-x: 0%;\n			&:hover, &:focus {background-position-x: 100%;}\n			&:active {background-position-x: 50%;}\n		" : ""}
 		/* 背景画像（[button b_pic=…]）。本家は文字スプライトの背後へ絵を**中央合わせ**で置く
 			（Button.ts:249-257：sp位置はtxtの原点基準、pivotに(sp-txt)/2を使うことでtxt中心に
 			絵を揃える）。**要素本体ではなく疑似要素::beforeに置く**のがポイント：fit倍率
@@ -10405,8 +10405,8 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 			2026-08-24のfit二重スケール修正で箱側から抜いた）。
 			ow/ohは**箱＝文字の既定サイズ**（btnBoxSizeはb_picでは広げない、上のコメント参照）。
 			本家のtxt.width/heightに当たる */
-		${s?.b_pic && s.b_src ? (() => {
-		let e = b?.w ?? 0, t = b?.h ?? 0, { w: n, h: r } = Mu(s, _), i = (n - e) / 2, a = (r - t) / 2;
+		${c?.b_pic && c.b_src ? (() => {
+		let e = C?.w ?? 0, t = C?.h ?? 0, { w: n, h: r } = Mu(c, y), i = (n - e) / 2, a = (r - t) / 2;
 		return `
 				&::before {
 					content: '';
@@ -10415,47 +10415,53 @@ function Pu({ text: e, label: t, call: n, fn: r, arg: a, sty: s, enabled: c, onA
 					top: ${String(a)}px;
 					width: ${String(e)}px;
 					height: ${String(t)}px;
-					background-image: url("${s.b_src}");
+					background-image: url("${c.b_src}");
 					background-repeat: no-repeat;
 					z-index: -1;
 					pointer-events: none;
 				}
 			`;
 	})() : ""}
-	`, E = Au`
+	`, k = Au`
 		display: inline-block;
 		padding: 5px;
-	`, O = (e, t) => {
-		if (!d) return;
-		let n = s?.[e];
-		n && u(n, s?.[t] ?? "SYS");
-	}, k = (e) => {
-		e.stopPropagation(), d && (Ou.hide(), O("clickse", "clicksebuf"), l(t, n ?? !1, r, a));
-	}, A = () => {
-		s?.hint && Ou.show(p.current, s.hint, s.hint_style, s.hint_opt);
+	`, A = (e, t) => {
+		if (!p) return;
+		let n = c?.[e];
+		n && f(n, c?.[t] ?? "SYS");
+	}, j = () => {
+		if (s) {
+			d(s);
+			return;
+		}
+		u(t, n ?? !1, r, a);
+	}, M = (e) => {
+		e.stopPropagation(), p && (Ou.hide(), A("clickse", "clicksebuf"), j());
+	}, N = () => {
+		c?.hint && Ou.show(h.current, c.hint, c.hint_style, c.hint_opt);
 	};
 	return /* @__PURE__ */ D("span", {
-		css: T,
-		style: s ? Nu(s, _) : void 0,
-		ref: p,
+		css: O,
+		style: c ? Nu(c, y) : void 0,
+		ref: h,
 		role: "button",
-		tabIndex: d ? 0 : -1,
-		onClick: k,
+		tabIndex: p ? 0 : -1,
+		onClick: M,
 		onKeyDown: (e) => {
-			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), d && (Ou.hide(), O("clickse", "clicksebuf"), l(t, n ?? !1, r, a)));
+			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), p && (Ou.hide(), A("clickse", "clicksebuf"), j()));
 		},
 		onMouseEnter: () => {
-			A(), O("enterse", "entersebuf");
+			N(), A("enterse", "entersebuf");
 		},
 		onMouseLeave: () => {
-			Ou.hide(), O("leavese", "leavesebuf");
+			Ou.hide(), A("leavese", "leavesebuf");
 		},
-		onFocus: A,
+		onFocus: N,
 		onBlur: () => Ou.hide(),
 		children: [/* @__PURE__ */ P("span", {
-			css: E,
-			ref: m,
-			style: C.x !== 1 || C.y !== 1 ? { transform: `scale(${String(C.x)}, ${String(C.y)})` } : void 0,
+			css: k,
+			ref: g,
+			style: T.x !== 1 || T.y !== 1 ? { transform: `scale(${String(T.x)}, ${String(T.y)})` } : void 0,
 			children: e
 		}), i.masume && /* @__PURE__ */ P("span", { style: {
 			position: "absolute",
@@ -10866,9 +10872,11 @@ function Fu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				arg: e.arg,
+				url: e.url,
 				sty: e.sty,
 				enabled: N,
 				onActivate: L,
+				onNavigate: R,
 				onSe: z
 			}, e.nm))
 		}),
@@ -10882,9 +10890,11 @@ function Fu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				call: e.call ?? !1,
 				fn: e.fn ?? "",
 				arg: e.arg,
+				url: e.url,
 				sty: e.sty,
 				enabled: N,
 				onActivate: L,
+				onNavigate: R,
 				onSe: z
 			}, e.nm))
 		}),

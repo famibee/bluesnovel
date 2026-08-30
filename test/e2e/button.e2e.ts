@@ -40,6 +40,8 @@ test('[button]が文字レイヤ上に並ぶ', async ({page})=> {
 			style: 'color: rgb(255, 0, 0);', style_hover: 'color: rgb(0, 128, 0);', style_clicked: 'color: rgb(0, 0, 255);'}},
 		// JSON指定はエンジンがCSSへ読み替えるので、ストアに入る時点でCSS
 		{nm: 'btn_sty2', text: 'JSON指定', label: '*goal', call: false, fn: 'main', sty: {...DEF, style: 'color: rgb(255, 0, 255);'}},
+		// url指定はfn・labelを無視してURLを開く（label省略＝''、fnは省略時の既定'main'が入るが未使用）
+		{nm: 'btn_url', text: 'URLを開く', label: '', call: false, fn: 'main', url: 'https://example.com/', sty: DEF},
 	]);
 	await expect(page.getByText('サブルーチンを呼ぶ')).toBeVisible();
 	await expect(page.getByText('ジャンプする')).toBeVisible();
@@ -82,6 +84,18 @@ test('[button]（call指定なし）はジャンプし、戻ってこない', as
 
 	const {wait} = await snap(page);
 	expect(wait).toBeNull();	// ジャンプ先の[s]で停止（マーカーなし）
+});
+
+test('[button url=…]はジャンプせず別タブでURLを開く（[link url=]と同じ）', async ({page})=> {
+	// 本家 Main.ts:179 resumeByJumpOrCall：url指定時はfn・labelを無視してURLを開く。
+	//	location.hrefだとゲームごと終わるので別タブ（[link url=]のe2eと同じ確認）
+	const [popup] = await Promise.all([
+		page.waitForEvent('popup'),
+		page.getByText('URLを開く').click(),
+	]);
+	expect(popup.url()).toBe('https://example.com/');
+	await popup.close();
+	expect(await mesStr(page)).toBe('選んでください。');	// シナリオは[l]で止まったまま
 });
 
 test('ボタンを押さずキーで進めた場合は、ボタンと無関係に次の停止点へ進む', async ({page})=> {

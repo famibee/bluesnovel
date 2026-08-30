@@ -23,9 +23,11 @@ type T_BTNARG = {
 	call	: boolean;
 	fn		: string;
 	arg?	: string | undefined;	// [button arg=...]。クリック時に&sn.eventArgとして受け取れる
+	url?	: string | undefined;	// [button url=...]。指定時はラベルへ飛ばず別タブでURLを開く（fn・labelより優先）
 	sty?	: T_BTN_STY | undefined;
 	enabled	: boolean;	// 親の文字レイヤの[enable_event enabled=]。falseの間はクリックもキー操作も受けない
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
+	onNavigate: (url: string)=> void;	// [button url=…]（[link url=…]と同じ経路＝ScriptMng.navigateTo）
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
 };
 
@@ -144,7 +146,7 @@ function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null): CSSProp
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onActivate, onSe}: T_BTNARG) {
+export default function BtnLayer({text, label, call, fn, arg, url, sty, enabled, onActivate, onNavigate, onSe}: T_BTNARG) {
 	// 実効的な有効・無効：層側（[enable_event]）とボタン自身（[button enabled=]）のANDを取る
 	const isEnabled = enabled && sty?.enabled !== false;
 	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
@@ -353,12 +355,19 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		if (se) onSe(se, sty?.[bufKey] ?? 'SYS');
 	};
 
+	// 決定（マウスクリック／フォーカス中Enter・Space）。url指定なら[navigate_to]と同じ経路で
+	//	URLを開き、ラベルへは飛ばない（本家 Main.ts:179 resumeByJumpOrCall。[link url=]と同じ扱い）
+	const activate = ()=> {
+		if (url) {onNavigate(url); return}
+		onActivate(label, call ?? false, fn, arg);
+	};
+
 	const onClick = (e: MouseEvent)=> {
 		e.stopPropagation();	// 親(Stage)のonClick(=読み進め)へ伝播させないのがポイント
 		if (! isEnabled) return;
 		hintMng.hide();			// 本家もpointerdownで消す（EventMng.ts:424）
 		playSe('clickse', 'clicksebuf');
-		onActivate(label, call ?? false, fn, arg);
+		activate();
 	};
 
 	// ツールチップ（[button hint=…]）。本家 EventMng.ts:418 も pointerover/out と
@@ -382,7 +391,7 @@ export default function BtnLayer({text, label, call, fn, arg, sty, enabled, onAc
 		if (! isEnabled) return;
 		hintMng.hide();			// onClickと同様、決定と同時にヒントも消す（ゲームパッドOKはここを通る）
 		playSe('clickse', 'clicksebuf');
-		onActivate(label, call ?? false, fn, arg);
+		activate();
 	};
 
 	// [button]で書かれた配置・寸法は既定スタイルの後ろに置いて上書きさせる。

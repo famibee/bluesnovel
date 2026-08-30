@@ -290,6 +290,7 @@ export type T_ADDBTN = {
 	call?	: boolean;	// [button call=true]指定時：クリックでjumpではなくcall（サブルーチンコール）する
 	fn?		: string;	// [button fn=...]指定時：別スクリプトのラベルへ飛ぶ（label省略時はそのファイルの先頭）
 	arg?	: string;	// [button arg=...]。クリック時に&sn.eventArgとして受け取れる（本家 Main.ts:174）
+	url?	: string;	// [button url=...]指定時：ラベルへ飛ばず別タブでURLを開く（fn・labelより優先。本家 Main.ts:179）
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
 
@@ -402,7 +403,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	}),
 	// [button]タグ：指定した文字レイヤ（UIコンテナ）のaBtnにボタンを1件追加する。
 	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる
-	addBtn	: ({layerNm, page, nm, text, label, call, fn, arg, sty}: T_ADDBTN)=> set(s=> {
+	addBtn	: ({layerNm, page, nm, text, label, call, fn, arg, url, sty}: T_ADDBTN)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, layerNm, 'txt');
 		// nmはReactのkeyになるので同一レイヤ内で一意でなければならない。
@@ -413,7 +414,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		if (nm === undefined) nm = `${label || fn || 'btn'}#${String(e.aBtn.length)}`;
 		else if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
 
-		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(arg !== undefined ? {arg} : {}), ...(sty !== undefined ? {sty} : {})}];
+		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(arg !== undefined ? {arg} : {}), ...(url !== undefined ? {url} : {}), ...(sty !== undefined ? {sty} : {})}];
 		return putPage(s, idx, aLay);
 	}),
 	chgPic	: ({nm, page, fn, src, isSheet, isMovie, aFace}: T_CHGPIC)=> set(s=> {

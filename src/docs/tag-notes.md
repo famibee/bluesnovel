@@ -15,9 +15,9 @@
 
 ## `[button]` の本家との差（未移植の棚卸し）
 
-- `url`：クリックで URL を開く。エンジンが `fn`/`label` しか見ていないだけで、`ScriptMng.navigateTo()`
-  は `[link url=]`/`[event url=]` で使っている。**配線するだけの小改修**（TODO 済み）。
-- `onenter`/`onleave`：上記の共通実装待ち。
+- `url`（クリックで URL を開く）は対応済み（2026-08-30）。`[link url=]` と同じ分岐で `BtnLayer` の
+  クリック／Enter から `ScriptMng.navigateTo` へ。ここに残すのは以下。
+- `onenter`/`onleave`：`[link]` と共通の実装待ち（下の節）。
 - `event_at_down`（押した瞬間に発火）・`draggable`/`drag_*`/`dragmove_*`：**本家の `docs/tag.html`
   でも「（以下は未作成）」**。ドラッグ系はデザインモード／Moveable 再開時にまとめて。
 - `style`/`style_hover`/`style_clicked`：本家は pixi の `TextStyle` JSON、こちらは CSS 文字列で受ける
