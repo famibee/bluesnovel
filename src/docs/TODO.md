@@ -71,6 +71,8 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
 詳細・理由は各ドキュメントへ。再検討はそちらの実測値を見てから。
 
 - `max_row` / `sys:sn.tagCh.canskip`：本家自体が未接続の死んだ属性 → [tag-notes.md](tag-notes.md)
+- `[tsy] arrive`：常に `true` 相当で固定（ストアを唯一の現在値とする設計と `false` が噛み合わない）。
+  配線すれば可能だが優先度低 → [tag-notes.md](tag-notes.md)
 - `[ch_out_style]` の消去アニメ適用 → [text-rendering.md](text-rendering.md)
 - ルビ付き行の行間不揃い（行頭にルビが来る場合のみ残存） → [text-rendering.md](text-rendering.md)
 - 縦書きで `〈`/`〉` だけ90°回転しない（Chromium + Hiragino の外部バグ） → [text-rendering.md](text-rendering.md)

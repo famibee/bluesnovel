@@ -1140,7 +1140,7 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 <tr class="y"><td>time</td><td>y</td><td></td><td>0〜；ミリ秒</td><td>トゥイーンにかける時間</td></tr>
 <tr><td>delay</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>トゥイーンを始める前の、何もしない待ち時間</td></tr>
 <tr><td>repeat</td><td></td><td>1</td><td>0〜</td><td>繰返し回数。0以下で無限ループ。1を設定すると「繰り返しなし」、2を設定すると「二回同じ動き」を行なう</td></tr>
-<tr><td>🟡 arrive</td><td></td><td>false</td><td>true、false</td><td>trueならクリックキャンセルでアニメ終端までSkip。<br/>falseならその場で停止<br/>（bluesnovel）未対応：常にtrue相当の挙動になり、属性としては受け付けない</td></tr>
+<tr><td>🟡 arrive</td><td></td><td>false</td><td>true、false</td><td>trueならクリックキャンセルでアニメ終端までSkip。<br/>falseならその場で停止<br/>（bluesnovel）属性は受け付けない。<b>常にtrue相当</b>（[stop_tsy]／[wait_tsy]中クリック／時間切れのどれでも必ず目標値で確定し、中途半端な見た目のまま止まらない）。<br/>ストアが常に「演出後の値」を持つ設計（Memento の読み戻し・[trans] のレイヤ複製が演出前の値を拾わないため）と、falseの「その場で停止」が噛み合わないための意図的な非対応。配線すれば技術的には可能だが優先度は低い</td></tr>
 <tr><td>backlay</td><td></td><td>false</td><td>true、false</td><td>trueならトゥイーン終了時、fore→backへ属性をコピーする。<br/>コピーする属性はalpha, height, rotation, scale_x, scale_y, pivot_x, pivot_y, width, left, top</td></tr>
 <tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング（値の変化の仕方）を指定する。<br/><a href="https://createjs.com/demos/tweenjs/tween_sparktable" target="_blank" rel="noopener">イージングの変化はこちらの図</a>（または<a href="https://sole.github.io/tween.js/examples/03_graphs.html" target="_blank" rel="noopener">こちら</a>）が分かりやすい。<br/>
 指定できる値は以下の通り。<br/>
@@ -1161,16 +1161,16 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 </td></tr>
 <tr><td>yoyo</td><td></td><td>false</td><td>true、false</td><td>（暫定）ヨーヨーのように逆方向に戻って繰り返す</td></tr>
 <tr><td>chain</td><td></td><td>なにもしない</td><td>レイヤ名</td><td>指定したレイヤのトゥイーンアニメが終了してから、このトゥイーンを続けて開始する</td></tr>
-<tr class="y"><td>alpha</td><td rowspan="9">いずれかを指定</td><td rowspan="9">何もしない</td><td rowspan="9">相対値か絶対値</td><td rowspan="7">同名属性の変化目標値</td></tr>
+<tr class="y"><td>alpha</td><td rowspan="11">いずれかを指定</td><td rowspan="11">何もしない</td><td rowspan="11">相対値か絶対値</td><td rowspan="8">同名属性の変化目標値</td></tr>
 <tr class="y"><td>rotation</td></tr>
 <tr class="y"><td>scale_x</td></tr>
 <tr class="y"><td>scale_y</td></tr>
 <tr class="y"><td>pivot_x</td></tr>
 <tr class="y"><td>pivot_y</td></tr>
 <tr class="y"><td>x</td></tr>
+<tr class="y"><td>y</td></tr>
 <tr class="y"><td>height</td><td rowspan="2">同名属性の変化目標値。<a href="tag.html#lay">[lay width=/height=]</a>で数値を明示したレイヤに限り指定できる（明示の無いレイヤを動かそうとするとエラーになる）</td></tr>
 <tr class="y"><td>width</td></tr>
-<tr class="y"><td>y</td></tr>
 <tr class="y"><td>path</td><td>
 	指定すると複数のポイントを連続してトゥイーンアニメする。<br/>
 	ポイントは半角丸括弧()【吉里吉里拡張】や{}【JSON形式】が連続する文字列。<br/>

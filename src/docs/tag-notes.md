@@ -21,6 +21,24 @@
 `l.alpha` 直前のコメント参照）。位置・拡縮のみで親が不透明なケースはグループ化されないが、
 その場合は境界の二重透け自体が起きないので実害なし。2026-08-20 発見、2026-08-27 決着。
 
+## `[tsy]` の `arrive`（凍結・意図的な非対応）
+
+本家：クリックキャンセル時、`arrive=true` ならアニメ終端まで飛ばして目標値で確定、`false` なら
+その瞬間の補間値のまま停止（`LayerMng.ts:850` / `CmnTween.ts` の onEnd で `Object.assign(lay, hTo)`）。
+
+bluesnovel：`arrive` 属性を受け付けず、**常に `true` 相当**。`[stop_tsy]` でも `[wait_tsy]` 中の
+クリックでも時間切れでも、`ScriptMng.#beginTsy()` の `end()`（`ScriptMng.ts` の
+「終了状態の確定」コメント）を必ず通って目標値で確定する。理由はストアを画面の唯一の現在値
+とする設計（`ScriptMng.ts` / `ScriptEngine.ts` の `case 'tsy'` 冒頭コメント）：見た目だけ DOM に
+書くと Memento の読み戻しや `[trans]` のレイヤ複製が演出前の値を拾うため、トゥイーンは必ず
+ストアを動かし、畳むときも目標値を書き戻す。`false`（その場で停止＝中途半端な補間値をストアへ
+確定して止める）はこの前提と噛み合わない。
+
+技術的には「キャンセル時、その時点の `from` をストアへ書いて `kill()`」で実装可能だが、
+使用例がまれで優先度は低い。実装するなら `#endTsy()` / `#stopTsyByLayer()` / `#goSafe()` の
+`#tsyWaiting` 分岐に `arrive` フラグを配線し、`end()`（目標値で確定）を通さず
+その時点の `from` をストアへ書いてから `kill()` する経路を足す。
+
 ## `[trans]` の `glsl=`（実装済み 2026-08-28）
 
 `src/ts/TransGlsl.ts`（lazy import の生 WebGL モジュール）で実装。表・裏ページを `Snapshot.ts` で
