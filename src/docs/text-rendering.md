@@ -11,7 +11,11 @@
 ＝本家の false 相当。`break_fixed=true` のときだけ `position:absolute` にして
 `break_fixed_left`/`break_fixed_top` の固定位置へ置く（本家 `Hyphenation.ts:87-89` ＋
 `TxtStage.ts` の `#cntBreak.position.set()`）。座標原点は文字表示領域の左上＝padding の内側なので、
-算出 `left`/`top` は `padding`（既定 16px、`pl`/`pt` 指定時はその値）＋指定値。属性は文字レイヤ専用
+算出 `left`/`top` は padding ＋指定値。この padding は `TxtLayer.tsx` の `useLayoutEffect` が
+`getComputedStyle(boxRef)` で実測する（`padIn`）——`pl`/`pr`/`pt`/`pb` 属性で指定しても
+`[lay style="padding-*"]`（本家互換の CSS 指定）で指定しても同じ値になる。本家 `TxtStage`
+`#lay_sub()` が `parseFloat(s.paddingLeft)` で padding を回収するのと同じ考え方で、masume 内枠・
+消去ゴーストの inset と同じ「生 prop でなく実測」ポリシー。属性は文字レイヤ専用
 （`store.tsx` の `chgLay` ガード）で、`[clear_lay]`/`[clear_text]` では変更しない（`kinsoku_*` と同じ。
 本家も `#clearLay()` は `Hyphenation` に触らない）。回帰は `test/ScriptEngine_lay.test.ts`＋
 `test/store_lay.test.ts`＋`test/e2e/lay.e2e.ts`。

@@ -295,6 +295,21 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		inner.style.inset = `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}`;
 	}, [pl, pr, pt, pb, sCss]);
 
+	// [lay break_fixed=true] の待ちマーカー原点＝文字表示領域の左上（padding の内側）。
+	//	絶対配置の子は padding-box 起点なので padding ぶん内側へ寄せる。**pl/pr/pt/pb 属性でも
+	//	[lay style="padding-*"]（本家互換のCSS指定）でも同じ結果になるよう**、prop の生値でなく
+	//	getComputedStyle で実測する（本家 TxtStage #lay_sub が parseFloat(s.paddingLeft) で
+	//	padding を回収するのと同じ考え方。masume 内枠・消去ゴーストと同じ実測ポリシー）
+	const [padIn, setPadIn] = useState({l: 16, t: 16});	// 既定は styTxt の padding: 16px
+	useLayoutEffect(()=> {
+		if (! break_fixed) return;	// 固定配置のときだけ要る値
+		const box = boxRef.current;
+		if (! box) return;
+		const cs = globalThis.getComputedStyle(box);
+		const l = parseFloat(cs.paddingLeft) || 0, t = parseFloat(cs.paddingTop) || 0;
+		setPadIn(p=> p.l === l && p.t === t ? p : {l, t});
+	}, [break_fixed, pl, pt, sCss]);
+
 	useLayoutEffect(()=> {
 		const el = charsRef.current;
 		if (! el) return;
@@ -567,14 +582,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	// [lay break_fixed=true]：流れの中でなく break_fixed_left/top の固定位置に置く（本家 Hyphenation.ts:
 	//	87-89 ＋ TxtStage.ts:507-509 #cntBreak.position.set()）。座標の原点は**文字表示領域の左上**
 	//	（padding の内側）。boxRef は position:absolute（styChild）なので子の absolute は padding-box 起点
-	//	＝padding ぶん足して content-box 起点に合わせる（pl/pt 未指定時は styTxt の既定 16px）
+	//	＝padding ぶん足して content-box 起点に合わせる。その padding は上の useLayoutEffect が
+	//	getComputedStyle で実測した padIn（pl/pr/pt/pb 属性でも style="padding-*" でも同じ値になる）
 	const styWaitPos: CSSProperties = {
 		...wait?.width !== undefined ? {width: `${String(wait.width)}px`} : {},
 		...wait?.height !== undefined ? {height: `${String(wait.height)}px`} : {},
 		...break_fixed ? {
 			position: 'absolute',
-			left: `${String((pl ?? 16) + (break_fixed_left ?? 0))}px`,
-			top: `${String((pt ?? 16) + (break_fixed_top ?? 0))}px`,
+			left: `${String(padIn.l + (break_fixed_left ?? 0))}px`,
+			top: `${String(padIn.t + (break_fixed_top ?? 0))}px`,
 		} : {},
 		...wait?.x !== undefined || wait?.y !== undefined
 			? {translate: `${String(wait?.x ?? 0)}px ${String(wait?.y ?? 0)}px`} : {},

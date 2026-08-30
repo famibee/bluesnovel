@@ -95,6 +95,12 @@
 ;	座標原点は文字表示領域の左上（padding 内側）＝算出 left/top は padding(16)＋指定値
 [lay layer=mes break_fixed=true break_fixed_left=100 break_fixed_top=60]
 かたまり[l]
+
+; padding を style=（本家互換のCSS指定）で変えても、待ちマーカー原点は
+;	getComputedStyle 実測で追従する（pl/pr/pt/pb 属性と同じ結果になる）。
+;	break_fixed* は[clear_text]では変更されない（本家 Hyphenation と同じ）
+[lay layer=mes style="padding-left: 30px; padding-top: 8px;"][clear_text]
+ついか[l]
 おわり[s]
 
 ; 到達しない：上の[button ... label=*btn_zorder]の飛び先を定義しておくだけ（未クリックのため実際は通らない）

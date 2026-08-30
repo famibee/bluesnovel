@@ -246,9 +246,19 @@ test('[lay break_fixed=true]は[l]/[p]待ちマーカーを固定位置（paddin
 
 	// 待ちマーカーのプロキシ span（data-wait-focus）の算出スタイル。
 	//	原点は文字表示領域の左上＝padding(16px 既定)＋指定値 → left:116px / top:76px
-	const st = await page.$eval('#skynovel [data-page="fore"] span[data-lay="mes"] [data-wait-focus]',
+	const SEL = '#skynovel [data-page="fore"] span[data-lay="mes"] [data-wait-focus]';
+	const st = await page.$eval(SEL,
 		el=> {const c = getComputedStyle(el); return {position: c.position, left: c.left, top: c.top}});
 	expect(st.position).toBe('absolute');
-	expect(st.left).toBe('116px');
-	expect(st.top).toBe('76px');
+	expect(st.left).toBe('116px');	// padding 16（既定）＋ break_fixed_left 100
+	expect(st.top).toBe('76px');	// padding 16（既定）＋ break_fixed_top 60
+
+	// padding を style=（本家互換のCSS指定）で変えても、原点は getComputedStyle 実測で追従する
+	//	（pl/pr/pt/pb 属性で指定したのと同じ結果。style= 経由でも 16px 決め打ちに戻らない）
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('ついか');
+	const st2 = await page.$eval(SEL,
+		el=> {const c = getComputedStyle(el); return {left: c.left, top: c.top}});
+	expect(st2.left).toBe('130px');	// padding-left 30 ＋ break_fixed_left 100
+	expect(st2.top).toBe('68px');	// padding-top 8 ＋ break_fixed_top 60
 });
