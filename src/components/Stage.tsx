@@ -9,19 +9,86 @@ import {CmnLib, argChk_Boolean, uint} from '../sn/CmnLib';
 import GrpLayer from './GrpLayer';
 import TxtLayer from './TxtLayer';
 import PlgLayer from './PlgLayer';
-import {clearDrag, isDragging, isGrpLay, isTxtLay, styLay, type T_LAY_CMN} from './Lay';
+import {clearDrag, isDragging, isGrpLay, isTxtLay, styLay, type T_LAY, type T_LAY_CMN} from './Lay';
 import {modKeyName, suppressClick, setDesignMode, type T_ARG} from './Main';
-import {useStore} from '../store/store';
+import {useStore, type T_TRANS} from '../store/store';
 import {ruleMaskFunc, VAGUE_DEF} from '../ts/Trans';
 import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
 import {detectSwipe} from '../ts/Swipe';
 
-import {type CSSProperties, type PointerEvent, RefObject, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {type CSSProperties, memo, type PointerEvent, RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useFullscreen, useLongPress, useMount, useToggle} from 'react-use';
 import {css} from '@emotion/react';
 
 // **デザインモード（長押しで入る）の有効・無効**。詳細は下の useLongPress のTODO参照
 const ENA_DESIGN_MODE = false;
+
+// 各レイヤ（GrpLayer/TxtLayer/PlgLayer）の絶対配置の下地。完全に静的なので
+//	モジュール定数にして毎 render の再生成を避ける（下の <Page> の memo が効くための前提の一つ。
+//	Stage の useMemo した cmn 経由で全レイヤへ配られる）
+const styChild = css`position: absolute; top: 0; left: 0;`;
+// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
+//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
+//	不透明にしておくことで、画像の無い部分はbg_colorで塗り潰される（本家は#fore/#back
+//	両方に同じbg_color塗りを敷く。LayerMng.ts:172-180）。**背景色だけは <Page> の inline style で
+//	与える**（CmnLib.bgColor はモジュール評価時にはまだ既定値のことがあるため）
+const styPage = css`
+	position: absolute; top: 0; left: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+`;
+
+type T_PAGE_PROPS = {
+	idx		: 0 | 1;			// ストアのページ添字（PlgLayMng が 'fore'/'back' へ解決するのに要る）
+	isFore	: boolean;			// このページが現在の表か（i === foreIdx）
+	trans	: T_TRANS;			// 進行中の[trans]（無ければ null）
+	aLay	: T_LAY[];			// このページに描くレイヤ配列（trans 中の合成は <Page> の外で解決済み）
+	cmn		: T_LAY_CMN['cmn'];	// 全レイヤ共通の render props（Stage 側で useMemo 済み）
+	scrMng	: T_ARG['scrMng'];
+	pgRef	: RefObject<HTMLDivElement | null>;
+};
+
+// 表裏1ページぶんの描画（[trans]では中身でなく「どちらを表とみなすか」だけを切り替えるため、
+//	どちらも常時マウントしたまま）。**React.memo でくるむのが要点**（backpage-perf.md
+//	「[tsy] 無限トゥイーンの結論」）：無限 [tsy]（page=fore）の毎フレーム set() で Stage は
+//	再 render されるが、その時の back Page の props（aLay = aPage[backIdx]／isFore／trans=null）は
+//	store の putPage が非対象ページの配列参照を保つおかげで全て参照安定 → 浅い比較が通り
+//	back サブツリー（レイヤコンポーネント）の再 render を丸ごとスキップできる。fore Page だけ
+//	再 render（正しい）。trans 中は back の aLay が毎 render 変わる＝再 render される想定でよい
+//	（可視なので正しい）。
+const Page = memo(function Page({idx, isFore, trans, aLay, cmn, scrMng, pgRef}: T_PAGE_PROPS) {
+	// 裏ページはトランジション中だけ見せる（本家の板テクスチャ2枚のクロスフェードと同じ）
+	const visible = isFore || !! trans;
+	return <div ref={pgRef} data-page={isFore ? 'fore' : 'back'} css={styPage} style={{
+		backgroundColor	: CmnLib.bgColor,
+		zIndex			: isFore ? 1 : 0,
+		visibility		: visible ? 'visible' : 'hidden',
+		pointerEvents	: isFore ? 'auto' : 'none',
+		// 不可視 back ページ（trans 中は見えているので除く）ではアニメ png シートの CSS animation を
+		//	止める（backpage-perf.md）。子孫の全シートクラスが読む CSS 変数（Sprite.ts aniSpriteCss）
+		...({'--sn-ani-play': visible ? 'running' : 'paused'} as CSSProperties),
+		// ルール画像ワイプは**表ページを部分的に消していく**（下から裏が出る）。
+		//	クロスフェードがopacityでやることを、画素ごとの不透明度に置き換えたもの
+		...trans?.ruleSrc && ! trans.glslSrc && isFore ? {mask: 'url(#sn_rule_msk)'} : {},
+	}}>
+		{aLay.map(l=> {
+			// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
+			//	そちらの値（sty4Moveable）より後ろに置いて優先させる
+			const sty = {...cmn.sty4Moveable, ...styLay(l)};
+			if (isGrpLay(l)) return <GrpLayer key={l.nm} cmn={cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} isSheet={l.isSheet} isMovie={l.isMovie} aFace={l.aFace} aFx={l.aFx ?? []} fxActive={visible} getVideoVol={()=> scrMng.getMovieVolume()} needClick2Play={()=> scrMng.needClick2Play()}/>;
+			// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
+			if (isTxtLay(l)) return <TxtLayer key={l.nm} cmn={cmn} sty={sty} nm={l.nm} isFore={isFore} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} kinsoku_sol={l.kinsoku_sol} kinsoku_eol={l.kinsoku_eol} kinsoku_dns={l.kinsoku_dns} kinsoku_bura={l.kinsoku_bura} r_align={l.r_align} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} pl={l.pl} pr={l.pr} pt={l.pt} pb={l.pb} enabled={l.enabled} aBtn={l.aBtn} in_style={l.in_style} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)} onSe={(fn, buf)=> scrMng.playButtonSe(fn, buf)}/>;
+			// プラグインレイヤー（[add_lay class=3d]等）。中身（3Dシーン等）はDOM側
+			//	（scrMng.attachPlgBox→PlgLayMng）が持つので、ここは箱と置き場所のdivだけ出す。
+			//	既知の制限：[trans]中の「交換対象外レイヤは表ページの中身で描く」合成
+			//	（下の Stage 側 aLay 生成部）はプラグインレイヤーには効かない（DOM実体はページ添字に
+			//	固定されており、storeのデータ差し替えでは動かないため）
+			return <PlgLayer key={l.nm} cmn={cmn} sty={sty} nm={l.nm}
+				attach={el=> {scrMng.attachPlgBox(l.nm, idx, el)}}/>;
+		})}
+	</div>;
+});
 
 export default function Stage({
 	arg: {heStage, sys, scrMng}, onClick, prev, next,
@@ -264,7 +331,6 @@ export default function Stage({
 		transform-origin: left top;
 		transform: scale(${String(cvsScale)});
 	`;
-	const styChild = css`position: absolute; top: 0; left: 0;`;
 	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、
 	//	FrameMng（DOM側）がここへiframeを足す。Reactは自分が作った子しか触らないので衝突しない。
 	//	ステージ（拡縮される内側の箱）の中に置くので、位置・寸法はステージ座標のまま書けばよく、
@@ -283,17 +349,6 @@ export default function Stage({
 		width: 100%; height: 100%;
 		z-index: 1;
 		pointer-events: none;
-	`;
-	// 表裏それぞれのページを包むコンテナ。[trans]はこの「ステージ大の板」2枚をクロスフェードさせる
-	//	（本家がページごとに板テクスチャを作って重ねるのと同じ絵）。
-	//	不透明にしておくことで、画像の無い部分はbg_colorで塗り潰される（本家は#fore/#back
-	//	両方に同じbg_color塗りを敷く。LayerMng.ts:172-180）
-	const styPage = css`
-		position: absolute; top: 0; left: 0;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-		background-color: ${CmnLib.bgColor};
 	`;
 
 	const styBtn = css`
@@ -401,13 +456,16 @@ export default function Stage({
 	//	書いていると、ステージのscale(cvsScale)（非整数）の下で余分なペイントレイヤを持ち続けることになり、
 	//	縦書き＋Webフォントの環境でグリフのラスタライズ欠落に繋がりうる（ENA_DESIGN_MODE=falseの現状は
 	//	デザインモードへ入れないため、これは常時無駄になっていた）
-	const c: T_LAY_CMN = {cmn: {sys, styChild, isDesignMode, sty4Moveable: isDesignMode ? {
+	//	**useMemo で安定参照にする**：下の <Page> の memo が効くには cmn が毎 render 変わらない
+	//	ことが要る（無限 [tsy] 中の再 render で back Page をスキップさせる。backpage-perf.md）。
+	//	依存は sys（Stage の寿命で不変）と isDesignMode だけ
+	const cmn = useMemo<T_LAY_CMN['cmn']>(()=> ({sys, styChild, isDesignMode, sty4Moveable: isDesignMode ? {
 		maxWidth	: 'auto',
 		maxHeight	: 'auto',
 		minWidth	: 'auto',
 		minHeight	: 'auto',
 		transform	: 'translate(0px, 0px) rotate(0deg)',
-	} : {}}};
+	} : {}}), [sys, isDesignMode]);
 	return <div css={styStage} onClick={onClick} onPointerDown={onPointerDown} onPointerUp={onPointerUp} {...ENA_DESIGN_MODE ?longPressEvent :{}} ref={stageRef}>
 		{/* ルール画像ワイプ（[trans rule=…]）のマスク。本家のフラグメントシェーダの置き換えで、
 			・feColorMatrix：ルール画像の**赤チャンネル**をアルファへ移し、RGBは白に固定する
@@ -468,38 +526,15 @@ export default function Stage({
 			// 演出中の裏ページは「**交換対象のレイヤは裏・それ以外は表**」の合成で描く
 			//	（本家 LayerMng.ts:648 `const lay = sDoTrans.has(ln) ? back : fore`）。
 			//	ストアの中身は触らない：交換対象外レイヤの裏には次の場面の組み立て途中が
-			//	載っていることがあり、先に見せると場面転換のたびに一瞬前の状態がちらつく
+			//	載っていることがあり、先に見せると場面転換のたびに一瞬前の状態がちらつく。
+			//	**<Page> の外で解決する**：trans が無ければ aLay0（＝aPage[i]）をそのまま渡す＝
+			//	参照が変わらず <Page> の memo が効く（backpage-perf.md）
 			const aLay = trans?.aLayNm && i !== foreIdx
 				? aLay0.map(e=> trans.aLayNm!.includes(e.nm)
 					? e : aPage[foreIdx].find(f=> f.nm === e.nm) ?? e)
 				: aLay0;
-			return <div key={i} ref={aPgRef[i]} data-page={i === foreIdx ? 'fore' : 'back'} css={styPage} style={{
-			zIndex			: i === foreIdx ? 1 : 0,
-			visibility		: i === foreIdx || trans ? 'visible' : 'hidden',
-			pointerEvents	: i === foreIdx ? 'auto' : 'none',
-			// 不可視 back ページ（trans 中は見えているので除く）ではアニメ png シートの CSS animation を
-			//	止める（backpage-perf.md）。子孫の全シートクラスが読む CSS 変数（Sprite.ts aniSpriteCss）
-			...({'--sn-ani-play': i === foreIdx || trans ? 'running' : 'paused'} as CSSProperties),
-			// ルール画像ワイプは**表ページを部分的に消していく**（下から裏が出る）。
-			//	クロスフェードがopacityでやることを、画素ごとの不透明度に置き換えたもの
-			...trans?.ruleSrc && ! trans.glslSrc && i === foreIdx ? {mask: 'url(#sn_rule_msk)'} : {},
-		}}>
-			{aLay.map(l=> {
-				// [lay]で指定したレイヤ共通の見た目。デザインモードのMoveableが直接styleを触るので、
-				//	そちらの値（sty4Moveable）より後ろに置いて優先させる
-				const sty = {...c.cmn.sty4Moveable, ...styLay(l)};
-				if (isGrpLay(l)) return <GrpLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} fn={l.fn} src={l.src} isSheet={l.isSheet} isMovie={l.isMovie} aFace={l.aFace} aFx={l.aFx ?? []} fxActive={i === foreIdx || !! trans} getVideoVol={()=> scrMng.getMovieVolume()} needClick2Play={()=> scrMng.needClick2Play()}/>;
-				// 文字レイヤ自体をUIコンテナとし、[button]で乗せたボタン群（l.aBtn）をTxtLayer内で一緒に描画する（独立レイヤにしない）。
-				if (isTxtLay(l)) return <TxtLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm} isFore={i === foreIdx} str={l.str} aCh={l.aCh} ffs={l.ffs} noffs={l.noffs} bura={l.bura} kinsoku_sol={l.kinsoku_sol} kinsoku_eol={l.kinsoku_eol} kinsoku_dns={l.kinsoku_dns} kinsoku_bura={l.kinsoku_bura} r_align={l.r_align} b_color={l.b_color} b_alpha={l.b_alpha} b_alpha_isfixed={l.b_alpha_isfixed} b_src={l.b_src} styTxt={l.style} pl={l.pl} pr={l.pr} pt={l.pt} pb={l.pb} enabled={l.enabled} aBtn={l.aBtn} in_style={l.in_style} onActivate={(label, call, fn, arg)=> scrMng.jumpToLabelAndGo(label, call, fn, arg)} onNavigate={url=> scrMng.navigateTo(url)} onSe={(fn, buf)=> scrMng.playButtonSe(fn, buf)}/>;
-				// プラグインレイヤー（[add_lay class=3d]等）。中身（3Dシーン等）はDOM側
-				//	（scrMng.attachPlgBox→PlgLayMng）が持つので、ここは箱と置き場所のdivだけ出す。
-				//	既知の制限：[trans]中の「交換対象外レイヤは表ページの中身で描く」合成
-				//	（上のaLay0.map部）はプラグインレイヤーには効かない（DOM実体はページ添字iに
-				//	固定されており、storeのデータ差し替えでは動かないため）
-				return <PlgLayer key={l.nm} cmn={c.cmn} sty={sty} nm={l.nm}
-					attach={el=> {scrMng.attachPlgBox(l.nm, i as 0 | 1, el)}}/>;
-			})}
-		</div>;
+			return <Page key={i} idx={i as 0 | 1} isFore={i === foreIdx} trans={trans}
+				aLay={aLay} cmn={cmn} scrMng={scrMng} pgRef={aPgRef[i]!}/>;
 		})}
 		{/* [trans glsl=]のWebGL canvas 置き場。FrameMng（[add_frame]）と同じく「JSXでは子を持たない
 			空div、実体（canvas）は Stage 側 useEffect が lazy import した src/ts/TransGlsl.ts 経由で

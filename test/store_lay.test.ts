@@ -77,6 +77,19 @@ it('moveLay_unknownLayerThrows', ()=> {
 });
 
 
+it('chgLay_keepsUntouchedPageArrayRef', ()=> {
+	// putPage は触ったページだけ新配列にし、**もう一方の配列参照は保つ**。
+	//	これが Stage.tsx の <Page> の React.memo が効くための前提（無限 [tsy]（page=fore）の
+	//	毎フレーム更新で back Page の再 render を丸ごとスキップさせる。backpage-perf.md）。
+	//	壊すと back サブツリーが毎フレーム再 render に戻る（挙動は不変だが最適化が無に帰す）
+	const back0 = useStore.getState().aPage[1];
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 100}});	// foreIdx=0 なので触るのは aPage[0]
+	const st = useStore.getState();
+	expect(st.aPage[1]).toBe(back0);			// 非対象ページは同一参照のまま
+	expect(st.aPage[0]).not.toBe(back0);		// 対象ページは新配列
+	expect(st.aPage[0].find(e=> e.nm === 'a')?.left).toBe(100);
+});
+
 it('chgLay_leftAloneClearsStaleAlignX', ()=> {
 	// [lay pos=]等でalign_x='center'を立てた後、align_xを伴わずleftだけ更新する呼び出し
 	//	（[tsy left=]が代表例）が来たら、古いalign_xは消えるべき（left/align_xは排他）。

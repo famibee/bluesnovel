@@ -15,7 +15,7 @@
 |---|---|---|---|
 | **`[add_fx]`** | rAF＋WebGL（シェーダのフレーム描画） | — | **対応済み**（2026-08-28）。`Stage` が `GrpLayer` へ `fxActive = (i === foreIdx \|\| !!trans)` を渡し、`FxRunner` が全パス凍結＋rAF 停止。可視復帰で tick の続きから |
 | **プラグイン拡張レイヤ**（3d_layer / live2d 等） | プラグイン自前の rAF（`ThreeDLayer.#tick` の `renderer.render()` など） | 高（WebGL render がページ数ぶん＝2 本走る） | **対応済み**（2026-08-28）。`sn/Layer` 基底に `setActive(active)`（既定 no-op）。`PlgLayMng` が `#foreIdx`／trans 状態から各インスタンスの可視を算出し `setActive()` で通知（`add`／`playback`／`finishTrans`／`ScriptMng.#beginTrans` から）。gallery 側は `ThreeDLayer`／`Live2DLayer` が `override setActive` で `#tick` を止める／再開（`#active` ガード追加。本家 skynovel_esm には `setActive` が無く呼ばれない＝従来動作）。`test/PlgLayMng.test.ts`＋`test/e2e/plg.e2e.ts`。cubism3／emote は未移植なので対象外 |
-| **`[tsy]`（無限 `repeat=0`）** | motion の内部 rAF ＋ `onUpdate`→`chgLay`→store→**Stage 全体（表裏レイヤ全部）**の React 再描画（`GrpLayer`/`TxtLayer` は memo 化なし） | 中（無限のみ。有限 `[tsy]` は数百 ms で自己完了するので実害ほぼ無し） | **方針決定（2026-08-30）→ (c) の memo 化で対応。実装は次セッション（TODO.md）**。下記「[tsy] 無限トゥイーンの結論」参照 |
+| **`[tsy]`（無限 `repeat=0`）** | motion の内部 rAF ＋ `onUpdate`→`chgLay`→store→**Stage 全体（表裏レイヤ全部）**の React 再描画（`GrpLayer`/`TxtLayer` は memo 化なし） | 中（無限のみ。有限 `[tsy]` は数百 ms で自己完了するので実害ほぼ無し） | **対応済み**（2026-08-30）。`Stage.tsx` の「1 ページぶん」を `<Page>` へ切り出し `React.memo` でくるんだ。無限 `[tsy] page=fore` の毎フレーム `set()` で Stage は再 render されるが、back Page の props（`aLay`＝`aPage[backIdx]`／`isFore`／`trans=null`／`cmn`＝`useMemo` 済み）は全て参照安定 → back サブツリーの再 render を丸ごとスキップ（実機で fore が毎フレーム再 render＝2955 回に対し back は 4 回で停止を確認）。純粋な最適化・挙動不変。下記「[tsy] 無限トゥイーンの結論」参照 |
 | **動画（`[lay fn=movie]`）** | `<video autoPlay>` のデコード継続 | 中 | **対応済み**（2026-08-28）。`GrpLayer` が `fxActive`（＝ページ可視。fx 有効時は `visibility:hidden` でも FxImg がテクスチャ源にするので「隠れているか」でなく「ページが可視か」で判定）で `video.pause()`／`play()`。**再開位置は pause 点から**（頭出しなし＝HTML 既定）。`[wv]` は「終わるまで待つ」タグなので、待ち対象が pause されていたら可視状態に関わらず `#waitVideoPlay` が `play()` で前へ進める（本家 pixi の常時再生へ寄せる）。`test/e2e/movie.e2e.ts` |
 | **アニメ png シート**（CSS animation） | `@keyframes` の style 再計算。`visibility:hidden` の要素はブラウザが概ね最適化する | 低 | **対応済み**（2026-08-28）。`Sprite.ts aniSpriteCss` が `animation-play-state: var(--sn-ani-play, running)` を出し、`Stage.tsx` が不可視 back ページの div へ `--sn-ani-play:paused` を撒く（子孫の grp 基本画像・face・`[graph]`・待ちマークへ一括）。`test/e2e/anime.e2e.ts` |
 | `[quake]` | Stage 側 rAF | — | 対象外。quake は短命かつ `#finishQuake` で停止、ステージ全体を揺らすので back ページ固有ではない |
@@ -25,9 +25,9 @@
 1. ~~プラグイン `Layer` の可視シグナル API~~ 済み（2026-08-28）
 2. ~~CSS シート~~ 済み（2026-08-28）
 3. ~~動画の pause~~ 済み（2026-08-28。pause 点から再開・`[wv]` は前へ進める）
-4. `[tsy]` 無限トゥイーン → **(c) memo 化で対応**（2026-08-30 方針決定。下記）。実装は次セッション
+4. ~~`[tsy]` 無限トゥイーン~~ 済み（2026-08-30。(c) `<Page>` の `React.memo` 化。下記）
 
-＝残るは `[tsy]` の memo 化（TODO.md に個別項目）。
+＝一覧のすべてに対応済み。
 
 ## [tsy] 無限トゥイーンの結論（2026-08-30）
 
@@ -43,16 +43,24 @@
 （`GrpLayer`/`TxtLayer` は memo 化なし）。不可視 back ページのレイヤ関数が毎フレーム呼び直され、
 画面を変えない render 作業をしている。
 
-**対応＝(c) back ページ `<div>` サブツリーの `React.memo` 化。**
-- いまの `Stage.tsx` は「1 ページぶん」を `Stage` 関数の中で直接展開している。これを
-  `<Page aLay={…} isFore={…} trans={…} …/>` に切り出し `React.memo` でくるむ。
+**対応＝(c) back ページ `<div>` サブツリーの `React.memo` 化（実施済み。`Stage.tsx`）。**
+- `Stage.tsx` の「1 ページぶん」（`<div data-page>` ＋ `aLay.map`）をモジュールスコープの
+  `<Page idx isFore trans aLay cmn scrMng pgRef/>` へ切り出し `memo()` でくるんだ。
+  trans 中の合成配列（`trans?.aLayNm && i !== foreIdx` の分岐）は `<Page>` の外で解決して
+  `aLay` として渡す＝trans が無ければ `aPage[i]` をそのまま渡す（参照不変）。
 - キモは `store.tsx` `putPage`：触ったページだけ新配列にし、**もう一方の配列参照は保つ**。
-  `page=fore` 更新時、back Page の props（`aLay` = `aPage[backIdx]`、`isFore`、`trans`）は
+  `page=fore` 更新時、back Page の props（`aLay` = `aPage[backIdx]`、`isFore`、`trans=null`）は
   すべて参照安定 → memo の浅い比較が通り、**back サブツリーの再 render を丸ごとスキップ**。
-  fore Page だけ再 render（正しい）。
-- 効かせるには Stage が `<Page>` へ渡す**毎 render 新規の関数**を安定参照化する必要がある
-  （`getVideoVol` / `onActivate` / `onSe` / `onNavigate` 等の inline arrow、および
-  `sty4Moveable` 経路）。これが実作業。
+  fore Page だけ再 render（正しい）。参照維持は `test/store_lay.test.ts`
+  `chgLay_keepsUntouchedPageArrayRef` で担保。
+- props 安定化：`cmn`（旧 `c.cmn`）を `useMemo([sys, isDesignMode])` に、`styChild`/`styPage` を
+  モジュール定数に（`styPage` の `background-color` だけ `CmnLib.bgColor` がモジュール評価時に
+  未確定のことがあるため `<Page>` の inline style へ移した）。`getVideoVol` / `needClick2Play` /
+  `onActivate` / `onNavigate` / `onSe` の inline arrow は `<Page>` の内側（`scrMng` メソッド呼び）へ
+  移した＝`<Page>` は memo でスキップされるので毎 render 新規でも実害なし。
+- 効果確認（2026-08-30、`prj_tsy` に無限 `[tsy repeat=0]` シーンを一時追加＋`<Page>` に
+  `console.count`）：無限トゥイーン中、fore Page が毎フレーム再 render（2955 回）に対し
+  back Page は 4 回（シーン組み立て時のみ）で停止。
 - 純粋な最適化で挙動不変。props 安定化が不完全でも「今日のコストに戻るだけ」でリスク無し。
   だから (a) `page=back` 限定 pause（狭すぎ）や (b) `[tsy]` を作成時の物理ページへ束縛
   （`chgLay` の動的解決を変える＝`[fg2]` の絶対再配置・`backlay` に波及する中規模改修）より安全。

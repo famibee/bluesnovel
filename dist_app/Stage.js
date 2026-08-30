@@ -11124,95 +11124,173 @@ function Ju(e, t, n, r) {
 }
 //#endregion
 //#region src/components/Stage.tsx
-function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
-	let f = S((e) => e.aPage), h = S((e) => e.foreIdx), g = S((e) => e.trans), x = (0, V.useRef)(null), C = (0, V.useRef)(null), w = [x, C], T = (0, V.useRef)(null), E = (0, V.useRef)(null), O = (0, V.useRef)(null);
+var Yu = Au`position: absolute; top: 0; left: 0;`, Xu = Au`
+	position: absolute; top: 0; left: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+`, Zu = (0, V.memo)(function({ idx: e, isFore: t, trans: n, aLay: r, cmn: a, scrMng: o, pgRef: s }) {
+	let c = t || !!n;
+	return /* @__PURE__ */ P("div", {
+		ref: s,
+		"data-page": t ? "fore" : "back",
+		css: Xu,
+		style: {
+			backgroundColor: i.bgColor,
+			zIndex: +!!t,
+			visibility: c ? "visible" : "hidden",
+			pointerEvents: t ? "auto" : "none",
+			"--sn-ani-play": c ? "running" : "paused",
+			...n?.ruleSrc && !n.glslSrc && t ? { mask: "url(#sn_rule_msk)" } : {}
+		},
+		children: r.map((n) => {
+			let r = {
+				...a.sty4Moveable,
+				...m(n)
+			};
+			return l(n) ? /* @__PURE__ */ P(bu, {
+				cmn: a,
+				sty: r,
+				nm: n.nm,
+				fn: n.fn,
+				src: n.src,
+				isSheet: n.isSheet,
+				isMovie: n.isMovie,
+				aFace: n.aFace,
+				aFx: n.aFx ?? [],
+				fxActive: c,
+				getVideoVol: () => o.getMovieVolume(),
+				needClick2Play: () => o.needClick2Play()
+			}, n.nm) : u(n) ? /* @__PURE__ */ P(Fu, {
+				cmn: a,
+				sty: r,
+				nm: n.nm,
+				isFore: t,
+				str: n.str,
+				aCh: n.aCh,
+				ffs: n.ffs,
+				noffs: n.noffs,
+				bura: n.bura,
+				kinsoku_sol: n.kinsoku_sol,
+				kinsoku_eol: n.kinsoku_eol,
+				kinsoku_dns: n.kinsoku_dns,
+				kinsoku_bura: n.kinsoku_bura,
+				r_align: n.r_align,
+				b_color: n.b_color,
+				b_alpha: n.b_alpha,
+				b_alpha_isfixed: n.b_alpha_isfixed,
+				b_src: n.b_src,
+				styTxt: n.style,
+				pl: n.pl,
+				pr: n.pr,
+				pt: n.pt,
+				pb: n.pb,
+				enabled: n.enabled,
+				aBtn: n.aBtn,
+				in_style: n.in_style,
+				onActivate: (e, t, n, r) => o.jumpToLabelAndGo(e, t, n, r),
+				onNavigate: (e) => o.navigateTo(e),
+				onSe: (e, t) => o.playButtonSe(e, t)
+			}, n.nm) : /* @__PURE__ */ P(Wu, {
+				cmn: a,
+				sty: r,
+				nm: n.nm,
+				attach: (t) => {
+					o.attachPlgBox(n.nm, e, t);
+				}
+			}, n.nm);
+		})
+	});
+});
+function Qu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
+	let u = S((e) => e.aPage), f = S((e) => e.foreIdx), m = S((e) => e.trans), h = (0, V.useRef)(null), g = (0, V.useRef)(null), x = [h, g], C = (0, V.useRef)(null), w = (0, V.useRef)(null), T = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
-		E.current !== null && cancelAnimationFrame(E.current), E.current = null;
-		for (let e of [x.current, C.current]) e && (e.getAnimations().forEach((e) => e.cancel()), e.style.opacity = "");
-		if (!g) return;
-		let e = w[h].current;
+		w.current !== null && cancelAnimationFrame(w.current), w.current = null;
+		for (let e of [h.current, g.current]) e && (e.getAnimations().forEach((e) => e.cancel()), e.style.opacity = "");
+		if (!m) return;
+		let e = x[f].current;
 		if (!e) return;
-		if (g.glslSrc) {
-			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = g, o = performance.now(), s = T.current, c = te.current, u = 1 - h, d = (a ? f[u].map((e) => a.includes(e.nm) ? e : f[h].find((t) => t.nm === e.nm) ?? e) : f[u]).filter(l).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), p = null, m = !1;
+		if (m.glslSrc) {
+			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = m, o = performance.now(), s = C.current, c = B.current, d = 1 - f, p = (a ? u[d].map((e) => a.includes(e.nm) ? e : u[f].find((t) => t.nm === e.nm) ?? e) : u[d]).filter(l).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), h = null, g = !1;
 			return s && c && import("./TransGlsl.js").then(async ({ runGlslTrans: n }) => {
 				let a = await n({
 					stageEl: c,
 					holder: s,
 					glslSrc: e,
 					time: t,
-					backSrcs: d,
+					backSrcs: p,
 					vague: r ?? .04,
 					...i ? { ruleSrc: i } : {},
 					t0: o
 				});
-				m ? a() : p = a;
+				g ? a() : h = a;
 			}).catch((e) => n.myTrace(`[trans glsl=] ${e instanceof Error ? e.message : String(e)}`, "E")), () => {
-				m = !0, p?.();
+				g = !0, h?.();
 			};
 		}
-		if (!g.ruleSrc) {
+		if (!m.ruleSrc) {
 			e.animate([{ opacity: 1 }, { opacity: 0 }], {
-				duration: g.time,
+				duration: m.time,
 				easing: "linear",
 				fill: "forwards"
 			});
 			return;
 		}
 		let t = (e) => {
-			let t = O.current;
+			let t = T.current;
 			if (!t) return;
-			let { slope: n, intercept: r } = qu(e, g.vague);
+			let { slope: n, intercept: r } = qu(e, m.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
 		let r = performance.now(), i = (e) => {
-			let n = g.time <= 0 ? 1 : Math.min((e - r) / g.time, 1);
-			t(n), n < 1 && (E.current = requestAnimationFrame(i));
+			let n = m.time <= 0 ? 1 : Math.min((e - r) / m.time, 1);
+			t(n), n < 1 && (w.current = requestAnimationFrame(i));
 		};
-		E.current = requestAnimationFrame(i);
-	}, [g]);
-	let k = S((e) => e.quake), M = (0, V.useRef)(null);
+		w.current = requestAnimationFrame(i);
+	}, [m]);
+	let E = S((e) => e.quake), O = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
-		M.current !== null && cancelAnimationFrame(M.current), M.current = null;
-		let e = [x.current, C.current].filter((e) => e !== null);
-		if (!k) {
+		O.current !== null && cancelAnimationFrame(O.current), O.current = null;
+		let e = [h.current, g.current].filter((e) => e !== null);
+		if (!E) {
 			for (let t of e) t.style.transform = "";
 			return;
 		}
-		let { hmax: t, vmax: n } = k, r = () => {
+		let { hmax: t, vmax: n } = E, r = () => {
 			let i = t === 0 ? 0 : Math.round(Math.random() * t * 2) - t, a = n === 0 ? 0 : Math.round(Math.random() * n * 2) - n;
 			for (let t of e) t.style.transform = `translate(${String(i)}px, ${String(a)}px)`;
-			M.current = requestAnimationFrame(r);
+			O.current = requestAnimationFrame(r);
 		};
-		M.current = requestAnimationFrame(r);
-	}, [k]);
-	let N = e.parentElement !== document.body, [F, R] = (0, V.useState)(Zu(e, N));
+		O.current = requestAnimationFrame(r);
+	}, [E]);
+	let k = e.parentElement !== document.body, [M, N] = (0, V.useState)(ed(e, k));
 	oe(() => {
 		function t() {
-			R(Zu(e, N));
+			N(ed(e, k));
 		}
 		return globalThis.addEventListener("resize", t), () => globalThis.removeEventListener("resize", t);
 	});
-	let { cvsScale: z } = Xu(F, N), { stageW: B, stageH: ee } = i, te = (0, V.useRef)(null), re = S((e) => e.fullScr), H = S((e) => e.setFullScr), ie = S((e) => e.toggleFullScr);
-	U((0, V.useRef)(e), re, { onClose: () => H(!1) });
-	let [W, se] = (0, V.useState)(() => !!document.fullscreenElement);
+	let { cvsScale: F } = $u(M, k), { stageW: R, stageH: z } = i, B = (0, V.useRef)(null), ee = S((e) => e.fullScr), te = S((e) => e.setFullScr), re = S((e) => e.toggleFullScr);
+	U((0, V.useRef)(e), ee, { onClose: () => te(!1) });
+	let [H, ie] = (0, V.useState)(() => !!document.fullscreenElement);
 	(0, V.useEffect)(() => {
-		let e = () => se(!!document.fullscreenElement);
+		let e = () => ie(!!document.fullscreenElement);
 		return document.addEventListener("fullscreenchange", e), () => document.removeEventListener("fullscreenchange", e);
 	}, []), (0, V.useEffect)(() => {
-		n.setFullScr(W);
-	}, [W]), (0, V.useLayoutEffect)(() => {
-		W ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(B * z)}px`, e.style.height = `${String(ee * z)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
+		n.setFullScr(H);
+	}, [H]), (0, V.useLayoutEffect)(() => {
+		H ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(R * F)}px`, e.style.height = `${String(z * F)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
 	}, [
+		F,
+		R,
 		z,
-		B,
-		ee,
-		W
+		H
 	]);
-	let ce = Au`
+	let W = Au`
 		position: relative;
-		width: ${B}px;
-		height: ${ee}px;
+		width: ${R}px;
+		height: ${z}px;
 		overflow: hidden;
 		background-color: ${i.bgColor};
 
@@ -11224,24 +11302,18 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
 			上のuseLayoutEffectのコメント参照） */
 		transform-origin: left top;
-		transform: scale(${String(z)});
-	`, le = Au`position: absolute; top: 0; left: 0;`, ue = Au`
+		transform: scale(${String(F)});
+	`, se = Au`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, de = Au`
+	`, ce = Au`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 1;
 		pointer-events: none;
-	`, fe = Au`
-		position: absolute; top: 0; left: 0;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-		background-color: ${i.bgColor};
-	`, pe = Au`
+	`, le = Au`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -11261,65 +11333,65 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, me = (0, V.useRef)(null);
+	`, ue = (0, V.useRef)(null);
 	oe(() => {
-		n.attachFrameBox(me.current), n.attachStageBox(te.current);
+		n.attachFrameBox(ue.current), n.attachStageBox(B.current);
 	}), oe(() => {
-		let e = te.current;
+		let e = B.current;
 		e.addEventListener("mousedown", () => p());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [he, ge] = ne(!1);
+	let [de, fe] = ne(!1);
 	ae((e) => {
-		e.stopPropagation(), L(), !_() && (ge(), I(!he));
+		e.stopPropagation(), L(), !_() && (fe(), I(!de));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
 	});
-	let _e = (0, V.useRef)(null);
-	function ve(e) {
-		_e.current = {
+	let pe = (0, V.useRef)(null);
+	function me(e) {
+		pe.current = {
 			x: e.clientX,
 			y: e.clientY
 		};
 	}
-	function ye(e) {
-		let t = _e.current;
-		if (_e.current = null, !t || he) return;
-		let r = te.current.getBoundingClientRect(), i = Ju(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
+	function he(e) {
+		let t = pe.current;
+		if (pe.current = null, !t || de) return;
+		let r = B.current.getBoundingClientRect(), i = Ju(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
 		i && (L(), n.fireEvent((e.pointerType === "mouse" ? A(e.nativeEvent) : "") + i));
 	}
-	let be = (() => {
+	let ge = (() => {
 		let e = /* @__PURE__ */ new Map();
-		for (let t of f) for (let n of t) if (n.aFlt) for (let t of y(n.aFlt)) e.set(b(t), t);
+		for (let t of u) for (let n of t) if (n.aFlt) for (let t of y(n.aFlt)) e.set(b(t), t);
 		return [...e.values()];
-	})(), xe = (() => {
+	})(), _e = (() => {
 		let e = /* @__PURE__ */ new Map();
-		for (let t of f) for (let n of t) if (n.aFlt) for (let t of v(n.aFlt)) e.set(d(t), t);
+		for (let t of u) for (let n of t) if (n.aFlt) for (let t of v(n.aFlt)) e.set(d(t), t);
 		return [...e.values()];
-	})(), Se = { cmn: {
+	})(), ve = (0, V.useMemo)(() => ({
 		sys: t,
-		styChild: le,
-		isDesignMode: he,
-		sty4Moveable: he ? {
+		styChild: Yu,
+		isDesignMode: de,
+		sty4Moveable: de ? {
 			maxWidth: "auto",
 			maxHeight: "auto",
 			minWidth: "auto",
 			minHeight: "auto",
 			transform: "translate(0px, 0px) rotate(0deg)"
 		} : {}
-	} };
+	}), [t, de]);
 	return /* @__PURE__ */ D("div", {
-		css: ce,
+		css: W,
 		onClick: r,
-		onPointerDown: ve,
-		onPointerUp: ye,
-		ref: te,
+		onPointerDown: me,
+		onPointerUp: he,
+		ref: B,
 		children: [
-			g?.ruleSrc && !g.glslSrc && /* @__PURE__ */ P("svg", {
+			m?.ruleSrc && !m.glslSrc && /* @__PURE__ */ P("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
@@ -11331,7 +11403,7 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 						type: "matrix",
 						values: "0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0"
 					}), /* @__PURE__ */ P("feComponentTransfer", { children: /* @__PURE__ */ P("feFuncA", {
-						ref: O,
+						ref: T,
 						type: "linear",
 						slope: "1",
 						intercept: "0"
@@ -11341,25 +11413,25 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					maskUnits: "userSpaceOnUse",
 					x: "0",
 					y: "0",
-					width: B,
-					height: ee,
+					width: R,
+					height: z,
 					children: /* @__PURE__ */ P("image", {
-						href: g.ruleSrc,
+						href: m.ruleSrc,
 						x: "0",
 						y: "0",
-						width: B,
-						height: ee,
+						width: R,
+						height: z,
 						preserveAspectRatio: "none",
 						filter: "url(#sn_rule_flt)"
 					})
 				})] })
 			}),
-			be.length > 0 && /* @__PURE__ */ P("svg", {
+			ge.length > 0 && /* @__PURE__ */ P("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ P("defs", { children: be.map((e) => /* @__PURE__ */ P("filter", {
+				children: /* @__PURE__ */ P("defs", { children: ge.map((e) => /* @__PURE__ */ P("filter", {
 					id: b(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
@@ -11372,118 +11444,58 @@ function Yu({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					})
 				}, b(e))) })
 			}),
-			xe.length > 0 && /* @__PURE__ */ P("svg", {
+			_e.length > 0 && /* @__PURE__ */ P("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ P("defs", { children: xe.map((e) => /* @__PURE__ */ P("filter", {
+				children: /* @__PURE__ */ P("defs", { children: _e.map((e) => /* @__PURE__ */ P("filter", {
 					id: d(e),
 					children: /* @__PURE__ */ P("feGaussianBlur", { stdDeviation: s(e) })
 				}, d(e))) })
 			}),
-			he && /* @__PURE__ */ D(j, { children: [
+			de && /* @__PURE__ */ D(j, { children: [
 				/* @__PURE__ */ P("button", {
-					onClick: () => ie(),
-					css: pe,
+					onClick: () => re(),
+					css: le,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ P("button", {
 					onClick: () => {},
-					css: pe,
+					css: le,
 					children: "Back"
 				}),
 				/* @__PURE__ */ P("button", {
 					onClick: () => {},
-					css: pe,
+					css: le,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ P("span", { children: W }),
-			f.map((e, t) => {
-				let r = g?.aLayNm && t !== h ? e.map((e) => g.aLayNm.includes(e.nm) ? e : f[h].find((t) => t.nm === e.nm) ?? e) : e;
-				return /* @__PURE__ */ P("div", {
-					ref: w[t],
-					"data-page": t === h ? "fore" : "back",
-					css: fe,
-					style: {
-						zIndex: +(t === h),
-						visibility: t === h || g ? "visible" : "hidden",
-						pointerEvents: t === h ? "auto" : "none",
-						"--sn-ani-play": t === h || g ? "running" : "paused",
-						...g?.ruleSrc && !g.glslSrc && t === h ? { mask: "url(#sn_rule_msk)" } : {}
-					},
-					children: r.map((e) => {
-						let r = {
-							...Se.cmn.sty4Moveable,
-							...m(e)
-						};
-						return l(e) ? /* @__PURE__ */ P(bu, {
-							cmn: Se.cmn,
-							sty: r,
-							nm: e.nm,
-							fn: e.fn,
-							src: e.src,
-							isSheet: e.isSheet,
-							isMovie: e.isMovie,
-							aFace: e.aFace,
-							aFx: e.aFx ?? [],
-							fxActive: t === h || !!g,
-							getVideoVol: () => n.getMovieVolume(),
-							needClick2Play: () => n.needClick2Play()
-						}, e.nm) : u(e) ? /* @__PURE__ */ P(Fu, {
-							cmn: Se.cmn,
-							sty: r,
-							nm: e.nm,
-							isFore: t === h,
-							str: e.str,
-							aCh: e.aCh,
-							ffs: e.ffs,
-							noffs: e.noffs,
-							bura: e.bura,
-							kinsoku_sol: e.kinsoku_sol,
-							kinsoku_eol: e.kinsoku_eol,
-							kinsoku_dns: e.kinsoku_dns,
-							kinsoku_bura: e.kinsoku_bura,
-							r_align: e.r_align,
-							b_color: e.b_color,
-							b_alpha: e.b_alpha,
-							b_alpha_isfixed: e.b_alpha_isfixed,
-							b_src: e.b_src,
-							styTxt: e.style,
-							pl: e.pl,
-							pr: e.pr,
-							pt: e.pt,
-							pb: e.pb,
-							enabled: e.enabled,
-							aBtn: e.aBtn,
-							in_style: e.in_style,
-							onActivate: (e, t, r, i) => n.jumpToLabelAndGo(e, t, r, i),
-							onNavigate: (e) => n.navigateTo(e),
-							onSe: (e, t) => n.playButtonSe(e, t)
-						}, e.nm) : /* @__PURE__ */ P(Wu, {
-							cmn: Se.cmn,
-							sty: r,
-							nm: e.nm,
-							attach: (r) => {
-								n.attachPlgBox(e.nm, t, r);
-							}
-						}, e.nm);
-					})
+			/* @__PURE__ */ P("span", { children: H }),
+			u.map((e, t) => {
+				let r = m?.aLayNm && t !== f ? e.map((e) => m.aLayNm.includes(e.nm) ? e : u[f].find((t) => t.nm === e.nm) ?? e) : e;
+				return /* @__PURE__ */ P(Zu, {
+					idx: t,
+					isFore: t === f,
+					trans: m,
+					aLay: r,
+					cmn: ve,
+					scrMng: n,
+					pgRef: x[t]
 				}, t);
 			}),
 			/* @__PURE__ */ P("div", {
-				ref: T,
-				css: de
+				ref: C,
+				css: ce
 			}),
 			/* @__PURE__ */ P("div", {
-				ref: me,
-				css: ue
+				ref: ue,
+				css: se
 			})
 		]
 	});
 }
-function Xu({ width: e, height: t }, a) {
+function $u({ width: e, height: t }, a) {
 	let o = 0, s = 0, c = 1;
 	return a ? (o = Math.min(e, i.stageW), s = r(i.stageH / i.stageW * o), c = o / i.stageW) : n(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = r(i.stageW / i.stageH * t)) : (o = e, s = r(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
 		cvsScale: c,
@@ -11491,7 +11503,7 @@ function Xu({ width: e, height: t }, a) {
 		cvsHeight: s
 	};
 }
-function Zu(e, t) {
+function ed(e, t) {
 	if (t && e.parentElement) return {
 		width: e.parentElement.clientWidth,
 		height: 0
@@ -11503,6 +11515,6 @@ function Zu(e, t) {
 	};
 }
 //#endregion
-export { Yu as default };
+export { Qu as default };
 
 //# sourceMappingURL=Stage.js.map
