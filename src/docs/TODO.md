@@ -53,13 +53,6 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**
 
-別件（本家 `[trans glsl=]` 契約側。§7 の棲み分け）：
-
-- [x] ぼかし／モザイク `[trans glsl=]`（2026-08-28）。ギャラリー作例でなく**エンジンのプリセット名**に
-      した（`[trans glsl=blur]` / `[trans glsl=mosaic]`。`src/ts/transPresets.ts`。`[add_fx fx=]` と同じ
-      考え方だが属性 1 つで兼ねる）。契約に `resolution`（vec2）追加。`test/transPresets.test.ts`＋
-      `test/e2e/trans.e2e.ts`。ギャラリー glsl_slide の `ml2` はカスタム GLSL の作例として残す
-
 ## 保留
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
