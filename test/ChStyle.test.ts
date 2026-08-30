@@ -181,6 +181,25 @@ it('[graph]/[tcy]のwaitも同じ経路で乗る', ()=> {
 	expect(chs('[tcy t=あい wait=444]')[0]?.w).toBe(444);
 });
 
+it('[ch wait=]はそのtextの各文字だけに乗る', ()=> {
+	const a = chs('[ch text=あい wait=200]う');
+	expect(a[0]?.w).toBe(200);
+	expect(a[1]?.w).toBe(200);
+	expect(a[2]?.w).toBeUndefined();	// add_close以降の地の文には効かない
+});
+
+it('[ch wait=0]は瞬時（0がそのまま乗る）', ()=> {
+	// num()は0を「指定なし」に落とさない（?? は null/undefined だけ）
+	expect(chs('[ch text=あ wait=0]')[0]?.w).toBe(0);
+});
+
+it('[ch wait=]は親[span wait=]に勝つ', ()=> {
+	const a = chs('[span wait=500]あ[ch text=い wait=100]う');
+	expect(a[0]?.w).toBe(500);	// [span]区間
+	expect(a[1]?.w).toBe(100);	// [ch]が上書き
+	expect(a[2]?.w).toBe(500);	// add_close後は[span]の値へ戻る
+});
+
 it('span_r_alignは記法内指定が無い文字へ落ちる', ()=> {
 	const a = chs('[span r_align=center]あ');
 	expect(a[0]?.ra).toBe('center');

@@ -175,7 +175,7 @@
 	<p>文字・文字レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
 		<li class="mb1"><a href="#autowc">🟢 [autowc] 文字ごとのウェイト</a></li>
-		<li class="mb1"><a href="#ch">🟡 [ch] 文字を追加する</a></li>
+		<li class="mb1"><a href="#ch">🟢 [ch] 文字を追加する</a></li>
 		<li class="mb1"><a href="#ch_in_style">🟢 [ch_in_style] 文字出現演出定義</a></li>
 		<li class="mb1"><a href="#ch_out_style">🟢 [ch_out_style] 文字消去演出定義</a></li>
 		<li class="mb1"><a href="#clear_text">🟢 [clear_text] 文字消去</a></li>
@@ -1264,7 +1264,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>page</td><td></td><td>fore</td><td>fore、back</td><td>ページの裏表</td></tr>
 <tr class="y"><td>text</td><td>y</td><td></td><td>表示したい文字列</td><td>ルビ文法（《》）も解析する。改行も [r] で出来る</td></tr>
 <tr><td>record</td><td></td><td>true</td><td>true、false</td><td>履歴に保存するか</td></tr>
-<tr><td>🟡 wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時<br/>（bluesnovel）未対応</td></tr>
+<tr><td>wait</td><td></td><td>現在の文字表示速度</td><td>0〜；ミリ秒</td><td>一時的な文字表示速度。0で瞬時。<br/>この[ch]の文字だけ1文字ごとの出現待ちを上書きする（<a href="#autowc">[autowc]</a>より優先）</td></tr>
 <tr><td>style</td><td></td><td>何もしない</td><td>CSS style</td><td>
 	文字の CSS Style を指定する。<br/>
 	このタグによる表示のみに適用、以降は元に戻る。<br/>
@@ -1281,8 +1281,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名</td></tr>
 </table>
 <p class="mb2 px1"><b>bluesnovel</b>：<code>text</code>（ルビ記法・<code>[r]</code>改行を含む）・<code>style</code>・<code>r_style</code>・
-	<code>record</code>・<code>layer</code>／<code>page</code>に対応。
-	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、styleはそのtextの間だけ効く。</p>
+	<code>record</code>・<code>wait</code>・<code>ch_in_style</code>／<code>ch_out_style</code>・<code>layer</code>／<code>page</code>に対応。
+	本家と同じく本文ストリームへ<code>add｜…</code>／<code>add_close｜…</code>を埋め込む方式で、
+	<code>style</code>・<code>wait</code>・<code>ch_in_style</code>等はそのtextの間だけ効く（<a href="#span">[span]</a>の区間指定に勝つ）。</p>
 <p>[ch]を使わない、より簡潔な記述文法があります。<br/>
 	以下の記述は、<br/>
 	[ch text=&amp;test]<br/>
