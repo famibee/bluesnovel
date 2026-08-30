@@ -146,10 +146,10 @@
 		<li class="mb1"><a href="#add_lay">🟢 [add_lay] レイヤを追加する</a></li>
 		<li class="mb1"><a href="#clear_lay">🟢 [clear_lay] レイヤ設定の消去</a></li>
 		<li class="mb1"><a href="#finish_trans">🟢 [finish_trans] トランス強制終了</a></li>
-		<li class="mb1"><a href="#lay">🟡 [lay] レイヤ設定</a></li>
+		<li class="mb1"><a href="#lay">🟢 [lay] レイヤ設定(共通)</a></li>
 		<li class="mb1"><a href="#blendMode">　blendModeの解説</a></li>
-		<li class="mb1"><a href="#txtlay">　レイヤ設定(文字レイヤ)</a></li>
-		<li class="mb1"><a href="#grplay">　レイヤ設定(画像レイヤ)</a></li>
+		<li class="mb1"><a href="#txtlay">　🟡 レイヤ設定(文字レイヤ)</a></li>
+		<li class="mb1"><a href="#grplay">　🟡 レイヤ設定(画像レイヤ)</a></li>
 		<li class="mb1"><a href="#trans">🟢 [trans] ページ裏表を交換</a></li>
 		<li class="mb1"><a href="#wt">🟢 [wt] トランス終了待ち</a></li>
 		<li class="mb1"><a href="#add_filter">🟡 [add_filter] フィルター追加</a></li>
@@ -179,7 +179,7 @@
 		<li class="mb1"><a href="#current">🟢 [current] デフォルト文字レイヤ設定</a></li>
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
-		<li class="mb1"><a href="#graph">🟡 [graph] インライン画像表示</a></li>
+		<li class="mb1"><a href="#graph">🟢 [graph] インライン画像表示</a></li>
 		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
 		<li class="mb1"><a href="#rec_ch">🟢 [rec_ch] 履歴書き込み</a></li>
@@ -188,7 +188,7 @@
 		<li class="mb1"><a href="#ruby2">🟢 [ruby2] 文字列と複数ルビの追加</a></li>
 		<li class="mb1"><a href="#set_focus">🟢 [set_focus] フォーカス移動</a></li>
 		<li class="mb1"><a href="#span">🟡 [span] インラインスタイル設定</a></li>
-		<li class="mb1"><a href="#tcy">🟡 [tcy] 縦中横を表示する</a></li>
+		<li class="mb1"><a href="#tcy">🟢 [tcy] 縦中横を表示する</a></li>
 	</ul>
 	<p>画像・画像レイヤ</p>
 	<ul class="anchors list-reset m0 p0 px1">
@@ -268,7 +268,7 @@
 	</ul>
 	<p>画面揺らし</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#quake">🟡 [quake] 画面を揺らす</a></li>
+		<li class="mb1"><a href="#quake">🟢 [quake] 画面を揺らす</a></li>
 		<li class="mb1"><a href="#stop_quake">🟢 [stop_quake] 画面揺らし中断</a></li>
 		<li class="mb1"><a href="#wq">🟢 [wq] 画面揺らし終了待ち</a></li>
 	</ul>
@@ -2393,11 +2393,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>call</td><td></td><td>false</td><td>true、false</td><td>trueの場合は[call]、falseは[jump]。<br/>ただしcall=trueによりサブルーチンコールした場合、[return]によって「コールする前のイベント予約状態＆待ち状態」に戻る</td></tr>
 <tr><td>fn</td><td>どちらか、もしくは両方を指定</td><td>処理中のスクリプトファイル</td><td>スクリプトファイル名</td><td>クリック時にジャンプする先</td></tr>
 <tr><td>label</td><td>スクリプトファイルの先頭</td><td>ラベル名（半角アスタリスク*も含む）</td><td>コール先のスクリプトファイルにあるラベル</td><td>クリック時ジャンプ先で「&sn.eventLabel」にて値を受け取れる</td></tr>
-<tr><td>url</td><td>fnかlabelか、このurlを指定</td><td>fn・label によるスクリプトジャンプ</td><td>ブラウザで開けるURL</td><td>クリック時にURLを開く。指定時は fn・label を無視する</td></tr>
-<tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく</td></tr>
+<tr><td>🔴 url</td><td>fnかlabelか、このurlを指定</td><td>fn・label によるスクリプトジャンプ</td><td>ブラウザで開けるURL</td><td>クリック時にURLを開く。指定時は fn・label を無視する<br/>（bluesnovel）未対応：エンジンが<code>fn</code>／<code>label</code>しか見ない。<a href="#link">[link url=]</a>・<a href="#event">[event url=]</a>は対応済みなので配線するだけの小改修</td></tr>
+<tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく<br/>（bluesnovel）受理はするが効果を持たない：表示されている間は常にクリック可能（本家のtrue相当）が既定のため。<a href="#link">[link global]</a>と同じ</td></tr>
 <tr><td>arg</td><td></td><td></td><td>ジャンプ先に渡したい値</td><td>指定した場合、クリック時ジャンプ先で「&amp;sn.eventArg」にて値を受け取れる</td></tr>
-<tr><td>onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること</td></tr>
-<tr><td>onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること</td></tr>
+<tr><td>🟡 onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：<a href="#link">[link onenter]</a>と同じく専用の実行経路をエンジンに新設する必要がある。todo.md参照</td></tr>
+<tr><td>🟡 onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：<a href="#link">[link onleave]</a>と同じ。todo.md参照</td></tr>
 <tr><td>clickse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、クリック時に効果音を再生する</td></tr>
 <tr><td>enterse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上にマウスカーソルが載った時に効果音を再生する</td></tr>
 <tr><td>leavese</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上からマウスカーソルが外れた時に効果音を再生する</td></tr>
@@ -2454,7 +2454,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <code>hint</code>／<code>hint_style</code>／<code>hint_opt</code>（ツールチップ）：マウスを乗せた時とフォーカスが入った時に出る。画面端にはみ出す場合は自動で反対側へ切り替え、それでも収まらなければ画面内へ位置をずらす。フォーカス時はホバーと同じ見た目になる。<br/>
 <b>画像ボタン</b>：<code>pic</code>は「通常｜押下｜ホバー」を横に3コマ並べた1枚。箱の大きさは絵の実寸（横は3コマ分の1/3）で、<code>width</code>／<code>height</code>を書けばそちらが勝つ。<code>pic</code>を書くと文字は出ない。<code>b_pic</code>は文字を残して背後へ絵を中央合わせで敷く。<br/>
 <b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）：<code>join</code>は常にfalse固定（投げっぱなし）。<code>enabled=false</code>のボタンは効果音も鳴らない。同じバッファに同じファイルの再生要求が重なっても、頭から鳴り直さない。<br/>
-<b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。</p>
+<b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。<br/>
+<b>本家との差（未移植）</b>：<code>url</code>（🔴・小改修で可）／<code>onenter</code>・<code>onleave</code>（🟡・<a href="#link">[link]</a>と共通の中規模実装待ち）／<code>global</code>（受理のみ）。<code>event_at_down</code>・<code>draggable</code>・<code>drag_*</code>・<code>dragmove_*</code>は本家でも「未作成」。<code>style</code>系はCSSで受ける（本家はpixi TextStyle JSON）。</p>
 
 </p>
 <h2 id="call" class="w-heading">[call]サブルーチンコール</h2>
@@ -2810,8 +2811,9 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>vmax</td><td></td><td>10</td><td>0〜</td><td>縦方向の最大揺らし幅。幅はランダム値を取る</td></tr>
 </table>
 
-<p class="mb2 px1"><b>bluesnovel</b>：揺れ幅はステージ座標のpxで、毎フレーム<code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code>のランダム位置へ跳ぶ（補間しない）。<code>time=0</code>と既読スキップ中は揺らさない。<br/>
-特定レイヤだけを揺らしたい場合は<a href="#tsy">[tsy path=…]</a>で代替できる（立ち絵の揺れ演出はこちらで実現している）。</p>
+<p class="mb2 px1"><b>bluesnovel</b>🟢：揺れ幅はステージ座標のpxで、毎フレーム<code>[-hmax,+hmax]</code>／<code>[-vmax,+vmax]</code>のランダム位置へ跳ぶ（補間しない）。<code>time=0</code>と既読スキップ中は揺らさない。<br/>
+特定レイヤだけを揺らしたい場合は<a href="#tsy">[tsy path=…]</a>で代替できる（立ち絵の揺れ演出はこちらで実現している）。<br/>
+本家にある<code>delay</code>／<code>repeat</code>／<code>ease</code>／<code>yoyo</code>は<b>非対応（凍結）</b>。本家がこれらを持つのは<a href="#trans">[trans]</a>と同じトゥイーン枠を使い回している副産物であって画面揺らしとしての意図ではなく（<a href="#stop_quake">[stop_quake]</a>欄も参照）、こちらは毎フレームのランダムジャンプで実装しているためイージング／ヨーヨーの概念が無い。必要になれば<a href="#tsy">[tsy]</a>側で表現できる。</p>
 
 </p>
 <h2 id="stop_quake" class="w-heading">[stop_quake]画面揺らし中断</h2>

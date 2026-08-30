@@ -2,15 +2,36 @@
 
 対応コードが無い（または本家自体が未接続の）ものだけをここに置く。
 
-## `[link]` の `onenter` / `onleave`（保留）
+## `[link]` / `[button]` の `onenter` / `onleave`（保留）
 
 本家はラベルをコールし `[return]` で戻る仕様。素朴に `[button call=true]` と同じ経路
 （`callToLabel` → 通常の step 実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまう
 バグになる——`[return]` 後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを
 `[return]` まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する
-必要があり、`[button]` と共通の中規模な追加実装になる。
+必要があり、`[link]`・`[button]` 共通の中規模な追加実装になる。
 
-`global` は対応済み（受理はするが効果を持たない扱いで決着。理由は `docs/tag.html` の `[link]` 欄）。
+`global` は両タグとも「受理はするが効果を持たない」扱いで決着（表示中は常にクリック可能＝本家の
+`true` 相当が既定のため）。理由は `docs/tag.html` の `[link]` 欄。
+
+## `[button]` の本家との差（未移植の棚卸し）
+
+- `url`：クリックで URL を開く。エンジンが `fn`/`label` しか見ていないだけで、`ScriptMng.navigateTo()`
+  は `[link url=]`/`[event url=]` で使っている。**配線するだけの小改修**（TODO 済み）。
+- `onenter`/`onleave`：上記の共通実装待ち。
+- `event_at_down`（押した瞬間に発火）・`draggable`/`drag_*`/`dragmove_*`：**本家の `docs/tag.html`
+  でも「（以下は未作成）」**。ドラッグ系はデザインモード／Moveable 再開時にまとめて。
+- `style`/`style_hover`/`style_clicked`：本家は pixi の `TextStyle` JSON、こちらは CSS 文字列で受ける
+  （移植上の置き換えであって欠落ではない）。
+- 廃止扱い（本家も打ち消し線）：`hint_tate`/`hint_width`/`hint_color`/`hint_font`。
+
+## `[quake]` の `delay` / `repeat` / `ease` / `yoyo`（凍結）
+
+本家 `[quake]` がこの 4 属性を持つのは、実装が `[trans]` と同じトゥイーン枠（`CmnTween`）を
+使い回している副産物であって、画面揺らしとしての仕様意図ではない（`docs/tag.html` の
+`[stop_quake]` 欄でも触れている）。分家は「毎フレーム `[-hmax,+hmax]`／`[-vmax,+vmax]` の
+ランダム位置へ跳ぶ（補間なし）」で実装しているため、イージング・ヨーヨー・繰り返し回数という
+概念がそもそも無い。`time`＋`hmax`/`vmax` で機能は満たしており `[quake]` は 🟢。
+特定レイヤだけの揺れや凝った動きが要るなら `[tsy path=…]`（立ち絵の揺れ演出はこれ）で表現できる。
 
 ## `[tsy]` の `render`（決着・CSS で等価）
 

@@ -24,6 +24,8 @@
 
 ## タグ・変数の残り
 
+- [ ] `[button url=]`：クリックで URL を開く。エンジンが `fn`/`label` しか見ていない。
+      `[link url=]`/`[event url=]` は対応済み（`ScriptMng.navigateTo()`）なので配線するだけの小改修
 - [ ] `[ch]`/`[span]` の `ch_in_style`/`ch_out_style` 未接続（定義は `[ch_in_style]`/
       `[ch_out_style]` で受け付けるが `[ch]`/`[span]` 側の属性として未接続）。詳細 [text-rendering.md](text-rendering.md)
 - [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
@@ -57,8 +59,8 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
       （8/25頃）。連携先が無い状態での実装は着手しない
-- [ ] `[link]` の `onenter`/`onleave`：専用の実行経路をエンジンに新設する必要がある中規模実装。
-      理由の詳細は [tag-notes.md](tag-notes.md)
+- [ ] `[link]`／`[button]` の `onenter`/`onleave`：専用の実行経路をエンジンに新設する必要がある
+      中規模実装（両タグ共通）。理由の詳細は [tag-notes.md](tag-notes.md)
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE = false`）：調整結果の書き戻し先を
       決めてから。グループ位置指定・Moveable リサイズ追随も同時に。詳細 [deferred-infra.md](deferred-infra.md)
 - [ ] ESLint 復活（TS 7.1 対応待ち）時に `eslint-plugin-import` → `eslint-plugin-import-x`
@@ -73,6 +75,9 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
 - `max_row` / `sys:sn.tagCh.canskip`：本家自体が未接続の死んだ属性 → [tag-notes.md](tag-notes.md)
 - `[tsy] arrive`：常に `true` 相当で固定（ストアを唯一の現在値とする設計と `false` が噛み合わない）。
   配線すれば可能だが優先度低 → [tag-notes.md](tag-notes.md)
+- `[quake]` の `delay`/`repeat`/`ease`/`yoyo`：本家が `[trans]` と同じトゥイーン枠を使い回す副産物。
+  こちらは毎フレームのランダムジャンプ実装でイージング／ヨーヨーの概念が無い。必要なら `[tsy]` で
+  → [tag-notes.md](tag-notes.md)
 - `[ch_out_style]` の消去アニメ適用 → [text-rendering.md](text-rendering.md)
 - ルビ付き行の行間不揃い（行頭にルビが来る場合のみ残存） → [text-rendering.md](text-rendering.md)
 - 縦書きで `〈`/`〉` だけ90°回転しない（Chromium + Hiragino の外部バグ） → [text-rendering.md](text-rendering.md)
