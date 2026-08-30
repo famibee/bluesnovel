@@ -55,8 +55,6 @@ snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画�
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
       （8/25頃）。連携先が無い状態での実装は着手しない
-- [ ] `[link]`／`[button]` の `onenter`/`onleave`：専用の実行経路をエンジンに新設する必要がある
-      中規模実装（両タグ共通）。理由の詳細は [tag-notes.md](tag-notes.md)
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE = false`）：調整結果の書き戻し先を
       決めてから。グループ位置指定・Moveable リサイズ追随も同時に。詳細 [deferred-infra.md](deferred-infra.md)
 - [ ] ESLint 復活（TS 7.1 対応待ち）時に `eslint-plugin-import` → `eslint-plugin-import-x`

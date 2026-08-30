@@ -143,6 +143,15 @@ it('link_callFnArg', ()=> {
 	]);
 });
 
+it('link_onenterOnleave', ()=> {
+	// [link onenter=/onleave=]（本家 EventMng.ts:427-442）。ホバー中だけラベルをサブルーチン
+	//	コールする。表示単位に運ぶだけ（実際の割り込み実行はScriptMng.hoverCall→E2E側）
+	expect(units('[link label=*g onenter=*pause onleave=*resume]あ[endlink]')).toEqual([
+		{...LNK_DEFAULT_S, c: 'あ', lnk: {label: '*g', fn: '', call: false, arg: '',
+			onenter: '*pause', onleave: '*resume', ...LNK_DEFAULT_HOVER_CLICK}},
+	]);
+});
+
 it('link_requiresLabelOrFnOrUrl', ()=> {
 	expect(()=> units('[link]あ[endlink]')).toThrow('[link] fn・label・urlのいずれかは必須です');
 });

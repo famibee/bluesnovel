@@ -2,13 +2,37 @@
 
 対応コードが無い（または本家自体が未接続の）ものだけをここに置く。
 
-## `[link]` / `[button]` の `onenter` / `onleave`（保留）
+## `[link]` / `[button]` の `onenter` / `onleave`（実装済み 2026-08-31）
 
-本家はラベルをコールし `[return]` で戻る仕様。素朴に `[button call=true]` と同じ経路
-（`callToLabel` → 通常の step 実行継続）を流用すると、マウスが乗っただけで本編が読み進んでしまう
-バグになる——`[return]` 後にそのまま次のトークンへ進む設計のため。正しく作るには「サブルーチンを
-`[return]` まで走らせたらそこで止め、読み進めには使わない」専用の実行経路をエンジンに新設する
-必要があり、`[link]`・`[button]` 共通の中規模な追加実装になる。
+本家（`EventMng.ts:427-442`）は `pointerover`/`pointerout` で「キー＝`key+ラベル名`」の予約イベントを
+`Reading.fire` し、`resumeByJumpOrCall({call:true})` がラベルをサブルーチンコールする。`[return]` で
+待ちタグへ戻る。
+
+**専用の実行経路は新設せず、既存レールに乗せた。** `ScriptEngine.callToLabel()` /
+`callToScript()`（`--idx` で戻り先＝停止タグ、`clearOnResume` 凍結）と `ScriptMng.#goSafe(viaCall)`
+は元々「`[wait_tsy canskip=false]` 待ち中への割り込み」用に作られており（2026-08-21、`[button call=true]`
+をトゥイーン待ち中に押せるようにした対応）、`onenter`/`onleave` はそのまま流用できた。旧メモの
+「`[return]` 後そのまま次トークンへ進むバグ」はこの実装より前の記述で、もう当てはまらない。
+
+- エンジン：`[button]` は `onenter`/`onleave` を `T_BTN_STY` へ載せる（`addBtn` アクション経由）。
+  `[link]` は `#cmdTxt('link', {...args})` で元から素通ししており、`Txt.ts` の `T_LNK` で拾う。
+- React：`BtnLayer` の `onMouseEnter`/`onMouseLeave`、`TxtLayer` のリンクホバーグループ
+  （`hoverCnt` 0↔1 遷移）から `ScriptMng.hoverCall(label, fn)` を呼ぶ。`fn` はクリック先と共通
+  （本家 `o.fn = hArg.fn`）。
+- `ScriptMng.hoverCall()`：実質 `jumpToLabelAndGo(label, /*call*/true, fn)`。`tmp:sn.eventLabel`
+  も本家同様セット。
+
+**懸念（ホバーサブルーチン実行中に来た click／別ホバー）は本家準拠で「破棄」**（遅延キューにしない）。
+本家はサブルーチン実行中の状態が `ReadingState_go` で、その `fire()` が空実装＝click 等を捨てる。
+分家は `#hovering` フラグを立て、`#goSafe` の通常読み進め（`! viaCall`）を弾く。加えて `hoverCall`
+自体が `#busy`（本編の step 実行中）・`#procing`（DOM 非同期）・**冪等に再実行できない待ちタグ**
+（`[trans]`/`[wait]`/`[quake]`/音待ち）の最中はホバー発火を捨てる。`[wait_tsy]`/`[wait_fx]` は
+`#goSafe(viaCall)` が素通しできる（存在チェックの冪等実装）ので割り込み可。回帰は
+`test/ScriptEngine_lay.test.ts`（`btn_onenterOnleave`）＋`test/ScriptEngine_txt.test.ts`
+（`link_onenterOnleave`）＋`test/e2e/btnhover.e2e.ts`。
+
+なお `onenter`/`onleave` の中身は `[pause_tsy][return]` 程度の軽いものであること（本家も同じ制約）。
+サブルーチン内で `[wait]`／`[l]` すると本家同様そこで待ちに落ち、`#hovering` の保護も外れる。
 
 `global` は両タグとも「受理はするが効果を持たない」扱いで決着（表示中は常にクリック可能＝本家の
 `true` 相当が既定のため）。理由は `docs/tag.html` の `[link]` 欄。
@@ -17,7 +41,7 @@
 
 - `url`（クリックで URL を開く）は対応済み（2026-08-30）。`[link url=]` と同じ分岐で `BtnLayer` の
   クリック／Enter から `ScriptMng.navigateTo` へ。ここに残すのは以下。
-- `onenter`/`onleave`：`[link]` と共通の実装待ち（下の節）。
+- `onenter`/`onleave`：`[link]` と共通で実装済み（2026-08-31、上の節）。
 - `event_at_down`（押した瞬間に発火）・`draggable`/`drag_*`/`dragmove_*`：**本家の `docs/tag.html`
   でも「（以下は未作成）」**。ドラッグ系はデザインモード／Moveable 再開時にまとめて。
 - `style`/`style_hover`/`style_clicked`：本家は pixi の `TextStyle` JSON、こちらは CSS 文字列で受ける

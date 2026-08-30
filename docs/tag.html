@@ -183,7 +183,7 @@
 		<li class="mb1"><a href="#endlink">🟢 [endlink] ハイパーリンクの終了</a></li>
 		<li class="mb1"><a href="#er">🟢 [er] ページ両面の文字消去</a></li>
 		<li class="mb1"><a href="#graph">🟢 [graph] インライン画像表示</a></li>
-		<li class="mb1"><a href="#link">🟡 [link] ハイパーリンク</a></li>
+		<li class="mb1"><a href="#link">🟢 [link] ハイパーリンク</a></li>
 		<li class="mb1"><a href="#r">🟢 [r] 改行</a></li>
 		<li class="mb1"><a href="#rec_ch">🟢 [rec_ch] 履歴書き込み</a></li>
 		<li class="mb1"><a href="#rec_r">🟢 [rec_r] 履歴改行</a></li>
@@ -246,7 +246,7 @@
 	</ul>
 	<p>ラベル・ジャンプ</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#button">🟡 [button] ボタンを表示</a></li>
+		<li class="mb1"><a href="#button">🟢 [button] ボタンを表示</a></li>
 		<li class="mb1"><a href="#call">🟢 [call] サブルーチンコール</a></li>
 		<li class="mb1"><a href="#jump">🟢 [jump] シナリオジャンプ</a></li>
 		<li class="mb1"><a href="#page">🟢 [page] ページ移動</a></li>
@@ -1482,8 +1482,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>url</td><td>fnかlabelか、このurlを指定</td><td>fn・label によるスクリプトジャンプ</td><td>ブラウザで開けるURL</td><td>クリック時にURLを開く。指定時は fn・label を無視する</td></tr>
 <tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく<br/>（bluesnovel）受理はするが効果を持たない：表示されている間は常にクリック可能（本家のtrue相当）が既定のため</td></tr>
 <tr><td>arg</td><td></td><td></td><td>ジャンプ先に渡したい値</td><td>指定した場合、クリック時ジャンプ先で「&amp;sn.eventArg」にて値を受け取れる</td></tr>
-<tr><td>🟡 onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：詳細はtodo.md参照</td></tr>
-<tr><td>🟡 onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：詳細はtodo.md参照</td></tr>
+<tr><td>onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり時、指定したラベルをサブルーチンコールする。 必ず[return]で戻ること<br/>（bluesnovel）クリックの読み進めとは別経路。中身は<code>[pause_tsy][return]</code>程度の軽いものにすること（本家も同じ制約）</td></tr>
+<tr><td>onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ時、指定したラベルをサブルーチンコールする。 必ず[return]で戻ること</td></tr>
 <tr><td>clickse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、クリック時に効果音を再生する。既定バッファは<code>SYS</code>（<a href="#playse">[playse]</a>の既定<code>SE</code>とは異なる）で、再生は投げっぱなし（<code>join=false</code>相当）。<code>[enable_event enabled=false]</code>の間は鳴らない</td></tr>
 <tr><td>enterse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上にマウスカーソルが載った時に効果音を再生する</td></tr>
 <tr><td>leavese</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上からマウスカーソルが外れた時に効果音を再生する</td></tr>
@@ -2405,8 +2405,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>url</td><td>fnかlabelか、このurlを指定</td><td>fn・label によるスクリプトジャンプ</td><td>ブラウザで開けるURL</td><td>クリック時にURLを開く。指定時は fn・label を無視する<br/>（bluesnovel）対応：<a href="#link">[link url=]</a>・<a href="#event">[event url=]</a>と同じく別タブで開く（<code>window.open</code>）。シナリオは止まったまま進まない</td></tr>
 <tr><td>global</td><td></td><td>false</td><td>true、false</td><td>詳細は[event]と同様。<br/>※ボタンを[trans]する場合はtrueにしておく<br/>（bluesnovel）受理はするが効果を持たない：表示されている間は常にクリック可能（本家のtrue相当）が既定のため。<a href="#link">[link global]</a>と同じ</td></tr>
 <tr><td>arg</td><td></td><td></td><td>ジャンプ先に渡したい値</td><td>指定した場合、クリック時ジャンプ先で「&amp;sn.eventArg」にて値を受け取れる</td></tr>
-<tr><td>🟡 onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり（フォーカス取得）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：<a href="#link">[link onenter]</a>と同じく専用の実行経路をエンジンに新設する必要がある。todo.md参照</td></tr>
-<tr><td>🟡 onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ（フォーカス外れ）時、指定したラベルをコールする。 必ず[return]で戻ること<br/>（bluesnovel）未対応：<a href="#link">[link onleave]</a>と同じ。todo.md参照</td></tr>
+<tr><td>onenter</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり時、指定したラベルをサブルーチンコールする。 必ず[return]で戻ること<br/>（bluesnovel）<a href="#link">[link onenter]</a>と同じ経路。クリックの読み進めとは別扱い（読み戻り履歴にも触れない）</td></tr>
+<tr><td>onleave</td><td></td><td>何もしない</td><td>ラベル名</td><td>マウス重なり外れ時、指定したラベルをサブルーチンコールする。 必ず[return]で戻ること</td></tr>
 <tr><td>clickse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、クリック時に効果音を再生する</td></tr>
 <tr><td>enterse</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上にマウスカーソルが載った時に効果音を再生する</td></tr>
 <tr><td>leavese</td><td></td><td>省略時は無音</td><td>音声ファイル名</td><td>指定すると、ボタン上からマウスカーソルが外れた時に効果音を再生する</td></tr>
@@ -2464,7 +2464,8 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <b>画像ボタン</b>：<code>pic</code>は「通常｜押下｜ホバー」を横に3コマ並べた1枚。箱の大きさは絵の実寸（横は3コマ分の1/3）で、<code>width</code>／<code>height</code>を書けばそちらが勝つ。<code>pic</code>を書くと文字は出ない。<code>b_pic</code>は文字を残して背後へ絵を中央合わせで敷く。<br/>
 <b>効果音</b>（<code>clickse</code>／<code>enterse</code>／<code>leavese</code>）：<code>join</code>は常にfalse固定（投げっぱなし）。<code>enabled=false</code>のボタンは効果音も鳴らない。同じバッファに同じファイルの再生要求が重なっても、頭から鳴り直さない。<br/>
 <b>配置属性</b>（<code>center</code>／<code>middle</code>／<code>right</code>／<code>bottom</code>／<code>s_right</code>／<code>s_bottom</code>）に対応：詳細は<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>の同名属性を参照。<br/>
-<b>本家との差（未移植）</b>：<code>onenter</code>・<code>onleave</code>（🟡・<a href="#link">[link]</a>と共通の中規模実装待ち）／<code>global</code>（受理のみ）。<code>event_at_down</code>・<code>draggable</code>・<code>drag_*</code>・<code>dragmove_*</code>は本家でも「未作成」。<code>style</code>系はCSSで受ける（本家はpixi TextStyle JSON）。</p>
+<b>本家との差（未移植）</b>：<code>global</code>（受理のみ）。<code>event_at_down</code>・<code>draggable</code>・<code>drag_*</code>・<code>dragmove_*</code>は本家でも「未作成」。<code>style</code>系はCSSで受ける（本家はpixi TextStyle JSON）。<br/>
+<b>onenter／onleave</b>：<a href="#link">[link]</a>と共通で対応済み。ホバー中だけラベルをサブルーチンコールし<code>[return]</code>で戻る（クリックの読み進めとは別経路）。ホバーのサブルーチン実行中に来たクリックは本家同様<b>破棄</b>される（遅延しない）。</p>
 
 </p>
 <h2 id="call" class="w-heading">[call]サブルーチンコール</h2>

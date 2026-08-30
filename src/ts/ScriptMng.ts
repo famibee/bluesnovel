@@ -437,6 +437,34 @@ export class ScriptMng {
 		void this.#jumpToLabelAndGo(label, call, fn).catch(this.#catchErr);
 	}
 
+	// [button onenter=/onleave=]・[link onenter=/onleave=]のホバーコール（本家 EventMng.ts:427-442
+	//	＋ Reading.fire）。JSX側（BtnLayer/TxtLayer mkLink）のマウス乗り降りから呼ばれる。
+	//	クリックの jumpToLabelAndGo と違い**必ず call**（サブルーチンコール）で、[return]で
+	//	割り込まれた待ちタグへ戻る。専用の「読み進めない」経路＝callToLabel／#goSafe(viaCall)は
+	//	[button call=true]/[event]用に既にあり（2026-08-21、[wait_tsy canskip=false]中の割り込み用）、
+	//	それをそのまま流用する。fnはクリック先と共通（本家 o.fn = hArg.fn）。
+	//	**懸念（ホバーサブルーチン実行中に来た click/別ホバー）は本家準拠で捨てる**：本家は
+	//	サブルーチン実行中の状態が ReadingState_go で、そのfire()が空実装＝クリック等を遅延でなく
+	//	破棄する。分家では #hovering を立てて #goSafe の読み進めを弾き、#busy（本編のstep実行中）
+	//	・#procing（DOM非同期）・冪等に再実行できない待ちタグ（[trans]/[wait]/[quake]/音待ち）の
+	//	最中はホバー発火自体を捨てる（[wait_tsy]/[wait_fx]は #goSafe(viaCall) が素通しできるので可）。
+	//	詳細は src/docs/tag-notes.md「[link] / [button] の onenter / onleave」
+	#hovering = false;
+	hoverCall(label: string, fn = '') {
+		const engine = this.#engine;
+		if (! engine || ! label) return;
+		if (this.#hovering || this.#busy || this.#procing) return;
+		if (this.#transWaiting || this.#waiting || this.#quakeWaiting
+			|| this.#sndWaiting || this.#sndFadeWaiting || this.#videoWaiting) return;
+
+		this.#hovering = true;
+		engine.setValNochk('tmp:sn.eventArg', '');
+		engine.setValNochk('tmp:sn.eventLabel', label);
+		void this.#jumpToLabelAndGo(label, true, fn)
+			.catch(this.#catchErr)
+			.finally(()=> {this.#hovering = false});
+	}
+
 	// HTMLフレーム（[add_frame]系）。レイヤと違いストアには載せず、ここが抱える（FrameMng.ts参照）。
 	//	置き場所（ステージ座標系の箱）はStage.tsxがマウント時に渡してくる。
 	//	this.sys.cryptoを値として渡す都合上sysの初期化後でないと組み立てられない（TS2729）ので、
@@ -590,6 +618,11 @@ export class ScriptMng {
 		//	本家 ReadingState_wait4Tag も、タグ名が's'のときだけonUserActを付けずに待つ。
 		//	[waitclick]は同じ停止でもクリックで進む（＝ここを通らない）
 		if (this.#stopped) return;
+
+		// [button/link onenter=/onleave=]のホバーコール実行中は、通常の読み進めclickを捨てる
+		//	（本家 ReadingState_go.fire() が空実装なのに合わせ、遅延でなく破棄）。viaCall＝ホバー
+		//	コール自身の再開経路（#jumpToLabelAndGo→#goSafe(true)）はここを通す
+		if (this.#hovering && ! viaCall) return;
 
 		// [wt]で[trans]の演出待ち中、または[wait]のウェイト中は、
 		//	読み進め要求を「今すぐ待ちを打ち切って続行」に読み替える。

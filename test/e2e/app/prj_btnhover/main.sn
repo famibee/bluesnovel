@@ -1,0 +1,17 @@
+; E2E用シナリオ（btnhover.e2e.ts が使用）
+;	[button]/[link] の onenter/onleave（本家 EventMng.ts:427-442）。
+;	マウスが乗った／外れた間だけ指定ラベルをサブルーチンコールし、[return] で [l] 待ちへ戻る。
+;	クリックでの読み進めとは別経路（ScriptMng.hoverCall → callToLabel）で、読み戻り履歴にも触れない。
+[add_lay layer=mes class=txt]
+[current layer=mes]
+[button page=fore nm=b text="ホバーで反応" label=*bclick onenter=*benter onleave=*bleave call=true]
+[link label=*lclick call=true onenter=*lenter onleave=*lleave]リンク[endlink]
+どうぞ[l]
+／おわり[s]
+
+*bclick	／Bクリック[return]
+*benter	／B乗った[return]
+*bleave	／B外れた[return]
+*lclick	／Lクリック[return]
+*lenter	／L乗った[return]
+*lleave	／L外れた[return]

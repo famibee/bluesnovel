@@ -29,6 +29,7 @@ type T_BTNARG = {
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onNavigate: (url: string)=> void;	// [button url=…]（[link url=…]と同じ経路＝ScriptMng.navigateTo）
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
+	onHoverCall: (label: string, fn: string)=> void;	// [button onenter=/onleave=]（ScriptMng.hoverCall）
 };
 
 // [button]の配置・寸法・変形をCSSへ（本家 Button.ts のコンストラクタ相当）。
@@ -146,7 +147,7 @@ function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null): CSSProp
 //	Stage.tsxのルートdivにonClick={next}が付いているため、ここでstopPropagation()して
 //	クリックイベントの伝播を止め、Caretaker/isReadBackなどの読み進め系状態には一切触れずに
 //	ScriptMng.jumpToLabelAndGo()経由で直接ジャンプ・進行させる。
-export default function BtnLayer({text, label, call, fn, arg, url, sty, enabled, onActivate, onNavigate, onSe}: T_BTNARG) {
+export default function BtnLayer({text, label, call, fn, arg, url, sty, enabled, onActivate, onNavigate, onSe, onHoverCall}: T_BTNARG) {
 	// 実効的な有効・無効：層側（[enable_event]）とボタン自身（[button enabled=]）のANDを取る
 	const isEnabled = enabled && sty?.enabled !== false;
 	// 文字フォントは組み込み変数 tmp:sn.button.fontFamily（本家 LayerMng.ts:209）。
@@ -378,8 +379,16 @@ export default function BtnLayer({text, label, call, fn, arg, url, sty, enabled,
 	// マウスの乗り降り（本家 pointerover/pointerout）。フォーカス（onFocus/onBlur）は
 	//	キーボード操作でのヒント表示のためのbluesnovel独自拡張なので、本家に無いenterse/leavese
 	//	までは鳴らさない（マウスでの乗り降りだけに揃える）
-	const onMouseEnter = ()=> {showHint(); playSe('enterse', 'entersebuf')};
-	const onMouseLeave = ()=> {hintMng.hide(); playSe('leavese', 'leavesebuf')};
+	// [button onenter=/onleave=]（本家 EventMng.ts:427-442）。enabled=falseのボタンは本家も
+	//	リスナ自体を張らない（EventMng.button()が`if (this.#o.enabled)`の中）ので乗り降りとも撃たない
+	const onMouseEnter = ()=> {
+		showHint(); playSe('enterse', 'entersebuf');
+		if (isEnabled && sty?.onenter) onHoverCall(sty.onenter, fn);
+	};
+	const onMouseLeave = ()=> {
+		hintMng.hide(); playSe('leavese', 'leavesebuf');
+		if (isEnabled && sty?.onleave) onHoverCall(sty.onleave, fn);
+	};
 
 	// フォーカス中のEnter／Spaceで押下扱い（キーボードだけで操作できるように）。
 	//	マウスクリックと同じ「押された」動作なのでclickseも鳴らす

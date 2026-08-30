@@ -69,6 +69,11 @@ export type T_BTN_STY = {
 	clicksebuf?	: string;
 	entersebuf?	: string;
 	leavesebuf?	: string;
+	// [button onenter=/onleave=]。マウスが乗った／外れた間だけ指定ラベルをサブルーチンコールする
+	//	（本家 EventMng.ts:427-442。必ず[return]で戻ること）。飛び先ファイルはクリック先と共通
+	//	（本家 o.fn = hArg.fn）。読み進めない専用経路を通すのは ScriptMng.hoverCall()
+	onenter?	: string;
+	onleave?	: string;
 };
 export type T_BTN = {
 	nm		: string;
@@ -121,6 +126,7 @@ type T_TXTARG = T_LAY_CMN & {
 	onActivate: (label: string, call: boolean, fn: string, arg?: string)=> void;
 	onNavigate: (url: string)=> void;	// [link url=…]
 	onSe: (fn: string, buf: string)=> void;	// [button clickse=/enterse=/leavese=]
+	onHoverCall: (label: string, fn: string)=> void;	// [button/link onenter=/onleave=]（ScriptMng.hoverCall）
 };
 // [link]区間のクリック（本文DOMはReactの外で組み立てるので、コールバックを渡して繋ぐ）
 export type T_ON_LINK = (lnk: T_LNK)=> void;
@@ -137,7 +143,7 @@ export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
 
 export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore, str, aCh, clrGen, ffs, noffs, bura,
 	kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura,
-	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, out_style, onActivate, onNavigate, onSe}: T_TXTARG) {
+	r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, out_style, onActivate, onNavigate, onSe, onHoverCall}: T_TXTARG) {
 	// 読み戻り中（PageLogが最新ページを指していない間）は本文を[page style=…]の見た目にする
 	const isReadBack = useStore(s=> s.isReadBack);
 	const styPaging = useStore(s=> s.styPaging);	// [page style=…]（読み戻り中の本文の見た目）
@@ -364,7 +370,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 				s.style.outline = '1px solid rgb(255, 51, 0)';
 				s.style.backgroundColor = 'rgba(102, 204, 255, 0.5)';
 			}
-			s.appendChild(elCh(ch, r_align, onLink, fncFfs, onSe));
+			s.appendChild(elCh(ch, r_align, onLink, fncFfs, onSe, onHoverCall));
 			frag.appendChild(s);
 			return s;
 		});
@@ -821,10 +827,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			}</span>}
 		</span>
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe}/>)}
+			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
 		</span>}
 		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe}/>)}
+			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}
 			/* draggable */
@@ -1013,7 +1019,8 @@ function styRAlign(ch: string, rb: string, r_align: T_R_ALIGN): string {
 //	半角空白はそのままだと連続分が詰まるのでノーブレークスペースにする（従来どおり）。
 //	r_alignは[lay r_align=]の既定値（記法内指定chのraがあればそちらが勝つ。本家も同じ優先順位）
 function elCh({c, r, ra, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, r_align: T_R_ALIGN | undefined,
-	onLink: T_ON_LINK, fncFfs: (c: string)=> string, onSe: (fn: string, buf: string)=> void): Node {
+	onLink: T_ON_LINK, fncFfs: (c: string)=> string, onSe: (fn: string, buf: string)=> void,
+	onHoverCall: (label: string, fn: string)=> void): Node {
 	const txt = (t: string)=> document.createTextNode(t === ' ' ? '\u00A0' : t);
 	const ffs = fncFfs(c);
 	if (r === undefined && ! s && ! tcy && ! lnk && ! ffs && ! src) return txt(c);
@@ -1058,7 +1065,7 @@ function elCh({c, r, ra, s, rs, tcy, lnk, src, gw, gh, gx, gy}: T_CH, r_align: T
 		rt.textContent = r;
 		el.appendChild(rt);
 	}
-	if (lnk) mkLink(el, lnk, s ?? '', rt, rs ?? '', onLink, onSe);
+	if (lnk) mkLink(el, lnk, s ?? '', rt, rs ?? '', onLink, onSe, onHoverCall);
 	return el;
 }
 
@@ -1141,7 +1148,8 @@ const hLnkGroup = new WeakMap<T_LNK, T_LNK_GROUP>();
 //	**Reactの外で作るDOM**（文字送り演出のためTxtLayerが直接組み立てている）なので、
 //	BtnLayerのようなJSXではなくここでリスナを付ける。読み進めへ伝播させない点は同じ
 function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | undefined, rSty: string,
-	onLink: T_ON_LINK, onSe: (fn: string, buf: string)=> void) {
+	onLink: T_ON_LINK, onSe: (fn: string, buf: string)=> void,
+	onHoverCall: (label: string, fn: string)=> void) {
 	el.style.cursor = 'pointer';
 	el.addEventListener('click', e=> {
 		e.stopPropagation();	// クリックで本文も進む、の二重反応を防ぐ（BtnLayerと同じ）
@@ -1167,6 +1175,9 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | unde
 		}
 		if (lnk.hint) hintMng.show(el, lnk.hint, lnk.hs, lnk.ho);
 		if (lnk.enterse) onSe(lnk.enterse, lnk.entersebuf ?? 'SYS');
+		// [link onenter=…]（本家 EventMng.ts:427-434）。区間へ入った瞬間（hoverCnt 0→1）だけ撃つ。
+		//	enabled=falseの間はCSSのpointer-events:noneでそもそもイベントが来ない
+		if (lnk.onenter) onHoverCall(lnk.onenter, lnk.fn);
 	});
 	el.addEventListener('mouseleave', ()=> {
 		g.hoverCnt--;
@@ -1181,6 +1192,8 @@ function mkLink(el: HTMLElement, lnk: T_LNK, sty: string, rt: HTMLElement | unde
 			}
 			hintMng.hide();
 			if (lnk.leavese) onSe(lnk.leavese, lnk.leavesebuf ?? 'SYS');
+			// [link onleave=…]（本家 EventMng.ts:435-441）。区間の外へ本当に出た時だけ
+			if (lnk.onleave) onHoverCall(lnk.onleave, lnk.fn);
 		});
 	});
 	// 押し下げ中（style_clicked/r_style_clicked）。CSSの:activeが素直に使えない

@@ -1132,6 +1132,8 @@ function K(e) {
 					call: m.call === "true",
 					arg: m.arg ?? "",
 					...m.url ? { url: m.url } : {},
+					...m.onenter ? { onenter: m.onenter } : {},
+					...m.onleave ? { onleave: m.onleave } : {},
 					...m.style_hover ? { sh: m.style_hover } : {},
 					...m.style_clicked ? { sc: m.style_clicked } : {},
 					...m.r_style_hover ?? m.style_hover ? { rsh: m.r_style_hover ?? m.style_hover } : {},
@@ -2334,7 +2336,7 @@ var ce = class n {
 					let t = i[e];
 					t !== void 0 && Object.assign(d, { [e]: n.#n("button", e, t) });
 				}
-				return o || (d.width ??= 100, d.height ??= 30), i.enabled !== void 0 && (d.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (d.blendmode = a(i.blendmode)), i.style !== void 0 && (d.style = n.#u(i.style)), i.style_hover !== void 0 && (d.style_hover = n.#u(i.style_hover)), i.style_clicked !== void 0 && (d.style_clicked = n.#u(i.style_clicked)), i.hint !== void 0 && (d.hint = i.hint), i.hint_style !== void 0 && (d.hint_style = i.hint_style), i.hint_opt !== void 0 && (d.hint_opt = i.hint_opt), o !== void 0 && (d.pic = o), i.b_pic !== void 0 && (d.b_pic = i.b_pic), i.clickse !== void 0 && (d.clickse = i.clickse, d.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (d.enterse = i.enterse, d.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (d.leavese = i.leavese, d.leavesebuf = i.leavesebuf || "SYS"), l.push({
+				return o || (d.width ??= 100, d.height ??= 30), i.enabled !== void 0 && (d.enabled = i.enabled !== "false"), i.blendmode !== void 0 && (d.blendmode = a(i.blendmode)), i.style !== void 0 && (d.style = n.#u(i.style)), i.style_hover !== void 0 && (d.style_hover = n.#u(i.style_hover)), i.style_clicked !== void 0 && (d.style_clicked = n.#u(i.style_clicked)), i.hint !== void 0 && (d.hint = i.hint), i.hint_style !== void 0 && (d.hint_style = i.hint_style), i.hint_opt !== void 0 && (d.hint_opt = i.hint_opt), o !== void 0 && (d.pic = o), i.b_pic !== void 0 && (d.b_pic = i.b_pic), i.clickse !== void 0 && (d.clickse = i.clickse, d.clicksebuf = i.clicksebuf || "SYS"), i.enterse !== void 0 && (d.enterse = i.enterse, d.entersebuf = i.entersebuf || "SYS"), i.leavese !== void 0 && (d.leavese = i.leavese, d.leavesebuf = i.leavesebuf || "SYS"), i.onenter !== void 0 && (d.onenter = i.onenter), i.onleave !== void 0 && (d.onleave = i.onleave), l.push({
 					t: "addBtn",
 					layerNm: e,
 					page: u,

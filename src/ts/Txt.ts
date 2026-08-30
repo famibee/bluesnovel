@@ -26,6 +26,10 @@ export type T_LNK = {
 	call	: boolean;
 	arg		: string;	// 飛び先で &sn.eventArg として受け取れる（本家と同じ）
 	url?	: string;	// [link url=…]。指定時はラベルへ飛ばずURLを開く（[navigate_to]と同じ経路）
+	// [link onenter=/onleave=]。マウスが乗った／外れた間だけ指定ラベルをサブルーチンコールする
+	//	（本家 EventMng.ts:427-442。必ず[return]で戻ること）。飛び先ファイルはクリック先（fn）と共通
+	onenter?	: string;
+	onleave?	: string;
 	sh?		: string;	// style_hover。マウスが乗っている間だけ当てるCSS
 	sc?		: string;	// style_clicked。押し下げている間だけ当てるCSS（未指定ならshのまま）
 	rsh?	: string;	// r_style_hover。ルビ側のホバーCSS（未指定ならrsのまま）
@@ -82,6 +86,7 @@ type T_CMD_ARG = {
 	t?: string; r?: string;			// [tcy]
 	pic?: string; width?: string; height?: string; x?: string; y?: string;	// [graph]
 	label?: string; fn?: string; call?: string; arg?: string; url?: string;	// [link]
+	onenter?: string; onleave?: string;	// [link onenter=/onleave=]（本家 EventMng.ts:427-442）
 	hint?: string; hint_style?: string; hint_opt?: string;	// ツールチップ
 	clickse?: string; clicksebuf?: string; enterse?: string; entersebuf?: string;
 	leavese?: string; leavesebuf?: string;	// [link]の効果音
@@ -180,6 +185,8 @@ export function splitCh(raw: string): T_CH[] {
 					call	: o.call === 'true',
 					arg		: o.arg ?? '',
 					...(o.url ? {url: o.url} : {}),
+					...(o.onenter ? {onenter: o.onenter} : {}),
+					...(o.onleave ? {onleave: o.onleave} : {}),
 					...(o.style_hover ? {sh: o.style_hover} : {}),
 					// style_clicked省略時は「styleの値」＝クリック中も追加CSSなし（tag.html仕様）。
 					//	r_style_hover/r_style_clickedも同様に、本文側の対応値へ落ちる

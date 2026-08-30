@@ -2156,6 +2156,11 @@ export class ScriptEngine {
 			if (args.clickse !== undefined) {sty.clickse = args.clickse; sty.clicksebuf = args.clicksebuf || 'SYS'}
 			if (args.enterse !== undefined) {sty.enterse = args.enterse; sty.entersebuf = args.entersebuf || 'SYS'}
 			if (args.leavese !== undefined) {sty.leavese = args.leavese; sty.leavesebuf = args.leavesebuf || 'SYS'}
+			// [button onenter=/onleave=]（本家 EventMng.ts:427-442）。ホバー中だけラベルを
+			//	サブルーチンコールする。飛び先ファイルはクリック先（fn）と共通なので、ここでは
+			//	ラベル名だけ運ぶ。実際の割り込み実行は ScriptMng.hoverCall()→callToLabel()
+			if (args.onenter !== undefined) sty.onenter = args.onenter;
+			if (args.onleave !== undefined) sty.onleave = args.onleave;
 
 			aAct.push({t: 'addBtn', layerNm, page, text: pic ?'' :args.text ?? '', label, call,
 				...(nm === undefined ? {} : {nm}),

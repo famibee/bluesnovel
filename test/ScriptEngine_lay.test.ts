@@ -566,3 +566,12 @@ it('btnAlign_leftWins', ()=> {
 	expect(sty?.align_x).toBeUndefined();
 	expect(sty?.s_right).toBeUndefined();
 });
+
+it('btn_onenterOnleave', ()=> {
+	// [button onenter=/onleave=]（本家 EventMng.ts:427-442）。styへラベル名だけ運ぶ。
+	//	実際のホバー割り込み実行はScriptMng.hoverCall→callToLabel（E2E側で検証）
+	const sty = btnStyOfWin('[button text=x label=*a onenter=*pause onleave=*resume]');
+	expect(sty).toMatchObject({onenter: '*pause', onleave: '*resume'});
+	// 未指定なら渡さない（属性そのものが落ちる）
+	expect(btnStyOfWin('[button text=x label=*a]')?.onenter).toBeUndefined();
+});
