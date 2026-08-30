@@ -194,7 +194,16 @@ export class Kinsoku {
 			const {cont, ins} = bura
 				? this.hyphAlgBura(a, p_i, p_ch, i)
 				: this.hyphAlg(a, p_i, p_ch, i, a[i]!.ch);
-			if (cont) {i = ins -1; continue}	// forの++iで+1されるのでins-1
+			if (cont) {
+				// 折り返しは受理（禁則調整は不要）。**sl_xy を新しい行の起点 x へ更新する**。
+				//	怠ると前の行の最大 x が残り、新しい行の2文字目以降がすべて「折り返し」に
+				//	誤判定される。行途中に行頭禁則文字（「ー」「・」小書き仮名など）があると
+				//	そこで追い出しの <br> を誤挿入していた（[r]由来の改行を afterBr で
+				//	リセットするのと同じ理由。実測 add_fx「…レイヤ|スコープ…」で判明）
+				sl_xy = x;
+				i = ins -1;	// forの++iで+1されるのでins-1
+				continue;
+			}
 
 			let resumeAt = ins +2;
 			if (resumeAt < oldI) resumeAt = oldI;	// 永久ループ防御

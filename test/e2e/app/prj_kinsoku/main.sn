@@ -47,4 +47,16 @@
 ;	kc配列に積んでおらず（.at(0)で先頭1文字のみ）、'─'として認識されないため対が分断されていた
 [clear_lay layer=mes page=fore]
 [lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
-あいう｜え─《てすと》─おかきくけこ[s]
+あいう｜え─《てすと》─おかきくけこ[l]
+
+[er]
+; 自然折り返し受理後にsl_xyを更新していなかった回帰（実測 add_fx「…レイヤ|スコープ…」で判明）。
+;	1行目末（'お'）が行頭禁則でない＝ブラウザの自然な折り返しをそのまま受理（cont=true）した
+;	あと、2行目の途中に行頭禁則の長音符'ー'がある。sl_xyが1行目の最大xのまま残ると
+;	'ー'を新しい行頭と誤認し、その手前へ<br>を誤挿入して「…かき」で大きく余った改行になっていた。
+;	正しくは行頭禁則文字が本当の行頭に無い＝<br>は1つも挿さらない。
+;	（前セグメントのbura=trueを戻し、行頭禁則は'ー'だけの最小集合にする）
+[clear_lay layer=mes page=fore]
+[lay layer=mes kinsoku_sol='ー' bura=false]
+[lay layer=mes style='width: 5em; padding: 0; margin: 0; border: none; font-family: monospace; font-size: 20px;']
+あいうえおかきーけこさ[s]

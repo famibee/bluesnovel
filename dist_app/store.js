@@ -98,7 +98,7 @@ var p = class {
 			}
 			let o = this.i2pi(e, a), s = e[o].ch, c = a, { cont: l, ins: u } = n ? this.hyphAlgBura(e, o, s, a) : this.hyphAlg(e, o, s, a, e[a].ch);
 			if (l) {
-				a = u - 1;
+				i = r, a = u - 1;
 				continue;
 			}
 			let d = u + 2;

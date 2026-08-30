@@ -95,6 +95,17 @@ test('実データ回帰：複数文字ルビの親文字2文字目も禁則判�
 	expect(row[i + 1]).toBe('─');	// 対が隣接（間に<br>が無い＝分断されていない）
 });
 
+test('回帰：自然折り返し受理後は新しい行を基準に測る（行途中の「ー」で誤って追い出さない）', async ({page})=> {
+	// 実測 add_fx「無名 fx はレイヤスコープで…」の再現。1行目末が行頭禁則でない折り返しを
+	//	cont=true で受理したあと sl_xy を更新しないと、2行目途中の行頭禁則「ー」（コープの
+	//	長音符）を新行頭と誤認し、その手前へ<br>を誤挿入していた（「…かき」で大きく余った改行）。
+	//	行頭禁則文字が本当の行頭に無いので、正しくは<br>は1つも挿さらない
+	for (let i = 0; i < 6; ++i) await pressKey(page, 'Space');
+	const row = await domRow(page);
+	expect(row.filter(v=> v === '<br>')).toEqual([]);	// 誤挿入された<br>が無い
+	expect(row.join('')).toBe('あいうえおかきーけこさ');	// 文字の並びは保たれる
+});
+
 test('文字spanは[r]以外すべてinline-block（ブラウザ標準の行分割・禁則を無効化するため）', async ({page})=> {
 	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
 		aEl=> aEl.map(el=> getComputedStyle(el).display)))
