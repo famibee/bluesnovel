@@ -681,6 +681,26 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.8.0](https://github.com/famibee/bluesnovel/compare/v0.7.0...v0.8.0) (2026-08-30)
+
+
+### Features
+
+* **sn:** [button url=] を実装（[link url=] と同じ経路で別タブを開く） ([128a910](https://github.com/famibee/bluesnovel/commit/128a9100223a4a435e778e3392dd6aa7bda0a413))
+* **sn:** [button url=] を実装（[link url=] と同じ経路で別タブを開く） ([d631e22](https://github.com/famibee/bluesnovel/commit/d631e221b44ccd13209111b78513d8e75b922295))
+* **sn:** [ch_out_style] 文字消去アニメを実装（ゴーストspan方式） ([65561b5](https://github.com/famibee/bluesnovel/commit/65561b50ebc5930387895664703cb322d1a7c969))
+* **sn:** [link]/[button] の onenter/onleave（ホバーでラベルコール） ([c2ce89f](https://github.com/famibee/bluesnovel/commit/c2ce89f0714240a01045001a9e456fc55588329c))
+
+
+### Bug Fixes
+
+* **sn:** [span in_style=]＋[clear_text]で文字出現演出が撃ち直されない ([731fd1d](https://github.com/famibee/bluesnovel/commit/731fd1d23d6c83c1e3362dc949e71d285c9a9234))
+
+
+### Performance Improvements
+
+* **sn:** 不可視 back ページで無限 [tsy] 中の back サブツリー再描画を止める ([2e20143](https://github.com/famibee/bluesnovel/commit/2e20143185d6df3afa5a99c17fd00f0bdff022f4))
+
 ## [0.7.0](https://github.com/famibee/bluesnovel/compare/v0.6.0...v0.7.0) (2026-08-28)
 
 
