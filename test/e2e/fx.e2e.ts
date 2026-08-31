@@ -57,7 +57,7 @@ test('[add_fx] で <img> が WebGL <canvas> に替わり、[clear_fx] で戻る'
 	const a1 = (await afx(page))!;
 	expect(a1).toHaveLength(1);
 	// 無名 [add_fx] は store の chgFx が #fxN をレイヤスコープで採番（ANIMATION_RESEARCH.md §7）
-	expect(a1[0]).toMatchObject({name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1});
+	expect(a1[0]).toMatchObject({name: '#fx1', fx: 'wave', time: 0, speed: 1});
 	// プリセット固有パラメータ（既定は H_FX_DEF、上書きは属性どおり）
 	expect(a1[0]!.params).toMatchObject({amp: 10, freq: 3});
 
@@ -168,22 +168,22 @@ test('[pause_fx]/[resume_fx] は記述子の enabled を反転する', async ({p
 	expect((await afx(page))!.find(f=> f.name === 'p')).toMatchObject({enabled: true});
 });
 
-test('[add_fx glsl=] は生シェーダをそのまま描く（契約は [trans glsl=] と統一）', async ({page})=> {
+test('[def_fx] で定義した GLSL を [add_fx fx=] で描く（本体は aFx に焼かれない）', async ({page})=> {
 	for (let i = 0; i < 10; ++i) await pressKeyToWaitMark(page, 'Space');	// 「resume_fx」まで
 	expect(await mesStr(page)).toBe('resume_fx');
 
-	// [clear_fx] → [add_fx name=g glsl="…"] → [er]raw_glsl[l]
+	// [clear_fx] → [def_fx name=pulse glsl="…"] → [add_fx name=g fx=pulse] → [er]def_fx[l]
 	await pressKeyToWaitMark(page, 'Space');
-	expect(await mesStr(page)).toBe('raw_glsl');
+	expect(await mesStr(page)).toBe('def_fx');
 	const g = (await afx(page))!.find(f=> f.name === 'g')!;
-	expect(g).toMatchObject({fx: '', enabled: true});
-	expect(g.glsl).toContain('gl_FragColor');
+	expect(g).toMatchObject({fx: 'pulse', enabled: true});
+	expect(g).not.toHaveProperty('glsl');	// GLSL 本体は記述子（＝[save] 対象）に載らない
 	await expect.poll(async ()=> draw(page)).toBe('canvas');	// コンパイル成功で <canvas>（失敗なら console.error だけ出て絵は出ない）
 });
 
 test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す（face の <img> は DOM から消える）', async ({page})=> {
-	for (let i = 0; i < 11; ++i) await pressKeyToWaitMark(page, 'Space');	// 「raw_glsl」まで
-	expect(await mesStr(page)).toBe('raw_glsl');
+	for (let i = 0; i < 11; ++i) await pressKeyToWaitMark(page, 'Space');	// 「def_fx」まで
+	expect(await mesStr(page)).toBe('def_fx');
 	// この時点では face 無し
 	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
 

@@ -24,13 +24,14 @@ function acts(src: string): T_ENGINE_ACTION[] {return new ScriptEngine('t1', `${
 
 it('bldFx_プリセットの既定値（既定は H_FX_DEF の1箇所）', ()=> {
 	expect(bldFx({fx: 'wave'})).toEqual({
-		name: '', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}});
+		name: '', fx: 'wave', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}});
 	expect(bldFx({fx: 'rgbShift'})).toEqual({
-		name: '', fx: 'rgbShift', glsl: '', time: 0, speed: 1, enabled: true, params: {shift: 4}});
-	// 天候プリセット（背景向け）。amp=落下速度 / freq=密度
+		name: '', fx: 'rgbShift', time: 0, speed: 1, enabled: true, params: {shift: 4}});
+	// 天候プリセット（背景向け）。snow: amp=落下速度 / freq=層数。
+	//	rain: amp=落下速度（既定 2）/ freq=密度（弱雨 2〜豪雨 8+）/ shift=雨脚の長さ
 	expect(bldFx({fx: 'snow'}).params).toEqual({amp: 1, freq: 3});
-	expect(bldFx({fx: 'rain'}).params).toEqual({amp: 1, freq: 2});
-	expect(bldFx({fx: 'rain', amp: '2', freq: '4'}).params).toEqual({amp: 2, freq: 4});
+	expect(bldFx({fx: 'rain'}).params).toEqual({amp: 2, freq: 2, shift: 6});
+	expect(bldFx({fx: 'rain', amp: '3', freq: '8'}).params).toEqual({amp: 3, freq: 8, shift: 6});
 });
 
 it('bldFx_属性で既定を上書き（拾うのは A_FX_PARAM の範囲だけ）', ()=> {
@@ -45,26 +46,54 @@ it('bldFx_属性で既定を上書き（拾うのは A_FX_PARAM の範囲だけ�
 	expect(bldFx({fx: 'wave'}).params).toEqual({amp: 6, freq: 2});
 });
 
-it('bldFx_fx も glsl も無ければ throw', ()=> {
-	expect(()=> bldFx({})).toThrow('fx= か glsl= のどちらかが必要です');
+it('bldFx_fx= が無ければ throw（生 glsl= は [add_fx] では受けない＝[def_fx] へ分離）', ()=> {
+	expect(()=> bldFx({})).toThrow('fx=（プリセット名）が必要です');
+	expect(()=> bldFx({glsl: 'void main(){}'})).toThrow('fx=（プリセット名）が必要です');
 });
 
-it('bldFx_生 glsl= を受ける（fx="" / glsl に文字列 / params は空。契約は [trans glsl=] と統一）', ()=> {
-	const src = 'precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';
-	expect(bldFx({glsl: src})).toEqual({
-		name: '', fx: '', glsl: src, time: 0, speed: 1, enabled: true, params: {}});
-});
-
-it('bldFx_fx= と glsl= の同時指定は throw', ()=> {
-	expect(()=> bldFx({fx: 'wave', glsl: 'void main(){}'})).toThrow('fx= と glsl= は同時に指定できません');
-});
-
-it('bldFx_未知のプリセット名は対応一覧つきで throw', ()=> {
+it('bldFx_未知のプリセット名は throw（組み込み一覧つき）', ()=> {
 	expect(()=> bldFx({fx: 'glitch'})).toThrow('fx【glitch】は未対応です');
+});
+
+it('bldFx_[def_fx] で定義済みの名前は受ける（hDefFx を渡す）', ()=> {
+	expect(()=> bldFx({fx: 'mySnow'})).toThrow('fx【mySnow】は未対応です');	// 台帳なし
+	const f = bldFx({fx: 'mySnow', amp: '3'}, {mySnow: true});
+	expect(f).toEqual({name: '', fx: 'mySnow', time: 0, speed: 1, enabled: true, params: {amp: 3}});
+	// ユーザープリセットは固有既定値を持たない（H_FX_DEF に無い）＝属性で渡した分だけ
+	expect(bldFx({fx: 'mySnow'}, {mySnow: true}).params).toEqual({});
 });
 
 it('bldFx_数値でないパラメータは throw', ()=> {
 	expect(()=> bldFx({fx: 'wave', amp: 'もじ'})).toThrow('[add_fx] amp の値が不正です：もじ');
+});
+
+
+// ============ [def_fx]（ユーザープリセットGLSLの事前定義。[add_face] と同じ思想） ============
+
+const RAW = 'void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';
+
+it('defFx_pushes（storeは触らず本体をレジストリへ流すアクション）', ()=> {
+	expect(acts(`[def_fx name=mySnow glsl="${RAW}"]`).find(v=> v.t === 'defFx'))
+		.toEqual({t: 'defFx', name: 'mySnow', glsl: RAW});
+});
+
+it('defFx_name / glsl は必須', ()=> {
+	expect(()=> acts(`[def_fx glsl="${RAW}"]`)).toThrow('[def_fx] nameは必須です');
+	expect(()=> acts('[def_fx name=x]')).toThrow('[def_fx] glsl=（フラグメントシェーダ）は必須です');
+});
+
+it('defFx_組み込みプリセット名・既定義名はエラー', ()=> {
+	expect(()=> acts(`[def_fx name=wave glsl="${RAW}"]`)).toThrow('name【wave】は組み込みプリセット名');
+	expect(()=> acts(`[def_fx name=a glsl="${RAW}"][def_fx name=a glsl="${RAW}"]`))
+		.toThrow('name【a】は既に定義済みです');
+});
+
+it('defFx_定義後は [add_fx fx=その名前] が通る', ()=> {
+	const a = acts(`[def_fx name=mySnow glsl="${RAW}"][add_fx layer=base fx=mySnow amp=2]`);
+	expect(a.find(v=> v.t === 'addFx')).toEqual({t: 'addFx', aLayNm: ['base'], page: 'fore',
+		fx: {name: '', fx: 'mySnow', time: 0, speed: 1, enabled: true, params: {amp: 2}}});
+	// 未定義の名前はこれまで通りエラー
+	expect(()=> acts('[add_fx layer=base fx=noDef]')).toThrow('fx【noDef】は未対応です');
 });
 
 
@@ -73,7 +102,7 @@ it('bldFx_数値でないパラメータは throw', ()=> {
 it('addFx_pushes（[add_filter] と同じ #argLayNames / #argPageBoth）', ()=> {
 	expect(acts('[add_fx layer=base fx=wave amp=10 freq=3]').find(v=> v.t === 'addFx'))
 		.toEqual({t: 'addFx', aLayNm: ['base'], page: 'fore',
-			fx: {name: '', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 10, freq: 3}}});
+			fx: {name: '', fx: 'wave', time: 0, speed: 1, enabled: true, params: {amp: 10, freq: 3}}});
 });
 
 it('addFx_layer省略は全レイヤ・page=bothで両面', ()=> {
@@ -91,14 +120,6 @@ it('addFx_自体は待たない（[tsy] と同じく skip を返す）', ()=> {
 	expect(acts('[add_fx layer=base fx=wave]').some(v=> v.t === 'addFx')).toBe(true);
 });
 
-it('addFx_glsl= は生シェーダをそのまま記述子へ（fx="", params={}）', ()=> {
-	const src = 'precision mediump float;varying vec2 vTextureCoord;uniform sampler2D uSampler;void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';
-	expect(acts(`[add_fx layer=base glsl="${src}"]`).find(v=> v.t === 'addFx'))
-		.toEqual({t: 'addFx', aLayNm: ['base'], page: 'fore',
-			fx: {name: '', fx: '', glsl: src, time: 0, speed: 1, enabled: true, params: {}}});
-});
-
-
 // ============ [clear_fx] ============
 
 it('clearFx_name はカンマ区切りで複数可（省略はそのレイヤの fx 全部＝null）', ()=> {
@@ -111,6 +132,8 @@ it('clearFx_name はカンマ区切りで複数可（省略はそのレイヤの
 it('fxTags_はマクロ名に使えない', ()=> {
 	expect(()=> acts('[macro name=add_fx]'))
 		.toThrow('[add_fx]はタグ名のため、マクロ名として使用できません');
+	expect(()=> acts('[macro name=def_fx]'))
+		.toThrow('[def_fx]はタグ名のため、マクロ名として使用できません');
 	expect(()=> acts('[macro name=wait_fx]'))
 		.toThrow('[wait_fx]はタグ名のため、マクロ名として使用できません');
 });

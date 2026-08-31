@@ -14,6 +14,7 @@ import {PROTOCOL_USERDATA} from '../sn/Config';
 import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 import {ScriptEngine, type T_ENGINE_ACTION, type T_PAGE, type T_PAGE_BOTH} from './ScriptEngine';
 import {Script} from './Script';
+import {defFx} from './fxRegistry';	// [def_fx]で定義したユーザープリセットGLSLの置き場（分家独自）
 import {easeFn, H_TSY_DEF, type T_TSY_PRP} from './Tsy';
 import {FrameMng, type T_FRM_STY} from './FrameMng';
 import {PlgLayMng} from './PlgLayMng';
@@ -1885,6 +1886,9 @@ export class ScriptMng {
 		// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）。
 		//	後始末（WebGLコンテキスト/rAF破棄）は記述子がaFxから消える→GrpLayerの<canvas>が
 		//	unmountする→useEffect cleanupが担うので、[tsy]の#stopTsyByLayerのような帳簿は不要
+		case 'defFx':	// [def_fx]：ユーザープリセットGLSLをレジストリへ。storeもタイマーも触らない
+			defFx(act.name, act.glsl);
+			break;
 		case 'addFx':
 			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
 			this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る

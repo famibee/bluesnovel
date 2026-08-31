@@ -11,12 +11,13 @@
 //	はじめて読まれる）。TransGlsl.ts と同じ生 WebGL の骨格。
 //
 //	・aFx[] のスタックは順にパスとして適用（2 枚のフレームバッファで ping-pong）。各パスは
-//	  プリセット（fxPresets.ts H_FX_FRAG）か fx.glsl（生シェーダ）。契約 uniform／varying は
-//	  [trans glsl=] と統一（uSampler / tick / vTextureCoord / resolution。詳細は Fx.ts ヘッダ）。
+//	  組み込みプリセット（fxPresets.ts H_FX_FRAG）か [def_fx] のユーザープリセット（fxRegistry。
+//	  HEAD を前置して使う）。契約 uniform／varying は [trans glsl=] と統一
+//	  （uSampler / tick / vTextureCoord / resolution。詳細は Fx.ts ヘッダ）。
 //	・fx.time>0（one-shot）は経過後そのパスを素通しに切り替え、全パスが素通し／無効になったら
 //	  rAF を止めて凍結（＝基本画像そのまま）。記述子の撤去は [clear_fx]／[clear_lay] が行う。
 //	・update() は canvas/コンテキストを作り直さない。パラメータ・enabled（[pause_fx]/[resume_fx]）・
-//	  可視判定（active）はそのまま差し替え、**シェーダ構成（fx 名/生 glsl/パス数）が変わった時は
+//	  可視判定（active）はそのまま差し替え、**シェーダ構成（fx 名/パス数）が変わった時は
 //	  同じコンテキスト上でプログラムだけ組み直す**（旧フレームが残っているので切替時に空白が出ない）。
 //	  凍結パスは自分の tick を止めて描画は続ける（前段パスが動けば入力は変わるため）。全パス凍結／
 //	  不可視なら rAF ごと止め、凍結が解けたら続きから（[trans] 後の不可視 back ページの空回しを止める）。
@@ -29,7 +30,8 @@
 //	  3d_layer / live2d_layer と同じ理由。
 
 import type {T_FX} from './Fx';
-import {V_SRC, PASSTHRU_SRC, H_FX_FRAG} from './fxPresets';
+import {V_SRC, PASSTHRU_SRC, HEAD, H_FX_FRAG} from './fxPresets';
+import {getDefFx} from './fxRegistry';	// [def_fx] で定義したユーザープリセット GLSL（本体のみ。HEAD は下で前置）
 
 
 //	source が関数のときは「毎フレーム描き直される 2D canvas」＝rAF ごとに texImage2D で吸い上げる
@@ -39,7 +41,7 @@ type T_DYN_SOURCE = (()=> TexImageSource) & {dispose?: ()=> void};
 type T_SOURCE = string | HTMLCanvasElement | HTMLImageElement | T_DYN_SOURCE;
 type T_ARG = {canvas: HTMLCanvasElement; source: T_SOURCE; aFx: T_FX[]; active: boolean};
 
-// <FxImg>（GrpLayer.tsx）が握る制御ハンドル。シェーダ構成（fx 名/glsl/パス数）が変わらない限り
+// <FxImg>（GrpLayer.tsx）が握る制御ハンドル。シェーダ構成（fx 名/パス数）が変わらない限り
 //	canvas は作り直さず、enabled・プリセットパラメータ・speed・time・active は update() で差し替える
 export type T_FX_HANDLE = {
 	// aFx＝同じ長さ・同じ fx 構成（パラメータ・enabled だけ差分）。
@@ -162,14 +164,17 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uShift	: gl.getUniformLocation(pg, 'shift'),
 		};
 	};
-	// glsl= 指定はその生シェーダ、そうでなければプリセット（fx 名は Fx.bldFx() で検査済み）
+	// 組み込みプリセット（HEAD 込みで H_FX_FRAG が持つ）か、[def_fx] のユーザープリセット
+	//	（本体だけレジストリに登録されているので HEAD を前置）。fx 名は Fx.bldFx() で検査済み
 	const fsOf = (fx: T_FX)=> {
-		const fsSrc = fx.glsl || H_FX_FRAG[fx.fx];
-		if (! fsSrc) throw new Error(`未知の fx: ${fx.fx}`);
-		return fsSrc;
+		const preset = H_FX_FRAG[fx.fx];
+		if (preset) return preset;
+		const user = getDefFx(fx.fx);
+		if (user !== undefined) return `${HEAD}\n${user}`;
+		throw new Error(`未知の fx: ${fx.fx}（[def_fx] 未定義？）`);
 	};
-	// シェーダ構成（fx 名／生 glsl／パス数）の署名。これが変わらない限り update() でパスを作り直さない
-	const structSig = (a: readonly T_FX[])=> a.map(f=> `${f.fx}${f.glsl}`).join('');
+	// シェーダ構成（fx 名／パス数）の署名。これが変わらない限り update() でパスを作り直さない
+	const structSig = (a: readonly T_FX[])=> a.map(f=> f.fx).join('');
 
 	let aPass = aFx.map(fx=> mkPass(fsOf(fx), fx));
 	let sig = structSig(aFx);
