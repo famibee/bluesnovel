@@ -3,6 +3,7 @@
 	"bootstrap-sha": "c0ad223ccdf32dcf8eadf049ae3c49ac189538d0",
 	"last-release-sha": "c0ad223ccdf32dcf8eadf049ae3c49ac189538d0",
 	"release-type": "node",
+	"bump-minor-pre-major": true,
 	"packages": {
 		".": {
 			"package-name": "@famibee/bluesnovel",
