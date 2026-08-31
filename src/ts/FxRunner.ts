@@ -29,7 +29,7 @@
 //	・preserveDrawingBuffer:true は [snapshot]（Snapshot.ts の canvas→toDataURL 差し替え）対策で
 //	  3d_layer / live2d_layer と同じ理由。
 
-import type {T_FX} from './Fx';
+import {A_FX_PARAM, type T_FX} from './Fx';
 import {V_SRC, PASSTHRU_SRC, HEAD, H_FX_FRAG} from './fxPresets';
 import {getDefFx} from './fxRegistry';	// [def_fx] で定義したユーザープリセット GLSL（本体のみ。HEAD は下で前置）
 
@@ -142,9 +142,9 @@ type T_PASS = {
 	uSampler: WebGLUniformLocation | null;	// 契約名は [trans glsl=] と統一（src→uSampler / time→tick / vUv→vTextureCoord）
 	uTick	: WebGLUniformLocation | null;
 	uRes	: WebGLUniformLocation | null;
-	uAmp	: WebGLUniformLocation | null;
-	uFreq	: WebGLUniformLocation | null;
-	uShift	: WebGLUniformLocation | null;
+	// スカラ入力ポート（amp/freq/shift/p1〜p4）。名前は Fx.ts の A_FX_PARAM が唯一の台帳
+	uParam	: {readonly [k: string]: WebGLUniformLocation | null};
+	uColor	: WebGLUniformLocation | null;	// color=（uniform vec3 color。0..1 RGB）
 	fx		: T_FX;
 	pausedAccMs	: number;	// [pause_fx] で止まっていた合計時間（この分だけ tick を巻き戻す）
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
@@ -159,9 +159,8 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uSampler: gl.getUniformLocation(pg, 'uSampler'),
 			uTick	: gl.getUniformLocation(pg, 'tick'),
 			uRes	: gl.getUniformLocation(pg, 'resolution'),
-			uAmp	: gl.getUniformLocation(pg, 'amp'),
-			uFreq	: gl.getUniformLocation(pg, 'freq'),
-			uShift	: gl.getUniformLocation(pg, 'shift'),
+			uParam	: Object.fromEntries(A_FX_PARAM.map(k=> [k, gl.getUniformLocation(pg, k)])),
+			uColor	: gl.getUniformLocation(pg, 'color'),
 		};
 	};
 	// 組み込みプリセット（HEAD 込みで H_FX_FRAG が持つ）か、[def_fx] のユーザープリセット
@@ -212,9 +211,11 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		if (p.uSampler) gl.uniform1i(p.uSampler, 0);
 		if (p.uTick) gl.uniform1f(p.uTick, timeSec);
 		if (p.uRes) gl.uniform2f(p.uRes, w, h);
-		if (p.uAmp) gl.uniform1f(p.uAmp, p.fx.params?.amp ?? 0);
-		if (p.uFreq) gl.uniform1f(p.uFreq, p.fx.params?.freq ?? 0);
-		if (p.uShift) gl.uniform1f(p.uShift, p.fx.params?.shift ?? 0);
+		for (const k of A_FX_PARAM) {
+			const loc = p.uParam[k];
+			if (loc) gl.uniform1f(loc, p.fx.params?.[k] ?? 0);
+		}
+		if (p.uColor) {const c = p.fx.color ?? [0, 0, 0]; gl.uniform3f(p.uColor, c[0], c[1], c[2])}
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	};
 

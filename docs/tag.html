@@ -991,8 +991,7 @@
 <h2 id="def_fx" class="w-heading">[def_fx]シェーダプリセット定義</h2>
 <h4>生フラグメントシェーダをユーザープリセットとして事前定義する。</h4>
 <p class="mb2 px1">
-定義した名前は <code>[add_fx fx=その名前]</code> で使える。<b>GLSL 本体はセーブファイル（<code>aFx</code>）に
-焼かれない</b>ので、<a href="#save">[save]</a>肥大を避けられる代わりに、テンプレ起動時に必ず通る処理
+定義したシェーダは <code>[add_fx fx=プリセット名]</code> で使える。テンプレ起動時に必ず通る処理
 （<code>[call fn=ext_*]</code> 等）で <code>[def_fx]</code> を毎回再実行しておく必要がある
 （<a href="#add_face">[add_face]</a>による差分名定義と同じ思想）。
 </p>
@@ -1007,7 +1006,8 @@
 <tr><td><code>vec2 vTextureCoord</code></td><td>正規化 UV（0〜1、左下=(0,0) の y-up。※<a href="#trans">[trans]</a>側は画面左上=(0,0)）</td><td><code>fragCoord/iResolution</code></td></tr>
 <tr><td><code>float tick</code></td><td>経過秒 × <code>speed=</code>（0 起点）</td><td><code>iTime</code></td></tr>
 <tr><td><code>vec2 resolution</code></td><td>canvas の実ピクセルサイズ</td><td><code>iResolution.xy</code></td></tr>
-<tr><td>＋ <code>amp</code>／<code>freq</code>／<code>shift</code></td><td>固有パラメータ（自分で <code>uniform float</code> 宣言し、<code>[add_fx]</code> の属性で値を渡す。既定値は無く未指定は 0）</td><td>—</td></tr>
+<tr><td>＋ <code>float amp</code>／<code>freq</code>／<code>shift</code>／<code>p1</code>〜<code>p4</code></td><td>スカラ入力ポート（自分で <code>uniform float</code> 宣言し、<code>[add_fx]</code> の同名属性で値を渡す。既定値は無く未指定は 0）。<code>amp</code>／<code>freq</code>／<code>shift</code> は組み込みプリセットと意味を揃えると分かりやすい。<code>p1</code>〜<code>p4</code> は意味を作者が自由に決める汎用ポート</td><td><code>iMouse.x</code> 等</td></tr>
+<tr><td>＋ <code>vec3 color</code></td><td>色ポート。<code>[add_fx color=0xrrggbb]</code>（または <code>color="#rrggbb"</code>／<code>color=r,g,b</code> の各 0..1）で 0..1 RGB を渡す。未指定は <code>vec3(0.0)</code></td><td>—</td></tr>
 </table>
 <p class="mb2 px1">
 Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジンでは吸収しない。開発時に上表で手変換する（1本 ~5行の機械置換）。
@@ -1024,6 +1024,8 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 <tr><td>name</td><td></td><td>自動採番</td><td>識別子</td><td>そのレイヤの中で一意な名前。省略すると <code>#fx1</code>, <code>#fx2</code> … を自動採番する（<code>#</code>付きはシナリオから指定できない＝<code>[clear_fx name=]</code>では実質狙えず、<code>layer=</code>単位のクリアでのみ落ちる）。同名を再指定すると置換（<a href="#tsy">[tsy]</a>の「同名で再開」と同じ）</td></tr>
 <tr><td>time</td><td></td><td>0</td><td>0〜（ミリ秒）</td><td>0で無限（常時ゆらぎ）。正数を指定すると経過後そのパスは素通しに切り替わり凍結する（記述子の自動撤去はしない＝<code>[clear_fx]</code>／<code>[clear_lay]</code>で撤去）</td></tr>
 <tr><td>speed</td><td></td><td>1</td><td>実数</td><td>時間の進み方の倍率</td></tr>
+<tr><td><code>p1</code>〜<code>p4</code></td><td></td><td>0</td><td>実数</td><td><a href="#def_fx">[def_fx]</a>シェーダ向けの汎用スカラ入力ポート。シェーダが <code>uniform float p1;</code> 等を宣言していれば値が届く（組み込みプリセットは使わない）</td></tr>
+<tr><td>color</td><td></td><td>vec3(0)</td><td><code>0xrrggbb</code> ／ <code>"#rrggbb"</code> ／ <code>r,g,b</code>（各 0..1）</td><td><a href="#def_fx">[def_fx]</a>シェーダの <code>uniform vec3 color;</code> へ 0..1 RGB を渡す</td></tr>
 </table>
 
 <h4>プリセット「wave」に指定できる属性</h4>

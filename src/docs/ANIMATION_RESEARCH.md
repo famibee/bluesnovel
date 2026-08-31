@@ -201,7 +201,8 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 | `vTextureCoord`（vec2） | 正規化 UV（0..1、y-up） | `fragCoord / iResolution` |
 | `tick`（float） | 経過秒 × `speed=`（0 起点） | `iTime` |
 | `resolution`（vec2） | canvas 実ピクセルサイズ | `iResolution.xy` |
-| ＋プリセット固有（`amp`/`freq`/`shift`…） | 既定は [Fx.ts](../../src/ts/Fx.ts) の `H_FX_DEF` | — |
+| ＋スカラ入力ポート `float amp`/`freq`/`shift`/`p1`〜`p4` | `[add_fx]` の同名属性で渡す。既定は [Fx.ts](../../src/ts/Fx.ts) の `H_FX_DEF`、未指定は 0。`p1`〜`p4` は `[def_fx]` 作者向けの汎用（意味は作者が決める） | `iMouse.x` 等 |
+| ＋色ポート `vec3 color` | `[add_fx color=0xrrggbb]`（`"#rrggbb"`／`r,g,b` 各 0..1 も可）→ 0..1 RGB。未指定は `vec3(0)` | — |
 
 実装済み（2026-08-28、step 3）：スパイクの `src`/`vUv`/`time` を `uSampler`/`vTextureCoord`/`tick` へ
 リネーム（`fxPresets.ts` の頂点・素通し・wave・rgbShift、`FxRunner.ts` の uniform 取得）。y-up のまま（`[trans]` は y-down）。
@@ -215,6 +216,14 @@ GLSL 本体は `defFx` アクション経由で `src/ts/fxRegistry.ts`（core �
 （precision＋共通 uniform/varying）を FxRunner が前置**する（`[trans glsl=]` は自前で書く流儀なのでそこだけ違う）。
 `T_FX.glsl` は廃止＝`aFx`（=[save] 対象）には fx 名しか載らない（`[add_face]` に近い先行定義モノ。
 狙いはセーブ肥大の回避）。`FxImg`/`FxRunner` の構成署名（`structSig`）も `f.fx` だけになった。
+
+**2026-08-31：`[def_fx]` シェーダ向けの汎用入力ポートを追加**（`amp`/`freq`/`shift` は組み込み
+プリセットが意味を持って使うため、`[def_fx]` 作者が自由に使える口が実質無かった）。
+`Fx.ts` の `A_FX_PARAM` を `['amp','freq','shift','p1','p2','p3','p4']` へ拡張（＝スカラ 7 口）、
+`color=`（`uniform vec3 color`）を新設（`parseRGB()` が `0xrrggbb`／`#rrggbb`／`r,g,b` を 0..1 へ）。
+`FxRunner` は `A_FX_PARAM` を import して総なめ（`T_PASS.uParam` は名前→ロケーションの map、
+`drawPass` はループで `uniform1f`）＝**ポートを増やすときは `A_FX_PARAM` に 1 語足すだけ**。
+`structSig` は不変（`fx` 名のみ）なので値・色は `update()` でホットスワップされる。
 
 #### fx の 2 カテゴリ
 
