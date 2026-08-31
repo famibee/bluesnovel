@@ -47,8 +47,27 @@ const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	snow		: {amp: 1, freq: 3},
 	rain		: {amp: 2, freq: 2, shift: 6},
 };
-// プリセットが読むパラメータ名（この範囲だけ args から拾う）
-const A_FX_PARAM = ['amp', 'freq', 'shift'] as const;
+// プリセットが読むスカラパラメータ名（この範囲だけ args から拾う）。
+//	amp/freq/shift … 組み込みプリセットが意味を持って使う（tag.html 参照）
+//	p1〜p4 … [def_fx] 作者向けの汎用入力ポート（意味は作者が決める。未指定は 0）
+//	増やすときはここへ 1 語足すだけ（FxRunner.ts は A_FX_PARAM を import して総なめする）
+export const A_FX_PARAM = ['amp', 'freq', 'shift', 'p1', 'p2', 'p3', 'p4'] as const;
+
+// color= を uniform vec3 color（0..1 RGB）へ。'#rrggbb' / '0xrrggbb' / 'r,g,b'（各 0..1）を受ける
+function parseRGB(v: string): readonly [number, number, number] {
+	const s = v.trim();
+	if (s.includes(',')) {
+		const a = s.split(',').map(t=> Number(t.trim()));
+		if (a.length === 3 && a.every(n=> Number.isFinite(n))) {
+			return [a[0]!, a[1]!, a[2]!].map(n=> Math.min(1, Math.max(0, n))) as unknown as [number, number, number];
+		}
+		throw `[add_fx] color= の値が不正です：${v}`;
+	}
+	const hex = s.startsWith('#') ? s.slice(1) : s.startsWith('0x') ? s.slice(2) : s;
+	const n = parseInt(hex, 16);
+	if (hex.length !== 6 || ! Number.isFinite(n)) throw `[add_fx] color= の値が不正です：${v}`;
+	return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+}
 
 // エフェクト記述子 1 件。plain data だけ（structuredClone／JSON 化を通すため。aFlt と同じ）
 export type T_FX = {
@@ -60,7 +79,8 @@ export type T_FX = {
 	time	: number;	// ms。0 で無限（常時ゆらぎ）。>0 で time 経過後は素通し（試作では記述子の自動撤去はしない）
 	speed	: number;	// 速度倍率
 	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
-	params	: {[k: string]: number};	// プリセット固有（amp/freq/shift…）
+	params	: {[k: string]: number};	// スカラ入力ポート（amp/freq/shift/p1〜p4。A_FX_PARAM の範囲）
+	color?	: readonly [number, number, number];	// color=（uniform vec3 color。0..1 RGB）。未指定は uniform へ vec3(0)
 };
 
 function num(args: {[k: string]: string}, k: string, def: number): number {
@@ -91,5 +111,6 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		speed	: num(args, 'speed', 1),
 		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,
+		...(args.color !== undefined ? {color: parseRGB(args.color)} : {}),
 	};
 }

@@ -67,6 +67,22 @@ it('bldFx_数値でないパラメータは throw', ()=> {
 	expect(()=> bldFx({fx: 'wave', amp: 'もじ'})).toThrow('[add_fx] amp の値が不正です：もじ');
 });
 
+it('bldFx_汎用スカラポート p1〜p4（[def_fx] 作者向け。組み込みは使わない）', ()=> {
+	const f = bldFx({fx: 'u', p1: '0.5', p2: '-3', p4: '10'}, {u: true});
+	expect(f.params).toEqual({p1: 0.5, p2: -3, p4: 10});	// p3 は書いてないので入らない
+	expect(()=> bldFx({fx: 'u', p1: 'x'}, {u: true})).toThrow('[add_fx] p1 の値が不正です：x');
+});
+
+it('bldFx_color= を uniform vec3 color（0..1 RGB）へ', ()=> {
+	expect(bldFx({fx: 'u', color: '0xff8000'}, {u: true}).color)
+		.toEqual([1, 128 / 255, 0]);
+	expect(bldFx({fx: 'u', color: '#00ff00'}, {u: true}).color).toEqual([0, 1, 0]);
+	expect(bldFx({fx: 'u', color: '0.1, 0.2, 0.3'}, {u: true}).color).toEqual([0.1, 0.2, 0.3]);
+	expect(bldFx({fx: 'u'}, {u: true}).color).toBeUndefined();	// 未指定は持たない
+	expect(()=> bldFx({fx: 'u', color: 'red'}, {u: true})).toThrow('[add_fx] color= の値が不正です：red');
+	expect(()=> bldFx({fx: 'u', color: '1,2'}, {u: true})).toThrow('[add_fx] color= の値が不正です：1,2');
+});
+
 
 // ============ [def_fx]（ユーザープリセットGLSLの事前定義。[add_face] と同じ思想） ============
 

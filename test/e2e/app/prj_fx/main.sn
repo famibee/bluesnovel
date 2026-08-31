@@ -49,8 +49,9 @@
 ; [def_fx] で定義したユーザープリセットを [add_fx fx=] で使う（HEAD は自動前置＝main() だけ書く。
 ;	契約は [trans glsl=] と統一：uSampler / vTextureCoord / tick）。GLSL 本体は aFx に焼かれない
 [clear_fx layer=base]
-[def_fx name=pulse glsl="void main(){gl_FragColor=texture2D(uSampler,vTextureCoord)*(0.6+0.4*sin(tick));}"]
-[add_fx layer=base name=g fx=pulse]
+; 汎用入力ポート（p1〜p4 / color）も一緒にコンパイル回帰させる（値の反映は playwright-cli で確認）
+[def_fx name=pulse glsl="uniform float p1;uniform vec3 color;void main(){vec4 s=texture2D(uSampler,vTextureCoord);gl_FragColor=vec4(mix(s.rgb,color,p1)*(0.6+0.4*sin(tick)),s.a);}"]
+[add_fx layer=base name=g fx=pulse p1=0.3 color=0x3366ff]
 [er]def_fx[l]
 
 ; 静止 face 差分を fx のテクスチャへ合成（offscreen 2D canvas。sheet/動画は未対応＝DOMのまま）。
