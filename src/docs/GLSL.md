@@ -2,6 +2,13 @@
 	(重) ... 全画面にするとPCファンが動く・処理落ちする
 
 - 加工系（rain）
+	- Rain shader - 01 https://www.shadertoy.com/view/M3GfDV
+		> 弱い雨
+	- The Drive Home https://www.shadertoy.com/view/MdfBRX
+		> 小雨の中、運転中の車
+		-> 雨なしで運転中の車イメージ版・昼版も欲しくなる。夕方版は[add_filter]担当か
+	- Heartfelt https://www.shadertoy.com/view/ltffzl
+		> ガラス越しの雨、稲光付き
 	- Rain drops combined https://www.shadertoy.com/view/llfczH
 		> 窓ガラスの雨粒、よく見るとちょっと変
 	- Raining Blood https://www.shadertoy.com/view/tdG3Rw
@@ -113,8 +120,8 @@
 	- Frozen Waterfalls https://www.shadertoy.com/view/7tySDW
 		> シャーベット水のシミュレーション
 - 背景系（Fireworks）
-	- (重) Fireworks 2016 https://www.shadertoy.com/view/lscGRl
-		> 
+	- (重) Fireworks Performance https://www.shadertoy.com/view/tfXcz8
+		> なかなか本物っぽい
 	- (重) [SH17A] Fireworks https://www.shadertoy.com/view/ldBfzw
 		> ビル街の花火
 	- (重) Lakeside https://www.shadertoy.com/view/MtsBRH
@@ -137,6 +144,10 @@
 		> ぼやっとした連発
 	- (重) Happy 2026 https://www.shadertoy.com/view/wcVBRV
 		> キラキライメージ
+	- (重) Happy 2020! https://www.shadertoy.com/view/tt3GRN
+		> ドット絵
+	- (重) Fireworks 2016 https://www.shadertoy.com/view/lscGRl
+		> 
 	- (重) Deterministic Fireworks https://www.shadertoy.com/view/4fdGDl
 		> ドット表現だが重い
 	- (重) City Fireworks https://www.shadertoy.com/view/f3XSzH

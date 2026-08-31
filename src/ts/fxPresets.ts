@@ -37,7 +37,10 @@ varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
 void main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }`;
 
-const HEAD = `
+// 組み込みプリセットと [def_fx]（ユーザープリセット）に FxRunner が前置する共通ヘッダ。
+//	作者はこれらを再宣言せず main() と固有 uniform（amp/freq/shift…）だけ書く。
+//	（生の [trans glsl=] は自前で書く流儀だが、[def_fx] は「プリセット追加」なので組み込みと統一）
+export const HEAD = `
 precision mediump float;
 varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
@@ -96,23 +99,43 @@ void main() {
 	gl_FragColor = vec4(mix(src.rgb, vec3(1.0), snow), max(src.a, snow));
 }`,
 
-	// 雨（背景向け）。amp=落下速度, freq=本数の目安（＝密度）。
-	//	技法：画面を縦帯に割り、帯ごとにハッシュで位相・速度を変えた縦スジを描く定番手法の再実装
+	// 雨（背景向け）。amp=落下速度（既定 2）, freq=密度（弱雨 2 〜 豪雨 8+。曇天・雨幕・シア角も連動）,
+	//	shift=雨脚の長さ。縦帯ハッシュの雨脚を奥/中/手前の 3 層＋風のシアで重ねる定番手法の再実装
+	//	（特定コードの写しではない＝MIT 相当。y-up＝tick を「＋」で下へ流す）。
+	//	2026-08-31 に旧・単層版から差し替え（freq で弱雨↔豪雨を切り替えられるように）
 	rain: `${HEAD}
 uniform float amp;
 uniform float freq;
-float hash(float x) { return fract(sin(x * 41.3) * 43758.5453); }
+uniform float shift;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }	// snow と同じ流儀
+float rainLayer(vec2 uv, float density, float speed, float tail, float seed) {
+	float aspect = resolution.x / max(resolution.y, 1.0);
+	float cols = floor(18.0 + density * 10.0);
+	float gx = uv.x * cols * aspect;
+	float id = floor(gx);
+	float lane = fract(gx) - 0.5;
+	float h0 = hash(vec2(id, seed));
+	float h1 = hash(vec2(id, seed + 7.0));
+	float on = step(h0, clamp(0.08 + density * 0.06, 0.0, 0.9));	// 一部の帯だけ雨脚
+	float segs = 1.5 + h1 * 2.5;
+	float y = fract(uv.y * segs + tick * speed * (0.7 + h1) + h0 * 6.2831);	// y-up＝+tick で下へ
+	float body = smoothstep(tail, 0.0, y) * smoothstep(0.0, 0.02, y);		// 先端が明・上へ尾
+	float thin = smoothstep(0.5, 0.0, abs(lane) * (2.4 + density * 0.15));
+	return on * body * thin * (0.4 + 0.6 * h0);
+}
 void main() {
 	vec4 src = texture2D(uSampler, vTextureCoord);
+	float heavy = clamp((freq - 2.0) / 6.0, 0.0, 1.0);	// 0=弱雨 … 1=豪雨（freq 2→8）
+	float tail = clamp(0.05 + shift * 0.02, 0.06, 0.6);
 	vec2 uv = vTextureCoord;
-	uv.x *= resolution.x / max(resolution.y, 1.0);
-	float bands = 40.0 + freq * 20.0;
-	float col_id = floor(uv.x * bands);
-	float x = fract(uv.x * bands) - 0.5;
-	float rnd = hash(col_id);
-	float y = fract(uv.y * (2.0 + rnd) - tick * (1.2 + rnd) * amp);
-	float streak = smoothstep(1.0, 0.0, abs(x) * 12.0)
-		* smoothstep(0.0, 0.15, y) * smoothstep(0.9, 0.35, y);
-	gl_FragColor = vec4(mix(src.rgb, vec3(0.75, 0.80, 0.92), streak * 0.5), src.a);
+	uv.x += uv.y * mix(0.06, 0.16, heavy);				// 風のシア（豪雨ほど寝かせる）
+	float r = rainLayer(uv, freq * 0.6, amp * 0.8, tail * 1.4, 11.0)		// 奥
+		+ rainLayer(uv, freq, amp * 1.2, tail, 23.0)						// 中
+		+ rainLayer(uv, freq * 0.5, amp * 1.7, tail * 0.7, 41.0) * mix(0.6, 1.1, heavy);	// 手前
+	r = clamp(r, 0.0, 1.0);
+	vec3 col = mix(src.rgb, src.rgb * 0.80, heavy);		// 曇天で暗く
+	col += vec3(0.03, 0.04, 0.05) * heavy;				// うっすら雨幕
+	col += vec3(0.80, 0.86, 1.0) * r * mix(0.5, 0.85, heavy);	// 雨脚のハイライト
+	gl_FragColor = vec4(col, src.a);
 }`,
 };

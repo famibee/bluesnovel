@@ -276,8 +276,8 @@ it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを�
 	useStore.setState({aPage: [[], []], foreIdx: 0});
 	S().replace(json);
 	expect(fxOf('a')).toEqual([
-		{name: '#fx1', fx: 'wave', glsl: '', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}},
-		{name: 'rs', fx: 'rgbShift', glsl: '', time: 0, speed: 1, enabled: true, params: {shift: 4}},
+		{name: '#fx1', fx: 'wave', time: 0, speed: 1, enabled: true, params: {amp: 6, freq: 2}},
+		{name: 'rs', fx: 'rgbShift', time: 0, speed: 1, enabled: true, params: {shift: 4}},
 	]);
 	// round-trip 後も採番が続く（#fx1 の次は #fx2）
 	addFx('a', {fx: 'wave'});

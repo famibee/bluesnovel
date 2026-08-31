@@ -204,9 +204,17 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 | ＋プリセット固有（`amp`/`freq`/`shift`…） | 既定は [Fx.ts](../../src/ts/Fx.ts) の `H_FX_DEF` | — |
 
 実装済み（2026-08-28、step 3）：スパイクの `src`/`vUv`/`time` を `uSampler`/`vTextureCoord`/`tick` へ
-リネーム（`fxPresets.ts` の頂点・素通し・wave・rgbShift、`FxRunner.ts` の uniform 取得）。生 `glsl=` は
-`Fx.bldFx()` が受理し（`fx=` と排他）、`FxRunner` が `fx.glsl || H_FX_FRAG[fx.fx]` でパスを組む。
-`FxImg` の `structKey` に `f.glsl` を含むのでシェーダ差し替えは canvas 再生成。y-up のまま（`[trans]` は y-down）。
+リネーム（`fxPresets.ts` の頂点・素通し・wave・rgbShift、`FxRunner.ts` の uniform 取得）。y-up のまま（`[trans]` は y-down）。
+
+**2026-08-31：生 `glsl=` を `[add_fx]` から `[def_fx name= glsl=]` へ分離。**
+`[add_fx]` は `fx=`（プリセット名）のみ受ける。生シェーダは `[def_fx]` で「ユーザープリセット」として
+先に定義し、`[add_fx fx=その名前]` で使う。`[def_fx]` の名前台帳は `ScriptEngine.#hDefFx`（純粋部分。
+`#hFace`/`#hMacro` と同じくセーブ非対象・`[load]` でエンジン作り直し→起動スクリプトの再実行で埋め直し）、
+GLSL 本体は `defFx` アクション経由で `src/ts/fxRegistry.ts`（core の Map）へ流し、lazy な `FxRunner.fsOf()`
+が `H_FX_FRAG[fx.fx] ?? (HEAD + getDefFx(fx.fx))` で解決する。組み込みプリセットと同じく **HEAD
+（precision＋共通 uniform/varying）を FxRunner が前置**する（`[trans glsl=]` は自前で書く流儀なのでそこだけ違う）。
+`T_FX.glsl` は廃止＝`aFx`（=[save] 対象）には fx 名しか載らない（`[add_face]` に近い先行定義モノ。
+狙いはセーブ肥大の回避）。`FxImg`/`FxRunner` の構成署名（`structSig`）も `f.fx` だけになった。
 
 #### fx の 2 カテゴリ
 
@@ -221,10 +229,11 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 
 #### セーブ・ロード
 
-`aFx` は `getPagesJson`/`replace` で round-trip 済み（`test/store_lay.test.ts`）。生 `glsl=` は
-**解決済み文字列を `T_FX.glsl` に焼いてセーブファイルへ**（`[add_filter]` と同じ「消すまで永続」。
-`[trans]` のような transient ではない）。1 シェーダ ~1K のセーブ肥大は許容とドキュメント明記。
-作者は `glsl=&mySnow` と変数経由で書く想定。
+`aFx` は `getPagesJson`/`replace` で round-trip 済み（`test/store_lay.test.ts`）。**2026-08-31 以降、
+GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み or `[def_fx]` で定義した名前）だけが載る。
+`[def_fx]` の定義は起動スクリプト（`[call fn=ext_*]` 等）で毎回再実行して `fxRegistry` を埋め直す運用
+（`[add_face]` の `#hFace` と同じ思想）。作者は `[def_fx name=mySnow glsl=&mySnowSrc]` と変数経由で書く想定。
+（旧仕様：`T_FX.glsl` に解決済み文字列を焼き 1 シェーダ ~1K のセーブ肥大を許容していた。廃止。）
 
 #### 不可視 back ページで停止
 
@@ -249,7 +258,7 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
   判定する割り切り（`layer=` 省略＝全レイヤ＝`null` は常に一致）。無名 fx の `#fxN` はエンジンから
   見えないので名前 `''` 扱い＝`[wait_fx layer=…]` でのみ待てる。
 - **`[pause_fx]`/`[resume_fx]` は canvas を作り直さない**。`FxImg`（`GrpLayer.tsx`）の再生成 `key` を
-  「シェーダ構成（fx 名/glsl/パス数）」だけに絞り（`structKey`）、プリセットパラメータ・`speed`・
+  「シェーダ構成（fx 名/パス数）」だけに絞り（`structKey`）、プリセットパラメータ・`speed`・
   `time`・`enabled` は `FxRunner` の制御ハンドル `update(aFx)` でホットスワップ（`contentKey` の
   変化で `useEffect`）。`FxRunner.setup()` は `()=>void` でなく `{update, dispose}`（`T_FX_HANDLE`）を
   返す。パスごとに `pausedAccMs`/`pausedAt` を持ち、無効化中の経過を tick から差し引く（＝tick 凍結。
@@ -316,15 +325,21 @@ Shadertoy シェーダはプリセット化・ギャラリー掲載時にこち�
 
 `fxPresets.ts` に `snow`／`rain` を追加（`H_FX_DEF` に既定、`A_FX_PRESET` に名前）。どちらも
 ハッシュ乱数のセル／縦帯という定番手法を再実装（特定コードの写しではない＝MIT 相当）。
-生成系なので `uSampler` を読み、その上へ白い粒／スジを合成。`amp`＝落下速度、`freq`＝密度。
-透明部にも降るので**背景（bg）レイヤ向け**。次候補：花火・タイル塗り＋スクロール・桜。
+生成系なので `uSampler` を読み、その上へ白い粒／スジを合成。透明部にも降るので**背景（bg）レイヤ向け**。
+
+**2026-08-31：`rain` を単層版から 3 層＋風のシア版へ差し替え。** `freq` を「密度＝弱雨↔豪雨のスイッチ」に
+格上げ（`freq` 2＝弱雨／8 前後＝豪雨。`heavy = clamp((freq-2)/6, 0, 1)` で曇天の暗さ・雨幕・シア角も連動）。
+`H_FX_DEF.rain` の既定を `{amp: 2, freq: 2, shift: 6}` に（`amp`＝落下速度、`shift`＝雨脚の長さ）。
+きっかけは Shadertoy「Rain shader - 01」(M3GfDV, CC BY-NC-SA) を「どんな画が欲しいか」の参考にした検討。
+その固有式（`drop()`/`f()`/`rnd1()` マクロ、`rot()` 係数、`1050-pow(1000,rain_d)` 等）は一切再現せず、
+内蔵 `snow` と同系の縦帯ハッシュ＋`smoothstep` で独立実装した。次候補：花火・タイル塗り＋スクロール・桜。
 
 #### 構成切替で一瞬消えない（2026-08-28）
 
 gallery `?cur=add_fx` でボタン連打すると「切り替えるたびに立ち絵が一瞬消える」不具合。
 2 段構えで対策：
 
-1. **fx 名／生 glsl／パス数が変わっても canvas を作り直さない**。`FxImg` の `key` を
+1. **fx 名／パス数が変わっても canvas を作り直さない**。`FxImg` の `key` を
    `sourceKey`（基本画像＋静止 face のみ）にし、シェーダ構成の変化は `handle.update()` が
    **同じ WebGL コンテキスト上でプログラムだけ組み直す**（`FxRunner` の `structSig` 比較→
    `gl.deleteProgram`＋再 link。旧フレームが `preserveDrawingBuffer` で残るので空白フレームが出ない。
@@ -562,7 +577,7 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。プリセット wave/rgbShift/snow/rain＋生 `glsl=`（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。Shadertoy は開発時に手変換）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、基本画像は静止画・アニメ png シート・動画いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、不可視 back ページで rAF 凍結、構成切替で継ぎ目なし。残り＝プリセット追加・ギャラリー実演（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~400–580 行 | ★★★☆ |
+| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。組み込みプリセット wave/rgbShift/snow/rain。生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。HEAD 自動前置。Shadertoy は開発時に手変換。**セーブ非対象＝起動スクリプトで再定義する運用**）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、基本画像は静止画・アニメ png シート・動画いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、不可視 back ページで rAF 凍結、構成切替で継ぎ目なし。残り＝プリセット追加・ギャラリー実演（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~400–580 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。

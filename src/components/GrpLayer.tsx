@@ -270,7 +270,7 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
 	// canvasを作り直すのは**テクスチャ源が変わったとき**だけ（基本画像・静止 face）：
 	//	WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを取り直せないため
-	//	使い捨てにして開き直す。**シェーダ構成（fx名/glsl/パス数）が変わっても作り直さない**——
+	//	使い捨てにして開き直す。**シェーダ構成（fx名/パス数）が変わっても作り直さない**——
 	//	handle.update() が同じコンテキスト上でプログラムを組み直す（＝切替時に空白が出ない。
 	//	以前は structKey で canvas ごと張り替えていて runFx 完了まで一瞬消えていた）。
 	//	パラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）も update() でホットスワップ

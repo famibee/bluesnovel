@@ -23,7 +23,7 @@ import {getDateStr, int, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
-import {bldFx, type T_FX} from './Fx';
+import {bldFx, A_FX_PRESET, type T_FX} from './Fx';
 import {argBlendmode} from './Blendmode';
 import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
@@ -141,6 +141,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'addFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; flt: T_FLT; replace: boolean}	// [add_filter]（replace=falseで重ねる）／[lay filter=…]（replace=trueで置き換え）
 	| {t: 'clearFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_filter]
 	| {t: 'enableFilter'; aLayNm: string[] | null; page: T_PAGE_BOTH; index: number; enabled: boolean}	// [enable_filter]。何番目のフィルターを効かせるか
+	| {t: 'defFx'; name: string; glsl: string}	// [def_fx]。ユーザープリセットGLSLの事前定義（分家独自）。名前検査は#hDefFxで済み、本体をfxRegistryへ流すだけ。storeには触れない（セーブ非対象）
 	| {t: 'addFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; fx: T_FX}	// [add_fx]。立ち絵へシェーダエフェクトを重ねる（分家独自の試作。aFx[]へpush／同名は置換）
 	| {t: 'clearFx'; aLayNm: string[] | null; page: T_PAGE_BOTH; names: string[] | null}	// [clear_fx]。namesはカンマ区切り名前リスト（null＝そのレイヤのfx全部）
 	| {t: 'waitFx'; aLayNm: string[] | null; names: string[] | null; canskip: boolean}	// [wait_fx]。fx one-shot（[add_fx time>0]）の終了待ち。実際に待つのはScriptMng（[add_fx]で張ったタイマー。WebGLランナーからの終了通知は作らない。ANIMATION_RESEARCH.md §7）。page=は受けない（セレクタはlayer=＋name=、最低一方必須）
@@ -440,6 +441,11 @@ export class ScriptEngine {
 	get clearOnResume() {return this.#clearOnResume}
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
+	// [def_fx name= glsl=]で定義したユーザープリセット名の台帳（分家独自。ここは名前だけ＝純粋部分。
+	//	GLSL 本体は defFx アクション経由で src/ts/fxRegistry.ts へ流し、lazy な FxRunner が引く）。
+	//	#hFace/#hMacro と同じくセーブには載らず、[load]でエンジンごと作り直し→起動スクリプトの
+	//	[def_fx]再実行で埋め直す運用（ANIMATION_RESEARCH.md §7）
+	readonly #hDefFx: {[name: string]: true} = Object.create(null);
 	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt/プラグインcls）。#applyLayPage()の判定専用
 	//	（本家 GrpLayer/TxtLayer はクラスごとに別インスタンスだが、こちらは単一の関数で両方を
 	//	処理するため、判定材料をここに持たせる）
@@ -585,7 +591,7 @@ export class ScriptEngine {
 		'copybookmark', 'erasebookmark', 'export', 'import',
 		'add_frame', 'frame', 'set_frame', 'let_frame', 'set_focus',
 		'add_filter', 'clear_filter', 'enable_filter',
-		'add_fx', 'clear_fx', 'wait_fx', 'pause_fx', 'resume_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
+		'def_fx', 'add_fx', 'clear_fx', 'wait_fx', 'pause_fx', 'resume_fx',	// 立ち絵シェーダエフェクトの試作（分家独自。ANIMATION_RESEARCH.md §7）
 		'if', 'elsif', 'else', 'endif',
 		'r', 'er', 'trace', 'log',
 		'jump', 'call', 'return', 'macro', 'endmacro', 'char2macro', 'bracket2macro',
@@ -1443,9 +1449,21 @@ export class ScriptEngine {
 			return 'skip';
 
 		// ---- 立ち絵シェーダエフェクト（分家独自の試作。ANIMATION_RESEARCH.md §7。[add_filter]に倣う） ----
+		case 'def_fx': {	// ユーザープリセットGLSLの事前定義（[add_face]と同じ思想＝セーブ非対象・起動時再実行）
+			const dfName = args.name ?? '';
+			if (! dfName) throw '[def_fx] nameは必須です';
+			const glsl = args.glsl ?? '';
+			if (! glsl) throw '[def_fx] glsl=（フラグメントシェーダ）は必須です';
+			if ((A_FX_PRESET as readonly string[]).includes(dfName)) throw `[def_fx] name【${dfName}】は組み込みプリセット名なので使えません`;
+			if (this.#hDefFx[dfName]) throw `[def_fx] name【${dfName}】は既に定義済みです`;
+			this.#hDefFx[dfName] = true;
+			aAct.push({t: 'defFx', name: dfName, glsl});
+			return 'skip';
+		}
+
 		case 'add_fx':	// bldFx()がfx名・パラメータの書き間違いをここで例外にする
 			aAct.push({t: 'addFx', aLayNm: ScriptEngine.#argLayNames(args.layer),
-				page: ScriptEngine.#argPageBoth('add_fx', args, 'fore'), fx: bldFx(args)});
+				page: ScriptEngine.#argPageBoth('add_fx', args, 'fore'), fx: bldFx(args, this.#hDefFx)});
 			return 'skip';	// [add_fx]自体は待たない（[tsy]と同じ。time>0のone-shotは[wait_fx]で待てる）
 
 		case 'clear_fx':	// name=はカンマ区切りで複数可（[add_filter]のlayer=と同じ#argLayNamesを流用）

@@ -36,8 +36,10 @@
 
 ### シェーダエフェクト（`[add_fx]` 一族）— 正式化（2026-08-28）
 
-`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、プリセット wave / rgbShift /
-snow / rain、生 `glsl=`（契約は `[trans glsl=]` と統一）、基本画像は静止画・アニメ png シート・動画
+`[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、組み込みプリセット
+wave / rgbShift / snow / rain、生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義
+（契約は `[trans glsl=]` と統一・HEAD 自動前置・セーブ非対象＝起動スクリプトで再定義する運用）、
+基本画像は静止画・アニメ png シート・動画
 いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、`[trans]` 後の不可視 back
 ページで rAF 凍結、構成切替で一瞬消えない（fx 変化は canvas を作り直さず同コンテキストでプログラム
 組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋
