@@ -22,27 +22,45 @@ void main() {
 	snow: `${i}
 uniform float amp;
 uniform float freq;
-float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
+// 1 層ぶんの降雪。戻り値は雪片の明るさ（0..1）。scale が大きいほど遠い（細かく淡い）層
+float snowLayer(vec2 uv, float scale) {
+	float w = smoothstep(1.0, 0.0, -uv.y * (scale / 10.0));	// 画面下ほど濃く
+	if (w < 0.1) return 0.0;
+
+	uv   += tick * amp / scale;				// amp＝落下速度の倍率
+	uv.y += tick * amp * 2.0 / scale;
+	uv.x += sin(uv.y + tick * 0.5) / scale;	// 横ゆらぎ（位相は基準速度）
+
+	uv *= scale;
+	vec2 s = floor(uv);
+	vec2 f = fract(uv);
+	vec2 p = vec2(0.0);	// 元シェーダは未初期化 p を右辺で参照（＝実質 0）。挙動を固定するため明示
+	float k = 3.0;
+
+	p = 0.5 + 0.35 * sin(11.0 * fract(sin((s + p + scale) * mat2(7, 3, 6, 5)) * 5.0)) - f;
+	float d = length(p);
+	k = min(d, k);
+
+	k = smoothstep(0.0, k, sin(f.x + f.y) * 0.01);
+	return k * w;
+}
 void main() {
+	vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
+
+	// 手前（小さい scale・強い）から freq 個ぶんの層を積む
+	float n = clamp(freq, 0.0, 7.0);
+	float acc = 0.0;
+	acc += snowLayer(uv,  5.0)       * clamp(n - 0.0, 0.0, 1.0);
+	acc += snowLayer(uv,  6.0)       * clamp(n - 1.0, 0.0, 1.0);
+	acc += snowLayer(uv,  8.0)       * clamp(n - 2.0, 0.0, 1.0);
+	acc += snowLayer(uv, 10.0)       * clamp(n - 3.0, 0.0, 1.0);
+	acc += snowLayer(uv, 15.0) * 0.8 * clamp(n - 4.0, 0.0, 1.0);
+	acc += snowLayer(uv, 20.0) * 0.5 * clamp(n - 5.0, 0.0, 1.0);
+	acc += snowLayer(uv, 30.0) * 0.3 * clamp(n - 6.0, 0.0, 1.0);
+
+	float a = clamp(acc, 0.0, 1.0);
 	vec4 src = texture2D(uSampler, vTextureCoord);
-	vec2 uv = vTextureCoord;
-	uv.x *= resolution.x / max(resolution.y, 1.0);	// 正方セルにするアスペクト補正
-	float layers = clamp(freq, 1.0, 6.0);
-	float snow = 0.0;
-	for (float i = 0.0; i < 6.0; i++) {
-		if (i >= layers) break;
-		float scale = 8.0 + i * 6.0;
-		vec2 gv = uv * scale;
-		gv.y += tick * (0.3 + 0.15 * i) * amp * scale;	// 下へ流す
-		gv.x += sin((gv.y + i) * 0.5) * 0.5;				// 横ゆらぎ
-		vec2 id = floor(gv);
-		float rnd = hash(id + i * 13.0);
-		vec2 c = fract(gv) - 0.5 - (vec2(rnd, fract(rnd * 7.0)) - 0.5) * 0.6;
-		float flake = smoothstep(0.09 + 0.02 * i, 0.0, length(c)) * (0.4 + 0.6 * rnd);
-		snow += flake * (1.0 - i / 8.0);
-	}
-	snow = clamp(snow, 0.0, 1.0);
-	gl_FragColor = vec4(mix(src.rgb, vec3(1.0), snow), max(src.a, snow));
+	gl_FragColor = vec4(mix(src.rgb, vec3(1.0), a), max(src.a, a));
 }`,
 	rain: `${i}
 uniform float amp;
