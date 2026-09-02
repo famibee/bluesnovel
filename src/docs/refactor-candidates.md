@@ -2,11 +2,19 @@
 
 `/simplify` を分家独自コード全体（`src/ts/**`＋`src/components/**`＋`src/store/store.tsx`）に
 かけた際に挙がった**構造リファクタ案**の控え。掃除でなく「作り直し」の範疇なので即着手せず
-ここに置く。適用済みの軽微な整理（`mutatePages`/`eachTargetLay` 共通化、`aMat`/`aBlur` の
-`useMemo`、ホットパスの `new RegExp` キャッシュ、残骸除去）はコミット済み。
+ここに置く。
 
 いずれも**動作確認済みのコードの書き換え**で、既存テストは視覚・挙動の回帰を拾えない。
 着手するなら 1 項目ずつ、E2E とサンプル実走で確認しながら。
+
+## 適用済み
+
+- `c5ece67`（第1弾・軽微な整理）… `mutatePages`/`eachTargetLay` 共通化、`aMat`/`aBlur` の
+  `useMemo`、ホットパスの `new RegExp` キャッシュ、残骸除去
+- `（第2弾・Reuse 一部）` … 下記 Reuse のうち **色分解 `rgb01`**（Filter.ts ローカル）、
+  **`applyTransform`**（Lay.ts へ切り出し、[lay]・[button] 共通）、**`classifyAsset`**（ScriptMng、
+  拡張子判定の反復を解消）、**`#stageWH()`**（ScriptEngine、ステージ寸法読みの 4 箇所重複を集約）、
+  ChStyle の出現/消去キーフレーム重複（`kfStyled`/`KF_BARE`）
 
 ## Altitude（下の機構を一般化する）
 
@@ -47,11 +55,9 @@
   zustand のアクションは安定参照なので ~30 個は一生発火しない購読。
   → `scrMng` に `useStore.getState`（またはバインド済み store）を 1 回渡す。リアクティブが
   要る値（`isTyping`）だけセレクタ購読。
-- **拡張子によるアセット種別判定がインライン反復。** `ScriptMng.#applyAction` の `chgPic`
-  内で `src.endsWith('.json')`（png シート）と `/\.(?:mp4|webm)$/i`（動画）が 3 回、`aFace`
-  の map でも再計算。`Crypto.ts` にも独立した `.json` 特例（復号スキップ）。
-  → 純粋関数 `classifyAsset(src) => {isSheet, isMovie}` を 1 個、crypto スキップ含む全箇所で
-  使う。
+- **拡張子によるアセット種別判定がインライン反復。**（一部済・第2弾）`ScriptMng` の `chgPic`
+  内の 2 箇所は `classifyAsset(src)` に集約した。`Crypto.ts` の `.json` 特例（復号スキップ。
+  `data:`/`blob:` も含む別条件）は「種別」でなく「復号可否」の判定なので統合は保留。
 - **サウンドバッファ既定名が ~10 箇所で場当たり解決。** `args.buf || 'SE'` と
   `isBgm ? 'BGM' : (args.buf || 'SE')` が playse/stopse/xchgbuf/volume/fadese/ws/wf の各
   case に散らばり、ボタン SE の既定 `'SYS'` も 2 箇所×計 5 回手書き。
@@ -65,23 +71,21 @@
 
 ## Reuse（横断ヘルパ抽出）
 
-共通化先が本家由来 `src/sn/CmnLib.ts`（無改変原則）になりうる点は要判断。分家側の
-新 util モジュールにするか、CmnLib への最小追加を許すか。
-
-- **数値属性パース 4 実装。** `ScriptEngine.#argNum`／`Filter.ts num()`／`VarStore.#toNum`／
-  `Fx.ts parseRGB` 内の hex 分岐。「0x 始まりは 16 進、他は数値、NaN/Infinity は例外」が
-  コメントごと 4 回。空文字の扱い・`parseFloat` か `Number` かが微妙に食い違い。
-- **`0xRRGGBB` → 8bit `[r,g,b]` 分解 5 実装。** `Fx.ts:95`／`Filter.ts:173`（tint）／
-  `Filter.ts:202`（color_tone）／`Snapshot.ts rgbaOf`（AARRGGBB）／`TxtLayer.tsx rgbOf`。
-  `CmnLib.cssColorOf()`（数値→`#RRGGBB`）の対になる分解関数が無い。※AARRGGBB と RRGGBB で
-  バイト順が違うので統合時は引数で明示。
-- **`rotation/scale/pivot` → CSS transform 文字列。** `Lay.ts:133` と `BtnLayer.tsx:134`
-  がバイト一致、`ChStyle.ts` 内で同式 2 回、`FrameMng.ts:211` にフレーム版。
-  → `Lay.ts` に `styTransformOf(o)` を切り出す。
-- **ステージ寸法の取得経路 2 系統。** `ScriptEngine` だけ var store 越しに文字列キー
-  `tmp:const.sn.config.window.width` で取得（同ファイル内 2 回コピー＋「下端中央寄せ」
-  スニペットも 2 重）、他は `CmnLib.stageW/H` 直参照。
-  → ScriptEngine 内も `CmnLib.stageW/H` に寄せ、下端中央寄せは private メソッド 1 つに。
+- **数値属性パース 4 実装。**（見送り）`ScriptEngine.#argNum`／`Filter.ts num()`／
+  `VarStore.#toNum`／`Fx.ts parseRGB` 内の hex 分岐。`CmnLib.argChk_Num` が本家シグネチャ
+  （`hash` を破壊的更新・`:タグ名` ベースのメッセージ）で web.ts が公開 API 再 export して
+  いるのに対し、分家内パーサは**非破壊・呼び出し側ごとのエラーメッセージ**で意図的に別実装。
+  統合するとメッセージの揺れと破壊的更新の押し付けが生じるので現状維持。
+- ~~`0xRRGGBB` → `[r,g,b]` 分解~~ … 済（第2弾）。実質重複は Filter.ts の tint/color_tone
+  だけだったので同ファイルローカルの `rgb01()` に。`Fx.parseRGB` の 1 行は import を増やさ
+  ないため据え置き、`Snapshot.rgbaOf`（AARRGGBB＋アルファ）・`TxtLayer.rgbOf`（0..255）は
+  別フォーマットで対象外。
+- ~~`rotation/scale/pivot` → CSS transform~~ … 済（第2弾）。`Lay.ts` に `applyTransform(o, sty)`
+  を切り出し、`styLay`（Lay.ts）と `BtnLayer.tsx` から呼ぶ。`ChStyle.ts` は translate 込み・
+  デフォルト無しで式が違うため対象外、`FrameMng.ts:211` のフレーム版も別実装のまま。
+- ~~ステージ寸法の取得経路~~ … 済（第2弾）。`ScriptEngine` 内の 4 箇所（`#argPos`＋pos 系
+  フォールバック 2＋plg フォールバック）を private `#stageWH()` に集約。純粋エンジンが
+  DOM 側グローバル `CmnLib.stageW/H` でなく自分の var store から読む方針は維持。
 
 ※ `SaveMng.dateStr()` → `CmnLib.getDateStr()` は**誤指摘**（`getDateStr` は分までで秒を
 出さない。セーブ名の一意性に秒が要るので現状維持）。

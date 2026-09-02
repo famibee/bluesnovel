@@ -104,23 +104,24 @@ export function chStyleEase(ease: string): string {
 	return REG_CSS_EASE.test(v) ? v : 'ease-out';
 }
 
+// 定義値の見た目（透明度・移動後）キーフレーム。素の表示状態は {opacity:1, transform:'none'}＝
+//	CSSの初期値と完全一致（fill と組み合わせると後始末が要らない）
+const kfStyled = (sty: T_CH_STYLE): Keyframe=> ({
+	opacity: sty.alpha,
+	transform: `translate(${chStylePos(sty.x)}, ${chStylePos(sty.y)}) `
+		+ `scale(${String(sty.scale_x)}, ${String(sty.scale_y)}) rotate(${String(sty.rotate)}deg)`,
+});
+const KF_BARE: Keyframe = {opacity: 1, transform: 'none'};
+
 // 出現演出 → Web Animations APIの`el.animate(keyframes, options)`の引数。
 //	**fromキーフレームが定義の値、toが素の表示状態**（本家のkeyframesも`from`に定義値・
-//	`to`に`opacity:1; transform:none`を置く）。toはCSSの初期値と完全に一致するので、
-//	`options.fill: 'backwards'`と組み合わせると後始末が要らない（TxtLayer.tsx参照）：
-//	delay中/実行中はfromの見た目を保ち、自然終了時・.cancel()時は効果が外れて素のDOM既定値
-//	（=to）へ自動的に戻る
+//	`to`に`opacity:1; transform:none`を置く）。`options.fill: 'backwards'`と組み合わせると
+//	後始末が要らない（TxtLayer.tsx参照）：delay中/実行中はfromの見た目を保ち、
+//	自然終了時・.cancel()時は効果が外れて素のDOM既定値（=to）へ自動的に戻る。
+//	durationはWeb Animations APIの慣例どおりミリ秒（GSAP版は秒への変換が要ったが不要になった）
 export function chStyleAnim(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: KeyframeAnimationOptions} {
 	return {
-		keyframes: [
-			{
-				opacity: sty.alpha,
-				transform: `translate(${chStylePos(sty.x)}, ${chStylePos(sty.y)}) `
-					+ `scale(${String(sty.scale_x)}, ${String(sty.scale_y)}) rotate(${String(sty.rotate)}deg)`,
-			},
-			{opacity: 1, transform: 'none'},
-		],
-		// durationはWeb Animations APIの慣例どおりミリ秒（GSAP版は秒への変換が要ったが不要になった）
+		keyframes: [kfStyled(sty), KF_BARE],
 		options: {duration: sty.wait, easing: chStyleEase(sty.ease), fill: 'backwards'},
 	};
 }
@@ -132,14 +133,7 @@ export function chStyleAnim(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: K
 //	`fill:'forwards'`で終端の見た目（透明・移動後）を保持したままDOMから外す
 export function chStyleAnimOut(sty: T_CH_STYLE): {keyframes: Keyframe[]; options: KeyframeAnimationOptions} {
 	return {
-		keyframes: [
-			{opacity: 1, transform: 'none'},
-			{
-				opacity: sty.alpha,
-				transform: `translate(${chStylePos(sty.x)}, ${chStylePos(sty.y)}) `
-					+ `scale(${String(sty.scale_x)}, ${String(sty.scale_y)}) rotate(${String(sty.rotate)}deg)`,
-			},
-		],
+		keyframes: [KF_BARE, kfStyled(sty)],
 		options: {duration: sty.wait, easing: chStyleEase(sty.ease), fill: 'forwards'},
 	};
 }

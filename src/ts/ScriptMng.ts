@@ -47,6 +47,14 @@ function styNum(style: string | undefined, prop: 'width' | 'height'): number | u
 	return m ? Number(m[1]) : undefined;
 }
 
+// アセットの種別（アニメ png シート／動画）を拡張子で判定。fn（論理名）は拡張子を持たず、
+//	crypto 構成では src も Blob URL に化けて拡張子を失うため、判定できるのは解決直後の src だけ
+//	（#applyAction chgPic のコメント参照。本家 SpritesMng.#csv2Sprites も要素ごとに拡張子判定）
+const RE_MOVIE_EXT = /\.(?:mp4|webm)$/i;
+function classifyAsset(src: string): {isSheet: boolean; isMovie: boolean} {
+	return {isSheet: src.endsWith('.json'), isMovie: RE_MOVIE_EXT.test(src)};
+}
+
 
 export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
@@ -1748,18 +1756,14 @@ export class ScriptMng {
 			//	例外を投げるが、renderの中で投げるとReactごと落ちるので、
 			//	シナリオ実行時に解決してエラーはデバッグ表示へ出す。GrpLayerは出来上がったURLを描くだけ
 			const src = this.#searchPic('lay', act.fn);
-			// アニメpngシート／動画判定は**Blob URL化前のここで確定**させ、ストアへ渡す（GrpLayer.tsx参照）。
-			//	fn（論理名）はアニメpngシートでは拡張子を持たず（例："anime"）、crypto構成ではsrcも
-			//	Blob URLに化けて拡張子情報を失うため、どちらでも判定できるのはこのタイミングだけ
-			const isSheet = src.endsWith('.json');
-			const isMovie = /\.(?:mp4|webm)$/i.test(src);
+			// アニメpngシート／動画判定は**Blob URL化前のここで確定**させ、ストアへ渡す（GrpLayer.tsx参照）
+			const {isSheet, isMovie} = classifyAsset(src);
 			// act.aFaceがundefined＝[lay face=...]省略。ストア側でも省略扱いとし、
 			//	パス解決自体をスキップして直前のfaceをそのまま残す。
-			//	isSheetは基本画像（isSheet変数）と同じ判定：各要素は等しくアニメpngシート候補
-			//	（本家 SpritesMng.#csv2Sprites はcsvの各要素を拡張子で個別判定する。先頭限定ではない）
+			//	各要素は基本画像と同じく個別に拡張子判定（本家 SpritesMng.#csv2Sprites。先頭限定ではない）
 			const aFace = act.aFace?.map(f=> {
 				const faceSrc = this.#searchPic('add_face', f.fn);
-				return {...f, src: faceSrc, isSheet: faceSrc.endsWith('.json'), isMovie: /\.(?:mp4|webm)$/i.test(faceSrc)};
+				return {...f, src: faceSrc, ...classifyAsset(faceSrc)};
 			});
 			// exactOptionalPropertyTypes: true のため、undefinedの時はaFaceキー自体を省略する
 			//	（chgPicはaFaceキー無しなら直前の値を維持する）

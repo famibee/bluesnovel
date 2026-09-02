@@ -20,14 +20,18 @@ function r(e, t, n) {
 	if (!Number.isFinite(i)) throw `[add_filter] ${t}の値が不正です：${r}`;
 	return i;
 }
-var i = {
+var i = (e) => [
+	(e >> 16 & 255) / 255,
+	(e >> 8 & 255) / 255,
+	(e & 255) / 255
+], a = {
 	blur: (e) => `blur(${String(r(e, "strength", 8))}px)`,
 	brightness: (e) => `brightness(${String(r(e, "b", .5))})`,
 	black_and_white: () => "grayscale(1)",
 	negative: () => "invert(1)",
 	saturate: (e) => `saturate(${String(1 + r(e, "amount", .5))})`,
 	sepia: () => "sepia(1)"
-}, a = ["noise"], o = {
+}, o = ["noise"], s = {
 	grayscale: (e) => {
 		let t = r(e, "scale", .5);
 		return [
@@ -258,21 +262,21 @@ var i = {
 		0
 	],
 	tint: (e) => {
-		let t = r(e, "f_color", 8947848);
+		let [t, n, a] = i(r(e, "f_color", 8947848));
 		return [
-			(t >> 16 & 255) / 255,
+			t,
 			0,
 			0,
 			0,
 			0,
 			0,
-			(t >> 8 & 255) / 255,
+			n,
 			0,
 			0,
 			0,
 			0,
 			0,
-			(t & 255) / 255,
+			a,
 			0,
 			0,
 			0,
@@ -333,26 +337,26 @@ var i = {
 		];
 	},
 	color_tone: (e) => {
-		let t = r(e, "desaturation", .5), n = r(e, "toned", .5), i = r(e, "light_color", 16770432), a = r(e, "dark_color", 16770432), o = (i >> 16 & 255) / 255, s = (i >> 8 & 255) / 255, c = (i & 255) / 255, l = (a >> 16 & 255) / 255, u = (a >> 8 & 255) / 255, d = (a & 255) / 255;
+		let t = r(e, "desaturation", .5), n = r(e, "toned", .5), a = r(e, "light_color", 16770432), o = r(e, "dark_color", 16770432), [s, c, l] = i(a), [u, d, f] = i(o);
 		return [
 			.3,
 			.59,
 			.11,
 			0,
 			0,
-			o,
 			s,
 			c,
+			l,
 			t,
 			0,
-			l,
 			u,
 			d,
+			f,
 			n,
 			0,
-			o - l,
 			s - u,
 			c - d,
+			l - f,
 			0,
 			0
 		];
@@ -389,62 +393,62 @@ var i = {
 		];
 	}
 };
-function s(e) {
+function c(e) {
 	let t = 0, n = e.join(",");
 	for (let e = 0; e < n.length; ++e) t = Math.imul(t, 31) + n.charCodeAt(e) | 0;
 	return `sn_cm_${(t >>> 0).toString(36)}`;
 }
-var c = (e) => e.join(" ");
-function l([e, t]) {
+var l = (e) => e.join(" ");
+function u([e, t]) {
 	return `sn_gb_${String(e)}_${String(t)}`;
 }
-var u = ([e, t]) => `${String(e)} ${String(t)}`;
-function d(t) {
-	let { filter: c = "" } = t, u = t.blendmode === void 0 ? void 0 : n(t.blendmode), d = (t.enable_filter ?? "true") !== "false";
-	if (c === "blur" && (t.blur_x !== void 0 || t.blur_y !== void 0)) {
+var d = ([e, t]) => `${String(e)} ${String(t)}`;
+function f(t) {
+	let { filter: i = "" } = t, l = t.blendmode === void 0 ? void 0 : n(t.blendmode), d = (t.enable_filter ?? "true") !== "false";
+	if (i === "blur" && (t.blur_x !== void 0 || t.blur_y !== void 0)) {
 		let n = [e(r(t, "blur_x", 2)), e(r(t, "blur_y", 2))];
 		return {
-			css: `url(#${l(n)})`,
+			css: `url(#${u(n)})`,
 			enabled: d,
 			blurXY: n,
-			...u === void 0 ? {} : { blendmode: u }
+			...l === void 0 ? {} : { blendmode: l }
 		};
 	}
-	let f = o[c];
+	let f = s[i];
 	if (f) {
 		let e = f(t);
 		return {
-			css: `url(#${s(e)})`,
+			css: `url(#${c(e)})`,
 			enabled: d,
 			mat: e,
-			...u === void 0 ? {} : { blendmode: u }
+			...l === void 0 ? {} : { blendmode: l }
 		};
 	}
-	let p = i[c];
-	if (!p) throw a.includes(c) ? `filter【${c}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
+	let p = a[i];
+	if (!p) throw o.includes(i) ? `filter【${i}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
 		css: p(t),
 		enabled: d,
-		...u === void 0 ? {} : { blendmode: u }
+		...l === void 0 ? {} : { blendmode: l }
 	};
 }
-function f(e) {
+function p(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function p(e) {
+function m(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function m(e) {
+function h(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function h(e) {
+function g(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var g = [
+var _ = [
 	"visible",
 	"alpha",
 	"left",
@@ -464,27 +468,30 @@ var g = [
 	"aFlt",
 	"aFx"
 ];
-function _(e) {
+function v(e, t) {
+	(e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
+}
+function y(e) {
 	let t = {};
-	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), (e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : m(e.aFlt));
+	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), v(e, t);
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : h(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = h(e.aFlt);
+		let n = g(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-function v(e) {
+function b(e) {
 	return e.cls === "grp";
 }
-function y(e) {
+function x(e) {
 	return e.cls === "txt";
 }
-var b = !1, x = () => {
-	b = !0;
-}, S = () => {
-	b = !1;
-}, C = () => b, w = {
+var S = !1, C = () => {
+	S = !0;
+}, w = () => {
+	S = !1;
+}, T = () => S, E = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -494,7 +501,7 @@ var b = !1, x = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, T = {
+}, D = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -504,82 +511,77 @@ var b = !1, x = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, E = /[{\s.,*]/, D = (e, t, n, r) => {
+}, O = /[{\s.,*]/, k = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function O(e, t, n) {
+function A(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (E.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (O.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: D(e, "wait", t.wait, 500),
-			alpha: D(e, "alpha", t.alpha, 0),
+			wait: k(e, "wait", t.wait, 500),
+			alpha: k(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: D(e, "scale_x", t.scale_x, 1),
-			scale_y: D(e, "scale_y", t.scale_y, 1),
-			rotate: D(e, "rotate", t.rotate, 0),
+			scale_x: k(e, "scale_x", t.scale_x, 1),
+			scale_y: k(e, "scale_y", t.scale_y, 1),
+			rotate: k(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function k(e) {
+function j(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
-var A = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
-function j(e) {
+var M = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
+function N(e) {
 	let t = e.trim();
-	return A.test(t) ? t : "ease-out";
+	return M.test(t) ? t : "ease-out";
 }
-function M(e) {
+var P = (e) => ({
+	opacity: e.alpha,
+	transform: `translate(${j(e.x)}, ${j(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+}), F = {
+	opacity: 1,
+	transform: "none"
+};
+function I(e) {
 	return {
-		keyframes: [{
-			opacity: e.alpha,
-			transform: `translate(${k(e.x)}, ${k(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
-		}, {
-			opacity: 1,
-			transform: "none"
-		}],
+		keyframes: [P(e), F],
 		options: {
 			duration: e.wait,
-			easing: j(e.ease),
+			easing: N(e.ease),
 			fill: "backwards"
 		}
 	};
 }
-function N(e) {
+function L(e) {
 	return {
-		keyframes: [{
-			opacity: 1,
-			transform: "none"
-		}, {
-			opacity: e.alpha,
-			transform: `translate(${k(e.x)}, ${k(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
-		}],
+		keyframes: [F, P(e)],
 		options: {
 			duration: e.wait,
-			easing: j(e.ease),
+			easing: N(e.ease),
 			fill: "forwards"
 		}
 	};
 }
 //#endregion
 //#region src/ts/PageLog.ts
-var P = [
+var R = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], F = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", I = class {
+], z = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", B = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -642,6 +644,6 @@ var P = [
 	}
 };
 //#endregion
-export { n as C, f as S, l as _, T as a, s as b, O as c, C as d, v as f, d as g, _ as h, w as i, g as l, x as m, F as n, M as o, y as p, I as r, N as s, P as t, S as u, u as v, c as x, p as y };
+export { p as C, l as S, f as _, D as a, m as b, A as c, w as d, T as f, y as g, C as h, E as i, _ as l, x as m, z as n, I as o, b as p, B as r, L as s, R as t, v as u, u as v, n as w, c as x, d as y };
 
 //# sourceMappingURL=PageLog.js.map

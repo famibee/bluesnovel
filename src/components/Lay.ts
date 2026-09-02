@@ -90,6 +90,18 @@ export type T_LAY_IDX = T_LAY_STY & {
 	nm		: string;
 };
 
+// rotation/scale/pivot → CSS の transform / transform-origin（[lay]・[button] 共通）。
+//	1つでも指定があれば書く。pivot 未指定は 0 0 ＝ 従来の left top と同じ（原点は本家 pixi の pivot 既定＝左上）
+export function applyTransform(
+	o: {rotation?: number; scale_x?: number; scale_y?: number; pivot_x?: number; pivot_y?: number},
+	sty: CSSProperties,
+): void {
+	if (o.rotation === undefined && o.scale_x === undefined && o.scale_y === undefined
+	 && o.pivot_x === undefined && o.pivot_y === undefined) return;
+	sty.transform = `rotate(${String(o.rotation ?? 0)}deg) scale(${String(o.scale_x ?? 1)}, ${String(o.scale_y ?? 1)})`;
+	sty.transformOrigin = `${String(o.pivot_x ?? 0)}px ${String(o.pivot_y ?? 0)}px`;
+}
+
 // 上のT_LAY_STYをCSSへ。**指定された属性だけ**を出す。
 //	位置はstyChild（絶対配置）のleft/topを上書きし、回転・拡縮はtransformでまとめる
 //	（原点は左上＝本家pixiのpivot既定と揃える）
@@ -128,12 +140,7 @@ export function styLay(l: T_LAY_STY): CSSProperties {
 	//	left+width+rightが揃うCSSの規則で上書きする）
 	if (l.width !== undefined) sty.width = `${String(l.width)}px`;
 	if (l.height !== undefined) sty.height = `${String(l.height)}px`;
-	if (l.rotation !== undefined || l.scale_x !== undefined || l.scale_y !== undefined
-	 || l.pivot_x !== undefined || l.pivot_y !== undefined) {
-		sty.transform = `rotate(${String(l.rotation ?? 0)}deg) scale(${String(l.scale_x ?? 1)}, ${String(l.scale_y ?? 1)})`;
-		// pivot未指定なら 0 0 ＝ 従来の left top と同じ
-		sty.transformOrigin = `${String(l.pivot_x ?? 0)}px ${String(l.pivot_y ?? 0)}px`;
-	}
+	applyTransform(l, sty);
 	// [lay blendmode=]優先、無指定なら[add_filter blendmode=]（フィルター単位のブレンド）に
 	//	フォールバック。CSSはmix-blend-modeを要素につき1つしか持てないため両者は同じ枠を取り合う
 	const bm = l.blendmode ?? (l.aFlt !== undefined ? blendmodeOf(l.aFlt) : undefined);

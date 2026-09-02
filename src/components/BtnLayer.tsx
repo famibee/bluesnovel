@@ -11,7 +11,7 @@ import {useStore} from '../store/store';
 import {CmnLib} from '../sn/CmnLib';
 
 import type {T_BTN_STY} from './TxtLayer';
-import {BTN_DEF_H, BTN_DEF_W} from './Lay';
+import {applyTransform, BTN_DEF_H, BTN_DEF_W} from './Lay';
 
 import {css} from '@emotion/react';
 import {type CSSProperties, type KeyboardEvent, type MouseEvent, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -129,11 +129,7 @@ function styBtnArg(o: T_BTN_STY, natPic: {w: number; h: number} | null): CSSProp
 	//	原点は常に本家pivot（既定左上）。本家はrotation/scale_x/scale_yをボタンコンテナ（背景画像
 	//	込みの箱全体）へ、fit相当のText.width/heightはText自身のローカル原点基準で別々に掛けており、
 	//	ここでも箱側はfit抜きの本来のpivot基準のままでよい（Button.ts:85,123-153）
-	if (o.rotation !== undefined || o.scale_x !== undefined || o.scale_y !== undefined
-	 || o.pivot_x !== undefined || o.pivot_y !== undefined) {
-		sty.transform = `rotate(${String(o.rotation ?? 0)}deg) scale(${String(o.scale_x ?? 1)}, ${String(o.scale_y ?? 1)})`;
-		sty.transformOrigin = `${String(o.pivot_x ?? 0)}px ${String(o.pivot_y ?? 0)}px`;
-	}
+	applyTransform(o, sty);
 	if (o.blendmode !== undefined) sty.mixBlendMode = o.blendmode as CSSProperties['mixBlendMode'];
 	// enabled=false：本家は文字を灰色にしてイベントも受けない（Button.ts の fill と evtMng.button）
 	if (o.enabled === false) {sty.color = 'gray'; sty.pointerEvents = 'none'}

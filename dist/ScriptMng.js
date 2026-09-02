@@ -1,6 +1,6 @@
 import { a as e, t } from "./CmnLib.js";
 import { t as n } from "./FocusMng.js";
-import { f as r, n as i, p as a, r as o } from "./PageLog.js";
+import { m as r, n as i, p as a, r as o } from "./PageLog.js";
 import { DEF_BTN_FONT as s } from "./store.js";
 import { o as c, r as l } from "./Sprite.js";
 import { n as u } from "./ConfigBase.js";
@@ -3509,7 +3509,14 @@ function mo(e, t) {
 	let n = e?.match(po[t]);
 	return n ? Number(n[1]) : void 0;
 }
-var ho = class f {
+var ho = /\.(?:mp4|webm)$/i;
+function go(e) {
+	return {
+		isSheet: e.endsWith(".json"),
+		isMovie: ho.test(e)
+	};
+}
+var _o = class f {
 	sys;
 	#e;
 	constructor(e) {
@@ -3587,13 +3594,13 @@ var ho = class f {
 		e.defBuiltin("const.sn.lay", () => {
 			let { fore: e, back: n } = this.$fncs.getPages(), i = (e) => {
 				if (!e) return;
-				let n = e.left ?? 0, i = e.top ?? 0, o = r(e) ? (() => {
+				let n = e.left ?? 0, i = e.top ?? 0, o = a(e) ? (() => {
 					let t = l(e.src);
 					return {
 						w: t?.w ?? 0,
 						h: t?.h ?? 0
 					};
-				})() : a(e) ? {
+				})() : r(e) ? {
 					w: mo(e.style, "width") ?? t.stageW,
 					h: mo(e.style, "height") ?? t.stageH
 				} : {
@@ -4520,13 +4527,12 @@ var ho = class f {
 				break;
 			case "layPlg": break;
 			case "chgPic": {
-				let t = this.#et("lay", e.fn), n = t.endsWith(".json"), r = /\.(?:mp4|webm)$/i.test(t), i = e.aFace?.map((e) => {
+				let t = this.#et("lay", e.fn), { isSheet: n, isMovie: r } = go(t), i = e.aFace?.map((e) => {
 					let t = this.#et("add_face", e.fn);
 					return {
 						...e,
 						src: t,
-						isSheet: t.endsWith(".json"),
-						isMovie: /\.(?:mp4|webm)$/i.test(t)
+						...go(t)
 					};
 				});
 				if (!this.sys.crypto) {
@@ -4984,6 +4990,6 @@ var ho = class f {
 	};
 };
 //#endregion
-export { ho as ScriptMng };
+export { _o as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

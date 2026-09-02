@@ -61,6 +61,8 @@ function num(args: {[k: string]: string}, nm: string, def: number): number {
 	if (! Number.isFinite(n)) throw `[add_filter] ${nm}の値が不正です：${v}`;
 	return n;
 }
+// 0xRRGGBB → 0..1 の [r,g,b]（feColorMatrix の対角・行に置く）
+const rgb01 = (n: number): [number, number, number]=> [(n >> 16 & 0xFF) / 255, (n >> 8 & 0xFF) / 255, (n & 0xFF) / 255];
 
 // filter名 -> CSSのfilter関数。既定値は本家（Layer.ts hBldFilter）に合わせてある
 const H_BLD: {[nm: string]: (args: {[k: string]: string})=> string} = {
@@ -168,11 +170,11 @@ const H_MAT: {[nm: string]: (args: {[k: string]: string})=> number[]} = {
 		0, 0, 0, 1, 0],
 	// 色合い（対角に色成分を置く）。本家の既定は 0x888888
 	tint		: a=> {
-		const c = num(a, 'f_color', 0x888888);
+		const [r, g, b] = rgb01(num(a, 'f_color', 0x888888));
 		return [
-			(c >> 16 & 0xFF) / 255, 0, 0, 0, 0,
-			0, (c >> 8 & 0xFF) / 255, 0, 0, 0,
-			0, 0, (c & 0xFF) / 255, 0, 0,
+			r, 0, 0, 0, 0,
+			0, g, 0, 0, 0,
+			0, 0, b, 0, 0,
 			0, 0, 0, 1, 0];
 	},
 	// ナイトエフェクト
@@ -199,8 +201,8 @@ const H_MAT: {[nm: string]: (args: {[k: string]: string})=> number[]} = {
 		const tnd = num(a, 'toned', 0.5);
 		const lc = num(a, 'light_color', 0xFFE580);
 		const dc = num(a, 'dark_color', 0xFFE580);
-		const lR = (lc >> 16 & 0xFF) / 255, lG = (lc >> 8 & 0xFF) / 255, lB = (lc & 0xFF) / 255;
-		const dR = (dc >> 16 & 0xFF) / 255, dG = (dc >> 8 & 0xFF) / 255, dB = (dc & 0xFF) / 255;
+		const [lR, lG, lB] = rgb01(lc);
+		const [dR, dG, dB] = rgb01(dc);
 		return [
 			0.3, 0.59, 0.11, 0, 0,
 			lR, lG, lB, des, 0,

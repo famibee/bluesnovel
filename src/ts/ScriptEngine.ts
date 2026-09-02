@@ -322,9 +322,19 @@ export class ScriptEngine {
 	#argPos(tag: string, nm: 'left' | 'top', v: string): number {
 		const n = ScriptEngine.#argNum(tag, nm, v);
 		if (n <= -1 || n >= 1) return n;
-		const sz = Number(this.#val.get(
-			nm === 'left' ? 'tmp:const.sn.config.window.width' : 'tmp:const.sn.config.window.height'));
+		const {w, h} = this.#stageWH();
+		const sz = nm === 'left' ? w : h;
 		return Number.isFinite(sz) ? n * sz : n;	// 組み込み変数が無い環境（単体テスト等）はそのまま
+	}
+
+	// ステージ寸法（本家 CmnLib.stageW/H 相当）。純粋エンジンは DOM 側グローバルでなく
+	//	ScriptMng が入れる組み込み変数 tmp:const.sn.config.window.* から読む（config 由来で不変）。
+	//	組み込み変数が無い環境（単体テスト等）では NaN が返る＝呼ぶ側でフォールバックすること
+	#stageWH(): {w: number; h: number} {
+		return {
+			w: Number(this.#val.get('tmp:const.sn.config.window.width')),
+			h: Number(this.#val.get('tmp:const.sn.config.window.height')),
+		};
 	}
 
 	// 省略可の数値属性（本家 argChk_Num() の「省略値あり」呼び出しに対応）。
@@ -1216,8 +1226,7 @@ export class ScriptEngine {
 		if (! isPlg && args.pos === 'stay') { /* 位置は変えない */ }
 		else if (! isPlg && args.pos !== undefined) {
 			const p = args.pos;
-			const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
-			const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
+			const {w: stageW, h: stageH} = this.#stageWH();
 			if (p === '' || p === 'c') {sty.left = stageW /2; sty.align_x = 'center'}
 			else if (p === 'l') sty.left = 0;
 			else if (p === 'r') {sty.left = stageW; sty.align_x = 'right'}
@@ -1262,8 +1271,7 @@ export class ScriptEngine {
 			if ((args.fn !== undefined || args.pic !== undefined || args.face !== undefined)
 			&& ! ('left' in sty) && ! ('s_right' in sty) && ! ('top' in sty) && ! ('s_bottom' in sty)
 			&& cls === 'grp') {
-				const stageW = Number(this.#val.get('tmp:const.sn.config.window.width'));
-				const stageH = Number(this.#val.get('tmp:const.sn.config.window.height'));
+				const {w: stageW, h: stageH} = this.#stageWH();
 				sty.left = stageW /2; sty.align_x = 'center';
 				sty.top = stageH; sty.align_y = 'bottom';
 			}
@@ -1277,9 +1285,10 @@ export class ScriptEngine {
 		if (isNew && isPlg
 		&& ! ('left' in sty) && ! ('s_right' in sty) && ! ('top' in sty) && ! ('s_bottom' in sty)
 		&& args.width === undefined && args.height === undefined) {
+			const {w, h} = this.#stageWH();
 			sty.left = 0; sty.top = 0;
-			sty.width = Number(this.#val.get('tmp:const.sn.config.window.width'));
-			sty.height = Number(this.#val.get('tmp:const.sn.config.window.height'));
+			sty.width = w;
+			sty.height = h;
 		}
 		// レイヤの寸法。0.0〜1.0を画面比率とする#argPos()は使わない（本家もwidth/heightは
 		//	素のargChk_Numで、比率変換は位置属性left/center/right/s_right/top/…だけの仕様）。
