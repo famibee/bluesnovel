@@ -54,6 +54,13 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**
 
+## リファクタ候補（/simplify 分家全体 2026-09-03）
+
+- [ ] 構造リファクタ案の控えは [refactor-candidates.md](refactor-candidates.md)。1 項目ずつ
+      E2E＋サンプル実走で確認しながら。優先度の高そうなもの：ScriptMng の待ち合わせ 8
+      サブシステム統一、レイヤ属性キー集合の単一台帳化（既に食い違い有り）、レイヤ子
+      コンポーネントの `React.memo` 化（無限 `[tsy]` 中の全レイヤ再レンダー抑止）
+
 ## 保留
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬

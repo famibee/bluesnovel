@@ -38,8 +38,12 @@ type T_TRACE = (txt: string, lvl?: 'D'|'W'|'F'|'E'|'I'|'ET')=> void;
 // 文字レイヤの[lay style="width: …px; height: …px;"]からpx数値を拾う
 //	（本家 TxtStage.ts:259-260 の `parseFloat(s.width)` 相当。CSSStyleDeclarationは持ち出さず
 //	正規表現で軽量に済ませる。%等px以外の単位は対象外＝undefinedのまま）
+const RE_STY_NUM = {
+	width	: /(?:^|;)\s*width\s*:\s*([\d.]+)px/i,
+	height	: /(?:^|;)\s*height\s*:\s*([\d.]+)px/i,
+} as const;
 function styNum(style: string | undefined, prop: 'width' | 'height'): number | undefined {
-	const m = style?.match(new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([\\d.]+)px`, 'i'));
+	const m = style?.match(RE_STY_NUM[prop]);
 	return m ? Number(m[1]) : undefined;
 }
 

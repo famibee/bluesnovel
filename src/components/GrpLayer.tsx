@@ -11,7 +11,7 @@ import {aniSpriteClass, loadSheet, setNatSize, type T_SHEET, type T_FRAME} from 
 
 import type {T_FX} from '../ts/Fx';
 
-import {type CSSProperties, MouseEvent, useEffect, useRef, useState} from 'react';
+import {type CSSProperties, useEffect, useRef, useState} from 'react';
 
 
 // [add_face]で定義した差分絵1件分。dx/dyは親画像（fn）の左上を原点(0,0)とした相対座標
@@ -321,12 +321,6 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 }
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, fxActive, getVideoVol, needClick2Play}: T_GRPARG) {
-	const onMouseDown = (e: MouseEvent)=> {	// left, middle, right
-		if (e.button != 1) {
-			return
-		}
-console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
-	};
 
 	// 差分合成（face）の重ね方針：
 	//	・div0（ラッパー）を Stage 上の配置単位（Moveableの対象）とし、styChild/sty4Moveableはここに適用する
@@ -405,7 +399,7 @@ console.log(`fn:GrpLayer.tsx line:28 MIDDLE:`);
 	//	ただし要素自体は残す（div0 のサイズを決める／<video> は [wv]・音量・音の担当）
 	const hideForFx = fxOn && fxReady;
 	const styHide: CSSProperties = hideForFx ? {visibility: 'hidden'} : {};
-	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true} onMouseDown={onMouseDown}>
+	return <Layer styChild={styChild} isDesignMode={isDesignMode} nm={nm} sty={styDiv0} keepRatio={true}>
 		{/* srcが空（未指定・解決失敗）のときは<img src="">を描画しない
 			（Reactがページ全体再ダウンロードの可能性を警告するため）。
 			アニメpngは<img>ではなく背景画像を送るdivで描く（読み込み前は何も描かない）。

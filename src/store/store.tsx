@@ -322,6 +322,26 @@ function putPage(s: T_STATE, idx: 0 | 1, aLay: T_LAY[]): {aPage: [T_LAY[], T_LAY
 	aPage[idx] = aLay;
 	return {aPage};
 }
+// page='both' なら両面、'fore'/'back' なら該当面だけに fn を当てて差分を返す。
+//	clearTxtLay/clearLay/chgFilter/chgFx/chgStr/enableEvent の共通骨格（[er] だけが 'both'）
+function mutatePages(s: T_STATE, page: T_PAGE_BOTH, fn: (aLay: T_LAY[])=> void): {aPage: [T_LAY[], T_LAY[]]} {
+	if (page === 'both') return {aPage: s.aPage.map(a=> {
+		const aLay = [...a]; fn(aLay); return aLay;
+	}) as [T_LAY[], T_LAY[]]};
+	const {idx, aLay} = pickPage(s, page);
+	fn(aLay);
+	return putPage(s, idx, aLay);
+}
+// aLayNm=null/undefined は全レイヤ（本家 LayerMng.#getLayers()）、指定ありは各名前を引いて
+//	（無ければ例外）fn1 を当てる。clearLay/chgFilter/chgFx の対象選択
+function eachTargetLay(aLay: T_LAY[], aLayNm: readonly string[] | null | undefined, fn1: (e: T_LAY)=> void): void {
+	if (! aLayNm) {aLay.forEach(fn1); return}
+	for (const nm of aLayNm) {
+		const e = aLay.find(e=> e.nm === nm);
+		if (! e) throw `存在しないレイヤ ${nm} です`;
+		fn1(e);
+	}
+}
 // [trans]の完了処理（本家 LayerMng.ts:612 comp()）。呼ぶのは finishTrans と、
 //	演出なし（time<=0）の startTrans。foreIdxの反転とレイヤの入れ替え・複製をまとめてやる
 function finTrans(s: T_STATE, aLayNm: string[] | null): Partial<T_STATE> {
@@ -364,7 +384,7 @@ function mergeCssText(oldCss: string | undefined, newCss: string): string {
 	return [...m].map(([k, v])=> `${k}: ${v};`).join(' ');
 }
 
-// レイヤ1件を探す（見つからない・種別違いは例外）// レイヤ1件を探す（見つからない・種別違いは例外）
+// レイヤ1件を探す（見つからない・種別違いは例外）
 function findLay<C extends 'grp' | 'txt'>(aLay: T_LAY[], nm: string, cls: C) {
 	const e = aLay.find(e=> e.nm === nm);
 	if (! e) throw `存在しないレイヤ ${nm} です`;
@@ -534,11 +554,9 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	},
 	// [enable_event]：表裏どちらのページにも同じ値を入れる。
 	//	本家はレイヤ（Pagesの片面ではなくレイヤ自体）が持つ状態なので、[trans]で入れ替わっても揺れないようにする
-	enableEvent: ({nm, enabled}: T_ENABLEEVENT)=> set(s=> ({aPage: s.aPage.map(a=> {
-		const aLay = [...a];
+	enableEvent: ({nm, enabled}: T_ENABLEEVENT)=> set(s=> mutatePages(s, 'both', aLay=> {
 		findLay(aLay, nm, 'txt').enabled = enabled;
-		return aLay;
-	}) as [T_LAY[], T_LAY[]]})),
+	})),
 	// [clear_lay]：見た目を初期値へ戻し、中身も捨てる（本家 Layer.clearLay()＋各レイヤのoverride）。
 	//	**visibleだけは触らない**（本家のコメント「visibleは触らない」そのまま）
 	// [er]用（本家 TxtLayer.clearLay()＋Layer.clearLay()）。**本文（str/aCh）はchgStrが別に消す**ので、
@@ -547,21 +565,12 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	//	**visibleと位置（left/top/寄せ）・b_color/style等の見た目には触らない**
 	//	（位置まで戻すのは[clear_lay]の仕事。本家も #er() は clearLay(hArg) しか呼ばない）。
 	//	フィルターは clear_filter=true のときだけ落とす（本家の既定はfalse）
-	clearTxtLay: ({nm, page, clearFilter}: T_CLEARTXTLAY)=> set(s=> {
-		const clr1 = (aLay: T_LAY[])=> {
-			const e = findLay(aLay, nm, 'txt');
-			if (e.aBtn.length > 0) e.aBtn = [];
-			for (const k of A_ER_RESET_KEY) delete e[k];
-			if (clearFilter) delete e.aFlt;
-		};
-		if (page === 'both') return {aPage: s.aPage.map(a=> {
-			const aLay = [...a]; clr1(aLay); return aLay;
-		}) as [T_LAY[], T_LAY[]]};
-
-		const {idx, aLay} = pickPage(s, page);
-		clr1(aLay);
-		return putPage(s, idx, aLay);
-	}),
+	clearTxtLay: ({nm, page, clearFilter}: T_CLEARTXTLAY)=> set(s=> mutatePages(s, page, aLay=> {
+		const e = findLay(aLay, nm, 'txt');
+		if (e.aBtn.length > 0) e.aBtn = [];
+		for (const k of A_ER_RESET_KEY) delete e[k];
+		if (clearFilter) delete e.aFlt;
+	})),
 	clearLay: ({aLayNm, page}: T_CLEARLAY)=> set(s=> {
 		const clr1 = (e: T_LAY)=> {
 			// 見た目は「未指定」へ戻す（＝各レイヤのCSS既定に従う）。
@@ -574,23 +583,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			// プラグインレイヤーはstoreに中身を持たない（中身の実体・クリアはDOM側 PlgLayMng が持つ）ので、
 			//	共通の見た目（上のA_LAY_STY_KEYループ）を戻すだけでよい
 		};
-		// aLayNm=nullはlayer属性の省略＝全レイヤ（本家 LayerMng.#getLayers()）
-		const clr = (aLay: T_LAY[])=> {
-			if (! aLayNm) {aLay.forEach(clr1); return}
-
-			for (const nm of aLayNm) {
-				const e = aLay.find(e=> e.nm === nm);
-				if (! e) throw `存在しないレイヤ ${nm} です`;
-				clr1(e);
-			}
-		};
-		if (page === 'both') return {aPage: s.aPage.map(a=> {
-			const aLay = [...a]; clr(aLay); return aLay;
-		}) as [T_LAY[], T_LAY[]]};
-
-		const {idx, aLay} = pickPage(s, page);
-		clr(aLay);
-		return putPage(s, idx, aLay);
+		return mutatePages(s, page, aLay=> eachTargetLay(aLay, aLayNm, clr1));
 	}),
 	// [lay float=/index=/dive=]：レイヤの重なり順。配列の並びがそのまま描画順（後ろほど手前）。
 	//	**表裏を必ず同じ並びに保つ**：addLayerが両面へ同順で足す前提を、他の処理
@@ -644,22 +637,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			}
 			}
 		};
-		const chg = (aLay: T_LAY[])=> {
-			if (! aLayNm) {aLay.forEach(chg1); return}
-
-			for (const nm of aLayNm) {
-				const e = aLay.find(e=> e.nm === nm);
-				if (! e) throw `存在しないレイヤ ${nm} です`;
-				chg1(e);
-			}
-		};
-		if (page === 'both') return {aPage: s.aPage.map(a=> {
-			const aLay = [...a]; chg(aLay); return aLay;
-		}) as [T_LAY[], T_LAY[]]};
-
-		const {idx, aLay} = pickPage(s, page);
-		chg(aLay);
-		return putPage(s, idx, aLay);
+		return mutatePages(s, page, aLay=> eachTargetLay(aLay, aLayNm, chg1));
 	}),
 	// [add_fx]/[clear_fx]/[pause_fx]/[resume_fx]（分家独自の試作。ANIMATION_RESEARCH.md §7）。
 	//	chgFilterと同じ骨格。fxはgrpレイヤ専用なので、対象がgrpでなければ黙って飛ばす（[clear_lay]
@@ -708,42 +686,16 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			if (i >= 0) a[i] = f; else a.push(f);
 			e.aFx = a;
 		};
-		const chg = (aLay: T_LAY[])=> {
-			if (! aLayNm) {aLay.forEach(chg1); return}
-
-			for (const nm of aLayNm) {
-				const e = aLay.find(e=> e.nm === nm);
-				if (! e) throw `存在しないレイヤ ${nm} です`;
-				chg1(e);
-			}
-		};
-		if (page === 'both') return {aPage: s.aPage.map(a=> {
-			const aLay = [...a]; chg(aLay); return aLay;
-		}) as [T_LAY[], T_LAY[]]};
-
-		const {idx, aLay} = pickPage(s, page);
-		chg(aLay);
-		return putPage(s, idx, aLay);
+		return mutatePages(s, page, aLay=> eachTargetLay(aLay, aLayNm, chg1));
 	}),
-	chgStr	: ({nm, page, str, aCh, hard}: T_CHGSTR)=> set(s=> {
-		const put = (aLay: T_LAY[])=> {
-			const e = findLay(aLay, nm, 'txt');
-			e.str = str;
-			e.aCh = aCh;
-			if (hard) e.clrGen = (e.clrGen ?? 0) + 1;	// 消去世代を進める（TxtLayerが再アニメの判断に使う）
-		};
-		// [er]だけが'both'＝両面の文字を消す。片面だけだと[trans]で裏が表に出たときに
-		//	前の場面の文字が蘇ってしまう（本家 hTag.er「ページ両面の文字消去」）
-		if (page === 'both') return {aPage: s.aPage.map(a=> {
-			const aLay = [...a];
-			put(aLay);
-			return aLay;
-		}) as [T_LAY[], T_LAY[]]};
-
-		const {idx, aLay} = pickPage(s, page);
-		put(aLay);
-		return putPage(s, idx, aLay);
-	}),
+	// [er]だけが'both'＝両面の文字を消す。片面だけだと[trans]で裏が表に出たときに
+	//	前の場面の文字が蘇ってしまう（本家 hTag.er「ページ両面の文字消去」）
+	chgStr	: ({nm, page, str, aCh, hard}: T_CHGSTR)=> set(s=> mutatePages(s, page, aLay=> {
+		const e = findLay(aLay, nm, 'txt');
+		e.str = str;
+		e.aCh = aCh;
+		if (hard) e.clrGen = (e.clrGen ?? 0) + 1;	// 消去世代を進める（TxtLayerが再アニメの判断に使う）
+	})),
 
 	trans		: null,
 	// [trans]開始。演出の主役は「表ページを次第に透明にし、下から裏ページを出す」こと（Stage.tsx）。

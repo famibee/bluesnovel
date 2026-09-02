@@ -3501,14 +3501,15 @@ var uo = lo(), fo = class {
 	resume() {
 		return this.#d?.play(), this;
 	}
+}, po = {
+	width: /(?:^|;)\s*width\s*:\s*([\d.]+)px/i,
+	height: /(?:^|;)\s*height\s*:\s*([\d.]+)px/i
 };
-//#endregion
-//#region src/ts/ScriptMng.ts
-function po(e, t) {
-	let n = e?.match(RegExp(`(?:^|;)\\s*${t}\\s*:\\s*([\\d.]+)px`, "i"));
+function mo(e, t) {
+	let n = e?.match(po[t]);
 	return n ? Number(n[1]) : void 0;
 }
-var mo = class f {
+var ho = class f {
 	sys;
 	#e;
 	constructor(e) {
@@ -3593,8 +3594,8 @@ var mo = class f {
 						h: t?.h ?? 0
 					};
 				})() : a(e) ? {
-					w: po(e.style, "width") ?? t.stageW,
-					h: po(e.style, "height") ?? t.stageH
+					w: mo(e.style, "width") ?? t.stageW,
+					h: mo(e.style, "height") ?? t.stageH
 				} : {
 					w: 0,
 					h: 0
@@ -4983,6 +4984,6 @@ var mo = class f {
 	};
 };
 //#endregion
-export { mo as ScriptMng };
+export { ho as ScriptMng };
 
 //# sourceMappingURL=ScriptMng.js.map

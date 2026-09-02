@@ -270,10 +270,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 	// 文字詰め（本家 TxtLayer.ts:480 #fncFFSStyle）。**1文字ずつ当てる**必要があるのは
 	//	noffsで「この文字だけ詰めない」と外せる仕様のため（全角空白は本家も常に除く）
+	const reNoffs = useMemo(()=> new RegExp(`[　${noffs ?? ''}]`), [noffs]);	// 「詰めない文字」集合（全角空白＋noffs）。文字ごとの再コンパイルを避ける
 	const fncFfs = useCallback((c: string)=> {
 		if (! ffs) return '';
-		return new RegExp(`[　${noffs ?? ''}]`).test(c) ? '' : ffs;
-	}, [ffs, noffs]);
+		return reNoffs.test(c) ? '' : ffs;
+	}, [ffs, reNoffs]);
 
 	// 禁則文字集合（[lay kinsoku_sol=/eol=/dns=/bura=]）。競合チェックはstore.tsxのchgLayが
 	//	済ませている（マージ後のそのレイヤ全体の値が要るため、エンジン単体では判定できない）

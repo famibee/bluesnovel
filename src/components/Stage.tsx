@@ -447,23 +447,19 @@ export default function Stage({
 	}
 
 
-	// 今どちらかのページで使われている色成分行列（重複はidで畳む）
-	const aMat = (()=> {
-		const h = new Map<string, number[]>();
+	// 今どちらかのページで使われている色成分行列とblur_x/blur_y（重複はidで畳む）。
+	//	[tsy]中は毎フレーム再レンダーされるので aPage 依存でメモ化（両ページ全レイヤ走査＋Map確保）。
+	//	blur は [add_filter filter=blur blur_x=/blur_y=]＝CSSのblur()が半径1つしか持てない分をSVGのfeGaussianBlurへ回したもの
+	const {aMat, aBlur} = useMemo(()=> {
+		const hMat = new Map<string, number[]>();
+		const hBlur = new Map<string, readonly [number, number]>();
 		for (const aLay of aPage) for (const l of aLay) {
-			if (l.aFlt) for (const m of matsOf(l.aFlt)) h.set(fltId(m), m);
+			if (! l.aFlt) continue;
+			for (const m of matsOf(l.aFlt)) hMat.set(fltId(m), m);
+			for (const b of blursOf(l.aFlt)) hBlur.set(blurId(b), b);
 		}
-		return [...h.values()];
-	})();
-	// 今どちらかのページで使われているblur_x/blur_y（[add_filter filter=blur blur_x=/blur_y=]。
-	//	重複はidで畳む。CSSのblur()は半径1つしか持てないのでSVGのfeGaussianBlurへ回した分）
-	const aBlur = (()=> {
-		const h = new Map<string, readonly [number, number]>();
-		for (const aLay of aPage) for (const l of aLay) {
-			if (l.aFlt) for (const b of blursOf(l.aFlt)) h.set(blurId(b), b);
-		}
-		return [...h.values()];
-	})();
+		return {aMat: [...hMat.values()], aBlur: [...hBlur.values()]};
+	}, [aPage]);
 
 	// isDesignMode=falseの間は空にする。Moveable自体もisDesignMode時だけ条件レンダーなので
 	//	（GrpLayer.tsx/TxtLayer.tsx）、無効中はこの下地が要らない。恒等transformを常時全レイヤへ
@@ -531,7 +527,6 @@ export default function Stage({
 			<button onClick={()=> {}} css={styBtn}>Back</button>
 			<button onClick={()=> {}} css={styBtn}>Prev</button>
 		</>}
-		{<span>{isFullscreen}</span>}
 		{/* 表裏2枚のページ。**どちらも常にマウントしたまま**にし、[trans]では中身ではなく
 			「どちらを表とみなすか」（foreIdx）だけを切り替える。中身を入れ替えるとTxtLayerが
 			文字送り演出をやり直してしまうため（store.tsx aPage のコメント参照）。

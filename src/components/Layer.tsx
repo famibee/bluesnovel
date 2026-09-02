@@ -14,7 +14,7 @@
 
 import {noticeDrag} from './Lay';
 
-import {type CSSProperties, type MouseEvent, type ReactNode, useRef} from 'react';
+import {type CSSProperties, type ReactNode, useRef} from 'react';
 import type {SerializedStyles} from '@emotion/react';
 import Moveable from 'react-moveable';
 
@@ -25,18 +25,17 @@ export type T_LAYER_PROPS = {
 	nm				: string;
 	sty				: CSSProperties;	// styLay()適用済み（呼び出し側でmax-content等を足してもよい）
 	keepRatio?		: boolean;	// resize時に縦横比を固定するか（画像＝true、既定false）
-	onMouseDown?	: (e: MouseEvent)=> void;
 	children		: ReactNode;
 };
 
-export default function Layer({styChild, isDesignMode, nm, sty, keepRatio = false, onMouseDown, children}: T_LAYER_PROPS) {
+export default function Layer({styChild, isDesignMode, nm, sty, keepRatio = false, children}: T_LAYER_PROPS) {
 	const div0 = useRef<HTMLDivElement>(null);
 	const evt = (style: CSSStyleDeclaration, transform: string)=> {
 		noticeDrag();
 		style.transform = transform;
 	};
 	return <>
-		<div css={styChild} ref={div0} data-lay={nm} style={sty} onMouseDown={onMouseDown}>
+		<div css={styChild} ref={div0} data-lay={nm} style={sty}>
 			{children}
 		</div>
 		{isDesignMode && <Moveable
