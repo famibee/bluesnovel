@@ -20,21 +20,26 @@ function r(e, t, n) {
 	if (isNaN(i)) throw `[${e[":タグ名"] ?? ""}]属性 ${t} の値【${String(r)}】が数値ではありません`;
 	return e[t] = i, i;
 }
-function i(e, t, n) {
+function i(e, t) {
+	let n = e.trim() === "" ? NaN : e.startsWith("0x") ? parseInt(e.slice(2), 16) : Number(e);
+	if (!Number.isFinite(n)) throw `${t}の値が不正です：${e}`;
+	return n;
+}
+function a(e, t, n) {
 	if (!(t in e)) return e[t] = n, n;
 	let r = e[t];
 	if (r === null) return !1;
 	let i = String(r);
 	return e[t] = i !== "false" && !!i;
 }
-function a(e) {
+function o(e) {
 	return typeof e == "number" ? `#${e.toString(16).padStart(6, "0")}` : e;
 }
-var o = /^[^/.]+$|[^/]+(?=\.)/;
-function s(e) {
-	return (o.exec(e) ?? [""])[0];
+var s = /^[^/.]+$|[^/]+(?=\.)/;
+function c(e) {
+	return (s.exec(e) ?? [""])[0];
 }
-var c = class {
+var l = class {
 	static init() {
 		let e = globalThis.navigator.userAgent;
 		this.platform = e, this.plat_desc = e, this.isSafari = /safari/i.test(e) && !/chrome|chromium|crios|edg|android|fxios/i.test(e), this.isFirefox = /firefox|fxios/i.test(e), this.isMac = /macintosh|mac os x/i.test(e) && !/iphone|ipad|ipod/i.test(e), this.isMobile = !/windows|macintosh|mac os x/i.test(e) || /iphone|ipad|ipod|android/i.test(e);
@@ -57,6 +62,6 @@ var c = class {
 	static cc4ColorName;
 };
 //#endregion
-export { n as a, t as c, a as i, i as n, s as o, r, e as s, c as t };
+export { n as a, i as c, o as i, t as l, a as n, c as o, r, e as s, l as t };
 
 //# sourceMappingURL=CmnLib.js.map

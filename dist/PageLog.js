@@ -1,39 +1,36 @@
-import { c as e } from "./CmnLib.js";
+import { c as e, l as t } from "./CmnLib.js";
 //#region src/ts/Blendmode.ts
-var t = {
+var n = {
 	normal: "normal",
 	add: "plus-lighter",
 	multiply: "multiply",
 	screen: "screen"
 };
-function n(e) {
-	let n = t[e];
-	if (!n) throw `${e} はサポートされない blendmode です`;
-	return n;
+function r(e) {
+	let t = n[e];
+	if (!t) throw `${e} はサポートされない blendmode です`;
+	return t;
 }
 //#endregion
 //#region src/ts/Filter.ts
-function r(e, t, n) {
-	let r = e[t];
-	if (r === void 0) return n;
-	let i = r.startsWith("0x") ? parseInt(r.slice(2), 16) : Number(r);
-	if (!Number.isFinite(i)) throw `[add_filter] ${t}の値が不正です：${r}`;
-	return i;
+function i(t, n, r) {
+	let i = t[n];
+	return i === void 0 ? r : e(i, `[add_filter] ${n}`);
 }
-var i = (e) => [
+var a = (e) => [
 	(e >> 16 & 255) / 255,
 	(e >> 8 & 255) / 255,
 	(e & 255) / 255
-], a = {
-	blur: (e) => `blur(${String(r(e, "strength", 8))}px)`,
-	brightness: (e) => `brightness(${String(r(e, "b", .5))})`,
+], o = {
+	blur: (e) => `blur(${String(i(e, "strength", 8))}px)`,
+	brightness: (e) => `brightness(${String(i(e, "b", .5))})`,
 	black_and_white: () => "grayscale(1)",
 	negative: () => "invert(1)",
-	saturate: (e) => `saturate(${String(1 + r(e, "amount", .5))})`,
+	saturate: (e) => `saturate(${String(1 + i(e, "amount", .5))})`,
 	sepia: () => "sepia(1)"
-}, o = ["noise"], s = {
+}, s = ["noise"], c = {
 	grayscale: (e) => {
-		let t = r(e, "scale", .5);
+		let t = i(e, "scale", .5);
 		return [
 			t,
 			t,
@@ -58,7 +55,7 @@ var i = (e) => [
 		];
 	},
 	contrast: (e) => {
-		let t = r(e, "amount", .5) + 1, n = -.5 * (t - 1);
+		let t = i(e, "amount", .5) + 1, n = -.5 * (t - 1);
 		return [
 			t,
 			0,
@@ -83,20 +80,20 @@ var i = (e) => [
 		];
 	},
 	hue: (e) => {
-		let t = r(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), i = Math.sin(t), a = 1 / 3, o = Math.sqrt(a);
+		let t = i(e, "f_rotation", 90) / 180 * Math.PI, n = Math.cos(t), r = Math.sin(t), a = 1 / 3, o = Math.sqrt(a);
 		return [
 			n + (1 - n) * a,
-			a * (1 - n) - o * i,
-			a * (1 - n) + o * i,
+			a * (1 - n) - o * r,
+			a * (1 - n) + o * r,
 			0,
 			0,
-			a * (1 - n) + o * i,
+			a * (1 - n) + o * r,
 			n + a * (1 - n),
-			a * (1 - n) - o * i,
+			a * (1 - n) - o * r,
 			0,
 			0,
-			a * (1 - n) - o * i,
-			a * (1 - n) + o * i,
+			a * (1 - n) - o * r,
+			a * (1 - n) + o * r,
 			n + a * (1 - n),
 			0,
 			0,
@@ -262,7 +259,7 @@ var i = (e) => [
 		0
 	],
 	tint: (e) => {
-		let [t, n, a] = i(r(e, "f_color", 8947848));
+		let [t, n, r] = a(i(e, "f_color", 8947848));
 		return [
 			t,
 			0,
@@ -276,7 +273,7 @@ var i = (e) => [
 			0,
 			0,
 			0,
-			a,
+			r,
 			0,
 			0,
 			0,
@@ -287,7 +284,7 @@ var i = (e) => [
 		];
 	},
 	night: (e) => {
-		let t = r(e, "intensity", .5);
+		let t = i(e, "intensity", .5);
 		return [
 			t * -2,
 			-t,
@@ -312,7 +309,7 @@ var i = (e) => [
 		];
 	},
 	predator: (e) => {
-		let t = r(e, "amount", .5);
+		let t = i(e, "amount", .5);
 		return [
 			11.224130630493164 * t,
 			-4.794486999511719 * t,
@@ -337,7 +334,7 @@ var i = (e) => [
 		];
 	},
 	color_tone: (e) => {
-		let t = r(e, "desaturation", .5), n = r(e, "toned", .5), a = r(e, "light_color", 16770432), o = r(e, "dark_color", 16770432), [s, c, l] = i(a), [u, d, f] = i(o);
+		let t = i(e, "desaturation", .5), n = i(e, "toned", .5), r = i(e, "light_color", 16770432), o = i(e, "dark_color", 16770432), [s, c, l] = a(r), [u, d, f] = a(o);
 		return [
 			.3,
 			.59,
@@ -370,85 +367,85 @@ var i = (e) => [
 			return e;
 		}
 		return [
-			r(e, "rtor", 1),
-			r(e, "gtor", 0),
-			r(e, "btor", 0),
-			r(e, "ator", 0),
-			r(e, "pr", 0),
-			r(e, "rtog", 0),
-			r(e, "gtog", 1),
-			r(e, "btog", 0),
-			r(e, "atog", 0),
-			r(e, "pg", 0),
-			r(e, "rtob", 0),
-			r(e, "gtob", 0),
-			r(e, "btob", 1),
-			r(e, "atob", 0),
-			r(e, "pb", 0),
-			r(e, "rtoa", 0),
-			r(e, "gtoa", 0),
-			r(e, "btoa", 0),
-			r(e, "atoa", 1),
-			r(e, "pa", 0)
+			i(e, "rtor", 1),
+			i(e, "gtor", 0),
+			i(e, "btor", 0),
+			i(e, "ator", 0),
+			i(e, "pr", 0),
+			i(e, "rtog", 0),
+			i(e, "gtog", 1),
+			i(e, "btog", 0),
+			i(e, "atog", 0),
+			i(e, "pg", 0),
+			i(e, "rtob", 0),
+			i(e, "gtob", 0),
+			i(e, "btob", 1),
+			i(e, "atob", 0),
+			i(e, "pb", 0),
+			i(e, "rtoa", 0),
+			i(e, "gtoa", 0),
+			i(e, "btoa", 0),
+			i(e, "atoa", 1),
+			i(e, "pa", 0)
 		];
 	}
 };
-function c(e) {
+function l(e) {
 	let t = 0, n = e.join(",");
 	for (let e = 0; e < n.length; ++e) t = Math.imul(t, 31) + n.charCodeAt(e) | 0;
 	return `sn_cm_${(t >>> 0).toString(36)}`;
 }
-var l = (e) => e.join(" ");
-function u([e, t]) {
+var u = (e) => e.join(" ");
+function d([e, t]) {
 	return `sn_gb_${String(e)}_${String(t)}`;
 }
-var d = ([e, t]) => `${String(e)} ${String(t)}`;
-function f(t) {
-	let { filter: i = "" } = t, l = t.blendmode === void 0 ? void 0 : n(t.blendmode), d = (t.enable_filter ?? "true") !== "false";
-	if (i === "blur" && (t.blur_x !== void 0 || t.blur_y !== void 0)) {
-		let n = [e(r(t, "blur_x", 2)), e(r(t, "blur_y", 2))];
+var f = ([e, t]) => `${String(e)} ${String(t)}`;
+function p(e) {
+	let { filter: n = "" } = e, a = e.blendmode === void 0 ? void 0 : r(e.blendmode), u = (e.enable_filter ?? "true") !== "false";
+	if (n === "blur" && (e.blur_x !== void 0 || e.blur_y !== void 0)) {
+		let n = [t(i(e, "blur_x", 2)), t(i(e, "blur_y", 2))];
 		return {
-			css: `url(#${u(n)})`,
-			enabled: d,
+			css: `url(#${d(n)})`,
+			enabled: u,
 			blurXY: n,
-			...l === void 0 ? {} : { blendmode: l }
+			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
-	let f = s[i];
+	let f = c[n];
 	if (f) {
-		let e = f(t);
+		let t = f(e);
 		return {
-			css: `url(#${c(e)})`,
-			enabled: d,
-			mat: e,
-			...l === void 0 ? {} : { blendmode: l }
+			css: `url(#${l(t)})`,
+			enabled: u,
+			mat: t,
+			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
-	let p = a[i];
-	if (!p) throw o.includes(i) ? `filter【${i}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
+	let p = o[n];
+	if (!p) throw s.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
-		css: p(t),
-		enabled: d,
-		...l === void 0 ? {} : { blendmode: l }
+		css: p(e),
+		enabled: u,
+		...a === void 0 ? {} : { blendmode: a }
 	};
 }
-function p(e) {
+function m(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function m(e) {
+function h(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function h(e) {
+function g(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function g(e) {
+function _(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var _ = [
+var v = [
 	"visible",
 	"alpha",
 	"left",
@@ -468,30 +465,30 @@ var _ = [
 	"aFlt",
 	"aFx"
 ];
-function v(e, t) {
+function y(e, t) {
 	(e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
 }
-function y(e) {
+function b(e) {
 	let t = {};
-	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), v(e, t);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : h(e.aFlt));
+	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), y(e, t);
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : g(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = g(e.aFlt);
+		let n = _(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-function b(e) {
+function x(e) {
 	return e.cls === "grp";
 }
-function x(e) {
+function S(e) {
 	return e.cls === "txt";
 }
-var S = !1, C = () => {
-	S = !0;
-}, w = () => {
-	S = !1;
-}, T = () => S, E = {
+var C = !1, w = () => {
+	C = !0;
+}, T = () => {
+	C = !1;
+}, E = () => C, D = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -501,7 +498,7 @@ var S = !1, C = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, D = {
+}, O = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -511,77 +508,77 @@ var S = !1, C = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, O = /[{\s.,*]/, k = (e, t, n, r) => {
+}, k = /[{\s.,*]/, A = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function A(e, t, n) {
+function j(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (O.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (k.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: k(e, "wait", t.wait, 500),
-			alpha: k(e, "alpha", t.alpha, 0),
+			wait: A(e, "wait", t.wait, 500),
+			alpha: A(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: k(e, "scale_x", t.scale_x, 1),
-			scale_y: k(e, "scale_y", t.scale_y, 1),
-			rotate: k(e, "rotate", t.rotate, 0),
+			scale_x: A(e, "scale_x", t.scale_x, 1),
+			scale_y: A(e, "scale_y", t.scale_y, 1),
+			rotate: A(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function j(e) {
+function M(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
-var M = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
-function N(e) {
+var N = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
+function P(e) {
 	let t = e.trim();
-	return M.test(t) ? t : "ease-out";
+	return N.test(t) ? t : "ease-out";
 }
-var P = (e) => ({
+var F = (e) => ({
 	opacity: e.alpha,
-	transform: `translate(${j(e.x)}, ${j(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
-}), F = {
+	transform: `translate(${M(e.x)}, ${M(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+}), I = {
 	opacity: 1,
 	transform: "none"
 };
-function I(e) {
+function L(e) {
 	return {
-		keyframes: [P(e), F],
+		keyframes: [F(e), I],
 		options: {
 			duration: e.wait,
-			easing: N(e.ease),
+			easing: P(e.ease),
 			fill: "backwards"
 		}
 	};
 }
-function L(e) {
+function R(e) {
 	return {
-		keyframes: [F, P(e)],
+		keyframes: [I, F(e)],
 		options: {
 			duration: e.wait,
-			easing: N(e.ease),
+			easing: P(e.ease),
 			fill: "forwards"
 		}
 	};
 }
 //#endregion
 //#region src/ts/PageLog.ts
-var R = [
+var z = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], z = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", B = class {
+], B = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", V = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -644,6 +641,6 @@ var R = [
 	}
 };
 //#endregion
-export { p as C, l as S, f as _, D as a, m as b, A as c, w as d, T as f, y as g, C as h, E as i, _ as l, x as m, z as n, I as o, b as p, B as r, L as s, R as t, v as u, u as v, n as w, c as x, d as y };
+export { m as C, u as S, p as _, O as a, h as b, j as c, T as d, E as f, b as g, w as h, D as i, v as l, S as m, B as n, L as o, x as p, V as r, R as s, z as t, y as u, d as v, r as w, l as x, f as y };
 
 //# sourceMappingURL=PageLog.js.map

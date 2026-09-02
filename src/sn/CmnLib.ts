@@ -92,6 +92,17 @@ export	function argChk_Num(hash: T_HASH_Arg, name: string, def: number): number 
 	return n;
 }
 
+// 「文字列 1 個 → 数値」の非破壊版（上の argChk_Num は hash を破壊的に更新し必須チェックも
+//	持つ本家シグネチャ＝web.ts が公開 API として再 export。こちらは分家内の属性パース専用）。
+//	0x 始まりは 16 進、他は 10 進。空文字・NaN・Infinity は例外（空文字を弾くのは Number('')→0 で
+//	書き忘れを見逃さないため）。エラー文の主語（`[tag] 属性名`）は呼び出し側が errHead で渡す
+export function parseArgNum(v: string, errHead: string): number {
+	const n = v.trim() === '' ? NaN
+		: v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
+	if (! Number.isFinite(n)) throw `${errHead}の値が不正です：${v}`;
+	return n;
+}
+
 /*
 	それぞれの型を Boolean 型に変換した場合の値は以下のようになります。
 

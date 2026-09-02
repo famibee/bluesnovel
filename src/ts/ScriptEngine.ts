@@ -19,7 +19,7 @@ import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {RubySpliter} from '../sn/RubySpliter';
 import {Areas, type T_H_Areas} from '../sn/Areas';
-import {getDateStr, int, uint} from '../sn/CmnLib';
+import {getDateStr, int, parseArgNum, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
@@ -304,13 +304,9 @@ export class ScriptEngine {
 
 	// 属性pageの検査（本家 Pages.ts:65 argChk_page()）。既定値は呼ぶ側のタグごとに違う
 	//	（[lay]は'fore'、[clear_lay]は'back'）ので引数で受ける
-	// 数値属性の検査（本家 CmnLib.argChk_Num() 相当。0x始まりは16進として読む）。
-	//	空文字は弾く：JSの Number('') は 0 になってしまうため、属性の書き忘れを見逃さないようにする
+	// 数値属性の検査（パース本体は CmnLib.parseArgNum。Filter.ts num() と共通）
 	static #argNum(tag: string, nm: string, v: string): number {
-		const n = v.trim() === '' ? NaN
-			: v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
-		if (! Number.isFinite(n)) throw `[${tag}] ${nm}の値が不正です：${v}`;
-		return n;
+		return parseArgNum(v, `[${tag}] ${nm}`);
 	}
 
 	// 位置属性（left/top）。**-1〜1 はステージ幅・高さに対する割合**として解釈する

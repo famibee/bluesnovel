@@ -5,7 +5,7 @@
 	http://opensource.org/licenses/mit-license.php
 ** ***** END LICENSE BLOCK ***** */
 
-import {uint} from '../sn/CmnLib';
+import {parseArgNum, uint} from '../sn/CmnLib';
 import {argBlendmode} from './Blendmode';
 
 // フィルター（[add_filter]/[clear_filter]/[enable_filter]・[lay filter=…]）のうち、
@@ -52,14 +52,10 @@ import {argBlendmode} from './Blendmode';
 //	表現できない）
 export type T_FLT = {css: string; enabled: boolean; blendmode?: string; mat?: number[]; blurXY?: readonly [number, number]};
 
-// 数値属性（本家 argChk_Num 相当。ここは省略値ありのみ）
+// 数値属性（省略値ありのみ）。パース本体は CmnLib.parseArgNum（ScriptEngine.#argNum と共通）
 function num(args: {[k: string]: string}, nm: string, def: number): number {
 	const v = args[nm];
-	if (v === undefined) return def;
-
-	const n = v.startsWith('0x') ? parseInt(v.slice(2), 16) : Number(v);
-	if (! Number.isFinite(n)) throw `[add_filter] ${nm}の値が不正です：${v}`;
-	return n;
+	return v === undefined ? def : parseArgNum(v, `[add_filter] ${nm}`);
 }
 // 0xRRGGBB → 0..1 の [r,g,b]（feColorMatrix の対角・行に置く）
 const rgb01 = (n: number): [number, number, number]=> [(n >> 16 & 0xFF) / 255, (n >> 8 & 0xFF) / 255, (n & 0xFF) / 255];

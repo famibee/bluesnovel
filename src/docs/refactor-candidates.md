@@ -14,6 +14,7 @@
 - `（第2弾・Reuse 一部）` … 下記 Reuse のうち **色分解 `rgb01`**（Filter.ts ローカル）、
   **`applyTransform`**（Lay.ts へ切り出し、[lay]・[button] 共通）、**`classifyAsset`**（ScriptMng、
   拡張子判定の反復を解消）、**`#stageWH()`**（ScriptEngine、ステージ寸法読みの 4 箇所重複を集約）、
+  **`CmnLib.parseArgNum`**（ScriptEngine.#argNum と Filter.num の数値パースを統合）、
   ChStyle の出現/消去キーフレーム重複（`kfStyled`/`KF_BARE`）
 
 ## Altitude（下の機構を一般化する）
@@ -71,11 +72,12 @@
 
 ## Reuse（横断ヘルパ抽出）
 
-- **数値属性パース 4 実装。**（見送り）`ScriptEngine.#argNum`／`Filter.ts num()`／
-  `VarStore.#toNum`／`Fx.ts parseRGB` 内の hex 分岐。`CmnLib.argChk_Num` が本家シグネチャ
-  （`hash` を破壊的更新・`:タグ名` ベースのメッセージ）で web.ts が公開 API 再 export して
-  いるのに対し、分家内パーサは**非破壊・呼び出し側ごとのエラーメッセージ**で意図的に別実装。
-  統合するとメッセージの揺れと破壊的更新の押し付けが生じるので現状維持。
+- **数値属性パース 4 実装。**（一部済・第2弾）`ScriptEngine.#argNum` と `Filter.ts num()` を
+  `CmnLib.parseArgNum(v, errHead)` に集約（非破壊・0x=16進・空文字/NaN/Infinity は例外。
+  Filter は従来 `Number('')→0` で空文字を素通ししていたのを例外に統一＝正式リリース前の
+  意図的な破壊的変更）。`CmnLib.argChk_Num`（本家シグネチャ＝`hash` 破壊的更新・必須チェック・
+  web.ts が公開 API 再 export）と `VarStore.#toNum`（式評価用に throw せず NaN を返す＝本家の
+  未定義検出）はそのまま。`Fx.parseRGB` の hex 分岐は `#`/`0x`/素の3系統を受ける独自仕様で対象外。
 - ~~`0xRRGGBB` → `[r,g,b]` 分解~~ … 済（第2弾）。実質重複は Filter.ts の tint/color_tone
   だけだったので同ファイルローカルの `rgb01()` に。`Fx.parseRGB` の 1 行は import を増やさ
   ないため据え置き、`Snapshot.rgbaOf`（AARRGGBB＋アルファ）・`TxtLayer.rgbOf`（0..255）は

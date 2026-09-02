@@ -1,5 +1,5 @@
 import { r as e, t } from "./rolldown-runtime.js";
-import { n, s as r, t as i } from "./CmnLib.js";
+import { c as n, n as r, t as i } from "./CmnLib.js";
 import { t as a } from "./react.js";
 import { t as o } from "./FocusMng.js";
 import { C as s, S as c, a as l, b as u, d, f, g as p, h as m, i as h, m as g, o as _, p as v, s as y, u as b, v as x, x as S, y as C } from "./PageLog.js";
@@ -11596,7 +11596,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 }
 function nd({ width: e, height: t }, a) {
 	let o = 0, s = 0, c = 1;
-	return a ? (o = Math.min(e, i.stageW), s = r(i.stageH / i.stageW * o), c = o / i.stageW) : n(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = r(i.stageW / i.stageH * t)) : (o = e, s = r(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
+	return a ? (o = Math.min(e, i.stageW), s = n(i.stageH / i.stageW * o), c = o / i.stageW) : r(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = n(i.stageW / i.stageH * t)) : (o = e, s = n(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
 		cvsScale: c,
 		cvsWidth: o,
 		cvsHeight: s
