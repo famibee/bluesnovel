@@ -159,8 +159,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	保険で生定数 CH_*_DEF も最終フォールバックに置く
 	const chStyIn = (chName?: string)=> hChIn[chName ?? in_style ?? CH_DEF_NM] ?? CH_IN_DEF;
 	const chStyOut = (chName?: string)=> hChOut[chName ?? out_style ?? CH_DEF_NM] ?? CH_OUT_DEF;
-	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
-	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
+	// 1文字あたりの待ち（`chWait`＝sys:sn.tagCh.*＋既読状態）と[autowc]の文字ごとウェイト表は
+	//	**購読しない**（下の useLayoutEffect 内で `useStore.getState()` から読む）。
+	//	これらは「新規追加した文字の出現ディレイ」の計算にしか使わず、その分岐は `aCh` が
+	//	伸びたときだけ通る（伸びていなければ effect 冒頭で早期 return）。deps に入れると
+	//	テキスト速度の設定変更や既読フラグの切替のたびに、既に組み上がったページ全体の
+	//	禁則処理（applyKinsoku）が無駄に走り直していた
 
 	// b_pic（文字レイヤ背後の枠画像）の自動サイズ調整（本家 TxtLayer.ts:396-414
 	//	setMySize(sp.width, sp.height) 相当）。**[lay width=/height=]の明示があればそちらが勝つ**
@@ -319,6 +323,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const el = charsRef.current;
 		if (! el) return;
 
+		// 新規追加文字の出現ディレイ計算にだけ使う（下記 added ループ）。購読はしない（上のコメント）
+		const {chWait, autowc} = useStore.getState();
+
 		++genRef.current;
 		for (const a of animsRef.current) a.cancel();
 		animsRef.current = [];
@@ -456,7 +463,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			// 自分より新しいバッチが動き出していたら、この完了通知は無視する（上のgenRefのコメント参照）
 			if (genRef.current === gen) setIsTyping(false);
 		});
-	}, [aCh, clrGen, isReadBack, fncFfs, in_style, hChIn, chWait, autowc, bura, kin, r_align]);
+	}, [aCh, clrGen, isReadBack, fncFfs, in_style, hChIn, bura, kin, r_align]);
 
 	// タイプ演出中にMain.tsxのnext()からスキップ要求（requestSkip）が来たら、即終端まで進める
 	//	（.finish()でPromise.allSettledが解決し、setIsTyping(false)も自動で呼ばれる）。
