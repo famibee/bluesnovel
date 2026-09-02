@@ -238,13 +238,30 @@ export default function Stage({
 	//	既存のレイアウトが敷かれている状態。sn_gallery/index.htmlでは`#skynovel`自身に
 	//	Bootstrapの`mw-100 mh-100`が付き、その実サイズは親要素`.container-fluid.p-0`基準で決まる）
 	const isGallery = heStage.parentElement !== document.body;
-	const [wh, setWH] = useState<T_WH>(innWH(heStage, isGallery));
-	useMount(()=> {
-		function onResize() {setWH(innWH(heStage, isGallery))}
+
+	// 実際に全画面になったか（[toggle_full_screen]の要求＝store.fullScr とは別。下の
+	//	useFullscreen のコメント参照）。**先に宣言しておく**：埋め込み時の縮小専用スケール
+	//	（calcScale/innWH の isGallery 分岐）を全画面中は使ってはいけない。全画面要素は
+	//	heStage 自身だが親要素の clientWidth は変わらないため、埋め込み時の倍率のまま
+	//	stageW 等倍・左上寄せ・黒背景で描かれてしまう（＝全画面にならず黒画面に左上寄せ）。
+	//	全画面中は window の実寸で expanding するスタンドアロンと同じ計算に切り替える
+	const [isFullscreen, setIsFullscreenActual] = useState(()=> Boolean(document.fullscreenElement));
+	useEffect(()=> {
+		const onChange = ()=> setIsFullscreenActual(Boolean(document.fullscreenElement));
+		document.addEventListener('fullscreenchange', onChange);
+		return ()=> document.removeEventListener('fullscreenchange', onChange);
+	}, []);
+	const effGallery = isGallery && ! isFullscreen;
+
+	const [wh, setWH] = useState<T_WH>(innWH(heStage, effGallery));
+	useEffect(()=> {
+		function onResize() {setWH(innWH(heStage, effGallery))}
+		onResize();	// 全画面の出入り（effGallery の変化）でも即再計算。fullscreenchange 直後に
+					//	resize が来ない環境でも取りこぼさない
 		globalThis.addEventListener('resize', onResize);
 		return ()=> globalThis.removeEventListener('resize', onResize);
-	});
-	const {cvsScale} = calcScale(wh, isGallery);
+	}, [effGallery]);
+	const {cvsScale} = calcScale(wh, effGallery);
 
 	// ステージ（＝ノベルゲームの表示範囲そのもの）の寸法は prj.json の window.width/height 固定。
 	//	Config.generate() が CmnLib.stageW/stageH へ入れている
@@ -273,13 +290,8 @@ export default function Stage({
 	//	trueのままになり、実際は全画面になっていないのにレイアウトだけ全画面用（中央寄せ）へ
 	//	切り替わってレターボックス位置が本家とズレる事故になっていた。実際に切り替わったかは
 	//	document.fullscreenElement の変化でしか確定しないので、そちらを別途見る
-	//	（本家 SysWeb.ts:138 の fullscreenchange 監視と同じ判定基準）
-	const [isFullscreen, setIsFullscreenActual] = useState(()=> Boolean(document.fullscreenElement));
-	useEffect(()=> {
-		const onChange = ()=> setIsFullscreenActual(Boolean(document.fullscreenElement));
-		document.addEventListener('fullscreenchange', onChange);
-		return ()=> document.removeEventListener('fullscreenchange', onChange);
-	}, []);
+	//	（本家 SysWeb.ts:138 の fullscreenchange 監視と同じ判定基準）。
+	//	isFullscreen の宣言・監視は上（埋め込み時スケールの分岐に先に要るため）へ移動済み
 	useEffect(()=> {scrMng.setFullScr(isFullscreen)}, [isFullscreen]);
 
 	// 外側の <div id="skynovel"> にも、拡縮後の実寸を持たせる。
@@ -288,14 +300,15 @@ export default function Stage({
 	//	overflow:hidden は内側にも掛けるが、拡縮の丸め誤差でのはみ出しを止めるため両方に置く
 	useLayoutEffect(()=> {
 		if (isFullscreen) {
-			// 本家 SysBase.cvsResize() は「中央へ寄せる」ロジックを持たず、fullscreen化しても
-			//	内箱は左上固定のまま（ofsLeft4elm += (w-cvsWidth)/2 はマウス座標変換用の
-			//	オフセットで、見た目のDOM配置には反映されない）。合わせて中央寄せをやめる
+			// 全画面時はレターボックスを上下 or 左右へ均等に振る＝中央寄せ。
+			//	transform: scale() はレイアウト箱（stageW×stageH）を変えないので、
+			//	内箱の transform-origin を center にして（styStage 側）flex で中央寄せすると
+			//	スケール後の見た目の中心＝箱の中心で一致し、正しく中央に来る
 			heStage.style.width		= '';
 			heStage.style.height	= '';
-			heStage.style.display	= '';
-			heStage.style.alignItems	= '';
-			heStage.style.justifyContent= '';
+			heStage.style.display	= 'flex';
+			heStage.style.alignItems	= 'center';
+			heStage.style.justifyContent= 'center';
 			heStage.style.backgroundColor= 'black';	// 余白（レターボックス）を黒に
 		}
 		else {
@@ -326,9 +339,10 @@ export default function Stage({
 			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
-		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
-			上のuseLayoutEffectのコメント参照） */
-		transform-origin: left top;
+		/* 通常時は左上固定（親箱＝スケール後の実寸なので原点も左上で合う）。
+			全画面時だけ中央寄せ：親 heStage を flex center にし、原点も center へ移す
+			（上の useLayoutEffect のコメント参照） */
+		transform-origin: ${isFullscreen ? 'center' : 'left top'};
 		transform: scale(${String(cvsScale)});
 	`;
 	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、

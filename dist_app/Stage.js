@@ -11312,7 +11312,7 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		let e = _[p].current;
 		if (!e) return;
 		if (m.glslSrc) {
-			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = m, o = performance.now(), s = v.current, c = B.current, u = 1 - p, d = (a ? l[u].map((e) => a.includes(e.nm) ? e : l[p].find((t) => t.nm === e.nm) ?? e) : l[u]).filter(f).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), h = null, g = !1;
+			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = m, o = performance.now(), s = v.current, c = te.current, u = 1 - p, d = (a ? l[u].map((e) => a.includes(e.nm) ? e : l[p].find((t) => t.nm === e.nm) ?? e) : l[u]).filter(f).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), h = null, g = !1;
 			return s && c && import("./TransGlsl.js").then(async ({ runGlslTrans: n }) => {
 				let a = await n({
 					stageEl: c,
@@ -11365,33 +11365,33 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		};
 		D.current = requestAnimationFrame(r);
 	}, [E]);
-	let O = e.parentElement !== document.body, [A, j] = (0, H.useState)(nd(e, O));
-	ce(() => {
-		function t() {
-			j(nd(e, O));
-		}
-		return globalThis.addEventListener("resize", t), () => globalThis.removeEventListener("resize", t);
-	});
-	let { cvsScale: P } = td(A, O), { stageW: F, stageH: L } = i, B = (0, H.useRef)(null), ee = w((e) => e.fullScr), V = w((e) => e.setFullScr), te = w((e) => e.toggleFullScr);
-	ie((0, H.useRef)(e), ee, { onClose: () => V(!1) });
-	let [ne, W] = (0, H.useState)(() => !!document.fullscreenElement);
+	let O = e.parentElement !== document.body, [A, j] = (0, H.useState)(() => !!document.fullscreenElement);
 	(0, H.useEffect)(() => {
-		let e = () => W(!!document.fullscreenElement);
+		let e = () => j(!!document.fullscreenElement);
 		return document.addEventListener("fullscreenchange", e), () => document.removeEventListener("fullscreenchange", e);
-	}, []), (0, H.useEffect)(() => {
-		n.setFullScr(ne);
-	}, [ne]), (0, H.useLayoutEffect)(() => {
-		ne ? (e.style.width = "", e.style.height = "", e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = "black") : (e.style.width = `${String(F * P)}px`, e.style.height = `${String(L * P)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
+	}, []);
+	let P = O && !A, [F, L] = (0, H.useState)(nd(e, P));
+	(0, H.useEffect)(() => {
+		function t() {
+			L(nd(e, P));
+		}
+		return t(), globalThis.addEventListener("resize", t), () => globalThis.removeEventListener("resize", t);
+	}, [P]);
+	let { cvsScale: B } = td(F, P), { stageW: ee, stageH: V } = i, te = (0, H.useRef)(null), ne = w((e) => e.fullScr), W = w((e) => e.setFullScr), re = w((e) => e.toggleFullScr);
+	ie((0, H.useRef)(e), ne, { onClose: () => W(!1) }), (0, H.useEffect)(() => {
+		n.setFullScr(A);
+	}, [A]), (0, H.useLayoutEffect)(() => {
+		A ? (e.style.width = "", e.style.height = "", e.style.display = "flex", e.style.alignItems = "center", e.style.justifyContent = "center", e.style.backgroundColor = "black") : (e.style.width = `${String(ee * B)}px`, e.style.height = `${String(V * B)}px`, e.style.display = "", e.style.alignItems = "", e.style.justifyContent = "", e.style.backgroundColor = ""), e.style.overflow = "hidden";
 	}, [
-		P,
-		F,
-		L,
-		ne
+		B,
+		ee,
+		V,
+		A
 	]);
-	let re = Mu`
+	let ae = Mu`
 		position: relative;
-		width: ${F}px;
-		height: ${L}px;
+		width: ${ee}px;
+		height: ${V}px;
 		overflow: hidden;
 		background-color: ${i.bgColor};
 
@@ -11400,21 +11400,22 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			BtnLayer側で明示指定しているのでそちらが優先される（＝別途フォントを差し替え可能） */
 		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif;
 
-		/* 全画面（[toggle_full_screen]）でも本家同様に**左上固定**（中央寄せはしない。
-			上のuseLayoutEffectのコメント参照） */
-		transform-origin: left top;
-		transform: scale(${String(P)});
-	`, ae = Mu`
+		/* 通常時は左上固定（親箱＝スケール後の実寸なので原点も左上で合う）。
+			全画面時だけ中央寄せ：親 heStage を flex center にし、原点も center へ移す
+			（上の useLayoutEffect のコメント参照） */
+		transform-origin: ${A ? "center" : "left top"};
+		transform: scale(${String(B)});
+	`, oe = Mu`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 2;
 		pointer-events: none;
-	`, oe = Mu`
+	`, le = Mu`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
 		z-index: 1;
 		pointer-events: none;
-	`, le = Mu`
+	`, ue = Mu`
 		position: relative; z-index: 1;
 
 		display: inline-block;
@@ -11434,63 +11435,63 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 			color: #fff;
 			background: #27acd9;
 		}
-	`, ue = (0, H.useRef)(null);
+	`, de = (0, H.useRef)(null);
 	ce(() => {
-		n.attachFrameBox(ue.current), n.attachStageBox(B.current);
+		n.attachFrameBox(de.current), n.attachStageBox(te.current);
 	}), ce(() => {
-		let e = B.current;
+		let e = te.current;
 		e.addEventListener("mousedown", () => y());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
 		return e.addEventListener("wheel", t, { passive: !1 }), () => e.removeEventListener("wheel", t);
 	});
-	let [de, fe] = U(!1);
+	let [fe, pe] = U(!1);
 	se((e) => {
-		e.stopPropagation(), z(), !d() && (fe(), R(!de));
+		e.stopPropagation(), z(), !d() && (pe(), R(!fe));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
 	});
-	let pe = (0, H.useRef)(null);
-	function me(e) {
-		pe.current = {
+	let me = (0, H.useRef)(null);
+	function he(e) {
+		me.current = {
 			x: e.clientX,
 			y: e.clientY
 		};
 	}
-	function he(e) {
-		let t = pe.current;
-		if (pe.current = null, !t || de) return;
-		let r = B.current.getBoundingClientRect(), i = Xu(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
+	function ge(e) {
+		let t = me.current;
+		if (me.current = null, !t || fe) return;
+		let r = te.current.getBoundingClientRect(), i = Xu(e.clientX - t.x, e.clientY - t.y, r.width, r.height);
 		i && (z(), n.fireEvent((e.pointerType === "mouse" ? M(e.nativeEvent) : "") + i));
 	}
-	let ge = (() => {
+	let _e = (() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of l) for (let n of t) if (n.aFlt) for (let t of s(n.aFlt)) e.set(u(t), t);
 		return [...e.values()];
-	})(), _e = (() => {
+	})(), ve = (() => {
 		let e = /* @__PURE__ */ new Map();
 		for (let t of l) for (let n of t) if (n.aFlt) for (let t of S(n.aFlt)) e.set(c(t), t);
 		return [...e.values()];
-	})(), ve = (0, H.useMemo)(() => ({
+	})(), ye = (0, H.useMemo)(() => ({
 		sys: t,
 		styChild: Zu,
-		isDesignMode: de,
-		sty4Moveable: de ? {
+		isDesignMode: fe,
+		sty4Moveable: fe ? {
 			maxWidth: "auto",
 			maxHeight: "auto",
 			minWidth: "auto",
 			minHeight: "auto",
 			transform: "translate(0px, 0px) rotate(0deg)"
 		} : {}
-	}), [t, de]);
+	}), [t, fe]);
 	return /* @__PURE__ */ k("div", {
-		css: re,
+		css: ae,
 		onClick: r,
-		onPointerDown: me,
-		onPointerUp: he,
-		ref: B,
+		onPointerDown: he,
+		onPointerUp: ge,
+		ref: te,
 		children: [
 			m?.ruleSrc && !m.glslSrc && /* @__PURE__ */ I("svg", {
 				width: "0",
@@ -11514,25 +11515,25 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					maskUnits: "userSpaceOnUse",
 					x: "0",
 					y: "0",
-					width: F,
-					height: L,
+					width: ee,
+					height: V,
 					children: /* @__PURE__ */ I("image", {
 						href: m.ruleSrc,
 						x: "0",
 						y: "0",
-						width: F,
-						height: L,
+						width: ee,
+						height: V,
 						preserveAspectRatio: "none",
 						filter: "url(#sn_rule_flt)"
 					})
 				})] })
 			}),
-			ge.length > 0 && /* @__PURE__ */ I("svg", {
+			_e.length > 0 && /* @__PURE__ */ I("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ I("defs", { children: ge.map((e) => /* @__PURE__ */ I("filter", {
+				children: /* @__PURE__ */ I("defs", { children: _e.map((e) => /* @__PURE__ */ I("filter", {
 					id: u(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
@@ -11545,34 +11546,34 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					})
 				}, u(e))) })
 			}),
-			_e.length > 0 && /* @__PURE__ */ I("svg", {
+			ve.length > 0 && /* @__PURE__ */ I("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
 				"aria-hidden": !0,
-				children: /* @__PURE__ */ I("defs", { children: _e.map((e) => /* @__PURE__ */ I("filter", {
+				children: /* @__PURE__ */ I("defs", { children: ve.map((e) => /* @__PURE__ */ I("filter", {
 					id: c(e),
 					children: /* @__PURE__ */ I("feGaussianBlur", { stdDeviation: b(e) })
 				}, c(e))) })
 			}),
-			de && /* @__PURE__ */ k(N, { children: [
+			fe && /* @__PURE__ */ k(N, { children: [
 				/* @__PURE__ */ I("button", {
-					onClick: () => te(),
-					css: le,
+					onClick: () => re(),
+					css: ue,
 					children: "FullScr"
 				}),
 				/* @__PURE__ */ I("button", {
 					onClick: () => {},
-					css: le,
+					css: ue,
 					children: "Back"
 				}),
 				/* @__PURE__ */ I("button", {
 					onClick: () => {},
-					css: le,
+					css: ue,
 					children: "Prev"
 				})
 			] }),
-			/* @__PURE__ */ I("span", { children: ne }),
+			/* @__PURE__ */ I("span", { children: A }),
 			l.map((e, t) => {
 				let r = m?.aLayNm && t !== p ? e.map((e) => m.aLayNm.includes(e.nm) ? e : l[p].find((t) => t.nm === e.nm) ?? e) : e;
 				return /* @__PURE__ */ I($u, {
@@ -11580,18 +11581,18 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					isFore: t === p,
 					trans: m,
 					aLay: r,
-					cmn: ve,
+					cmn: ye,
 					scrMng: n,
 					pgRef: _[t]
 				}, t);
 			}),
 			/* @__PURE__ */ I("div", {
 				ref: v,
-				css: oe
+				css: le
 			}),
 			/* @__PURE__ */ I("div", {
-				ref: ue,
-				css: ae
+				ref: de,
+				css: oe
 			})
 		]
 	});
