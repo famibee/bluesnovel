@@ -341,6 +341,16 @@ export class ScriptEngine {
 
 	// 音声の実効音量計算（本家 SndBuf.ts:43 getVol()）で使う0.0〜1.0クランプ
 	static #clampVol(v: number): number {return v < 0 ? 0 : v > 1 ? 1 : v}
+
+	// SE/BGM 系タグのバッファ名。BGM 系タグ（*bgm／wl／wb）は 'BGM' 固定、他は buf= 指定→既定 'SE'
+	//	（本家 SoundMng も同じ対）。「どのタグが BGM か」の台帳をここ 1 箇所に置く
+	static readonly #A_BGM_TAG = new Set(['playbgm', 'stopbgm', 'fadebgm', 'fadeoutbgm', 'wl', 'wb']);
+	static #bufOf(name: string, args: {[k: string]: string}): string {
+		return ScriptEngine.#A_BGM_TAG.has(name) ? 'BGM' : (args.buf || 'SE');
+	}
+	// clickse/enterse/leavese の buf 既定（ボタン・リンク共通。[playse] 自体の既定 'SE' とは別。
+	//	属性の既定値は1箇所ルールによりエンジン入口のここで確定＝Txt.ts/TxtLayer.tsx ではフォールバックしない）
+	static readonly #BTN_SE_BUF = 'SYS';
 	// end_ms省略時の「音声ファイルの末端」を表す番兵値（本家 SndBuf.ts:23 MAX_END_MS）。
 	//	実際の長さはAudioBufferが要る＝SndBuf.ts（DOM/WebAudio層）側でしか分からないので、
 	//	この定数はそちらにも同じ値で重複定義してある（ズレないよう変更時は両方直すこと）
@@ -1847,9 +1857,9 @@ export class ScriptEngine {
 			//	[link]をラップしているのでここへ相乗りする）。bufの既定'SYS'は[playse]自体の既定'SE'
 			//	とは別のボタン・リンク共通の既定値なので、属性の既定値は1箇所ルールに従いここで確定する
 			//	（Txt.ts/TxtLayer.tsxではフォールバックしない）
-			if (args.clickse !== undefined) args.clicksebuf = args.clicksebuf || 'SYS';
-			if (args.enterse !== undefined) args.entersebuf = args.entersebuf || 'SYS';
-			if (args.leavese !== undefined) args.leavesebuf = args.leavesebuf || 'SYS';
+			if (args.clickse !== undefined) args.clicksebuf = args.clicksebuf || ScriptEngine.#BTN_SE_BUF;
+			if (args.enterse !== undefined) args.entersebuf = args.entersebuf || ScriptEngine.#BTN_SE_BUF;
+			if (args.leavese !== undefined) args.leavesebuf = args.leavesebuf || ScriptEngine.#BTN_SE_BUF;
 			// リンクだと分かる既定の赤背景（本家 LayerMng.ts:1029-1031）。styleは属性の既定値は
 			//	1箇所ルールにより必ずここで確定させる（Txt.ts/TxtLayer.tsxではフォールバックしない）
 			args.style ??= 'background-color: rgba(255,0,0,0.5);';
@@ -2182,9 +2192,9 @@ export class ScriptEngine {
 			//	時点で先読みしても仕方ないので、鳴らす瞬間にScriptMng側で行う（論理名のまま積む）。
 			//	bufの既定'SYS'は[playse]自体の既定'SE'とは別の、ボタン専用の既定値なのでここで確定する
 			//	（属性の既定値は1箇所というルールに従い、BtnLayer側ではフォールバックしない）
-			if (args.clickse !== undefined) {sty.clickse = args.clickse; sty.clicksebuf = args.clicksebuf || 'SYS'}
-			if (args.enterse !== undefined) {sty.enterse = args.enterse; sty.entersebuf = args.entersebuf || 'SYS'}
-			if (args.leavese !== undefined) {sty.leavese = args.leavese; sty.leavesebuf = args.leavesebuf || 'SYS'}
+			if (args.clickse !== undefined) {sty.clickse = args.clickse; sty.clicksebuf = args.clicksebuf || ScriptEngine.#BTN_SE_BUF}
+			if (args.enterse !== undefined) {sty.enterse = args.enterse; sty.entersebuf = args.entersebuf || ScriptEngine.#BTN_SE_BUF}
+			if (args.leavese !== undefined) {sty.leavese = args.leavese; sty.leavesebuf = args.leavesebuf || ScriptEngine.#BTN_SE_BUF}
 			// [button onenter=/onleave=]（本家 EventMng.ts:427-442）。ホバー中だけラベルを
 			//	サブルーチンコールする。飛び先ファイルはクリック先（fn）と共通なので、ここでは
 			//	ラベル名だけ運ぶ。実際の割り込み実行は ScriptMng.hoverCall()→callToLabel()
@@ -2624,7 +2634,7 @@ export class ScriptEngine {
 			//	（SoundMng.ts:118）、それは指摘済みの不具合なのでこちらは踏襲せず何もしない
 			if (this.skipEnabled && canskip) return 'skip';
 
-			const buf = isBgm ? 'BGM' : (args.buf || 'SE');
+			const buf = ScriptEngine.#bufOf(name, args);
 			const fn = args.fn ?? '';
 			if (! fn) throw `[${name}] fnは必須です`;
 
@@ -2679,7 +2689,7 @@ export class ScriptEngine {
 		}
 
 		case 'stopse': case 'stopbgm': {
-			const buf = name === 'stopbgm' ? 'BGM' : (args.buf || 'SE');
+			const buf = ScriptEngine.#bufOf(name, args);
 			this.#delLoopPlay(buf);
 			aAct.push({t: 'stopSnd', buf});
 			return 'skip';
@@ -2737,9 +2747,8 @@ export class ScriptEngine {
 
 		// ---- フェード（本家 SndBuf.ts の StPlaying.fade()/StFade 相当） ----
 		case 'fadese': case 'fadebgm': case 'fadeoutse': case 'fadeoutbgm': {
-			const isBgm = name === 'fadebgm' || name === 'fadeoutbgm';
 			const isOut = name === 'fadeoutse' || name === 'fadeoutbgm';
-			const buf = isBgm ? 'BGM' : (args.buf || 'SE');
+			const buf = ScriptEngine.#bufOf(name, args);
 			const vn = `const.sn.sound.${buf}.`;
 
 			// [fadeoutse]/[fadeoutbgm]はvolume=0固定（属性そのものを受け付けない。本家tag.html準拠）
@@ -2767,7 +2776,7 @@ export class ScriptEngine {
 		//	global属性は本家の「ローカル／グローバル予約イベント」の区別に由来するが、
 		//	こちらの待ち合わせにその区別が無いため受けても意味を持たない
 		case 'ws': case 'wl': {
-			const buf = name === 'wl' ? 'BGM' : (args.buf || 'SE');
+			const buf = ScriptEngine.#bufOf(name, args);
 			// 待ち系のcanskip既定はfalse（[wt]/[wq]/[wait_tsy]/[wait]とは逆。本家 tag.html の通り）
 			const canskip = (args.canskip ?? 'false') !== 'false';
 			const stop = (args.stop ?? 'true') !== 'false';
@@ -2776,7 +2785,7 @@ export class ScriptEngine {
 		}
 
 		case 'wf': case 'wb': {
-			const buf = name === 'wb' ? 'BGM' : (args.buf || 'SE');
+			const buf = ScriptEngine.#bufOf(name, args);
 			const canskip = (args.canskip ?? 'false') !== 'false';
 			aAct.push({t: 'waitFade', buf, canskip});
 			return 'stop';

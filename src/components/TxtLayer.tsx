@@ -154,6 +154,10 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const wait = useStore(s=> s.wait);
 	const hChIn = useStore(s=> s.hChIn);	// [ch_in_style]の定義表（画面ぜんぶで1つ）
 	const hChOut = useStore(s=> s.hChOut);	// [ch_out_style]の定義表（消去演出）
+	// 文字演出スタイルの解決順：[span/ch ch_*_style=]（ch 側）→ [lay in/out_style=] → 組み込み 'default'
+	//	（本家と同じ）。定義表に 'default' が無い環境向けに生定数 CH_*_DEF を最終フォールバック
+	const chStyIn = (chName?: string)=> hChIn[chName ?? in_style ?? 'default'] ?? CH_IN_DEF;
+	const chStyOut = (chName?: string)=> hChOut[chName ?? out_style ?? 'default'] ?? CH_OUT_DEF;
 	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
 	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
 
@@ -251,8 +255,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		const anims: Animation[] = [];
 		oldSpans.forEach((sp, i)=> {
-			// 消去演出は [span ch_out_style=] → [lay out_style=] → 組み込み default の順（本家と同じ）
-			const chSty = hChOut[oldCh[i]?.cos ?? out_style ?? 'default'] ?? CH_OUT_DEF;
+			const chSty = chStyOut(oldCh[i]?.cos);
 			if (chSty.wait <= 0) {sp.style.display = 'none'; return}	// 本家 #clearText:745 と同じ即時
 			const {keyframes, options} = chStyleAnimOut(chSty);
 			// join:false は待たずに一斉、join:true は出現時と同じ順送り（本家 #clearText:748）
@@ -400,7 +403,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		{
 			let d = 0;
 			for (const ch of added) {
-				const cs = hChIn[ch.cis ?? in_style ?? 'default'] ?? CH_IN_DEF;
+				const cs = chStyIn(ch.cis);
 				const w = ch.w ?? (autowc.enabled ? autowc.h[ch.c.at(0) ?? ''] ?? 0 : chWait);
 				if (cs.join) d += w;	// 本家も使う前に足す
 				delaysRef.current.push(cs.join ? d : 0);
@@ -428,8 +431,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		const anims: Animation[] = [];
 		newSpans.forEach((el, i)=> {
 			const ch = added[i]!;
-			// 演出は [span]/[ch] の指定 → レイヤの指定 → 組み込みの`default` の順に落ちる
-			const chSty = hChIn[ch.cis ?? in_style ?? 'default'] ?? CH_IN_DEF;
+			const chSty = chStyIn(ch.cis);
 			// この文字ぶんの待ちも同じ順（本家 TxtLayer.ts:756 #o2domArg）。
 			//	[autowc]の表に無い文字は0（本家も `?? 0`＝表に載せた文字だけが待つ）
 			const w = ch.w ?? (autowc.enabled ? autowc.h[ch.c.at(0) ?? ''] ?? 0 : chWait);

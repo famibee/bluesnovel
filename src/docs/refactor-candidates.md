@@ -16,6 +16,10 @@
   拡張子判定の反復を解消）、**`#stageWH()`**（ScriptEngine、ステージ寸法読みの 4 箇所重複を集約）、
   **`CmnLib.parseArgNum`**（ScriptEngine.#argNum と Filter.num の数値パースを統合）、
   ChStyle の出現/消去キーフレーム重複（`kfStyled`/`KF_BARE`）
+- `（第3弾・Altitude 一部）` … **`ScriptEngine.#bufOf(name, args)`＋`#A_BGM_TAG`**（SE/BGM
+  バッファ名解決の 5 箇所と「どのタグが BGM か」の台帳を 1 箇所に）、**`#BTN_SE_BUF='SYS'`**
+  （ボタン・リンク SE の既定を 6 箇所の生文字列から定数へ）、**`chStyIn`/`chStyOut`**（TxtLayer、
+  文字演出スタイルのフォールバックチェーンを 1+2 箇所 → helper 2 個へ）
 
 ## Altitude（下の機構を一般化する）
 
@@ -59,16 +63,14 @@
 - **拡張子によるアセット種別判定がインライン反復。**（一部済・第2弾）`ScriptMng` の `chgPic`
   内の 2 箇所は `classifyAsset(src)` に集約した。`Crypto.ts` の `.json` 特例（復号スキップ。
   `data:`/`blob:` も含む別条件）は「種別」でなく「復号可否」の判定なので統合は保留。
-- **サウンドバッファ既定名が ~10 箇所で場当たり解決。** `args.buf || 'SE'` と
-  `isBgm ? 'BGM' : (args.buf || 'SE')` が playse/stopse/xchgbuf/volume/fadese/ws/wf の各
-  case に散らばり、ボタン SE の既定 `'SYS'` も 2 箇所×計 5 回手書き。
-  → `resolveBuf(tagName, args)` 単一ヘルパ＋`BTN_SE_DEF = 'SYS'` 定数。
+- **サウンドバッファ既定名が ~10 箇所で場当たり解決。**（済・第3弾）SE/BGM 系 5 箇所は
+  `ScriptEngine.#bufOf(name, args)`＋`#A_BGM_TAG` 台帳へ、ボタン・リンク SE の既定 `'SYS'` は
+  `#BTN_SE_BUF` 定数へ。`xchgbuf`（buf/buf2）と `volume` は `args.buf || 'SE'` のまま（BGM 分岐が
+  無く helper に載せる意味が薄い）。
 - **文字演出スタイルの解決チェーン「cis → lay in_style → 'default'」が 3 レンダ経路に
-  インライン。** `TxtLayer.tsx` の 3 描画経路に `hChOut[oldCh[i]?.cos ?? out_style ??
-  'default'] ?? CH_OUT_DEF` がコピー。既定は store 初期値・エンジンの `#hChStyleNm`・
-  component 定数の 3 箇所に実在。
-  → `resolveChStyle(hMap, ch, layStyle, kind)` に集約、component は `hMap[name] ??
-  hMap.default` だけ見る。store 初期値も `CH_IN_DEF` から seed。
+  インライン。**（一部済・第3弾）`TxtLayer.tsx` 内の 3 箇所（out×1／in×2）を `chStyIn`/`chStyOut`
+  helper 2 個に。**残り**：既定が store 初期値・エンジンの `#hChStyleNm`・component 定数
+  `CH_*_DEF` の 3 箇所に実在する件は未着手（store 初期値を `CH_*_DEF` から seed して実体を 1 つに）。
 
 ## Reuse（横断ヘルパ抽出）
 
