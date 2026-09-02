@@ -11370,7 +11370,7 @@ function ed({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		let e = () => j(!!document.fullscreenElement);
 		return document.addEventListener("fullscreenchange", e), () => document.removeEventListener("fullscreenchange", e);
 	}, []);
-	let P = O && !A, [F, L] = (0, H.useState)(nd(e, P));
+	let P = O && !A, [F, L] = (0, H.useState)(() => nd(e, P));
 	(0, H.useEffect)(() => {
 		function t() {
 			L(nd(e, P));

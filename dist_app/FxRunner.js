@@ -160,13 +160,12 @@ vec3 starField(vec3 o, vec3 d, float t, float dens, float spd) {
 	//	実効ワーク ≒ resolution画素数 × nHeads × emberPts × (two?2:1)。ここを一定予算に寄せる。
 	float mpx  = (resolution.x * 0.001) * (resolution.y * 0.001);	// メガピクセル（x*y は mediump 桁溢れするので 0.001 ずつ）
 	float lod  = clamp((mpx - 0.5) / 3.0, 0.0, 1.0);				// 0.5Mpx(≈XGA)→0 … 3.5Mpx(≈WQHD超)→1
-	int   nLod = int(mix(32.0, 12.0, lod) * dens);				// 頭の数
 	int   eLod = int(mix(18.0,  8.0, lod));						// 火の粉の落下地点の数
 	bool  two  = lod < 0.5;										// 1地点あたり 2粒→1粒
 	float gain = mix(1.0, 3.4, lod);							// 減らした分は明るく
 	float tK   = mix(1.0, 0.42, lod);							// tight を下げる＝粒を大きく（総発光量を保つ）
 
-	int   n         = int(clamp(float(nLod), 8.0, float(MAX_STARS)));
+	int   n         = int(clamp(mix(32.0, 12.0, lod) * dens, 8.0, float(MAX_STARS)));	// 頭の数
 	float dt        = 1.0 / float(EMBER_N);				// 火の粉を落とす間隔（寿命全体を EMBER_N 等分）
 	float emberLife = 0.62;							// 火の粉が産まれてから冷え切るまで（life 単位＝長寿命）
 	float GSPARK    = 0.20;							// 火の粉の重力（頭の 0.6〜1.55 よりずっと軽い）

@@ -253,7 +253,7 @@ export default function Stage({
 	}, []);
 	const effGallery = isGallery && ! isFullscreen;
 
-	const [wh, setWH] = useState<T_WH>(innWH(heStage, effGallery));
+	const [wh, setWH] = useState<T_WH>(()=> innWH(heStage, effGallery));
 	useEffect(()=> {
 		function onResize() {setWH(innWH(heStage, effGallery))}
 		onResize();	// 全画面の出入り（effGallery の変化）でも即再計算。fullscreenchange 直後に
