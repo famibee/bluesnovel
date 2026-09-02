@@ -488,7 +488,7 @@ var C = !1, w = () => {
 	C = !0;
 }, T = () => {
 	C = !1;
-}, E = () => C, D = {
+}, E = () => C, D = "default", O = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -498,7 +498,7 @@ var C = !1, w = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, O = {
+}, k = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -508,77 +508,77 @@ var C = !1, w = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, k = /[{\s.,*]/, A = (e, t, n, r) => {
+}, A = /[{\s.,*]/, j = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function j(e, t, n) {
+function M(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (k.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (A.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: A(e, "wait", t.wait, 500),
-			alpha: A(e, "alpha", t.alpha, 0),
+			wait: j(e, "wait", t.wait, 500),
+			alpha: j(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: A(e, "scale_x", t.scale_x, 1),
-			scale_y: A(e, "scale_y", t.scale_y, 1),
-			rotate: A(e, "rotate", t.rotate, 0),
+			scale_x: j(e, "scale_x", t.scale_x, 1),
+			scale_y: j(e, "scale_y", t.scale_y, 1),
+			rotate: j(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function M(e) {
+function N(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
-var N = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
-function P(e) {
+var P = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
+function F(e) {
 	let t = e.trim();
-	return N.test(t) ? t : "ease-out";
+	return P.test(t) ? t : "ease-out";
 }
-var F = (e) => ({
+var I = (e) => ({
 	opacity: e.alpha,
-	transform: `translate(${M(e.x)}, ${M(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
-}), I = {
+	transform: `translate(${N(e.x)}, ${N(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+}), L = {
 	opacity: 1,
 	transform: "none"
 };
-function L(e) {
+function R(e) {
 	return {
-		keyframes: [F(e), I],
+		keyframes: [I(e), L],
 		options: {
 			duration: e.wait,
-			easing: P(e.ease),
+			easing: F(e.ease),
 			fill: "backwards"
 		}
 	};
 }
-function R(e) {
+function z(e) {
 	return {
-		keyframes: [I, F(e)],
+		keyframes: [L, I(e)],
 		options: {
 			duration: e.wait,
-			easing: P(e.ease),
+			easing: F(e.ease),
 			fill: "forwards"
 		}
 	};
 }
 //#endregion
 //#region src/ts/PageLog.ts
-var z = [
+var B = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], B = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", V = class {
+], V = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", H = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -641,6 +641,6 @@ var z = [
 	}
 };
 //#endregion
-export { m as C, u as S, p as _, O as a, h as b, j as c, T as d, E as f, b as g, w as h, D as i, v as l, S as m, B as n, L as o, x as p, V as r, R as s, z as t, y as u, d as v, r as w, l as x, f as y };
+export { u as C, l as S, r as T, b as _, O as a, f as b, z as c, y as d, T as f, w as g, S as h, D as i, M as l, x as m, V as n, k as o, E as p, H as r, R as s, B as t, v as u, p as v, m as w, h as x, d as y };
 
 //# sourceMappingURL=PageLog.js.map

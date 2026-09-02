@@ -32,6 +32,11 @@ export type T_CH_STYLE = {
 	ease	: string;	// CSSのanimation-timing-function名
 };
 
+// 組み込み演出の名前。store 初期値の表キー・エンジンの重複名チェック用 Set・TxtLayer の
+//	フォールバックがこの 1 語で揃う（＝[ch_in_style name=default] は「すでにあります」で弾かれ、
+//	hChIn/hChOut には常に default が居る）
+export const CH_DEF_NM = 'default';
+
 // 組み込みの`default`（本家 TxtLayer.ts:120/133）。
 //	**出現と消去で`join`と`wait`の既定が違う**のは本家どおり
 export const CH_IN_DEF: T_CH_STYLE = {

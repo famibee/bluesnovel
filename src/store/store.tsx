@@ -11,7 +11,7 @@ import type {T_FX} from '../ts/Fx';
 import type {T_FACE_SRC} from '../components/GrpLayer';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import type {T_CH, T_R_ALIGN} from '../ts/Txt';
-import {CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
+import {CH_DEF_NM, CH_IN_DEF, CH_OUT_DEF, type T_CH_STYLE} from '../ts/ChStyle';
 import {chkKinsoku, DEF_KINSOKU} from '../ts/Hyphenation';
 import {INI_STYPAGE} from '../ts/PageLog';
 
@@ -402,8 +402,8 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	foreIdx	: 0,
 
 	// 組み込みの`default`だけ入った状態から始める（本家 TxtLayer.ts:120/133 が起動時に定義する）
-	hChIn	: {default: CH_IN_DEF},
-	hChOut	: {default: CH_OUT_DEF},
+	hChIn	: {[CH_DEF_NM]: CH_IN_DEF},
+	hChOut	: {[CH_DEF_NM]: CH_OUT_DEF},
 	defChStyle: ({kind, nm, sty}: T_DEFCHSTYLE)=> set(s=> kind === 'in'
 		? {hChIn : {...s.hChIn,  [nm]: sty}}
 		: {hChOut: {...s.hChOut, [nm]: sty}}),

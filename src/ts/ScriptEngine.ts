@@ -27,7 +27,7 @@ import {bldFx, A_FX_PRESET, type T_FX} from './Fx';
 import {argBlendmode} from './Blendmode';
 import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
-import {parseChStyle, type T_CH_STYLE} from './ChStyle';
+import {CH_DEF_NM, parseChStyle, type T_CH_STYLE} from './ChStyle';
 import {A_PAGE_TO, type T_PAGE_TO} from './PageLog';
 import type {T_BTN_STY} from '../components/TxtLayer';
 import {BTN_DEF_H, BTN_DEF_W} from '../components/Lay';
@@ -538,7 +538,7 @@ export class ScriptEngine {
 	// 定義済みの文字出現・消去演出名（本家 TxtStage.ts:600/640 の #hChInStyle/#hChOutStyle）。
 	//	**同じ名前の二度定義は本家がthrowする**ので、その検査のために名前だけ覚えておく。
 	//	定義の中身を持つのはストア（描くのはReact側なので）。`default`は組み込み済み
-	readonly #hChStyleNm = {in: new Set(['default']), out: new Set(['default'])};
+	readonly #hChStyleNm = {in: new Set([CH_DEF_NM]), out: new Set([CH_DEF_NM])};
 
 	// if/elsif/else/endifの再開位置スタック（本家 skynovel_esm/src/sn/ScriptIterator.ts:873 #aIfStk 相当）
 	//	call/return実装に伴い、本家同様「壁」(-1)を積む方式を導入した（#call()参照）。

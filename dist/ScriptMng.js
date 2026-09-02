@@ -1,6 +1,6 @@
 import { a as e, t } from "./CmnLib.js";
 import { t as n } from "./FocusMng.js";
-import { m as r, n as i, p as a, r as o } from "./PageLog.js";
+import { h as r, m as i, n as a, r as o } from "./PageLog.js";
 import { DEF_BTN_FONT as s } from "./store.js";
 import { o as c, r as l } from "./Sprite.js";
 import { n as u } from "./ConfigBase.js";
@@ -3568,7 +3568,7 @@ var _o = class f {
 		this.go = () => this.#M(), this.$trgNext();
 	}
 	#s(e) {
-		let { oCfg: n } = this.sys.cfg, i = {
+		let { oCfg: n } = this.sys.cfg, a = {
 			"const.sn.config.window.width": () => t.stageW,
 			"const.sn.config.window.height": () => t.stageH,
 			"const.sn.config.book.title": () => n.book.title,
@@ -3590,11 +3590,11 @@ var _o = class f {
 			"const.sn.isPaging": () => this.#c.isPaging,
 			"const.sn.aPageLog": () => this.#c.json()
 		};
-		for (let [t, n] of Object.entries(i)) e.defBuiltin(t, n);
+		for (let [t, n] of Object.entries(a)) e.defBuiltin(t, n);
 		e.defBuiltin("const.sn.lay", () => {
-			let { fore: e, back: n } = this.$fncs.getPages(), i = (e) => {
+			let { fore: e, back: n } = this.$fncs.getPages(), a = (e) => {
 				if (!e) return;
-				let n = e.left ?? 0, i = e.top ?? 0, o = a(e) ? (() => {
+				let n = e.left ?? 0, a = e.top ?? 0, o = i(e) ? (() => {
 					let t = l(e.src);
 					return {
 						w: t?.w ?? 0,
@@ -3611,16 +3611,16 @@ var _o = class f {
 					visible: e.visible !== !1,
 					alpha: e.alpha ?? 1,
 					x: n,
-					y: i,
+					y: a,
 					left: n,
-					top: i,
+					top: a,
 					width: e.width ?? o.w,
 					height: e.height ?? o.h
 				};
 			}, o = {};
 			for (let t of e) o[t.nm] = {
-				fore: i(t),
-				back: i(n.find((e) => e.nm === t.nm))
+				fore: a(t),
+				back: a(n.find((e) => e.nm === t.nm))
 			};
 			return JSON.stringify(o);
 		});
@@ -4894,7 +4894,7 @@ var _o = class f {
 				this.sys.updateCheck(e.url);
 				break;
 			case "clearPageLog":
-				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", i), this.#f();
+				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", a), this.#f();
 				break;
 			case "pageStyle":
 				this.#r?.setValNochk("save:const.sn.styPaging", e.style), this.#f();

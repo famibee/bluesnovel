@@ -2,7 +2,7 @@ import { r as e, t } from "./rolldown-runtime.js";
 import { l as n, n as r, t as i } from "./CmnLib.js";
 import { t as a } from "./react.js";
 import { t as o } from "./FocusMng.js";
-import { C as s, S as c, a as l, b as u, d, f, g as p, h as m, i as h, m as g, o as _, p as v, s as y, u as b, v as x, x as S, y as C } from "./PageLog.js";
+import { C as s, S as c, _ as l, a as u, b as d, c as f, d as p, f as m, g as h, h as g, m as _, o as v, p as y, s as b, w as x, x as S, y as C } from "./PageLog.js";
 import { t as w, useStore as T } from "./store.js";
 import { a as E, c as D, d as O, f as k, i as A, l as j, m as M, modKeyName as N, n as P, o as F, p as I, r as L, s as R, setDesignMode as z, suppressClick as ee, u as te } from "./Main.js";
 import { a as B, i as ne, n as re } from "./Sprite.js";
@@ -9846,7 +9846,7 @@ var du = /* @__PURE__ */ function(e) {
 //#region src/components/Layer.tsx
 function fu({ styChild: e, isDesignMode: t, nm: n, sty: r, keepRatio: i = !1, children: a }) {
 	let o = (0, V.useRef)(null), s = (e, t) => {
-		m(), e.transform = t;
+		h(), e.transform = t;
 	};
 	return /* @__PURE__ */ A(P, { children: [/* @__PURE__ */ L("div", {
 		css: e,
@@ -10266,7 +10266,7 @@ function Iu(e, t) {
 		let { w: r, h: i } = Fu(e, t);
 		r > 0 && (n.width = `${String(r)}px`), i > 0 && (n.height = `${String(i)}px`), e.pic || (n.fontSize = `${String(Pu(e).h)}px`, n.lineHeight = 1), n.boxSizing = "border-box";
 	}
-	return e.pic && e.src && (n.backgroundImage = `url("${e.src}")`, n.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", n.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (n.opacity = e.alpha), b(e, n), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
+	return e.pic && e.src && (n.backgroundImage = `url("${e.src}")`, n.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", n.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (n.opacity = e.alpha), p(e, n), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
 function Lu({ text: e, label: t, call: n, fn: r, arg: a, url: s, sty: c, enabled: l, onActivate: u, onNavigate: d, onSe: f, onHoverCall: p }) {
 	let m = l && c?.enabled !== !1, h = T((e) => e.btnFont), g = (0, V.useRef)(null);
@@ -10471,8 +10471,8 @@ function Lu({ text: e, label: t, call: n, fn: r, arg: a, url: s, sty: c, enabled
 }
 //#endregion
 //#region src/components/TxtLayer.tsx
-function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: s, aCh: c, clrGen: u, ffs: d, noffs: f, bura: p, kinsoku_sol: g, kinsoku_eol: v, kinsoku_dns: b, kinsoku_bura: x, r_align: S, break_fixed: C, break_fixed_left: E, break_fixed_top: D, b_color: O, b_alpha: k, b_alpha_isfixed: j, b_src: M, styTxt: N, pl: F, pr: I, pt: R, pb: z, enabled: ee, aBtn: te, in_style: B, out_style: H, onActivate: U, onNavigate: ie, onSe: W, onHoverCall: ae }) {
-	let oe = T((e) => e.isReadBack), se = T((e) => e.styPaging), ce = T((e) => e.isTyping), le = T((e) => e.setIsTyping), ue = T((e) => e.skipReq), de = T((e) => e.skipping), fe = T((e) => e.wait), pe = T((e) => e.hChIn), me = T((e) => e.hChOut), he = (e) => pe[e ?? B ?? "default"] ?? h, ge = (e) => me[e ?? H ?? "default"] ?? l, _e = T((e) => e.chWait), ve = T((e) => e.autowc), [ye, be] = (0, V.useState)(null);
+function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: s, aCh: c, clrGen: l, ffs: d, noffs: p, bura: m, kinsoku_sol: g, kinsoku_eol: _, kinsoku_dns: y, kinsoku_bura: x, r_align: S, break_fixed: C, break_fixed_left: E, break_fixed_top: D, b_color: O, b_alpha: k, b_alpha_isfixed: j, b_src: M, styTxt: N, pl: F, pr: I, pt: R, pb: z, enabled: ee, aBtn: te, in_style: B, out_style: H, onActivate: U, onNavigate: ie, onSe: W, onHoverCall: ae }) {
+	let oe = T((e) => e.isReadBack), se = T((e) => e.styPaging), ce = T((e) => e.isTyping), le = T((e) => e.setIsTyping), ue = T((e) => e.skipReq), de = T((e) => e.skipping), fe = T((e) => e.wait), pe = T((e) => e.hChIn), me = T((e) => e.hChOut), he = (e) => pe[e ?? B ?? "default"] ?? u, ge = (e) => me[e ?? H ?? "default"] ?? v, _e = T((e) => e.chWait), ve = T((e) => e.autowc), [ye, be] = (0, V.useState)(null);
 	(0, V.useEffect)(() => {
 		if (!M) {
 			be(null);
@@ -10504,7 +10504,7 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			return;
 		}
 		U(e.label, e.call, e.fn, e.arg);
-	}, Ee = (0, V.useRef)([]), De = (0, V.useRef)([]), Oe = (0, V.useRef)([]), ke = (0, V.useRef)(0), Ae = (0, V.useRef)(u), je = (0, V.useRef)([]), Me = (0, V.useRef)(null), Ne = (0, V.useCallback)(() => {
+	}, Ee = (0, V.useRef)([]), De = (0, V.useRef)([]), Oe = (0, V.useRef)([]), ke = (0, V.useRef)(0), Ae = (0, V.useRef)(l), je = (0, V.useRef)([]), Me = (0, V.useRef)(null), Ne = (0, V.useCallback)(() => {
 		let e = Me.current;
 		if (e) {
 			Me.current = null;
@@ -10527,7 +10527,7 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				e.style.display = "none";
 				return;
 			}
-			let { keyframes: a, options: o } = y(i);
+			let { keyframes: a, options: o } = f(i);
 			s.push(e.animate(a, {
 				...o,
 				delay: i.join ? n[r] ?? 0 : 0
@@ -10548,15 +10548,15 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		Ne
 	]);
 	(0, V.useEffect)(() => Ne, [Ne]);
-	let Fe = (0, V.useMemo)(() => RegExp(`[　${f ?? ""}]`), [f]), Ie = (0, V.useCallback)((e) => d ? Fe.test(e) ? "" : d : "", [d, Fe]), Le = (0, V.useMemo)(() => new w({
+	let Fe = (0, V.useMemo)(() => RegExp(`[　${p ?? ""}]`), [p]), Ie = (0, V.useCallback)((e) => d ? Fe.test(e) ? "" : d : "", [d, Fe]), Le = (0, V.useMemo)(() => new w({
 		sol: g,
-		eol: v,
-		dns: b,
+		eol: _,
+		dns: y,
 		bura: x
 	}), [
 		g,
-		v,
-		b,
+		_,
+		y,
 		x
 	]), Re = () => !!Se.current && globalThis.getComputedStyle(Se.current).writingMode.startsWith("vertical");
 	(0, V.useLayoutEffect)(() => {
@@ -10596,8 +10596,8 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		++ke.current;
 		for (let e of Oe.current) e.cancel();
 		Oe.current = [];
-		let t = Ae.current !== u;
-		Ae.current = u;
+		let t = Ae.current !== l;
+		Ae.current = l;
 		let n = De.current, r = Math.min(n.length, c.length), a = 0;
 		if (!t) for (; a < r && n[a].c === c[a].c && n[a].r === c[a].r && n[a].s === c[a].s && n[a].rs === c[a].rs;) ++a;
 		Ee.current.length > 0 && a < Ee.current.length && !oe && !de && (Pe(Ee.current, De.current, je.current), Ee.current = [], De.current = [], je.current = [], e.textContent = ""), a < r && (Ee.current = [], De.current = [], je.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
@@ -10605,30 +10605,30 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		for (; e.childNodes.length > s;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < s;) e.appendChild(o[e.childNodes.length]);
 		if (c.length <= o.length) {
-			Bu(e, o, De.current, Le, p ?? !1, Re()), le(!1);
+			Bu(e, o, De.current, Le, m ?? !1, Re()), le(!1);
 			return;
 		}
-		let l = c.slice(o.length), d = document.createDocumentFragment(), f = l.map((e) => {
+		let u = c.slice(o.length), d = document.createDocumentFragment(), f = u.map((e) => {
 			let t = document.createElement("span");
 			return t.style.display = e.c === "\n" ? "inline" : "inline-block", i.masume && (t.style.outline = "1px solid rgb(255, 51, 0)", t.style.backgroundColor = "rgba(102, 204, 255, 0.5)"), t.appendChild(Hu(e, S, Te, Ie, W, ae)), d.appendChild(t), t;
 		});
-		De.current = [...De.current, ...l], o.push(...f), e.appendChild(d);
+		De.current = [...De.current, ...u], o.push(...f), e.appendChild(d);
 		{
 			let e = 0;
-			for (let t of l) {
+			for (let t of u) {
 				let n = he(t.cis), r = t.w ?? (ve.enabled ? ve.h[t.c.at(0) ?? ""] ?? 0 : _e);
 				n.join && (e += r), je.current.push(n.join ? e : 0);
 			}
 		}
-		if (Bu(e, o, De.current, Le, p ?? !1, Re()), oe || de) {
+		if (Bu(e, o, De.current, Le, m ?? !1, Re()), oe || de) {
 			le(!1);
 			return;
 		}
-		let m = ke.current, h = 0, g = [];
+		let p = ke.current, h = 0, g = [];
 		if (f.forEach((e, t) => {
-			let n = l[t], r = he(n.cis), i = n.w ?? (ve.enabled ? ve.h[n.c.at(0) ?? ""] ?? 0 : _e);
+			let n = u[t], r = he(n.cis), i = n.w ?? (ve.enabled ? ve.h[n.c.at(0) ?? ""] ?? 0 : _e);
 			if (r.join && (h += i / 1e3), r.wait <= 0) return;
-			let { keyframes: a, options: o } = _(r);
+			let { keyframes: a, options: o } = b(r);
 			g.push(e.animate(a, {
 				...o,
 				delay: (r.join ? h : 0) * 1e3
@@ -10638,18 +10638,18 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			return;
 		}
 		Oe.current = g, le(!0), Promise.allSettled(g.map((e) => e.finished)).then(() => {
-			ke.current === m && le(!1);
+			ke.current === p && le(!1);
 		});
 	}, [
 		c,
-		u,
+		l,
 		oe,
 		Ie,
 		B,
 		pe,
 		_e,
 		ve,
-		p,
+		m,
 		Le,
 		S
 	]), (0, V.useEffect)(() => {
@@ -10892,7 +10892,7 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 	`, [bt, xt] = (0, V.useState)("");
 	(0, V.useEffect)(() => xt(s), [s]);
 	let St = (0, V.useRef)(null), G = (e, t) => {
-		m(), e.transform = t;
+		h(), e.transform = t;
 	};
 	return /* @__PURE__ */ A(P, { children: [
 		/* @__PURE__ */ A("span", {
@@ -11237,9 +11237,9 @@ var Qu = Nu`position: absolute; top: 0; left: 0;`, $u = Nu`
 		children: r.map((n) => {
 			let r = {
 				...a.sty4Moveable,
-				...p(n)
+				...l(n)
 			};
-			return v(n) ? /* @__PURE__ */ L(Cu, {
+			return _(n) ? /* @__PURE__ */ L(Cu, {
 				cmn: a,
 				sty: r,
 				nm: n.nm,
@@ -11300,34 +11300,34 @@ var Qu = Nu`position: absolute; top: 0; left: 0;`, $u = Nu`
 	});
 });
 function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
-	let l = T((e) => e.aPage), p = T((e) => e.foreIdx), m = T((e) => e.trans), h = (0, V.useRef)(null), g = (0, V.useRef)(null), _ = [h, g], y = (0, V.useRef)(null), b = (0, V.useRef)(null), w = (0, V.useRef)(null);
+	let l = T((e) => e.aPage), u = T((e) => e.foreIdx), f = T((e) => e.trans), p = (0, V.useRef)(null), h = (0, V.useRef)(null), g = [p, h], v = (0, V.useRef)(null), b = (0, V.useRef)(null), w = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
 		b.current !== null && cancelAnimationFrame(b.current), b.current = null;
-		for (let e of [h.current, g.current]) e && (e.getAnimations().forEach((e) => e.cancel()), e.style.opacity = "");
-		if (!m) return;
-		let e = _[p].current;
+		for (let e of [p.current, h.current]) e && (e.getAnimations().forEach((e) => e.cancel()), e.style.opacity = "");
+		if (!f) return;
+		let e = g[u].current;
 		if (!e) return;
-		if (m.glslSrc) {
-			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = m, o = performance.now(), s = y.current, c = ne.current, u = 1 - p, d = (a ? l[u].map((e) => a.includes(e.nm) ? e : l[p].find((t) => t.nm === e.nm) ?? e) : l[u]).filter(v).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), f = null, h = !1;
+		if (f.glslSrc) {
+			let { glslSrc: e, time: t, vague: r, ruleSrc: i, aLayNm: a } = f, o = performance.now(), s = v.current, c = ne.current, d = 1 - u, p = (a ? l[d].map((e) => a.includes(e.nm) ? e : l[u].find((t) => t.nm === e.nm) ?? e) : l[d]).filter(_).flatMap((e) => [e.src, ...e.aFace.map((e) => e.src)].filter((e) => e !== "")), m = null, h = !1;
 			return s && c && import("./TransGlsl.js").then(async ({ runGlslTrans: n }) => {
 				let a = await n({
 					stageEl: c,
 					holder: s,
 					glslSrc: e,
 					time: t,
-					backSrcs: d,
+					backSrcs: p,
 					vague: r ?? .04,
 					...i ? { ruleSrc: i } : {},
 					t0: o
 				});
-				h ? a() : f = a;
+				h ? a() : m = a;
 			}).catch((e) => n.myTrace(`[trans glsl=] ${e instanceof Error ? e.message : String(e)}`, "E")), () => {
-				h = !0, f?.();
+				h = !0, m?.();
 			};
 		}
-		if (!m.ruleSrc) {
+		if (!f.ruleSrc) {
 			e.animate([{ opacity: 1 }, { opacity: 0 }], {
-				duration: m.time,
+				duration: f.time,
 				easing: "linear",
 				fill: "forwards"
 			});
@@ -11336,20 +11336,20 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		let t = (e) => {
 			let t = w.current;
 			if (!t) return;
-			let { slope: n, intercept: r } = Xu(e, m.vague);
+			let { slope: n, intercept: r } = Xu(e, f.vague);
 			t.setAttribute("slope", String(n)), t.setAttribute("intercept", String(r));
 		};
 		t(0);
 		let r = performance.now(), i = (e) => {
-			let n = m.time <= 0 ? 1 : Math.min((e - r) / m.time, 1);
+			let n = f.time <= 0 ? 1 : Math.min((e - r) / f.time, 1);
 			t(n), n < 1 && (b.current = requestAnimationFrame(i));
 		};
 		b.current = requestAnimationFrame(i);
-	}, [m]);
+	}, [f]);
 	let E = T((e) => e.quake), D = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
 		D.current !== null && cancelAnimationFrame(D.current), D.current = null;
-		let e = [h.current, g.current].filter((e) => e !== null);
+		let e = [p.current, h.current].filter((e) => e !== null);
 		if (!E) {
 			for (let t of e) t.style.transform = "";
 			return;
@@ -11436,7 +11436,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		n.attachFrameBox(de.current), n.attachStageBox(ne.current);
 	}), le(() => {
 		let e = ne.current;
-		e.addEventListener("mousedown", () => d());
+		e.addEventListener("mousedown", () => m());
 		let t = (e) => {
 			e.preventDefault(), e.deltaY < 0 ? o() : a();
 		};
@@ -11444,7 +11444,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 	});
 	let [fe, pe] = U(!1);
 	ce((e) => {
-		e.stopPropagation(), ee(), !f() && (pe(), z(!fe));
+		e.stopPropagation(), ee(), !y() && (pe(), z(!fe));
 	}, {
 		isPreventDefault: !0,
 		delay: 300
@@ -11465,8 +11465,8 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 	let { aMat: _e, aBlur: ve } = (0, V.useMemo)(() => {
 		let e = /* @__PURE__ */ new Map(), t = /* @__PURE__ */ new Map();
 		for (let n of l) for (let r of n) if (r.aFlt) {
-			for (let t of s(r.aFlt)) e.set(S(t), t);
-			for (let e of u(r.aFlt)) t.set(x(e), e);
+			for (let t of x(r.aFlt)) e.set(c(t), t);
+			for (let e of S(r.aFlt)) t.set(C(e), e);
 		}
 		return {
 			aMat: [...e.values()],
@@ -11491,7 +11491,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 		onPointerUp: ge,
 		ref: ne,
 		children: [
-			m?.ruleSrc && !m.glslSrc && /* @__PURE__ */ L("svg", {
+			f?.ruleSrc && !f.glslSrc && /* @__PURE__ */ L("svg", {
 				width: "0",
 				height: "0",
 				style: { position: "absolute" },
@@ -11516,7 +11516,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					width: te,
 					height: B,
 					children: /* @__PURE__ */ L("image", {
-						href: m.ruleSrc,
+						href: f.ruleSrc,
 						x: "0",
 						y: "0",
 						width: te,
@@ -11532,7 +11532,7 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 				style: { position: "absolute" },
 				"aria-hidden": !0,
 				children: /* @__PURE__ */ L("defs", { children: _e.map((e) => /* @__PURE__ */ L("filter", {
-					id: S(e),
+					id: c(e),
 					colorInterpolationFilters: "sRGB",
 					x: "0",
 					y: "0",
@@ -11540,9 +11540,9 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 					height: "100%",
 					children: /* @__PURE__ */ L("feColorMatrix", {
 						type: "matrix",
-						values: c(e)
+						values: s(e)
 					})
-				}, S(e))) })
+				}, c(e))) })
 			}),
 			ve.length > 0 && /* @__PURE__ */ L("svg", {
 				width: "0",
@@ -11550,9 +11550,9 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 				style: { position: "absolute" },
 				"aria-hidden": !0,
 				children: /* @__PURE__ */ L("defs", { children: ve.map((e) => /* @__PURE__ */ L("filter", {
-					id: x(e),
-					children: /* @__PURE__ */ L("feGaussianBlur", { stdDeviation: C(e) })
-				}, x(e))) })
+					id: C(e),
+					children: /* @__PURE__ */ L("feGaussianBlur", { stdDeviation: d(e) })
+				}, C(e))) })
 			}),
 			fe && /* @__PURE__ */ A(P, { children: [
 				/* @__PURE__ */ L("button", {
@@ -11572,19 +11572,19 @@ function td({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next:
 				})
 			] }),
 			l.map((e, t) => {
-				let r = m?.aLayNm && t !== p ? e.map((e) => m.aLayNm.includes(e.nm) ? e : l[p].find((t) => t.nm === e.nm) ?? e) : e;
+				let r = f?.aLayNm && t !== u ? e.map((e) => f.aLayNm.includes(e.nm) ? e : l[u].find((t) => t.nm === e.nm) ?? e) : e;
 				return /* @__PURE__ */ L(ed, {
 					idx: t,
-					isFore: t === p,
-					trans: m,
+					isFore: t === u,
+					trans: f,
 					aLay: r,
 					cmn: ye,
 					scrMng: n,
-					pgRef: _[t]
+					pgRef: g[t]
 				}, t);
 			}),
 			/* @__PURE__ */ L("div", {
-				ref: y,
+				ref: v,
 				css: se
 			}),
 			/* @__PURE__ */ L("div", {

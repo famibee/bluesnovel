@@ -19,7 +19,8 @@
 - `（第3弾・Altitude 一部）` … **`ScriptEngine.#bufOf(name, args)`＋`#A_BGM_TAG`**（SE/BGM
   バッファ名解決の 5 箇所と「どのタグが BGM か」の台帳を 1 箇所に）、**`#BTN_SE_BUF='SYS'`**
   （ボタン・リンク SE の既定を 6 箇所の生文字列から定数へ）、**`chStyIn`/`chStyOut`**（TxtLayer、
-  文字演出スタイルのフォールバックチェーンを 1+2 箇所 → helper 2 個へ）
+  文字演出スタイルのフォールバックチェーンを 1+2 箇所 → helper 2 個へ）、**`ChStyle.CH_DEF_NM`**
+  （組み込み演出名 `'default'` の生文字列 4 箇所を定数へ）
 
 ## Altitude（下の機構を一般化する）
 
@@ -68,9 +69,10 @@
   `#BTN_SE_BUF` 定数へ。`xchgbuf`（buf/buf2）と `volume` は `args.buf || 'SE'` のまま（BGM 分岐が
   無く helper に載せる意味が薄い）。
 - **文字演出スタイルの解決チェーン「cis → lay in_style → 'default'」が 3 レンダ経路に
-  インライン。**（一部済・第3弾）`TxtLayer.tsx` 内の 3 箇所（out×1／in×2）を `chStyIn`/`chStyOut`
-  helper 2 個に。**残り**：既定が store 初期値・エンジンの `#hChStyleNm`・component 定数
-  `CH_*_DEF` の 3 箇所に実在する件は未着手（store 初期値を `CH_*_DEF` から seed して実体を 1 つに）。
+  インライン。**（済・第3弾）`TxtLayer.tsx` 内の 3 箇所（out×1／in×2）を `chStyIn`/`chStyOut`
+  helper 2 個に。既定値 `CH_IN_DEF`/`CH_OUT_DEF` は元々 store 初期値も参照していて重複なし
+  （agent の指摘は不正確）。組み込み名 `'default'` の生文字列 4 箇所（store 初期キー・エンジンの
+  重複名チェック Set×2・TxtLayer フォールバック）は `ChStyle.CH_DEF_NM` に統一。
 
 ## Reuse（横断ヘルパ抽出）
 
@@ -103,6 +105,10 @@
   1200 行 `TxtLayer`・`BtnLayer` 群が 60fps で全再レンダー。
   → 子を `React.memo`＋ハンドラ `useCallback`（`cmn` を `useMemo` した Stage の規律を子へ）。
   効果大だが prop 安定化の設計変更。
+  ※ [backpage-perf.md](backpage-perf.md) が「fore ページの毎フレーム再 render（実測 2955 回）は
+  許容し、back ページを `<Page>` の `React.memo` 化で止めた」で一旦決着済み。**覆すには
+  「fore の毎フレーム再 render の実コスト」をブラウザで計測してから**（render 回数でなく 1 回の
+  コスト＝特に 1200 行 `TxtLayer`＋多数の `useLayoutEffect`）。専用セッション向け。
 - **禁則処理が毎テキスト追記で全文字を再測定。** `applyKinsoku` が `chgStr` のたび、その
   時点でページに積まれた全表示単位の `getBoundingClientRect` を `<br>` を挿すたびに測り直し
   （挿入で強制リフロー）。1 ページ構築で概ね O(文字数 × 改行数) の強制レイアウト読み。

@@ -7,7 +7,7 @@
 
 import {type T_LAY_IDX, type T_LAY_CMN, noticeDrag} from './Lay';
 import {useStore} from '../store/store';
-import {CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleAnimOut} from '../ts/ChStyle';
+import {CH_DEF_NM, CH_IN_DEF, CH_OUT_DEF, chStyleAnim, chStyleAnimOut} from '../ts/ChStyle';
 import {Kinsoku, type T_KIN_CH} from '../ts/Hyphenation';
 import {type T_CH, type T_LNK, type T_R_ALIGN} from '../ts/Txt';
 import {aniSpriteClass, loadSheet, type T_SHEET} from '../ts/Sprite';
@@ -154,10 +154,11 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	const wait = useStore(s=> s.wait);
 	const hChIn = useStore(s=> s.hChIn);	// [ch_in_style]の定義表（画面ぜんぶで1つ）
 	const hChOut = useStore(s=> s.hChOut);	// [ch_out_style]の定義表（消去演出）
-	// 文字演出スタイルの解決順：[span/ch ch_*_style=]（ch 側）→ [lay in/out_style=] → 組み込み 'default'
-	//	（本家と同じ）。定義表に 'default' が無い環境向けに生定数 CH_*_DEF を最終フォールバック
-	const chStyIn = (chName?: string)=> hChIn[chName ?? in_style ?? 'default'] ?? CH_IN_DEF;
-	const chStyOut = (chName?: string)=> hChOut[chName ?? out_style ?? 'default'] ?? CH_OUT_DEF;
+	// 文字演出スタイルの解決順：[span/ch ch_*_style=]（ch 側）→ [lay in/out_style=] → 組み込み default
+	//	（本家と同じ）。hChIn/hChOut には常に default が居る（ChStyle.CH_DEF_NM のコメント）が、
+	//	保険で生定数 CH_*_DEF も最終フォールバックに置く
+	const chStyIn = (chName?: string)=> hChIn[chName ?? in_style ?? CH_DEF_NM] ?? CH_IN_DEF;
+	const chStyOut = (chName?: string)=> hChOut[chName ?? out_style ?? CH_DEF_NM] ?? CH_OUT_DEF;
 	const chWait = useStore(s=> s.chWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
 	const autowc = useStore(s=> s.autowc);	// [autowc]の文字ごとウェイト表
 
