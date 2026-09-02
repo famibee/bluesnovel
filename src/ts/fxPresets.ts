@@ -47,6 +47,25 @@ uniform sampler2D uSampler;
 uniform float tick;
 uniform vec2 resolution;`;
 
+// ---- 負荷メモ（1 パス＝フルスクリーンクワッド。実効ワーク W ≒ FBO 画素数 × 下記の1画素コスト） ----
+//	FBO 画素数はレイヤの基本画像の naturalWidth×naturalHeight（FxRunner。ウィンドウ幅でも DPR でもない）。
+//	計測は各自の環境で：EXT_disjoint_timer_query（draw を挟んで GPU ナノ秒）／DevTools > Performance の
+//	GPU トラック／fx on-off の rAF 間隔差。詳しい量りかたは sn_gallery ext_fx_tst.sn の「負荷」節。
+//	  wave      … tex 1 + sin 1。ほぼ下限。amp/resolution.x の div 1 が per-fragment だが誤差。
+//	  rgbShift  … tex 3（色収差の芯コスト＝これ以上削れない）+ sin 1。sin(tick*…) はフレーム定数だが
+//	              GLSL からは畳めない（JS 側 uniform 化は FxRunner に非 A_FX_PARAM uniform を通す配線が
+//	              要る＝tex 3 に対して割に合わず見送り）。
+//	  snow      … 層数 × snowLayer（1 層 ≒ sin 3 + length 1 + smoothstep 3）。**層数 = ceil(freq)、1〜7**。
+//	              freq を超える層は snowLayer を呼ばない（下記 main。uniform 分岐＝ワープ分岐なし）。
+//	  rain      … 3 層固定 × rainLayer（1 層 ≒ hash 3〈=sin 3〉 + smoothstep 3 + step 1）。freq は層数に
+//	              効かず密度のみ＝雨は freq を下げても軽くならない（構造上の下限。層を可変にすると
+//	              近/中/遠の重なりが崩れるので固定のまま）。
+//	  fireworks … resolution LOD 内蔵（広いほど頭・火の粉を減らして粒を大きく）。詳細は下の block と
+//	              ext_fx_tst.sn。エンジン側で FBO 解像度を上限クランプする案は、生成系（snow/rain/
+//	              fireworks）に限れば有効だが「ウィンドウ超の背景画像を置いた時だけ効く」狭い最適化で、
+//	              per-preset テーブル＋全パス opt-in＋snapshot 低解像度化の常時コストに見合わず見送り
+//	              （2026-09-03 検討）。実際に 4K 背景で 60fps 割れの報告が出たら H_FX_MAX_MPX 方式で後付け。
+
 // プリセット名 → フラグメントシェーダ。src/ts/Fx.ts の A_FX_PRESET と対応
 export const H_FX_FRAG: {readonly [fx: string]: string} = {
 	// 横方向の正弦波でゆらす（水面／陽炎）。amp=px, freq=縦の波の本数の目安
@@ -89,29 +108,30 @@ float snowLayer(vec2 uv, float scale) {
 	uv *= scale;
 	vec2 s = floor(uv);
 	vec2 f = fract(uv);
-	vec2 p = vec2(0.0);	// 元シェーダは未初期化 p を右辺で参照（＝実質 0）。挙動を固定するため明示
-	float k = 3.0;
 
-	p = 0.5 + 0.35 * sin(11.0 * fract(sin((s + p + scale) * mat2(7, 3, 6, 5)) * 5.0)) - f;
-	float d = length(p);
-	k = min(d, k);
-
-	k = smoothstep(0.0, k, sin(f.x + f.y) * 0.01);
+	// 元シェーダは未初期化 p を右辺（s + p + scale）で参照＝実質 s + scale。ここは明示。
+	vec2 p = 0.5 + 0.35 * sin(11.0 * fract(sin((s + scale) * mat2(7, 3, 6, 5)) * 5.0)) - f;
+	// 旧版の k = min(length(p), 3.0) の 3.0 クランプは、p 各成分が [0.15,0.85]-f ∈ (-0.85,0.85]
+	//	＝ length(p) ≤ 1.2 で常に効かない死にコード。外した（層数ぶんの min を節約）。
+	float k = smoothstep(0.0, length(p), sin(f.x + f.y) * 0.01);
 	return k * w;
 }
 void main() {
 	vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
 
-	// 手前（小さい scale・強い）から freq 個ぶんの層を積む
+	// 手前（小さい scale・強い）から freq 個ぶんの層を積む。**freq を超える層は snowLayer を
+	//	呼ばない**：freq は uniform ＝全フラグメント同一分岐でワープ分岐が無く丸ごと省ける。
+	//	旧版は 7 層を常に計算してから 0 を掛けて捨てていた（freq=3〈既定〉でも 7 層ぶん回っていた）。
+	//	freq=3 で 4/7、freq=1 で 1/7 の実効ワークに。端数の層はフェード（min(n-i, 1.0)）。
 	float n = clamp(freq, 0.0, 7.0);
 	float acc = 0.0;
-	acc += snowLayer(uv,  5.0)       * clamp(n - 0.0, 0.0, 1.0);
-	acc += snowLayer(uv,  6.0)       * clamp(n - 1.0, 0.0, 1.0);
-	acc += snowLayer(uv,  8.0)       * clamp(n - 2.0, 0.0, 1.0);
-	acc += snowLayer(uv, 10.0)       * clamp(n - 3.0, 0.0, 1.0);
-	acc += snowLayer(uv, 15.0) * 0.8 * clamp(n - 4.0, 0.0, 1.0);
-	acc += snowLayer(uv, 20.0) * 0.5 * clamp(n - 5.0, 0.0, 1.0);
-	acc += snowLayer(uv, 30.0) * 0.3 * clamp(n - 6.0, 0.0, 1.0);
+	if (n > 0.0) acc += snowLayer(uv,  5.0)       * min(n,       1.0);
+	if (n > 1.0) acc += snowLayer(uv,  6.0)       * min(n - 1.0, 1.0);
+	if (n > 2.0) acc += snowLayer(uv,  8.0)       * min(n - 2.0, 1.0);
+	if (n > 3.0) acc += snowLayer(uv, 10.0)       * min(n - 3.0, 1.0);
+	if (n > 4.0) acc += snowLayer(uv, 15.0) * 0.8 * min(n - 4.0, 1.0);
+	if (n > 5.0) acc += snowLayer(uv, 20.0) * 0.5 * min(n - 5.0, 1.0);
+	if (n > 6.0) acc += snowLayer(uv, 30.0) * 0.3 * min(n - 6.0, 1.0);
 
 	float a = clamp(acc, 0.0, 1.0);
 	vec4 src = texture2D(uSampler, vTextureCoord);
@@ -127,8 +147,8 @@ uniform float amp;
 uniform float freq;
 uniform float shift;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }	// snow と同じ流儀
-float rainLayer(vec2 uv, float density, float speed, float tail, float seed) {
-	float aspect = resolution.x / max(resolution.y, 1.0);
+// aspect は 3 層で共通なので呼び出し側で 1 回だけ出して渡す（層内で毎回 div するのをやめた）
+float rainLayer(vec2 uv, float aspect, float density, float speed, float tail, float seed) {
 	float cols = floor(18.0 + density * 10.0);
 	float gx = uv.x * cols * aspect;
 	float id = floor(gx);
@@ -146,11 +166,12 @@ void main() {
 	vec4 src = texture2D(uSampler, vTextureCoord);
 	float heavy = clamp((freq - 2.0) / 6.0, 0.0, 1.0);	// 0=弱雨 … 1=豪雨（freq 2→8）
 	float tail = clamp(0.05 + shift * 0.02, 0.06, 0.6);
+	float aspect = resolution.x / max(resolution.y, 1.0);
 	vec2 uv = vTextureCoord;
 	uv.x += uv.y * mix(0.06, 0.16, heavy);				// 風のシア（豪雨ほど寝かせる）
-	float r = rainLayer(uv, freq * 0.6, amp * 0.8, tail * 1.4, 11.0)		// 奥
-		+ rainLayer(uv, freq, amp * 1.2, tail, 23.0)						// 中
-		+ rainLayer(uv, freq * 0.5, amp * 1.7, tail * 0.7, 41.0) * mix(0.6, 1.1, heavy);	// 手前
+	float r = rainLayer(uv, aspect, freq * 0.6, amp * 0.8, tail * 1.4, 11.0)		// 奥
+		+ rainLayer(uv, aspect, freq, amp * 1.2, tail, 23.0)						// 中
+		+ rainLayer(uv, aspect, freq * 0.5, amp * 1.7, tail * 0.7, 41.0) * mix(0.6, 1.1, heavy);	// 手前
 	r = clamp(r, 0.0, 1.0);
 	vec3 col = mix(src.rgb, src.rgb * 0.80, heavy);		// 曇天で暗く
 	col += vec3(0.03, 0.04, 0.05) * heavy;				// うっすら雨幕
