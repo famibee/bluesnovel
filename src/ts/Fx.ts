@@ -51,14 +51,20 @@ export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks'] as 
 //	  snow … amp=落下速度倍率 / freq=密度（層数）。背景（bg）レイヤ向け
 //	  rain … amp=落下速度 / freq=密度（弱雨 2 〜 豪雨 8+。曇天・雨幕・シア角も連動）/ shift=雨脚の長さ
 //	  fireworks … amp=明るさ / freq=頭（火の粉の親）の数（1.0＝32個・上限 1.4）/ p1=打ち上げ周期の速さ
-//	              （0.25＝約4秒周期）。color= で光の色（既定は橙金）。背景（bg）レイヤ向け。
-//	              元は sn_gallery prj/add_fx/mat/ext_fx_tst.sn の [def_fx name=花火2]（冠菊）。MIT
+//	              （0.25＝約4秒周期）/ p2=横位置（0=中央・±1=フレーム端）。color= で光の色（既定は橙金）。
+//	              背景（bg）レイヤ向け。元は sn_gallery prj/add_fx/mat/ext_fx_tst.sn の [def_fx name=花火2]（冠菊）。MIT
+//
+//	p2（横位置）は px でなく**画面幅に対する割合**にした：FBO 解像度はレイヤ基本画像の naturalWidth/Height
+//	（プロジェクトごとに違う／解像度 LOD で動きうる）で「画面のドット数」に安定した意味が無く、fireworks の
+//	座標系自体が world/角度ベースで px の概念を持たない。割合なら同じ .sn がどのウィンドウ・背景素材でも
+//	炸裂位置が「フレームに対して同じ場所」に来る（wave amp / rgbShift shift の px 指定は解像度で見た目量が
+//	変わる脆さがあり、配置系では踏襲しない）。
 const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	wave		: {amp: 6, freq: 2},
 	rgbShift	: {shift: 4},
 	snow		: {amp: 1, freq: 3},
 	rain		: {amp: 2, freq: 2, shift: 6},
-	fireworks	: {amp: 1, freq: 1, p1: 0.25},
+	fireworks	: {amp: 1, freq: 1, p1: 0.25, p2: 0},
 };
 
 // 組み込みプリセットの「単発の尺」（[add_fx loop=false] が time= として解決する ms）。

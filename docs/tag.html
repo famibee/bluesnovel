@@ -1026,8 +1026,8 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 <tr><td>time</td><td></td><td>0</td><td>0〜（ミリ秒）</td><td>0で無限（常時ゆらぎ）。正数を指定すると経過後そのパスは素通しに切り替わり凍結する（記述子の自動撤去はしない＝<code>[clear_fx]</code>／<code>[clear_lay]</code>で撤去）。<code>loop=false</code>と併用すると<code>time=</code>が優先（個別上書き）</td></tr>
 <tr><td>loop</td><td></td><td>true</td><td>true／false</td><td><code>false</code>で花火の爆発のような単発再生。<code>time=</code>未指定なら宣言済みの尺を使う（<code>fireworks</code>は約4秒、<a href="#def_fx">[def_fx duration=]</a>のユーザープリセットはその宣言値）。尺を持たないプリセット（<code>wave</code>／<code>rgbShift</code>／<code>snow</code>／<code>rain</code>）へ<code>time=</code>も伴わず指定するとエラー</td></tr>
 <tr><td>speed</td><td></td><td>1</td><td>実数</td><td>時間の進み方の倍率</td></tr>
-<tr><td><code>p1</code>〜<code>p4</code></td><td></td><td>0</td><td>実数</td><td><a href="#def_fx">[def_fx]</a>シェーダ向けの汎用スカラ入力ポート。シェーダが <code>uniform float p1;</code> 等を宣言していれば値が届く（組み込みプリセットは使わない）</td></tr>
-<tr><td>color</td><td></td><td>vec3(0)</td><td><code>0xrrggbb</code> ／ <code>"#rrggbb"</code> ／ <code>r,g,b</code>（各 0..1）</td><td><a href="#def_fx">[def_fx]</a>シェーダの <code>uniform vec3 color;</code> へ 0..1 RGB を渡す</td></tr>
+<tr><td><code>p1</code>〜<code>p4</code></td><td></td><td>0</td><td>実数</td><td>汎用スカラ入力ポート。シェーダが <code>uniform float p1;</code> 等を宣言していれば値が届く（<a href="#def_fx">[def_fx]</a>シェーダ向け。組み込みでは <code>fireworks</code> が <code>p1</code>＝周期・<code>p2</code>＝横位置に使う）</td></tr>
+<tr><td>color</td><td></td><td>vec3(0)</td><td><code>0xrrggbb</code> ／ <code>"#rrggbb"</code> ／ <code>r,g,b</code>（各 0..1）</td><td>シェーダの <code>uniform vec3 color;</code> へ 0..1 RGB を渡す（<code>fireworks</code>／<a href="#def_fx">[def_fx]</a>シェーダ）</td></tr>
 </table>
 
 <h4>プリセット「wave」に指定できる属性</h4>
@@ -1065,11 +1065,13 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 <tr><td>amp</td><td></td><td>1</td><td>実数</td><td>明るさ</td></tr>
 <tr><td>freq</td><td></td><td>1</td><td>実数</td><td>頭（＝火の粉を撒く親）の数。<code>1</code>で32個、<code>1.4</code>前後で頭打ち（44個）</td></tr>
 <tr><td>p1</td><td></td><td>0.25</td><td>実数</td><td>打ち上げ周期の速さ（＝周期の逆数）。<code>0.25</code>で約4秒周期。上げるとテンポが速くなる</td></tr>
+<tr><td>p2</td><td></td><td>0</td><td>実数</td><td>横位置。<code>0</code>で中央、<code>±1</code>で炸裂中心がフレーム左右端（画面幅に対する割合＝px指定ではない）。<code>0.3</code>で少し右</td></tr>
 <tr><td>color</td><td></td><td>橙金</td><td><code>0xrrggbb</code> ／ <code>"#rrggbb"</code> ／ <code>r,g,b</code></td><td>光の色。未指定は既定の橙金（<code>1.25, 1.05, 0.55</code>）</td></tr>
 </table>
 <p class="mb2 px1">指定例：<br/>
 <code>[add_fx layer=bg fx=fireworks]</code> …… 約4秒周期で無限に開く（既定）<br/>
 <code>[add_fx layer=bg fx=fireworks amp=1.6 freq=1.4]</code> …… 明るく・枝を増やす<br/>
+<code>[add_fx layer=bg fx=fireworks p2=0.35]</code> …… 少し右で開く<br/>
 <code>[add_fx layer=bg fx=fireworks color=0x66ccff]</code> …… 青白い光に固定<br/>
 <code>[add_fx layer=bg fx=fireworks loop=false]</code> …… 1発だけ開いて余韻ごと消える（約4秒）<br/>
 <code>[add_fx layer=bg fx=fireworks loop=false p1=0.5 time=2000]</code> …… <code>p1=</code>で周期を変えるときは<code>time=</code>（ms。周期と一致させた値）も指定<br/>

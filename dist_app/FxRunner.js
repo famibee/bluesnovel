@@ -104,6 +104,7 @@ uniform float amp;		// 明るさ（未指定=0→標準1.0）
 uniform float freq;		// 頭（＝火の粉を撒く親）の数（未指定=0→標準1.0＝32個。上限44個）
 uniform float p1;		// 広がり＝落下＝周期の速さ（未指定=0→標準0.25＝約4秒周期）。
 						//	"speed"はエンジン予約語（tick倍率。docs/tag.html [add_fx]）なのでここでは使わない
+uniform float p2;		// 横位置（0=中央, ±1=炸裂中心がフレーム左右端）。画面幅に対する割合＝解像度・背景サイズ非依存
 uniform vec3  color;	// 光の色づけ（未指定=vec3(0)→既定の橙金）
 
 const int MAX_STARS = 44;	// 頭の上限（火の粉の落下地点18×2粒と掛けて最大 44×(2+36) ループ＝アンロール量の頭打ち）
@@ -229,7 +230,10 @@ void main() {
 
 	vec3 o = vec3(0.0, -0.3, -2.0);
 	vec2 fragPx = uv * resolution;
-	vec3 d = normalize(vec3(fragPx * 2.0 - resolution.xy, resolution.y * 2.0));
+	vec2 ray = fragPx * 2.0 - resolution.xy;
+	ray.x -= p2 * resolution.x;	// 横位置：画面幅の割合ぶんレイをバイアス（p2=±1 で炸裂中心がフレーム端）。
+								//	わずかに斜め視点になる＝平行移動より自然。アスペクト補正不要（x を x で割る比率）
+	vec3 d = normalize(vec3(ray, resolution.y * 2.0));
 
 	vec3 g = starField(o, d, tick, dens, spd) * bright;
 	vec3 glow = sqrt(clamp(g * tint, 0.0, 4.0));	// ガンマ補正（≒2.0。pow(x,1/2.2) の代用で sqrt 1回）

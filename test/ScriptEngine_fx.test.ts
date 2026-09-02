@@ -32,10 +32,10 @@ it('bldFx_プリセットの既定値（既定は H_FX_DEF の1箇所）', ()=> 
 	expect(bldFx({fx: 'snow'}).params).toEqual({amp: 1, freq: 3});
 	expect(bldFx({fx: 'rain'}).params).toEqual({amp: 2, freq: 2, shift: 6});
 	expect(bldFx({fx: 'rain', amp: '3', freq: '8'}).params).toEqual({amp: 3, freq: 8, shift: 6});
-	// fireworks（冠菊花火。背景向け）: amp=明るさ / freq=頭の数 / p1=打ち上げ周期の速さ
-	expect(bldFx({fx: 'fireworks'}).params).toEqual({amp: 1, freq: 1, p1: 0.25});
-	expect(bldFx({fx: 'fireworks', freq: '1.4', color: '0x66ccff'}))
-		.toMatchObject({fx: 'fireworks', params: {amp: 1, freq: 1.4, p1: 0.25}, color: [102 / 255, 204 / 255, 1]});
+	// fireworks（冠菊花火。背景向け）: amp=明るさ / freq=頭の数 / p1=打ち上げ周期の速さ / p2=横位置（画面比率）
+	expect(bldFx({fx: 'fireworks'}).params).toEqual({amp: 1, freq: 1, p1: 0.25, p2: 0});
+	expect(bldFx({fx: 'fireworks', freq: '1.4', p2: '-0.3', color: '0x66ccff'}))
+		.toMatchObject({fx: 'fireworks', params: {amp: 1, freq: 1.4, p1: 0.25, p2: -0.3}, color: [102 / 255, 204 / 255, 1]});
 });
 
 it('bldFx_fireworks は組み込みで loop=false の尺を持つ（[def_fx duration=] 不要）', ()=> {

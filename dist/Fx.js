@@ -23,7 +23,8 @@ var e = [
 	fireworks: {
 		amp: 1,
 		freq: 1,
-		p1: .25
+		p1: .25,
+		p2: 0
 	}
 }, n = { fireworks: 4e3 }, r = [
 	"amp",

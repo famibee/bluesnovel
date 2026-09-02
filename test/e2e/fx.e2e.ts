@@ -218,8 +218,8 @@ test('天候・花火プリセット snow / rain / fireworks が 3 本重ねて�
 	const a = (await afx(page))!;
 	expect(a.map(f=> f.fx)).toEqual(['snow', 'rain', 'fireworks']);
 	expect(a[1]!.params).toMatchObject({amp: 2});
-	expect(a[2]!.params).toMatchObject({amp: 1, freq: 1, p1: 0.25});	// 組み込み既定（Fx.ts H_FX_DEF）
-	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 3 パスとも compile 成功で <canvas>（失敗なら絵が出ない。color=0x66ccff の uniform vec3 も含む）
+	expect(a[2]!.params).toMatchObject({amp: 1, freq: 1, p1: 0.25, p2: -0.35});	// 組み込み既定＋p2=横位置
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 3 パスとも compile 成功で <canvas>（失敗なら絵が出ない。color の uniform vec3・p2 の横バイアスも含む）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 常時ゆらぎ＝回り続ける
 });
 

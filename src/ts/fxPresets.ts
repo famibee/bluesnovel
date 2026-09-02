@@ -182,7 +182,8 @@ void main() {
 	// 冠菊（かむろ）花火。全部の頭（●）が同時に飛び出し、寿命を等分した固定時刻ごとに、その瞬間の
 	//	頭の位置へ火の粉（∴）を落とす。火の粉は落とした場所に置いて行かれ、軽い重力でゆっくり沈み
 	//	各自の寿命で橙→赤へ冷えて消える。amp=明るさ / freq=頭の数（1.0＝32個・上限 1.4）/ p1=打ち上げ
-	//	周期の速さ（0.25＝約4秒周期）/ color=光の色（既定は橙金）。loop=false は約4秒で1発ぶん
+	//	周期の速さ（0.25＝約4秒周期）/ p2=横位置（0=中央・±1=フレーム端。**画面比率**＝解像度非依存。
+	//	px 指定にしない理由は Fx.ts の H_FX_DEF コメント）/ color=光の色（既定は橙金）。loop=false は約4秒で1発ぶん
 	//	（Fx.ts H_FX_BUILTIN_DURATION）。背景（bg。不透明）レイヤ向け＝base へ加算合成。
 	//	元は sn_gallery prj/add_fx/mat/ext_fx_tst.sn の [def_fx name=花火2]（MIT）。参考にした
 	//	公開シェーダ https://www.shadertoy.com/view/tfXSWr（物理の下敷きのみ。コードの写しではない）。
@@ -192,6 +193,7 @@ uniform float amp;		// 明るさ（未指定=0→標準1.0）
 uniform float freq;		// 頭（＝火の粉を撒く親）の数（未指定=0→標準1.0＝32個。上限44個）
 uniform float p1;		// 広がり＝落下＝周期の速さ（未指定=0→標準0.25＝約4秒周期）。
 						//	"speed"はエンジン予約語（tick倍率。docs/tag.html [add_fx]）なのでここでは使わない
+uniform float p2;		// 横位置（0=中央, ±1=炸裂中心がフレーム左右端）。画面幅に対する割合＝解像度・背景サイズ非依存
 uniform vec3  color;	// 光の色づけ（未指定=vec3(0)→既定の橙金）
 
 const int MAX_STARS = 44;	// 頭の上限（火の粉の落下地点18×2粒と掛けて最大 44×(2+36) ループ＝アンロール量の頭打ち）
@@ -317,7 +319,10 @@ void main() {
 
 	vec3 o = vec3(0.0, -0.3, -2.0);
 	vec2 fragPx = uv * resolution;
-	vec3 d = normalize(vec3(fragPx * 2.0 - resolution.xy, resolution.y * 2.0));
+	vec2 ray = fragPx * 2.0 - resolution.xy;
+	ray.x -= p2 * resolution.x;	// 横位置：画面幅の割合ぶんレイをバイアス（p2=±1 で炸裂中心がフレーム端）。
+								//	わずかに斜め視点になる＝平行移動より自然。アスペクト補正不要（x を x で割る比率）
+	vec3 d = normalize(vec3(ray, resolution.y * 2.0));
 
 	vec3 g = starField(o, d, tick, dens, spd) * bright;
 	vec3 glow = sqrt(clamp(g * tint, 0.0, 4.0));	// ガンマ補正（≒2.0。pow(x,1/2.2) の代用で sqrt 1回）
