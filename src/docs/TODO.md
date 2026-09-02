@@ -56,16 +56,16 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 
 ## リファクタ候補（/simplify 分家全体 2026-09-03）
 
-軽微な整理は第 1〜6 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
+軽微な整理は第 1〜7 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
 残りは 1 項目ずつ設計判断＋実機（E2E・サンプル実走）確認が要る規模。**オススメ順**：
 
-- [ ] **禁則処理の差分測定**（Efficiency）。`applyKinsoku` が `chgStr` のたび全表示単位を
-      `getBoundingClientRect` で測り直す（`<br>` 挿入ごとに強制リフロー＝O(文字数×改行数)）。
-      直近の既存 `<br>` 以降だけを対象に。TxtLayer 内で完結。着手前に長文ページで実測。
 - [ ] **`splitCh` のページ全文再パース → 差分**（Efficiency）。`#appendTxt` が毎回全文の
       `chgStr` を積み、`ScriptMng` が `splitCh`＋`plainOf` を全走査（O(セグメント数×ページ長)）。
-      追記デルタだけパースして `aCh` に連結。エンジン側の span/link オープン状態の露出が要る＝
-      上の禁則差分化とセットで。`const.sn.last_page_plain_text` の並走キャッシュも同時に。
+      追記デルタだけパースして `aCh` に連結。エンジン側の span/link オープン状態の露出が要る。
+      `const.sn.last_page_plain_text` の並走キャッシュも同時に。ついでに `TxtLayer` の
+      禁則 `useLayoutEffect` から `chWait`/`autowc`（レイアウト非関係）を外す
+      （[refactor-candidates.md](refactor-candidates.md) の第7弾「残り」）。実測は
+      第7弾と同じ `prj_kinperf` で。
 - [ ] **ScriptMng の待ち合わせ 8 サブシステム統一**（Altitude・大物）。`[trans]`/`[wait]`/`[tsy]`/
       `[fx]`/`[quake]`/`[ws-wl]`/`[wf-wb]`/`[wv]` の `#xxxWaiting`＋フラグ＋`#waitXxx`＋
       `#goSafe` 分岐＋`#runStep` 判定を `#curWait` 単一 + `WaitToken` へ。待ちタグ追加が

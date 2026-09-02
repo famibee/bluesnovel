@@ -1,0 +1,10 @@
+{
+	"save_ns": "bluesnovel_e2e_kinperf",
+	"window": {"width": 800, "height": 600},
+	"book": {"title": "E2E kinperf", "creator": "famibee", "cre_url": "", "publisher": "famibee", "pub_url": "", "detail": "禁則処理のDOM計測コストを実測するE2E用（refactor-candidates.md）", "version": "1.0"},
+	"log": {"max_len": 64},
+	"init": {"bg_color": "#000000", "tagch_msecwait": 0, "auto_msecpagewait": 3500, "escape": ""},
+	"debug": {"devtool": false, "dumpHtm": false, "token": false, "tag": false, "putCh": false, "debugLog": false, "baseTx": false, "masume": false, "variable": false},
+	"code": {},
+	"debuger_token": ""
+}

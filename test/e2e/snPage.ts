@@ -50,7 +50,7 @@ export type T_SNAP = {
 	title		: string;
 };
 
-export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnhover' | 'btnpic' | 'button' | 'chstyle' | 'choutstyle' | 'crypto' | 'derive' | 'event' | 'expr' | 'filter' | 'frame' | 'fx' | 'grp' | 'kinsoku' | 'lay' | 'log' | 'movie' | 'mulev' | 'multi' | 'page' | 'pic' | 'plg' | 'quake' | 'resize' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'transflash' | 'tsy' | 'uc' | 'wait';
+export type T_PRJ = 'anime' | 'argdef' | 'autoskip' | 'autostory' | 'basic' | 'btnhover' | 'btnpic' | 'button' | 'chstyle' | 'choutstyle' | 'crypto' | 'derive' | 'event' | 'expr' | 'filter' | 'frame' | 'fx' | 'grp' | 'kinsoku' | 'kinperf' | 'lay' | 'log' | 'movie' | 'mulev' | 'multi' | 'page' | 'pic' | 'plg' | 'quake' | 'resize' | 'ruby' | 'save' | 'snap' | 'snd' | 'sys' | 'trans' | 'transflash' | 'tsy' | 'uc' | 'wait';
 
 // 表ページのコンテナ配下だけを見るためのセレクタ。
 //	ページは表裏2枚とも常にDOMにあるので（Stage.tsx）、単に「#skynovel span」で拾うと

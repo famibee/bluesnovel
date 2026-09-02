@@ -961,15 +961,19 @@ function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aC
 
 	try {
 		let i = 2;
+		// scan() は from（=i）以降の xy しか読まず（Hyphenation.ts）、i は走査のたび単調増加、
+		//	`<br>` 挿入で位置が動くのも常に i 以降。よって毎パス kc 全体を測り直す必要は無く、
+		//	i 以降だけ測れば結果は同一（i 未満の要素は二度と読まれない＝古い値のままでよい）
+		const xy = new Array<number>(kc.length).fill(0);
 		for (let guard = 0; guard <= kc.length; ++guard) {
-			const xy = kc.map((_, j)=> {
+			for (let j = i; j < kc.length; ++j) {
 				const ix = idx[j]!;
 				const outer = ix < 0 ? sentinel : cache[ix]!;
 				const si = sub[j]!;
 				const target = si < 0 ? outer : (outer.firstElementChild?.children[si] as HTMLElement | undefined) ?? outer;
 				const r = target.getBoundingClientRect();
-				return tategaki ? r.top : r.left;
-			});
+				xy[j] = tategaki ? r.top : r.left;
+			}
 
 			const found = kin.scan(kc, xy, bura, i);
 			if (! found) break;

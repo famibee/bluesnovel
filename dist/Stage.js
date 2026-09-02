@@ -11043,12 +11043,13 @@ function Bu(e, t, n, r, i, a) {
 	let l = document.createElement("span");
 	l.style.display = "inline-block", l.textContent = " ", e.appendChild(l);
 	try {
-		let n = 2;
-		for (let u = 0; u <= o.length; ++u) {
-			let u = o.map((e, n) => {
-				let r = s[n], i = r < 0 ? l : t[r], o = c[n], u = (o < 0 ? i : i.firstElementChild?.children[o] ?? i).getBoundingClientRect();
-				return a ? u.top : u.left;
-			}), d = r.scan(o, u, i, n);
+		let n = 2, u = Array(o.length).fill(0);
+		for (let d = 0; d <= o.length; ++d) {
+			for (let e = n; e < o.length; ++e) {
+				let n = s[e], r = n < 0 ? l : t[n], i = c[e], o = (i < 0 ? r : r.firstElementChild?.children[i] ?? r).getBoundingClientRect();
+				u[e] = a ? o.top : o.left;
+			}
+			let d = r.scan(o, u, i, n);
 			if (!d) break;
 			e.insertBefore(document.createElement("br"), t[s[d.ins]]), n = d.resumeAt;
 		}
