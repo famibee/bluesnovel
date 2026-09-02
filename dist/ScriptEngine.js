@@ -1885,8 +1885,10 @@ var ae = class n {
 				let t = i.glsl ?? "";
 				if (!t) throw "[def_fx] glsl=（フラグメントシェーダ）は必須です";
 				if (d.includes(e)) throw `[def_fx] name【${e}】は組み込みプリセット名なので使えません`;
-				if (this.#w[e]) throw `[def_fx] name【${e}】は既に定義済みです`;
-				return this.#w[e] = !0, l.push({
+				if (e in this.#w) throw `[def_fx] name【${e}】は既に定義済みです`;
+				let r = n.#i("def_fx", "duration", i.duration, 0);
+				if (r < 0) throw `[def_fx] durationは0以上にしてください：${r}`;
+				return this.#w[e] = r, l.push({
 					t: "defFx",
 					name: e,
 					glsl: t

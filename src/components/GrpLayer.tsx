@@ -277,7 +277,6 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 	//	（再生成すると tick=0 へ戻る。ANIMATION_RESEARCH.md §7 step 2）
 	const faceKey = aFace.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode},${String(f.isSheet)},${String(f.isMovie)}`).join(';');
 	const sourceKey = `${baseSrc}\n${String(isSheet)}\n${String(isMovie)}\n${faceKey}`;
-	const contentKey = JSON.stringify(aFx);
 	// sourceKeyのuseEffectを回さない値はmount時だけrefで拾う（activeとaFx。以後は下のupdate effect）
 	const activeRef = useRef(active);
 	activeRef.current = active;
@@ -304,11 +303,18 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sourceKey]);
 	// シェーダ構成／パラメータ／enabled（[pause_fx]）／active（不可視ページ）の変化は
-	//	canvasを保ったまま handle.update() で反映（構成変化はプログラムだけ組み直す）
+	//	canvasを保ったまま handle.update() で反映（構成変化はプログラムだけ組み直す）。
+	//	依存は aFx の参照そのもの（JSON.stringify した中身ではない）：store.chgFx() は
+	//	[add_fx]/[clear_fx] のたびに必ず新しい配列を作る（immer の構造共有で無関係な
+	//	再描画時は同じ参照のまま）ので、参照比較で過不足なく検知できる。中身の文字列化に
+	//	していた頃は、[clear_fx]→[add_fx loop=false] を同じ内容（同じ fx 名・time=）で
+	//	連続実行すると、クリアで #fxN の採番が #fx1 へ戻るせいで前回と一字一句同じ
+	//	JSON になり、「変化なし」と誤判定されて update() が呼ばれない不具合があった
+	//	（単発の花火を続けて2回目に押しても発火しない。2026-09-02 実機で確認）
 	useEffect(()=> {
 		handle.current?.update(aFx, active);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [contentKey, active]);
+	}, [aFx, active]);
 
 	// 基本<img>の上に敷く（div0はposition:absolute＝これの包含ブロック。inset:0で<img>の箱いっぱいに）
 	return <canvas key={sourceKey} ref={ref} style={{position: 'absolute', inset: 0}}/>;

@@ -34,6 +34,8 @@ export type T_BTN_STY = {
     clicksebuf?: string;
     entersebuf?: string;
     leavesebuf?: string;
+    onenter?: string;
+    onleave?: string;
 };
 export type T_BTN = {
     nm: string;
@@ -42,6 +44,7 @@ export type T_BTN = {
     call?: boolean;
     fn?: string;
     arg?: string;
+    url?: string;
     sty?: T_BTN_STY;
 };
 type T_TXTARG = T_LAY_CMN & {
@@ -50,6 +53,7 @@ type T_TXTARG = T_LAY_CMN & {
     isFore: boolean;
     str: string;
     aCh: T_CH[];
+    clrGen?: number | undefined;
     ffs?: string | undefined;
     noffs?: string | undefined;
     bura?: boolean | undefined;
@@ -58,6 +62,9 @@ type T_TXTARG = T_LAY_CMN & {
     kinsoku_dns?: string | undefined;
     kinsoku_bura?: string | undefined;
     r_align?: T_R_ALIGN | undefined;
+    break_fixed?: boolean | undefined;
+    break_fixed_left?: number | undefined;
+    break_fixed_top?: number | undefined;
     b_color?: number | undefined;
     b_alpha: number;
     b_alpha_isfixed?: boolean | undefined;
@@ -70,15 +77,18 @@ type T_TXTARG = T_LAY_CMN & {
     enabled: boolean;
     aBtn: T_BTN[];
     in_style?: string | undefined;
+    out_style?: string | undefined;
     onActivate: (label: string, call: boolean, fn: string, arg?: string) => void;
     onNavigate: (url: string) => void;
     onSe: (fn: string, buf: string) => void;
+    onHoverCall: (label: string, fn: string) => void;
 };
 export type T_ON_LINK = (lnk: T_LNK) => void;
 export type T_TXTLAY_DATA = T_LAY_IDX & {
     cls: 'txt';
     str: string;
     aCh: T_CH[];
+    clrGen?: number;
     ffs?: string;
     noffs?: string;
     bura?: boolean;
@@ -95,6 +105,9 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {
     style?: string;
     enabled: boolean;
     aBtn: T_BTN[];
+    break_fixed?: boolean;
+    break_fixed_left?: number;
+    break_fixed_top?: number;
     pl?: number;
     pr?: number;
     pt?: number;
@@ -103,5 +116,5 @@ export type T_TXTLAY_DATA = T_LAY_IDX & {
     out_style?: string;
 };
 export type T_TXTLAY = T_TXTLAY_DATA & T_LAY_CMN;
-export default function TxtLayer({ cmn: { styChild, isDesignMode }, sty, nm, isFore, str, aCh, ffs, noffs, bura, kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura, r_align, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, onActivate, onNavigate, onSe }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function TxtLayer({ cmn: { styChild, isDesignMode }, sty, nm, isFore, str, aCh, clrGen, ffs, noffs, bura, kinsoku_sol, kinsoku_eol, kinsoku_dns, kinsoku_bura, r_align, break_fixed, break_fixed_left, break_fixed_top, b_color, b_alpha, b_alpha_isfixed, b_src, styTxt: sCss, pl, pr, pt, pb, enabled, aBtn, in_style, out_style, onActivate, onNavigate, onSe, onHoverCall }: T_TXTARG): import("@emotion/react/jsx-runtime").JSX.Element;
 export {};

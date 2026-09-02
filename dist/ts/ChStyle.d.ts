@@ -23,3 +23,7 @@ export declare function chStyleAnim(sty: T_CH_STYLE): {
     keyframes: Keyframe[];
     options: KeyframeAnimationOptions;
 };
+export declare function chStyleAnimOut(sty: T_CH_STYLE): {
+    keyframes: Keyframe[];
+    options: KeyframeAnimationOptions;
+};

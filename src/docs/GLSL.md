@@ -3,14 +3,16 @@
 
 - 加工系
 	- rain
-		- ★ 窓ガラスの雨 → sn_gallery `prj/add_fx/mat/ext_fx_rain_window.sn`（`[def_fx name=rain_window]`）で
-		サンプル化済み（分家本体には置かない）。Heartfelt / Raining Blood / codrops を参考にした
-		MIT 再実装。稲光・ホワイトアウトは外した。`color=` で血の雨アレンジ
+		- ⭐【プリセット】雨（背景向け）
+			参考コードそのままではなく、画面を縦帯に割り、帯ごとにハッシュで位相・速度を変えた縦スジを描く定番手法の再実装
 		- Rain shader - 01 https://www.shadertoy.com/view/M3GfDV
 			> 弱い雨
 		- The Drive Home https://www.shadertoy.com/view/MdfBRX
 			> 小雨の中、運転中の車
 			-> 雨なしで運転中の車イメージ版・昼版も欲しくなる。夕方版は[add_filter]担当か
+	- rain window
+		- ⭐【拡張機能】窓ガラスの雨
+			sn_gallery `prj/add_fx/mat/ext_fx_rain_window.sn`（`[def_fx name=rain_window]`）でサンプル化済み（分家本体には置かない）。Heartfelt / Raining Blood / codrops を参考にしたMIT 再実装。稲光・ホワイトアウトは外した。`color=` で血の雨アレンジ
 		- Heartfelt https://www.shadertoy.com/view/ltffzl
 			> ガラス越しの雨、稲光付き
 		- Rain drops combined https://www.shadertoy.com/view/llfczH
@@ -22,28 +24,87 @@
 		- Banished https://www.shadertoy.com/view/XsX3DB
 			> 簡易な雨と濡れる犬小屋
 	- snow
+		- ⭐【プリセット】降雪（背景向け）
+			MITコードを参考に
+			- https://www.glslsandbox.com/e#36547.0
+			- https://www.glslsandbox.com/
+			- https://github.com/mrdoob/glsl-sandbox
 		- Simple Snow https://www.shadertoy.com/view/XtBfzw
 			> シンプルな雪。軽い
 		- Snow is falling https://www.shadertoy.com/view/4lfcz4
 			> ふわっとした降雪
 	- Fireworks
 		- Fireworks - AT (sound) https://www.shadertoy.com/view/WtdBRj
-			> 花火連発、軽い
+			> 花火連発、シンプルで軽い
 		- (重) firework1 https://www.shadertoy.com/view/tfXSWr
 			> 大玉一個ずつ
 		- Fireworks (atz) https://www.shadertoy.com/view/wslcWN
 			> 花火連発、バリエーションあり
 		- (重) Fireworks Performance https://www.shadertoy.com/view/tfXcz8
-			> なかなか本物っぽい
-	- other
+			> 連発系だがバリエーションが単調。ラッシュ時ともいえるが
+	- conflagration 火事
 		- (重) 301's Fire Shader - Remix 2 https://www.shadertoy.com/view/MtcGD7
-			> 燃え盛る炎
+			> 床で燃え盛る炎
+			以下をベースにマージしたらしい
+			- https://www.shadertoy.com/view/XsXXRN
+			- https://www.shadertoy.com/view/llc3DM
+	- 海面
+		- GLSL Sandbox https://www.glslsandbox.com/e#109471.0
+			> ちょっと黒っぽいので手直し必要
+		- GLSL Sandbox https://www.glslsandbox.com/e#108737.0
+			> ちょっとドットが見える
+		- 
+			> 
+	- ラリってる
+		- GLSL Sandbox https://www.glslsandbox.com/e#109064.0
+			> 
+		- GLSL Sandbox https://www.glslsandbox.com/e#108709.4
+			> 
+	- 魔法陣（背景）
+		GLSL Sandbox https://www.glslsandbox.com/e#108790.0
+			> 
+	- もやもや（背景）
+		煙というよりもやもやイメージ用
+		- GLSL Sandbox https://www.glslsandbox.com/e#109550.0
+			> 多い
+		- GLSL Sandbox https://www.glslsandbox.com/e#109541.0
+			> 少ない
+	- 目が回る・催眠
+		- GLSL Sandbox https://www.glslsandbox.com/e#108624.0
+			> 
+		- 
+			> 
+		- 
+			> 
+	- 
+		- 
+			> 
+		- 
+			> 
+		- 
+			> 
+	- 
+		- 
+			> 
+		- 
+			> 
+		- 
+			> 
+	- other
 		- (重) REALISTIC SUB-PIXEL OLD CRT :::. https://www.shadertoy.com/view/ms2fDV
 			> ブラウン管テレビ風
 		- (激重) https://www.shadertoy.com/view/wdGSzw
 			> 前出。砂と人物の動き。粒を大きくして減らしたら行けるかも。
 		- Light Spectrum Therapy https://www.shadertoy.com/view/fsVBR1
 			> 顔を避けて通り過ぎる光の流れ
+		- GLSL Sandbox https://www.glslsandbox.com/e#108691.0
+			> 
+		- GLSL Sandbox https://www.glslsandbox.com/e#108643.1
+			> 
+		- 
+			> 
+		- 
+			> 
 		- 
 			> 
 		- 

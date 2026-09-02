@@ -5,6 +5,8 @@ export type T_LNK = {
     call: boolean;
     arg: string;
     url?: string;
+    onenter?: string;
+    onleave?: string;
     sh?: string;
     sc?: string;
     rsh?: string;

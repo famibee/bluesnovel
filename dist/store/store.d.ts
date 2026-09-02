@@ -147,6 +147,9 @@ export type T_LAY_STY_ARG = Partial<T_LAY_STY> & {
     kinsoku_dns?: string;
     kinsoku_bura?: string;
     r_align?: T_R_ALIGN;
+    break_fixed?: boolean;
+    break_fixed_left?: number;
+    break_fixed_top?: number;
     in_style?: string;
     out_style?: string;
 };
@@ -207,6 +210,7 @@ export type T_CHGSTR = {
     page: T_PAGE_BOTH;
     str: string;
     aCh: T_CH[];
+    hard?: boolean;
 };
 export type T_ADDBTN = {
     layerNm: string;
@@ -217,6 +221,7 @@ export type T_ADDBTN = {
     call?: boolean;
     fn?: string;
     arg?: string;
+    url?: string;
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";

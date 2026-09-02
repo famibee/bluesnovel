@@ -18,6 +18,7 @@ export declare class ScriptMng {
     resumePlg(): void;
     navigateTo(url: string): void;
     jumpToLabelAndGo(label: string, call: boolean, fn?: string, arg?: string): void;
+    hoverCall(label: string, fn?: string): void;
     attachFrameBox(el: HTMLElement): void;
     attachPlgBox(nm: string, pageIdx: 0 | 1, el: HTMLElement | null): void;
     getVal(nm: string, def?: number | string): string | number | boolean | undefined;

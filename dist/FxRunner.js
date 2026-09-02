@@ -230,7 +230,9 @@ function d(o, u, d, f, p, m, h, g) {
 			}
 			else for (let t = 0; t < x.length; ++t) {
 				let n = e[t];
-				n && (x[t].fx = n);
+				if (!n) continue;
+				let r = x[t];
+				n.time > 0 && (r.pausedAccMs = performance.now() - O, r.pausedAt = 0), r.fx = n;
 			}
 			k === 0 && M(requestAnimationFrame(P));
 		},

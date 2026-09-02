@@ -1,15 +1,18 @@
 export declare const A_FX_PRESET: readonly ["wave", "rgbShift", "snow", "rain"];
+export declare const A_FX_PARAM: readonly ["amp", "freq", "shift", "p1", "p2", "p3", "p4"];
 export type T_FX = {
     name: string;
     fx: string;
-    glsl: string;
     time: number;
     speed: number;
     enabled: boolean;
     params: {
         [k: string]: number;
     };
+    color?: readonly [number, number, number];
 };
 export declare function bldFx(args: {
     [k: string]: string;
+}, hDefFx?: {
+    readonly [name: string]: number;
 }): T_FX;

@@ -57,10 +57,10 @@ it('bldFx_未知のプリセット名は throw（組み込み一覧つき）', (
 
 it('bldFx_[def_fx] で定義済みの名前は受ける（hDefFx を渡す）', ()=> {
 	expect(()=> bldFx({fx: 'mySnow'})).toThrow('fx【mySnow】は未対応です');	// 台帳なし
-	const f = bldFx({fx: 'mySnow', amp: '3'}, {mySnow: true});
+	const f = bldFx({fx: 'mySnow', amp: '3'}, {mySnow: 0});
 	expect(f).toEqual({name: '', fx: 'mySnow', time: 0, speed: 1, enabled: true, params: {amp: 3}});
 	// ユーザープリセットは固有既定値を持たない（H_FX_DEF に無い）＝属性で渡した分だけ
-	expect(bldFx({fx: 'mySnow'}, {mySnow: true}).params).toEqual({});
+	expect(bldFx({fx: 'mySnow'}, {mySnow: 0}).params).toEqual({});
 });
 
 it('bldFx_数値でないパラメータは throw', ()=> {
@@ -68,19 +68,44 @@ it('bldFx_数値でないパラメータは throw', ()=> {
 });
 
 it('bldFx_汎用スカラポート p1〜p4（[def_fx] 作者向け。組み込みは使わない）', ()=> {
-	const f = bldFx({fx: 'u', p1: '0.5', p2: '-3', p4: '10'}, {u: true});
+	const f = bldFx({fx: 'u', p1: '0.5', p2: '-3', p4: '10'}, {u: 0});
 	expect(f.params).toEqual({p1: 0.5, p2: -3, p4: 10});	// p3 は書いてないので入らない
-	expect(()=> bldFx({fx: 'u', p1: 'x'}, {u: true})).toThrow('[add_fx] p1 の値が不正です：x');
+	expect(()=> bldFx({fx: 'u', p1: 'x'}, {u: 0})).toThrow('[add_fx] p1 の値が不正です：x');
 });
 
 it('bldFx_color= を uniform vec3 color（0..1 RGB）へ', ()=> {
-	expect(bldFx({fx: 'u', color: '0xff8000'}, {u: true}).color)
+	expect(bldFx({fx: 'u', color: '0xff8000'}, {u: 0}).color)
 		.toEqual([1, 128 / 255, 0]);
-	expect(bldFx({fx: 'u', color: '#00ff00'}, {u: true}).color).toEqual([0, 1, 0]);
-	expect(bldFx({fx: 'u', color: '0.1, 0.2, 0.3'}, {u: true}).color).toEqual([0.1, 0.2, 0.3]);
-	expect(bldFx({fx: 'u'}, {u: true}).color).toBeUndefined();	// 未指定は持たない
-	expect(()=> bldFx({fx: 'u', color: 'red'}, {u: true})).toThrow('[add_fx] color= の値が不正です：red');
-	expect(()=> bldFx({fx: 'u', color: '1,2'}, {u: true})).toThrow('[add_fx] color= の値が不正です：1,2');
+	expect(bldFx({fx: 'u', color: '#00ff00'}, {u: 0}).color).toEqual([0, 1, 0]);
+	expect(bldFx({fx: 'u', color: '0.1, 0.2, 0.3'}, {u: 0}).color).toEqual([0.1, 0.2, 0.3]);
+	expect(bldFx({fx: 'u'}, {u: 0}).color).toBeUndefined();	// 未指定は持たない
+	expect(()=> bldFx({fx: 'u', color: 'red'}, {u: 0})).toThrow('[add_fx] color= の値が不正です：red');
+	expect(()=> bldFx({fx: 'u', color: '1,2'}, {u: 0})).toThrow('[add_fx] color= の値が不正です：1,2');
+});
+
+// ---- loop=false（単発再生。[def_fx duration=] が time= として解決される。2026-09-02） ----
+
+it('bldFx_loop=false は [def_fx duration=] を time= として解決する', ()=> {
+	const f = bldFx({fx: 'hanabi', loop: 'false'}, {hanabi: 3000});
+	expect(f).toMatchObject({fx: 'hanabi', time: 3000});
+});
+
+it('bldFx_loop=false でも time= の明示指定が勝つ（個別上書き）', ()=> {
+	const f = bldFx({fx: 'hanabi', loop: 'false', time: '1200'}, {hanabi: 3000});
+	expect(f.time).toBe(1200);
+});
+
+it('bldFx_loop=false かつ duration 未宣言（組み込み含む）は time= 無しだと throw', ()=> {
+	expect(()=> bldFx({fx: 'hanabi', loop: 'false'}, {hanabi: 0}))
+		.toThrow('[add_fx] loop=false を使うには [def_fx name=hanabi duration=…]（ms）の宣言が必要です');
+	expect(()=> bldFx({fx: 'wave', loop: 'false'})).toThrow('loop=false を使うには');
+	// time= を伴えば duration 未宣言でも通る（time= は個別上書きなので）
+	expect(bldFx({fx: 'wave', loop: 'false', time: '800'}).time).toBe(800);
+});
+
+it('bldFx_loop 省略／true は従来どおり time=0（無限）', ()=> {
+	expect(bldFx({fx: 'hanabi'}, {hanabi: 3000}).time).toBe(0);
+	expect(bldFx({fx: 'hanabi', loop: 'true'}, {hanabi: 3000}).time).toBe(0);
 });
 
 
@@ -110,6 +135,21 @@ it('defFx_定義後は [add_fx fx=その名前] が通る', ()=> {
 		fx: {name: '', fx: 'mySnow', time: 0, speed: 1, enabled: true, params: {amp: 2}}});
 	// 未定義の名前はこれまで通りエラー
 	expect(()=> acts('[add_fx layer=base fx=noDef]')).toThrow('fx【noDef】は未対応です');
+});
+
+it('defFx_duration=（loop=false 用の尺）を宣言でき、[add_fx loop=false] が time= へ解決する', ()=> {
+	const a = acts(`[def_fx name=hanabi glsl="${RAW}" duration=3000][add_fx layer=base fx=hanabi loop=false]`);
+	expect(a.find(v=> v.t === 'addFx')).toMatchObject({fx: {fx: 'hanabi', time: 3000}});
+});
+
+it('defFx_duration= は0以上（負数は throw）', ()=> {
+	expect(()=> acts(`[def_fx name=x glsl="${RAW}" duration=-1]`)).toThrow('durationは0以上にしてください');
+});
+
+it('defFx_duration=未指定（既定0）でも既定義判定は効く（0はtruthyでないがキーはある）', ()=> {
+	// duration未宣言＝#hDefFxの値が0でも、2回目のdef_fxはキーの有無（in）で弾かれることの回帰確認
+	expect(()=> acts(`[def_fx name=a glsl="${RAW}"][def_fx name=a glsl="${RAW}" duration=1000]`))
+		.toThrow('name【a】は既に定義済みです');
 });
 
 

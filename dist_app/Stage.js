@@ -10031,10 +10031,10 @@ async function bu(e, t) {
 	}), h;
 }
 function xu({ baseSrc: e, isSheet: t, isMovie: n, getVideoEl: r, aFace: i, aFx: a, active: o, onReady: s }) {
-	let c = (0, H.useRef)(null), l = (0, H.useRef)(null), u = i.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode},${String(e.isSheet)},${String(e.isMovie)}`).join(";"), d = `${e}\n${String(t)}\n${String(n)}\n${u}`, f = JSON.stringify(a), p = (0, H.useRef)(o);
-	p.current = o;
-	let m = (0, H.useRef)(a);
-	return m.current = a, (0, H.useEffect)(() => {
+	let c = (0, H.useRef)(null), l = (0, H.useRef)(null), u = i.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode},${String(e.isSheet)},${String(e.isMovie)}`).join(";"), d = `${e}\n${String(t)}\n${String(n)}\n${u}`, f = (0, H.useRef)(o);
+	f.current = o;
+	let p = (0, H.useRef)(a);
+	return p.current = a, (0, H.useEffect)(() => {
 		let a = c.current;
 		if (!a || !e) return;
 		let o = !0;
@@ -10052,8 +10052,8 @@ function xu({ baseSrc: e, isSheet: t, isMovie: n, getVideoEl: r, aFace: i, aFx: 
 			let { runFx: u } = await import("./FxRunner.js"), d = await u({
 				canvas: a,
 				source: c,
-				aFx: m.current,
-				active: p.current
+				aFx: p.current,
+				active: f.current
 			});
 			o ? (l.current = d, s(!0)) : d.dispose();
 		})().catch((e) => {
@@ -10063,7 +10063,7 @@ function xu({ baseSrc: e, isSheet: t, isMovie: n, getVideoEl: r, aFace: i, aFx: 
 		};
 	}, [d]), (0, H.useEffect)(() => {
 		l.current?.update(a, o);
-	}, [f, o]), /* @__PURE__ */ I("canvas", {
+	}, [a, o]), /* @__PURE__ */ I("canvas", {
 		ref: c,
 		style: {
 			position: "absolute",

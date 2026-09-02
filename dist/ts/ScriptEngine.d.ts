@@ -49,6 +49,9 @@ export type T_LAY_STY_ARG = {
     kinsoku_dns?: string;
     kinsoku_bura?: string;
     r_align?: T_R_ALIGN;
+    break_fixed?: boolean;
+    break_fixed_left?: number;
+    break_fixed_top?: number;
     in_style?: string;
     out_style?: string;
 };
@@ -123,6 +126,7 @@ export type T_ENGINE_ACTION = {
     nm: string;
     page: T_PAGE_BOTH;
     str: string;
+    hard?: boolean;
 } | {
     t: 'clearTxtLay';
     nm: string;
@@ -138,6 +142,7 @@ export type T_ENGINE_ACTION = {
     call?: boolean;
     fn?: string;
     arg?: string;
+    url?: string;
     sty?: T_BTN_STY;
 } | {
     t: 'chgLay';
@@ -181,6 +186,10 @@ export type T_ENGINE_ACTION = {
     page: T_PAGE_BOTH;
     index: number;
     enabled: boolean;
+} | {
+    t: 'defFx';
+    name: string;
+    glsl: string;
 } | {
     t: 'addFx';
     aLayNm: string[] | null;

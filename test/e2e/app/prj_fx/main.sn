@@ -107,4 +107,18 @@
 [clear_fx layer=base]
 [lay layer=base fn=anime face=""]
 [add_fx layer=base fx=wave]
-[er]sheet_base[s]
+[er]sheet_base[l]
+
+; 回帰：同じ内容の単発 fx を [clear_fx]→[add_fx] で連続再トリガーすると2回目が発火しない不具合
+;	（GrpLayer.tsx の FxImg が useEffect の依存を JSON.stringify(aFx)＝内容の文字列にしていたため。
+;	[clear_fx] で #fxN の採番が #fx1 へ戻る仕様と相まって、前回と一字一句同じ内容の T_FX が
+;	できると「変化なし」と誤判定され update() が呼ばれなかった。依存を aFx の参照そのものへ
+;	変更して修正。2026-09-02 実機で確認・修正）
+[clear_fx layer=base]
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+[add_fx layer=base fx=rgbShift time=1500 shift=20]
+[er]単発再発火1[l]
+
+[clear_fx layer=base]
+[add_fx layer=base fx=rgbShift time=1500 shift=20]
+[er]単発再発火2[s]

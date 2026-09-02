@@ -278,7 +278,6 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		update(newAFx: T_FX[], newActive: boolean) {
 			if (! live) return;
 			active = newActive;
-
 			const nextSig = structSig(newAFx);
 			if (nextSig !== sig) {
 				// シェーダ構成が変わった＝canvas は作り直さず**同じコンテキスト上でプログラムだけ組み直す**
@@ -294,7 +293,21 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 				}
 				catch (e) {console.error(`[add_fx] ${String(e)}`)}
 			}
-			else for (let i = 0; i < aPass.length; ++i) {const f = newAFx[i]; if (f) aPass[i]!.fx = f}
+			// プリセット構成（fx名の並び）が変わらない＝プログラムは作り直さず.fxだけ差し替える経路。
+			//	無限ループ系（time=0）はここで tick を巻き戻さない：[add_fx amp=…] のようなその場の
+			//	パラメータ調整でアニメの位相を保つのが目的（wave/rain等の想定挙動）。
+			//	単発（time>0）は逆に、同じ preset 名のまま（[clear_fx] を挟まず）[add_fx name=同名
+			//	fx=同名 loop=false] 等で再トリガーする場合、ここで tick を巻き戻さないと、前回の
+			//	経過時間を引き継いだまま新しい time= と比較されてしまい、再生し直したいのに
+			//	初回描画から「経過済み」＝素通しになりかねない。単発は毎回「今から」が自然な
+			//	挙動なので、そのパスだけ pausedAccMs をリセットする（2026-09-02）
+			else for (let i = 0; i < aPass.length; ++i) {
+				const f = newAFx[i];
+				if (! f) continue;
+				const p = aPass[i]!;
+				if (f.time > 0) {p.pausedAccMs = performance.now() - t0; p.pausedAt = 0}
+				p.fx = f;
+			}
 
 			// 止まっていた rAF を動かし直す（enabled／active／構成が変わった等）。凍結のままなら
 			//	step() が 1 フレームで raf=0 に戻すだけ（不可視ページで無駄回しにはならない）

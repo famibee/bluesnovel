@@ -1880,16 +1880,18 @@ var ae = class e {
 				enabled: (i.enabled ?? "true") !== "false"
 			}), "skip";
 			case "def_fx": {
-				let e = i.name ?? "";
-				if (!e) throw "[def_fx] nameは必須です";
-				let t = i.glsl ?? "";
-				if (!t) throw "[def_fx] glsl=（フラグメントシェーダ）は必須です";
-				if (d.includes(e)) throw `[def_fx] name【${e}】は組み込みプリセット名なので使えません`;
-				if (this.#w[e]) throw `[def_fx] name【${e}】は既に定義済みです`;
-				return this.#w[e] = !0, l.push({
+				let t = i.name ?? "";
+				if (!t) throw "[def_fx] nameは必須です";
+				let n = i.glsl ?? "";
+				if (!n) throw "[def_fx] glsl=（フラグメントシェーダ）は必須です";
+				if (d.includes(t)) throw `[def_fx] name【${t}】は組み込みプリセット名なので使えません`;
+				if (t in this.#w) throw `[def_fx] name【${t}】は既に定義済みです`;
+				let r = e.#i("def_fx", "duration", i.duration, 0);
+				if (r < 0) throw `[def_fx] durationは0以上にしてください：${r}`;
+				return this.#w[t] = r, l.push({
 					t: "defFx",
-					name: e,
-					glsl: t
+					name: t,
+					glsl: n
 				}), "skip";
 			}
 			case "add_fx": return l.push({

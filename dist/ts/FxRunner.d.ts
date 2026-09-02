@@ -1,4 +1,4 @@
-import type { T_FX } from './Fx';
+import { type T_FX } from './Fx';
 type T_DYN_SOURCE = (() => TexImageSource) & {
     dispose?: () => void;
 };

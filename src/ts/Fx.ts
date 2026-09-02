@@ -14,6 +14,15 @@
 //	    埋め直す運用（[add_face] と同じ思想。src/ts/fxRegistry.ts、ANIMATION_RESEARCH.md §7）
 //	・基本画像（静止画・アニメ png シート・動画）＋ face 差分合成（aFace）を GrpLayer の
 //	  makeFxSource() が 2D canvas へ合成してからシェーダへ通す（sheet/動画は毎フレーム）
+//	・[add_fx loop=false]：花火の爆発のような「始まりと終わりがある単発」再生（2026-09-02）。
+//	  tick は雨/雪と同じくラップしない生の経過秒のままなので（FxRunner.ts）、シェーダ自身が
+//	  fract() 等で無限ループする代わりに time の経過とともに 1 回だけ変化して終わるよう書く。
+//	  「何 ms で終わるか」は呼び出し側ではなく [def_fx duration=] でプリセット作者が宣言する
+//	  （[tsy]/[trans] の time= は進行度そのものの分母だが、[add_fx] の time= は tick と無関係な
+//	  外側からの締切なので、両者を一致させるにはどちらかを権威にする必要があり、シェーダの
+//	  中身を知っているプリセット作者側に権威を置いた）。bldFx() が loop=false を
+//	  「duration の値を time= として渡したのと同じ T_FX」へその場で解決するので、
+//	  FxRunner.ts 以降は一切変更が要らない（＝time>0 の one-shot 経路をそのまま流用）
 //
 //	ここは DOM も WebGL も触らない純粋部分（本家 Filter.ts の bldFilter() と同じ役回り）。
 //	エンジンから呼べるので fx 名・パラメータの書き間違いをその場で例外にできる。
@@ -70,6 +79,9 @@ function parseRGB(v: string): readonly [number, number, number] {
 }
 
 // エフェクト記述子 1 件。plain data だけ（structuredClone／JSON 化を通すため。aFlt と同じ）
+//	loop=false（単発再生）は T_FX に専用フィールドを持たない：bldFx() がスクリプト解析時点で
+//	「[def_fx duration=] の宣言値」を time へ解決してしまうので、ここから先（FxRunner.ts・
+//	セーブファイル）は「time>0 の one-shot」と完全に同じ扱いで済む（下記 bldFx() 参照）
 export type T_FX = {
 	name	: string;	// そのレイヤの aFx 内で一意な識別子。''＝無名で、store の chgFx が
 						//	`#fxN`（レイヤスコープ採番）を振る。#fxN はシナリオから書けない＝[clear_fx name=]
@@ -92,8 +104,9 @@ function num(args: {[k: string]: string}, k: string, def: number): number {
 }
 
 // hDefFx＝[def_fx] で定義済みのユーザープリセット名の台帳（ScriptEngine.#hDefFx）。
-//	純粋部分なので Set でなく「キーの有無」だけ見る緩い型で受ける（テストからは省略可）
-export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: string]: unknown}): T_FX {
+//	値は [def_fx duration=]（ms。未指定は0＝単発の尺を持たないプリセット）。
+//	純粋部分なので Map でなく「キーの有無＋値」だけ見る緩い型で受ける（テストからは省略可）
+export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: string]: number}): T_FX {
 	const fx = args.fx ?? '';
 	if (! fx) throw '[add_fx] fx=（プリセット名）が必要です';
 	if (! (A_FX_PRESET as readonly string[]).includes(fx) && ! (hDefFx && fx in hDefFx)) {
@@ -104,10 +117,25 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 	const params: {[k: string]: number} = {...H_FX_DEF[fx]};
 	for (const k of A_FX_PARAM) if (args[k] !== undefined) params[k] = num(args, k, 0);
 
+	// loop=false（単発再生）：[def_fx duration=] で宣言された尺を time へ解決する。
+	//	time= が明示されていればそちらが勝つ（個別上書き）。[tsy]/[trans] の time=（アニメの尺
+	//	そのもの＝進行度の分母）と違い、[add_fx] の time は tick とは無関係な外側からの締切
+	//	（FxRunner.ts 参照）なので、「シェーダの1サイクルの長さ」と「締切」を一致させるには
+	//	どちらか一方を権威にする必要がある＝ここでは [def_fx duration=] を権威にする。
+	//	duration 未宣言のプリセット（組み込み wave/rgbShift/snow/rain を含む）へ loop=false だけ
+	//	（time= を伴わず）指定するとその場でエラーにする（書き間違いをその場で例外にする方針）
+	const loop = (args.loop ?? 'true') !== 'false';
+	let time = num(args, 'time', 0);
+	if (! loop && time <= 0) {
+		const duration = hDefFx?.[fx];
+		if (! duration) throw `[add_fx] loop=false を使うには [def_fx name=${fx} duration=…]（ms）の宣言が必要です`;
+		time = duration;
+	}
+
 	return {
 		name	: args.name ?? '',
 		fx,
-		time	: num(args, 'time', 0),
+		time,
 		speed	: num(args, 'speed', 1),
 		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,

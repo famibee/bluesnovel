@@ -441,11 +441,13 @@ export class ScriptEngine {
 	get clearOnResume() {return this.#clearOnResume}
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
-	// [def_fx name= glsl=]で定義したユーザープリセット名の台帳（分家独自。ここは名前だけ＝純粋部分。
+	// [def_fx name= glsl= duration=]で定義したユーザープリセット名の台帳（分家独自。ここは
+	//	名前とduration（[add_fx loop=false]がtimeへ解決する尺。ms。0=未宣言）だけ＝純粋部分。
 	//	GLSL 本体は defFx アクション経由で src/ts/fxRegistry.ts へ流し、lazy な FxRunner が引く）。
 	//	#hFace/#hMacro と同じくセーブには載らず、[load]でエンジンごと作り直し→起動スクリプトの
 	//	[def_fx]再実行で埋め直す運用（ANIMATION_RESEARCH.md §7）
-	readonly #hDefFx: {[name: string]: true} = Object.create(null);
+	//	値0は「truthyでない」だけでキー自体は存在する＝`in`で見る（bldFx()と同じ流儀。Fx.ts）
+	readonly #hDefFx: {[name: string]: number} = Object.create(null);
 	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt/プラグインcls）。#applyLayPage()の判定専用
 	//	（本家 GrpLayer/TxtLayer はクラスごとに別インスタンスだが、こちらは単一の関数で両方を
 	//	処理するため、判定材料をここに持たせる）
@@ -1455,8 +1457,12 @@ export class ScriptEngine {
 			const glsl = args.glsl ?? '';
 			if (! glsl) throw '[def_fx] glsl=（フラグメントシェーダ）は必須です';
 			if ((A_FX_PRESET as readonly string[]).includes(dfName)) throw `[def_fx] name【${dfName}】は組み込みプリセット名なので使えません`;
-			if (this.#hDefFx[dfName]) throw `[def_fx] name【${dfName}】は既に定義済みです`;
-			this.#hDefFx[dfName] = true;
+			if (dfName in this.#hDefFx) throw `[def_fx] name【${dfName}】は既に定義済みです`;
+			// duration=（ms）：[add_fx fx=このname loop=false]が time= として使う「単発の尺」。
+			//	未指定は0＝このプリセットへ loop=false（time= を伴わず）を使うと bldFx() が例外にする
+			const duration = ScriptEngine.#argNumDef('def_fx', 'duration', args.duration, 0);
+			if (duration < 0) throw `[def_fx] durationは0以上にしてください：${duration}`;
+			this.#hDefFx[dfName] = duration;
 			aAct.push({t: 'defFx', name: dfName, glsl});
 			return 'skip';
 		}

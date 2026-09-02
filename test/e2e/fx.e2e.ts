@@ -260,10 +260,32 @@ test('動画 face を fx のテクスチャへ合成（DOM オーバーレイは
 
 test('アニメ png シート基本画像のレイヤへ fx（従来は FxImg を出さなかった条件を緩めた）', async ({page})=> {
 	for (let i = 0; i < 18; ++i) await pressKeyToWaitMark(page, 'Space');	// 「movie_face」まで
-	await pressKey(page, 'Space');	// [lay fn=anime]→[add_fx fx=wave]→[er]sheet_base[s]
-	await expect.poll(async ()=> mesStr(page)).toBe('sheet_base');
+	await pressKeyToWaitMark(page, 'Space');	// [lay fn=anime]→[add_fx fx=wave]→[er]sheet_base[l]
+	expect(await mesStr(page)).toBe('sheet_base');
 
 	await expect.poll(async ()=> draw(page)).toBe('canvas');
 	// シート div は div0 のサイズ担当として残るが animation-play-state:paused
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 毎フレーム転写
+});
+
+test('同じ内容の単発 fx を [clear_fx]→[add_fx] で連続再トリガーすると毎回発火する（バグの回帰）', async ({page})=> {
+	// GrpLayer.tsx の FxImg は以前、update() を呼ぶ useEffect の依存を JSON.stringify(aFx)
+	//	（内容の文字列）にしていた。[clear_fx] は #fxN の採番を #fx1 へ戻すので、同じ
+	//	fx=／time= で [clear_fx]→[add_fx] を連続実行すると前回と一字一句同じ T_FX ができ、
+	//	「変化なし」と誤判定されて update() が呼ばれず＝2回目の単発が発火しなかった
+	//	（[add_fx loop=false] で単発を撃ち直す操作で実機で確認。2026-09-02）
+	for (let i = 0; i < 19; ++i) await pressKeyToWaitMark(page, 'Space');	// 「sheet_base」まで
+
+	// 1回目：[clear_fx]→[add_fx fx=rgbShift time=1500]→[er]単発再発火1[l]
+	await pressKeyToWaitMark(page, 'Space');
+	expect(await mesStr(page)).toBe('単発再発火1');
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 発火直後は rAF が回っている
+	// time=1500 の経過で凍結（素通しに切り替わり rAF が止まる）のを待つ
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 3000}).toBe('0');
+
+	// 2回目：1回目と一字一句同じ内容で [clear_fx]→[add_fx]→[er]単発再発火2[s]
+	await pressKey(page, 'Space');
+	await expect.poll(async ()=> mesStr(page)).toBe('単発再発火2');
+	// 修正前はここが '0' に固まったまま（update() が呼ばれないので rAF が再開しない）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
 });

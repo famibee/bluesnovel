@@ -60,10 +60,16 @@ function a(a, o) {
 	if (!e.includes(s) && !(o && s in o)) throw `[add_fx] fx【${s}】は未対応です（組み込み：${e.join(" / ")}／または [def_fx] で定義した名前）`;
 	let c = { ...t[s] };
 	for (let e of n) a[e] !== void 0 && (c[e] = i(a, e, 0));
+	let l = (a.loop ?? "true") !== "false", u = i(a, "time", 0);
+	if (!l && u <= 0) {
+		let e = o?.[s];
+		if (!e) throw `[add_fx] loop=false を使うには [def_fx name=${s} duration=…]（ms）の宣言が必要です`;
+		u = e;
+	}
 	return {
 		name: a.name ?? "",
 		fx: s,
-		time: i(a, "time", 0),
+		time: u,
 		speed: i(a, "speed", 1),
 		enabled: (a.enabled ?? "true") !== "false",
 		params: c,
