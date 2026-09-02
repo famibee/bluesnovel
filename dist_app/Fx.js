@@ -3,7 +3,8 @@ var e = [
 	"wave",
 	"rgbShift",
 	"snow",
-	"rain"
+	"rain",
+	"fireworks"
 ], t = {
 	wave: {
 		amp: 6,
@@ -18,8 +19,13 @@ var e = [
 		amp: 2,
 		freq: 2,
 		shift: 6
+	},
+	fireworks: {
+		amp: 1,
+		freq: 1,
+		p1: .25
 	}
-}, n = [
+}, n = { fireworks: 4e3 }, r = [
 	"amp",
 	"freq",
 	"shift",
@@ -28,7 +34,7 @@ var e = [
 	"p3",
 	"p4"
 ];
-function r(e) {
+function i(e) {
 	let t = e.trim();
 	if (t.includes(",")) {
 		let n = t.split(",").map((e) => Number(e.trim()));
@@ -47,36 +53,36 @@ function r(e) {
 		(r & 255) / 255
 	];
 }
-function i(e, t, n) {
+function a(e, t, n) {
 	let r = e[t];
 	if (r === void 0) return n;
 	let i = Number(r);
 	if (!Number.isFinite(i)) throw `[add_fx] ${t} の値が不正です：${r}`;
 	return i;
 }
-function a(a, o) {
-	let s = a.fx ?? "";
-	if (!s) throw "[add_fx] fx=（プリセット名）が必要です";
-	if (!e.includes(s) && !(o && s in o)) throw `[add_fx] fx【${s}】は未対応です（組み込み：${e.join(" / ")}／または [def_fx] で定義した名前）`;
-	let c = { ...t[s] };
-	for (let e of n) a[e] !== void 0 && (c[e] = i(a, e, 0));
-	let l = (a.loop ?? "true") !== "false", u = i(a, "time", 0);
-	if (!l && u <= 0) {
-		let e = o?.[s];
-		if (!e) throw `[add_fx] loop=false を使うには [def_fx name=${s} duration=…]（ms）の宣言が必要です`;
-		u = e;
+function o(o, s) {
+	let c = o.fx ?? "";
+	if (!c) throw "[add_fx] fx=（プリセット名）が必要です";
+	if (!e.includes(c) && !(s && c in s)) throw `[add_fx] fx【${c}】は未対応です（組み込み：${e.join(" / ")}／または [def_fx] で定義した名前）`;
+	let l = { ...t[c] };
+	for (let e of r) o[e] !== void 0 && (l[e] = a(o, e, 0));
+	let u = (o.loop ?? "true") !== "false", d = a(o, "time", 0);
+	if (!u && d <= 0) {
+		let e = n[c] ?? s?.[c];
+		if (!e) throw `[add_fx] loop=false を使うには [def_fx name=${c} duration=…]（ms）の宣言が必要です`;
+		d = e;
 	}
 	return {
-		name: a.name ?? "",
-		fx: s,
-		time: u,
-		speed: i(a, "speed", 1),
-		enabled: (a.enabled ?? "true") !== "false",
-		params: c,
-		...a.color === void 0 ? {} : { color: r(a.color) }
+		name: o.name ?? "",
+		fx: c,
+		time: d,
+		speed: a(o, "speed", 1),
+		enabled: (o.enabled ?? "true") !== "false",
+		params: l,
+		...o.color === void 0 ? {} : { color: i(o.color) }
 	};
 }
 //#endregion
-export { e as n, a as r, n as t };
+export { e as n, o as r, r as t };
 
 //# sourceMappingURL=Fx.js.map

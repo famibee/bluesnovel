@@ -8,7 +8,7 @@
 // [add_fx]/[clear_fx]/[wait_fx]/[pause_fx]/[resume_fx]：立ち絵・背景（grp レイヤ）へシェーダ
 //	エフェクトを重ねる**分家独自機能**（2026-08-28 正式化）。ANIMATION_RESEARCH.md §7。
 //	・対象指定（layer=/page=）は [add_filter] に、記述子スタック（aFx[]）も [add_filter] の aFlt に倣う
-//	・fx= はプリセット名のみ。組み込み（wave|rgbShift|snow|rain）か、[def_fx name= glsl=] で
+//	・fx= はプリセット名のみ。組み込み（wave|rgbShift|snow|rain|fireworks）か、[def_fx name= glsl=] で
 //	  事前定義したユーザープリセット名。生 glsl= は [add_fx] では受けない（2026-08-31 に分離）。
 //	  → セーブファイル（aFx）には fx 名しか載らず、GLSL 本体は起動スクリプトの [def_fx] 再実行で
 //	    埋め直す運用（[add_face] と同じ思想。src/ts/fxRegistry.ts、ANIMATION_RESEARCH.md §7）
@@ -42,19 +42,30 @@
 //	Shadertoy（iTime/iChannel0…）は開発時に手変換（マッピングは docs/tag.html）。
 
 // プリセット名。GLSL 実体は fxPresets.ts（lazy）が持つ。ここは名前の台帳だけ
-export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain'] as const;
+export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks'] as const;
 
 // プリセット固有パラメータの既定値（**属性の既定値は 1 箇所**：ここがエンジン入口）。
-//	amp/freq/shift はプリセットごとに意味が違う（tag.html 参照）：
+//	amp/freq/shift/p1 はプリセットごとに意味が違う（tag.html 参照）：
 //	  wave  … amp=px 振幅 / freq=縦の波の本数
 //	  rgbShift … shift=px ずらし量
 //	  snow … amp=落下速度倍率 / freq=密度（層数）。背景（bg）レイヤ向け
 //	  rain … amp=落下速度 / freq=密度（弱雨 2 〜 豪雨 8+。曇天・雨幕・シア角も連動）/ shift=雨脚の長さ
+//	  fireworks … amp=明るさ / freq=頭（火の粉の親）の数（1.0＝32個・上限 1.4）/ p1=打ち上げ周期の速さ
+//	              （0.25＝約4秒周期）。color= で光の色（既定は橙金）。背景（bg）レイヤ向け。
+//	              元は sn_gallery prj/add_fx/mat/ext_fx_tst.sn の [def_fx name=花火2]（冠菊）。MIT
 const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	wave		: {amp: 6, freq: 2},
 	rgbShift	: {shift: 4},
 	snow		: {amp: 1, freq: 3},
 	rain		: {amp: 2, freq: 2, shift: 6},
+	fireworks	: {amp: 1, freq: 1, p1: 0.25},
+};
+
+// 組み込みプリセットの「単発の尺」（[add_fx loop=false] が time= として解決する ms）。
+//	[def_fx duration=] のユーザープリセット版に対応する組み込み版。ここに無いプリセット
+//	（wave/rgbShift/snow/rain）へ loop=false を time= 無しで指定すると bldFx() が例外にする
+const H_FX_BUILTIN_DURATION: {readonly [fx: string]: number} = {
+	fireworks	: 4000,	// p1 未指定＝標準の約4秒周期（fxPresets.ts fireworks のコメント）
 };
 // プリセットが読むスカラパラメータ名（この範囲だけ args から拾う）。
 //	amp/freq/shift … 組み込みプリセットが意味を持って使う（tag.html 参照）
@@ -117,17 +128,18 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 	const params: {[k: string]: number} = {...H_FX_DEF[fx]};
 	for (const k of A_FX_PARAM) if (args[k] !== undefined) params[k] = num(args, k, 0);
 
-	// loop=false（単発再生）：[def_fx duration=] で宣言された尺を time へ解決する。
+	// loop=false（単発再生）：宣言済みの尺を time へ解決する。組み込みは H_FX_BUILTIN_DURATION、
+	//	[def_fx] のユーザープリセットは [def_fx duration=]（hDefFx）。
 	//	time= が明示されていればそちらが勝つ（個別上書き）。[tsy]/[trans] の time=（アニメの尺
 	//	そのもの＝進行度の分母）と違い、[add_fx] の time は tick とは無関係な外側からの締切
 	//	（FxRunner.ts 参照）なので、「シェーダの1サイクルの長さ」と「締切」を一致させるには
-	//	どちらか一方を権威にする必要がある＝ここでは [def_fx duration=] を権威にする。
-	//	duration 未宣言のプリセット（組み込み wave/rgbShift/snow/rain を含む）へ loop=false だけ
-	//	（time= を伴わず）指定するとその場でエラーにする（書き間違いをその場で例外にする方針）
+	//	どちらか一方を権威にする必要がある＝ここでは尺の宣言側を権威にする。
+	//	尺を持たないプリセット（組み込み wave/rgbShift/snow/rain、duration 未宣言の [def_fx]）へ
+	//	loop=false だけ（time= を伴わず）指定するとその場でエラーにする（書き間違いをその場で例外にする方針）
 	const loop = (args.loop ?? 'true') !== 'false';
 	let time = num(args, 'time', 0);
 	if (! loop && time <= 0) {
-		const duration = hDefFx?.[fx];
+		const duration = H_FX_BUILTIN_DURATION[fx] ?? hDefFx?.[fx];
 		if (! duration) throw `[add_fx] loop=false を使うには [def_fx name=${fx} duration=…]（ms）の宣言が必要です`;
 		time = duration;
 	}

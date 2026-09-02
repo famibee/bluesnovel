@@ -211,14 +211,15 @@ test('[trans] 後の不可視 back ページでは fx の rAF が止まる（dat
 	await expect.poll(()=> canvasRunning('#skynovel [data-page="back"]')(page)).toBe('0');
 });
 
-test('天候プリセット snow / rain が 2 本重ねてコンパイル・描画できる', async ({page})=> {
+test('天候・花火プリセット snow / rain / fireworks が 3 本重ねてコンパイル・描画できる', async ({page})=> {
 	for (let i = 0; i < 14; ++i) await pressKeyToWaitMark(page, 'Space');	// 「trans後」まで
-	await pressKey(page, 'Space');	// [clear_fx]→[add_fx snow]→[add_fx rain]→[er]天候[s]
+	await pressKey(page, 'Space');	// [clear_fx]→[add_fx snow]→[add_fx rain]→[add_fx fireworks]→[er]天候[s]
 	await expect.poll(async ()=> mesStr(page)).toBe('天候');
 	const a = (await afx(page))!;
-	expect(a.map(f=> f.fx)).toEqual(['snow', 'rain']);
+	expect(a.map(f=> f.fx)).toEqual(['snow', 'rain', 'fireworks']);
 	expect(a[1]!.params).toMatchObject({amp: 2});
-	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>（失敗なら絵が出ない）
+	expect(a[2]!.params).toMatchObject({amp: 1, freq: 1, p1: 0.25});	// 組み込み既定（Fx.ts H_FX_DEF）
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 3 パスとも compile 成功で <canvas>（失敗なら絵が出ない。color=0x66ccff の uniform vec3 も含む）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');	// 常時ゆらぎ＝回り続ける
 });
 

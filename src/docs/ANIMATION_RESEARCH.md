@@ -330,7 +330,7 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   round-trip・`[clear_lay]` 追随は変更なし。回帰は `fx.e2e.ts` に 3 本追加（`prj_fx` に `movie.mp4`）。
 - 制約：外部ドメインの動画は 2D canvas / `texImage2D` を汚染する（`[snapshot]` と同じ）。
 
-#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）
+#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）
 
 `fxPresets.ts` に `snow`／`rain` を追加（`H_FX_DEF` に既定、`A_FX_PRESET` に名前）。どちらも
 ハッシュ乱数のセル／縦帯という定番手法を再実装（特定コードの写しではない＝MIT 相当）。
@@ -341,7 +341,15 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
 `H_FX_DEF.rain` の既定を `{amp: 2, freq: 2, shift: 6}` に（`amp`＝落下速度、`shift`＝雨脚の長さ）。
 きっかけは Shadertoy「Rain shader - 01」(M3GfDV, CC BY-NC-SA) を「どんな画が欲しいか」の参考にした検討。
 その固有式（`drop()`/`f()`/`rnd1()` マクロ、`rot()` 係数、`1050-pow(1000,rain_d)` 等）は一切再現せず、
-内蔵 `snow` と同系の縦帯ハッシュ＋`smoothstep` で独立実装した。次候補：花火・タイル塗り＋スクロール・桜。
+内蔵 `snow` と同系の縦帯ハッシュ＋`smoothstep` で独立実装した。
+
+**2026-09-03：`fireworks`（冠菊花火）を組み込み化。** sn_gallery `prj/add_fx/mat/ext_fx_tst.sn` の
+`[def_fx name=花火2]`（火の粉の余韻を引きながら枝垂れ落ちる冠菊。参考は shadertoy tfXSWr の物理のみ・
+コードの写しではない＝MIT）を `H_FX_FRAG.fireworks` へそのまま移設。`amp`＝明るさ／`freq`＝頭の数
+（1.0＝32個・上限 1.4）／`p1`＝打ち上げ周期の速さ（0.25＝約4秒）／`color`＝光の色（既定は橙金）。
+組み込みで初めて `loop=false` の尺を持つプリセット＝`Fx.ts` に `H_FX_BUILTIN_DURATION`（`[def_fx duration=]`
+の組み込み版。`fireworks: 4000`）を新設し、`bldFx()` が `H_FX_BUILTIN_DURATION[fx] ?? hDefFx?.[fx]` で解決。
+次候補：タイル塗り＋スクロール・桜。
 
 #### 構成切替で一瞬消えない（2026-08-28）
 
@@ -586,7 +594,7 @@ store 経由なので `aFx` は `aFlt` 同様しおり（`[save]`/`[load]`）・
 | | 実現性 | 方式 | 規模 | 推奨度 |
 |---|---|---|---|---|
 | `[trans] glsl=` | ○（実装済み） | Snapshot.ts で表裏 2 ページをラスタライズ → 本家 `glsl_slide` 契約の GLSL → rAF。lazy モジュール | ~230 行・純粋 lazy | ★★★★☆ |
-| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。組み込みプリセット wave/rgbShift/snow/rain。生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。HEAD 自動前置。Shadertoy は開発時に手変換。**セーブ非対象＝起動スクリプトで再定義する運用**）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、基本画像は静止画・アニメ png シート・動画いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、不可視 back ページで rAF 凍結、構成切替で継ぎ目なし。残り＝プリセット追加・ギャラリー実演（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~400–580 行 | ★★★☆ |
+| 立ち絵・背景シェーダ | ○（実装済み・2026-08-28 正式化） | `[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`。組み込みプリセット wave/rgbShift/snow/rain/fireworks。生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義（契約は `[trans glsl=]` と統一：`uSampler`/`vTextureCoord`/`tick`。HEAD 自動前置。Shadertoy は開発時に手変換。**セーブ非対象＝起動スクリプトで再定義する運用**）。`aFlt` と同型の `aFx` seam、GrpLayer が `<canvas>` 分岐、基本画像は静止画・アニメ png シート・動画いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、不可視 back ページで rAF 凍結、構成切替で継ぎ目なし。残り＝プリセット追加・ギャラリー実演（随時）。**本家には入れない分家独自機能** | コア ~250 行 + lazy ~400–580 行 | ★★★☆ |
 
 どちらも gl-react / R3F は不要。プラグイン化は「専用レイヤ class（A）」なら可能だが後がけ不可・face
 再実装が要る。GrpLayer に 1 分岐だけ入れる C 方式（コア seam + lazy モジュール）が費用対効果最良。

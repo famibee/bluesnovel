@@ -73,10 +73,11 @@
 [wt]
 [er]trans後[l]
 
-; 天候プリセット（snow / rain。背景向け）。2 本重ねて ping-pong を通す＝GLSL コンパイル回帰
+; 天候・花火プリセット（snow / rain / fireworks。背景向け）。3 本重ねて ping-pong を通す＝GLSL コンパイル回帰
 [clear_fx layer=base]
 [add_fx layer=base name=sn fx=snow]
 [add_fx layer=base name=rn fx=rain amp=2]
+[add_fx layer=base name=fw fx=fireworks color=0x66ccff]
 [er]天候[l]
 
 ; アニメ png シートの face を fx のテクスチャへ毎フレーム転写（GrpLayer makeFxSource が関数を返す）。

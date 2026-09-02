@@ -32,6 +32,19 @@ it('bldFx_プリセットの既定値（既定は H_FX_DEF の1箇所）', ()=> 
 	expect(bldFx({fx: 'snow'}).params).toEqual({amp: 1, freq: 3});
 	expect(bldFx({fx: 'rain'}).params).toEqual({amp: 2, freq: 2, shift: 6});
 	expect(bldFx({fx: 'rain', amp: '3', freq: '8'}).params).toEqual({amp: 3, freq: 8, shift: 6});
+	// fireworks（冠菊花火。背景向け）: amp=明るさ / freq=頭の数 / p1=打ち上げ周期の速さ
+	expect(bldFx({fx: 'fireworks'}).params).toEqual({amp: 1, freq: 1, p1: 0.25});
+	expect(bldFx({fx: 'fireworks', freq: '1.4', color: '0x66ccff'}))
+		.toMatchObject({fx: 'fireworks', params: {amp: 1, freq: 1.4, p1: 0.25}, color: [102 / 255, 204 / 255, 1]});
+});
+
+it('bldFx_fireworks は組み込みで loop=false の尺を持つ（[def_fx duration=] 不要）', ()=> {
+	// 組み込み H_FX_BUILTIN_DURATION により hDefFx 無しでも単発が通る（約4秒周期）
+	expect(bldFx({fx: 'fireworks', loop: 'false'}).time).toBe(4000);
+	// time= 明示はそちらが勝つ（p1 で周期を変えたときの上書き）
+	expect(bldFx({fx: 'fireworks', loop: 'false', p1: '0.5', time: '2000'}).time).toBe(2000);
+	// loop 省略は従来どおり無限
+	expect(bldFx({fx: 'fireworks'}).time).toBe(0);
 });
 
 it('bldFx_属性で既定を上書き（拾うのは A_FX_PARAM の範囲だけ）', ()=> {
@@ -95,9 +108,10 @@ it('bldFx_loop=false でも time= の明示指定が勝つ（個別上書き）'
 	expect(f.time).toBe(1200);
 });
 
-it('bldFx_loop=false かつ duration 未宣言（組み込み含む）は time= 無しだと throw', ()=> {
+it('bldFx_loop=false かつ duration 未宣言（尺を持たない組み込み含む）は time= 無しだと throw', ()=> {
 	expect(()=> bldFx({fx: 'hanabi', loop: 'false'}, {hanabi: 0}))
 		.toThrow('[add_fx] loop=false を使うには [def_fx name=hanabi duration=…]（ms）の宣言が必要です');
+	// wave/rgbShift/snow/rain は H_FX_BUILTIN_DURATION に無い＝尺を持たない
 	expect(()=> bldFx({fx: 'wave', loop: 'false'})).toThrow('loop=false を使うには');
 	// time= を伴えば duration 未宣言でも通る（time= は個別上書きなので）
 	expect(bldFx({fx: 'wave', loop: 'false', time: '800'}).time).toBe(800);
