@@ -215,6 +215,11 @@ export type T_CHGLAY = {
 	nm	: string;
 	page: T_PAGE;
 	sty	: T_LAY_STY_ARG;
+	// この left/top は「絶対座標への置き直し」か「現在位置からの相対移動」か。前者の軸は
+	//	寄せ（align_x/align_y）を落とす（残ると新しい left へ古い translate が二重に乗る）。
+	//	どちらかは呼ぶ側（[lay] は ScriptEngine、[tsy] は ScriptMng）しか判断できないので
+	//	明示してもらう。store はキーの有無から推測しない（[fg2]→[fg2_squat] の再発防止）
+	reposition?: 'x' | 'y' | 'xy';
 }
 // [autowc]：文字ごとのウェイト表（ミリ秒）。enabled=falseなら表を使わずchWaitへ落ちる
 export type T_AUTOWC = {enabled: boolean; h: {[ch: string]: number}};
@@ -486,7 +491,7 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 		return putPage(s, idx, aLay);
 	}),
 	// [lay]のレイヤ共通属性。書かれた属性だけを上書きする（本家 Layer.lay() も `'x' in hArg` で判定）
-	chgLay	: ({nm, page, sty}: T_CHGLAY)=> set(s=> {
+	chgLay	: ({nm, page, sty, reposition}: T_CHGLAY)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = aLay.find(e=> e.nm === nm);
 		if (! e) throw `存在しないレイヤ ${nm} です`;
@@ -510,15 +515,14 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 			);
 		}
 
-		// left/align_x、top/align_yは排他（本家 Layer.ts:513-532 相当。ScriptEngine.ts:1172の
-		//	コメント参照）。Object.assignは指定したキーだけを上書きするため、align_xを伴わず
-		//	leftだけを更新する呼び出し（[tsy left=]が代表例。「もう寸法込みの絵の左端」を渡してくる
-		//	前提でcenter/right寄せの-50%translateは要らない）が来ても、直前の[lay pos=/center=/right=]
-		//	で立ったalign_xは素通りして残り続け、新しいleftへ古いtranslateが二重に乗って表示位置が
-		//	幅・高さの半分ぶんずれてしまっていた（[fg2]で立ち絵をtsyで動かした後の最終位置が
-		//	本家とズレる不具合の原因）
-		if (sty.left !== undefined && sty.align_x === undefined) delete e.align_x;
-		if (sty.top !== undefined && sty.align_y === undefined) delete e.align_y;
+		// left/align_x、top/align_yは排他（本家 Layer.ts:513-532 相当）。「このleft/topは絶対座標への
+		//	置き直しか、現在位置からの相対移動か」は呼ぶ側だけが分かる（[lay left=]・絶対区間を含む
+		//	[tsy]は前者、[fg2_squat]等の相対[tsy]は後者）ので、payloadのrepositionで明示してもらう。
+		//	絶対置き直しの軸は寄せを落とす（残ると新しいleftへ古い-50%等のtranslateが二重に乗って
+		//	表示位置が幅・高さの半分ぶんずれる。以前はstoreが「align無しのleft更新＝絶対」と
+		//	推測していたが、相対の揺らしまで巻き込んで立ち絵がbottom寄せを失う不具合の元だった）
+		if (reposition === 'x' || reposition === 'xy') delete e.align_x;
+		if (reposition === 'y' || reposition === 'xy') delete e.align_y;
 
 		// styleは属性まるごとの置き換えではなく、本家同様CSSプロパティ単位で既存styleへ足す
 		//	（[lay style='text-shadow:…']だけを送るシーン転換タグが、先に指定済みの

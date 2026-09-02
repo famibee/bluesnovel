@@ -56,13 +56,9 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 
 ## リファクタ候補（/simplify 分家全体 2026-09-03）
 
-軽微な整理は第 1〜5 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
+軽微な整理は第 1〜6 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
 残りは 1 項目ずつ設計判断＋実機（E2E・サンプル実走）確認が要る規模。**オススメ順**：
 
-- [ ] **`left`/`align_x` 排他ルールの payload 明示**（Altitude）。`store.chgLay` の「キーの有無から
-      再配置意図を推測」→ `ScriptMng.withAlign` が現在値再注入で打ち消す、の 2 段推論をやめ、
-      `chgLay` payload に `reposition: 'absolute' | 'nudge'` を持たせてエンジンが 1 回決める。
-      対象 2 ファイル・過去バグ（[fg2]→[fg2_squat]）の再発防止。まず着手推奨。
 - [ ] **禁則処理の差分測定**（Efficiency）。`applyKinsoku` が `chgStr` のたび全表示単位を
       `getBoundingClientRect` で測り直す（`<br>` 挿入ごとに強制リフロー＝O(文字数×改行数)）。
       直近の既存 `<br>` 以降だけを対象に。TxtLayer 内で完結。着手前に長文ページで実測。

@@ -256,16 +256,16 @@ var j = x()((e, t) => ({
 		let { idx: r, aLay: i } = w(e, n), a = A(i, t, "txt");
 		return delete a.b_color, a.b_alpha = 0, a.b_alpha_isfixed = !1, delete a.b_pic, delete a.b_src, T(e, r, i);
 	}),
-	chgLay: ({ nm: t, page: n, sty: i }) => e((e) => {
-		let { idx: a, aLay: o } = w(e, n), s = o.find((e) => e.nm === t);
-		if (!s) throw `存在しないレイヤ ${t} です`;
-		if (!r(s) && (i.b_color !== void 0 || i.style !== void 0 || i.ffs !== void 0 || i.noffs !== void 0 || i.bura !== void 0 || i.r_align !== void 0 || i.kinsoku_sol !== void 0 || i.kinsoku_eol !== void 0 || i.kinsoku_dns !== void 0 || i.kinsoku_bura !== void 0 || i.break_fixed !== void 0 || i.break_fixed_left !== void 0 || i.break_fixed_top !== void 0 || i.pl !== void 0 || i.pr !== void 0 || i.pt !== void 0 || i.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
-		r(s) && (i.kinsoku_eol !== void 0 || i.kinsoku_dns !== void 0 || i.kinsoku_bura !== void 0) && p(i.kinsoku_eol ?? s.kinsoku_eol ?? u.eol, i.kinsoku_dns ?? s.kinsoku_dns ?? u.dns, i.kinsoku_bura ?? s.kinsoku_bura ?? u.bura), i.left !== void 0 && i.align_x === void 0 && delete s.align_x, i.top !== void 0 && i.align_y === void 0 && delete s.align_y;
-		let c = r(s) && i.style !== void 0 ? {
+	chgLay: ({ nm: t, page: n, sty: i, reposition: a }) => e((e) => {
+		let { idx: o, aLay: s } = w(e, n), c = s.find((e) => e.nm === t);
+		if (!c) throw `存在しないレイヤ ${t} です`;
+		if (!r(c) && (i.b_color !== void 0 || i.style !== void 0 || i.ffs !== void 0 || i.noffs !== void 0 || i.bura !== void 0 || i.r_align !== void 0 || i.kinsoku_sol !== void 0 || i.kinsoku_eol !== void 0 || i.kinsoku_dns !== void 0 || i.kinsoku_bura !== void 0 || i.break_fixed !== void 0 || i.break_fixed_left !== void 0 || i.break_fixed_top !== void 0 || i.pl !== void 0 || i.pr !== void 0 || i.pt !== void 0 || i.pb !== void 0)) throw `${t} は文字レイヤではありません（b_color/style/ffs/noffs/bura/r_align/kinsoku_*/break_fixed*/pl/pr/pt/pbは文字レイヤ専用）`;
+		r(c) && (i.kinsoku_eol !== void 0 || i.kinsoku_dns !== void 0 || i.kinsoku_bura !== void 0) && p(i.kinsoku_eol ?? c.kinsoku_eol ?? u.eol, i.kinsoku_dns ?? c.kinsoku_dns ?? u.dns, i.kinsoku_bura ?? c.kinsoku_bura ?? u.bura), (a === "x" || a === "xy") && delete c.align_x, (a === "y" || a === "xy") && delete c.align_y;
+		let l = r(c) && i.style !== void 0 ? {
 			...i,
-			style: i.style ? k(s.style, i.style) : ""
+			style: i.style ? k(c.style, i.style) : ""
 		} : i;
-		return Object.assign(s, c), T(e, a, o);
+		return Object.assign(c, l), T(e, o, s);
 	}),
 	getLaySty: (e, n) => {
 		let r = t(), i = r.aPage[n === "fore" ? r.foreIdx : 1 - r.foreIdx].find((t) => t.nm === e);

@@ -25,6 +25,14 @@
 - `（第5弾）` … **`Main.tsx` のセレクタ手配線撤去**（33 個の `useStore(s=>s.x)` →
   `{...useStore.getState(), isTyping}` の 1 行。-31 行。`T_INIT_FNCS` の Pick リストは
   「エンジンが store に依存する範囲」の契約として残す）
+- `（第6弾・Altitude）` … **`left`/`align_x` 排他ルールの `reposition` payload 明示**。
+  `store.chgLay` が「`left` があって `align_x` が無い＝絶対再配置」とキーの有無から推測し、
+  `ScriptMng.#beginTsy` の `withAlign` が相対 `[tsy]` のたび現在の寄せを再注入して打ち消す、
+  の 2 段推論を廃止。`T_CHGLAY` に `reposition?: 'x'|'y'|'xy'`（＝寄せを落とす軸）を足し、
+  `[lay]` は `ScriptEngine`（`sty.left && ! sty.align_x` を 1 回判定）、`[tsy]` は
+  `ScriptMng`（区間に絶対指定があるか）がそれぞれ文脈を持って決める。store は
+  `reposition` だけを見る。既存 E2E（`tsy.e2e.ts` の [fg2_squat] 回帰・`uc.e2e.ts`・
+  `pic.e2e.ts`）で挙動不変を確認。対象 3 ファイル（store / ScriptEngine / ScriptMng）
 
 ## Altitude（下の機構を一般化する）
 
@@ -52,13 +60,11 @@
   「停止点で 1 回だけ engine を真実として突き合わせる」現状の方が浅くない。`tmp:sn.button.fontFamily`
   は `tmp:`＝保存対象外で `[let]` 経由のみ＝トリガでも足りるが、Back.Alpha と非対称になるので
   据え置き。chWait は既読状態依存で元から停止点評価が妥当。
-- **`left`/`align_x` の排他ルールを 3 層で推論・逆推論。** `store.chgLay` が「`left` が来て
-  `align_x` を伴わない＝絶対再配置」と解釈して `align_x` を消す。`ScriptMng` の `withAlign`
-  は相対指定のみの `[tsy]` で消されると困るので現在値を再注入し store の推論を打ち消す。
-  `styLay`（`Lay.ts`）が実描画。`[fg2]`→`[fg2_squat]` と不具合が出るたび推論に例外が
-  足された。
-  → 意図を payload に明示（`chgLay` に `reposition: 'absolute' | 'nudge'`）、エンジン／
-  ScriptMng が 1 回だけ決める。store がキーの有無から推測し呼ぶ側が対策する構図をやめる。
+- ~~**`left`/`align_x` の排他ルールを 3 層で推論・逆推論。**~~ … 済（第6弾）。`T_CHGLAY` に
+  `reposition?: 'x'|'y'|'xy'` を足し、`store.chgLay` はキーの有無から推測せずこのフィールド
+  だけを見る。判定は `[lay]`＝`ScriptEngine`（`sty.left && ! sty.align_x`）、`[tsy]`＝
+  `ScriptMng.#beginTsy`（区間に絶対指定があるか）が文脈を持って行い、`withAlign` の
+  現在値再注入は撤去。
 - **エンジン→store ブリッジが ~35 個の名前付きセレクタ手配線。**（済・第5弾）`Main.tsx` の
   33 個の `useStore(s=>s.x)`（＋`attachTsx` へ渡すリテラル）を撤去し、`{...useStore.getState(),
   isTyping: ()=> isTypingRef.current}` の 1 行に。`T_INIT_FNCS` は全部 Pick された安定アクション

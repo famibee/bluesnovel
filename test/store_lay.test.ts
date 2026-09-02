@@ -90,16 +90,33 @@ it('chgLay_keepsUntouchedPageArrayRef', ()=> {
 	expect(st.aPage[0].find(e=> e.nm === 'a')?.left).toBe(100);
 });
 
-it('chgLay_leftAloneClearsStaleAlignX', ()=> {
-	// [lay pos=]等でalign_x='center'を立てた後、align_xを伴わずleftだけ更新する呼び出し
-	//	（[tsy left=]が代表例）が来たら、古いalign_xは消えるべき（left/align_xは排他）。
-	//	消え残ると新しいleftへ古い-50%translateが二重に乗って表示位置がずれる
+it('chgLay_repositionClearsStaleAlign', ()=> {
+	// [lay pos=]等でalign_x='center'を立てた後、絶対座標へ置き直す呼び出し（[lay left=]・
+	//	絶対区間を含む[tsy]）はreposition:'x'を伴う。古いalign_xは消えるべき（left/align_xは排他。
+	//	消え残ると新しいleftへ古い-50%translateが二重に乗って表示位置がずれる）
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 375, align_x: 'center'}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 87}, reposition: 'x'});
+
+	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e?.left).toBe(87);
+	expect(e?.align_x).toBeUndefined();
+
+	S().chgLay({nm: 'a', page: 'fore', sty: {top: 480, align_y: 'bottom'}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {top: 50}, reposition: 'y'});
+	const e2 = useStore.getState().aPage[0].find(e=> e.nm === 'a');
+	expect(e2?.top).toBe(50);
+	expect(e2?.align_y).toBeUndefined();
+});
+
+it('chgLay_noRepositionKeepsStaleAlign', ()=> {
+	// reposition未指定＝現在位置からの相対移動（[fg2_squat]等の揺らし）。storeは寄せを推測で
+	//	消さず、立ち絵の設置基準（bottom寄せ）をそのまま保つ
 	S().chgLay({nm: 'a', page: 'fore', sty: {left: 375, align_x: 'center'}});
 	S().chgLay({nm: 'a', page: 'fore', sty: {left: 87}});
 
 	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
 	expect(e?.left).toBe(87);
-	expect(e?.align_x).toBeUndefined();
+	expect(e?.align_x).toBe('center');
 });
 
 it('chgLay_leftWithAlignXOverwrites', ()=> {
@@ -110,15 +127,6 @@ it('chgLay_leftWithAlignXOverwrites', ()=> {
 	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
 	expect(e?.left).toBe(100);
 	expect(e?.align_x).toBe('right');
-});
-
-it('chgLay_topAloneClearsStaleAlignY', ()=> {
-	S().chgLay({nm: 'a', page: 'fore', sty: {top: 480, align_y: 'bottom'}});
-	S().chgLay({nm: 'a', page: 'fore', sty: {top: 50}});
-
-	const e = useStore.getState().aPage[0].find(e=> e.nm === 'a');
-	expect(e?.top).toBe(50);
-	expect(e?.align_y).toBeUndefined();
 });
 
 

@@ -37,9 +37,9 @@ it('add_lay_pluginClsRegistersAndEmitsLayPlgTwice', ()=> {
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'addLay', cls: 'dmy', nm: 'x'},
-		{t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 0, top: 0, width: NaN, height: NaN}},
+		{t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 0, top: 0, width: NaN, height: NaN}, reposition: 'xy'},
 		{t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', class: 'dmy'}},
-		{t: 'chgLay', nm: 'x', page: 'back', sty: {left: 0, top: 0, width: NaN, height: NaN}},
+		{t: 'chgLay', nm: 'x', page: 'back', sty: {left: 0, top: 0, width: NaN, height: NaN}, reposition: 'xy'},
 		{t: 'layPlg', nm: 'x', page: 'back', hArg: {layer: 'x', class: 'dmy'}},
 	]);
 	expect(se.step()).toEqual([{t: 'stop', kind: 's', key: 't1:2', nm: 'mes'}]);
@@ -73,7 +73,7 @@ it('lay_pluginLayer_commonStyStillApplies', ()=> {
 	const se = new ScriptEngine('t1', '[add_lay layer=x class=dmy][lay layer=x left=10 alpha=0.5][s]');
 	se.step();
 	const a = se.step();
-	expect(a).toContainEqual({t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 10, alpha: 0.5}});
+	expect(a).toContainEqual({t: 'chgLay', nm: 'x', page: 'fore', sty: {left: 10, alpha: 0.5}, reposition: 'x'});
 	expect(a).toContainEqual({t: 'layPlg', nm: 'x', page: 'fore', hArg: {layer: 'x', left: '10', alpha: '0.5'}});
 });
 

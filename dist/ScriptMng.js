@@ -3918,14 +3918,15 @@ var _o = class f {
 			let n = t[e] ?? h[e];
 			if (n === void 0) throw `[tsy] ${e} は [lay ${e}=…] で寸法を明示したレイヤにしか使えません`;
 			return n;
-		}), a = [e.hTo, ...e.aPath ?? []], o = (e) => a.every((t) => !t[e] || t[e].rel), s = (e) => (i.includes("left") && o("left") && t.align_x !== void 0 && (e.align_x = t.align_x), i.includes("top") && o("top") && t.align_y !== void 0 && (e.align_y = t.align_y), e);
+		}), a = [e.hTo, ...e.aPath ?? []], o = (e) => i.includes(e) && a.some((t) => t[e] && !t[e].rel), s = o("left"), c = o("top"), l = s ? c ? "xy" : "x" : c ? "y" : void 0;
 		this.#oe(e, n, r, () => {
 			let t = {};
 			for (let e of i) Object.assign(t, { [e]: n[e] });
 			this.$fncs.chgLay({
 				nm: e.nm,
 				page: e.page,
-				sty: s(t)
+				sty: t,
+				...l ? { reposition: l } : {}
 			});
 		}, e.backlay ? () => {
 			let t = {};
@@ -3933,7 +3934,8 @@ var _o = class f {
 			this.$fncs.chgLay({
 				nm: e.nm,
 				page: e.page === "fore" ? "back" : "fore",
-				sty: s(t)
+				sty: t,
+				...l ? { reposition: l } : {}
 			});
 		} : void 0);
 	}
@@ -4656,7 +4658,8 @@ var _o = class f {
 				this.$fncs.chgLay({
 					nm: e.nm,
 					page: e.page,
-					sty: e.sty
+					sty: e.sty,
+					...e.reposition ? { reposition: e.reposition } : {}
 				});
 				break;
 			case "defChStyle":

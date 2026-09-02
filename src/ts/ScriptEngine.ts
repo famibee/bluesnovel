@@ -133,7 +133,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'chgStr'; nm: string; page: T_PAGE_BOTH; str: string; hard?: boolean}		// そのレイヤの「そのページでの全文字列」。[er]だけは両面（'both'）を消す。hard=消去タグ由来（[clear_text]/[er]/[p]再開）＝同内容の再表示でも出現演出を撃ち直す
 	| {t: 'clearTxtLay'; nm: string; page: T_PAGE_BOTH; clearFilter: boolean}	// [er]。本文はchgStrが消すので、こちらはボタンの消去と変形まわりの属性の初期化（本家 Layer.ts:420）
 	| {t: 'addBtn'; layerNm: string; page: T_PAGE; nm?: string; text: string; label: string; call?: boolean; fn?: string; arg?: string; url?: string; sty?: T_BTN_STY}	// 文字レイヤ(layerNm)をUIコンテナとしてボタンを追加。クリックでlabelへジャンプ（読み進め扱いにはしない）。call=true指定時はjumpではなくcall（サブルーチンコール）する。fn指定時は別スクリプトのラベルへ。arg：クリック時に&sn.eventArgとして受け取れる。url指定時はラベルへ飛ばず[navigate_to]と同じ経路でURLを開く（本家 Main.ts:179 resumeByJumpOrCall）
-	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ
+	| {t: 'chgLay'; nm: string; page: T_PAGE; sty: T_LAY_STY_ARG; reposition?: 'x' | 'y' | 'xy'}	// [lay]のレイヤ共通属性（visible/alpha/left/top/rotation/scale_*/b_color/style）。書かれた属性だけを持つ。repositionは寄せ無しのleft/top＝絶対座標への置き直しの軸（store がその軸のalign_x/align_yを落とす）
 	| {t: 'defChStyle'; kind: 'in' | 'out'; nm: string; sty: T_CH_STYLE}	// [ch_in_style]/[ch_out_style]。文字出現・消去演出の定義。名前で引けるようストアが表に持つ
 	| {t: 'autowc'; enabled: boolean; hWait: {[ch: string]: number}}	// [autowc]。文字ごとのウェイト表（ミリ秒）。enabled=falseなら表を使わずsys:sn.tagCh.msecWaitへ落ちる
 	| {t: 'clearLay'; aLayNm: string[] | null; page: T_PAGE_BOTH}	// [clear_lay]。見た目を初期値へ戻し中身も捨てる（visibleは触らない）。aLayNm=nullは全レイヤ
@@ -1345,7 +1345,13 @@ export class ScriptEngine {
 			if (args.in_style !== undefined) sty.in_style = args.in_style;
 			if (args.out_style !== undefined) sty.out_style = args.out_style;
 		}
-		if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: nmLay, page, sty});
+		// left/topを寄せ（align_x/align_y）無しで指定した＝絶対座標への置き直し。store が
+		//	キーの有無から推測せず済むよう、文脈を持つここで判定して明示する。[lay center=]/
+		//	[lay pos=c] 等は上で align を立てているので該当しない（＝絶対だが寄せ付き）
+		const xAbs = sty.left !== undefined && sty.align_x === undefined;
+		const yAbs = sty.top !== undefined && sty.align_y === undefined;
+		const reposition = xAbs ? (yAbs ? 'xy' : 'x') : yAbs ? 'y' : undefined;
+		if (Object.keys(sty).length > 0) aAct.push({t: 'chgLay', nm: nmLay, page, sty, ...(reposition ? {reposition} : {})});
 
 		// [lay filter=…]はフィルターを**置き換える**（本家 Layer.lay() の
 		//	`c.filters = [bldFilters(hArg)]`。重ねたいなら[add_filter]）。プラグインの箱にも効く

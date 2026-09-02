@@ -1799,11 +1799,13 @@ var se = class r {
 			}
 			e.in_style !== void 0 && (l.in_style = e.in_style), e.out_style !== void 0 && (l.out_style = e.out_style);
 		}
+		let d = l.left !== void 0 && l.align_x === void 0, f = l.top !== void 0 && l.align_y === void 0, p = d ? f ? "xy" : "x" : f ? "y" : void 0;
 		Object.keys(l).length > 0 && t.push({
 			t: "chgLay",
 			nm: a,
 			page: n,
-			sty: l
+			sty: l,
+			...p ? { reposition: p } : {}
 		}), e.filter !== void 0 && t.push({
 			t: "addFilter",
 			aLayNm: [a],
