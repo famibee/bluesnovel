@@ -91,18 +91,25 @@
   だけ購読を残す（`requestSkip` は `next()` 内で `getState()` から）。`Main.tsx` -31 行、
   store 更新ごとの no-op セレクタ 33 個ぶんが消える。`T_INIT_FNCS` の `Pick` リストはそのまま
   （型として「エンジンが store に依存する範囲」を明示する契約なので残す価値がある）。
-- **拡張子によるアセット種別判定がインライン反復。**（一部済・第2弾）`ScriptMng` の `chgPic`
-  内の 2 箇所は `classifyAsset(src)` に集約した。`Crypto.ts` の `.json` 特例（復号スキップ。
-  `data:`/`blob:` も含む別条件）は「種別」でなく「復号可否」の判定なので統合は保留。
+- **拡張子によるアセット種別判定がインライン反復。**（済・第2弾＋2026-09-03 で決着）
+  `ScriptMng` の `chgPic` 内の 2 箇所は `classifyAsset(src)` に集約済み。`Crypto.ts` の
+  `.json` 特例（復号スキップ。`data:`/`blob:` も含む別条件）は**共通化しない**と確定：
+  `classifyAsset` は「種別（＝アニメシート）」、`Crypto` は「復号可否（`sys.dec` で別処理）」で、
+  たまたま同じ `.endsWith('.json')` になっているだけ。`Crypto.ts` のコメントに明記した
+  （将来「共通化できる」と誤読されないため）。
 - **サウンドバッファ既定名が ~10 箇所で場当たり解決。**（済・第3弾）SE/BGM 系 5 箇所は
   `ScriptEngine.#bufOf(name, args)`＋`#A_BGM_TAG` 台帳へ、ボタン・リンク SE の既定 `'SYS'` は
   `#BTN_SE_BUF` 定数へ。`xchgbuf`（buf/buf2）と `volume` は `args.buf || 'SE'` のまま（BGM 分岐が
   無く helper に載せる意味が薄い）。
 - **文字演出スタイルの解決チェーン「cis → lay in_style → 'default'」が 3 レンダ経路に
-  インライン。**（済・第3弾）`TxtLayer.tsx` 内の 3 箇所（out×1／in×2）を `chStyIn`/`chStyOut`
-  helper 2 個に。既定値 `CH_IN_DEF`/`CH_OUT_DEF` は元々 store 初期値も参照していて重複なし
-  （agent の指摘は不正確）。組み込み名 `'default'` の生文字列 4 箇所（store 初期キー・エンジンの
-  重複名チェック Set×2・TxtLayer フォールバック）は `ChStyle.CH_DEF_NM` に統一。
+  インライン。**（済・第3弾＋2026-09-03 で決着）`TxtLayer.tsx` 内の 3 箇所（out×1／in×2）を
+  `chStyIn`/`chStyOut` helper 2 個に。既定値 `CH_IN_DEF`/`CH_OUT_DEF` は元々 store 初期値も
+  参照していて重複なし（「3 実体」という指摘は不正確）。組み込み名 `'default'` の生文字列
+  4 箇所（store 初期キー・エンジンの重複名チェック Set×2・TxtLayer フォールバック）は
+  `ChStyle.CH_DEF_NM` に統一済み。**残りの「組み込みは default 1 個」が store 初期表と
+  エンジン Set の 2 箇所に手書き、を `CH_BUILTIN_*` テーブルへ寄せる案は見送り**（2026-09-03）：
+  値の重複は既に無く、寄せると `ChStyle` が独立チャンクに分離して 22 個の dist 差分が出る割に、
+  組み込みは 1 個で増やす予定も無い＝churn > value。
 
 ## Reuse（横断ヘルパ抽出）
 

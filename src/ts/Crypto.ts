@@ -22,7 +22,9 @@ const H_PIC_EXT2MIME: {[ext: string]: string} = {
 //	（**呼び出し側の判断に任せず、ここで必ず弾く**——crypto:false時にBlob URL化してしまうと、
 //	無駄なfetch/Blob生成が走るだけでなく、元URLに依存するテスト・キャッシュキーが壊れる。
 //	Sprite.ts/FrameMng.tsはsys.cryptoを直接読めないモジュールなので、ここで一元的に判定する）。
-//	アニメpngシート本体（.json）はここを通さない——jsonはテキストなのでsys.decで別途複号する。
+//	アニメpngシート本体（.json）はここを通さない——jsonはテキストなのでsys.decで別途複号する
+//	（`.json`＝シート、はScriptMngのclassifyAssetも見るが、あちらは「種別」・ここは「復号可否」で
+//	たまたま同じ拡張子判定になっているだけ＝共通化しない）。
 //	`userdata:/…`由来（data URL）・既にBlob URL化済みのものもそのまま素通し。
 export async function decryptPicUrl(url: string, crypto: boolean, sysFetch: SysBase['fetch'], sysDecAB: SysBase['decAB']): Promise<string> {
 	if (! crypto || ! url || url.startsWith('data:') || url.startsWith('blob:') || url.endsWith('.json')) return url;

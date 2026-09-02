@@ -67,9 +67,6 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
       全レイヤ（1200 行 `TxtLayer` 含む）が毎フレーム再 render。[backpage-perf.md](backpage-perf.md)
       で「fore の毎フレーム再 render は許容・back を memo 化で対応」と一旦決着済み＝**覆すには
       1 回の render の実コストをブラウザで計測してから**。
-- [ ] 小さい尾ひれ：`Crypto.ts` の `.json` 復号スキップ判定と `classifyAsset` の関係整理、
-      文字演出既定の 3 実体（store 初期値・`#hChStyleNm`・`CH_*_DEF`）を `CH_*_DEF` seed で
-      1 つに。どちらも優先度低。
 - [ ] （別タスク）本家由来部分（`src/sn/**` ほか）の /simplify＋modern-web-guidance は
       **分析のみ**（適用しない）。本家との再取り込み衝突を増やさないため。対象を `src/sn/**` に
       絞るか本家側でやるか含めて要相談。
