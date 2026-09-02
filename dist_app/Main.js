@@ -189,7 +189,7 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 			return Error("react-stack-top-frame");
 		}
 		function c(e) {
-			if (D.call(e, "key")) {
+			if (ie.call(e, "key")) {
 				var t = Object.getOwnPropertyDescriptor(e, "key").get;
 				if (t && t.isReactWarning) return !1;
 			}
@@ -197,7 +197,7 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 		}
 		function l(e, t) {
 			function n() {
-				k || (k = !0, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", t));
+				O || (O = !0, console.error("%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)", t));
 			}
 			n.isReactWarning = !0, Object.defineProperty(e, "key", {
 				get: n,
@@ -206,7 +206,7 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 		}
 		function u() {
 			var e = t(this.type);
-			return A[e] || (A[e] = !0, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.")), e = this.props.ref, e === void 0 ? null : e;
+			return k[e] || (k[e] = !0, console.error("Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release.")), e = this.props.ref, e === void 0 ? null : e;
 		}
 		function d(e, t, n, r, i, a) {
 			var o = n.ref;
@@ -248,18 +248,18 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 			var f = n.children;
 			if (f !== void 0) {
 				if (a) {
-					if (ie(f)) {
+					if (ae(f)) {
 						for (a = 0; a < f.length; a++) p(f[a]);
 						Object.freeze && Object.freeze(f);
 					} else console.error("React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.");
 				} else p(f);
 			}
-			if (D.call(n, "key")) {
+			if (ie.call(n, "key")) {
 				f = t(e);
 				var m = Object.keys(n).filter(function(e) {
 					return e !== "key";
 				});
-				a = 0 < m.length ? "{key: someKey, " + m.join(": ..., ") + ": ...}" : "{key: someKey}", N[f + a] || (m = 0 < m.length ? "{" + m.join(": ..., ") + ": ...}" : "{}", console.error("A props object containing a \"key\" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />", a, f, m, f), N[f + a] = !0);
+				a = 0 < m.length ? "{key: someKey, " + m.join(": ..., ") + ": ...}" : "{key: someKey}", M[f + a] || (m = 0 < m.length ? "{" + m.join(": ..., ") + ": ...}" : "{}", console.error("A props object containing a \"key\" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />", a, f, m, f), M[f + a] = !0);
 			}
 			if (f = null, r !== void 0 && (i(r), f = "" + r), c(n) && (i(n.key), f = "" + n.key), "key" in n) for (var h in r = {}, n) h !== "key" && (r[h] = n[h]);
 			else r = n;
@@ -271,19 +271,19 @@ var ne = typeof document < "u" ? te : function(e) {}, w = /* @__PURE__ */ n(((e)
 		function m(e) {
 			return typeof e == "object" && !!e && e.$$typeof === g;
 		}
-		var h = r(), g = Symbol.for("react.transitional.element"), _ = Symbol.for("react.portal"), v = Symbol.for("react.fragment"), y = Symbol.for("react.strict_mode"), b = Symbol.for("react.profiler"), x = Symbol.for("react.consumer"), S = Symbol.for("react.context"), C = Symbol.for("react.forward_ref"), ee = Symbol.for("react.suspense"), te = Symbol.for("react.suspense_list"), ne = Symbol.for("react.memo"), w = Symbol.for("react.lazy"), re = Symbol.for("react.activity"), T = Symbol.for("react.client.reference"), E = h.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, D = Object.prototype.hasOwnProperty, ie = Array.isArray, O = console.createTask ? console.createTask : function() {
+		var h = r(), g = Symbol.for("react.transitional.element"), _ = Symbol.for("react.portal"), v = Symbol.for("react.fragment"), y = Symbol.for("react.strict_mode"), b = Symbol.for("react.profiler"), x = Symbol.for("react.consumer"), S = Symbol.for("react.context"), C = Symbol.for("react.forward_ref"), ee = Symbol.for("react.suspense"), te = Symbol.for("react.suspense_list"), ne = Symbol.for("react.memo"), w = Symbol.for("react.lazy"), re = Symbol.for("react.activity"), T = Symbol.for("react.client.reference"), E = h.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ie = Object.prototype.hasOwnProperty, ae = Array.isArray, D = console.createTask ? console.createTask : function() {
 			return null;
 		};
 		h = { react_stack_bottom_frame: function(e) {
 			return e();
 		} };
-		var k, A = {}, j = h.react_stack_bottom_frame.bind(h, s)(), M = O(a(s)), N = {};
+		var O, k = {}, A = h.react_stack_bottom_frame.bind(h, s)(), j = D(a(s)), M = {};
 		e.Fragment = v, e.jsx = function(e, t, n) {
 			var r = 1e4 > E.recentlyCreatedOwnerStacks++;
-			return f(e, t, n, !1, r ? Error("react-stack-top-frame") : j, r ? O(a(e)) : M);
+			return f(e, t, n, !1, r ? Error("react-stack-top-frame") : A, r ? D(a(e)) : j);
 		}, e.jsxs = function(e, t, n) {
 			var r = 1e4 > E.recentlyCreatedOwnerStacks++;
-			return f(e, t, n, !0, r ? Error("react-stack-top-frame") : j, r ? O(a(e)) : M);
+			return f(e, t, n, !0, r ? Error("react-stack-top-frame") : A, r ? D(a(e)) : j);
 		};
 	})();
 })), T = /* @__PURE__ */ t((/* @__PURE__ */ n(((e, t) => {
@@ -294,11 +294,11 @@ function E(e) {
 	/* istanbul ignore next */
 	for (var t = 0; t < document.styleSheets.length; t++) if (document.styleSheets[t].ownerNode === e) return document.styleSheets[t];
 }
-function D(e) {
+function ie(e) {
 	var t = document.createElement("style");
 	return t.setAttribute("data-emotion", e.key), e.nonce !== void 0 && t.setAttribute("nonce", e.nonce), t.appendChild(document.createTextNode("")), t.setAttribute("data-s", ""), t;
 }
-var ie = /*#__PURE__*/ function() {
+var ae = /*#__PURE__*/ function() {
 	function e(e) {
 		var t = this;
 		this._insertTag = function(e) {
@@ -310,7 +310,7 @@ var ie = /*#__PURE__*/ function() {
 	return t.hydrate = function(e) {
 		e.forEach(this._insertTag);
 	}, t.insert = function(e) {
-		this.ctr % (this.isSpeedy ? 65e3 : 1) == 0 && this._insertTag(D(this));
+		this.ctr % (this.isSpeedy ? 65e3 : 1) == 0 && this._insertTag(ie(this));
 		var t = this.tags[this.tags.length - 1];
 		if (this.isSpeedy) {
 			var n = E(t);
@@ -324,43 +324,43 @@ var ie = /*#__PURE__*/ function() {
 			return e.parentNode?.removeChild(e);
 		}), this.tags = [], this.ctr = 0;
 	}, e;
-}(), O = "-ms-", k = "-moz-", A = "-webkit-", j = "comm", M = "rule", N = "decl", ae = "@import", oe = "@keyframes", P = "@layer", se = Math.abs, F = String.fromCharCode, ce = Object.assign;
-function le(e, t) {
-	return L(e, 0) ^ 45 ? (((t << 2 ^ L(e, 0)) << 2 ^ L(e, 1)) << 2 ^ L(e, 2)) << 2 ^ L(e, 3) : 0;
+}(), D = "-ms-", O = "-moz-", k = "-webkit-", A = "comm", j = "rule", M = "decl", oe = "@import", se = "@keyframes", ce = "@layer", le = Math.abs, N = String.fromCharCode, ue = Object.assign;
+function de(e, t) {
+	return F(e, 0) ^ 45 ? (((t << 2 ^ F(e, 0)) << 2 ^ F(e, 1)) << 2 ^ F(e, 2)) << 2 ^ F(e, 3) : 0;
 }
-function ue(e) {
+function fe(e) {
 	return e.trim();
 }
-function de(e, t) {
+function pe(e, t) {
 	return (e = t.exec(e)) ? e[0] : e;
 }
-function I(e, t, n) {
+function P(e, t, n) {
 	return e.replace(t, n);
 }
-function fe(e, t) {
+function me(e, t) {
 	return e.indexOf(t);
 }
-function L(e, t) {
+function F(e, t) {
 	return e.charCodeAt(t) | 0;
 }
-function R(e, t, n) {
+function I(e, t, n) {
 	return e.slice(t, n);
 }
-function z(e) {
+function L(e) {
 	return e.length;
 }
-function pe(e) {
+function he(e) {
 	return e.length;
 }
-function me(e, t) {
+function R(e, t) {
 	return t.push(e), e;
 }
-function he(e, t) {
+function ge(e, t) {
 	return e.map(t).join("");
 }
 //#endregion
 //#region node_modules/stylis/src/Tokenizer.js
-var ge = 1, B = 1, _e = 0, V = 0, H = 0, U = "";
+var z = 1, B = 1, _e = 0, V = 0, H = 0, U = "";
 function ve(e, t, n, r, i, a, o) {
 	return {
 		value: e,
@@ -369,32 +369,32 @@ function ve(e, t, n, r, i, a, o) {
 		type: r,
 		props: i,
 		children: a,
-		line: ge,
+		line: z,
 		column: B,
 		length: o,
 		return: ""
 	};
 }
 function W(e, t) {
-	return ce(ve("", null, null, "", null, null, 0), e, { length: -e.length }, t);
+	return ue(ve("", null, null, "", null, null, 0), e, { length: -e.length }, t);
 }
 function ye() {
 	return H;
 }
 function be() {
-	return H = V > 0 ? L(U, --V) : 0, B--, H === 10 && (B = 1, ge--), H;
+	return H = V > 0 ? F(U, --V) : 0, B--, H === 10 && (B = 1, z--), H;
 }
 function G() {
-	return H = V < _e ? L(U, V++) : 0, B++, H === 10 && (B = 1, ge++), H;
+	return H = V < _e ? F(U, V++) : 0, B++, H === 10 && (B = 1, z++), H;
 }
 function K() {
-	return L(U, V);
+	return F(U, V);
 }
 function xe() {
 	return V;
 }
 function q(e, t) {
-	return R(U, e, t);
+	return I(U, e, t);
 }
 function J(e) {
 	switch (e) {
@@ -424,13 +424,13 @@ function J(e) {
 	return 0;
 }
 function Se(e) {
-	return ge = B = 1, _e = z(U = e), V = 0, [];
+	return z = B = 1, _e = L(U = e), V = 0, [];
 }
 function Ce(e) {
 	return U = "", e;
 }
 function we(e) {
-	return ue(q(V - 1, De(e === 91 ? e + 2 : e === 40 ? e + 1 : e)));
+	return fe(q(V - 1, De(e === 91 ? e + 2 : e === 40 ? e + 1 : e)));
 }
 function Te(e) {
 	for (; (H = K()) && H < 33;) G();
@@ -456,7 +456,7 @@ function De(e) {
 }
 function Oe(e, t) {
 	for (; G() && e + H !== 57 && (e + H !== 84 || K() !== 47););
-	return "/*" + q(t, V - 1) + "*" + F(e === 47 ? e : G());
+	return "/*" + q(t, V - 1) + "*" + N(e === 47 ? e : G());
 }
 function ke(e) {
 	for (; !J(K());) G();
@@ -469,8 +469,8 @@ function Ae(e) {
 }
 function je(e, t, n, r, i, a, o, s, c) {
 	for (var l = 0, u = 0, d = o, f = 0, p = 0, m = 0, h = 1, g = 1, _ = 1, v = 0, y = "", b = i, x = a, S = r, C = y; g;) switch (m = v, v = G()) {
-		case 40: if (m != 108 && L(C, d - 1) == 58) {
-			fe(C += I(we(v), "&", "&\f"), "&\f") != -1 && (_ = -1);
+		case 40: if (m != 108 && F(C, d - 1) == 58) {
+			me(C += P(we(v), "&", "&\f"), "&\f") != -1 && (_ = -1);
 			break;
 		}
 		case 34:
@@ -491,12 +491,12 @@ function je(e, t, n, r, i, a, o, s, c) {
 			switch (K()) {
 				case 42:
 				case 47:
-					me(Ne(Oe(G(), xe()), t, n), c);
+					R(Ne(Oe(G(), xe()), t, n), c);
 					break;
 				default: C += "/";
 			}
 			break;
-		case 123 * h: s[l++] = z(C) * _;
+		case 123 * h: s[l++] = L(C) * _;
 		case 125 * h:
 		case 59:
 		case 0:
@@ -504,17 +504,17 @@ function je(e, t, n, r, i, a, o, s, c) {
 				case 0:
 				case 125: g = 0;
 				case 59 + u:
-					_ == -1 && (C = I(C, /\f/g, "")), p > 0 && z(C) - d && me(p > 32 ? Pe(C + ";", r, n, d - 1) : Pe(I(C, " ", "") + ";", r, n, d - 2), c);
+					_ == -1 && (C = P(C, /\f/g, "")), p > 0 && L(C) - d && R(p > 32 ? Pe(C + ";", r, n, d - 1) : Pe(P(C, " ", "") + ";", r, n, d - 2), c);
 					break;
 				case 59: C += ";";
-				default: if (me(S = Me(C, t, n, l, u, i, s, y, b = [], x = [], d), a), v === 123) {
+				default: if (R(S = Me(C, t, n, l, u, i, s, y, b = [], x = [], d), a), v === 123) {
 					if (u === 0) je(C, t, S, S, b, a, d, s, x);
-					else switch (f === 99 && L(C, 3) === 110 ? 100 : f) {
+					else switch (f === 99 && F(C, 3) === 110 ? 100 : f) {
 						case 100:
 						case 108:
 						case 109:
 						case 115:
-							je(e, S, S, r && me(Me(e, S, S, 0, 0, i, s, y, i, b = [], d), x), i, x, d, s, r ? b : x);
+							je(e, S, S, r && R(Me(e, S, S, 0, 0, i, s, y, i, b = [], d), x), i, x, d, s, r ? b : x);
 							break;
 						default: je(C, S, S, S, [""], x, 0, s, x);
 					}
@@ -522,58 +522,58 @@ function je(e, t, n, r, i, a, o, s, c) {
 			}
 			l = u = p = 0, h = _ = 1, y = C = "", d = o;
 			break;
-		case 58: d = 1 + z(C), p = m;
+		case 58: d = 1 + L(C), p = m;
 		default:
 			if (h < 1) {
 				if (v == 123) --h;
 				else if (v == 125 && h++ == 0 && be() == 125) continue;
 			}
-			switch (C += F(v), v * h) {
+			switch (C += N(v), v * h) {
 				case 38:
 					_ = u > 0 ? 1 : (C += "\f", -1);
 					break;
 				case 44:
-					s[l++] = (z(C) - 1) * _, _ = 1;
+					s[l++] = (L(C) - 1) * _, _ = 1;
 					break;
 				case 64:
-					K() === 45 && (C += we(G())), f = K(), u = d = z(y = C += ke(xe())), v++;
+					K() === 45 && (C += we(G())), f = K(), u = d = L(y = C += ke(xe())), v++;
 					break;
-				case 45: m === 45 && z(C) == 2 && (h = 0);
+				case 45: m === 45 && L(C) == 2 && (h = 0);
 			}
 	}
 	return a;
 }
 function Me(e, t, n, r, i, a, o, s, c, l, u) {
-	for (var d = i - 1, f = i === 0 ? a : [""], p = pe(f), m = 0, h = 0, g = 0; m < r; ++m) for (var _ = 0, v = R(e, d + 1, d = se(h = o[m])), y = e; _ < p; ++_) (y = ue(h > 0 ? f[_] + " " + v : I(v, /&\f/g, f[_]))) && (c[g++] = y);
-	return ve(e, t, n, i === 0 ? M : s, c, l, u);
+	for (var d = i - 1, f = i === 0 ? a : [""], p = he(f), m = 0, h = 0, g = 0; m < r; ++m) for (var _ = 0, v = I(e, d + 1, d = le(h = o[m])), y = e; _ < p; ++_) (y = fe(h > 0 ? f[_] + " " + v : P(v, /&\f/g, f[_]))) && (c[g++] = y);
+	return ve(e, t, n, i === 0 ? j : s, c, l, u);
 }
 function Ne(e, t, n) {
-	return ve(e, t, n, j, F(ye()), R(e, 2, -2), 0);
+	return ve(e, t, n, A, N(ye()), I(e, 2, -2), 0);
 }
 function Pe(e, t, n, r) {
-	return ve(e, t, n, N, R(e, 0, r), R(e, r + 1, -1), r);
+	return ve(e, t, n, M, I(e, 0, r), I(e, r + 1, -1), r);
 }
 //#endregion
 //#region node_modules/stylis/src/Serializer.js
 function Y(e, t) {
-	for (var n = "", r = pe(e), i = 0; i < r; i++) n += t(e[i], i, e, t) || "";
+	for (var n = "", r = he(e), i = 0; i < r; i++) n += t(e[i], i, e, t) || "";
 	return n;
 }
 function Fe(e, t, n, r) {
 	switch (e.type) {
-		case P: if (e.children.length) break;
-		case ae:
-		case N: return e.return = e.return || e.value;
-		case j: return "";
-		case oe: return e.return = e.value + "{" + Y(e.children, r) + "}";
-		case M: e.value = e.props.join(",");
+		case ce: if (e.children.length) break;
+		case oe:
+		case M: return e.return = e.return || e.value;
+		case A: return "";
+		case se: return e.return = e.value + "{" + Y(e.children, r) + "}";
+		case j: e.value = e.props.join(",");
 	}
-	return z(n = Y(e.children, r)) ? e.return = e.value + "{" + n + "}" : "";
+	return L(n = Y(e.children, r)) ? e.return = e.value + "{" + n + "}" : "";
 }
 //#endregion
 //#region node_modules/stylis/src/Middleware.js
 function Ie(e) {
-	var t = pe(e);
+	var t = he(e);
 	return function(n, r, i, a) {
 		for (var o = "", s = 0; s < t; s++) o += e[s](n, r, i, a) || "";
 		return o;
@@ -611,7 +611,7 @@ var ze = function(e, t, n) {
 				e[++n] = K() === 58 ? "&\f" : "", t[n] = e[n].length;
 				break;
 			}
-			default: e[n] += F(r);
+			default: e[n] += N(r);
 		}
 	while (r = G());
 	return e;
@@ -632,8 +632,8 @@ var ze = function(e, t, n) {
 	}
 };
 function Ge(e, t) {
-	switch (le(e, t)) {
-		case 5103: return A + "print-" + e + e;
+	switch (de(e, t)) {
+		case 5103: return k + "print-" + e + e;
 		case 5737:
 		case 4201:
 		case 3177:
@@ -658,30 +658,30 @@ function Ge(e, t) {
 		case 5109:
 		case 5365:
 		case 5621:
-		case 3829: return A + e + e;
+		case 3829: return k + e + e;
 		case 5349:
 		case 4246:
 		case 4810:
 		case 6968:
-		case 2756: return A + e + k + e + O + e + e;
+		case 2756: return k + e + O + e + D + e + e;
 		case 6828:
-		case 4268: return A + e + O + e + e;
-		case 6165: return A + e + O + "flex-" + e + e;
-		case 5187: return A + e + I(e, /(\w+).+(:[^]+)/, A + "box-$1$2" + O + "flex-$1$2") + e;
-		case 5443: return A + e + O + "flex-item-" + I(e, /flex-|-self/, "") + e;
-		case 4675: return A + e + O + "flex-line-pack" + I(e, /align-content|flex-|-self/, "") + e;
-		case 5548: return A + e + O + I(e, "shrink", "negative") + e;
-		case 5292: return A + e + O + I(e, "basis", "preferred-size") + e;
-		case 6060: return A + "box-" + I(e, "-grow", "") + A + e + O + I(e, "grow", "positive") + e;
-		case 4554: return A + I(e, /([^-])(transform)/g, "$1" + A + "$2") + e;
-		case 6187: return I(I(I(e, /(zoom-|grab)/, A + "$1"), /(image-set)/, A + "$1"), e, "") + e;
+		case 4268: return k + e + D + e + e;
+		case 6165: return k + e + D + "flex-" + e + e;
+		case 5187: return k + e + P(e, /(\w+).+(:[^]+)/, k + "box-$1$2" + D + "flex-$1$2") + e;
+		case 5443: return k + e + D + "flex-item-" + P(e, /flex-|-self/, "") + e;
+		case 4675: return k + e + D + "flex-line-pack" + P(e, /align-content|flex-|-self/, "") + e;
+		case 5548: return k + e + D + P(e, "shrink", "negative") + e;
+		case 5292: return k + e + D + P(e, "basis", "preferred-size") + e;
+		case 6060: return k + "box-" + P(e, "-grow", "") + k + e + D + P(e, "grow", "positive") + e;
+		case 4554: return k + P(e, /([^-])(transform)/g, "$1" + k + "$2") + e;
+		case 6187: return P(P(P(e, /(zoom-|grab)/, k + "$1"), /(image-set)/, k + "$1"), e, "") + e;
 		case 5495:
-		case 3959: return I(e, /(image-set\([^]*)/, A + "$1$`$1");
-		case 4968: return I(I(e, /(.+:)(flex-)?(.*)/, A + "box-pack:$3" + O + "flex-pack:$3"), /s.+-b[^;]+/, "justify") + A + e + e;
+		case 3959: return P(e, /(image-set\([^]*)/, k + "$1$`$1");
+		case 4968: return P(P(e, /(.+:)(flex-)?(.*)/, k + "box-pack:$3" + D + "flex-pack:$3"), /s.+-b[^;]+/, "justify") + k + e + e;
 		case 4095:
 		case 3583:
 		case 4068:
-		case 2532: return I(e, /(.+)-inline(.+)/, A + "$1$2") + e;
+		case 2532: return P(e, /(.+)-inline(.+)/, k + "$1$2") + e;
 		case 8116:
 		case 7059:
 		case 5753:
@@ -694,43 +694,43 @@ function Ge(e, t) {
 		case 5789:
 		case 5021:
 		case 4765:
-			if (z(e) - 1 - t > 6) switch (L(e, t + 1)) {
-				case 109: if (L(e, t + 4) !== 45) break;
-				case 102: return I(e, /(.+:)(.+)-([^]+)/, "$1" + A + "$2-$3$1" + k + (L(e, t + 3) == 108 ? "$3" : "$2-$3")) + e;
-				case 115: return ~fe(e, "stretch") ? Ge(I(e, "stretch", "fill-available"), t) + e : e;
+			if (L(e) - 1 - t > 6) switch (F(e, t + 1)) {
+				case 109: if (F(e, t + 4) !== 45) break;
+				case 102: return P(e, /(.+:)(.+)-([^]+)/, "$1" + k + "$2-$3$1" + O + (F(e, t + 3) == 108 ? "$3" : "$2-$3")) + e;
+				case 115: return ~me(e, "stretch") ? Ge(P(e, "stretch", "fill-available"), t) + e : e;
 			}
 			break;
-		case 4949: if (L(e, t + 1) !== 115) break;
+		case 4949: if (F(e, t + 1) !== 115) break;
 		case 6444:
-			switch (L(e, z(e) - 3 - (~fe(e, "!important") && 10))) {
-				case 107: return I(e, ":", ":" + A) + e;
-				case 101: return I(e, /(.+:)([^;!]+)(;|!.+)?/, "$1" + A + (L(e, 14) === 45 ? "inline-" : "") + "box$3$1" + A + "$2$3$1" + O + "$2box$3") + e;
+			switch (F(e, L(e) - 3 - (~me(e, "!important") && 10))) {
+				case 107: return P(e, ":", ":" + k) + e;
+				case 101: return P(e, /(.+:)([^;!]+)(;|!.+)?/, "$1" + k + (F(e, 14) === 45 ? "inline-" : "") + "box$3$1" + k + "$2$3$1" + D + "$2box$3") + e;
 			}
 			break;
 		case 5936:
-			switch (L(e, t + 11)) {
-				case 114: return A + e + O + I(e, /[svh]\w+-[tblr]{2}/, "tb") + e;
-				case 108: return A + e + O + I(e, /[svh]\w+-[tblr]{2}/, "tb-rl") + e;
-				case 45: return A + e + O + I(e, /[svh]\w+-[tblr]{2}/, "lr") + e;
+			switch (F(e, t + 11)) {
+				case 114: return k + e + D + P(e, /[svh]\w+-[tblr]{2}/, "tb") + e;
+				case 108: return k + e + D + P(e, /[svh]\w+-[tblr]{2}/, "tb-rl") + e;
+				case 45: return k + e + D + P(e, /[svh]\w+-[tblr]{2}/, "lr") + e;
 			}
-			return A + e + O + e + e;
+			return k + e + D + e + e;
 	}
 	return e;
 }
 var Ke = [function(e, t, n, r) {
 	if (e.length > -1 && !e.return) switch (e.type) {
-		case N:
+		case M:
 			e.return = Ge(e.value, e.length);
 			break;
-		case oe: return Y([W(e, { value: I(e.value, "@", "@" + A) })], r);
-		case M: if (e.length) return he(e.props, function(t) {
-			switch (de(t, /(::plac\w+|:read-\w+)/)) {
+		case se: return Y([W(e, { value: P(e.value, "@", "@" + k) })], r);
+		case j: if (e.length) return ge(e.props, function(t) {
+			switch (pe(t, /(::plac\w+|:read-\w+)/)) {
 				case ":read-only":
-				case ":read-write": return Y([W(e, { props: [I(t, /:(read-\w+)/, ":" + k + "$1")] })], r);
+				case ":read-write": return Y([W(e, { props: [P(t, /:(read-\w+)/, ":" + O + "$1")] })], r);
 				case "::placeholder": return Y([
-					W(e, { props: [I(t, /:(plac\w+)/, ":" + A + "input-$1")] }),
-					W(e, { props: [I(t, /:(plac\w+)/, ":" + k + "$1")] }),
-					W(e, { props: [I(t, /:(plac\w+)/, O + "input-$1")] })
+					W(e, { props: [P(t, /:(plac\w+)/, ":" + k + "input-$1")] }),
+					W(e, { props: [P(t, /:(plac\w+)/, ":" + O + "$1")] }),
+					W(e, { props: [P(t, /:(plac\w+)/, D + "input-$1")] })
 				], r);
 			}
 			return "";
@@ -759,7 +759,7 @@ var Ke = [function(e, t, n, r) {
 	};
 	var p = {
 		key: t,
-		sheet: new ie({
+		sheet: new ae({
 			key: t,
 			container: a,
 			nonce: e.nonce,
@@ -863,47 +863,47 @@ var Ke = [function(e, t, n, r) {
 				}
 			}
 		}
-		var S = l, C = u, ee = c, te = s, ne = n, w = d, re = i, T = h, E = m, D = r, ie = o, O = a, k = f, A = !1;
-		function j(e) {
-			return A || (A = !0, console.warn("The ReactIs.isAsyncMode() alias has been deprecated, and will be removed in React 17+. Update your code to use ReactIs.isConcurrentMode() instead. It has the exact same API.")), M(e) || x(e) === l;
+		var S = l, C = u, ee = c, te = s, ne = n, w = d, re = i, T = h, E = m, ie = r, ae = o, D = a, O = f, k = !1;
+		function A(e) {
+			return k || (k = !0, console.warn("The ReactIs.isAsyncMode() alias has been deprecated, and will be removed in React 17+. Update your code to use ReactIs.isConcurrentMode() instead. It has the exact same API.")), j(e) || x(e) === l;
 		}
-		function M(e) {
+		function j(e) {
 			return x(e) === u;
 		}
-		function N(e) {
+		function M(e) {
 			return x(e) === c;
 		}
-		function ae(e) {
+		function oe(e) {
 			return x(e) === s;
 		}
-		function oe(e) {
+		function se(e) {
 			return typeof e == "object" && !!e && e.$$typeof === n;
 		}
-		function P(e) {
+		function ce(e) {
 			return x(e) === d;
 		}
-		function se(e) {
+		function le(e) {
 			return x(e) === i;
 		}
-		function F(e) {
+		function N(e) {
 			return x(e) === h;
 		}
-		function ce(e) {
+		function ue(e) {
 			return x(e) === m;
 		}
-		function le(e) {
+		function de(e) {
 			return x(e) === r;
 		}
-		function ue(e) {
+		function fe(e) {
 			return x(e) === o;
 		}
-		function de(e) {
+		function pe(e) {
 			return x(e) === a;
 		}
-		function I(e) {
+		function P(e) {
 			return x(e) === f;
 		}
-		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = ee, e.ContextProvider = te, e.Element = ne, e.ForwardRef = w, e.Fragment = re, e.Lazy = T, e.Memo = E, e.Portal = D, e.Profiler = ie, e.StrictMode = O, e.Suspense = k, e.isAsyncMode = j, e.isConcurrentMode = M, e.isContextConsumer = N, e.isContextProvider = ae, e.isElement = oe, e.isForwardRef = P, e.isFragment = se, e.isLazy = F, e.isMemo = ce, e.isPortal = le, e.isProfiler = ue, e.isStrictMode = de, e.isSuspense = I, e.isValidElementType = b, e.typeOf = x;
+		e.AsyncMode = S, e.ConcurrentMode = C, e.ContextConsumer = ee, e.ContextProvider = te, e.Element = ne, e.ForwardRef = w, e.Fragment = re, e.Lazy = T, e.Memo = E, e.Portal = ie, e.Profiler = ae, e.StrictMode = D, e.Suspense = O, e.isAsyncMode = A, e.isConcurrentMode = j, e.isContextConsumer = M, e.isContextProvider = oe, e.isElement = se, e.isForwardRef = ce, e.isFragment = le, e.isLazy = N, e.isMemo = ue, e.isPortal = de, e.isProfiler = fe, e.isStrictMode = pe, e.isSuspense = P, e.isValidElementType = b, e.typeOf = x;
 	})();
 })), Xe = /* @__PURE__ */ n(((e, t) => {
 	t.exports = process.env.NODE_ENV === "production" ? Je() : Ye();
@@ -1203,56 +1203,21 @@ function Dt({ arg: e, inited: t }) {
 			e.textContent = o;
 		});
 	}, [o]);
-	let c = a((e) => e.addLayer), l = a((e) => e.chgPic), u = a((e) => e.chgBAlpha), f = a((e) => e.chgStr), p = a((e) => e.chgLay), m = a((e) => e.defChStyle), h = a((e) => e.setChWait), v = a((e) => e.setAutowc), y = a((e) => e.getLaySty), b = a((e) => e.getForeIdx), x = a((e) => e.getPages), S = a((e) => e.chgBPic), ee = a((e) => e.chgBackClear), te = a((e) => e.setBackAlpha), w = a((e) => e.setBtnFont), re = a((e) => e.getPagesJson), T = a((e) => e.replace), E = a((e) => e.toggleFullScr), D = a((e) => e.clearLay), ie = a((e) => e.clearTxtLay), O = a((e) => e.moveLay), k = a((e) => e.chgFilter), A = a((e) => e.chgFx), j = a((e) => e.enableEvent), M = a((e) => e.addBtn), N = a((e) => e.setReadBack), ae = a((e) => e.setStyPaging), oe = a((e) => e.isReadBack), P = a((e) => e.isTyping), se = (0, g.useRef)(P);
-	se.current = P;
-	let F = a((e) => e.requestSkip), ce = a((e) => e.setWait), le = a((e) => e.setSkipping), ue = a((e) => e.startTrans), de = a((e) => e.finishTrans), I = a((e) => e.startQuake), fe = a((e) => e.finishQuake);
-	function L() {
+	let c = a((e) => e.isReadBack), l = a((e) => e.isTyping), u = (0, g.useRef)(l);
+	u.current = l;
+	function f() {
 		i.go();
 	}
 	_(() => {
 		s(r.cfg.oCfg.book.title);
 		let e = Object.create(null);
 		return i.attachTsx(() => n.dispatchEvent(new CustomEvent("ev_next", {})), {
-			addLayer: c,
-			chgPic: l,
-			chgBAlpha: u,
-			chgBPic: S,
-			chgBackClear: ee,
-			setBackAlpha: te,
-			setBtnFont: w,
-			chgStr: f,
-			chgLay: p,
-			defChStyle: m,
-			setChWait: h,
-			setAutowc: v,
-			getLaySty: y,
-			getForeIdx: b,
-			getPages: x,
-			getPagesJson: re,
-			replace: T,
-			clearLay: D,
-			clearTxtLay: ie,
-			moveLay: O,
-			chgFilter: k,
-			chgFx: A,
-			enableEvent: j,
-			addBtn: M,
-			addTitle: s,
-			toggleFullScr: E,
-			setWait: ce,
-			requestSkip: F,
-			setSkipping: le,
-			startTrans: ue,
-			finishTrans: de,
-			startQuake: I,
-			finishQuake: fe,
-			setReadBack: N,
-			setStyPaging: ae,
-			isTyping: () => se.current
-		}, e), t(), n.addEventListener("ev_next", L), () => n.removeEventListener("ev_next", L);
+			...a.getState(),
+			isTyping: () => u.current
+		}, e), t(), n.addEventListener("ev_next", f), () => n.removeEventListener("ev_next", f);
 	}), (0, g.useEffect)(() => {
-		P || i.onTypingDone();
-	}, [P, i]), _(() => {
+		l || i.onTypingDone();
+	}, [l, i]), _(() => {
 		let e = (e) => i.setKeyDown(e.key, !0), t = (e) => i.setKeyDown(e.key, !1), n = () => i.clearKeyDown();
 		return document.addEventListener("keydown", e), document.addEventListener("keyup", t), globalThis.addEventListener("blur", n), () => {
 			document.removeEventListener("keydown", e), document.removeEventListener("keyup", t), globalThis.removeEventListener("blur", n);
@@ -1278,18 +1243,18 @@ function Dt({ arg: e, inited: t }) {
 			document.removeEventListener("contextmenu", e);
 		};
 	});
-	function R() {
-		if (P) {
-			F();
+	function p() {
+		if (l) {
+			a.getState().requestSkip();
 			return;
 		}
-		if (oe) {
+		if (c) {
 			i.page("next");
 			return;
 		}
-		L();
+		f();
 	}
-	function z() {
+	function m() {
 		i.page("prev");
 	}
 	C(() => !0, (e) => {
@@ -1308,25 +1273,25 @@ function Dt({ arg: e, inited: t }) {
 			case "Space":
 			case "ArrowDown":
 			case "PageDown":
-				e.stopPropagation(), e.preventDefault(), R();
+				e.stopPropagation(), e.preventDefault(), p();
 				break;
-			case "PageUp": e.stopPropagation(), e.preventDefault(), z();
+			case "PageUp": e.stopPropagation(), e.preventDefault(), m();
 		}
 	});
-	function pe() {
+	function h() {
 		if (Mt) {
 			Mt = !1;
 			return;
 		}
-		At || (i.cancelAuto(), i.unlockAudio(), !i.fireEvent("click") && R());
+		At || (i.cancelAuto(), i.unlockAudio(), !i.fireEvent("click") && p());
 	}
 	return /* @__PURE__ */ $(g.Suspense, {
 		fallback: /* @__PURE__ */ $(St, { children: "Loading" }),
 		children: /* @__PURE__ */ $(Tt, {
 			arg: e,
-			next: R,
-			prev: z,
-			onClick: pe
+			next: p,
+			prev: m,
+			onClick: h
 		})
 	});
 }

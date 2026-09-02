@@ -19,8 +19,12 @@
 - `（第3弾・Altitude 一部）` … **`ScriptEngine.#bufOf(name, args)`＋`#A_BGM_TAG`**（SE/BGM
   バッファ名解決の 5 箇所と「どのタグが BGM か」の台帳を 1 箇所に）、**`#BTN_SE_BUF='SYS'`**
   （ボタン・リンク SE の既定を 6 箇所の生文字列から定数へ）、**`chStyIn`/`chStyOut`**（TxtLayer、
-  文字演出スタイルのフォールバックチェーンを 1+2 箇所 → helper 2 個へ）、**`ChStyle.CH_DEF_NM`**
-  （組み込み演出名 `'default'` の生文字列 4 箇所を定数へ）
+  文字演出スタイルのフォールバックチェーンを 1+2 箇所 → helper 2 個へ）
+- `4288118`（第3-4弾）… **`ChStyle.CH_DEF_NM`**（組み込み演出名 `'default'` の生文字列 4 箇所を
+  定数へ）
+- `（第5弾）` … **`Main.tsx` のセレクタ手配線撤去**（33 個の `useStore(s=>s.x)` →
+  `{...useStore.getState(), isTyping}` の 1 行。-31 行。`T_INIT_FNCS` の Pick リストは
+  「エンジンが store に依存する範囲」の契約として残す）
 
 ## Altitude（下の機構を一般化する）
 
@@ -55,12 +59,13 @@
   足された。
   → 意図を payload に明示（`chgLay` に `reposition: 'absolute' | 'nudge'`）、エンジン／
   ScriptMng が 1 回だけ決める。store がキーの有無から推測し呼ぶ側が対策する構図をやめる。
-- **エンジン→store ブリッジが ~35 個の名前付きセレクタ手配線（3 リスト同期）。**
-  `Main.tsx` が `attachTsx` へ渡す store アクション ~35 個を `useStore(s=>s.x)` で個別取得
-  しリテラルで束ね、同じ名前を `T_INIT_FNCS` の `Pick` でも列挙。追加＝3 箇所編集。
-  zustand のアクションは安定参照なので ~30 個は一生発火しない購読。
-  → `scrMng` に `useStore.getState`（またはバインド済み store）を 1 回渡す。リアクティブが
-  要る値（`isTyping`）だけセレクタ購読。
+- **エンジン→store ブリッジが ~35 個の名前付きセレクタ手配線。**（済・第5弾）`Main.tsx` の
+  33 個の `useStore(s=>s.x)`（＋`attachTsx` へ渡すリテラル）を撤去し、`{...useStore.getState(),
+  isTyping: ()=> isTypingRef.current}` の 1 行に。`T_INIT_FNCS` は全部 Pick された安定アクション
+  なので `getState()` のスナップショットで恒久的に正しい。値が変わる `isReadBack`/`isTyping`
+  だけ購読を残す（`requestSkip` は `next()` 内で `getState()` から）。`Main.tsx` -31 行、
+  store 更新ごとの no-op セレクタ 33 個ぶんが消える。`T_INIT_FNCS` の `Pick` リストはそのまま
+  （型として「エンジンが store に依存する範囲」を明示する契約なので残す価値がある）。
 - **拡張子によるアセット種別判定がインライン反復。**（一部済・第2弾）`ScriptMng` の `chgPic`
   内の 2 箇所は `classifyAsset(src)` に集約した。`Crypto.ts` の `.json` 特例（復号スキップ。
   `data:`/`blob:` も含む別条件）は「種別」でなく「復号可否」の判定なので統合は保留。

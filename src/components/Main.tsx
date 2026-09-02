@@ -42,51 +42,20 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 		document.querySelectorAll('[data-title]').forEach(v=> {v.textContent = title});
 	}, [title]);
 
-	const addLayer = useStore(s=> s.addLayer);
-	const chgPic = useStore(s=> s.chgPic);
-	const chgBAlpha = useStore(s=> s.chgBAlpha);
-	const chgStr = useStore(s=> s.chgStr);
-	const chgLay = useStore(s=> s.chgLay);
-	const defChStyle = useStore(s=> s.defChStyle);	// [ch_in_style]/[ch_out_style]の定義
-	const setChWait = useStore(s=> s.setChWait);	// 1文字あたりの待ち（sys:sn.tagCh.*＋既読状態）
-	const setAutowc = useStore(s=> s.setAutowc);	// [autowc]の文字ごとウェイト表
-	const getLaySty = useStore(s=> s.getLaySty);	// [tsy]がレイヤの現在値（＝トゥイーン開始値）を読むため
-	const getForeIdx = useStore(s=> s.getForeIdx);	// プラグインレイヤー（PlgLayMng）のページ添字解決用
-	const getPages = useStore(s=> s.getPages);	// [dump_lay]用
-	const chgBPic = useStore(s=> s.chgBPic);	// [lay b_pic=…]（文字レイヤ背後の枠画像）
-	const chgBackClear = useStore(s=> s.chgBackClear);	// [lay back_clear=true]（文字レイヤ背景を初期状態へ）
-	const setBackAlpha = useStore(s=> s.setBackAlpha);	// sys:TextLayer.Back.Alpha（全文字レイヤ共通の掛け率）
-	const setBtnFont = useStore(s=> s.setBtnFont);	// tmp:sn.button.fontFamily（[button]の文字フォント）
-	const getPagesJson = useStore(s=> s.getPagesJson);	// しおり（[record_place]/[save]）用
-	const replace = useStore(s=> s.replace);			// しおりからの復元（[load]/[reload_script]）用
-	const toggleFullScr = useStore(s=> s.toggleFullScr);
-	const clearLay = useStore(s=> s.clearLay);
-	const clearTxtLay = useStore(s=> s.clearTxtLay);
-	const moveLay = useStore(s=> s.moveLay);
-	const chgFilter = useStore(s=> s.chgFilter);	// [lay float=/index=/dive=]のレイヤ重なり順
-	const chgFx = useStore(s=> s.chgFx);	// [add_fx]/[clear_fx]（立ち絵シェーダエフェクトの試作）
-	const enableEvent = useStore(s=> s.enableEvent);
-	const addBtn = useStore(s=> s.addBtn);
-	const setReadBack = useStore(s=> s.setReadBack);
-	const setStyPaging = useStore(s=> s.setStyPaging);	// [page style=…]（読み戻り中の本文の見た目）
+	// 値が変わるので購読するのはこの2つだけ（読み戻り中か／文字送り演出中か）。
+	//	store アクション（addLayer/chgPic/…）は zustand の安定参照なので個別 useStore で購読
+	//	せず、attachTsx へ getState() ごと渡す（T_INIT_FNCS は全部 Pick された関数）。
+	//	isTyping は attachTsx 時点のスナップショットで固まらないよう ref 越しに渡す
 	const isReadBack = useStore(s=> s.isReadBack);		// 読み戻り中か（PageLog.isPaging）
 	const isTyping = useStore(s=> s.isTyping);
-	// attachTsxはマウント時に一度きりなので、fncsへ渡す関数はrefごしに最新値を読む
-	//	（オート読み・既読スキップの待ち時間カウント開始を文字送り演出の完了まで遅らせるため）
 	const isTypingRef = useRef(isTyping);
 	isTypingRef.current = isTyping;
-	const requestSkip = useStore(s=> s.requestSkip);
-	const setWait = useStore(s=> s.setWait);
-	const setSkipping = useStore(s=> s.setSkipping);
-	const startTrans = useStore(s=> s.startTrans);
-	const finishTrans = useStore(s=> s.finishTrans);
-	const startQuake = useStore(s=> s.startQuake);
-	const finishQuake = useStore(s=> s.finishQuake);
 	function procNext() {scrMng.go()}
 	useEffectOnce(()=> {
 		addTitle(sys.cfg.oCfg.book.title);
 		const hTag: T_HTag		= Object.create(null);	// タグ処理辞書
-		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})), {addLayer, chgPic, chgBAlpha, chgBPic, chgBackClear, setBackAlpha, setBtnFont, chgStr, chgLay, defChStyle, setChWait, setAutowc, getLaySty, getForeIdx, getPages, getPagesJson, replace, clearLay, clearTxtLay, moveLay, chgFilter, chgFx, enableEvent, addBtn, addTitle, toggleFullScr, setWait, requestSkip, setSkipping, startTrans, finishTrans, startQuake, finishQuake, setReadBack, setStyPaging, isTyping: ()=> isTypingRef.current}, hTag);
+		scrMng.attachTsx(()=> heStage.dispatchEvent(new CustomEvent('ev_next', {})),
+			{...useStore.getState(), isTyping: ()=> isTypingRef.current}, hTag);
 
 		inited();
 
@@ -164,7 +133,7 @@ export function Main({arg, inited}: {arg: T_ARG, inited: ()=> void}) {
 	//	そのページを演じ直す。テンプレが[event key=pageup label=*page]で同じことをするので、
 	//	組み込みのキーとシナリオからの指定が同じ動きになる
 	function next() {
-		if (isTyping) {requestSkip(); return}	// 文字送り演出中の1クリック目は瞬時完了のみ行い、進行はしない
+		if (isTyping) {useStore.getState().requestSkip(); return}	// 文字送り演出中の1クリック目は瞬時完了のみ行い、進行はしない
 		if (isReadBack) {scrMng.page('next'); return}
 		procNext();
 	}
