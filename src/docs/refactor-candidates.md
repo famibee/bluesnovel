@@ -37,21 +37,21 @@
   bypassOnCall}` を持たせ、`#goSafe()`/`#runStep()` は種別を知らずトークン経由で扱う。
   ARCHITECTURE.md が「終わりを宣言するのは ScriptMng」と 1 概念で語っているのに抽象が
   切り出されていない。
-- **レイヤ表示属性の「キー集合」が 4 箇所手書きで既に食い違っている。** `A_LAY_STY_KEY`
-  （`components/Lay.ts`）／`A_ER_RESET_KEY`（`store.tsx`）／文字専用ガード（`store.tsx` の
-  `chgLay`）／`[clear_lay]` の文字リセット（`store.tsx` clearLay の `clr1` インライン
-  `delete e.b_color; …`）／`H_TSY_DEF`（`Tsy.ts`）に散在。ガードは `bura/kinsoku_*/
-  break_fixed*` を文字専用と列挙するのに `[clear_lay]` のリセットはそれらを外し逆に
-  `b_src/b_alpha_isfixed` を足す＝2 リストが不一致。
-  → 属性 1 個＝1 レコードの単一表 `{key: {owner:'common'|'grp'|'txt', clearLay:bool,
-  er:bool, tsyDef?:number}}` を作り、全部そこから導出する。
-- **`sys:` → store のミラーを停止点ごとにポーリング。** `ScriptMng` が `[l]/[p]/[s]` の
-  たびに `sys:TextLayer.Back.Alpha`・`tmp:sn.button.fontFamily`・chWait をエンジンから
-  読み直して store へ push。一方 `VarStore.defSetTrigger()`（代入時 push）が既にあり
-  `sn.sound.global_volume` 等は init で登録済み（本家も `val.defValTrg` 処理）。
-  → `Back.Alpha`・`button.fontFamily` を init で `defSetTrigger` 登録し停止点の読み直しを
-  消す。既定値 `DEF_BTN_FONT` の `||` フォールバックもトリガ登録側 1 箇所へ。chWait は
-  既読状態依存なので停止点評価のままでよい。
+- ~~レイヤ表示属性の「キー集合」が 4 箇所手書きで食い違い~~ … **見送り**（2026-09-03 調査）。
+  `A_LAY_STY_KEY`（共通スタイル）／`A_ER_RESET_KEY`（[er] が戻す変形サブセット）／`chgLay`
+  ガード（grp/plg に来たらエラーにする文字専用属性）／`[clear_lay]` の `clr1` 文字リセット
+  （[clear_lay] が既定へ戻す文字属性）は**それぞれ別の問い**を表しており、リストが違うのは
+  主に意図的（`[clear_lay]` が `bura/kinsoku_*` を外すのはコメントに理由あり＝本家も
+  Hyphenation に触らない。`b_src/b_alpha` を足すのは背景系がリセット対象だから）。単一表化は
+  リセット意味論の回帰リスクが高い割に得るものが薄い。
+- ~~`sys:` → store のミラーを停止点ごとにポーリング~~ … **見送り**（2026-09-03 調査）。
+  `defSetTrigger` へ移す案だったが、`sys:` の復元経路（`#loadSaveData` の `setSys`／`[importData]`
+  の `setSys`／`[load]` 系）はいずれも `VarStore.setNs()` 直書き＝**代入トリガをバイパスする**
+  （line 350 のコメント「setSys()は…代入トリガを通らないため」）。トリガ化すると各 `setSys` の
+  直後に手動 re-sync（`global_volume` が line 353 でやっているのと同じ）を 3+ 箇所足す羽目になり、
+  「停止点で 1 回だけ engine を真実として突き合わせる」現状の方が浅くない。`tmp:sn.button.fontFamily`
+  は `tmp:`＝保存対象外で `[let]` 経由のみ＝トリガでも足りるが、Back.Alpha と非対称になるので
+  据え置き。chWait は既読状態依存で元から停止点評価が妥当。
 - **`left`/`align_x` の排他ルールを 3 層で推論・逆推論。** `store.chgLay` が「`left` が来て
   `align_x` を伴わない＝絶対再配置」と解釈して `align_x` を消す。`ScriptMng` の `withAlign`
   は相対指定のみの `[tsy]` で消されると困るので現在値を再注入し store の推論を打ち消す。

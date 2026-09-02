@@ -56,10 +56,38 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 
 ## リファクタ候補（/simplify 分家全体 2026-09-03）
 
-- [ ] 構造リファクタ案の控えは [refactor-candidates.md](refactor-candidates.md)。1 項目ずつ
-      E2E＋サンプル実走で確認しながら。優先度の高そうなもの：ScriptMng の待ち合わせ 8
-      サブシステム統一、レイヤ属性キー集合の単一台帳化（既に食い違い有り）、レイヤ子
-      コンポーネントの `React.memo` 化（無限 `[tsy]` 中の全レイヤ再レンダー抑止）
+軽微な整理は第 1〜5 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
+残りは 1 項目ずつ設計判断＋実機（E2E・サンプル実走）確認が要る規模。**オススメ順**：
+
+- [ ] **`left`/`align_x` 排他ルールの payload 明示**（Altitude）。`store.chgLay` の「キーの有無から
+      再配置意図を推測」→ `ScriptMng.withAlign` が現在値再注入で打ち消す、の 2 段推論をやめ、
+      `chgLay` payload に `reposition: 'absolute' | 'nudge'` を持たせてエンジンが 1 回決める。
+      対象 2 ファイル・過去バグ（[fg2]→[fg2_squat]）の再発防止。まず着手推奨。
+- [ ] **禁則処理の差分測定**（Efficiency）。`applyKinsoku` が `chgStr` のたび全表示単位を
+      `getBoundingClientRect` で測り直す（`<br>` 挿入ごとに強制リフロー＝O(文字数×改行数)）。
+      直近の既存 `<br>` 以降だけを対象に。TxtLayer 内で完結。着手前に長文ページで実測。
+- [ ] **`splitCh` のページ全文再パース → 差分**（Efficiency）。`#appendTxt` が毎回全文の
+      `chgStr` を積み、`ScriptMng` が `splitCh`＋`plainOf` を全走査（O(セグメント数×ページ長)）。
+      追記デルタだけパースして `aCh` に連結。エンジン側の span/link オープン状態の露出が要る＝
+      上の禁則差分化とセットで。`const.sn.last_page_plain_text` の並走キャッシュも同時に。
+- [ ] **ScriptMng の待ち合わせ 8 サブシステム統一**（Altitude・大物）。`[trans]`/`[wait]`/`[tsy]`/
+      `[fx]`/`[quake]`/`[ws-wl]`/`[wf-wb]`/`[wv]` の `#xxxWaiting`＋フラグ＋`#waitXxx`＋
+      `#goSafe` 分岐＋`#runStep` 判定を `#curWait` 単一 + `WaitToken` へ。待ちタグ追加が
+      4〜5 箇所→1 箇所に。エンジンの停止/再開の中枢なので専用セッション＋全 E2E で。
+- [ ] **`fireworks` GLSL パーティクルの JS 側計算**（Efficiency）。頭・火の粉の弾道を毎ピクセル
+      再計算しているのを JS で毎フレーム 1 回に。1 プリセット完結で他機能へ影響なし。ただし
+      非 `A_FX_PARAM` uniform（配列/データテクスチャ）の配線が前提＝
+      [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7 で見送った判断の再検討から。
+- [ ] **レイヤ子コンポーネントの `React.memo` 化**（Efficiency）。無限 `[tsy]` 中に fore ページの
+      全レイヤ（1200 行 `TxtLayer` 含む）が毎フレーム再 render。[backpage-perf.md](backpage-perf.md)
+      で「fore の毎フレーム再 render は許容・back を memo 化で対応」と一旦決着済み＝**覆すには
+      1 回の render の実コストをブラウザで計測してから**。
+- [ ] 小さい尾ひれ：`Crypto.ts` の `.json` 復号スキップ判定と `classifyAsset` の関係整理、
+      文字演出既定の 3 実体（store 初期値・`#hChStyleNm`・`CH_*_DEF`）を `CH_*_DEF` seed で
+      1 つに。どちらも優先度低。
+- [ ] （別タスク）本家由来部分（`src/sn/**` ほか）の /simplify＋modern-web-guidance は
+      **分析のみ**（適用しない）。本家との再取り込み衝突を増やさないため。対象を `src/sn/**` に
+      絞るか本家側でやるか含めて要相談。
 
 ## 保留
 
