@@ -158,10 +158,26 @@
   ＋ScriptMng キャッシュ＋エンジン `#hPlainTxt` を 6 箇所のクリア地点と同期**、という
   改修のリスクに対してリターンが小さい。再検討は「1 パラグラフに数十個の装飾タグ」が
   実測でボトルネックに出てからで十分。
-- **`fireworks` GLSL のパーティクル計算がフラグメント不変なのに毎ピクセル再計算。**
-  `starField` 内の頭ごと `h13`+`normalize`+`headPos`、火の粉ごと `E`/`sink`/`base`/`col`/
-  `tight` はいずれも (フレーム, 頭, 火の粉) のみに依存。ピクセル依存は最後の `mote`/
-  `headGlow` だけ。resolution LOD は数を減らすだけで冗長性自体は残る。
-  → 頭・火の粉の位置/色/明るさを JS 側で毎フレーム 1 回計算し uniform 配列か小さなデータ
-  テクスチャで渡す。フラグメントは splat のみに。※ ANIMATION_RESEARCH.md §7 で「非
-  A_FX_PARAM uniform の配線」を見送った経緯あり、再検討はそこから。
+- ~~**`fireworks` GLSL のパーティクル計算がフラグメント不変なのに毎ピクセル再計算。**~~
+  … 分析して見送り（2026-09-03）。冗長性の指摘は正しい：`starField` の頭ごと
+  `h13`+`normalize`+`headPos`、火の粉ごと `E`/`sink`/`base`/`col`/`tight` は
+  (フレーム, 頭, 火の粉) のみ依存で、ピクセル依存は最後の `mote`/`headGlow` splat だけ。
+  1 画素あたり概ね `n頭(12〜32) × (頭splat + eLod(8〜18) × 2粒 splat)` ≒ 5〜5.5 万 ops、
+  うち粒子シミュ再計算が ~4 割。**だが着手を見送る理由**：
+  - **`mote` splat ループ自体（最大 44+44×18×2 ≒ 1600 回/画素）は削れない**＝
+    パラメータを JS で持っても per-pixel の下限は ~3 万 ops。削減幅は理論上 ~4 割。
+  - **配線コストが重い**：粒子データ ≒ 1600 × 8 float ＝ WebGL1 の uniform 配列上限
+    （`MAX_FRAGMENT_UNIFORM_VECTORS` 数百 vec4）を超える → `OES_texture_float` か
+    RGBA8 パックのデータテクスチャ＋2 本目のテクスチャユニット＋毎フレーム `texImage2D`
+    が要る（`A_FX_PARAM` のスカラ 7 口設計の外）。しかも 1600 依存テクスチャフェッチ/画素は
+    GPU によっては ALU 削減分を食い潰す。
+  - **`fireworks` が「GLSL 文字列 1 個」でなくなる**：JS シミュレーション相棒つきの特殊
+    プリセット化＝「プリセット追加＝GLSL を足すだけ」の設計（ANIMATION_RESEARCH.md §7）が崩れる。
+  - **`fireworks` は `loop=false` の約 4 秒単発**＝持続負荷ではない。resolution LOD が
+    大画面ぶんの粒数を既に段階的に落としている。
+  - ANIMATION_RESEARCH.md §7 は fx 全般の重さ対策として「4K 背景で 60fps 割れの実報告が
+    出たら `H_FX_MAX_MPX`（FBO 解像度クランプ・1 行のテーブル）で後付け」と決めており、
+    そちらの方が 10 倍安い。JS 粒子化はその実報告が出て、かつ FBO クランプでも足りないと
+    分かってから。
+  - 実測は headless E2E では不可（SwiftShader ＝ 4K fireworks で rAF が数秒停止）。
+    代表値は実 GPU（playwright-cli／手動プロファイル）が要る。

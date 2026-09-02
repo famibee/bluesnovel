@@ -63,10 +63,6 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
       `[fx]`/`[quake]`/`[ws-wl]`/`[wf-wb]`/`[wv]` の `#xxxWaiting`＋フラグ＋`#waitXxx`＋
       `#goSafe` 分岐＋`#runStep` 判定を `#curWait` 単一 + `WaitToken` へ。待ちタグ追加が
       4〜5 箇所→1 箇所に。エンジンの停止/再開の中枢なので専用セッション＋全 E2E で。
-- [ ] **`fireworks` GLSL パーティクルの JS 側計算**（Efficiency）。頭・火の粉の弾道を毎ピクセル
-      再計算しているのを JS で毎フレーム 1 回に。1 プリセット完結で他機能へ影響なし。ただし
-      非 `A_FX_PARAM` uniform（配列/データテクスチャ）の配線が前提＝
-      [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7 で見送った判断の再検討から。
 - [ ] **レイヤ子コンポーネントの `React.memo` 化**（Efficiency）。無限 `[tsy]` 中に fore ページの
       全レイヤ（1200 行 `TxtLayer` 含む）が毎フレーム再 render。[backpage-perf.md](backpage-perf.md)
       で「fore の毎フレーム再 render は許容・back を memo 化で対応」と一旦決着済み＝**覆すには
