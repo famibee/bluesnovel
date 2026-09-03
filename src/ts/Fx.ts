@@ -110,7 +110,22 @@ export type T_FX = {
 	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
 	params	: {[k: string]: number};	// スカラ入力ポート（amp/freq/shift/p1〜p4。A_FX_PARAM の範囲）
 	color?	: readonly [number, number, number];	// color=（uniform vec3 color。0..1 RGB）。未指定は uniform へ vec3(0)
+	// [def_fx pad=]／[def_fx pad_b=]（基本画像**高さ**に対する比率）。fx キャンバスを
+	//	naturalW/H の外側へ広げ、立ち絵レイヤをそのまま（別レイヤや余白 png 無しで）
+	//	画像の枠外までシェーダ出力できるようにする（オーラ等）。上左右は pad、下端は padB。
+	//	宣言が 0／未宣言なら持たない（既存 fx の T_FX 形を変えない＝color と同じ流儀）。
+	//	GrpLayer.makeFxSource() が px へ換算し、はみ出し分は div0 の外へ絶対配置で描く
+	//	（div0 の箱は基本画像サイズのまま＝[tsy]／Moveable のピボットは不変）
+	pad?	: number;
+	padB?	: number;
 };
+
+// [def_fx] 宣言メタ（ScriptEngine.#hDefFx の値）。duration＝loop=false の尺（ms）、
+//	pad／padB＝上記 T_FX.pad／padB のもと値。テスト等が数値だけ渡す旧形（＝duration）も受ける
+export type T_DEF_FX_META = {duration?: number; pad?: number; padB?: number};
+function metaOf(v: number | T_DEF_FX_META | undefined): T_DEF_FX_META {
+	return typeof v === 'number' ? {duration: v} : v ?? {};
+}
 
 function num(args: {[k: string]: string}, k: string, def: number): number {
 	const v = args[k];
@@ -123,12 +138,13 @@ function num(args: {[k: string]: string}, k: string, def: number): number {
 // hDefFx＝[def_fx] で定義済みのユーザープリセット名の台帳（ScriptEngine.#hDefFx）。
 //	値は [def_fx duration=]（ms。未指定は0＝単発の尺を持たないプリセット）。
 //	純粋部分なので Map でなく「キーの有無＋値」だけ見る緩い型で受ける（テストからは省略可）
-export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: string]: number}): T_FX {
+export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: string]: number | T_DEF_FX_META}): T_FX {
 	const fx = args.fx ?? '';
 	if (! fx) throw '[add_fx] fx=（プリセット名）が必要です';
 	if (! (A_FX_PRESET as readonly string[]).includes(fx) && ! (hDefFx && fx in hDefFx)) {
 		throw `[add_fx] fx【${fx}】は未対応です（組み込み：${A_FX_PRESET.join(' / ')}／または [def_fx] で定義した名前）`;
 	}
+	const meta = metaOf(hDefFx?.[fx]);
 
 	// ユーザープリセット（[def_fx]）は固有既定値を持たない（H_FX_DEF[それ] は undefined ＝ params は {}）
 	const params: {[k: string]: number} = {...H_FX_DEF[fx]};
@@ -145,7 +161,7 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 	const loop = (args.loop ?? 'true') !== 'false';
 	let time = num(args, 'time', 0);
 	if (! loop && time <= 0) {
-		const duration = H_FX_BUILTIN_DURATION[fx] ?? hDefFx?.[fx];
+		const duration = H_FX_BUILTIN_DURATION[fx] ?? meta.duration;
 		if (! duration) throw `[add_fx] loop=false を使うには [def_fx name=${fx} duration=…]（ms）の宣言が必要です`;
 		time = duration;
 	}
@@ -158,5 +174,8 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,
 		...(args.color !== undefined ? {color: parseRGB(args.color)} : {}),
+		// [def_fx pad=／pad_b=] 宣言ぶんの余白（基本画像高さ比）。0／未宣言は持たない
+		...(meta.pad ? {pad: meta.pad} : {}),
+		...(meta.padB ? {padB: meta.padB} : {}),
 	};
 }

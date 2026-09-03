@@ -161,16 +161,25 @@ async function loadFaceVideo(src: string): Promise<HTMLVideoElement> {
 	return v;
 }
 
+// makeFxSource() の戻り。source＝FxRunner へ渡すテクスチャ源。pl/pt＝基本画像左上が
+//	canvas 内で持つオフセット（＝[def_fx pad=] ぶんの余白 px）。w/h＝canvas 実寸。
+//	FxImg 側が <canvas> を div0 の外へ left:-pl / top:-pt で絶対配置するのに使う
+type T_FX_SOURCE = {source: HTMLCanvasElement | T_DYN_SOURCE; pl: number; pt: number; w: number; h: number};
+
 // 基本画像＋face を1枚のoffscreen 2D canvasへ合成した「fx のテクスチャ源」を作る（ANIMATION_RESEARCH.md §7 step 4・6）。
 //	・すべて静止画なら**一度きり合成した <canvas>** を返す（従来。差分が変わった時だけ呼ばれる）
 //	・基本画像か face のどれかが動的（アニメ png シート／動画）なら**毎フレーム描き直す関数**を返す
 //	  （FxRunner が rAF ごとに texImage2D で吸い上げる）。動画 face は detached な <video> を毎フレーム転写
 //	dx,dy＝基本画像の左上原点（DOM版FaceImgと同じ）。canvas外へはみ出す分は切れる。
 //	base.videoEl＝基本画像が動画のとき GrpLayer が握っている <video>（React 所有。dispose しない）
+//	padRatio／padBRatio＝[def_fx pad=／pad_b=]（基本画像**高さ**比）。canvas を naturalW/H の
+//	外側へ広げ、基本画像・face を (pl, pt) だけずらして描く＝画像の枠外へオーラ等を出せる
 async function makeFxSource(
 	base: {src: string; isSheet: boolean; isMovie: boolean; videoEl: HTMLVideoElement | null},
 	aFace: readonly T_FACE_SRC[],
-): Promise<HTMLCanvasElement | T_DYN_SOURCE> {
+	padRatio = 0,
+	padBRatio = 0,
+): Promise<T_FX_SOURCE> {
 	const stat = aFace.filter(f=> ! f.isSheet && ! f.isMovie);
 	const animF = aFace.filter(f=> f.isSheet);
 	const movF = aFace.filter(f=> f.isMovie);
@@ -202,11 +211,20 @@ async function makeFxSource(
 		drawBase = ctx=> {ctx.drawImage(img, 0, 0)};
 	}
 
+	// [def_fx pad=] ぶんの余白（px）。上左右は pad、下端は pad_b（基本画像高さ基準で揃える）
+	const pl = Math.max(0, Math.round(baseH * padRatio));
+	const pt = pl;
+	const pr = pl;
+	const pb = Math.max(0, Math.round(baseH * padBRatio));
+
 	const cvs = document.createElement('canvas');
-	cvs.width = baseW;
-	cvs.height = baseH;
+	cvs.width = baseW + pl + pr;
+	cvs.height = baseH + pt + pb;
 	const ctx = cvs.getContext('2d');
 	if (! ctx) throw new Error('2Dコンテキストが取得できません');
+	// 以降の drawImage は基本画像左上を原点(0,0)として書く（従来コードそのまま）。
+	//	余白ぶんを一括で平行移動＝基本画像・face とも自動で (pl, pt) へずれる
+	if (pl || pt) ctx.translate(pl, pt);
 
 	const statImgs = await Promise.all(stat.map(f=> loadImg(f.src)));
 	const drawStatFaces = ()=> stat.forEach((f, i)=> {
@@ -219,7 +237,7 @@ async function makeFxSource(
 		ctx.globalCompositeOperation = 'source-over';
 		drawBase(ctx);
 		drawStatFaces();
-		return cvs;
+		return {source: cvs, pl, pt, w: cvs.width, h: cvs.height};
 	}
 
 	const sheets = await Promise.all(animF.map(async f=> {
@@ -231,7 +249,7 @@ async function makeFxSource(
 	const t0 = performance.now();
 
 	const frame = (()=> {
-		ctx.clearRect(0, 0, cvs.width, cvs.height);
+		ctx.clearRect(-pl, -pt, cvs.width, cvs.height);	// translate 後なので原点を余白ぶん戻す
 		ctx.globalCompositeOperation = 'source-over';
 		drawBase(ctx);
 		drawStatFaces();
@@ -250,7 +268,7 @@ async function makeFxSource(
 	if (faceVids.length > 0) frame.dispose = ()=> {
 		for (const v of faceVids) {v.pause(); v.removeAttribute('src'); v.load()}
 	};
-	return frame;
+	return {source: frame, pl, pt, w: cvs.width, h: cvs.height};
 }
 
 // [add_fx]（立ち絵・背景シェーダエフェクト。ANIMATION_RESEARCH.md §7 の「C 方式」）。
@@ -268,6 +286,12 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 }) {
 	const ref = useRef<HTMLCanvasElement>(null);
 	const handle = useRef<{update(a: T_FX[], active: boolean): void; dispose(): void} | null>(null);
+	// [def_fx pad=／pad_b=]（基本画像高さ比。スタックした複数 fx のうち最大を採る＝canvas は 1 枚）。
+	//	>0 なら fx canvas を画像枠外へ広げて div0 の外へ描く（オーラ等。ANIMATION_RESEARCH.md §7）
+	const padRatio = aFx.reduce((m, f)=> Math.max(m, f.pad ?? 0), 0);
+	const padBRatio = aFx.reduce((m, f)=> Math.max(m, f.padB ?? 0), 0);
+	// makeFxSource が返す実オフセット px（pl=pt=上左右、w/h=canvas実寸）。null＝余白なし＝従来の inset:0
+	const [box, setBox] = useState<{pl: number; pt: number; w: number; h: number} | null>(null);
 	// canvasを作り直すのは**テクスチャ源が変わったとき**だけ（基本画像・静止 face）：
 	//	WEBGL_lose_context.loseContext()後の同一canvasからは生きたコンテキストを取り直せないため
 	//	使い捨てにして開き直す。**シェーダ構成（fx名/パス数）が変わっても作り直さない**——
@@ -276,7 +300,8 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 	//	パラメータ・speed・time・enabled（[pause_fx]/[resume_fx]）も update() でホットスワップ
 	//	（再生成すると tick=0 へ戻る。ANIMATION_RESEARCH.md §7 step 2）
 	const faceKey = aFace.map(f=> `${f.src}@${String(f.dx)},${String(f.dy)},${f.blendmode},${String(f.isSheet)},${String(f.isMovie)}`).join(';');
-	const sourceKey = `${baseSrc}\n${String(isSheet)}\n${String(isMovie)}\n${faceKey}`;
+	// pad は canvas 実寸を変える＝テクスチャ源の一部。変わったら canvas を作り直す（sourceKey に含める）
+	const sourceKey = `${baseSrc}\n${String(isSheet)}\n${String(isMovie)}\n${faceKey}\n${String(padRatio)},${String(padBRatio)}`;
 	// sourceKeyのuseEffectを回さない値はmount時だけrefで拾う（activeとaFx。以後は下のupdate effect）
 	const activeRef = useRef(active);
 	activeRef.current = active;
@@ -288,18 +313,23 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 
 		let alive = true;
 		void (async ()=> {
-			// 基本画像が動的（sheet/動画）か face が付くなら 2D canvas で合成、
-			//	静止画のみ（従来）は URL をそのまま渡す（合成コストなし）
-			const source = isSheet || isMovie || aFace.length > 0
-				? await makeFxSource({src: baseSrc, isSheet, isMovie, videoEl: getVideoEl()}, aFace)
-				: baseSrc;
-			if (! alive) {if (typeof source === 'function') source.dispose?.(); return}
+			// 基本画像が動的（sheet/動画）か face が付く、または [def_fx pad=] で余白が要るなら
+			//	2D canvas で合成。静止画のみ＆余白なし（従来）は URL をそのまま渡す（合成コストなし）
+			const needCvs = isSheet || isMovie || aFace.length > 0 || padRatio > 0 || padBRatio > 0;
+			const r = needCvs
+				? await makeFxSource({src: baseSrc, isSheet, isMovie, videoEl: getVideoEl()}, aFace, padRatio, padBRatio)
+				: {source: baseSrc, pl: 0, pt: 0, w: 0, h: 0};
+			if (! alive) {if (typeof r.source === 'function') r.source.dispose?.(); return}
 			const {runFx} = await import('../ts/FxRunner');
-			const h = await runFx({canvas: cvs, source, aFx: aFxRef.current, active: activeRef.current});
-			if (alive) {handle.current = h; onReady(true)}	// 初回フレーム描画済み＝下の<img>を隠してよい
+			const h = await runFx({canvas: cvs, source: r.source, aFx: aFxRef.current, active: activeRef.current});
+			if (alive) {
+				handle.current = h;
+				setBox(r.pl > 0 || r.pt > 0 ? {pl: r.pl, pt: r.pt, w: r.w, h: r.h} : null);
+				onReady(true);	// 初回フレーム描画済み＝下の<img>を隠してよい
+			}
 			else h.dispose();
 		})().catch((e: unknown)=> {console.error(`[add_fx] ${String(e)}`)});
-		return ()=> {alive = false; onReady(false); handle.current?.dispose(); handle.current = null};
+		return ()=> {alive = false; onReady(false); setBox(null); handle.current?.dispose(); handle.current = null};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sourceKey]);
 	// シェーダ構成／パラメータ／enabled（[pause_fx]）／active（不可視ページ）の変化は
@@ -316,8 +346,16 @@ function FxImg({baseSrc, isSheet, isMovie, getVideoEl, aFace, aFx, active, onRea
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [aFx, active]);
 
-	// 基本<img>の上に敷く（div0はposition:absolute＝これの包含ブロック。inset:0で<img>の箱いっぱいに）
-	return <canvas key={sourceKey} ref={ref} style={{position: 'absolute', inset: 0}}/>;
+	// 基本<img>の上に敷く（div0はposition:absolute＝これの包含ブロック）。
+	//	余白なし（従来）：inset:0 で<img>の箱いっぱいに。
+	//	[def_fx pad=] あり：canvas は画像枠より大きいので、基本画像左上が箱の(0,0)へ来るよう
+	//	  left:-pl / top:-pt でずらし実寸を当てる＝余白ぶんが div0 の外へはみ出して描かれる
+	//	  （div0 の箱＝<img>サイズは不変なので [tsy]／Moveable のピボットは変わらない。
+	//	   Stage の overflow:hidden がステージ端では切る）
+	const styCvs: CSSProperties = box
+		? {position: 'absolute', left: -box.pl, top: -box.pt, width: box.w, height: box.h, maxWidth: 'none'}
+		: {position: 'absolute', inset: 0};
+	return <canvas key={sourceKey} ref={ref} style={styCvs}/>;
 }
 
 export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, src, isSheet, isMovie, aFace, aFx, fxActive, getVideoVol, needClick2Play}: T_GRPARG) {

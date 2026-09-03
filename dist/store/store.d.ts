@@ -157,6 +157,7 @@ export type T_CHGLAY = {
     nm: string;
     page: T_PAGE;
     sty: T_LAY_STY_ARG;
+    reposition?: 'x' | 'y' | 'xy';
 };
 export type T_AUTOWC = {
     enabled: boolean;

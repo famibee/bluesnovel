@@ -271,6 +271,7 @@ export type Script = {
     aLNum: number[];
 };
 export declare const REG_TAG: RegExp;
+export declare function numLF(s: string): number;
 export declare function tagToken2Name_Args(token: string): [name: string, args: string];
 export declare function tagToken2Name(token: string): string;
 export declare function splitAmpersand(token: string): {

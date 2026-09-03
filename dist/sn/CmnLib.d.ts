@@ -8,6 +8,7 @@ type T_HASH_Arg = {
     [name: string]: any;
 };
 export declare function argChk_Num(hash: T_HASH_Arg, name: string, def: number): number;
+export declare function parseArgNum(v: string, errHead: string): number;
 export declare function argChk_Boolean(hash: T_HASH_Arg, name: string, def: boolean): boolean;
 export declare function cssColorOf(v: string | number): string;
 export declare function getFn(p: string): string;

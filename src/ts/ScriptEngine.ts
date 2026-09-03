@@ -23,7 +23,7 @@ import {getDateStr, int, parseArgNum, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
-import {bldFx, A_FX_PRESET, type T_FX} from './Fx';
+import {bldFx, A_FX_PRESET, type T_FX, type T_DEF_FX_META} from './Fx';
 import {argBlendmode} from './Blendmode';
 import {plainTxt, A_R_ALIGN, type T_R_ALIGN} from './Txt';
 import {Log} from './Log';
@@ -457,13 +457,14 @@ export class ScriptEngine {
 	get clearOnResume() {return this.#clearOnResume}
 	set clearOnResume(b: boolean) {this.#clearOnResume = b}
 	readonly #hFace: {[name: string]: T_FACE} = Object.create(null);	// [add_face]で定義した差分名 -> {fn, dx, dy, blendmode}（本家 SpritesMng.#hFace 相当）
-	// [def_fx name= glsl= duration=]で定義したユーザープリセット名の台帳（分家独自。ここは
-	//	名前とduration（[add_fx loop=false]がtimeへ解決する尺。ms。0=未宣言）だけ＝純粋部分。
+	// [def_fx name= glsl= duration= pad= pad_b=]で定義したユーザープリセット名の台帳（分家独自。
+	//	ここは名前と数値メタ（duration＝[add_fx loop=false]がtimeへ解決する尺。ms。0=未宣言／
+	//	pad・padB＝fxキャンバスを画像枠外へ広げる余白。基本画像高さ比。0=無し）だけ＝純粋部分。
 	//	GLSL 本体は defFx アクション経由で src/ts/fxRegistry.ts へ流し、lazy な FxRunner が引く）。
 	//	#hFace/#hMacro と同じくセーブには載らず、[load]でエンジンごと作り直し→起動スクリプトの
 	//	[def_fx]再実行で埋め直す運用（ANIMATION_RESEARCH.md §7）
-	//	値0は「truthyでない」だけでキー自体は存在する＝`in`で見る（bldFx()と同じ流儀。Fx.ts）
-	readonly #hDefFx: {[name: string]: number} = Object.create(null);
+	//	キー自体の存在で「定義済み」を見る＝`in`で判定（bldFx()と同じ流儀。Fx.ts）
+	readonly #hDefFx: {[name: string]: T_DEF_FX_META} = Object.create(null);
 	// [add_lay]で作ったレイヤ名 -> クラス（grp/txt/プラグインcls）。#applyLayPage()の判定専用
 	//	（本家 GrpLayer/TxtLayer はクラスごとに別インスタンスだが、こちらは単一の関数で両方を
 	//	処理するため、判定材料をここに持たせる）
@@ -1483,7 +1484,16 @@ export class ScriptEngine {
 			//	未指定は0＝このプリセットへ loop=false（time= を伴わず）を使うと bldFx() が例外にする
 			const duration = ScriptEngine.#argNumDef('def_fx', 'duration', args.duration, 0);
 			if (duration < 0) throw `[def_fx] durationは0以上にしてください：${duration}`;
-			this.#hDefFx[dfName] = duration;
+			// pad=／pad_b=（基本画像高さに対する比率）：fx キャンバスを画像枠の外側へ広げ、
+			//	立ち絵レイヤをそのまま（別レイヤ・余白 png 無しで）枠外までシェーダ出力できるようにする
+			//	（オーラ等）。pad＝上左右、pad_b＝下端（既定 0。立ち絵は grp 下端接地で足元が画面外のため）。
+			//	GrpLayer.makeFxSource() が px へ換算し、div0 の外へ絶対配置で描く（箱＝基本画像サイズは不変
+			//	＝[tsy]／Moveable のピボットは変わらない）
+			const pad = ScriptEngine.#argNumDef('def_fx', 'pad', args.pad, 0);
+			if (pad < 0) throw `[def_fx] padは0以上にしてください：${pad}`;
+			const padB = ScriptEngine.#argNumDef('def_fx', 'pad_b', args.pad_b, 0);
+			if (padB < 0) throw `[def_fx] pad_bは0以上にしてください：${padB}`;
+			this.#hDefFx[dfName] = {duration, pad, padB};
 			aAct.push({t: 'defFx', name: dfName, glsl});
 			return 'skip';
 		}

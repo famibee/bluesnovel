@@ -34,6 +34,7 @@
 		- Snow is falling https://www.shadertoy.com/view/4lfcz4
 			> ふわっとした降雪
 	- Fireworks
+		- ⭐【プリセット】花火, fx=fireworks
 		- Fireworks - AT (sound) https://www.shadertoy.com/view/WtdBRj
 			> 花火連発、シンプルで軽い
 		- (重) firework1 https://www.shadertoy.com/view/tfXSWr
@@ -42,12 +43,15 @@
 			> 花火連発、バリエーションあり
 		- (重) Fireworks Performance https://www.shadertoy.com/view/tfXcz8
 			> 連発系だがバリエーションが単調。ラッシュ時ともいえるが
-	- conflagration 火事
+	- flames 火
+		- ⭐【プリセット】炎の床, fx=fire_floor（背景向け）
 		- (重) 301's Fire Shader - Remix 2 https://www.shadertoy.com/view/MtcGD7
 			> 床で燃え盛る炎
 			以下をベースにマージしたらしい
 			- https://www.shadertoy.com/view/XsXXRN
 			- https://www.shadertoy.com/view/llc3DM
+		- ⭐【プリセット】炎, fx=flame（背景向け）
+		- 炎 https://webgl-fire.appspot.com/html/fire.html
 	- 海面
 		- GLSL Sandbox https://www.glslsandbox.com/e#109471.0
 			> ちょっと黒っぽいので手直し必要

@@ -1,4 +1,4 @@
-import { type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 import type { SerializedStyles } from '@emotion/react';
 export type T_LAYER_PROPS = {
     styChild: SerializedStyles;
@@ -6,7 +6,6 @@ export type T_LAYER_PROPS = {
     nm: string;
     sty: CSSProperties;
     keepRatio?: boolean;
-    onMouseDown?: (e: MouseEvent) => void;
     children: ReactNode;
 };
-export default function Layer({ styChild, isDesignMode, nm, sty, keepRatio, onMouseDown, children }: T_LAYER_PROPS): import("@emotion/react/jsx-runtime").JSX.Element;
+export default function Layer({ styChild, isDesignMode, nm, sty, keepRatio, children }: T_LAYER_PROPS): import("@emotion/react/jsx-runtime").JSX.Element;

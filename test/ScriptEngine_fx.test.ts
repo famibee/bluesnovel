@@ -166,6 +166,24 @@ it('defFx_duration=未指定（既定0）でも既定義判定は効く（0はtr
 		.toThrow('name【a】は既に定義済みです');
 });
 
+it('defFx_pad=／pad_b=（基本画像高さ比の余白）を宣言でき、[add_fx] が T_FX へ乗せる', ()=> {
+	// pad=（上左右）／pad_b=（下端）。宣言ぶんが [add_fx] 時に T_FX.pad／padB へ解決される
+	const a = acts(`[def_fx name=aura glsl="${RAW}" pad=0.28 pad_b=0.1][add_fx layer=base fx=aura amp=2]`);
+	expect(a.find(v=> v.t === 'addFx')).toMatchObject({fx: {fx: 'aura', pad: 0.28, padB: 0.1, params: {amp: 2}}});
+	// pad_b 省略は下端 0（＝T_FX に padB を持たせない。立ち絵は grp 下端接地で足元が画面外）
+	const b = acts(`[def_fx name=aura2 glsl="${RAW}" pad=0.2][add_fx layer=base fx=aura2]`);
+	const fb = b.find(v=> v.t === 'addFx');
+	expect(fb).toMatchObject({fx: {fx: 'aura2', pad: 0.2}});
+	expect((fb as {fx: {padB?: number}}).fx.padB).toBeUndefined();
+	// pad 未宣言は従来どおり pad/padB を持たない（既存 fx の T_FX 形を変えない）
+	expect(bldFx({fx: 'nopad'}, {nopad: {}})).not.toHaveProperty('pad');
+});
+
+it('defFx_pad=／pad_b= は0以上（負数は throw）', ()=> {
+	expect(()=> acts(`[def_fx name=x glsl="${RAW}" pad=-0.1]`)).toThrow('padは0以上にしてください');
+	expect(()=> acts(`[def_fx name=x glsl="${RAW}" pad_b=-1]`)).toThrow('pad_bは0以上にしてください');
+});
+
 
 // ============ [add_fx] ============
 

@@ -9,6 +9,7 @@ export type T_CH_STYLE = {
     join: boolean;
     ease: string;
 };
+export declare const CH_DEF_NM = "default";
 export declare const CH_IN_DEF: T_CH_STYLE;
 export declare const CH_OUT_DEF: T_CH_STYLE;
 export declare function parseChStyle(tag: string, args: {

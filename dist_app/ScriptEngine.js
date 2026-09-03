@@ -1914,7 +1914,15 @@ var Se = class e {
 				if (t in this.#O) throw `[def_fx] name【${t}】は既に定義済みです`;
 				let r = e.#a("def_fx", "duration", i.duration, 0);
 				if (r < 0) throw `[def_fx] durationは0以上にしてください：${r}`;
-				return this.#O[t] = r, a.push({
+				let o = e.#a("def_fx", "pad", i.pad, 0);
+				if (o < 0) throw `[def_fx] padは0以上にしてください：${o}`;
+				let s = e.#a("def_fx", "pad_b", i.pad_b, 0);
+				if (s < 0) throw `[def_fx] pad_bは0以上にしてください：${s}`;
+				return this.#O[t] = {
+					duration: r,
+					pad: o,
+					padB: s
+				}, a.push({
 					t: "defFx",
 					name: t,
 					glsl: n

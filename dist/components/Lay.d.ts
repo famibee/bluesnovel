@@ -32,6 +32,13 @@ export type T_LAY_IDX = T_LAY_STY & {
     cls: 'grp' | 'txt' | (string & {});
     nm: string;
 };
+export declare function applyTransform(o: {
+    rotation?: number;
+    scale_x?: number;
+    scale_y?: number;
+    pivot_x?: number;
+    pivot_y?: number;
+}, sty: CSSProperties): void;
 export declare function styLay(l: T_LAY_STY): CSSProperties;
 export type T_LAY_CMN = {
     cmn: {

@@ -18,6 +18,19 @@
 
 - [ ]
 
+- [x] **`[def_fx pad= / pad_b=]` を追加：fx キャンバスを対象レイヤの基本画像の枠外へ広げる**（2026-09-03）
+  - 立ち絵の背後に出すオーラ・炎のように「画像の透明部分より外」へシェーダ出力したいプリセット向け。
+    従来は「余白を広く取った専用 png ＋別レイヤ」しか手が無く、別レイヤだとレイヤごと `[tsy]` できなかった。
+  - `pad`＝上左右、`pad_b`＝下端（既定 0。立ち絵は grp 下端接地で足元が画面外のため）。値は基本画像**高さ**比。
+  - `Fx.ts`：`bldFx()` が `[def_fx]` 宣言ぶんを `T_FX.pad`／`padB` へ解決（`color` と同じく 0／未宣言なら持たない
+    ＝既存 fx の T_FX 形は不変）。`ScriptEngine.#hDefFx` を数値（duration）→ `{duration,pad,padB}` へ拡張（テストが
+    渡す旧形の数値も `metaOf()` で受ける）。
+  - `GrpLayer.tsx`：`makeFxSource()` が `幅+2p × 高さ+p(+pb)` の合成 canvas を作り基本画像・face を `(pl,pt)` へ
+    オフセット描画。`<FxImg>` の canvas を `inset:0` → `left:-pl / top:-pt`＋実寸へ（余白ぶんが `div0` の外へはみ出す。
+    `div0` の箱＝基本画像サイズは不変なので `[tsy]`／Moveable のピボットは変わらない。ステージ端は Stage の
+    `overflow:hidden` で切れる）。静止画のみでも pad>0 なら canvas 経由に。`FxRunner` は source 実寸に追従するso無改修。
+  - docs：`tag.html` `[def_fx]` に `pad`／`pad_b` 行。test：`ScriptEngine_fx.test.ts` に解決・バリデーションのケース追加。
+
 - [x] **CLAUDE.md系ファイル・tsソース・テスト・公開ドキュメントを、直近の実装変更に合わせて棚卸し**
   （2026-08-19）
   - `b8b6ab6`（gsap→motion移行）以降、CLAUDE.md／`.claude/docs/ARCHITECTURE.md`／`PITFALLS.md`に

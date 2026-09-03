@@ -149,6 +149,7 @@ export type T_ENGINE_ACTION = {
     nm: string;
     page: T_PAGE;
     sty: T_LAY_STY_ARG;
+    reposition?: 'x' | 'y' | 'xy';
 } | {
     t: 'defChStyle';
     kind: 'in' | 'out';

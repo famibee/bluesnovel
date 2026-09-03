@@ -9970,12 +9970,12 @@ async function bu(e) {
 	} catch {}
 	return t;
 }
-async function xu(e, t) {
-	let n = t.filter((e) => !e.isSheet && !e.isMovie), r = t.filter((e) => e.isSheet), i = t.filter((e) => e.isMovie), a = 1, o = 1, s;
+async function xu(e, t, n = 0, r = 0) {
+	let i = t.filter((e) => !e.isSheet && !e.isMovie), a = t.filter((e) => e.isSheet), o = t.filter((e) => e.isMovie), s = 1, c = 1, l;
 	if (e.isMovie) {
 		let t = e.videoEl;
 		if (!t) throw Error("動画レイヤの<video>要素が取得できません");
-		await yu(t), a = Math.max(1, t.videoWidth), o = Math.max(1, t.videoHeight), s = (e) => {
+		await yu(t), s = Math.max(1, t.videoWidth), c = Math.max(1, t.videoHeight), l = (e) => {
 			try {
 				e.drawImage(t, 0, 0);
 			} catch {}
@@ -9984,27 +9984,34 @@ async function xu(e, t) {
 		let t = await ne(e.src);
 		if (!t) throw Error(`シート定義が読めません: ${e.src.slice(0, 64)}`);
 		let n = await gu(t.img);
-		a = t.boxW, o = t.boxH;
+		s = t.boxW, c = t.boxH;
 		let r = performance.now();
-		s = (e) => {
+		l = (e) => {
 			let i = vu(t, performance.now() - r);
 			e.drawImage(n, i.x, i.y, i.w, i.h, i.ox, i.oy, i.w, i.h);
 		};
 	} else {
 		let t = await gu(e.src);
-		a = Math.max(1, t.naturalWidth), o = Math.max(1, t.naturalHeight), s = (e) => {
+		s = Math.max(1, t.naturalWidth), c = Math.max(1, t.naturalHeight), l = (e) => {
 			e.drawImage(t, 0, 0);
 		};
 	}
-	let c = document.createElement("canvas");
-	c.width = a, c.height = o;
-	let l = c.getContext("2d");
-	if (!l) throw Error("2Dコンテキストが取得できません");
-	let u = await Promise.all(n.map((e) => gu(e.src))), d = () => n.forEach((e, t) => {
-		l.globalCompositeOperation = _u[e.blendmode] ?? "source-over", l.drawImage(u[t], e.dx, e.dy);
+	let u = Math.max(0, Math.round(c * n)), d = u, f = u, p = Math.max(0, Math.round(c * r)), m = document.createElement("canvas");
+	m.width = s + u + f, m.height = c + d + p;
+	let h = m.getContext("2d");
+	if (!h) throw Error("2Dコンテキストが取得できません");
+	(u || d) && h.translate(u, d);
+	let g = await Promise.all(i.map((e) => gu(e.src))), _ = () => i.forEach((e, t) => {
+		h.globalCompositeOperation = _u[e.blendmode] ?? "source-over", h.drawImage(g[t], e.dx, e.dy);
 	});
-	if (!e.isSheet && !e.isMovie && r.length === 0 && i.length === 0) return l.globalCompositeOperation = "source-over", s(l), d(), c;
-	let f = await Promise.all(r.map(async (e) => {
+	if (!e.isSheet && !e.isMovie && a.length === 0 && o.length === 0) return h.globalCompositeOperation = "source-over", l(h), _(), {
+		source: m,
+		pl: u,
+		pt: d,
+		w: m.width,
+		h: m.height
+	};
+	let v = await Promise.all(a.map(async (e) => {
 		let t = await ne(e.src);
 		if (!t) throw Error(`シート定義が読めません: ${e.src.slice(0, 64)}`);
 		return {
@@ -10012,63 +10019,89 @@ async function xu(e, t) {
 			sh: t,
 			img: await gu(t.img)
 		};
-	})), p = await Promise.all(i.map((e) => bu(e.src))), m = performance.now(), h = (() => {
-		l.clearRect(0, 0, c.width, c.height), l.globalCompositeOperation = "source-over", s(l), d();
-		let e = performance.now() - m;
-		return f.forEach(({ f: t, sh: n, img: r }) => {
+	})), y = await Promise.all(o.map((e) => bu(e.src))), b = performance.now(), x = (() => {
+		h.clearRect(-u, -d, m.width, m.height), h.globalCompositeOperation = "source-over", l(h), _();
+		let e = performance.now() - b;
+		return v.forEach(({ f: t, sh: n, img: r }) => {
 			let i = vu(n, e);
-			l.globalCompositeOperation = _u[t.blendmode] ?? "source-over", l.drawImage(r, i.x, i.y, i.w, i.h, t.dx + i.ox, t.dy + i.oy, i.w, i.h);
-		}), i.forEach((e, t) => {
-			l.globalCompositeOperation = _u[e.blendmode] ?? "source-over";
+			h.globalCompositeOperation = _u[t.blendmode] ?? "source-over", h.drawImage(r, i.x, i.y, i.w, i.h, t.dx + i.ox, t.dy + i.oy, i.w, i.h);
+		}), o.forEach((e, t) => {
+			h.globalCompositeOperation = _u[e.blendmode] ?? "source-over";
 			try {
-				l.drawImage(p[t], e.dx, e.dy);
+				h.drawImage(y[t], e.dx, e.dy);
 			} catch {}
-		}), c;
+		}), m;
 	});
-	return p.length > 0 && (h.dispose = () => {
-		for (let e of p) e.pause(), e.removeAttribute("src"), e.load();
-	}), h;
+	return y.length > 0 && (x.dispose = () => {
+		for (let e of y) e.pause(), e.removeAttribute("src"), e.load();
+	}), {
+		source: x,
+		pl: u,
+		pt: d,
+		w: m.width,
+		h: m.height
+	};
 }
 function Su({ baseSrc: e, isSheet: t, isMovie: n, getVideoEl: r, aFace: i, aFx: a, active: o, onReady: s }) {
-	let c = (0, V.useRef)(null), l = (0, V.useRef)(null), u = i.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode},${String(e.isSheet)},${String(e.isMovie)}`).join(";"), d = `${e}\n${String(t)}\n${String(n)}\n${u}`, f = (0, V.useRef)(o);
-	f.current = o;
-	let p = (0, V.useRef)(a);
-	return p.current = a, (0, V.useEffect)(() => {
+	let c = (0, V.useRef)(null), l = (0, V.useRef)(null), u = a.reduce((e, t) => Math.max(e, t.pad ?? 0), 0), d = a.reduce((e, t) => Math.max(e, t.padB ?? 0), 0), [f, p] = (0, V.useState)(null), m = i.map((e) => `${e.src}@${String(e.dx)},${String(e.dy)},${e.blendmode},${String(e.isSheet)},${String(e.isMovie)}`).join(";"), h = `${e}\n${String(t)}\n${String(n)}\n${m}\n${String(u)},${String(d)}`, g = (0, V.useRef)(o);
+	g.current = o;
+	let _ = (0, V.useRef)(a);
+	_.current = a, (0, V.useEffect)(() => {
 		let a = c.current;
 		if (!a || !e) return;
 		let o = !0;
 		return (async () => {
-			let c = t || n || i.length > 0 ? await xu({
+			let c = t || n || i.length > 0 || u > 0 || d > 0 ? await xu({
 				src: e,
 				isSheet: t,
 				isMovie: n,
 				videoEl: r()
-			}, i) : e;
+			}, i, u, d) : {
+				source: e,
+				pl: 0,
+				pt: 0,
+				w: 0,
+				h: 0
+			};
 			if (!o) {
-				typeof c == "function" && c.dispose?.();
+				typeof c.source == "function" && c.source.dispose?.();
 				return;
 			}
-			let { runFx: u } = await import("./FxRunner.js"), d = await u({
+			let { runFx: f } = await import("./FxRunner.js"), m = await f({
 				canvas: a,
-				source: c,
-				aFx: p.current,
-				active: f.current
+				source: c.source,
+				aFx: _.current,
+				active: g.current
 			});
-			o ? (l.current = d, s(!0)) : d.dispose();
+			o ? (l.current = m, p(c.pl > 0 || c.pt > 0 ? {
+				pl: c.pl,
+				pt: c.pt,
+				w: c.w,
+				h: c.h
+			} : null), s(!0)) : m.dispose();
 		})().catch((e) => {
 			console.error(`[add_fx] ${String(e)}`);
 		}), () => {
-			o = !1, s(!1), l.current?.dispose(), l.current = null;
+			o = !1, s(!1), p(null), l.current?.dispose(), l.current = null;
 		};
-	}, [d]), (0, V.useEffect)(() => {
+	}, [h]), (0, V.useEffect)(() => {
 		l.current?.update(a, o);
-	}, [a, o]), /* @__PURE__ */ L("canvas", {
+	}, [a, o]);
+	let v = f ? {
+		position: "absolute",
+		left: -f.pl,
+		top: -f.pt,
+		width: f.w,
+		height: f.h,
+		maxWidth: "none"
+	} : {
+		position: "absolute",
+		inset: 0
+	};
+	return /* @__PURE__ */ L("canvas", {
 		ref: c,
-		style: {
-			position: "absolute",
-			inset: 0
-		}
-	}, d);
+		style: v
+	}, h);
 }
 function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: a, isSheet: o, isMovie: s, aFace: c, aFx: l, fxActive: u, getVideoVol: d, needClick2Play: f }) {
 	let p = pu(a, o), m = mu(o || s ? "" : a), [h, g] = (0, V.useState)(!1);
