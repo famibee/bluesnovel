@@ -694,6 +694,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.10.0](https://github.com/famibee/bluesnovel/compare/v0.9.0...v0.10.0) (2026-09-03)
+
+
+### Features
+
+* **sn:** [def_fx pad= / pad_b=] で fx キャンバスを基本画像の枠外へ広げる ([45b90e7](https://github.com/famibee/bluesnovel/commit/45b90e745f57d4bab495d999901ebf6206f8e239))
+
 ## [0.9.0](https://github.com/famibee/bluesnovel/compare/v0.8.0...v0.9.0) (2026-09-03)
 
 
