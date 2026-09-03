@@ -65,6 +65,47 @@
   だから (a) `page=back` 限定 pause（狭すぎ）や (b) `[tsy]` を作成時の物理ページへ束縛
   （`chgLay` の動的解決を変える＝`[fg2]` の絶対再配置・`backlay` に波及する中規模改修）より安全。
 
+## fore ページの毎フレーム再 render の実コスト（計測 2026-09-03、TODO #62 決着）
+
+2026-08-30 は「fore の毎フレーム再 render は許容」を回数（2955 回）だけで判断していた。
+**子コンポーネント（GrpLayer/TxtLayer/PlgLayer）も `React.memo` 化すべきか**を、1 コミットの
+実コストで測り直した。
+
+**計測方法（再現レシピ）**：使い捨てフィクスチャ（1280×720・背景＋立ち絵 3＋満杯の `mes`
+TxtLayer〔約 200 字・ルビ 6・折返し多数〕＋ボタン 4）で立ち絵 1 枚に無限
+`[tsy repeat=0 yoyo=true]` をかけ `[l]` で停止。`Stage.tsx` の `aPage.map` を React
+`<Profiler id=…>` で一時的にくるみ、`onRender` の `actualDuration`/`baseDuration` を
+`window.__renderProf` へ蓄積。Playwright（headless chromium＝**vite dev＝React development
+build**）で 4 秒間収集。CPU 内訳は CDP `Profiler`（サンプリング 100µs）。
+
+**結果**：
+
+| 指標 | 値 |
+|---|---|
+| コミット頻度 | 60 /s（＝毎フレーム再 render 確定） |
+| `actualDuration`（back は memo でスキップ済＝実質 fore のみ） | mean 1.9ms / p95 2.2ms / max 2.4ms |
+| `baseDuration`（fore+back 全再 render 相当） | mean 2.9ms |
+| コミット間隔 | mean 16.66ms＝**フレーム落ちゼロ・60fps 維持** |
+
+CPU プロファイル内訳（非 idle 分）：大半が `React.createElement` ＋ emotion の `css`
+再シリアライズ（`serializeStyles`/`murmur2`）＋ **development build 限定の計装**
+（`jsxDEV`/`validateProperty`/`logComponentRender`/`runWithFiberInDEV` 等）。アプリ側
+コード（TxtLayer/BtnLayer の本体）は合計でも 0.1ms/frame 未満。重い `useLayoutEffect`
+（`applyKinsoku` ~13ms）は deps 不変で**再実行されていない**（4 秒で 240 回走れば
+~3000ms 出るはずが出ていない＝effect は再実行なし、render 関数だけが回っている）。
+
+**結論＝子コンポーネントの memo 化は見送り**：
+
+- production build では dev 計装が消え emotion も最小化＝実コストは概ね 0.5〜1ms/frame と
+  見込まれる。headless dev でもフレーム落ちゼロ。無限 `[tsy]` 自体がニッチ（有限 tsy は
+  数百 ms で自己完了）。
+- 一方 `<Page>` の `aLay.map` はフックを置けず、レイヤごとの `sty`（毎 render 新規オブジェクト）
+  と 5 個のインライン arrow ハンドラを安定化するには **per-layer ラッパーコンポーネント新設**
+  ＝「prop 安定化の設計変更」が要る。`sty` は `cmn.sty4Moveable`（デザインモード）との合成
+  でもあり追随が必要で、リセット/演出系の回帰リスク（`applyKinsoku` の折返しズレ実績多数）を負う。
+- 2026-08-30 の決着（fore の毎フレーム再 render は許容・back のみ `<Page>` memo 化）を
+  計測で追認した。再検討は「production build の実測で 60fps 割れ」が出てからで十分。
+
 ## メモ
 
 - ページ可視の信号は用途ごとに別経路：

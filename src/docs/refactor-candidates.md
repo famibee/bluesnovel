@@ -141,17 +141,18 @@
 
 ## Efficiency（アルゴリズム変更）
 
-- **レイヤ子コンポーネントが非メモ化＋毎レンダー新規コールバック。** 無限 `[tsy]`（や音声
-  フェード）で Stage が毎フレーム再レンダーされると表ページの全レイヤが再レンダー。
-  `GrpLayer`/`TxtLayer`/`PlgLayer` は `memo` されておらず `getVideoVol={()=>…}` 等の
-  クロージャをレイヤごと毎回生成。1 レイヤを tsy で動かすだけで同ページの他の立ち絵・
-  1200 行 `TxtLayer`・`BtnLayer` 群が 60fps で全再レンダー。
-  → 子を `React.memo`＋ハンドラ `useCallback`（`cmn` を `useMemo` した Stage の規律を子へ）。
-  効果大だが prop 安定化の設計変更。
-  ※ [backpage-perf.md](backpage-perf.md) が「fore ページの毎フレーム再 render（実測 2955 回）は
-  許容し、back ページを `<Page>` の `React.memo` 化で止めた」で一旦決着済み。**覆すには
-  「fore の毎フレーム再 render の実コスト」をブラウザで計測してから**（render 回数でなく 1 回の
-  コスト＝特に 1200 行 `TxtLayer`＋多数の `useLayoutEffect`）。専用セッション向け。
+- ~~**レイヤ子コンポーネントが非メモ化＋毎レンダー新規コールバック。**~~ … 計測して見送り
+  （2026-09-03、TODO #62）。無限 `[tsy]` 中、fore の全レイヤ（1200 行 `TxtLayer` 含む）が
+  60fps で再 render されるのは事実。だが 1 コミットの実コストを React `<Profiler>` で実測
+  （満杯ページ＋無限 tsy・vite dev＝React development build・headless）すると
+  `actualDuration` mean 1.9ms／p95 2.2ms、**フレーム間隔 mean 16.66ms＝フレーム落ちゼロ**。
+  CPU 内訳は `React.createElement`＋emotion の `css` 再シリアライズ＋dev build 限定の計装が
+  大半で、アプリ側コードは 0.1ms/frame 未満、重い `useLayoutEffect`（`applyKinsoku`）は
+  deps 不変で再実行なし。production build ではさらに軽い見込み。一方 memo 化は `<Page>` の
+  `aLay.map` がフックを置けず、`sty`（毎 render 新規）＋5 ハンドラの安定化に per-layer
+  ラッパー新設＝設計変更が要り、`sty4Moveable` 合成の追随・折返しズレ回帰リスクを負う。
+  数値・レシピ・結論の詳細は [backpage-perf.md](backpage-perf.md)「fore ページの毎フレーム
+  再 render の実コスト」。
 - ~~**禁則処理が毎テキスト追記で全文字を再測定。**~~ … 済（第7弾＝走査範囲限定、
   第8弾＝deps から `chWait`/`autowc` 除去。どちらも上「適用済み」参照）。
   **見送り（未着手）**：**呼び出しをまたぐ差分**。第7弾は 1 回の `applyKinsoku` 内の
