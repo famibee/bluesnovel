@@ -681,6 +681,38 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.9.0](https://github.com/famibee/bluesnovel/compare/v0.8.0...v0.9.0) (2026-09-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sn:** [add_fx fx=snow] を積雪レイヤ方式へ刷新（glslsandbox e#36547.0 由来 / MIT）
+* **sn:** [add_fx] の生 glsl= を新タグ [def_fx name= glsl=] へ分離
+
+### Features
+
+* **sn:** [add_fx fx=fireworks] に p2=（横位置）を追加 ([5e5b72d](https://github.com/famibee/bluesnovel/commit/5e5b72def8911ec5a944c72680bab103f91bfe32))
+* **sn:** [add_fx fx=fireworks] を組み込みプリセットに追加（冠菊花火 / MIT） ([65535d5](https://github.com/famibee/bluesnovel/commit/65535d59940b92f08e16b008fd18a2c7b7df2da1))
+* **sn:** [add_fx fx=snow] を積雪レイヤ方式へ刷新（glslsandbox e[#36547](https://github.com/famibee/bluesnovel/issues/36547).0 由来 / MIT） ([2b0d9bb](https://github.com/famibee/bluesnovel/commit/2b0d9bb8f7d2206765a686c5a25bc0782a1f3316))
+* **sn:** [add_fx loop=false] で単発エフェクトの尺を [def_fx duration=] から解決 ([ee2f62a](https://github.com/famibee/bluesnovel/commit/ee2f62a7874a7da0c00fde1807d56230f3186460))
+* **sn:** [add_fx] の生 glsl= を新タグ [def_fx name= glsl=] へ分離 ([daecf95](https://github.com/famibee/bluesnovel/commit/daecf950e04aacb0a265dcd8308dbaf0ab196532))
+* **sn:** [def_fx] シェーダに汎用入力ポート p1〜p4 / color を追加 ([894bc9c](https://github.com/famibee/bluesnovel/commit/894bc9cbb93e21f729e8f44e46364fe4a60c5d29))
+
+
+### Bug Fixes
+
+* **sn:** [add_fx fx=rain] が下から上へ降る ([daecf95](https://github.com/famibee/bluesnovel/commit/daecf950e04aacb0a265dcd8308dbaf0ab196532))
+* **sn:** [lay break_fixed=] 待ちマーカー原点を getComputedStyle 実測へ（style= の padding 指定に追従） ([36b0e9b](https://github.com/famibee/bluesnovel/commit/36b0e9b199308be9836643828d12bf0115c4433d))
+* **sn:** ギャラリー埋め込み時の [toggle_full_screen] が全画面化されず左上寄せになる ([90c09b3](https://github.com/famibee/bluesnovel/commit/90c09b37e1963431677356c669940dc3cbc093ea))
+* **sn:** 同一内容の単発 fx を [clear_fx]→[add_fx] で撃ち直すと2回目が発火しない ([ee2f62a](https://github.com/famibee/bluesnovel/commit/ee2f62a7874a7da0c00fde1807d56230f3186460))
+* **sn:** 禁則処理が自然折り返しの受理後に行の起点を見失い「ー」等で誤って追い出す不具合 ([c3e1bd8](https://github.com/famibee/bluesnovel/commit/c3e1bd84f52e99825708469bc7f925db0993aac0))
+
+
+### Performance Improvements
+
+* **sn:** 禁則 effect の deps から chWait/autowc を外す（/simplify 第8弾） ([c6a003e](https://github.com/famibee/bluesnovel/commit/c6a003ebda01881532f962ab75cfe158d7d2246f))
+* **sn:** 禁則処理の測り直しを走査範囲に限定（/simplify 第7弾） ([d0d4923](https://github.com/famibee/bluesnovel/commit/d0d4923fa774c2abeee61cd25ec8060183e80500))
+
 ## [0.8.0](https://github.com/famibee/bluesnovel/compare/v0.7.0...v0.8.0) (2026-08-30)
 
 
