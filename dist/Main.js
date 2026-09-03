@@ -620,7 +620,7 @@ var ze = function(e, t, n) {
 }, He = /* #__PURE__ */ new WeakMap(), Ue = function(e) {
 	if (!(e.type !== "rule" || !e.parent || e.length < 1)) {
 		for (var t = e.value, n = e.parent, r = e.column === n.column && e.line === n.line; n.type !== "rule";) if (n = n.parent, !n) return;
-		if (!(e.props.length === 1 && t.charCodeAt(0) !== 58 && !He.get(n)) && !r) {
+		if ((e.props.length !== 1 || t.charCodeAt(0) === 58 || He.get(n)) && !r) {
 			He.set(e, !0);
 			for (var i = [], a = Ve(t, i), o = n.props, s = 0, c = 0; s < a.length; s++) for (var l = 0; l < o.length; l++, c++) e.props[c] = i[s] ? a[s].replace(/&\f/g, o[l]) : o[l] + " " + a[s];
 		}

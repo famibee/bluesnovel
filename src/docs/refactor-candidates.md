@@ -52,18 +52,24 @@
   `useStore(s=>s.chWait/autowc)` の購読をやめ effect 内で `useStore.getState()` から読む
   （新規文字は現在値を使う＝挙動同一。`autoskip`/`chstyle`/`ruby` 系 E2E 40 件で確認）。
   下 `splitCh` 実測の副産物。`TxtLayer.tsx` 1 ファイル完結。
+- `（第9弾・Altitude）` … **ScriptMng の待ち合わせ 8 サブシステムを `#curWait` 単一トークンへ統一**。
+  `[wt]`/`[wait]`/`[wait_tsy]`/`[wait_fx]`/`[wq]`/`[ws]`-`[wl]`/`[wf]`-`[wb]`/`[wv]` がそれぞれ
+  `#xxxWaiting` フィールド＋`#waitXxx()`＋`#skipXxxWait()`＋終了口の identity 照合＋`#goSafe()` の
+  分岐（約 40 行）＋`hoverCall()` のガード列を持ち、待ちタグ 1 個追加で 9 箇所を触っていた
+  （`viaCall` バイパスは tsy/fx だけ手で `&& ! viaCall`、`hoverCall` は 8 個中 6 個だけ列挙）。
+  → `T_WAIT {kind; key; canskip; bypassOnCall; skip}` の 1 フィールド `#curWait` に集約。
+  待ちに入るのは `#armWait(w | undefined)`（`undefined`＝待つものが無い＝素通し）、終了口は
+  `#resumeWait(kind, key, deferred)`。サブシステム固有の追加データ（`stop` 等）は `skip`
+  クロージャ捕捉でトークン型を膨らませない。`#goSafe()`/`hoverCall()` は待ち種別を知らなくなった
+  （ARCHITECTURE.md「終わりを宣言するのは ScriptMng」の 1 概念に抽象を合わせた）。各サブシステムの
+  `#beginXxx`/`#finishXxx`（タイマー・`#hTw`・rAF ポーリング）と deferred の有無（trans/wait/
+  quake/snd/video は即時、tsy/fx/fade は `setTimeout(0)`）は挙動保存のため不変。`ScriptMng.ts`
+  正味 −55 行。**ついでに直した既存不具合**：`destroy()` が `#aFxTimer` の one-shot タイマーを
+  畳み忘れており、プロジェクト切替後に `[add_fx time>0]` のタイマーが発火して `#goSafe()` まで
+  走りうる（`#dropFxTimers(()=> true)` を追加）。単体 1771 件＋E2E 全件で挙動不変を確認。
 
 ## Altitude（下の機構を一般化する）
 
-- **ScriptMng の待ち合わせが 8 サブシステム平行実装。** `[trans]`/`[wait]`/`[tsy]`/`[fx]`/
-  `[quake]`/`[ws-wl]`/`[wf-wb]`/`[wv]` がそれぞれ `#xxxWaiting` フィールド＋`#xxxRunning`
-  フラグ＋`#waitXxx()`＋`#endXxx`/`#skipXxxWait`＋`#goSafe()` の分岐＋`#runStep()` の
-  `if (last?.t === 'waitXxx')` を持ち、待ちタグ 1 個追加で 4〜5 箇所を触る。`viaCall`
-  バイパスは tsy/fx だけ手で `&& ! viaCall` が付く。
-  → `#curWait` 単一フィールドに `WaitToken {canskip; isRunning(); skip(); settleOn(cb);
-  bypassOnCall}` を持たせ、`#goSafe()`/`#runStep()` は種別を知らずトークン経由で扱う。
-  ARCHITECTURE.md が「終わりを宣言するのは ScriptMng」と 1 概念で語っているのに抽象が
-  切り出されていない。
 - ~~レイヤ表示属性の「キー集合」が 4 箇所手書きで食い違い~~ … **見送り**（2026-09-03 調査）。
   `A_LAY_STY_KEY`（共通スタイル）／`A_ER_RESET_KEY`（[er] が戻す変形サブセット）／`chgLay`
   ガード（grp/plg に来たらエラーにする文字専用属性）／`[clear_lay]` の `clr1` 文字リセット

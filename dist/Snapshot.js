@@ -64,7 +64,7 @@ async function s(e) {
 	let t = [...e.querySelectorAll("img")];
 	await Promise.all(t.map(async (e) => {
 		let { src: t } = e;
-		if (!(!t || t.startsWith("data:"))) try {
+		if (t && !t.startsWith("data:")) try {
 			e.setAttribute("src", await l(t));
 		} catch {
 			e.remove();

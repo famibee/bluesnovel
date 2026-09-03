@@ -1577,7 +1577,7 @@ var se = class e {
 		this.#P.setNs("sys", e);
 	}
 	transDone(e) {
-		for (let t of Object.keys(this.#C)) e && !e.includes(t) || (this.#C[t] = this.#w[t] ?? "");
+		for (let t of Object.keys(this.#C)) (!e || e.includes(t)) && (this.#C[t] = this.#w[t] ?? "");
 	}
 	get isKidoku() {
 		return this.#G;
@@ -1779,7 +1779,7 @@ var se = class e {
 			}
 		}
 		let l = {};
-		if (t.visible !== void 0 && (l.visible = t.visible !== "false"), t.alpha !== void 0 && (l.alpha = e.#n("lay", "alpha", t.alpha)), !(!c && t.pos === "stay")) {
+		if (t.visible !== void 0 && (l.visible = t.visible !== "false"), t.alpha !== void 0 && (l.alpha = e.#n("lay", "alpha", t.alpha)), c || t.pos !== "stay") {
 			if (!c && t.pos !== void 0) {
 				let n = t.pos, { w: r, h: i } = this.#i();
 				n === "" || n === "c" ? (l.left = r / 2, l.align_x = "center") : n === "l" ? l.left = 0 : n === "r" ? (l.left = r, l.align_x = "right") : (l.left = e.#n("lay", "pos", n), l.align_x = "center"), l.top = i, l.align_y = "bottom";

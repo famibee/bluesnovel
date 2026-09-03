@@ -55,6 +55,20 @@ function classifyAsset(src: string): {isSheet: boolean; isMovie: boolean} {
 	return {isSheet: src.endsWith('.json'), isMovie: RE_MOVIE_EXT.test(src)};
 }
 
+// 待ち合わせトークン。[wt]/[wait]/[wait_tsy]/[wait_fx]/[wq]/[ws]-[wl]/[wf]-[wb]/[wv] の8タグは
+//	どれも「対象の演出・音・動画が終わる（または canskip クリックで打ち切られる）まで #runStep() を
+//	止める」という同じ形。ScriptMng は「今なにを待っているか」をこのトークン1個だけで持ち、
+//	#goSafe()/hoverCall() は待ちの種別を知らない（ARCHITECTURE.md「終わりを宣言するのは ScriptMng」の
+//	1概念に抽象を合わせる）。サブシステム固有の追加データ（stop 等）はトークンに載せず skip クロージャに
+//	捕捉させる（トークン型を union で膨らませないため）
+type T_WAIT = {
+	readonly kind        : 'trans' | 'wait' | 'tsy' | 'fx' | 'quake' | 'snd' | 'fade' | 'video';
+	readonly key         : unknown;		// サブシステム固有の識別子（tw_nm / buf / fn / Set<id>）。参照等値で照合
+	readonly canskip     : boolean;		// クリックで打ち切れるか
+	readonly bypassOnCall: boolean;		// [button call=]/[event] が素通ししてよいか（[wait_tsy]/[wait_fx] だけ true）
+	readonly skip        : ()=> void;	// canskip クリック時の打ち切り。最終的に #resumeWait() へ至る
+};
+
 
 export class ScriptMng {
 	readonly	#spnDbg	: HTMLSpanElement;
@@ -86,10 +100,12 @@ export class ScriptMng {
 		this.cancelAuto();
 		clearTimeout(this.#transTimer);
 		clearTimeout(this.#quakeTimer);
-		clearTimeout(this.#waiting?.timer);
+		clearTimeout(this.#waitTimer);
+		this.#dropFxTimers(()=> true);	// [add_fx time>0]のone-shotタイマー（旧実装は畳み忘れ＝プロジェクト切替後に発火して#goSafe()まで走りうる不具合）
 		for (const {tw} of Object.values(this.#hTw)) tw.kill();
 		for (const {tw} of Object.values(this.#hSndTw)) tw.kill();
 		this.#sndMng.stopAll();
+		this.#curWait = undefined;	// 未解決の待ちトークンを次プロジェクトへ持ち越さない
 		this.#spnDbg.remove();
 		this.#plgLayMng.destroy();	// プロジェクト切替で古いWebGLコンテキスト等を持ち越さない
 	}
@@ -467,8 +483,7 @@ export class ScriptMng {
 		const engine = this.#engine;
 		if (! engine || ! label) return;
 		if (this.#hovering || this.#busy || this.#procing) return;
-		if (this.#transWaiting || this.#waiting || this.#quakeWaiting
-			|| this.#sndWaiting || this.#sndFadeWaiting || this.#videoWaiting) return;
+		if (this.#curWait && ! this.#curWait.bypassOnCall) return;	// bypassOnCall（[wait_tsy]/[wait_fx]）だけ #goSafe(viaCall) が素通しできる
 
 		this.#hovering = true;
 		engine.setValNochk('tmp:sn.eventArg', '');
@@ -618,64 +633,33 @@ export class ScriptMng {
 	// viaCall＝[button]/[event]のcall/jump予約（jumpToLabelAndGo経由）からの呼び出しか。
 	//	通常のクリック読み進めと違い、callToLabel()が積んだ戻り先は「割り込まれた待ちタグ自身」
 	//	（--idxで1つ戻して積むため、[return]はそのタグを再実行する。本家 #doReturn()のコメント
-	//	参照）なので、[wait_tsy]待ち中でも安全に今すぐ実行してよい：[pause_tsy]等を含む呼び先を
-	//	[return]まで走らせても、戻った先で同じ[wait_tsy]が再実行され、動いているトゥイーンが
-	//	あれば（#waitTsy()参照。存在チェックだけの副作用無い実装）そのまま待ちに戻るだけで済む。
-	//	tag_tsyのpause/resumeボタン（[button call=true label=*pause]）が、canskip=false指定の
-	//	[wait_tsy]中はクリックしても#runStep()が一切呼ばれず待ちが自然終了するまで無視され続ける
-	//	不具合として発見（2026-08-21）。[trans]/[wait]/[quake]等の他の待ちタグは再実行すると
-	//	演出そのものが再発火してしまう（[wait_tsy]のような存在チェックの冪等実装が無い）ため、
-	//	同じ理屈でのバイパスはできず対象外のまま
+	//	参照）なので、bypassOnCall（[wait_tsy]/[wait_fx]）の待ち中でも安全に今すぐ実行してよい：
+	//	[pause_tsy]等を含む呼び先を[return]まで走らせても、戻った先で同じ[wait_tsy]/[wait_fx]が
+	//	再実行され、動いているトゥイーン／タイマーがあれば（#waitTsy()/#waitFx()参照。存在チェック
+	//	だけの副作用無い実装）そのまま待ちに戻るだけで済む。tag_tsyのpause/resumeボタン
+	//	（[button call=true label=*pause]）が、canskip=false指定の[wait_tsy]中はクリックしても
+	//	#runStep()が一切呼ばれず待ちが自然終了するまで無視され続ける不具合として発見（2026-08-21）。
+	//	[trans]/[wait]/[quake]等の他の待ちタグは再実行すると演出そのものが再発火してしまう
+	//	（冪等実装が無い）ため bypassOnCall=false のまま
 	#goSafe(viaCall = false) {
 		// [s]で停止中は、クリック・キーでは進まない（進めるのは[event]/[button]の予約だけ）。
 		//	本家 ReadingState_wait4Tag も、タグ名が's'のときだけonUserActを付けずに待つ。
 		//	[waitclick]は同じ停止でもクリックで進む（＝ここを通らない）
 		if (this.#stopped) return;
+		const w = this.#curWait;
 
 		// [button/link onenter=/onleave=]のホバーコール実行中は、通常の読み進めclickを捨てる
 		//	（本家 ReadingState_go.fire() が空実装なのに合わせ、遅延でなく破棄）。viaCall＝ホバー
 		//	コール自身の再開経路（#jumpToLabelAndGo→#goSafe(true)）はここを通す
 		if (this.#hovering && ! viaCall) return;
 
-		// [wt]で[trans]の演出待ち中、または[wait]のウェイト中は、
-		//	読み進め要求を「今すぐ待ちを打ち切って続行」に読み替える。
-		//	canskip=falseなら何も起きない（＝クリックでは飛ばせない）
-		if (this.#transWaiting) {
-			if (this.#transWaiting.canskip) {
-				this.#finishTrans();
-				// クロスフェードを途中で畳んだので、消えかけの文字（[ch_out_style]のゴースト）も
-				//	終端へスナップさせる。requestSkipは本来タイプ演出用だが「本文表示を最終状態へ」
-				//	という意味は出現・消去どちらも同じ（TxtLayer.tsxの[skipReq]効果）
-				this.$fncs.requestSkip();
-			}
-			return;
-		}
-		if (this.#waiting) {
-			if (this.#waiting.canskip) this.#endWait();
-			return;
-		}
-		if (this.#tsyWaiting && ! viaCall) {
-			if (this.#tsyWaiting.canskip) this.#endTsy(this.#tsyWaiting.tw_nm);
-			return;
-		}
-		if (this.#fxWaiting && ! viaCall) {	// viaCall（[button call=]/[event]）は[wait_tsy]と同じく素通し
-			if (this.#fxWaiting.canskip) this.#skipFxWait();		//	（#waitFx は存在チェックだけの冪等実装なので[return]後に再実行されても待ちに戻るだけ）
-			return;
-		}
-		if (this.#quakeWaiting) {
-			if (this.#quakeWaiting.canskip) this.#finishQuake();
-			return;
-		}
-		if (this.#sndWaiting) {
-			if (this.#sndWaiting.canskip) this.#skipSndWait();
-			return;
-		}
-		if (this.#sndFadeWaiting) {
-			if (this.#sndFadeWaiting.canskip) this.#skipSndFadeWait();
-			return;
-		}
-		if (this.#videoWaiting) {
-			if (this.#videoWaiting.canskip) this.#skipVideoWait();
+		// 待ち合わせタグ（[wt]/[wait]/[wait_tsy]/[wait_fx]/[wq]/[ws]-[wl]/[wf]-[wb]/[wv]）で
+		//	#runStep()を止めている最中は、読み進め要求を「今すぐ待ちを打ち切って続行」に読み替える。
+		//	canskip=falseなら何も起きない（＝クリックでは飛ばせない）。打ち切りの中身は待ち種別ごとに
+		//	違う（trans は #finishTrans+requestSkip、tsy は #endTsy、音は停止判断つき…）ので、
+		//	トークンが skip クロージャに閉じ込めている。#curWait の詳細は T_WAIT 宣言と #armWait/#resumeWait
+		if (w && ! (viaCall && w.bypassOnCall)) {
+			if (w.canskip) w.skip();
 			return;
 		}
 		// DOM絡みの非同期処理中（[add_frame]/[let_frame]/[loadplugin]/[snapshot]/[load]）は
@@ -689,6 +673,30 @@ export class ScriptMng {
 	}
 	#stopped = false;	// [s]で停止中か
 	#procing = false;	// DOM絡みの非同期処理中か（上記）
+
+	// ===== 待ち合わせ（T_WAIT 宣言のコメント参照） =====
+	//	8タグそれぞれの #beginXxx/#finishXxx（タイマー・#hTw・rAF ポーリング等）はサブシステム側に
+	//	残し、ここが束ねるのは「今なにを待っているか」の1個だけ
+	#curWait: T_WAIT | undefined;
+
+	// 待ちに入る（#runStep() 末尾の待ちアクション処理から）。#waitXxx() が「待つものが無い」
+	//	（演出が既に終わっている・鳴っていない等）と判断したら undefined を渡す＝待たずに続きを回す
+	//	（#runStep() の中＝#busy 中なので、#busy が下りてから goSafe する）
+	#armWait(w: T_WAIT | undefined) {
+		if (w) {this.#curWait = w; return}
+		setTimeout(()=> this.#goSafe(), 0);
+	}
+	// 待ち対象が終わった通知（各サブシステムの終了口＝#finishTrans/#endWait/#onTsyEnd/… から）。
+	//	今の待ちと一致すれば #curWait を下ろして続きを回す。kind+key の参照等値で照合するので、
+	//	待っていない演出の終了通知や、[stopse] 等で既に打ち切り済みの通知は素通しできる。
+	//	deferred＝呼び出し元が #runStep() の中（#busy 中）でありうる経路か
+	//	（[tsy time=0] 直後の [wait_tsy]、[fadese time=0] 直後の [wf] 等）
+	#resumeWait(kind: T_WAIT['kind'], key: unknown, deferred: boolean) {
+		const w = this.#curWait;
+		if (w?.kind !== kind || w.key !== key) return;
+		this.#curWait = undefined;
+		if (deferred) setTimeout(()=> this.#goSafe(), 0); else this.#goSafe();
+	}
 
 	// オート読み・既読スキップの自動進行タイマー。停止点でresume指示が来たら仕込み、
 	//	次のgo()を自分で呼ぶ。手動操作（Main.tsx）や[s]到達で止める
@@ -743,7 +751,6 @@ export class ScriptMng {
 	//	交換前のページへ次の文が書かれてしまう（＝画面が空のまま進む）
 	#transTimer		: ReturnType<typeof setTimeout> | undefined;
 	#transRunning	= false;	// 演出中か（time=0は即交換済みなのでfalseのまま）
-	#transWaiting	: {canskip: boolean} | undefined;	// [wt]で待っている最中か
 	#transALayNm	: string[] | null = null;	// 演出中の[trans]が交換するレイヤ名（本文蓄積の追随用）
 
 	// [trans]適用時：演出時間ぶんのタイマーを仕込む。[wt]の有無に関わらず必ず終わらせる
@@ -777,24 +784,25 @@ export class ScriptMng {
 			this.#plgLayMng.finishTrans(this.#transALayNm, oldForeIdx, []);
 		}
 
-		if (! this.#transWaiting) return;
-		this.#transWaiting = undefined;
-		this.#goSafe();
+		this.#resumeWait('trans', undefined, false);
 	}
 	// [wt]：演出中なら待ちに入る。待つものが無ければそのまま続きへ
 	//	（本家 CmnTween.wt() も、動いているトゥイーンが無ければ待たずに済ませる）
 	#waitTrans(canskip: boolean) {
-		if (this.#transRunning) {this.#transWaiting = {canskip}; return}
-
-		// ここは#runStep()の中なので、同期で続きを回すと#busyが下りる前に再入してしまう
-		setTimeout(()=> this.#goSafe(), 0);
+		this.#armWait(this.#transRunning ? {kind: 'trans', key: undefined, canskip, bypassOnCall: false,
+			skip: ()=> {
+				this.#finishTrans();
+				// クロスフェードを途中で畳んだので、消えかけの文字（[ch_out_style]のゴースト）も
+				//	終端へスナップさせる。requestSkipは本来タイプ演出用だが「本文表示を最終状態へ」
+				//	という意味は出現・消去どちらも同じ（TxtLayer.tsxの[skipReq]効果）
+				this.$fncs.requestSkip();
+			}} : undefined);
 	}
 
 	// ===== [quake]の画面揺らしと、その終了待ち（[wq]／[stop_quake]） =====
 	//	[trans]とまったく同じ形。揺らすのはStage側のrAFループで、**終わりを決めるのはここ**
 	#quakeTimer		: ReturnType<typeof setTimeout> | undefined;
 	#quakeRunning	= false;
-	#quakeWaiting	: {canskip: boolean} | undefined;
 
 	#beginQuake(act: Extract<T_ENGINE_ACTION, {t: 'quake'}>) {
 		clearTimeout(this.#quakeTimer);
@@ -808,29 +816,28 @@ export class ScriptMng {
 		this.#quakeRunning = false;
 		this.$fncs.finishQuake();	// Stage側が揺れを止め、ずれを0へ戻す
 
-		if (! this.#quakeWaiting) return;
-		this.#quakeWaiting = undefined;
-		this.#goSafe();
+		this.#resumeWait('quake', undefined, false);
 	}
 	#waitQuake(canskip: boolean) {
-		if (this.#quakeRunning) {this.#quakeWaiting = {canskip}; return}
-
-		setTimeout(()=> this.#goSafe(), 0);	// #waitTrans()と同じ事情
+		this.#armWait(this.#quakeRunning
+			? {kind: 'quake', key: undefined, canskip, bypassOnCall: false, skip: ()=> this.#finishQuake()}
+			: undefined);
 	}
 
 	// ===== [wait time=…]のウェイト =====
 	//	[wt]と同じ形（時間切れ、またはcanskipならクリックで打ち切って続行）。
 	//	違いは「終わったときに片付けるものが無い」ことだけ
-	#waiting: {timer: ReturnType<typeof setTimeout>; canskip: boolean} | undefined;
+	#waitTimer: ReturnType<typeof setTimeout> | undefined;
 
 	#beginWait(msec: number, canskip: boolean) {
-		this.#waiting = {canskip, timer: setTimeout(()=> this.#endWait(), Math.max(0, msec))};
+		clearTimeout(this.#waitTimer);
+		this.#waitTimer = setTimeout(()=> this.#endWait(), Math.max(0, msec));
+		this.#armWait({kind: 'wait', key: undefined, canskip, bypassOnCall: false, skip: ()=> this.#endWait()});
 	}
 	#endWait() {
-		if (! this.#waiting) return;
-		clearTimeout(this.#waiting.timer);
-		this.#waiting = undefined;
-		this.#goSafe();
+		clearTimeout(this.#waitTimer);
+		this.#waitTimer = undefined;
+		this.#resumeWait('wait', undefined, false);
 	}
 
 	// ===== トゥイーンアニメ（[tsy]/[wait_tsy]/[stop_tsy]/[pause_tsy]/[resume_tsy]） =====
@@ -843,7 +850,6 @@ export class ScriptMng {
 	//	トゥイーン名（tw_nm）はname省略時レイヤ名（本家 CmnTween.#tw_nm()）
 	//	nm/pageは[er]/[clear_lay]でそのレイヤのトゥイーンを畳むための紐付け（[tsy_frame]はnm無し）
 	readonly #hTw: {[tw_nm: string]: {tw: Tw; end: ()=> void; next?: ()=> void; nm?: string; page?: T_PAGE}} = Object.create(null);
-	#tsyWaiting	: {tw_nm: string; canskip: boolean} | undefined;	// [wait_tsy]で待っている最中か
 
 	#beginTsy(act: Extract<T_ENGINE_ACTION, {t: 'tsy'}>) {
 		const cur = this.$fncs.getLaySty(act.nm, act.page);
@@ -978,12 +984,8 @@ export class ScriptMng {
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hTw[tw_nm];
 		next?.();	// [tsy chain=…]で後ろに繋がれたトゥイーンを開始する
-		if (this.#tsyWaiting?.tw_nm !== tw_nm) return;
-
-		this.#tsyWaiting = undefined;
-		// #runStep()の中から呼ばれる場合がある（[tsy time=0]直後の[wait_tsy]等）ので、
-		//	#busyが下りるのを待ってから回す
-		setTimeout(()=> this.#goSafe(), 0);
+		// #runStep()の中から呼ばれる場合がある（[tsy time=0]直後の[wait_tsy]等）ので deferred
+		this.#resumeWait('tsy', tw_nm, true);
 	}
 	// 終了状態へ送って止める（[stop_tsy]、[wait_tsy]中のクリック）
 	#endTsy(tw_nm: string) {
@@ -996,7 +998,7 @@ export class ScriptMng {
 	//	見た目をトゥイーンが上書きし続ける（本家 TODO.md に既知不具合として記載。分家で先に対処）。
 	//	[stop_tsy]と違い最終値の畳み込み（end()）は呼ばない——レイヤは既定へ戻される最中なので、
 	//	トゥイーンの最終値を入れ直すと打ち消し合う。chain先も道連れ（kill()が辿る／nextは発火しない）。
-	//	[wait_tsy]待機中は#runStep()が止まり[er]/[clear_lay]が来ないので#tsyWaitingは触らなくてよい
+	//	[wait_tsy]待機中は#runStep()が止まり[er]/[clear_lay]が来ないので#curWaitは触らなくてよい
 	#stopTsyByLayer(aLayNm: readonly string[] | null, page: T_PAGE_BOTH) {
 		for (const [tw_nm, ti] of Object.entries(this.#hTw)) {
 			if (ti.nm === undefined) continue;	// [tsy_frame]はレイヤに紐付かない
@@ -1009,9 +1011,9 @@ export class ScriptMng {
 	}
 	// [wait_tsy]：動いているトゥイーンが無ければ待たずに続きへ（本家 wait_tsy() も false を返す）
 	#waitTsy(tw_nm: string, canskip: boolean) {
-		if (! this.#hTw[tw_nm]) {setTimeout(()=> this.#goSafe(), 0); return}
-
-		this.#tsyWaiting = {tw_nm, canskip};
+		this.#armWait(this.#hTw[tw_nm]
+			? {kind: 'tsy', key: tw_nm, canskip, bypassOnCall: true, skip: ()=> this.#endTsy(tw_nm)}
+			: undefined);
 	}
 
 	// ===== fx one-shot 終了待ち（[wait_fx]。[add_fx time>0] のタイマー） =====
@@ -1027,7 +1029,6 @@ export class ScriptMng {
 	//	[add_fx layer=省略] のあと [wait_fx layer=me] は「me にも載っている」とみなして待つ）
 	#aFxTimer: {id: number; timer: ReturnType<typeof setTimeout>; endAt: number; paused: {remainMs: number} | null; aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string}[] = [];
 	#fxTimerSeq = 0;
-	#fxWaiting: {ids: Set<number>; canskip: boolean} | undefined;	// [wait_fx]で待っている最中か（[wait_tsy]の複数版）
 
 	// [add_fx time>0] で1件張る。time=0（無限＝常時ゆらぎ）は終わりが無いので [wait_fx] の対象外
 	#addFxTimer(act: Extract<T_ENGINE_ACTION, {t: 'addFx'}>) {
@@ -1060,14 +1061,15 @@ export class ScriptMng {
 		const i = this.#aFxTimer.findIndex(t=> t.id === id);
 		if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
 
-		if (! this.#fxWaiting) return;
-		this.#fxWaiting.ids.delete(id);
-		if (this.#fxWaiting.ids.size > 0) return;
-		this.#fxWaiting = undefined;
-		setTimeout(()=> this.#goSafe(), 0);	// #onTsyEnd() と同じく #busy が下りてから回す
+		const w = this.#curWait;
+		const ids = w?.kind === 'fx' ? w.key as Set<number> : undefined;
+		if (! ids) return;
+		ids.delete(id);
+		if (ids.size > 0) return;
+		this.#resumeWait('fx', ids, true);	// #onTsyEnd() と同じく #busy が下りてから回す
 	}
 	// [clear_fx]/[clear_lay]/ページ演じ直しの replace() でタイマーも落とす。
-	//	[wait_fx]待機中は #runStep() が止まり [clear_fx] 等は来ないので #fxWaiting は触らない
+	//	[wait_fx]待機中は #runStep() が止まり [clear_fx] 等は来ないので #curWait は触らない
 	//	（[tsy] の #stopTsyByLayer と同じ前提。ANIMATION_RESEARCH.md §7）
 	#dropFxTimers(match: (t: {aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string})=> boolean) {
 		for (let i = this.#aFxTimer.length; --i >= 0;) {
@@ -1077,12 +1079,14 @@ export class ScriptMng {
 			this.#aFxTimer.splice(i, 1);
 		}
 	}
-	// [wait_fx]：セレクタ一致の未経過タイマーが無ければ待たずに続きへ（[wait_tsy] と同じ）
+	// [wait_fx]：セレクタ一致の未経過タイマーが無ければ待たずに続きへ（[wait_tsy] と同じ）。
+	//	待ち対象は複数タイマーなので key は id の Set（#endFxTimer が畳んで size===0 で完了通知）
 	#waitFx(aLayNm: readonly string[] | null, names: readonly string[] | null, canskip: boolean) {
 		const hit = this.#aFxTimer.filter(t=> ScriptMng.#fxMatch(t, aLayNm, names));
-		if (hit.length === 0) {setTimeout(()=> this.#goSafe(), 0); return}
-
-		this.#fxWaiting = {ids: new Set(hit.map(t=> t.id)), canskip};
+		this.#armWait(hit.length === 0 ? undefined : {
+			kind: 'fx', key: new Set(hit.map(t=> t.id)), canskip, bypassOnCall: true,
+			skip: ()=> this.#skipFxWait(),
+		});
 	}
 	// [wait_fx]/[clear_fx] のセレクタ照合。qNames/qLayNm は null で「全部」
 	static #fxMatch(t: {aLayNm: readonly string[] | null; name: string}, qLayNm: readonly string[] | null, qNames: readonly string[] | null): boolean {
@@ -1092,13 +1096,14 @@ export class ScriptMng {
 	}
 	// [wait_fx canskip=true]中のクリック：残りタイマーを全部畳んで続行（#endWait と同じ考え方）
 	#skipFxWait() {
-		if (! this.#fxWaiting) return;
-		for (const id of this.#fxWaiting.ids) {
+		const w = this.#curWait;
+		const ids = w?.kind === 'fx' ? w.key as Set<number> : undefined;
+		if (! ids) return;
+		for (const id of ids) {
 			const i = this.#aFxTimer.findIndex(t=> t.id === id);
 			if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
 		}
-		this.#fxWaiting = undefined;
-		this.#goSafe();
+		this.#resumeWait('fx', ids, false);
 	}
 
 	// ===== ＢＧＭ・効果音（[playse]/[playbgm]・[ws]/[wl]・[fadese]系・[wf]/[wb]） =====
@@ -1186,25 +1191,18 @@ export class ScriptMng {
 
 	// [ws]/[wl]：再生終了待ち。既に鳴っていない・ループ中なら待たずに続きへ
 	//	（本家 tag.html の「loop=trueなら待たない」通り。SndMng.waitEnd()がその判定を持つ）
-	#sndWaiting: {buf: string; canskip: boolean; stop: boolean} | undefined;
 	#waitSndPlay(buf: string, canskip: boolean, stop: boolean) {
-		const done = ()=> {
-			if (this.#sndWaiting?.buf !== buf) return;	// [stopse]等で既に打ち切り済み
-			this.#sndWaiting = undefined;
-			this.#goSafe();
-		};
-		if (! this.#sndMng.waitEnd(buf, done)) {setTimeout(()=> this.#goSafe(), 0); return}
+		const done = ()=> this.#resumeWait('snd', buf, false);	// [stopse]等で既に打ち切り済みなら kind/key 不一致で素通し
+		if (! this.#sndMng.waitEnd(buf, done)) {this.#armWait(undefined); return}
 
-		this.#sndWaiting = {buf, canskip, stop};
-	}
-	// [ws]/[wl]待機中のクリックで打ち切る。stop属性がtrueなら鳴っている音も止める
-	#skipSndWait() {
-		const w = this.#sndWaiting;
-		if (! w) return;
-		this.#sndWaiting = undefined;
-		this.#sndMng.cancelWaitEnd(w.buf);	// 自然終了時のdone()はもう要らない
-		if (w.stop) this.#sndMng.stop(w.buf);
-		this.#goSafe();
+		this.#armWait({kind: 'snd', key: buf, canskip, bypassOnCall: false, skip: ()=> {
+			// 先に #curWait を下ろす（stop() が同期で done() を呼んでも二重 goSafe しないため。
+			//	旧 #skipSndWait が #sndWaiting=undefined を先に置いていたのと同じ用心）
+			this.#curWait = undefined;
+			this.#sndMng.cancelWaitEnd(buf);	// 自然終了時のdone()はもう要らない
+			if (stop) this.#sndMng.stop(buf);
+			this.#goSafe();
+		}});
 	}
 
 	// [fadese]/[fadebgm]/[fadeoutse]/[fadeoutbgm]の本体（TwでGainNode.gainを動かす。
@@ -1237,26 +1235,15 @@ export class ScriptMng {
 	#onSndFadeEnd(buf: string) {
 		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 		delete this.#hSndTw[buf];
-		if (this.#sndFadeWaiting?.buf !== buf) return;
-
-		this.#sndFadeWaiting = undefined;
-		// #runStep()の中から呼ばれる場合がある（[fadese time=0]直後の[wf]等）ので、
-		//	#busyが下りるのを待ってから回す
-		setTimeout(()=> this.#goSafe(), 0);
+		// #runStep()の中から呼ばれる場合がある（[fadese time=0]直後の[wf]等）ので deferred
+		this.#resumeWait('fade', buf, true);
 	}
-	// [wf]/[wb]：フェード終了待ち。動いているフェードが無ければ待たずに続きへ
-	#sndFadeWaiting: {buf: string; canskip: boolean} | undefined;
+	// [wf]/[wb]：フェード終了待ち。動いているフェードが無ければ待たずに続きへ。
+	//	打ち切りは #killSndFade（終了状態へ送ってから続行する）
 	#waitFadeSnd(buf: string, canskip: boolean) {
-		if (! this.#hSndTw[buf]) {setTimeout(()=> this.#goSafe(), 0); return}
-
-		this.#sndFadeWaiting = {buf, canskip};
-	}
-	// [wf]/[wb]待機中のクリックで打ち切る。終了状態へ送ってから続行する
-	#skipSndFadeWait() {
-		const w = this.#sndFadeWaiting;
-		if (! w) return;
-
-		this.#killSndFade(w.buf);
+		this.#armWait(this.#hSndTw[buf]
+			? {kind: 'fade', key: buf, canskip, bypassOnCall: false, skip: ()=> this.#killSndFade(buf)}
+			: undefined);
 	}
 	// 走行中のフェードを即座に終了状態へ送って畳む（フェードが無ければ何もしない）。
 	//	[wf]/[wb]待機中のクリック打ち切りと、[xchgbuf]が実体を動かす前の下ごしらえの両方から使う
@@ -1271,7 +1258,6 @@ export class ScriptMng {
 	// [wv]：動画再生終了待ち（本家 SpritesMng.wv()）。**レイヤ名でなくファイル名（fn）**で
 	//	<video>を探す（GrpLayerがdata-fn属性に論理名を出している）。無い・ループ中・
 	//	既に終わっていれば待たず、stop指定なら（本家 stopVideo()相当で）その場で確定させる
-	#videoWaiting: {fn: string; canskip: boolean; stop: boolean} | undefined;
 	#findVideo(fn: string): HTMLVideoElement | undefined {
 		return this.#heStageBox?.querySelector<HTMLVideoElement>(`video[data-fn="${CSS.escape(fn)}"]`) ?? undefined;
 	}
@@ -1305,34 +1291,29 @@ export class ScriptMng {
 		//	同一要素のままだが、こちらはReactでDOM要素そのものを描画するため、trans完了時に
 		//	どちらかがアンマウントされると、最初に見つけたvideo要素へ張った'ended'リスナーが
 		//	消えて二度と発火しない（動画が終わっても[wv]が永久に進まなくなる不具合の原因だった）。
-		//	`#findVideo()`を毎フレーム呼び直せば、要素が差し替わっても常に最新のものを見られる
-		this.#videoWaiting = {fn, canskip, stop};
+		//	`#findVideo()`を毎フレーム呼び直せば、要素が差し替わっても常に最新のものを見られる。
+		//	待機中のクリック打ち切りは skip クロージャ。#curWait を先に下ろすので、走り続ける poll は
+		//	次フレームの kind/key ガードで自然に止まる
+		this.#armWait({kind: 'video', key: fn, canskip, bypassOnCall: false, skip: ()=> {
+			this.#curWait = undefined;	// 先に下ろす（旧 #skipVideoWait が #videoWaiting=undefined を先に置いていたのと同じ）
+			if (stop) {
+				const ve = this.#findVideo(fn);
+				if (ve) this.#stopVideo(ve);
+			}
+			this.#goSafe();
+		}});
 		const poll = ()=> {
-			if (this.#videoWaiting?.fn !== fn) return;	// [wv]待機中のクリックで既に打ち切り済み
+			if (this.#curWait?.kind !== 'video' || this.#curWait.key !== fn) return;	// クリック等で既に打ち切り済み
 			const cur = this.#findVideo(fn);
 			if (! cur || cur.loop || cur.ended) {
-				this.#videoWaiting = undefined;
 				if (cur?.ended && stop) this.#stopVideo(cur);
-				this.#goSafe();
+				this.#resumeWait('video', fn, false);
 				return;
 			}
 			if (cur.paused) void cur.play().catch(()=> {});	// back ページ化で pause されても待ち中は進める
 			requestAnimationFrame(poll);
 		};
 		requestAnimationFrame(poll);
-	}
-	// [wv]待機中のクリックで打ち切る。'ended'は{once:true}なので、まだ発火していなければ
-	//	そのまま残っても無害（done()の#videoWaiting?.fn!==fnガードが二重発火を防ぐ）
-	#skipVideoWait() {
-		const w = this.#videoWaiting;
-		if (! w) return;
-
-		this.#videoWaiting = undefined;
-		if (w.stop) {
-			const ve = this.#findVideo(w.fn);
-			if (ve) this.#stopVideo(ve);
-		}
-		this.#goSafe();
 	}
 	// 本家 SpritesMng.stopVideo()相当。#hFn2hveからの先削除によるリークは移植しない（todo.md参照）
 	#stopVideo(ve: HTMLVideoElement) {

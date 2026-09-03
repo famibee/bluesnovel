@@ -56,13 +56,9 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 
 ## リファクタ候補（/simplify 分家全体 2026-09-03）
 
-軽微な整理は第 1〜8 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
+軽微な整理は第 1〜9 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
 残りは 1 項目ずつ設計判断＋実機（E2E・サンプル実走）確認が要る規模。**オススメ順**：
 
-- [ ] **ScriptMng の待ち合わせ 8 サブシステム統一**（Altitude・大物）。`[trans]`/`[wait]`/`[tsy]`/
-      `[fx]`/`[quake]`/`[ws-wl]`/`[wf-wb]`/`[wv]` の `#xxxWaiting`＋フラグ＋`#waitXxx`＋
-      `#goSafe` 分岐＋`#runStep` 判定を `#curWait` 単一 + `WaitToken` へ。待ちタグ追加が
-      4〜5 箇所→1 箇所に。エンジンの停止/再開の中枢なので専用セッション＋全 E2E で。
 - [ ] **レイヤ子コンポーネントの `React.memo` 化**（Efficiency）。無限 `[tsy]` 中に fore ページの
       全レイヤ（1200 行 `TxtLayer` 含む）が毎フレーム再 render。[backpage-perf.md](backpage-perf.md)
       で「fore の毎フレーム再 render は許容・back を memo 化で対応」と一旦決着済み＝**覆すには

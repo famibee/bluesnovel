@@ -845,7 +845,7 @@ function Vt(e, t) {
 		zt(n, r, i, t, n[a]);
 		for (var o = 0; o < t; ++o) {
 			var s = o, c = n[o + i * t];
-			!G(c, 1e-7) || i === o || Lt(n, r, s, i, t, -c);
+			G(c, 1e-7) && i !== o && Lt(n, r, s, i, t, -c);
 		}
 	}
 	return r;
@@ -1498,7 +1498,7 @@ var Bn = /*#__PURE__*/ function(e) {
 		var t = e !== null && e.apply(this, arguments) || this;
 		return t._startRect = null, t._startPos = [], t._prevTime = 0, t._timer = 0, t._prevScrollPos = [0, 0], t._isWait = !1, t._flag = !1, t._currentOptions = null, t._lock = !1, t._unregister = null, t._onScroll = function() {
 			var e = t._currentOptions;
-			t._lock || !e || t.emit("scrollDrag", { next: function(n) {
+			!t._lock && e && t.emit("scrollDrag", { next: function(n) {
 				t.checkScroll({
 					container: e.container,
 					inputEvent: n
@@ -1932,7 +1932,7 @@ var hr = /* @__PURE__ */ function() {
 		n === void 0 && (n = {});
 		var r = e.call(this) || this;
 		r.options = {}, r.flag = !1, r.pinchFlag = !1, r.data = {}, r.isDrag = !1, r.isPinch = !1, r.clientStores = [], r.targets = [], r.prevTime = 0, r.doubleFlag = !1, r._useMouse = !1, r._useTouch = !1, r._useDrag = !1, r._dragFlag = !1, r._isTrusted = !1, r._isMouseEvent = !1, r._isSecondaryButton = !1, r._preventMouseEvent = !1, r._prevInputEvent = null, r._isDragAPI = !1, r._isIdle = !0, r._preventMouseEventId = 0, r._window = window, r.onDragStart = function(e, t) {
-			if (t === void 0 && (t = !0), !(!r.flag && e.cancelable === !1)) {
+			if (t === void 0 && (t = !0), r.flag || e.cancelable !== !1) {
 				var n = e.type.indexOf("drag") >= -1;
 				if (!(r.flag && n)) {
 					r._isDragAPI = !0;
@@ -4166,11 +4166,11 @@ var Co = {
 				var L = K(F, g), R = K(I, g), z = K(R, m), ee = K(L, h);
 				n.prevDist = R, n.prevBeforeDist = L, n.passDelta = z, n.passDist = R;
 				var te = n.left + L[0], B = n.top + L[1], ne = n.right - L[0], re = n.bottom - L[1], V = mi(n, `translate(${I[0]}px, ${I[1]}px)`, `translate(${R[0]}px, ${R[1]}px)`);
-				if (Mi(t, V), e.state.dragInfo.dist = r ? [0, 0] : R, !(!r && !v && z.every(function(e) {
+				if (Mi(t, V), e.state.dragInfo.dist = r ? [0, 0] : R, r || v || !z.every(function(e) {
 					return !e;
-				}) && ee.some(function(e) {
+				}) || !ee.some(function(e) {
 					return !e;
-				}))) {
+				})) {
 					var H = e.state, U = H.width, ie = H.height, W = Z(e, t, q({
 						transform: V,
 						dist: R,
@@ -4452,7 +4452,7 @@ var Do = Sc("resizable"), Oo = {
 	},
 	dragControlAfter: function(e, t) {
 		var n = t.datas, r = n.isResize, i = n.startOffsetWidth, a = n.startOffsetHeight, o = n.prevWidth, s = n.prevHeight;
-		if (!(!r || e.props.checkResizableError === !1)) {
+		if (r && e.props.checkResizableError !== !1) {
 			var c = e.state, l = c.width, u = c.height, d = l - (i + o), f = u - (a + s), p = $(d) > 3, m = $(f) > 3;
 			if (p && (n.startWidth += d, n.startOffsetWidth += d, n.prevWidth += d), m && (n.startHeight += f, n.startOffsetHeight += f, n.prevHeight += f), p || m) return this.dragControl(e, t);
 		}
@@ -4796,7 +4796,7 @@ var Fo = {
 				setRotation: function(e) {
 					O = e - N, T = O, j = O;
 				}
-			}, !0)), n = J(Mo(e, y, m, T, N, F), 3), w = n[0], T = n[1], E = n[2], r = J(Mo(e, y, h, O, N, F), 3), D = r[0], O = r[1], k = r[2], i = J(Mo(e, y, g, j, P, F), 3), A = i[0], j = i[1], M = i[2], !(!A && !D && !w && !C && !f)) {
+			}, !0)), n = J(Mo(e, y, m, T, N, F), 3), w = n[0], T = n[1], E = n[2], r = J(Mo(e, y, h, O, N, F), 3), D = r[0], O = r[1], k = r[2], i = J(Mo(e, y, g, j, P, F), 3), A = i[0], j = i[1], M = i[2], A || D || w || C || f) {
 				var z = mi(a, `rotate(${k}deg)`, `rotate(${O}deg)`);
 				f && (a.fixedPosition = Ri(e, a.targetAllTransform, a.fixedDirection, a.fixedOffset, a));
 				var ee = Ui(e, O, a), te = K(Yt(d || [0, 0], ee), a.prevInverseDist || [0, 0]);
@@ -7572,7 +7572,7 @@ function Sl(e, t, n, r, i) {
 		var r = t === "n" || t === "s";
 		e.forEach(function(e, i) {
 			var a = e.direction, o = e.horizontal, s = e.vertical;
-			!a || a.indexOf(t) === -1 || (c[i] = [r || !o ? 0 : n[0], !r || !s ? 0 : n[1]]);
+			a && a.indexOf(t) !== -1 && (c[i] = [r || !o ? 0 : n[0], !r || !s ? 0 : n[1]]);
 		});
 	}) : c[t] = n;
 	return c;
@@ -7987,7 +7987,7 @@ function Dl(e, t, n, r) {
 		var t = e.virtual;
 		return e.vertical && !t;
 	}).length, o = -1;
-	if (t === 0 && (i === 0 ? o = 0 : i === 1 && (o = 1)), t === 2 && (i <= 2 ? o = 2 : i <= 3 && (o = 3)), t === 3 && (a === 0 ? o = 4 : a < 4 && (o = 7)), t === 1 && (a <= 1 ? o = 5 : a <= 2 && (o = 6)), !(o === -1 || !e[o].virtual)) {
+	if (t === 0 && (i === 0 ? o = 0 : i === 1 && (o = 1)), t === 2 && (i <= 2 ? o = 2 : i <= 3 && (o = 3)), t === 3 && (a === 0 ? o = 4 : a < 4 && (o = 7)), t === 1 && (a <= 1 ? o = 5 : a <= 2 && (o = 6)), o !== -1 && e[o].virtual) {
 		var s = e[o];
 		Ol(e, o), o < 4 ? s.pos[0] = n : s.pos[1] = r;
 	}
@@ -8978,7 +8978,7 @@ var ql = /* @__PURE__ */ function(e) {
 	}, t.prototype.checkUpdate = function() {
 		this._isPropTargetChanged = !1;
 		var e = this.props, t = e.target, n = e.container, r = e.parentMoveable, i = this.state, a = i.target, o = i.container;
-		if (!(!a && !t)) {
+		if (a || t) {
 			this.updateAbles();
 			var s = !uc(a, t);
 			if (s || !uc(o, n)) {
@@ -9284,7 +9284,7 @@ var ql = /* @__PURE__ */ function(e) {
 	},
 	dragGroupEnd: function(e, t) {
 		var n = t.inputEvent, r = t.inputTarget;
-		if (!(!n || !r || t.isDrag || e.isMoveableElement(r) || t.datas.inputTarget === r)) {
+		if (n && r && !t.isDrag && !e.isMoveableElement(r) && t.datas.inputTarget !== r) {
 			var i = e.props.targets, a = i.indexOf(r), o = a > -1, s = !1;
 			a === -1 && (a = ct(i, function(e) {
 				return e.contains(r);
@@ -10080,7 +10080,7 @@ function Cu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 	};
 	(0, V.useEffect)(() => {
 		let e = _.current;
-		!e || !s || (u ? e.play().catch(() => {}) : e.pause());
+		e && s && (u ? e.play().catch(() => {}) : e.pause());
 	}, [
 		u,
 		s,
@@ -10272,7 +10272,7 @@ function Lu({ text: e, label: t, call: n, fn: r, arg: a, url: s, sty: c, enabled
 	let m = l && c?.enabled !== !1, h = T((e) => e.btnFont), g = (0, V.useRef)(null);
 	(0, V.useEffect)(() => {
 		let e = g.current;
-		if (!(!e || !m)) return o.add(e), () => o.remove(e);
+		if (e && m) return o.add(e), () => o.remove(e);
 	}, [m]);
 	let _ = (0, V.useRef)(null), v = c?.pic ? c.src ?? "" : "", y = c?.enabled !== !1, [b, x] = (0, V.useState)(null);
 	(0, V.useEffect)(() => {
@@ -10708,7 +10708,7 @@ function Ru({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 	`, Xe = (0, V.useRef)(null), Ze = (0, V.useRef)(!1);
 	(0, V.useEffect)(() => {
 		let e = Xe.current;
-		if (!(!e || !Ke)) return o.add(e), Ze.current && (Ze.current = !1, e.focus()), () => {
+		if (e && Ke) return o.add(e), Ze.current && (Ze.current = !1, e.focus()), () => {
 			Ze.current = o.isFocus(e), o.remove(e);
 		};
 	}, [Ke]);

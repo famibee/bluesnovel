@@ -46,6 +46,14 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   (`path.json`→`searchPath`) もここ**で、store は論理名 `fn` と解決後 URL `src` の両方を持つ。
   `searchPath` は見つからないと throw し、render 中の throw は React ごと落とすため。画像欠損は
   `'E'`（表示のみ）、スクリプト欠損は致命的。
+  **停止/再開の中枢**でもあり、`[s]` 停止（`#stopped`）・DOM 非同期（`#procing`）・本編 step 実行中
+  （`#busy`）・ホバーコール中（`#hovering`）に加え、**待ち合わせタグ 8 種**
+  （`[wt]`/`[wait]`/`[wait_tsy]`/`[wait_fx]`/`[wq]`/`[ws]`-`[wl]`/`[wf]`-`[wb]`/`[wv]`）は
+  `#curWait` 単一トークン（`T_WAIT`）で表す。各サブシステムの `#beginXxx`/`#finishXxx`
+  （タイマー・`#hTw`・rAF ポーリング等）は個別に残るが、「今なにを待っているか」はこの 1 個で、
+  `#goSafe()`／`hoverCall()` は種別を知らない（`#armWait()` で待ちに入り、終了口が
+  `#resumeWait(kind, key, deferred)` で戻す）。`bypassOnCall`（`[wait_tsy]`/`[wait_fx]` だけ）は
+  `[button call=]`/`[event]` が待ちを跨いで実行してよいことを表す。
 - **`src/store/store.tsx`** — zustand。単一の真実。`aPage: [T_LAY[], T_LAY[]]` が fore/back 2 ページ
   （本家 `Pages.ts`）で `foreIdx` がどちらが fore かを示す。`[add_lay]` は**両ページ**に作る。
   **レイヤ `nm` は `grp`/`txt` を跨いで一意**（重複は throw、React key も衝突する）。
