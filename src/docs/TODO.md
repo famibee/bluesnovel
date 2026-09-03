@@ -54,15 +54,6 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**
 
-## リファクタ候補（/simplify 分家全体 2026-09-03）
-
-軽微な整理は第 1〜9 弾で適用済み（[refactor-candidates.md](refactor-candidates.md) の「適用済み」節）。
-残りは 1 項目ずつ設計判断＋実機（E2E・サンプル実走）確認が要る規模。**オススメ順**：
-
-- [ ] （別タスク）本家由来部分（`src/sn/**` ほか）の /simplify＋modern-web-guidance は
-      **分析のみ**（適用しない）。本家との再取り込み衝突を増やさないため。対象を `src/sn/**` に
-      絞るか本家側でやるか含めて要相談。
-
 ## 保留
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
