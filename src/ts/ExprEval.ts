@@ -41,6 +41,18 @@ type T_TOK = {t: string; v?: any[] | string};
 // 変数参照 hA['args'] / hB[1 + 4] の添字部分（中身は未解決の生テキストのまま）
 const REG_BRACKETS = /\[[^\]]+\]/g;
 
+// #tokenize() のホットループで使う（毎周回の regex リテラル生成を避けモジュール定数へ）。
+//	いずれも ^ アンカー・非 global なので lastIndex 問題は無い（本家 PropParser.ts 同）
+const REG_TOK_HEX	= /^0x[0-9a-fA-F]+/;
+const REG_TOK_FLOAT	= /^(0|[1-9][0-9]*)\.[0-9]+/;
+const REG_TOK_INT	= /^(0|[1-9][0-9]*)/;
+const REG_TOK_BOOL	= /^(true|false)/;
+const REG_TOK_IDENT	= /^[A-Za-z_][A-Za-z0-9_]*/;
+
+// JS の値の実体型判定（プリミティブとラッパーの両方を拾う）
+const isStr = (v: unknown)=> Object.prototype.toString.call(v) === '[object String]';
+const isNum = (v: unknown)=> Object.prototype.toString.call(v) === '[object Number]';
+
 // 2項演算子の優先順位表（値が大きいほど強く結合）。演算子文字列がそのままASTのopcode
 // （#hFncのキー）になる。right:trueは右結合（例：2**3**2 は 2**(3**2)）
 const H_BINOP: {[op: string]: {bp: number; right?: boolean}} = {
@@ -94,17 +106,17 @@ export class ExprEval {
 
 			// 数値：16進 → 小数 → 整数の順（本家Numと同じ優先。1つ目・2つ目はNumber()、
 			//	整数だけint()＝parseInt基数10。頭の符号はUnaryNegateが持つのでここでは見ない）
-			if ((m = /^0x[0-9a-fA-F]+/.exec(rest))
-			 || (m = /^(0|[1-9][0-9]*)\.[0-9]+/.exec(rest))) {
+			if ((m = REG_TOK_HEX.exec(rest))
+			 || (m = REG_TOK_FLOAT.exec(rest))) {
 				aTok.push({t: 'NUM', v: ['!num!', Number(m[0])]}); pos += m[0].length; continue;
 			}
-			if ((m = /^(0|[1-9][0-9]*)/.exec(rest))) {
+			if ((m = REG_TOK_INT.exec(rest))) {
 				aTok.push({t: 'NUM', v: ['!num!', int(m[0])]}); pos += m[0].length; continue;
 			}
 
 			// null・true/false（本家同様、単語境界のチェックは無い）
 			if (rest.startsWith('null')) {aTok.push({t: 'NULL', v: ['!str!', null]}); pos += 4; continue}
-			if ((m = /^(true|false)/.exec(rest))) {
+			if ((m = REG_TOK_BOOL.exec(rest))) {
 				aTok.push({t: 'BOOL', v: ['!bool!', m[0] === 'true']}); pos += m[0].length; continue;
 			}
 
@@ -130,7 +142,7 @@ export class ExprEval {
 			if ('()!~*/%+-<>&^|:?¥'.includes(one)) {aTok.push({t: one}); ++pos; continue}
 
 			// 関数呼び出し：ASCII識別子の直後（空白無し）に'('が来たときだけ（本家と同じ制約）
-			const mFunc = /^[A-Za-z_][A-Za-z0-9_]*/.exec(rest);
+			const mFunc = REG_TOK_IDENT.exec(rest);
 			if (mFunc && rest.charAt(mFunc[0].length) === '(') {
 				aTok.push({t: 'FUNC', v: mFunc[0]}); pos += mFunc[0].length; continue;
 			}
@@ -231,7 +243,7 @@ export class ExprEval {
 		if (v === null || v === undefined) return ['!str!', v];	// v == null は eqeqeq違反
 		if (typeof v === 'boolean') return ['!bool!', v];
 
-		return Object.prototype.toString.call(v) === '[object String]'
+		return isStr(v)
 			? ['!str!', String(v)]
 			: ['!num!', Number(v)];
 	}
@@ -259,6 +271,14 @@ export class ExprEval {
 		const fnc = this.#hFnc[elm];
 		return fnc ? fnc(a) : Object(null);
 	}
+	// 2項数値演算の共通形：左辺→右辺の順に評価し（評価順は元の各実装と同一）両者を
+	//	Number 化して f へ渡す。短絡評価が要る &&・|| と文字列連結分岐のある + は対象外。
+	//	#hFnc の初期化時に呼ぶので #hFnc より前に置く（本家 PropParser.ts 同）
+	#binNum = (f: (x: number, y: number)=> any): IFncCalc=> a=> {
+		const x = Number(this.#calc(a.shift()));
+		const y = Number(this.#calc(a.shift()));
+		return f(x, y);
+	};
 	readonly #hFnc: IHFncCalc = {
 		'!num!':	a=> a.shift(),
 		'!str!':	a=> this.#procEmbedVar(a.shift()),
@@ -277,28 +297,27 @@ export class ExprEval {
 		UnaryNegate:	a=> - this.#hFnc.Number!(a),
 
 		// 乗算、除算、剰余
-		'**':	a=> Number(this.#calc(a.shift())) ** Number(this.#calc(a.shift())),
-		'*':	a=> Number(this.#calc(a.shift())) * Number(this.#calc(a.shift())),
-		'/':	a=> Number(this.#calc(a.shift())) / Number(this.#calc(a.shift())),
+		'**':	this.#binNum((x, y)=> x ** y),
+		'*':	this.#binNum((x, y)=> x * y),
+		'/':	this.#binNum((x, y)=> x / y),
 		'¥':	a=> Math.floor(this.#hFnc['/']!(a)),	// 整数除算
-		'%':	a=> Number(this.#calc(a.shift())) % Number(this.#calc(a.shift())),
+		'%':	this.#binNum((x, y)=> x % y),
 
 		// 加算、減算、文字列の連結
 		'+':	a=> {
 			const b = this.#calc(a.shift());
 			const c = this.#calc(a.shift());
-			return Object.prototype.toString.call(b) === '[object String]'
-				|| Object.prototype.toString.call(c) === '[object String]'
-					? String(b) + String(c) : Number(b) + Number(c);
+			return isStr(b) || isStr(c)
+				? String(b) + String(c) : Number(b) + Number(c);
 		},
-		'-':	a=> Number(this.#calc(a.shift())) - Number(this.#calc(a.shift())),
+		'-':	this.#binNum((x, y)=> x - y),
 
 		// 関数
 		int:		a=> int(this.#fncSub_ChkNum(a.shift())),
 		parseInt:	a=> int(this.#hFnc.Number!(a)),
 		Number:		a=> {
 			const b = this.#calc(a.shift());
-			return Object.prototype.toString.call(b) === '[object String]'
+			return isStr(b)
 				? this.#fncSub_ChkNum(this.#parseToAst(String(b)))
 				: Number(b);
 		},
@@ -312,15 +331,15 @@ export class ExprEval {
 		isNaN:	a=> Number.isNaN(this.#fncSub_ChkNum(a.shift())),
 
 		// ビットシフト
-		'<<':	a=> Number(this.#calc(a.shift())) << Number(this.#calc(a.shift())),
-		'>>':	a=> Number(this.#calc(a.shift())) >> Number(this.#calc(a.shift())),
-		'>>>':	a=> Number(this.#calc(a.shift())) >>> Number(this.#calc(a.shift())),
+		'<<':	this.#binNum((x, y)=> x << y),
+		'>>':	this.#binNum((x, y)=> x >> y),
+		'>>>':	this.#binNum((x, y)=> x >>> y),
 
 		// 小なり、以下、大なり、以上
-		'<':	a=> Number(this.#calc(a.shift())) < Number(this.#calc(a.shift())),
-		'<=':	a=> Number(this.#calc(a.shift())) <= Number(this.#calc(a.shift())),
-		'>':	a=> Number(this.#calc(a.shift())) > Number(this.#calc(a.shift())),
-		'>=':	a=> Number(this.#calc(a.shift())) >= Number(this.#calc(a.shift())),
+		'<':	this.#binNum((x, y)=> x < y),
+		'<=':	this.#binNum((x, y)=> x <= y),
+		'>':	this.#binNum((x, y)=> x > y),
+		'>=':	this.#binNum((x, y)=> x >= y),
 
 		// 等値、非等値、厳密等価、厳密非等価
 		'==':	a=> {
@@ -339,9 +358,9 @@ export class ExprEval {
 		'!==':	a=> ! this.#hFnc['===']!(a),
 
 		// ビット演算子
-		'&':	a=> Number(this.#calc(a.shift())) & Number(this.#calc(a.shift())),
-		'^':	a=> Number(this.#calc(a.shift())) ^ Number(this.#calc(a.shift())),
-		'|':	a=> Number(this.#calc(a.shift())) | Number(this.#calc(a.shift())),
+		'&':	this.#binNum((x, y)=> x & y),
+		'^':	this.#binNum((x, y)=> x ^ y),
+		'|':	this.#binNum((x, y)=> x | y),
 
 		// 論理 AND,OR
 		'&&':	a=> String(this.#calc(a.shift())) === 'true' &&
@@ -361,7 +380,7 @@ export class ExprEval {
 	};
 	#fncSub_ChkNum(v: any[]): number {
 		const b = this.#calc(v);
-		if (Object.prototype.toString.call(b) !== '[object Number]') throw Error(`(ExprEval)引数【${String(b)}】が数値ではありません`);
+		if (! isNum(b)) throw Error(`(ExprEval)引数【${String(b)}】が数値ではありません`);
 		return Number(b);
 	}
 

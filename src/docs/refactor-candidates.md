@@ -13,6 +13,35 @@
 再取り込み衝突が増えるだけ・適用先が本家なので本家で回す方が素直）。この項目は分家 TODO
 から落とし、以降は `skynovel_esm` の TODO で扱う。
 
+本家の /simplify（第 1〜8 弾）が済んだので、分家がほぼ無改変でミラーしている
+`src/sn/{Grammar,Config,ConfigBase,RubySpliter}.ts` と `src/ts/ExprEval.ts`（本家 PropParser
+の移植先）へ、本家が確立した掃除を **2026-09-03 に再同期**（下「適用済み・本家再同期」）。
+分家単独ではミラー乖離＝再取り込み衝突になるため着手できなかった掃除。
+
+## 適用済み・本家再同期（2026-09-03。本家 `skynovel_esm` の /simplify 第 1・5・8 弾に対応）
+
+挙動不変（単体 1771 件＋`tsc` 通過）。いずれも本家がパターンを確立したので分家も追従できた:
+
+- `src/sn/Grammar.ts` … `REG_CRLF`/`REG_LETML_SPLIT`/`REG_IS_LETML`/`REG_IS_ENDLETML` を
+  モジュール定数化（本家第1弾 `53620ad`）。加えて `resolveScript` の行番号計算ループの
+  `a[i]!.match(/\n/g)?.length ?? 0` を本家第5弾 `61859fb` の `numLF()` を移植して置換
+  （本家は `ScriptIterator` 側で遅延計算だが試作版はトークン化時に一括なのでここに置く）
+- `src/ts/ExprEval.ts`（本家 PropParser の移植先）… `#tokenize()` の数値/真偽/識別子 regex 5 本を
+  `REG_TOK_*` 定数へ、2 項数値演算 15 個の `Number(#calc(a.shift())) OP …` コピペを
+  `#binNum(f)` ファクトリへ、`[object String]`/`[object Number]` 判定を `isStr`/`isNum` helper へ
+  （本家第1弾 `53620ad`）。短絡が要る `&&`/`||` と連結分岐のある `+` は対象外
+- `src/sn/Config.ts` … `searchPath` の `slice(11)`/`slice(10)` を `PROTOCOL_DL.length`/
+  `PROTOCOL_USERDATA.length` へ（本家第1弾）
+- `src/sn/RubySpliter.ts` … `putTxtRb` の json 文法/傍点文法判定 regex 2 本を `REG_RB_JSON`/
+  `REG_RB_SESAME` 定数へ（本家第1弾）
+- `src/sn/ConfigBase.ts` … `searchPath` 内 4 箇所の `` `|${grp}|`.includes(`|${ext}|`) `` を
+  `#extInGroup(grp, ext)` helper へ、使い回しローカル `search_exts` を廃止（本家第8弾 `fdd89c6`）
+
+対象外：本家が触っても `SysBase.ts`（623 行乖離）・`Layer.ts`（432 行）・`PlgLayer.ts`（141 行）は
+分家が意図的に削減済みで手動判断。`Button`/`LayerMng`/`Main`/`Pages`/`ScriptIterator`/`SndBuf`/
+`SoundMng`/`TxtLayer`/`Variable` 等は分家では別実装（`ScriptEngine`/`ScriptMng`/`VarStore`/
+コンポーネント）で再同期の対象にならない。
+
 ## 適用済み
 
 - `c5ece67`（第1弾・軽微な整理）… `mutatePages`/`eachTargetLay` 共通化、`aMat`/`aBlur` の

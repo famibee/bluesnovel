@@ -17,6 +17,9 @@ export type T_PutCh = (ch: string, ruby: string)=> void;
 
 export type IAutoPage = (idx: number, str: string) => void;
 
+const REG_RB_JSON	= /^\w+｜{"/;	// 自動区切りを行わない内部 json 文法
+const REG_RB_SESAME	= /^\*.?$/;		// 傍点文法
+
 
 export class RubySpliter {
 	static	#sesame		= 'ヽ';
@@ -85,11 +88,11 @@ export class RubySpliter {
 
 	putTxtRb(text: string, ruby: string) {	// テスト用にpublic
 		// 自動区切りを行わない（内部的 json文法）
-		if (/^\w+｜{"/.test(ruby)) {this.#putCh(text, ruby); return}
+		if (REG_RB_JSON.test(ruby)) {this.#putCh(text, ruby); return}
 
 		const a: string[] = Array.from(text);
 		const len = a.length;
-		if (/^\*.?$/.test(ruby)) {	// 傍点文法
+		if (REG_RB_SESAME.test(ruby)) {	// 傍点文法
 			const rb_ses = 'center｜'+ (ruby === '*' ?RubySpliter.#sesame :ruby.charAt(1));
 			for (const s of a) this.#putCh(s, rb_ses);
 			return;

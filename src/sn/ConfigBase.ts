@@ -210,6 +210,8 @@ export class ConfigBase implements T_Config {
 
 	readonly	#REG_PATH = /([^/\s]+)\.([^\d]\w+)/;
 		// 4 match 498 step(~1ms)  https://regex101.com/r/tpVgmI/1
+	//	拡張子 ext がパイプ区切りの拡張子群 grp に含まれるか（例: grp='sn|png|jpg', ext='png'）
+	#extInGroup(grp: string, ext: string): boolean {return `|${grp}|`.includes(`|${ext}|`)}
 	searchPath(fn: string, extptn: SEARCH_PATH_ARG_EXT = SEARCH_PATH_ARG_EXT.DEFAULT): string {
 		if (! fn) throw '[searchPath] fnが空です';
 		if (fn.startsWith('http://')) return fn;
@@ -222,7 +224,7 @@ export class ConfigBase implements T_Config {
 			if (utn in this.hPathFn2Exts) {
 				if (extptn === SEARCH_PATH_ARG_EXT.DEFAULT) fn0 = utn;
 				else for (const e3 of Object.keys(this.hPathFn2Exts[utn] ?? {})) {
-					if (`|${extptn}|`.includes(`|${e3}|`)) {fn0 = utn; break}
+					if (this.#extInGroup(extptn, e3)) {fn0 = utn; break}
 				}
 			}
 		}
@@ -238,23 +240,22 @@ export class ConfigBase implements T_Config {
 				return fn;
 			}
 
-			const search_exts = `|${extptn}|`;
 			if (hcnt > 1) {
 				let cnt = 0;
 				for (const e2 of Object.keys(h_exts)) {
-					if (! search_exts.includes(`|${e2}|`)) continue;
+					if (! this.#extInGroup(extptn, e2)) continue;
 					if (++cnt > 1) throw `指定ファイル【${fn}】が複数マッチします。サーチ対象拡張子群【${extptn}】で絞り込むか、ファイル名を個別にして下さい。`;
 				}
 			}
 			for (const [ext, pp] of Object.entries(h_exts)) {
-				if (search_exts.includes(`|${ext}|`)) return <string>pp;
+				if (this.#extInGroup(extptn, ext)) return <string>pp;
 			}
 			throw `サーチ対象拡張子群【${extptn}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${fn}】`;
 		}
 
 		// fnに拡張子xが含まれている
 		//	ファイル名サーチ→拡張子群にxが含まれるか
-		if (extptn !== SEARCH_PATH_ARG_EXT.DEFAULT && ! `|${extptn}|`.includes(`|${ext}|`)) {
+		if (extptn !== SEARCH_PATH_ARG_EXT.DEFAULT && ! this.#extInGroup(extptn, ext)) {
 			throw `指定ファイルの拡張子【${ext}】は、サーチ対象拡張子群【${extptn}】にマッチしません。探索ファイル名=【${fn}】`;
 		}
 

@@ -51,10 +51,10 @@ export class Config extends ConfigBase {
 
 	override	searchPath(fn: string, extptn: SEARCH_PATH_ARG_EXT = SEARCH_PATH_ARG_EXT.DEFAULT): string {
 		if (fn.startsWith(PROTOCOL_DL)) {
-			return this.sys.path_downloads + fn.slice(11);
+			return this.sys.path_downloads + fn.slice(PROTOCOL_DL.length);
 		}
 		if (fn.startsWith(PROTOCOL_USERDATA)) {
-			return this.sys.path_userdata + 'storage/'+ fn.slice(10);
+			return this.sys.path_userdata + 'storage/'+ fn.slice(PROTOCOL_USERDATA.length);
 		}
 
 		return super.searchPath(fn, extptn);

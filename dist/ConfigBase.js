@@ -88,6 +88,9 @@ var r = class {
 		return `skynovel.${this.oCfg.save_ns} - `;
 	}
 	#n = /([^/\s]+)\.([^\d]\w+)/;
+	#r(e, t) {
+		return `|${e}|`.includes(`|${t}|`);
+	}
 	searchPath(t, n = "") {
 		if (!t) throw "[searchPath] fnが空です";
 		if (t.startsWith("http://")) return t;
@@ -96,7 +99,7 @@ var r = class {
 			let e = i + "@@" + this.userFnTail;
 			if (e in this.hPathFn2Exts) {
 				if (n === "") i = e;
-				else for (let t of Object.keys(this.hPathFn2Exts[e] ?? {})) if (`|${n}|`.includes(`|${t}|`)) {
+				else for (let t of Object.keys(this.hPathFn2Exts[e] ?? {})) if (this.#r(n, t)) {
 					i = e;
 					break;
 				}
@@ -110,15 +113,14 @@ var r = class {
 				if (r > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
 				return t;
 			}
-			let i = `|${n}|`;
 			if (r > 1) {
 				let e = 0;
-				for (let r of Object.keys(o)) if (i.includes(`|${r}|`) && ++e > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
+				for (let r of Object.keys(o)) if (this.#r(n, r) && ++e > 1) throw `指定ファイル【${t}】が複数マッチします。サーチ対象拡張子群【${n}】で絞り込むか、ファイル名を個別にして下さい。`;
 			}
-			for (let [e, t] of Object.entries(o)) if (i.includes(`|${e}|`)) return t;
+			for (let [e, t] of Object.entries(o)) if (this.#r(n, e)) return t;
 			throw `サーチ対象拡張子群【${n}】にマッチするファイルがサーチパスに存在しません。探索ファイル名=【${t}】`;
 		}
-		if (n !== "" && !`|${n}|`.includes(`|${a}|`)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${t}】`;
+		if (n !== "" && !this.#r(n, a)) throw `指定ファイルの拡張子【${a}】は、サーチ対象拡張子群【${n}】にマッチしません。探索ファイル名=【${t}】`;
 		let s = o[a];
 		if (!s) throw `サーチパスに存在しない拡張子【${a}】です。探索ファイル名=【${t}】、サーチ対象拡張子群【${n}】`;
 		return s;

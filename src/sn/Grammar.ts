@@ -348,6 +348,17 @@ export type Script = {
 
 
 export const	REG_TAG	= /(?<name>[^\s;\]]+)/;	// test用にexport
+
+// resolveScript / testTagLetml で毎回リテラル生成しないようくくり出し（本家 Grammar.ts 同）
+const REG_CRLF			= /\r\n?/g;
+const REG_LETML_SPLIT	= /^([^\]]+?])(.*)$/s;
+const REG_IS_LETML		= /^\[let_ml\s/;
+const REG_IS_ENDLETML	= /^\[endlet_ml\s*]/;
+
+// トークン内の改行数（行番号加算用）。本家は ScriptIterator 側で遅延計算だが試作版は
+//	resolveScript でトークン化時に一括計算する（下）。その走査ループで何度も呼ぶので集約
+const REG_LF			= /\n/g;
+export function	numLF(s: string): number {return (s.match(REG_LF) ?? []).length}
 export function	tagToken2Name_Args(token: string): [name: string, args: string] {
 	const e = REG_TAG.exec(token.slice(1, -1));
 	const g = e?.groups;
@@ -504,13 +515,13 @@ export class Grammar {
 	// スクリプト（.sn一ファイル分の文字列）をトークン列へ分解する（本家 Grammar.ts:483）
 	resolveScript(txt: string): Script {
 		const a: string[] = txt
-		.replaceAll(/\r\n?/g, '\n')
+		.replaceAll(REG_CRLF, '\n')
 		.match(this.#REG_TOKEN)
 		?.flatMap(tkn=> {
 			if (! this.testTagLetml(tkn)) return tkn;
 
 			// [let_ml ...]とその後続テキストは一つにマッチするので、ここで二つに割る
-			const r = /^([^\]]+?])(.*)$/s.exec(tkn);
+			const r = REG_LETML_SPLIT.exec(tkn);
 			if (! r) return tkn;
 			const [, a, b] = r;
 			return [a!, b!];
@@ -523,7 +534,7 @@ export class Grammar {
 		let ln = 1;
 		for (let i = 0; i < a.length; ++i) {
 			scr.aLNum[i] = ln;
-			ln += a[i]!.match(/\n/g)?.length ?? 0;
+			ln += numLF(a[i]!);
 		}
 
 		this.#replaceScr_C2M(scr);
@@ -574,8 +585,8 @@ export class Grammar {
 		readonly	#alzTagArg	= new AnalyzeTagArg;
 
 
-	testTagLetml(tkn: string): boolean {return /^\[let_ml\s/.test(tkn)}
-	testTagEndLetml(tkn: string): boolean {return /^\[endlet_ml\s*]/.test(tkn)}
+	testTagLetml(tkn: string): boolean {return REG_IS_LETML.test(tkn)}
+	testTagEndLetml(tkn: string): boolean {return REG_IS_ENDLETML.test(tkn)}
 
 
 	// 定義済みの一文字／括弧マクロを、対応するタグトークンへ置き換える（本家 Grammar.ts:548）
