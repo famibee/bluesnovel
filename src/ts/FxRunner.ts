@@ -295,30 +295,36 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 				//	旧構成のまま続ける（[add_fx] は Fx.bldFx() で検査済みなので通常起きない）
 				try {
 					const built = newAFx.map(fx=> mkPass(fsOf(fx), fx));
-					for (const p of aPass) gl.deleteProgram(p.pg);
 					const nowMs = performance.now() - t0;
-					for (const p of built) p.pausedAccMs = nowMs;	// 新しい効果の tick は 0 から
+					// 構成変化（兄弟 fx の追加/削除・fx 名の切替）で作り直すのは**変わったパスだけ**。
+					//	記述子オブジェクトが据え置き（＝そのスロットは触られていない）なら旧パスの
+					//	タイムライン（pausedAccMs/pausedAt）を引き継ぐ——これをしないと、別 fx を足した
+					//	だけで保持中の keep/done パスが 0 から再ランプし、wave 等も位相が飛ぶ
+					const oldByFx = new Map(aPass.map(p=> [p.fx, p]));
+					for (const p of aPass) gl.deleteProgram(p.pg);
+					for (let k = 0; k < built.length; ++k) {
+						const old = oldByFx.get(newAFx[k]!);
+						if (old) {built[k]!.pausedAccMs = old.pausedAccMs; built[k]!.pausedAt = old.pausedAt}
+						else built[k]!.pausedAccMs = nowMs;	// 新しいパスは tick 0 から
+					}
 					aPass = built;
 					sig = nextSig;
 				}
 				catch (e) {console.error(`[add_fx] ${String(e)}`)}
 			}
-			// プリセット構成（fx名の並び）が変わらない＝プログラムは作り直さず.fxだけ差し替える経路。
-			//	無限ループ系（time=0）はここで tick を巻き戻さない：[add_fx amp=…] のようなその場の
-			//	パラメータ調整でアニメの位相を保つのが目的（wave/rain等の想定挙動）。
-			//	単発（time>0）は逆に、同じ preset 名のまま（[clear_fx] を挟まず）[add_fx name=同名
-			//	fx=同名 loop=false] 等で再トリガーする場合、ここで tick を巻き戻さないと、前回の
-			//	経過時間を引き継いだまま新しい time= と比較されてしまい、再生し直したいのに
-			//	初回描画から「経過済み」＝素通しになりかねない。単発は毎回「今から」が自然な
-			//	挙動なので、そのパスだけ pausedAccMs をリセットする（2026-09-02）
+			// プリセット構成（fx名の並び）が変わらない＝プログラムは作り直さず .fx だけ差し替える経路。
+			//	無限ループ系（time=0）は巻き戻さない：[add_fx amp=…] のその場調整でアニメの位相を保つ。
+			//	単発（time>0）は、その記述子が**差し替わった時だけ**「今から」へ巻き戻す：
+			//	  ・同名再トリガー（[add_fx name=同名 loop=false]）
+			//	  ・[clear_fx]→[add_fx] が同じ構成へ畳み込まれた（fx=blur→fx=blur reverse= 等の切替）
+			//	f === p.fx（他スロットが変わっただけで自分は不変）や done（[load] 復元済み）は据え置き
+			//	——これを外すと、reverse へ切り替えても前回の経過時間を引き継いで初回描画から「経過済み」
+			//	＝一瞬で終端になる（keep なら終端フレームで即凍結）。2026-09-02 導入・2026-09-04 修正
 			else for (let i = 0; i < aPass.length; ++i) {
 				const f = newAFx[i];
 				if (! f) continue;
 				const p = aPass[i]!;
-				// 単発（time>0）は「今から」へ巻き戻す（同名再トリガーの想定挙動）。ただし
-				//	keep／done は経過後に保持しているパス＝別 fx を足しただけで元絵に戻して
-				//	再ランプしてしまうので対象外（撮り直しは [clear_fx]→[add_fx]）
-				if (f.time > 0 && ! f.keep && ! f.done) {p.pausedAccMs = performance.now() - t0; p.pausedAt = 0}
+				if (f.time > 0 && f !== p.fx && ! f.done) {p.pausedAccMs = performance.now() - t0; p.pausedAt = 0}
 				p.fx = f;
 			}
 

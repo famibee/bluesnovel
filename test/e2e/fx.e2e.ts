@@ -310,13 +310,33 @@ test('[add_fx fx=blur loop=false] は keep 既定 true・one-shot 自然経過�
 	await expect.poll(async ()=> draw(page)).toBe('canvas');
 });
 
-test('[add_fx fx=blur reverse=true] は記述子に reverse/keep が載る', async ({page})=> {
-	for (let i = 0; i < 22; ++i) await pressKeyToWaitMark(page, 'Space');	// 「blur」まで
+test('[add_fx fx=blur reverse=true] は完了済み blur の後でも「今から」ランプし直す（一瞬で戻らない）', async ({page})=> {
+	for (let i = 0; i < 22; ++i) await pressKeyToWaitMark(page, 'Space');	// 「blur」まで（直前の blur は done 済み）
 
-	await pressKey(page, 'Space');	// [clear_fx]→[add_fx name=blr fx=blur loop=false time=300 reverse=true]→[er]blur_reverse[s]
+	await pressKey(page, 'Space');	// [clear_fx]→[add_fx name=blr fx=blur loop=false time=2000 reverse=true]→[er]blur_reverse[l]
 	await expect.poll(async ()=> mesStr(page)).toBe('blur_reverse');
 
 	const blr = (await afx(page))!.find(f=> f.name === 'blr')!;
-	expect(blr).toMatchObject({fx: 'blur', time: 300, reverse: true, keep: true});
+	expect(blr).toMatchObject({fx: 'blur', time: 2000, reverse: true, keep: true});
+	expect(blr).not.toHaveProperty('done');	// 直前の完了済み blur のタイムラインを引き継いでいない
 	await expect.poll(async ()=> draw(page)).toBe('canvas');
+	// 修正前はここが即 '0'（前回の経過時間 ≫ time= で初回描画から凍結）。今は time=2000 のランプ中＝rAF が回る
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+	// 経過後は素通しへ戻さず（keep）rAF だけ止まる
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 4000}).toBe('0');
+});
+
+test('grayscale / sepia（blur と同じランプ型）が 2 本重ねてコンパイル・描画できる', async ({page})=> {
+	for (let i = 0; i < 23; ++i) await pressKeyToWaitMark(page, 'Space');	// 「blur_reverse」まで
+
+	await pressKey(page, 'Space');	// [clear_fx]→[add_fx gs fx=grayscale]→[add_fx sp fx=sepia amp=0.7]→[er]color_fx[s]
+	await expect.poll(async ()=> mesStr(page)).toBe('color_fx');
+
+	const a = (await afx(page))!;
+	expect(a.map(f=> f.fx)).toEqual(['grayscale', 'sepia']);
+	expect(a[0]).toMatchObject({fx: 'grayscale', time: 300, keep: true, params: {amp: 1}});
+	expect(a[1]).toMatchObject({fx: 'sepia', time: 300, keep: true, params: {amp: 0.7}});
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>
+	// keep なので経過後も canvas は残るが rAF は止まる
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 3000}).toBe('0');
 });

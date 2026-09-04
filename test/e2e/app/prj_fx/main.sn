@@ -133,7 +133,16 @@
 [add_fx layer=base name=bl fx=blur loop=false time=300]
 [er]blur[l]
 
-; reverse=（ブラー→元絵）。keep 既定 true は据え置き＝記述子に reverse/keep 両方載る
+; reverse=（ブラー→元絵）。直前に完了済み blur があっても、[clear_fx]→[add_fx] は
+;	記述子が差し替わる＝タイムラインを引き継がず「今から」ランプし直す（2026-09-04 修正）。
+;	time= を長めにして「経過済みで即凍結」でなく実際にアニメすることを確かめる
 [clear_fx layer=base]
-[add_fx layer=base name=blr fx=blur loop=false time=300 reverse=true]
-[er]blur_reverse[s]
+[add_fx layer=base name=blr fx=blur loop=false time=2000 reverse=true]
+[er]blur_reverse[l]
+
+; grayscale / sepia（blur と同じランプ型。keep 既定 true）。行列は [add_filter] の同名フィルタと同じ。
+;	2 本重ねて ping-pong を通す＝GLSL コンパイル回帰も兼ねる
+[clear_fx layer=base]
+[add_fx layer=base name=gs fx=grayscale loop=false time=300]
+[add_fx layer=base name=sp fx=sepia loop=false time=300 amp=0.7]
+[er]color_fx[s]

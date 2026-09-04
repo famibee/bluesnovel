@@ -27,7 +27,7 @@
 ### シェーダエフェクト（`[add_fx]` 一族）— 正式化（2026-08-28）
 
 `[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、組み込みプリセット
-wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義
+wave / rgbShift / snow / rain / fireworks / blur / grayscale / sepia、生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義
 （契約は `[trans glsl=]` と統一・HEAD 自動前置・セーブ非対象＝起動スクリプトで再定義する運用）、
 基本画像は静止画・アニメ png シート・動画
 いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、`[trans]` 後の不可視 back
@@ -38,13 +38,14 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 残り：
 
 - [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：
-      タイル塗り＋スクロール／桜（花びら）／モザイク／グレースケール・セピアのランプ版
-      （`blur` の `progress`/`reverse`/`keep` 基盤に乗るので各 5–20 行）
+      タイル塗り＋スクロール／桜（花びら）／モザイク
       （花火 = `fireworks` は sn_gallery の `[def_fx name=花火2]` を組み込み化して済。
-      ぼかしアニメ = `blur` は 2026-09-04 に「ランプ型」基盤ごと実装して済）
+      ぼかし／グレースケール／セピア = `blur`/`grayscale`/`sepia` は 2026-09-04 に
+      「ランプ型」基盤〈`progress`/`reverse`/`keep`/`done`〉ごと実装して済）
 - [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**
+      （2026-09-04：blur/grayscale/sepia の進み・戻りボタンを `prj/add_fx/mat/main.sn` へ追加済み）
 
 ## 保留
 

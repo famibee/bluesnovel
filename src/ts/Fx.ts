@@ -42,7 +42,7 @@
 //	Shadertoy（iTime/iChannel0…）は開発時に手変換（マッピングは docs/tag.html）。
 
 // プリセット名。GLSL 実体は fxPresets.ts（lazy）が持つ。ここは名前の台帳だけ
-export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks', 'blur'] as const;
+export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks', 'blur', 'grayscale', 'sepia'] as const;
 
 // プリセット固有パラメータの既定値（**属性の既定値は 1 箇所**：ここがエンジン入口）。
 //	amp/freq/shift/p1 はプリセットごとに意味が違う（tag.html 参照）：
@@ -56,6 +56,10 @@ export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks', 'bl
 //	  blur  … amp=最大ぼかし半径（px。CSS blur(Npx) と同義。既定 8）。初の「ランプ型」プリセット
 //	          ＝time= の尺いっぱいかけて 元絵→ブラー（progress 0→1）に変化してそこで終わる。
 //	          keep=true（blur の既定）で最終フレームのまま保持、reverse=true で ブラー→元絵。
+//	  grayscale / sepia … amp=最終的な効き（0..1。既定 1）。blur と同じランプ型（keep 既定 true）。
+//	          元絵→モノクロ／セピア（reverse=true で色が戻る）。行列は [add_filter] の同名フィルタと同じ
+//	          ＝「fx で色を抜く演出 → 落ち着いたら [add_filter] へ差し替えて [clear_fx]」が自然。
+//	          1 タップだけ（追加コストほぼ 0）＝背景でも立ち絵でも軽い。
 //
 //	p2（横位置）は px でなく**画面幅に対する割合**にした：FBO 解像度はレイヤ基本画像の naturalWidth/Height
 //	（プロジェクトごとに違う／解像度 LOD で動きうる）で「画面のドット数」に安定した意味が無く、fireworks の
@@ -69,6 +73,8 @@ const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	rain		: {amp: 2, freq: 2, shift: 6},
 	fireworks	: {amp: 1, freq: 1, p1: 0.25, p2: 0},
 	blur		: {amp: 8},
+	grayscale	: {amp: 1},
+	sepia		: {amp: 1},
 };
 
 // 組み込みプリセットの「単発の尺」（[add_fx loop=false] が time= として解決する ms）。
@@ -77,12 +83,16 @@ const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 const H_FX_BUILTIN_DURATION: {readonly [fx: string]: number} = {
 	fireworks	: 4000,	// p1 未指定＝標準の約4秒周期（fxPresets.ts fireworks のコメント）
 	blur		: 800,	// ぼかし込みの標準的な尺（time= 明示で上書き可）
+	grayscale	: 800,	// blur と揃える（脱色フェードの標準的な尺）
+	sepia		: 800,
 };
 // 組み込みプリセットの keep=（最終フレーム保持）の既定。ここに無ければ false（＝time= 経過で素通し）。
 //	[def_fx] のユーザープリセットは [def_fx keep=]（T_DEF_FX_META.keep）で宣言する。
 //	blur のようなランプ型は「変化しきった絵」を保つのが自然なので既定 true（keep=false 明示で解除）
 const H_FX_BUILTIN_KEEP: {readonly [fx: string]: boolean} = {
 	blur		: true,
+	grayscale	: true,
+	sepia		: true,
 };
 // プリセットが読むスカラパラメータ名（この範囲だけ args から拾う）。
 //	amp/freq/shift … 組み込みプリセットが意味を持って使う（tag.html 参照）

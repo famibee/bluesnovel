@@ -162,6 +162,18 @@ it('bldFx_done は bldFx が絶対に付けない（[load] 復元専用。Script
 	expect(bldFx({fx: 'blur', done: 'true'}).done).toBeUndefined();	// done= 属性は無視
 });
 
+it('bldFx_grayscale / sepia も blur と同じランプ型（amp=1／尺 800／keep 既定 true）', ()=> {
+	for (const fx of ['grayscale', 'sepia'] as const) {
+		expect(bldFx({fx})).toEqual({
+			name: '', fx, time: 0, speed: 1, enabled: true, params: {amp: 1}, keep: true,
+		});
+		expect(bldFx({fx, loop: 'false'})).toMatchObject({time: 800, keep: true});
+		expect(bldFx({fx, loop: 'false', reverse: 'true', amp: '0.7'}))
+			.toMatchObject({time: 800, reverse: true, params: {amp: 0.7}});
+		expect(bldFx({fx, keep: 'false'}).keep).toBeUndefined();
+	}
+});
+
 
 // ============ [def_fx]（ユーザープリセットGLSLの事前定義。[add_face] と同じ思想） ============
 

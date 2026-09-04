@@ -330,7 +330,7 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   round-trip・`[clear_lay]` 追随は変更なし。回帰は `fx.e2e.ts` に 3 本追加（`prj_fx` に `movie.mp4`）。
 - 制約：外部ドメインの動画は 2D canvas / `texImage2D` を汚染する（`[snapshot]` と同じ）。
 
-#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）／blur（2026-09-04）
+#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）／blur・grayscale・sepia（2026-09-04）
 
 `fxPresets.ts` に `snow`／`rain` を追加（`H_FX_DEF` に既定、`A_FX_PRESET` に名前）。どちらも
 ハッシュ乱数のセル／縦帯という定番手法を再実装（特定コードの写しではない＝MIT 相当）。
@@ -374,6 +374,14 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   `FxRunner` は `done` パスをセットアップ直後から `expired` 扱い＝keep なら即・最終フレーム、非 keep
   なら即・素通し。**副産物：非 keep one-shot の「ロードで再生」も直る。** `bldFx()` は `done` を
   絶対に付けない（同ページのタグ再実行＝演じ直しは常に頭から）。
+- **`FxRunner.update()` のタイムライン引き継ぎ（2026-09-04 修正）。** one-shot パスの
+  `pausedAccMs` を「今から」へ巻き戻すのは、その**記述子オブジェクトが差し替わった時だけ**
+  （`f !== p.fx && ! f.done`）。同名再トリガー・`[clear_fx]→[add_fx]` の畳み込み（`fx=blur` →
+  `fx=blur reverse=` の切替）で「今から」ランプし直す。**当初は `keep`／`done` を巻き戻し対象外に
+  していたが、それだと完了済み blur の直後に `reverse` へ切り替えても前回の経過時間（≫ time=）を
+  引き継いで初回描画から凍結＝一瞬で戻る不具合になっていた。** 構成変化（兄弟 fx 追加）の側も、
+  据え置きスロット（`newAFx[k] === 旧 pass.fx`）は旧タイムラインを引き継ぐようにして、別 fx を
+  足しただけで保持中の keep/done パスが再ランプしたり wave の位相が飛ぶのを防ぐ。
 - **`blur` 本体：** Vogel ディスク 40 タップ＋ガウス重み（σ = `amp × progress`、外周 2σ）。
   ディスクの回転角と半径を **interleaved gradient noise（IGN）**で 1 画素ごとに 1 タップぶん以内
   ずらす——純ハッシュの全域ランダムだと 40 タップでも白色グレインが出るが、IGN は空間構造の
@@ -381,9 +389,14 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   ほぼ不可視）。`FxRunner` は `premultipliedAlpha:false` なので**アルファ加重平均**（Σ rgb·a·w / Σ a·w）
   で透明縁の黒ハロを防ぐ。さらに滑らかにしたいときは 2 枚重ね（aFx スタックの ping-pong がそのまま
   効く）。静的ぼかしは `[add_filter] blur`（CSS/SVG。WebGL 不要で軽い）のまま。
-- 触ったファイル：`Fx.ts`／`fxPresets.ts`／`FxRunner.ts`（`uProg`＋`held`＋`done`＋巻き戻し除外）／
+- **`grayscale` / `sepia`：** blur と同じランプ型（`H_FX_DEF` に `{amp:1}`、`H_FX_BUILTIN_DURATION`
+  ／`H_FX_BUILTIN_KEEP` にも登録）。`amp × progress` で `mix(元色, 変換色)`。1 タップだけ＝周期系より
+  軽い。色行列は `[add_filter]` の同名フィルタと同一（grayscale は Rec.601、sepia は CSS `sepia(1)`）
+  ＝「fx で色を抜く演出 → 落ち着いたら `[add_filter]` へ差し替えて `[clear_fx]`」が自然。
+- 触ったファイル：`Fx.ts`／`fxPresets.ts`／`FxRunner.ts`（`uProg`＋`held`＋`done`＋`update()` の巻き戻し条件）／
   `ScriptMng.ts`（`#markFxDone`）／`ScriptEngine.ts`（`[def_fx keep=]`）／`store.tsx`（`chgFx` の
   `done` モード）／`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
+  sn_gallery `prj/add_fx/mat/main.sn` に blur/grayscale/sepia の進み・戻りボタン（背景へ適用）を追加。
 
 **2026-09-03：既存プリセットの負荷見直し。** 各プリセットの1画素コストと計測法を `fxPresets.ts` の
 `H_FX_FRAG` 直前にメモ。手を入れたのは `snow` と `rain`：

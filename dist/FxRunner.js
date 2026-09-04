@@ -268,6 +268,23 @@ void main() {
 	}
 	vec3 rgb = sum.a > 0.0001 ? sum.rgb / sum.a : texture2D(uSampler, vTextureCoord).rgb;
 	gl_FragColor = vec4(rgb, sum.a / wsum);
+}`,
+	grayscale: `${i}
+uniform float amp;
+void main() {
+	vec4  c = texture2D(uSampler, vTextureCoord);
+	float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+	gl_FragColor = vec4(mix(c.rgb, vec3(g), amp * clamp(progress, 0.0, 1.0)), c.a);
+}`,
+	sepia: `${i}
+uniform float amp;
+void main() {
+	vec4 c = texture2D(uSampler, vTextureCoord);
+	vec3 s = vec3(
+		dot(c.rgb, vec3(0.393, 0.769, 0.189)),
+		dot(c.rgb, vec3(0.349, 0.686, 0.168)),
+		dot(c.rgb, vec3(0.272, 0.534, 0.131)));
+	gl_FragColor = vec4(mix(c.rgb, clamp(s, 0.0, 1.0), amp * clamp(progress, 0.0, 1.0)), c.a);
 }`
 };
 //#endregion
@@ -393,10 +410,12 @@ function d(o, u, d, f, p, m, h, g) {
 			j = t;
 			let n = b(e);
 			if (n !== S) try {
-				let t = e.map((e) => v(y(e), e));
+				let t = e.map((e) => v(y(e), e)), r = performance.now() - O, i = new Map(x.map((e) => [e.fx, e]));
 				for (let e of x) o.deleteProgram(e.pg);
-				let r = performance.now() - O;
-				for (let e of t) e.pausedAccMs = r;
+				for (let n = 0; n < t.length; ++n) {
+					let a = i.get(e[n]);
+					a ? (t[n].pausedAccMs = a.pausedAccMs, t[n].pausedAt = a.pausedAt) : t[n].pausedAccMs = r;
+				}
 				x = t, S = n;
 			} catch (e) {
 				console.error(`[add_fx] ${String(e)}`);
@@ -405,7 +424,7 @@ function d(o, u, d, f, p, m, h, g) {
 				let n = e[t];
 				if (!n) continue;
 				let r = x[t];
-				n.time > 0 && !n.keep && !n.done && (r.pausedAccMs = performance.now() - O, r.pausedAt = 0), r.fx = n;
+				n.time > 0 && n !== r.fx && !n.done && (r.pausedAccMs = performance.now() - O, r.pausedAt = 0), r.fx = n;
 			}
 			k === 0 && M(requestAnimationFrame(P));
 		},

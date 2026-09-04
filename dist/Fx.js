@@ -5,7 +5,9 @@ var e = [
 	"snow",
 	"rain",
 	"fireworks",
-	"blur"
+	"blur",
+	"grayscale",
+	"sepia"
 ], t = {
 	wave: {
 		amp: 6,
@@ -27,11 +29,19 @@ var e = [
 		p1: .25,
 		p2: 0
 	},
-	blur: { amp: 8 }
+	blur: { amp: 8 },
+	grayscale: { amp: 1 },
+	sepia: { amp: 1 }
 }, n = {
 	fireworks: 4e3,
-	blur: 800
-}, r = { blur: !0 }, i = [
+	blur: 800,
+	grayscale: 800,
+	sepia: 800
+}, r = {
+	blur: !0,
+	grayscale: !0,
+	sepia: !0
+}, i = [
 	"amp",
 	"freq",
 	"shift",
