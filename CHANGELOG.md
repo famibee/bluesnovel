@@ -694,6 +694,21 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.11.0](https://github.com/famibee/bluesnovel/compare/v0.10.0...v0.11.0) (2026-09-04)
+
+
+### Features
+
+* **sn:** [add_fx fx=blur] とシェーダエフェクトの「時間軸ランプ」基盤 ([33524a5](https://github.com/famibee/bluesnovel/commit/33524a5541adc6e57540d388abf86932ef8a9264))
+* **sn:** [add_fx] に grayscale / sepia プリセット、reverse の巻き戻し不具合を修正 ([e6215ed](https://github.com/famibee/bluesnovel/commit/e6215edf9d99a2094d9c21dbc493c7700bc2e767))
+* **sn:** [add_fx] に negative / tint プリセット ([00c1eb8](https://github.com/famibee/bluesnovel/commit/00c1eb84e77aa2cd4c5865c522c263c9d8a3728f))
+* **sn:** フィルタ noise を feTurbulence 近似で対応（本家22種すべて対応に） ([537d247](https://github.com/famibee/bluesnovel/commit/537d2470fb31340a14b865b7e16199658d219f49))
+
+
+### Bug Fixes
+
+* **sn:** [add_fx] 適用初回に表情差分（DOM face）が一瞬消えるのを修正 ([49be534](https://github.com/famibee/bluesnovel/commit/49be53442d0749c3650c9fb94accc0f9263456c2))
+
 ## [0.10.0](https://github.com/famibee/bluesnovel/compare/v0.9.0...v0.10.0) (2026-09-03)
 
 
