@@ -370,6 +370,15 @@ var j = x()((e, t) => ({
 				t.length > 0 ? e.aFx = t : delete e.aFx;
 				return;
 			}
+			if (r === "done") {
+				let t = e.aFx;
+				if (!t) return;
+				e.aFx = t.map((e) => !(e.time > 0) || e.done ? e : (o ? o.includes(e.name) : !e.name || /^#fx\d+$/.test(e.name)) ? {
+					...e,
+					done: !0
+				} : e);
+				return;
+			}
 			if (r === "enable") {
 				let t = e.aFx ?? [];
 				if (t.length === 0) return;

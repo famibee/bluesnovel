@@ -122,4 +122,18 @@
 
 [clear_fx layer=base]
 [add_fx layer=base fx=rgbShift time=1500 shift=20]
-[er]単発再発火2[s]
+[er]単発再発火2[l]
+
+; blur（初のランプ型プリセット。progress 0→1／keep 既定 true／reverse=）。
+;	one-shot が自然経過すると ScriptMng.#markFxDone が記述子へ done を焼く
+;	（[load] 復元時に FxRunner が「経過済み」として扱う＝最終フレームで即凍結）。
+;	keep なので time= 経過後も canvas は残るが rAF は止まる（data-fx-running=0）
+[clear_fx layer=base]
+[lay layer=base fn=pic left=120 top=40 scale_x=3 scale_y=3]
+[add_fx layer=base name=bl fx=blur loop=false time=300]
+[er]blur[l]
+
+; reverse=（ブラー→元絵）。keep 既定 true は据え置き＝記述子に reverse/keep 両方載る
+[clear_fx layer=base]
+[add_fx layer=base name=blr fx=blur loop=false time=300 reverse=true]
+[er]blur_reverse[s]

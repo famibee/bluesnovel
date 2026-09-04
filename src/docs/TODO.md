@@ -14,18 +14,10 @@
 実装が要るのはその中身のタグのみ。`[notice]` はプロジェクト側プラグインなので対象外。
 ギャラリー（<https://github.com/famibee/SKYNovel_gallery>）の `public/prj/<機能>/` が機能ごとの仕様。
 
-## sn_gallery をbluesnovel駆動にする
-
-経緯・完了記録は [sn-gallery.md](sn-gallery.md)。残りの行動項目：
-
-- [ ] 依存の付け替え（`sn_gallery/package.json` の
-      `"@famibee/skynovel_esm": "file:../bluesnovel"` という本家のフリをどうするか）は
-      本格移行時に改めて判断（2026-08-21時点は現状維持と決定）。詳細 [sn-gallery.md](sn-gallery.md)
-
 ## タグ・変数の残り
 
 - [ ] （優先度低）フィルタ `color_tone` の色味差（pixi シェーダの `rgb *= result.a` を feColorMatrix で表現できない。マルチプリミティブ構成なら近似可）。詳細 [filters.md](filters.md)
-- [ ] （優先度低）`[add_filter] blur` の`repeat_edge_pixels` 近似余地。詳細 [filters.md](filters.md)
+- [ ] （優先度低）`[add_filter] blur` の`repeat_edge_pixels` 近似余地（SVG `feGaussianBlur` の `edgeMode`。**静的フィルタの話で `[add_fx fx=blur]` とは別件**）。詳細 [filters.md](filters.md)
 
 ## WebGL エフェクト
 
@@ -46,8 +38,10 @@ wave / rgbShift / snow / rain / fireworks、生シェーダは `[def_fx name= gl
 残り：
 
 - [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：
-      タイル塗り＋スクロール／桜（花びら）／ぼかしアニメ／モザイク
-      （花火 = `fireworks` は sn_gallery の `[def_fx name=花火2]` を組み込み化して済）
+      タイル塗り＋スクロール／桜（花びら）／モザイク／グレースケール・セピアのランプ版
+      （`blur` の `progress`/`reverse`/`keep` 基盤に乗るので各 5–20 行）
+      （花火 = `fireworks` は sn_gallery の `[def_fx name=花火2]` を組み込み化して済。
+      ぼかしアニメ = `blur` は 2026-09-04 に「ランプ型」基盤ごと実装して済）
 - [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**

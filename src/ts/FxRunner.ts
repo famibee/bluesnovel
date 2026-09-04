@@ -142,6 +142,7 @@ type T_PASS = {
 	uSampler: WebGLUniformLocation | null;	// 契約名は [trans glsl=] と統一（src→uSampler / time→tick / vUv→vTextureCoord）
 	uTick	: WebGLUniformLocation | null;
 	uRes	: WebGLUniformLocation | null;
+	uProg	: WebGLUniformLocation | null;	// progress（one-shot の進行度 0..1。reverse= は FxRunner が反転済みで渡す）
 	// スカラ入力ポート（amp/freq/shift/p1〜p4）。名前は Fx.ts の A_FX_PARAM が唯一の台帳
 	uParam	: {readonly [k: string]: WebGLUniformLocation | null};
 	uColor	: WebGLUniformLocation | null;	// color=（uniform vec3 color。0..1 RGB）
@@ -159,6 +160,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uSampler: gl.getUniformLocation(pg, 'uSampler'),
 			uTick	: gl.getUniformLocation(pg, 'tick'),
 			uRes	: gl.getUniformLocation(pg, 'resolution'),
+			uProg	: gl.getUniformLocation(pg, 'progress'),
 			uParam	: Object.fromEntries(A_FX_PARAM.map(k=> [k, gl.getUniformLocation(pg, k)])),
 			uColor	: gl.getUniformLocation(pg, 'color'),
 		};
@@ -201,7 +203,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 	gl.disable(gl.BLEND);
 
 	// 1 パス分の描画。inTex を読み、target（null=画面）へ書く
-	const drawPass = (p: T_PASS, inTex: WebGLTexture, target: WebGLFramebuffer | null, timeSec: number)=> {
+	const drawPass = (p: T_PASS, inTex: WebGLTexture, target: WebGLFramebuffer | null, timeSec: number, prog: number)=> {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, target);
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
@@ -211,6 +213,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		if (p.uSampler) gl.uniform1i(p.uSampler, 0);
 		if (p.uTick) gl.uniform1f(p.uTick, timeSec);
 		if (p.uRes) gl.uniform2f(p.uRes, w, h);
+		if (p.uProg) gl.uniform1f(p.uProg, prog);
 		for (const k of A_FX_PARAM) {
 			const loc = p.uParam[k];
 			if (loc) gl.uniform1f(loc, p.fx.params?.[k] ?? 0);
@@ -256,13 +259,20 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			else if (! frozen && p.pausedAt !== 0) {p.pausedAccMs += now - p.pausedAt; p.pausedAt = 0}
 			const effMs = elapsedMs - p.pausedAccMs - (p.pausedAt !== 0 ? now - p.pausedAt : 0);
 
-			const expired = p.fx.time > 0 && effMs >= p.fx.time;
+			// done＝[load] 復元済み one-shot（ScriptMng.#endFxTimer が焼く）。time 未到達でも経過済み扱い。
+			const expired = p.fx.done === true || (p.fx.time > 0 && effMs >= p.fx.time);
+			// keep＝経過後も最終フレームで凍結（素通しに切り替えない）。rAF は expired 扱いで止まる
+			const held = expired && p.fx.keep === true;
 			if (! expired && ! frozen) anyActive = true;	// 凍結パス・経過パスは rAF を回さない
 			const inTex = i === 0 ? texSrc : ping[(i - 1) % 2]!.tex;
-			const timeSec = effMs / 1000 * (p.fx.speed || 1);
-			drawPass(expired ? pgPass : p, inTex, ping[i % 2]!.fb, timeSec);
+			// 経過後は最終時刻で固定（tick も progress も動かさない）。time=0（無限）は effMs のまま
+			const effShown = expired && p.fx.time > 0 ? p.fx.time : effMs;
+			const timeSec = effShown / 1000 * (p.fx.speed || 1);
+			let prog = p.fx.time > 0 ? Math.min(1, effShown / p.fx.time) : 0;
+			if (p.fx.reverse) prog = 1 - prog;		// reverse= の反転はここ 1 箇所（シェーダは 0→1 で書く）
+			drawPass(held ? p : expired ? pgPass : p, inTex, ping[i % 2]!.fb, timeSec, prog);
 		}
-		drawPass(pgPass, ping[(aPass.length - 1) % 2]!.tex, null, 0);
+		drawPass(pgPass, ping[(aPass.length - 1) % 2]!.tex, null, 0, 0);
 		return anyActive;
 	};
 
@@ -305,7 +315,10 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 				const f = newAFx[i];
 				if (! f) continue;
 				const p = aPass[i]!;
-				if (f.time > 0) {p.pausedAccMs = performance.now() - t0; p.pausedAt = 0}
+				// 単発（time>0）は「今から」へ巻き戻す（同名再トリガーの想定挙動）。ただし
+				//	keep／done は経過後に保持しているパス＝別 fx を足しただけで元絵に戻して
+				//	再ランプしてしまうので対象外（撮り直しは [clear_fx]→[add_fx]）
+				if (f.time > 0 && ! f.keep && ! f.done) {p.pausedAccMs = performance.now() - t0; p.pausedAt = 0}
 				p.fx = f;
 			}
 

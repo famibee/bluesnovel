@@ -39,7 +39,7 @@ export type T_LAY_SNAP = {
 	pivot_y?: number;
 	blendmode?: string;
 	// [add_fx]（立ち絵シェーダエフェクトの試作）。src/ts/Fx.ts の T_FX と同形（plain data）
-	aFx?	: {name: string; fx: string; glsl: string; time: number; speed: number; params: {[k: string]: number}}[];
+	aFx?	: {name: string; fx: string; glsl: string; time: number; speed: number; params: {[k: string]: number}; color?: readonly [number, number, number]; pad?: number; padB?: number; reverse?: true; keep?: true; done?: true}[];
 };
 export type T_SNAP = {
 	aLay		: T_LAY_SNAP[];	// 表ページのレイヤ群（store.aPage[foreIdx]）

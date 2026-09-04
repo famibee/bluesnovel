@@ -266,9 +266,9 @@ export type T_CHGFILTER = {
 export type T_CHGFX = {
 	aLayNm	: string[] | null;
 	page	: T_PAGE_BOTH;
-	mode	: 'add' | 'clear' | 'enable';
+	mode	: 'add' | 'clear' | 'enable' | 'done';
 	fx?		: T_FX;				// add用
-	names?	: string[] | null;	// clear/enable用。null＝そのレイヤのfx全部
+	names?	: string[] | null;	// clear/enable/done用。null＝そのレイヤのfx全部（doneでは無名one-shot）
 	index?	: number;			// enable用（[enable_filter]由来。layer=併用でそのレイヤのN番目）
 	enabled?: boolean;			// enable用（[pause_fx]=false／[resume_fx]=true）
 }
@@ -656,6 +656,20 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 				if (! names) {delete e.aFx; return}
 				const a = (e.aFx ?? []).filter(f=> ! f.name || ! names.includes(f.name));
 				if (a.length > 0) e.aFx = a; else delete e.aFx;
+				return;
+			}
+			if (mode === 'done') {
+				// one-shot タイマー自然経過（ScriptMng.#markFxDone）：記述子へ done を焼く。
+				//	names 指定＝名前一致、names null＝無名 one-shot（timer 側の name='' ＝ store では
+				//	'' か採番済み #fxN。人間がつけた名前は除く）。[save] に載り、[load] 復元後は
+				//	FxRunner が「経過済み」として扱う（keep→最終フレーム／非 keep→即・素通し）
+				const a = e.aFx;
+				if (! a) return;
+				e.aFx = a.map(f=> {
+					if (! (f.time > 0) || f.done) return f;
+					const hit = names ? names.includes(f.name) : ! f.name || /^#fx\d+$/.test(f.name);
+					return hit ? {...f, done: true as const} : f;
+				});
 				return;
 			}
 			if (mode === 'enable') {

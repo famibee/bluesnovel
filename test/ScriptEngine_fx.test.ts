@@ -123,6 +123,46 @@ it('bldFx_loop 省略／true は従来どおり time=0（無限）', ()=> {
 });
 
 
+// ---- blur（初のランプ型プリセット。progress 0→1・keep 既定 true・reverse=） ----
+
+it('bldFx_blur の既定（amp=8／組み込みで loop=false の尺 800／keep 既定 true）', ()=> {
+	expect(bldFx({fx: 'blur'})).toEqual({
+		name: '', fx: 'blur', time: 0, speed: 1, enabled: true, params: {amp: 8}, keep: true,
+	});
+	// loop=false は H_FX_BUILTIN_DURATION.blur を time= として解決
+	expect(bldFx({fx: 'blur', loop: 'false'})).toMatchObject({time: 800, keep: true});
+	// time= 明示が勝つ／amp= 上書き
+	expect(bldFx({fx: 'blur', loop: 'false', time: '1500', amp: '14'}))
+		.toMatchObject({time: 1500, params: {amp: 14}});
+});
+
+it('bldFx_keep=false 明示は組み込み既定（blur=true）に勝つ', ()=> {
+	expect(bldFx({fx: 'blur', keep: 'false'}).keep).toBeUndefined();	// 真のときだけキーを持つ
+	// keep= を持たない従来プリセットは既定どおりキー無し
+	expect(bldFx({fx: 'wave'}).keep).toBeUndefined();
+	expect(bldFx({fx: 'fireworks', loop: 'false'}).keep).toBeUndefined();	// 既存挙動の非回帰
+});
+
+it('bldFx_reverse=true（未指定はキーを持たない）', ()=> {
+	expect(bldFx({fx: 'blur', reverse: 'true'}).reverse).toBe(true);
+	expect(bldFx({fx: 'blur'}).reverse).toBeUndefined();
+	expect(bldFx({fx: 'wave', reverse: 'true'}).reverse).toBe(true);	// 汎用（[def_fx] 作者向け）
+});
+
+it('bldFx_[def_fx keep=true] はユーザープリセットの keep 既定になる', ()=> {
+	expect(bldFx({fx: 'myRamp'}, {myRamp: {duration: 600, keep: true}}))
+		.toMatchObject({fx: 'myRamp', keep: true});
+	expect(bldFx({fx: 'myRamp', keep: 'false'}, {myRamp: {duration: 600, keep: true}}).keep)
+		.toBeUndefined();	// 個別 [add_fx keep=false] が勝つ
+	expect(bldFx({fx: 'myRamp'}, {myRamp: {duration: 600}}).keep).toBeUndefined();	// 宣言なし＝false
+});
+
+it('bldFx_done は bldFx が絶対に付けない（[load] 復元専用。ScriptMng.#markFxDone が焼く）', ()=> {
+	expect(bldFx({fx: 'blur', loop: 'false'}).done).toBeUndefined();
+	expect(bldFx({fx: 'blur', done: 'true'}).done).toBeUndefined();	// done= 属性は無視
+});
+
+
 // ============ [def_fx]（ユーザープリセットGLSLの事前定義。[add_face] と同じ思想） ============
 
 const RAW = 'void main(){gl_FragColor=texture2D(uSampler,vTextureCoord);}';

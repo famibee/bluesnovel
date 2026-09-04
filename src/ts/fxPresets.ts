@@ -45,7 +45,12 @@ precision mediump float;
 varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
 uniform float tick;
-uniform vec2 resolution;`;
+uniform vec2 resolution;
+uniform float progress;`;
+//	progress … one-shot（time=/loop=false）の進行度 0..1。time=0（無限）のときは常に 0。
+//	  reverse=true なら 1→0 で届く（反転は FxRunner が 1 箇所で行う）。ランプ型プリセット
+//	  （blur 等）は progress を「元絵→目標へ変化しきる度合い」として素直に使う。wave/rain 等の
+//	  周期系は宣言しなければよい（uColor と同じで getUniformLocation が null を返すだけ）
 
 // ---- 負荷メモ（1 パス＝フルスクリーンクワッド。実効ワーク W ≒ FBO 画素数 × 下記の1画素コスト） ----
 //	FBO 画素数はレイヤの基本画像の naturalWidth×naturalHeight（FxRunner。ウィンドウ幅でも DPR でもない）。
@@ -60,6 +65,9 @@ uniform vec2 resolution;`;
 //	  rain      … 3 層固定 × rainLayer（1 層 ≒ hash 3〈=sin 3〉 + smoothstep 3 + step 1）。freq は層数に
 //	              効かず密度のみ＝雨は freq を下げても軽くならない（構造上の下限。層を可変にすると
 //	              近/中/遠の重なりが崩れるので固定のまま）。
+//	  blur      … tex N + sin/cos N（N=40。Vogel ディスクのタップ数）。progress==0 なら 1 tex で早期 return
+//	              （r は uniform 由来＝ワープ分岐なし）。σ を上げるほど 40 タップでも粗さが出る＝
+//	              さらに滑らかにしたいときは [add_fx fx=blur] を 2 枚重ねる（ディスク×ディスク≒ガウス）。
 //	  fireworks … resolution LOD 内蔵（広いほど頭・火の粉を減らして粒を大きく）。詳細は下の block と
 //	              ext_fx_tst.sn。エンジン側で FBO 解像度を上限クランプする案は、生成系（snow/rain/
 //	              fireworks）に限れば有効だが「ウィンドウ超の背景画像を置いた時だけ効く」狭い最適化で、
@@ -328,5 +336,43 @@ void main() {
 
 	// 背景透過：既存レイヤ（base）に加算合成。アルファは背景のものをそのまま使う
 	gl_FragColor = vec4(clamp(base.rgb + glow, 0.0, 1.0), base.a);
+}`,
+
+	// 元絵→ガウスぼかしへ progress（0→1）に沿って変化する初の「ランプ型」プリセット。
+	//	amp＝最大ぼかし半径 px（CSS blur(Npx) と同義。既定 8）。実効半径 r = amp * progress。
+	//	Vogel ディスク 40 タップ＋ガウス重み（σ = r、外周は 2σ）。ディスク全体の回転角を
+	//	**interleaved gradient noise（IGN）**で 1 画素ごとに 0〜1 タップぶんだけ回す——純ハッシュの
+	//	全域ランダム回転だと 40 タップでも白色グレインが出るが、IGN は空間構造のある秩序ディザ
+	//	なので細かい網点＝滑らかに見える（バンディングだけ崩れる）。
+	//	FxRunner は premultipliedAlpha:false なので、透明画素の RGB=0 をそのまま平均すると
+	//	立ち絵の縁に黒ハロが出る → **アルファ加重平均**（Σ rgb·a·w / Σ a·w、α は Σ a·w / Σ w）で戻す。
+	blur: `${HEAD}
+uniform float amp;
+const int TAPS = 40;
+const float GA = 2.39996323;	// 黄金角
+// interleaved gradient noise（Jimenez 2014）。空間コヒーレントな [0,1) ディザ
+float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
+void main() {
+	float r = amp * clamp(progress, 0.0, 1.0);
+	if (r < 0.5) { gl_FragColor = texture2D(uSampler, vTextureCoord); return; }
+
+	vec2  px = 1.0 / resolution;
+	float n  = ign(gl_FragCoord.xy);
+	float a0 = n * GA;						// ディスクを 1 タップ角ぶん以内で回す（網点ディザ）
+	float jr = 0.5 + n;						// 半径も同じ位相で 0.5〜1.5 タップぶんずらす（残り moiré を潰す）
+	float gk = -0.5 / (r * r);				// ガウス核（σ = r）
+	vec4  sum  = vec4(0.0);					// rgb = Σ rgb·a·w ／ a = Σ a·w
+	float wsum = 0.0;						// Σ w
+	for (int i = 0; i < TAPS; i++) {
+		float fi  = float(i) + jr;
+		float rad = sqrt(fi / (float(TAPS) + 1.0)) * (r * 2.0);	// ディスク：外周 2σ・面積等分
+		float ang = a0 + fi * GA;						// 黄金角でらせん配置
+		vec4  t = texture2D(uSampler, vTextureCoord + vec2(cos(ang), sin(ang)) * rad * px);
+		float w = exp(gk * rad * rad);
+		sum  += vec4(t.rgb * t.a, t.a) * w;
+		wsum += w;
+	}
+	vec3 rgb = sum.a > 0.0001 ? sum.rgb / sum.a : texture2D(uSampler, vTextureCoord).rgb;
+	gl_FragColor = vec4(rgb, sum.a / wsum);
 }`,
 };

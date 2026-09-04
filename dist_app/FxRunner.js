@@ -1,7 +1,7 @@
 import { t as e } from "./Fx.js";
 import { n as t } from "./fxRegistry.js";
 //#region src/ts/fxPresets.ts
-var n = "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}", r = "\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", i = "\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nuniform float tick;\nuniform vec2 resolution;", a = {
+var n = "\nattribute vec2 aPos;\nvarying vec2 vTextureCoord;\nvoid main() {\n	vTextureCoord = (aPos + 1.0) * 0.5;\n	gl_Position = vec4(aPos, 0.0, 1.0);\n}", r = "\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nvoid main() { gl_FragColor = texture2D(uSampler, vTextureCoord); }", i = "\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform sampler2D uSampler;\nuniform float tick;\nuniform vec2 resolution;\nuniform float progress;", a = {
 	wave: `${i}
 uniform float amp;
 uniform float freq;
@@ -239,6 +239,35 @@ void main() {
 
 	// 背景透過：既存レイヤ（base）に加算合成。アルファは背景のものをそのまま使う
 	gl_FragColor = vec4(clamp(base.rgb + glow, 0.0, 1.0), base.a);
+}`,
+	blur: `${i}
+uniform float amp;
+const int TAPS = 40;
+const float GA = 2.39996323;	// 黄金角
+// interleaved gradient noise（Jimenez 2014）。空間コヒーレントな [0,1) ディザ
+float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
+void main() {
+	float r = amp * clamp(progress, 0.0, 1.0);
+	if (r < 0.5) { gl_FragColor = texture2D(uSampler, vTextureCoord); return; }
+
+	vec2  px = 1.0 / resolution;
+	float n  = ign(gl_FragCoord.xy);
+	float a0 = n * GA;						// ディスクを 1 タップ角ぶん以内で回す（網点ディザ）
+	float jr = 0.5 + n;						// 半径も同じ位相で 0.5〜1.5 タップぶんずらす（残り moiré を潰す）
+	float gk = -0.5 / (r * r);				// ガウス核（σ = r）
+	vec4  sum  = vec4(0.0);					// rgb = Σ rgb·a·w ／ a = Σ a·w
+	float wsum = 0.0;						// Σ w
+	for (int i = 0; i < TAPS; i++) {
+		float fi  = float(i) + jr;
+		float rad = sqrt(fi / (float(TAPS) + 1.0)) * (r * 2.0);	// ディスク：外周 2σ・面積等分
+		float ang = a0 + fi * GA;						// 黄金角でらせん配置
+		vec4  t = texture2D(uSampler, vTextureCoord + vec2(cos(ang), sin(ang)) * rad * px);
+		float w = exp(gk * rad * rad);
+		sum  += vec4(t.rgb * t.a, t.a) * w;
+		wsum += w;
+	}
+	vec3 rgb = sum.a > 0.0001 ? sum.rgb / sum.a : texture2D(uSampler, vTextureCoord).rgb;
+	gl_FragColor = vec4(rgb, sum.a / wsum);
 }`
 };
 //#endregion
@@ -297,6 +326,7 @@ function d(o, u, d, f, p, m, h, g) {
 			uSampler: o.getUniformLocation(r, "uSampler"),
 			uTick: o.getUniformLocation(r, "tick"),
 			uRes: o.getUniformLocation(r, "resolution"),
+			uProg: o.getUniformLocation(r, "progress"),
 			uParam: Object.fromEntries(e.map((e) => [e, o.getUniformLocation(r, e)])),
 			uColor: o.getUniformLocation(r, "color")
 		};
@@ -325,8 +355,8 @@ function d(o, u, d, f, p, m, h, g) {
 		};
 	});
 	o.bindFramebuffer(o.FRAMEBUFFER, null), o.viewport(0, 0, p, m), o.disable(o.DEPTH_TEST), o.disable(o.BLEND);
-	let D = (t, n, r, i) => {
-		o.bindFramebuffer(o.FRAMEBUFFER, r), o.clearColor(0, 0, 0, 0), o.clear(o.COLOR_BUFFER_BIT), o.useProgram(t.pg), o.activeTexture(o.TEXTURE0), o.bindTexture(o.TEXTURE_2D, n), t.uSampler && o.uniform1i(t.uSampler, 0), t.uTick && o.uniform1f(t.uTick, i), t.uRes && o.uniform2f(t.uRes, p, m);
+	let D = (t, n, r, i, a) => {
+		o.bindFramebuffer(o.FRAMEBUFFER, r), o.clearColor(0, 0, 0, 0), o.clear(o.COLOR_BUFFER_BIT), o.useProgram(t.pg), o.activeTexture(o.TEXTURE0), o.bindTexture(o.TEXTURE_2D, n), t.uSampler && o.uniform1i(t.uSampler, 0), t.uTick && o.uniform1f(t.uTick, i), t.uRes && o.uniform2f(t.uRes, p, m), t.uProg && o.uniform1f(t.uProg, a);
 		for (let n of e) {
 			let e = t.uParam[n];
 			e && o.uniform1f(e, t.fx.params?.[n] ?? 0);
@@ -348,12 +378,12 @@ function d(o, u, d, f, p, m, h, g) {
 		for (let r = 0; r < x.length; ++r) {
 			let i = x[r], a = !i.fx.enabled || !j;
 			a && i.pausedAt === 0 ? i.pausedAt = e : !a && i.pausedAt !== 0 && (i.pausedAccMs += e - i.pausedAt, i.pausedAt = 0);
-			let o = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), s = i.fx.time > 0 && o >= i.fx.time;
+			let o = t - i.pausedAccMs - (i.pausedAt === 0 ? 0 : e - i.pausedAt), s = i.fx.done === !0 || i.fx.time > 0 && o >= i.fx.time, c = s && i.fx.keep === !0;
 			!s && !a && (n = !0);
-			let c = r === 0 ? T : E[(r - 1) % 2].tex, l = o / 1e3 * (i.fx.speed || 1);
-			D(s ? C : i, c, E[r % 2].fb, l);
+			let l = r === 0 ? T : E[(r - 1) % 2].tex, u = s && i.fx.time > 0 ? i.fx.time : o, d = u / 1e3 * (i.fx.speed || 1), f = i.fx.time > 0 ? Math.min(1, u / i.fx.time) : 0;
+			i.fx.reverse && (f = 1 - f), D(c ? i : s ? C : i, l, E[r % 2].fb, d, f);
 		}
-		return D(C, E[(x.length - 1) % 2].tex, null, 0), n;
+		return D(C, E[(x.length - 1) % 2].tex, null, 0, 0), n;
 	}, P = () => {
 		A && M(N() ? requestAnimationFrame(P) : 0);
 	};
@@ -375,7 +405,7 @@ function d(o, u, d, f, p, m, h, g) {
 				let n = e[t];
 				if (!n) continue;
 				let r = x[t];
-				n.time > 0 && (r.pausedAccMs = performance.now() - O, r.pausedAt = 0), r.fx = n;
+				n.time > 0 && !n.keep && !n.done && (r.pausedAccMs = performance.now() - O, r.pausedAt = 0), r.fx = n;
 			}
 			k === 0 && M(requestAnimationFrame(P));
 		},

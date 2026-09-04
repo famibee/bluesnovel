@@ -290,3 +290,33 @@ test('同じ内容の単発 fx を [clear_fx]→[add_fx] で連続再トリガ�
 	// 修正前はここが '0' に固まったまま（update() が呼ばれないので rAF が再開しない）
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
 });
+
+test('[add_fx fx=blur loop=false] は keep 既定 true・one-shot 自然経過で done が焼かれる', async ({page})=> {
+	for (let i = 0; i < 21; ++i) await pressKeyToWaitMark(page, 'Space');	// 「単発再発火2」まで
+
+	await pressKey(page, 'Space');	// [clear_fx]→[lay]→[add_fx name=bl fx=blur loop=false time=300]→[er]blur[l]
+	await expect.poll(async ()=> mesStr(page)).toBe('blur');
+
+	const bl0 = (await afx(page))!.find(f=> f.name === 'bl')!;
+	//	組み込みで loop=false の尺（H_FX_BUILTIN_DURATION.blur=800）は time= 明示が上書き。keep は既定 true
+	expect(bl0).toMatchObject({fx: 'blur', time: 300, speed: 1, keep: true});
+	expect(bl0.params).toMatchObject({amp: 8});
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+
+	//	time=300 経過：keep なので素通しへ戻さず canvas を保持するが rAF は止まる（data-fx-running=0）。
+	//	あわせて ScriptMng.#markFxDone が記述子へ done を焼く（[load] 復元を最終フレームにするため）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 3000}).toBe('0');
+	await expect.poll(async ()=> (await afx(page))?.find(f=> f.name === 'bl')?.done).toBe(true);
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+});
+
+test('[add_fx fx=blur reverse=true] は記述子に reverse/keep が載る', async ({page})=> {
+	for (let i = 0; i < 22; ++i) await pressKeyToWaitMark(page, 'Space');	// 「blur」まで
+
+	await pressKey(page, 'Space');	// [clear_fx]→[add_fx name=blr fx=blur loop=false time=300 reverse=true]→[er]blur_reverse[s]
+	await expect.poll(async ()=> mesStr(page)).toBe('blur_reverse');
+
+	const blr = (await afx(page))!.find(f=> f.name === 'blr')!;
+	expect(blr).toMatchObject({fx: 'blur', time: 300, reverse: true, keep: true});
+	await expect.poll(async ()=> draw(page)).toBe('canvas');
+});

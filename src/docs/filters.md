@@ -52,6 +52,11 @@ pixi 側＝乗算後クランプに合わせないと合わない）。`color_to
 
 2026-08-20、`docs/tag.html` 整理時に `noise` の陰に隠れていたのを発見。優先度低いため保留。
 
+**「時間をかけて元絵→ぼかしへ変化」は `[add_fx fx=blur]`**（分家独自のシェーダエフェクト。
+[ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7 step 7）。`[add_filter] blur` は静的値専用で
+アニメしない（`[tsy]` も `aFlt` 強度を動かせない）。逆に**静止したぼかしは `[add_filter]` の方が軽い**
+（CSS/SVG のネイティブ合成＝WebGL コンテキストも rAF も要らない）ので、用途で使い分ける。
+
 ## `noise`（`feTurbulence` で近似・2026-09-04）
 
 pixi の `NoiseFilter`（`@pixi/filter-noise` 6.5 系、`noise.frag`）は

@@ -42,7 +42,7 @@
 //	Shadertoy（iTime/iChannel0…）は開発時に手変換（マッピングは docs/tag.html）。
 
 // プリセット名。GLSL 実体は fxPresets.ts（lazy）が持つ。ここは名前の台帳だけ
-export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks'] as const;
+export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks', 'blur'] as const;
 
 // プリセット固有パラメータの既定値（**属性の既定値は 1 箇所**：ここがエンジン入口）。
 //	amp/freq/shift/p1 はプリセットごとに意味が違う（tag.html 参照）：
@@ -53,6 +53,9 @@ export const A_FX_PRESET = ['wave', 'rgbShift', 'snow', 'rain', 'fireworks'] as 
 //	  fireworks … amp=明るさ / freq=頭（火の粉の親）の数（1.0＝32個・上限 1.4）/ p1=打ち上げ周期の速さ
 //	              （0.25＝約4秒周期）/ p2=横位置（0=中央・±1=フレーム端）。color= で光の色（既定は橙金）。
 //	              背景（bg）レイヤ向け。元は sn_gallery prj/add_fx/mat/ext_fx_tst.sn の [def_fx name=花火2]（冠菊）。MIT
+//	  blur  … amp=最大ぼかし半径（px。CSS blur(Npx) と同義。既定 8）。初の「ランプ型」プリセット
+//	          ＝time= の尺いっぱいかけて 元絵→ブラー（progress 0→1）に変化してそこで終わる。
+//	          keep=true（blur の既定）で最終フレームのまま保持、reverse=true で ブラー→元絵。
 //
 //	p2（横位置）は px でなく**画面幅に対する割合**にした：FBO 解像度はレイヤ基本画像の naturalWidth/Height
 //	（プロジェクトごとに違う／解像度 LOD で動きうる）で「画面のドット数」に安定した意味が無く、fireworks の
@@ -65,6 +68,7 @@ const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 	snow		: {amp: 1, freq: 3},
 	rain		: {amp: 2, freq: 2, shift: 6},
 	fireworks	: {amp: 1, freq: 1, p1: 0.25, p2: 0},
+	blur		: {amp: 8},
 };
 
 // 組み込みプリセットの「単発の尺」（[add_fx loop=false] が time= として解決する ms）。
@@ -72,6 +76,13 @@ const H_FX_DEF: {readonly [fx: string]: {readonly [k: string]: number}} = {
 //	（wave/rgbShift/snow/rain）へ loop=false を time= 無しで指定すると bldFx() が例外にする
 const H_FX_BUILTIN_DURATION: {readonly [fx: string]: number} = {
 	fireworks	: 4000,	// p1 未指定＝標準の約4秒周期（fxPresets.ts fireworks のコメント）
+	blur		: 800,	// ぼかし込みの標準的な尺（time= 明示で上書き可）
+};
+// 組み込みプリセットの keep=（最終フレーム保持）の既定。ここに無ければ false（＝time= 経過で素通し）。
+//	[def_fx] のユーザープリセットは [def_fx keep=]（T_DEF_FX_META.keep）で宣言する。
+//	blur のようなランプ型は「変化しきった絵」を保つのが自然なので既定 true（keep=false 明示で解除）
+const H_FX_BUILTIN_KEEP: {readonly [fx: string]: boolean} = {
+	blur		: true,
 };
 // プリセットが読むスカラパラメータ名（この範囲だけ args から拾う）。
 //	amp/freq/shift … 組み込みプリセットが意味を持って使う（tag.html 参照）
@@ -118,11 +129,23 @@ export type T_FX = {
 	//	（div0 の箱は基本画像サイズのまま＝[tsy]／Moveable のピボットは不変）
 	pad?	: number;
 	padB?	: number;
+	// [add_fx reverse=true]：ランプ型プリセットの progress を 1→0 で流す（ブラー→元絵 等）。
+	//	反転は FxRunner が progress を作るとき 1 箇所で行う＝各シェーダは素直に progress 0→1 で書けばよい
+	reverse?: true;
+	// [add_fx keep=true]：time= 経過後に素通し（＝元絵）へ切り替えず、最終フレームのまま凍結する
+	//	（rAF は従来どおり止まるので保持中の GPU コストは 0）。blur は既定 true（H_FX_BUILTIN_KEEP）
+	keep?	: true;
+	// one-shot が自然経過したことの記録（ScriptMng.#endFxTimer が chgFx mode:'done' で焼く）。
+	//	[save] に載り、[load] で復元された記述子は「セットアップ直後から経過済み」扱いになる
+	//	＝keep なら即・最終フレーム、非 keep なら即・素通し（ロードで頭から再生し直さない）。
+	//	新規 [add_fx]（同ページのタグ再実行）は bldFx が絶対に付けない＝常に頭から
+	done?	: true;
 };
 
 // [def_fx] 宣言メタ（ScriptEngine.#hDefFx の値）。duration＝loop=false の尺（ms）、
-//	pad／padB＝上記 T_FX.pad／padB のもと値。テスト等が数値だけ渡す旧形（＝duration）も受ける
-export type T_DEF_FX_META = {duration?: number; pad?: number; padB?: number};
+//	pad／padB＝上記 T_FX.pad／padB のもと値、keep＝上記 T_FX.keep の既定。
+//	テスト等が数値だけ渡す旧形（＝duration）も受ける
+export type T_DEF_FX_META = {duration?: number; pad?: number; padB?: number; keep?: boolean};
 function metaOf(v: number | T_DEF_FX_META | undefined): T_DEF_FX_META {
 	return typeof v === 'number' ? {duration: v} : v ?? {};
 }
@@ -166,6 +189,12 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		time = duration;
 	}
 
+	// reverse=（ランプ型の progress を 1→0 で流す）／keep=（time= 経過後も最終フレームを保持）。
+	//	keep の既定は組み込み表（H_FX_BUILTIN_KEEP）→ [def_fx keep=]（meta.keep）→ false の順。
+	//	どちらも真のときだけ T_FX にキーを載せる（color/pad と同じ流儀＝既存 fx の形を変えない）
+	const reverse = (args.reverse ?? 'false') !== 'false';
+	const keep = (args.keep ?? String(H_FX_BUILTIN_KEEP[fx] ?? meta.keep ?? false)) !== 'false';
+
 	return {
 		name	: args.name ?? '',
 		fx,
@@ -177,5 +206,7 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		// [def_fx pad=／pad_b=] 宣言ぶんの余白（基本画像高さ比）。0／未宣言は持たない
 		...(meta.pad ? {pad: meta.pad} : {}),
 		...(meta.padB ? {padB: meta.padB} : {}),
+		...(reverse ? {reverse: true as const} : {}),
+		...(keep ? {keep: true as const} : {}),
 	};
 }

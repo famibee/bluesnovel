@@ -330,7 +330,7 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   round-trip・`[clear_lay]` 追随は変更なし。回帰は `fx.e2e.ts` に 3 本追加（`prj_fx` に `movie.mp4`）。
 - 制約：外部ドメインの動画は 2D canvas / `texImage2D` を汚染する（`[snapshot]` と同じ）。
 
-#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）
+#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）／blur（2026-09-04）
 
 `fxPresets.ts` に `snow`／`rain` を追加（`H_FX_DEF` に既定、`A_FX_PRESET` に名前）。どちらも
 ハッシュ乱数のセル／縦帯という定番手法を再実装（特定コードの写しではない＝MIT 相当）。
@@ -350,6 +350,40 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
 組み込みで初めて `loop=false` の尺を持つプリセット＝`Fx.ts` に `H_FX_BUILTIN_DURATION`（`[def_fx duration=]`
 の組み込み版。`fireworks: 4000`）を新設し、`bldFx()` が `H_FX_BUILTIN_DURATION[fx] ?? hDefFx?.[fx]` で解決。
 次候補：タイル塗り＋スクロール・桜。
+
+**2026-09-04：`blur`（初の「ランプ型」プリセット）＋ ランプ基盤。** これまでのプリセットは全部
+周期系（`loop=false` の `fireworks` も「4秒周期を1発ぶんで切る」だけ）で、「A→B へ一定時間で
+変化してそこで終わる」演出が無かった。`[add_filter] blur` は静的値しか持てず、`[tsy]` は `aFlt`
+強度を動かせない。よって blur 本体（~25行）より**ランプ型を書けるようにする共通基盤**が本題：
+
+- **契約 uniform `progress`（0..1）を `HEAD` に追加。** `time>0` の one-shot で尺いっぱいに 0→1。
+  `time=0` は常に 0。組み込みにも `[def_fx]` にも前置されるので**ユーザープリセット作者もランプ
+  演出を書ける**。周期系は宣言しなければ `getUniformLocation` が null（`color` と同じ）。
+- **`[add_fx reverse=true]`（`T_FX.reverse?`）。** progress を 1→0 で流す（ブラー→元絵）。反転は
+  `FxRunner` が progress を作るとき **1 箇所**で行う＝各シェーダは素直に 0→1 で書く。
+- **`[add_fx keep=true]`（`T_FX.keep?`。§7:556 の当初設計を実装）。** `time=` 経過後に素通し
+  （＝元絵）へ切り替えず最終フレームで凍結（`FxRunner` の `held = expired && p.fx.keep`。rAF は
+  従来どおり止まるので保持中の GPU コストは 0）。既定はプリセット表 `H_FX_BUILTIN_KEEP`（`blur:true`、
+  他 false）→ `[def_fx keep=]`（`T_DEF_FX_META.keep`）→ false。個別 `[add_fx keep=]` が常に勝つ。
+- **`T_FX.done?`（`[load]` 復元を最終状態にする）。** one-shot 記述子は `aFx` から自動撤去されない
+  （試作の割り切り）ので、完了済みでも `[save]` に載り `[load]` で `replace()` が戻す。`FxRunner` は
+  `t0` を毎回ゼロから始めるので**放っておくと完了済み one-shot がロードのたびに頭から再生される**
+  （blur なら 0.8 秒の再ランプ、`reverse` なら保存時「くっきり」なのに一瞬ぼける）。対処：
+  `ScriptMng.#endFxTimer()`／`#skipFxWait()`（＝**自然経過**）が `chgFx({mode:'done'})` で記述子へ
+  `done:true` を焼く（`#dropFxTimers`＝`[clear_fx]`/`[clear_lay]`/演じ直しは撤去なので焼かない）。
+  `FxRunner` は `done` パスをセットアップ直後から `expired` 扱い＝keep なら即・最終フレーム、非 keep
+  なら即・素通し。**副産物：非 keep one-shot の「ロードで再生」も直る。** `bldFx()` は `done` を
+  絶対に付けない（同ページのタグ再実行＝演じ直しは常に頭から）。
+- **`blur` 本体：** Vogel ディスク 40 タップ＋ガウス重み（σ = `amp × progress`、外周 2σ）。
+  ディスクの回転角と半径を **interleaved gradient noise（IGN）**で 1 画素ごとに 1 タップぶん以内
+  ずらす——純ハッシュの全域ランダムだと 40 タップでも白色グレインが出るが、IGN は空間構造の
+  ある秩序ディザなので細かい網点＝滑らかに見える（実機の純グラデ torture test で確認。写真背景では
+  ほぼ不可視）。`FxRunner` は `premultipliedAlpha:false` なので**アルファ加重平均**（Σ rgb·a·w / Σ a·w）
+  で透明縁の黒ハロを防ぐ。さらに滑らかにしたいときは 2 枚重ね（aFx スタックの ping-pong がそのまま
+  効く）。静的ぼかしは `[add_filter] blur`（CSS/SVG。WebGL 不要で軽い）のまま。
+- 触ったファイル：`Fx.ts`／`fxPresets.ts`／`FxRunner.ts`（`uProg`＋`held`＋`done`＋巻き戻し除外）／
+  `ScriptMng.ts`（`#markFxDone`）／`ScriptEngine.ts`（`[def_fx keep=]`）／`store.tsx`（`chgFx` の
+  `done` モード）／`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
 
 **2026-09-03：既存プリセットの負荷見直し。** 各プリセットの1画素コストと計測法を `fxPresets.ts` の
 `H_FX_FRAG` 直前にメモ。手を入れたのは `snow` と `rain`：
@@ -551,10 +585,13 @@ TxtLayer は別コンポーネントで seam が無い）。だから `[er]`（�
 
 - `name=`（任意。**そのレイヤの `aFx` 内で**一意な識別子。省略時は上記の内部採番。`[tsy]` と違い
   レイヤ名は既定にしない——`[tsy]` は 1 レイヤ 1 トゥイーンだが `aFx` はスタックなので衝突する）。
-- `time=`（ms。省略/`0`=無限＝常時ゆらぎ、正数=one-shot）、`speed=` / `loop=`。one-shot 完了時は
-  記述子を `aFx` から自動撤去（＝canvas/コンテキストも解放。`[add_filter]` の「消すまで永続」とは
-  逆）。`keep=true` で最終フレームのまま凍結（撤去せず `enabled` を保つ）。`[wait_fx]` は撤去/凍結の
-  どちらでも「完了」で待ちを解く。
+- `time=`（ms。省略/`0`=無限＝常時ゆらぎ、正数=one-shot）、`speed=` / `loop=`。
+  **実装は当初案（one-shot 完了で自動撤去）と違い、記述子は `aFx` に残す**（試作の割り切り。
+  撤去は `[clear_fx]`/`[clear_lay]`）。完了後は素通し（＝元絵）へ切り替えて rAF を止める。
+  `keep=true`（実装済み。2026-09-04）で素通しへ戻さず**最終フレームで凍結**（rAF は止まる）。
+  完了済み記述子は `done` が焼かれて `[save]` に載り、`[load]` で最終状態に復元される（step 7 の
+  「ランプ基盤」参照）。`[wait_fx]` は素通し/凍結どちらでも「完了」で待ちを解く。
+- `reverse=true`（実装済み。2026-09-04）でランプ型プリセットの `progress` を 1→0 で流す。
 - `fx=wave|rgbShift|glitch|pixelate…` or `glsl=&src`。生 GLSL の契約は `[trans glsl=]` と同じく
   **本家サンプル準拠**（`uSampler` / `vTextureCoord` / `tick`）。
 - プリセット固有パラメータ `amp=` `freq=` `shift=` 等（`[add_filter blur_x=]` と同じノリ）。

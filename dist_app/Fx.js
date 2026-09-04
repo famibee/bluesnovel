@@ -4,7 +4,8 @@ var e = [
 	"rgbShift",
 	"snow",
 	"rain",
-	"fireworks"
+	"fireworks",
+	"blur"
 ], t = {
 	wave: {
 		amp: 6,
@@ -25,8 +26,12 @@ var e = [
 		freq: 1,
 		p1: .25,
 		p2: 0
-	}
-}, n = { fireworks: 4e3 }, r = [
+	},
+	blur: { amp: 8 }
+}, n = {
+	fireworks: 4e3,
+	blur: 800
+}, r = { blur: !0 }, i = [
 	"amp",
 	"freq",
 	"shift",
@@ -35,7 +40,7 @@ var e = [
 	"p3",
 	"p4"
 ];
-function i(e) {
+function a(e) {
 	let t = e.trim();
 	if (t.includes(",")) {
 		let n = t.split(",").map((e) => Number(e.trim()));
@@ -54,41 +59,44 @@ function i(e) {
 		(r & 255) / 255
 	];
 }
-function a(e) {
+function o(e) {
 	return typeof e == "number" ? { duration: e } : e ?? {};
 }
-function o(e, t, n) {
+function s(e, t, n) {
 	let r = e[t];
 	if (r === void 0) return n;
 	let i = Number(r);
 	if (!Number.isFinite(i)) throw `[add_fx] ${t} の値が不正です：${r}`;
 	return i;
 }
-function s(s, c) {
-	let l = s.fx ?? "";
-	if (!l) throw "[add_fx] fx=（プリセット名）が必要です";
-	if (!e.includes(l) && !(c && l in c)) throw `[add_fx] fx【${l}】は未対応です（組み込み：${e.join(" / ")}／または [def_fx] で定義した名前）`;
-	let u = a(c?.[l]), d = { ...t[l] };
-	for (let e of r) s[e] !== void 0 && (d[e] = o(s, e, 0));
-	let f = (s.loop ?? "true") !== "false", p = o(s, "time", 0);
-	if (!f && p <= 0) {
-		let e = n[l] ?? u.duration;
-		if (!e) throw `[add_fx] loop=false を使うには [def_fx name=${l} duration=…]（ms）の宣言が必要です`;
-		p = e;
+function c(c, l) {
+	let u = c.fx ?? "";
+	if (!u) throw "[add_fx] fx=（プリセット名）が必要です";
+	if (!e.includes(u) && !(l && u in l)) throw `[add_fx] fx【${u}】は未対応です（組み込み：${e.join(" / ")}／または [def_fx] で定義した名前）`;
+	let d = o(l?.[u]), f = { ...t[u] };
+	for (let e of i) c[e] !== void 0 && (f[e] = s(c, e, 0));
+	let p = (c.loop ?? "true") !== "false", m = s(c, "time", 0);
+	if (!p && m <= 0) {
+		let e = n[u] ?? d.duration;
+		if (!e) throw `[add_fx] loop=false を使うには [def_fx name=${u} duration=…]（ms）の宣言が必要です`;
+		m = e;
 	}
+	let h = (c.reverse ?? "false") !== "false", g = (c.keep ?? String(r[u] ?? d.keep ?? !1)) !== "false";
 	return {
-		name: s.name ?? "",
-		fx: l,
-		time: p,
-		speed: o(s, "speed", 1),
-		enabled: (s.enabled ?? "true") !== "false",
-		params: d,
-		...s.color === void 0 ? {} : { color: i(s.color) },
-		...u.pad ? { pad: u.pad } : {},
-		...u.padB ? { padB: u.padB } : {}
+		name: c.name ?? "",
+		fx: u,
+		time: m,
+		speed: s(c, "speed", 1),
+		enabled: (c.enabled ?? "true") !== "false",
+		params: f,
+		...c.color === void 0 ? {} : { color: a(c.color) },
+		...d.pad ? { pad: d.pad } : {},
+		...d.padB ? { padB: d.padB } : {},
+		...h ? { reverse: !0 } : {},
+		...g ? { keep: !0 } : {}
 	};
 }
 //#endregion
-export { e as n, s as r, r as t };
+export { e as n, c as r, i as t };
 
 //# sourceMappingURL=Fx.js.map

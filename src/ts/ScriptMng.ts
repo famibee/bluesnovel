@@ -1059,7 +1059,12 @@ export class ScriptMng {
 	}
 	#endFxTimer(id: number) {
 		const i = this.#aFxTimer.findIndex(t=> t.id === id);
-		if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
+		if (i >= 0) {
+			const t = this.#aFxTimer[i]!;
+			clearTimeout(t.timer);
+			this.#aFxTimer.splice(i, 1);
+			this.#markFxDone(t);	// 自然経過＝記述子へ done を焼く（[load] で頭から再生し直さない）
+		}
 
 		const w = this.#curWait;
 		const ids = w?.kind === 'fx' ? w.key as Set<number> : undefined;
@@ -1067,6 +1072,16 @@ export class ScriptMng {
 		ids.delete(id);
 		if (ids.size > 0) return;
 		this.#resumeWait('fx', ids, true);	// #onTsyEnd() と同じく #busy が下りてから回す
+	}
+	// one-shot タイマーが**自然経過**したとき、その記述子へ done:true を焼く（store 経由なので
+	//	[save] に載る）。[load] で復元された done 記述子は FxRunner が「経過済み」として扱う
+	//	＝keep なら即・最終フレーム、非 keep なら即・素通し（0.8 秒の再ランプを挟まない）。
+	//	timer レコードのセレクタ（aLayNm/page/name）をそのまま使う。無名（name=''）は
+	//	そのレイヤの無名 one-shot をまとめて done 扱い（照合が緩いのは #aFxTimer の元からの割り切り）。
+	//	撤去系（#dropFxTimers＝[clear_fx]/[clear_lay]/演じ直し）からは呼ばない
+	#markFxDone(t: {aLayNm: readonly string[] | null; page: T_PAGE_BOTH; name: string}) {
+		this.$fncs.chgFx({aLayNm: t.aLayNm ? [...t.aLayNm] : null, page: t.page,
+			mode: 'done', names: t.name ? [t.name] : null});
 	}
 	// [clear_fx]/[clear_lay]/ページ演じ直しの replace() でタイマーも落とす。
 	//	[wait_fx]待機中は #runStep() が止まり [clear_fx] 等は来ないので #curWait は触らない
@@ -1101,7 +1116,12 @@ export class ScriptMng {
 		if (! ids) return;
 		for (const id of ids) {
 			const i = this.#aFxTimer.findIndex(t=> t.id === id);
-			if (i >= 0) {clearTimeout(this.#aFxTimer[i]!.timer); this.#aFxTimer.splice(i, 1)}
+			if (i >= 0) {
+				const t = this.#aFxTimer[i]!;
+				clearTimeout(t.timer);
+				this.#aFxTimer.splice(i, 1);
+				this.#markFxDone(t);	// canskip での早め完了も「経過済み」＝done を焼く
+			}
 		}
 		this.#resumeWait('fx', ids, false);
 	}

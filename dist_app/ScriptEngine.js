@@ -1918,10 +1918,12 @@ var Se = class e {
 				if (o < 0) throw `[def_fx] padは0以上にしてください：${o}`;
 				let s = e.#a("def_fx", "pad_b", i.pad_b, 0);
 				if (s < 0) throw `[def_fx] pad_bは0以上にしてください：${s}`;
+				let c = (i.keep ?? "false") !== "false";
 				return this.#O[t] = {
 					duration: r,
 					pad: o,
-					padB: s
+					padB: s,
+					keep: c
 				}, a.push({
 					t: "defFx",
 					name: t,

@@ -18,7 +18,11 @@
   実装・実行時配線まで完了。3d_layer は 2026-08-24、live2d_layer は 2026-08-27 に移植・実機確認
   済み。実装メモは [plugin-layer.md](plugin-layer.md)。
 
-## 残りの行動項目（[TODO.md](TODO.md) にも記載）
+## 残り（bluesnovel 側の TODO ではない）
+
+タグ突き合わせによる不具合洗い出しは 2026-08-23 に完了済み。「sn_gallery を bluesnovel 駆動に
+する／依存を付け替える」という移行そのものは **sn_gallery リポジトリ側の課題**として扱い、
+bluesnovel の [TODO.md](TODO.md) からは外した（2026-09-04）。以下は判断の記録：
 
 - **依存の付け替え**：`sn_gallery/package.json` の
   `"@famibee/skynovel_esm": "file:../bluesnovel"` という本家のフリをどうするか。本格移行時に

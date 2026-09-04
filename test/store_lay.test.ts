@@ -292,6 +292,26 @@ it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを�
 	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1', 'rs', '#fx2']);
 });
 
+it('chgFx_mode:done は one-shot 記述子へ done を焼く（[load] 復元用。ScriptMng.#markFxDone）', ()=> {
+	addFx('a', {fx: 'blur', name: 'b', loop: 'false'});	// time=800・keep
+	addFx('a', {fx: 'wave'});							// time=0（無限）＝done 対象外
+	// name= 指定：一致する time>0 の記述子だけ
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'done', names: ['b']});
+	expect(fxOf('a')!.map(f=> f.done)).toEqual([true, undefined]);
+	// しおり round-trip で done が残る
+	const json = S().getPagesJson();
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().replace(json);
+	expect(fxOf('a')![0]).toMatchObject({fx: 'blur', keep: true, done: true});
+});
+
+it('chgFx_mode:done の names=null は無名 one-shot をまとめて done 扱い', ()=> {
+	addFx('a', {fx: 'blur', loop: 'false'});			// #fx1（無名・time>0）
+	addFx('a', {fx: 'blur', name: 'named', loop: 'false'});	// 名前つきは対象外
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'done', names: null});
+	expect(fxOf('a')!.map(f=> f.done)).toEqual([true, undefined]);
+});
+
 it('chgFx_page=both は表裏に同名の #fxN を複製', ()=> {
 	addFx('a', {fx: 'wave'}, 'both');
 	expect(fxOf('a', 0)!.map(f=> f.name)).toEqual(['#fx1']);

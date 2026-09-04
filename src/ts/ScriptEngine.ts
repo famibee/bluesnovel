@@ -1493,7 +1493,11 @@ export class ScriptEngine {
 			if (pad < 0) throw `[def_fx] padは0以上にしてください：${pad}`;
 			const padB = ScriptEngine.#argNumDef('def_fx', 'pad_b', args.pad_b, 0);
 			if (padB < 0) throw `[def_fx] pad_bは0以上にしてください：${padB}`;
-			this.#hDefFx[dfName] = {duration, pad, padB};
+			// keep=（既定false）：[add_fx fx=このname]の keep= 既定。ランプ型（progress を使い切って
+			//	終わる）プリセットは最終フレームを保つのが自然なので、ここで宣言しておける
+			//	（組み込み blur は Fx.ts の H_FX_BUILTIN_KEEP。個別 [add_fx keep=] が常に勝つ）
+			const keep = (args.keep ?? 'false') !== 'false';
+			this.#hDefFx[dfName] = {duration, pad, padB, keep};
 			aAct.push({t: 'defFx', name: dfName, glsl});
 			return 'skip';
 		}
