@@ -1,5 +1,5 @@
 import { a as e, c as t, l as n, o as r, s as i, t as a } from "./CmnLib.js";
-import { T as o, i as s, l as c, t as l, v as u } from "./PageLog.js";
+import { D as o, i as s, l as c, t as l, v as u } from "./PageLog.js";
 import { n as d } from "./ConfigBase.js";
 import { r as f } from "./LayCls.js";
 import { n as p, r as m } from "./Fx.js";

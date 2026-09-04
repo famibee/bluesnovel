@@ -788,7 +788,7 @@
 	レイヤに指定するフィルタ。その他必要な属性は適宜指定する<br/>
 	指定できる値は以下の通り。<br/>
 	blur		…… ガウスぼかし<br/>
-	🟡 noise		…… ノイズエフェクト（bluesnovel未対応。下の「noise」欄参照）<br/>
+	noise		…… ノイズエフェクト（下の「noise」欄参照）<br/>
 	color_matrix	…… カラーマトリックス<br/>
 	black_and_white	…… 白黒<br/>
 	brightness	…… 明るさを調整<br/>
@@ -829,11 +829,13 @@
 <tr><td>🟡 epeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
 </table>
 
-<h4>🟡 フィルター「noise」に指定できる属性</h4>
-<p>（bluesnovel）未対応：CSSにもSVGの単純な組合せにも相当する表現が無い</p>
+<h4>フィルター「noise」に指定できる属性</h4>
+<p>（bluesnovel）pixi の NoiseFilter を SVG の feTurbulence で近似。value ノイズのため
+ピクセル一致はしない（不透明部でおおむね一致。半透明の縁はノイズ量がずれる）</p>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>noise</td><td></td><td>0.5</td><td>0.0〜1.0</td><td>適用するノイズの量</td></tr>
-<tr><td>seed</td><td></td><td>Math.random()</td><td>整数</td><td>ノイズの生成に適用するシード値</td></tr>
+<tr><td>seed</td><td></td><td>0</td><td>整数</td><td>ノイズの生成に適用するシード値<br/>
+	（bluesnovel）既定は固定 0（本家は Math.random()）。再レンダーでフィルタ要素を作り直さないため</td></tr>
 </table>
 
 <h4>フィルター「color_matrix」に指定できる属性</h4>

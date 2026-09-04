@@ -13,7 +13,7 @@
 //	grayscaleはCSSと数式が違うため他のプリセットと同じくfeColorMatrix行き（src/ts/Filter.ts参照）
 
 import {ScriptEngine, type T_ENGINE_ACTION} from '../src/ts/ScriptEngine';
-import {bldFilter, fltId, matsOf, styFilter, blurId, blurValues, blursOf, blendmodeOf} from '../src/ts/Filter';
+import {bldFilter, fltId, matsOf, styFilter, blurId, blurValues, blursOf, blendmodeOf, noiseId, noisesOf} from '../src/ts/Filter';
 
 import {expect, it} from 'bun:test';
 
@@ -86,10 +86,28 @@ it('bldFilter_enableFilterAttr', ()=> {
 	expect(bldFilter({filter: 'sepia', enable_filter: 'false'}).enabled).toBe(false);
 });
 
-it('bldFilter_notYetSupported', ()=> {
-	// 残る未対応は noise だけ（CSSのfilterにもSVGのfeColorMatrixにも相当が無い）。
-	//	名前を知らないのか未対応なのかを区別して知らせる
-	expect(()=> bldFilter({filter: 'noise'})).toThrow('未対応です');
+it('bldFilter_noiseはfeTurbulence行き（[amount, seed]）', ()=> {
+	// pixiのNoiseFilter＝ピクセルごとの加算モノクロ白色ノイズ。CSSにもfeColorMatrixにも
+	//	相当が無いのでSVGのfeTurbulenceで近似する（Stage.tsx）。既定は本家どおりnoise=0.5、
+	//	seedは本家と違い固定0（Math.random()だと再レンダーのたびに<filter>が作り直される）
+	expect(bldFilter({filter: 'noise'}).noise).toEqual([0.5, 0]);
+	expect(bldFilter({filter: 'noise', noise: '0.2'}).noise).toEqual([0.2, 0]);
+	expect(bldFilter({filter: 'noise', seed: '7'}).noise).toEqual([0.5, 7]);
+	expect(bldFilter({filter: 'noise', seed: '3.9'}).noise).toEqual([0.5, 3]);	// 整数へ切り捨て
+	const f = bldFilter({filter: 'noise'});
+	expect(f.css).toBe(`url(#${noiseId(f.noise!)})`);
+});
+
+it('noiseId_同じ(amount,seed)は同じid・違えば違うid', ()=> {
+	expect(noiseId([0.5, 0])).toBe(noiseId([0.5, 0]));
+	expect(noiseId([0.5, 0])).not.toBe(noiseId([0.5, 1]));
+	expect(noiseId([0.5, 0])).not.toBe(noiseId([0.4, 0]));
+});
+
+it('noisesOf_有効なnoiseだけを集める', ()=> {
+	const a = bldFilter({filter: 'noise'});
+	const b = bldFilter({filter: 'noise', noise: '0.3', enable_filter: 'false'});
+	expect(noisesOf([a, b, {css: 'sepia(1)', enabled: true}])).toEqual([a.noise!]);
 });
 
 it('bldFilter_unknown', ()=> {

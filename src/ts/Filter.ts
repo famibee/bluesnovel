@@ -50,7 +50,10 @@ import {argBlendmode} from './Blendmode';
 //	どちらもcssは`url(#…)`になる。blendmodeは[add_filter blendmode=]（Lay.tsがレイヤの
 //	mix-blend-modeへ合流させる。CSSは要素につき1つしか持てないため、フィルター単位の合成は
 //	表現できない）
-export type T_FLT = {css: string; enabled: boolean; blendmode?: string; mat?: number[]; blurXY?: readonly [number, number]};
+//	noise があるものは SVG の feTurbulence 行き（[add_filter filter=noise]。pixi の NoiseFilter
+//	＝ピクセルごとの加算モノクロ白色ノイズ。CSS にも feColorMatrix にも相当が無い）。
+//	`[amount, seed]` の並び（blurXY と同じ流儀）
+export type T_FLT = {css: string; enabled: boolean; blendmode?: string; mat?: number[]; blurXY?: readonly [number, number]; noise?: readonly [number, number]};
 
 // 数値属性（省略値ありのみ）。パース本体は CmnLib.parseArgNum（ScriptEngine.#argNum と共通）
 function num(args: {[k: string]: string}, nm: string, def: number): number {
@@ -73,8 +76,9 @@ const H_BLD: {[nm: string]: (args: {[k: string]: string})=> string} = {
 	sepia			: ()=> 'sepia(1)',
 };
 
-// 本家にはあるがまだ対応できないもの。名前を知らないのか未対応なのかを区別して知らせる
-const A_FLT_NOT_YET = ['noise'];
+// 本家にはあるがまだ対応できないもの。名前を知らないのか未対応なのかを区別して知らせる。
+//	2026-09-04 に noise を feTurbulence 近似で対応、現状ゼロ（将来また空かない保証はないので枠は残す）
+const A_FLT_NOT_YET: string[] = [];
 
 // 色成分の5x4行列（pixi ColorMatrixFilter のプリセット。数値は pixi 6.5.10 の
 //	@pixi/filter-color-matrix から写した）。**オフセット列（5列目）は0〜1に揃えてある**
@@ -242,6 +246,11 @@ export function blurId([x, y]: readonly [number, number]): string {
 // feGaussianBlurのstdDeviation属性。X/Yを空白区切りで並べる
 export const blurValues = ([x, y]: readonly [number, number])=> `${String(x)} ${String(y)}`;
 
+// noise（amount, seed）→ SVGの`<filter>`のid。行列・blurと同じく中身から決めて使い回す
+export function noiseId([amount, seed]: readonly [number, number]): string {
+	return `sn_nz_${String(amount)}_${String(seed)}`;
+}
+
 export function bldFilter(args: {[k: string]: string}): T_FLT {
 	const {filter = ''} = args;
 	const blendmode = args.blendmode !== undefined ? argBlendmode(args.blendmode) : undefined;
@@ -252,6 +261,17 @@ export function bldFilter(args: {[k: string]: string}): T_FLT {
 	if (filter === 'blur' && (args.blur_x !== undefined || args.blur_y !== undefined)) {
 		const blurXY: [number, number] = [uint(num(args, 'blur_x', 2)), uint(num(args, 'blur_y', 2))];
 		return {css: `url(#${blurId(blurXY)})`, enabled, blurXY, ...blendmode !== undefined ? {blendmode} : {}};
+	}
+
+	// noise：pixi の NoiseFilter（ピクセルごとの加算モノクロ白色ノイズ）。CSS にも feColorMatrix にも
+	//	無いので SVG の feTurbulence で近似する（フィルタ木は Stage.tsx。src/docs/filters.md）。
+	//	pixi と違い seed 既定は固定値（Math.random() にすると [tsy] 等の再レンダーのたびに
+	//	<filter> 要素が作り直される）。value ノイズで空間相関があるためピクセル一致はしない
+	if (filter === 'noise') {
+		const noise: [number, number] = [
+			num(args, 'noise', 0.5),
+			'seed' in args ? Math.trunc(num(args, 'seed', 0)) : 0];
+		return {css: `url(#${noiseId(noise)})`, enabled, noise, ...blendmode !== undefined ? {blendmode} : {}};
 	}
 
 	// 色成分の行列で描くもの（CSSのfilter関数には無い）はSVGのfeColorMatrixへ回す
@@ -280,6 +300,11 @@ export function matsOf(aFlt: readonly T_FLT[]): number[][] {
 // レイヤの持つフィルターのうち、SVGのfeGaussianBlurで描くもの（Stage.tsxが要素を出すため）
 export function blursOf(aFlt: readonly T_FLT[]): (readonly [number, number])[] {
 	return aFlt.filter(f=> f.enabled && f.blurXY).map(f=> f.blurXY!);
+}
+
+// レイヤの持つフィルターのうち、SVGのfeTurbulenceで描くもの（Stage.tsxが要素を出すため）
+export function noisesOf(aFlt: readonly T_FLT[]): (readonly [number, number])[] {
+	return aFlt.filter(f=> f.enabled && f.noise).map(f=> f.noise!);
 }
 
 // レイヤが持つフィルターのうち、有効かつblendmode指定があるものの**最後の1つ**。

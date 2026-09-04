@@ -20,6 +20,13 @@
 [er]
 もどる[l]
 
+; ノイズ（pixiのNoiseFilter＝ピクセルごとの加算モノクロ白色ノイズ）。CSSにもfeColorMatrixにも
+;	相当が無いのでSVGのfeTurbulenceで近似する。単色の背景がザラつく＝画素の分散が出る
+[clear_filter layer=mes]
+[add_filter layer=mes filter=noise noise=0.5]
+[er]
+のいず[l]
+
 ; 汎用のカラーマトリックス。緑成分だけを残す
 [clear_filter layer=mes]
 [add_filter layer=mes filter=color_matrix matrix="0,0,0,0,0, 0,1,0,0,0, 0,0,0,0,0, 0,0,0,1,0"]

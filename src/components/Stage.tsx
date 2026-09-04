@@ -13,7 +13,7 @@ import {clearDrag, isDragging, isGrpLay, isTxtLay, styLay, type T_LAY, type T_LA
 import {modKeyName, suppressClick, setDesignMode, type T_ARG} from './Main';
 import {useStore, type T_TRANS} from '../store/store';
 import {ruleMaskFunc, VAGUE_DEF} from '../ts/Trans';
-import {fltId, fltValues, matsOf, blurId, blurValues, blursOf} from '../ts/Filter';
+import {fltId, fltValues, matsOf, blurId, blurValues, blursOf, noiseId, noisesOf} from '../ts/Filter';
 import {detectSwipe} from '../ts/Swipe';
 
 import {type CSSProperties, memo, type PointerEvent, RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -450,15 +450,17 @@ export default function Stage({
 	// 今どちらかのページで使われている色成分行列とblur_x/blur_y（重複はidで畳む）。
 	//	[tsy]中は毎フレーム再レンダーされるので aPage 依存でメモ化（両ページ全レイヤ走査＋Map確保）。
 	//	blur は [add_filter filter=blur blur_x=/blur_y=]＝CSSのblur()が半径1つしか持てない分をSVGのfeGaussianBlurへ回したもの
-	const {aMat, aBlur} = useMemo(()=> {
+	const {aMat, aBlur, aNoise} = useMemo(()=> {
 		const hMat = new Map<string, number[]>();
 		const hBlur = new Map<string, readonly [number, number]>();
+		const hNoise = new Map<string, readonly [number, number]>();
 		for (const aLay of aPage) for (const l of aLay) {
 			if (! l.aFlt) continue;
 			for (const m of matsOf(l.aFlt)) hMat.set(fltId(m), m);
 			for (const b of blursOf(l.aFlt)) hBlur.set(blurId(b), b);
+			for (const n of noisesOf(l.aFlt)) hNoise.set(noiseId(n), n);
 		}
-		return {aMat: [...hMat.values()], aBlur: [...hBlur.values()]};
+		return {aMat: [...hMat.values()], aBlur: [...hBlur.values()], aNoise: [...hNoise.values()]};
 	}, [aPage]);
 
 	// isDesignMode=falseの間は空にする。Moveable自体もisDesignMode時だけ条件レンダーなので
@@ -520,6 +522,37 @@ export default function Stage({
 				{aBlur.map(b=> <filter key={blurId(b)} id={blurId(b)}>
 					<feGaussianBlur stdDeviation={blurValues(b)}/>
 				</filter>)}
+			</defs>
+		</svg>}
+		{/* [add_filter filter=noise]。pixiのNoiseFilter＝ピクセルごとの加算モノクロ白色ノイズを
+			SVGのfeTurbulenceで近似する（src/ts/Filter.ts、経緯は src/docs/filters.md）。
+			・feTurbulence：fractalNoise（value ノイズ。pixi の独立白色ノイズとは違い空間相関がある。
+			　baseFrequency=0.9・numOctaves=1 で pixi の細かい粒に寄せる。octave を増やすと
+			　低周波の斑が乗って blotchy になる）。seed は Filter.ts が固定値化済み
+			・feColorMatrix：turbulence の R チャンネルだけ読み、rgb=amount*N + (0.5-amount/2) の
+			　グレー画像に。**0.5 を足すのは feColorMatrix の結果が [0,1] にクランプされ
+			　暗くする側のノイズが消えるのを防ぐため**（arithmetic の k4=-0.5 で戻す）。a=1
+			・feComposite arithmetic：src + grain - 0.5 ＝ src + amount*(N-0.5)。pixi と違い
+			　これは**premultiplied 空間**なので半透明の縁ではノイズ量がずれる（不透明部は一致）
+			・feComposite in：クランプで潰れたαを SourceAlpha へ戻す（立ち絵の透明部を出さない）
+			色空間はsRGB固定（他のフィルタと同じ理由） */}
+		{aNoise.length > 0 && <svg width="0" height="0" style={{position: 'absolute'}} aria-hidden>
+			<defs>
+				{aNoise.map(n=> {
+					const [amount] = n;
+					const off = 0.5 - amount / 2;	// クランプ回避の下駄（arithmetic の k4 で相殺）
+					const row = `${String(amount)} 0 0 0 ${String(off)}`;
+					return <filter key={noiseId(n)} id={noiseId(n)} colorInterpolationFilters="sRGB"
+						x="0" y="0" width="100%" height="100%">
+						<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1"
+							seed={n[1]} stitchTiles="noStitch" result="sn_nz_t"/>
+						<feColorMatrix in="sn_nz_t" type="matrix" result="sn_nz_g"
+							values={`${row}  ${row}  ${row}  0 0 0 0 1`}/>
+						<feComposite in="SourceGraphic" in2="sn_nz_g" operator="arithmetic"
+							k1="0" k2="1" k3="1" k4="-0.5" result="sn_nz_n"/>
+						<feComposite in="sn_nz_n" in2="SourceAlpha" operator="in"/>
+					</filter>;
+				})}
 			</defs>
 		</svg>}
 		{isDesignMode && <>

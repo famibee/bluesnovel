@@ -28,7 +28,7 @@ var a = (e) => [
 	negative: () => "invert(1)",
 	saturate: (e) => `saturate(${String(1 + i(e, "amount", .5))})`,
 	sepia: () => "sepia(1)"
-}, s = ["noise"], c = {
+}, s = [], c = {
 	grayscale: (e) => {
 		let t = i(e, "scale", .5);
 		return [
@@ -400,7 +400,10 @@ function d([e, t]) {
 	return `sn_gb_${String(e)}_${String(t)}`;
 }
 var f = ([e, t]) => `${String(e)} ${String(t)}`;
-function p(e) {
+function p([e, t]) {
+	return `sn_nz_${String(e)}_${String(t)}`;
+}
+function m(e) {
 	let { filter: n = "" } = e, a = e.blendmode === void 0 ? void 0 : r(e.blendmode), u = (e.enable_filter ?? "true") !== "false";
 	if (n === "blur" && (e.blur_x !== void 0 || e.blur_y !== void 0)) {
 		let n = [t(i(e, "blur_x", 2)), t(i(e, "blur_y", 2))];
@@ -408,6 +411,15 @@ function p(e) {
 			css: `url(#${d(n)})`,
 			enabled: u,
 			blurXY: n,
+			...a === void 0 ? {} : { blendmode: a }
+		};
+	}
+	if (n === "noise") {
+		let t = [i(e, "noise", .5), "seed" in e ? Math.trunc(i(e, "seed", 0)) : 0];
+		return {
+			css: `url(#${p(t)})`,
+			enabled: u,
+			noise: t,
 			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
@@ -421,31 +433,34 @@ function p(e) {
 			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
-	let p = o[n];
-	if (!p) throw s.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
+	let m = o[n];
+	if (!m) throw s.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
-		css: p(e),
+		css: m(e),
 		enabled: u,
 		...a === void 0 ? {} : { blendmode: a }
 	};
 }
-function m(e) {
+function h(e) {
 	return e.filter((e) => e.enabled && e.mat).map((e) => e.mat);
 }
-function h(e) {
+function g(e) {
 	return e.filter((e) => e.enabled && e.blurXY).map((e) => e.blurXY);
 }
-function g(e) {
+function _(e) {
+	return e.filter((e) => e.enabled && e.noise).map((e) => e.noise);
+}
+function v(e) {
 	let t;
 	for (let n of e) n.enabled && n.blendmode !== void 0 && (t = n.blendmode);
 	return t;
 }
-function _(e) {
+function y(e) {
 	return e.filter((e) => e.enabled).map((e) => e.css).join(" ");
 }
 //#endregion
 //#region src/components/Lay.ts
-var v = [
+var b = [
 	"visible",
 	"alpha",
 	"left",
@@ -465,30 +480,30 @@ var v = [
 	"aFlt",
 	"aFx"
 ];
-function y(e, t) {
+function x(e, t) {
 	(e.rotation !== void 0 || e.scale_x !== void 0 || e.scale_y !== void 0 || e.pivot_x !== void 0 || e.pivot_y !== void 0) && (t.transform = `rotate(${String(e.rotation ?? 0)}deg) scale(${String(e.scale_x ?? 1)}, ${String(e.scale_y ?? 1)})`, t.transformOrigin = `${String(e.pivot_x ?? 0)}px ${String(e.pivot_y ?? 0)}px`);
 }
-function b(e) {
+function S(e) {
 	let t = {};
-	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), y(e, t);
-	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : g(e.aFlt));
+	e.s_right === void 0 ? e.left !== void 0 && (t.left = `${String(e.left - (e.pivot_x ?? 0))}px`) : (t.right = `${String(e.s_right)}px`, t.left = "auto"), e.s_bottom === void 0 ? e.top !== void 0 && (t.top = `${String(e.top - (e.pivot_y ?? 0))}px`) : (t.bottom = `${String(e.s_bottom)}px`, t.top = "auto"), (e.align_x !== void 0 || e.align_y !== void 0) && (t.translate = `${e.align_x === "center" ? "-50%" : e.align_x === "right" ? "-100%" : "0"} ${e.align_y === "middle" ? "-50%" : e.align_y === "bottom" ? "-100%" : "0"}`), e.alpha !== void 0 && (t.opacity = e.alpha), e.width !== void 0 && (t.width = `${String(e.width)}px`), e.height !== void 0 && (t.height = `${String(e.height)}px`), x(e, t);
+	let n = e.blendmode ?? (e.aFlt === void 0 ? void 0 : v(e.aFlt));
 	if (n !== void 0 && (t.mixBlendMode = n), e.aFlt !== void 0) {
-		let n = _(e.aFlt);
+		let n = y(e.aFlt);
 		n && (t.filter = n);
 	}
 	return e.visible === !1 && (t.display = "none"), t;
 }
-function x(e) {
+function C(e) {
 	return e.cls === "grp";
 }
-function S(e) {
+function w(e) {
 	return e.cls === "txt";
 }
-var C = !1, w = () => {
-	C = !0;
-}, T = () => {
-	C = !1;
-}, E = () => C, D = "default", O = {
+var T = !1, E = () => {
+	T = !0;
+}, D = () => {
+	T = !1;
+}, O = () => T, k = "default", A = {
 	wait: 500,
 	alpha: 0,
 	x: "=0.3",
@@ -498,7 +513,7 @@ var C = !1, w = () => {
 	rotate: 0,
 	join: !0,
 	ease: "ease-out"
-}, k = {
+}, j = {
 	wait: 0,
 	alpha: 0,
 	x: "=0",
@@ -508,77 +523,77 @@ var C = !1, w = () => {
 	rotate: 0,
 	join: !1,
 	ease: "ease-out"
-}, A = /[{\s.,*]/, j = (e, t, n, r) => {
+}, M = /[{\s.,*]/, N = (e, t, n, r) => {
 	if (n === void 0) return r;
 	let i = Number(n);
 	if (!Number.isFinite(i)) throw `[${e}] ${t}【${n}】は数値ではありません`;
 	return i;
 };
-function M(e, t, n) {
+function P(e, t, n) {
 	let r = t.name ?? "";
 	if (!r) throw `[${e}] nameは必須です`;
-	if (A.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
+	if (M.test(r)) throw `[${e}] name【${r}】に使えない文字が含まれます`;
 	return {
 		name: r,
 		sty: {
-			wait: j(e, "wait", t.wait, 500),
-			alpha: j(e, "alpha", t.alpha, 0),
+			wait: N(e, "wait", t.wait, 500),
+			alpha: N(e, "alpha", t.alpha, 0),
 			x: t.x ?? "=0",
 			y: t.y ?? "=0",
-			scale_x: j(e, "scale_x", t.scale_x, 1),
-			scale_y: j(e, "scale_y", t.scale_y, 1),
-			rotate: j(e, "rotate", t.rotate, 0),
+			scale_x: N(e, "scale_x", t.scale_x, 1),
+			scale_y: N(e, "scale_y", t.scale_y, 1),
+			rotate: N(e, "rotate", t.rotate, 0),
 			join: (t.join ?? String(n)) !== "false",
 			ease: t.ease ?? "ease-out"
 		}
 	};
 }
-function N(e) {
+function F(e) {
 	let t = e.startsWith("="), n = parseFloat(t ? e.slice(1) : e);
 	return Number.isFinite(n) ? t ? `${n}em` : `${n}px` : "0px";
 }
-var P = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
-function F(e) {
+var I = /^(?:linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\([^()]+\)|steps\([^()]+\))$/;
+function L(e) {
 	let t = e.trim();
-	return P.test(t) ? t : "ease-out";
+	return I.test(t) ? t : "ease-out";
 }
-var I = (e) => ({
+var R = (e) => ({
 	opacity: e.alpha,
-	transform: `translate(${N(e.x)}, ${N(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
-}), L = {
+	transform: `translate(${F(e.x)}, ${F(e.y)}) scale(${String(e.scale_x)}, ${String(e.scale_y)}) rotate(${String(e.rotate)}deg)`
+}), z = {
 	opacity: 1,
 	transform: "none"
 };
-function R(e) {
+function B(e) {
 	return {
-		keyframes: [I(e), L],
+		keyframes: [R(e), z],
 		options: {
 			duration: e.wait,
-			easing: F(e.ease),
+			easing: L(e.ease),
 			fill: "backwards"
 		}
 	};
 }
-function z(e) {
+function V(e) {
 	return {
-		keyframes: [L, I(e)],
+		keyframes: [z, R(e)],
 		options: {
 			duration: e.wait,
-			easing: F(e.ease),
+			easing: L(e.ease),
 			fill: "forwards"
 		}
 	};
 }
 //#endregion
 //#region src/ts/PageLog.ts
-var B = [
+var H = [
 	"oldest",
 	"prev",
 	"next",
 	"newest",
 	"exit",
 	"load"
-], V = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", H = class {
+], U = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;", W = class {
 	maxLen;
 	constructor(e) {
 		this.maxLen = e;
@@ -641,6 +656,6 @@ var B = [
 	}
 };
 //#endregion
-export { u as C, l as S, r as T, b as _, O as a, f as b, z as c, y as d, T as f, w as g, S as h, D as i, M as l, x as m, V as n, k as o, E as p, H as r, R as s, B as t, v as u, p as v, m as w, h as x, d as y };
+export { u as C, r as D, _ as E, l as S, p as T, S as _, A as a, f as b, V as c, x as d, D as f, E as g, w as h, k as i, P as l, C as m, U as n, j as o, O as p, W as r, B as s, H as t, b as u, m as v, h as w, g as x, d as y };
 
 //# sourceMappingURL=PageLog.js.map

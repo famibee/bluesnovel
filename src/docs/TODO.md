@@ -24,10 +24,8 @@
 
 ## タグ・変数の残り
 
-- [ ] フィルタ `noise`：CSS にも SVG の単純な組合せにも無いので、対応するなら canvas 等で別途。
-      詳細 [filters.md](filters.md)
-- [ ] フィルタ `predator`/`color_tone` の色味差、`[add_filter] blur` の `repeat_edge_pixels`
-      近似余地（いずれも優先度低・未実機検証）。詳細 [filters.md](filters.md)
+- [ ] （優先度低）フィルタ `color_tone` の色味差（pixi シェーダの `rgb *= result.a` を feColorMatrix で表現できない。マルチプリミティブ構成なら近似可）。詳細 [filters.md](filters.md)
+- [ ] （優先度低）`[add_filter] blur` の`repeat_edge_pixels` 近似余地。詳細 [filters.md](filters.md)
 
 ## WebGL エフェクト
 
