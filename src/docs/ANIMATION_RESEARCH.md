@@ -330,7 +330,7 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   round-trip・`[clear_lay]` 追随は変更なし。回帰は `fx.e2e.ts` に 3 本追加（`prj_fx` に `movie.mp4`）。
 - 制約：外部ドメインの動画は 2D canvas / `texImage2D` を汚染する（`[snapshot]` と同じ）。
 
-#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）／blur・grayscale・sepia（2026-09-04）
+#### step 7（プリセット追加）— 随時。済み：snow / rain（2026-08-28）／fireworks（2026-09-03）／blur・grayscale・sepia・negative・tint（2026-09-04）
 
 `fxPresets.ts` に `snow`／`rain` を追加（`H_FX_DEF` に既定、`A_FX_PRESET` に名前）。どちらも
 ハッシュ乱数のセル／縦帯という定番手法を再実装（特定コードの写しではない＝MIT 相当）。
@@ -389,14 +389,19 @@ GLSL 本体はセーブに焼かない**——`aFx` には fx 名（組み込み
   ほぼ不可視）。`FxRunner` は `premultipliedAlpha:false` なので**アルファ加重平均**（Σ rgb·a·w / Σ a·w）
   で透明縁の黒ハロを防ぐ。さらに滑らかにしたいときは 2 枚重ね（aFx スタックの ping-pong がそのまま
   効く）。静的ぼかしは `[add_filter] blur`（CSS/SVG。WebGL 不要で軽い）のまま。
-- **`grayscale` / `sepia`：** blur と同じランプ型（`H_FX_DEF` に `{amp:1}`、`H_FX_BUILTIN_DURATION`
-  ／`H_FX_BUILTIN_KEEP` にも登録）。`amp × progress` で `mix(元色, 変換色)`。1 タップだけ＝周期系より
-  軽い。色行列は `[add_filter]` の同名フィルタと同一（grayscale は Rec.601、sepia は CSS `sepia(1)`）
-  ＝「fx で色を抜く演出 → 落ち着いたら `[add_filter]` へ差し替えて `[clear_fx]`」が自然。
+- **`grayscale` / `sepia` / `negative` / `tint`（色系ランプ）：** blur と同じランプ型（`H_FX_DEF` に
+  `{amp:1}`、`H_FX_BUILTIN_DURATION`／`H_FX_BUILTIN_KEEP` にも登録）。`amp × progress` で
+  `mix(元色, 変換色)`。1 タップだけ＝周期系より軽い。式は `[add_filter]` の同名フィルタと同一
+  （grayscale=Rec.601／sepia=CSS `sepia(1)`／negative=`1-c`／tint=対角乗算 `c*color`、`color` 未指定は
+  `0x888888` へフォールバック）＝「fx で演出 → 落ち着いたら `[add_filter]` へ差し替えて `[clear_fx]`」が自然。
+  `black_and_white` は `grayscale`（既定 `amp=1`）と同一なので専用 preset にしない。
+  **オフセット列を持つ行列（`brightness`/`contrast`/`color_tone`）は素の `mix(c, mat·c, t)` では
+  pixi と厳密一致しないので、要るときに個別対応する**（[filters.md](filters.md) の `color_tone` 非線形も同様）。
 - 触ったファイル：`Fx.ts`／`fxPresets.ts`／`FxRunner.ts`（`uProg`＋`held`＋`done`＋`update()` の巻き戻し条件）／
   `ScriptMng.ts`（`#markFxDone`）／`ScriptEngine.ts`（`[def_fx keep=]`）／`store.tsx`（`chgFx` の
   `done` モード）／`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋`test/e2e/fx.e2e.ts`＋`docs/tag.html`。
   sn_gallery `prj/add_fx/mat/main.sn` に blur/grayscale/sepia の進み・戻りボタン（背景へ適用）を追加。
+  negative/tint は分家のテスト・ドキュメントのみ（ギャラリー掲載しない）。
 
 **2026-09-03：既存プリセットの負荷見直し。** 各プリセットの1画素コストと計測法を `fxPresets.ts` の
 `H_FX_FRAG` 直前にメモ。手を入れたのは `snow` と `rain`：

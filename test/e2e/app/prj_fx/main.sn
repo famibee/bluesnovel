@@ -140,9 +140,11 @@
 [add_fx layer=base name=blr fx=blur loop=false time=2000 reverse=true]
 [er]blur_reverse[l]
 
-; grayscale / sepia（blur と同じランプ型。keep 既定 true）。行列は [add_filter] の同名フィルタと同じ。
-;	2 本重ねて ping-pong を通す＝GLSL コンパイル回帰も兼ねる
+; grayscale / sepia / negative / tint（blur と同じランプ型。keep 既定 true）。式は [add_filter] の同名フィルタと同じ。
+;	4 本重ねて ping-pong を通す＝GLSL コンパイル回帰も兼ねる（tint は color= も）
 [clear_fx layer=base]
 [add_fx layer=base name=gs fx=grayscale loop=false time=300]
 [add_fx layer=base name=sp fx=sepia loop=false time=300 amp=0.7]
+[add_fx layer=base name=ng fx=negative loop=false time=300 amp=0.5]
+[add_fx layer=base name=tn fx=tint loop=false time=300 color=0x3366ff]
 [er]color_fx[s]

@@ -40,8 +40,9 @@ wave / rgbShift / snow / rain / fireworks / blur / grayscale / sepia、生シェ
 - [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：
       タイル塗り＋スクロール／桜（花びら）／モザイク
       （花火 = `fireworks` は sn_gallery の `[def_fx name=花火2]` を組み込み化して済。
-      ぼかし／グレースケール／セピア = `blur`/`grayscale`/`sepia` は 2026-09-04 に
-      「ランプ型」基盤〈`progress`/`reverse`/`keep`/`done`〉ごと実装して済）
+      `blur`/`grayscale`/`sepia`/`negative`/`tint` は 2026-09-04 に
+      「ランプ型」基盤〈`progress`/`reverse`/`keep`/`done`〉ごと実装して済。色行列系の残り
+      〈`hue`/`contrast`/`night`/`predator`/`to_bgr`/`lsd` …〉は同じ 5–10 行パターンで随時）
 - [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
       動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
       （全画面壮大風景は対象外）。**随時・終わりなし**

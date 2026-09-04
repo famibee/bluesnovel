@@ -162,8 +162,8 @@ it('bldFx_done は bldFx が絶対に付けない（[load] 復元専用。Script
 	expect(bldFx({fx: 'blur', done: 'true'}).done).toBeUndefined();	// done= 属性は無視
 });
 
-it('bldFx_grayscale / sepia も blur と同じランプ型（amp=1／尺 800／keep 既定 true）', ()=> {
-	for (const fx of ['grayscale', 'sepia'] as const) {
+it('bldFx_grayscale / sepia / negative / tint も blur と同じランプ型（amp=1／尺 800／keep 既定 true）', ()=> {
+	for (const fx of ['grayscale', 'sepia', 'negative', 'tint'] as const) {
 		expect(bldFx({fx})).toEqual({
 			name: '', fx, time: 0, speed: 1, enabled: true, params: {amp: 1}, keep: true,
 		});
@@ -172,6 +172,9 @@ it('bldFx_grayscale / sepia も blur と同じランプ型（amp=1／尺 800／k
 			.toMatchObject({time: 800, reverse: true, params: {amp: 0.7}});
 		expect(bldFx({fx, keep: 'false'}).keep).toBeUndefined();
 	}
+	// tint は color=（未指定は shader 側で 0x888888 相当にフォールバック＝bldFx は color を持たない）
+	expect(bldFx({fx: 'tint'}).color).toBeUndefined();
+	expect(bldFx({fx: 'tint', color: '0x3366ff'}).color).toEqual([0x33 / 255, 0x66 / 255, 1]);
 });
 
 

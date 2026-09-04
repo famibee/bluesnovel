@@ -285,6 +285,20 @@ void main() {
 		dot(c.rgb, vec3(0.349, 0.686, 0.168)),
 		dot(c.rgb, vec3(0.272, 0.534, 0.131)));
 	gl_FragColor = vec4(mix(c.rgb, clamp(s, 0.0, 1.0), amp * clamp(progress, 0.0, 1.0)), c.a);
+}`,
+	negative: `${i}
+uniform float amp;
+void main() {
+	vec4 c = texture2D(uSampler, vTextureCoord);
+	gl_FragColor = vec4(mix(c.rgb, 1.0 - c.rgb, amp * clamp(progress, 0.0, 1.0)), c.a);
+}`,
+	tint: `${i}
+uniform float amp;
+uniform vec3 color;
+void main() {
+	vec4 c = texture2D(uSampler, vTextureCoord);
+	vec3 t = dot(color, color) > 0.0001 ? color : vec3(0.53333);	// 0x888888/255
+	gl_FragColor = vec4(mix(c.rgb, c.rgb * t, amp * clamp(progress, 0.0, 1.0)), c.a);
 }`
 };
 //#endregion

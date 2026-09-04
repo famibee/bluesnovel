@@ -68,7 +68,7 @@ uniform float progress;`;
 //	  blur      … tex N + sin/cos N（N=40。Vogel ディスクのタップ数）。progress==0 なら 1 tex で早期 return
 //	              （r は uniform 由来＝ワープ分岐なし）。σ を上げるほど 40 タップでも粗さが出る＝
 //	              さらに滑らかにしたいときは [add_fx fx=blur] を 2 枚重ねる（ディスク×ディスク≒ガウス）。
-//	  grayscale / sepia … tex 1 + dot 1〜3 + mix。実質下限（周期系より軽い）。keep で止まれば負荷 0。
+//	  grayscale / sepia / negative / tint … tex 1 + dot|sub|mul 1〜3 + mix。実質下限（周期系より軽い）。keep で止まれば負荷 0。
 //	  fireworks … resolution LOD 内蔵（広いほど頭・火の粉を減らして粒を大きく）。詳細は下の block と
 //	              ext_fx_tst.sn。エンジン側で FBO 解像度を上限クランプする案は、生成系（snow/rain/
 //	              fireworks）に限れば有効だが「ウィンドウ超の背景画像を置いた時だけ効く」狭い最適化で、
@@ -398,5 +398,26 @@ void main() {
 		dot(c.rgb, vec3(0.349, 0.686, 0.168)),
 		dot(c.rgb, vec3(0.272, 0.534, 0.131)));
 	gl_FragColor = vec4(mix(c.rgb, clamp(s, 0.0, 1.0), amp * clamp(progress, 0.0, 1.0)), c.a);
+}`,
+
+	// 元絵→色反転へ progress（0→1）で寄せるランプ型。amp＝最終的な効き（0..1、既定 1）。
+	//	[add_filter] filter=negative（CSS invert(1)）のアニメ版。1 タップ。keep 既定 true。
+	negative: `${HEAD}
+uniform float amp;
+void main() {
+	vec4 c = texture2D(uSampler, vTextureCoord);
+	gl_FragColor = vec4(mix(c.rgb, 1.0 - c.rgb, amp * clamp(progress, 0.0, 1.0)), c.a);
+}`,
+
+	// 元絵→色合い（チャンネル別乗算 c.rgb *= color）へ progress（0→1）で寄せるランプ型。
+	//	amp＝効き（0..1、既定 1）／color=色合い（未指定は 0x888888/255＝[add_filter] filter=tint の
+	//	既定と同じ中間グレー＝軽く沈める）。対角行列は [add_filter] filter=tint と同一。1 タップ。keep 既定 true。
+	tint: `${HEAD}
+uniform float amp;
+uniform vec3 color;
+void main() {
+	vec4 c = texture2D(uSampler, vTextureCoord);
+	vec3 t = dot(color, color) > 0.0001 ? color : vec3(0.53333);	// 0x888888/255
+	gl_FragColor = vec4(mix(c.rgb, c.rgb * t, amp * clamp(progress, 0.0, 1.0)), c.a);
 }`,
 };

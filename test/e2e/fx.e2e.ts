@@ -357,17 +357,19 @@ test('[add_fx fx=blur reverse=true] は完了済み blur の後でも「今か�
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 4000}).toBe('0');
 });
 
-test('grayscale / sepia（blur と同じランプ型）が 2 本重ねてコンパイル・描画できる', async ({page})=> {
+test('色ランプ preset（grayscale / sepia / negative / tint）が 4 本重ねてコンパイル・描画できる', async ({page})=> {
 	for (let i = 0; i < 23; ++i) await pressKeyToWaitMark(page, 'Space');	// 「blur_reverse」まで
 
-	await pressKey(page, 'Space');	// [clear_fx]→[add_fx gs fx=grayscale]→[add_fx sp fx=sepia amp=0.7]→[er]color_fx[s]
+	await pressKey(page, 'Space');	// [clear_fx]→gs grayscale／sp sepia amp=0.7／ng negative amp=0.5／tn tint color=0x3366ff→[er]color_fx[s]
 	await expect.poll(async ()=> mesStr(page)).toBe('color_fx');
 
 	const a = (await afx(page))!;
-	expect(a.map(f=> f.fx)).toEqual(['grayscale', 'sepia']);
+	expect(a.map(f=> f.fx)).toEqual(['grayscale', 'sepia', 'negative', 'tint']);
 	expect(a[0]).toMatchObject({fx: 'grayscale', time: 300, keep: true, params: {amp: 1}});
 	expect(a[1]).toMatchObject({fx: 'sepia', time: 300, keep: true, params: {amp: 0.7}});
-	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 2 パスとも compile 成功で <canvas>
+	expect(a[2]).toMatchObject({fx: 'negative', time: 300, keep: true, params: {amp: 0.5}});
+	expect(a[3]).toMatchObject({fx: 'tint', time: 300, keep: true, color: [0x33 / 255, 0x66 / 255, 1]});
+	await expect.poll(async ()=> draw(page)).toBe('canvas');	// 4 パスとも compile 成功で <canvas>（tint の uniform vec3 color 含む）
 	// keep なので経過後も canvas は残るが rAF は止まる
 	await expect.poll(()=> canvasRunning(SEL_FORE)(page), {timeout: 3000}).toBe('0');
 });
