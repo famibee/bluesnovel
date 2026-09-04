@@ -454,8 +454,12 @@ export default function GrpLayer({cmn: {styChild, isDesignMode}, sty, nm, fn, sr
 		{fxOn && <FxImg baseSrc={fxSrc} isSheet={isSheet} isMovie={isMovie} getVideoEl={()=> videoRef.current}
 			aFace={aFace} aFx={aFx} active={fxActive} onReady={setFxReady}/>}
 		{/* fx有効時は face（静止・sheet・動画とも）を FxImg が合成済み＝DOM には出さない。
-			fx 無効時は全 face を従来どおり DOM オーバーレイで重ねる */}
-		{(fxOn ? [] : aFace)
+			ただし **canvas が初回フレームを描くまで（fxReady=false）は残す**——基本 <img> と同じ扱い。
+			初回適用時は makeFxSource() の loadSheet() 等が非同期（未キャッシュ）で、その間だけ
+			DOM face を消すと基本画像だけ見えて「表情差分が一瞬消える」（アニメ png シート face を
+			持つ立ち絵に [add_fx] した初回。2 回目以降はキャッシュで顕在化しない）。
+			fx 無効時も全 face を従来どおり DOM オーバーレイで重ねる */}
+		{(hideForFx ? [] : aFace)
 			.map((face, i)=> <FaceImg key={`${face.fn}_${String(i)}`} {...face}/>)}
 	</Layer>;
 }

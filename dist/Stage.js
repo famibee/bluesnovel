@@ -10172,7 +10172,7 @@ function Tu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, fn: i, src: 
 				active: u,
 				onReady: g
 			}),
-			(S ? [] : c).map((e, t) => /* @__PURE__ */ z(_u, { ...e }, `${e.fn}_${String(t)}`))
+			(C ? [] : c).map((e, t) => /* @__PURE__ */ z(_u, { ...e }, `${e.fn}_${String(t)}`))
 		]
 	});
 }

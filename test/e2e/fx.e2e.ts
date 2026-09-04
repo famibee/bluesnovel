@@ -198,6 +198,37 @@ test('[add_fx] + 静止 face は 2D canvas で合成してシェーダに通す�
 const canvasRunning = (sel: string)=> (page: Page)=>
 	page.locator(`${sel} div[data-lay="base"] canvas`).getAttribute('data-fx-running');
 
+test('fx 合成が間に合うまで（canvas 未 ready）は DOM face を残す＝表情が一瞬消えない（回帰）', async ({page})=> {
+	// GrpLayer は fx on になった瞬間に DOM face を外していた（`fxOn ? []`）。初回適用時は
+	//	FxRunner の lazy import や合成が非同期で、その窓の間だけ基本画像だけ見え「表情差分が
+	//	一瞬消える」（アニメ png シート face を持つ立ち絵に [add_fx] した初回。2 回目以降は
+	//	キャッシュで顕在化しない）。ゲートを基本 <img> と同じ hideForFx（fxOn かつ canvas ready）へ。
+	//	ここでは FxRunner チャンクの応答を遅らせて「合成中」の窓を確実に開く
+	let release = ()=> {};
+	const gate = new Promise<void>(r=> {release = r});	// 全マッチ要求がこの1つを待つ
+	await page.route(/FxRunner|fxPresets/, async route=> {
+		await gate;
+		await route.continue();
+	});
+
+	// このシナリオは 12 歩目「face合成」より前（wave/both_fx/oneshot/pause_fx）で既に [add_fx] する。
+	//	＝2 歩目で FxRunner チャンクが要求され、以降はその応答待ちで足止め（＝チャンク未ロードのまま進む）
+	for (let i = 0; i < 11; ++i) await pressKeyToWaitMark(page, 'Space');	// 「def_fx」まで
+
+	await pressKeyToWaitMark(page, 'Space');	// [add_face f]→[lay face=f]→[add_fx fx=wave]→[er]face合成[l]
+	expect(await mesStr(page)).toBe('face合成');
+	// fx は on（<canvas> は DOM に居る）が FxRunner ロード待ちで未初期化＝data-fx-running が付かない。
+	//	この窓で基本 <img> は visible のまま、face の <img data-fn> も**在る**（表情が消えない）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe(null);	// まだ rAF 属性が無い＝未 ready
+	expect(await page.locator(`${LAY} img:not([data-fn])`).evaluate((el: HTMLElement)=> getComputedStyle(el).visibility)).toBe('visible');
+	expect(await page.locator(`${LAY} img[data-fn]`).count()).toBeGreaterThan(0);
+
+	release();	// 足止め中の FxRunner／続く fxPresets をまとめて解放（以後の要求も素通し）
+	// canvas が初回フレームを描いたら基本 <img>・DOM face とも隠れる（従来どおりの最終状態）
+	await expect.poll(()=> canvasRunning(SEL_FORE)(page)).toBe('1');
+	await expect.poll(async ()=> page.locator(`${LAY} img[data-fn]`).count()).toBe(0);
+});
+
 test('[trans] 後の不可視 back ページでは fx の rAF が止まる（data-fx-running=0）', async ({page})=> {
 	for (let i = 0; i < 13; ++i) await pressKeyToWaitMark(page, 'Space');	// 「trans前」まで
 	expect(await mesStr(page)).toBe('trans前');
