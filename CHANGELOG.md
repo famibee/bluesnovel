@@ -694,6 +694,20 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.12.0](https://github.com/famibee/bluesnovel/compare/v0.11.0...v0.12.0) (2026-09-05)
+
+
+### Features
+
+* **add_fx:** [add_fx tex=] で対象レイヤの画像とは別のテクスチャを渡せるように ([d908315](https://github.com/famibee/bluesnovel/commit/d9083150e23b33ae4c1b45cea1d4f05dc9f8ca2a))
+* **add_fx:** tex= の[load]復元をcrypto:true構成でも正しく行う ([4d79f2c](https://github.com/famibee/bluesnovel/commit/4d79f2cebdda0e17e6deca8a379eb1d6ae066a47))
+* **add_fx:** tex= を crypto:true 構成でも復号して使えるように ([f3ed9f6](https://github.com/famibee/bluesnovel/commit/f3ed9f6d685fe0ddc4bd3785914b94a0077b5342))
+
+
+### Bug Fixes
+
+* **sn:** [lay b_pic=] のライブ経路を crypto:true 構成でも復号する ([9018dac](https://github.com/famibee/bluesnovel/commit/9018dac119fed05c408eb1d25796303589e49166))
+
 ## [0.11.0](https://github.com/famibee/bluesnovel/compare/v0.10.0...v0.11.0) (2026-09-04)
 
 
