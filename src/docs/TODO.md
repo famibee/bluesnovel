@@ -16,8 +16,6 @@
 
 ## タグ・変数の残り
 
-- [ ] （優先度低）フィルタ `color_tone` の色味差（pixi シェーダの `rgb *= result.a` を feColorMatrix で表現できない。マルチプリミティブ構成なら近似可）。詳細 [filters.md](filters.md)
-- [ ] （優先度低）`[add_filter] blur` の`repeat_edge_pixels` 近似余地（SVG `feGaussianBlur` の `edgeMode`。**静的フィルタの話で `[add_fx fx=blur]` とは別件**）。詳細 [filters.md](filters.md)
 ## 保留
 
 - [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
@@ -47,3 +45,7 @@
   → [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7「fx でないもの」
 - `ScriptMng.#refreshCryptoAssets()` の一般化（アクション経路を変える改修になる割に得るものが薄い）
   → [refactor-candidates.md](refactor-candidates.md) Altitude 節
+- フィルタ `color_tone` の色味差（pixi の非線形補正をSVG feColorMatrixで再現できない）。
+  色味を厳密に一致させる必要はないため凍結 → [filters.md](filters.md)
+- `[add_filter] blur` の `repeat_edge_pixels`（SVG `feGaussianBlur` の `edgeMode` で近似余地は
+  あるが優先度低。**静的フィルタの話で `[add_fx fx=blur]` とは別件**）→ [filters.md](filters.md)

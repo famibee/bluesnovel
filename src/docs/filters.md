@@ -33,10 +33,10 @@ premultiply）ので、この乗せ戻しは表現できない。
 
 近似するなら `feColorMatrix`（行1–3）→ トーン値を全チャンネルへ出す 2 本目 → `feComposite`
 `operator="arithmetic"` で RGB へ再乗算、というマルチプリミティブ構成が要る（クランプ順序も
-pixi 側＝乗算後クランプに合わせないと合わない）。`color_tone` は使用頻度が低いため、実需が
-出るまで未着手とする。
+pixi 側＝乗算後クランプに合わせないと合わない）。色味を厳密に一致させる必要はない判断のため、
+**凍結**（2026-09-05、TODO.md「タグ・変数の残り」から移動）。
 
-## `[add_filter] blur` の pixi 専用パラメータ（対応不可・保留）
+## `[add_filter] blur` の pixi 専用パラメータ（対応不可・凍結）
 
 2026-08-27 調査（本家 `Layer.ts:115-127` と `src/ts/Filter.ts` を突き合わせ）。
 
@@ -48,7 +48,8 @@ pixi 側＝乗算後クランプに合わせないと合わない）。`color_to
   `blur_x`/`blur_y` 指定時（SVG の `feGaussianBlur` 経路。`src/ts/Filter.ts:254-257`）でしか
   効かせられない：`blur_x`/`blur_y` 未指定時に使う CSS の `blur()` 関数は CSS Filter Effects
   仕様上常に `edgeMode="duplicate"` 相当に固定されており、本家の既定 `repeat_edge_pixels=false`
-  （エッジ透明）とは異なる見た目になっている可能性がある（未実機検証）。
+  （エッジ透明）とは異なる見た目になっている可能性がある（未実機検証）。近似の余地はあるが
+  優先度低いため、こちらも**凍結**（2026-09-05、TODO.md「タグ・変数の残り」から移動）。
 
 2026-08-20、`docs/tag.html` 整理時に `noise` の陰に隠れていたのを発見。優先度低いため保留。
 

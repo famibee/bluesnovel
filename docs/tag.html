@@ -826,7 +826,7 @@
 <tr><td>🟡 kernel_size</td><td></td><td>5</td><td>5、7、9、11、13、15</td><td>カーネルサイズ<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
 <tr><td>blur_x</td><td></td><td>2</td><td>整数</td><td>X強度</td></tr>
 <tr><td>blur_y</td><td></td><td>2</td><td>整数</td><td>Y強度</td></tr>
-<tr><td>🟡 epeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
+<tr><td>🟡 repeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます<br/>（bluesnovel）未対応：SVG feGaussianBlurのedgeModeで近似する余地はある（blur_x/blur_y指定時限定）が、優先度低く凍結</td></tr>
 </table>
 
 <h4>フィルター「noise」に指定できる属性</h4>
@@ -865,6 +865,9 @@
 </table>
 
 <h4>フィルター「color_tone」に指定できる属性</h4>
+<p>（bluesnovel）pixi の ColorMatrixFilter シェーダが純粋な4x5アフィン変換でない（トーン値をRGBへ
+乗せ戻す非線形な補正が入る）ため、SVG feColorMatrixでは再現できずピクセル一致はしない
+（暗部は近いが、明部で青チャンネルの出方が食い違う）。使用頻度が低いため凍結</p>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>desaturation</td><td></td><td>0.5</td><td>0.0〜1.0</td><td></td></tr>
 <tr><td>toned</td><td></td><td>0.5</td><td>0.0〜1.0</td><td></td></tr>
