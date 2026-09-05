@@ -314,7 +314,7 @@
 	属性無し
 
 </p>
-<p class="mb2 px1" style="border-left:3px solid #3a9;padding-left:.6em"><b>bluesnovel</b>🟢：実装済。本家に加え、<b>既読(kidoku)情報も消去</b>する（本家の既読サンプルに合わせた挙動）。</p>
+<p class="mb2 px1" style="border-left:3px solid #3a9;padding-left:.6em">本家に加え、<b>既読(kidoku)情報も消去</b>する（本家の既読サンプルに合わせた挙動）。</p>
 <h2 id="clearvar" class="w-heading">[clearvar] ゲーム変数の全消去</h2>
 <h4>save:変数を全消去。削除すると言うより、初期化する</h4>
 <p class="mb2 px1">
@@ -977,7 +977,7 @@
 	記述子のスタックは<a href="#add_filter">[add_filter]</a>に倣う：<br/>
 	・<code>[add_fx fx=]</code> はプリセット名のみ。組み込み <code>wave</code> / <code>rgbShift</code> /
 	<code>snow</code> / <code>rain</code> / <code>fireworks</code> / <code>blur</code> / <code>grayscale</code> / <code>sepia</code> / <code>negative</code> / <code>tint</code>、または <code>[def_fx name= glsl=]</code> で先に定義したユーザープリセット名<br/>
-	・生フラグメントシェーダは <code>[def_fx]</code> で定義する（＝「プリセット追加」）。
+	・独自の生フラグメントシェーダは <code>[def_fx]</code> で定義する（＝「プリセット追加」）。
 	契約は<a href="#trans">[trans]</a>の<code>glsl=</code>と名前を統一（<a href="#def_fx">[def_fx]</a>の表）。
 	<b>GLSL 本体は<a href="#save">[save]</a>に焼かれない</b>——記述子（<code>aFx</code>）には fx 名しか載らず、
 	定義はテンプレ起動時に必ず通る処理（<code>[call fn=ext_*]</code> 等）で <code>[def_fx]</code> を
@@ -993,7 +993,7 @@
 </p>
 
 <h2 id="def_fx" class="w-heading">[def_fx]シェーダプリセット定義</h2>
-<h4>生フラグメントシェーダをユーザープリセットとして事前定義する。</h4>
+<h4>独自の生フラグメントシェーダをユーザープリセットとして事前定義する。</h4>
 <p class="mb2 px1">
 定義したシェーダは <code>[add_fx fx=プリセット名]</code> で使える。テンプレ起動時に必ず通る処理
 （<code>[call fn=ext_*]</code> 等）で <code>[def_fx]</code> を毎回再実行しておく必要がある
@@ -1038,6 +1038,7 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 <tr><td>keep</td><td></td><td>プリセット既定</td><td>true／false</td><td><code>true</code>で<code>time=</code>経過後も素通し（＝元絵）へ戻さず最終フレームで凍結する（<code>rAF</code>は止まるので保持中の負荷は0）。既定は<code>blur</code>が<code>true</code>、他の組み込みは<code>false</code>、ユーザープリセットは<a href="#def_fx">[def_fx keep=]</a>の宣言値（未宣言なら<code>false</code>）</td></tr>
 <tr><td><code>p1</code>〜<code>p4</code></td><td></td><td>0</td><td>実数</td><td>汎用スカラ入力ポート。シェーダが <code>uniform float p1;</code> 等を宣言していれば値が届く（<a href="#def_fx">[def_fx]</a>シェーダ向け。組み込みでは <code>fireworks</code> が <code>p1</code>＝周期・<code>p2</code>＝横位置に使う）</td></tr>
 <tr><td>color</td><td></td><td>vec3(0)</td><td><code>0xrrggbb</code> ／ <code>"#rrggbb"</code> ／ <code>r,g,b</code>（各 0..1）</td><td>シェーダの <code>uniform vec3 color;</code> へ 0..1 RGB を渡す（<code>fireworks</code>／<a href="#def_fx">[def_fx]</a>シェーダ）</td></tr>
+<tr><td>tex</td><td></td><td>なし</td><td><code>fn=</code>と同じ論理名（path.json）</td><td>シェーダの<code>uniform sampler2D uTex2;</code>へ、<code>layer=</code>の基本画像とは別の画像を追加テクスチャとして渡す（<a href="#def_fx">[def_fx]</a>シェーダ向け）。基本画像自体は差し替えない＝専用レイヤを増やさず1レイヤで「元絵＋別画像」を合成できる。読み込みは非同期（完了まで1×1透明）</td></tr>
 </table>
 
 <h4>プリセット「wave」に指定できる属性</h4>
@@ -1129,8 +1130,7 @@ Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジン�
 
 <h4>生シェーダを使うには</h4>
 <p class="mb2 px1">
-<code>[add_fx glsl=]</code> は廃止（2026-08-31）。生フラグメントシェーダは
-<a href="#def_fx">[def_fx name= glsl=]</a> でユーザープリセットとして先に定義し、
+独自の生フラグメントシェーダは<a href="#def_fx">[def_fx name= glsl=]</a> でユーザープリセットとして先に定義し、
 <code>[add_fx fx=その名前]</code> で使う（契約表は <a href="#def_fx">[def_fx]</a>）。
 </p>
 <p class="mb2 px1">

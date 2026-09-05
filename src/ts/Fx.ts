@@ -36,6 +36,15 @@
 //	  uniform float     tick          … 経過秒 × speed=（0 起点）
 //	  uniform vec2      resolution    … canvas 実ピクセルサイズ
 //	  ＋ プリセット固有 uniform（amp/freq/shift。作者が uniform 宣言し [add_fx] で値を渡す）
+//	  ＋ uniform sampler2D uTex2      … [add_fx tex=]（対象レイヤの基本画像とは別の追加テクスチャ。
+//	                                     作者が uniform sampler2D uTex2; を宣言した時だけ意味を持つ）
+//	uTex2 は「対象レイヤ自身の画像は変えず、別の画像をシェーダの入力として重ねたい」ケース向け
+//	（[add_fx fx=tile tex=…] が想定例。ext_fx_tile.sn 参照）。専用レイヤを増やして重ねる代わりに
+//	1 レイヤ・1 パスで完結する。tex= は fn=（layer= の基本画像）と同じ論理名（path.json）を取るが、
+//	基本画像を差し替えるわけではないので別属性名にした。パス解決は ScriptMng.#applyAction() が
+//	fn= と同じ #searchPic() で行い、store（aFx）には解決済み URL を積む（bldFx() 直後は生の fn の
+//	まま＝ここは純粋関数で I/O を持たない）。テクスチャのロードは非同期（FxRunner.ts）だが、
+//	ロード完了までは 1×1 透明テクスチャを束の間サンプルするだけ＝画面が一瞬崩れることはない
 //	[def_fx] は組み込みプリセットと同じく **HEAD（precision／上記共通 uniform／varying の宣言）を
 //	FxRunner が前置する**（[trans glsl=] は自前で書くが、[def_fx] は「プリセット追加」なので統一）。
 //	作者が書くのは main() と固有 uniform だけ（共通分を再宣言するとコンパイルエラー）。
@@ -140,6 +149,11 @@ export type T_FX = {
 	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
 	params	: {[k: string]: number};	// スカラ入力ポート（amp/freq/shift/p1〜p4。A_FX_PARAM の範囲）
 	color?	: readonly [number, number, number];	// color=（uniform vec3 color。0..1 RGB）。未指定は uniform へ vec3(0)
+	// tex=（uniform sampler2D uTex2）。bldFx() が返す時点では args.tex の生の論理名（fn= と同じ
+	//	path.json 参照）だが、store（aFx）に入る頃には ScriptMng.#applyAction() が #searchPic() で
+	//	解決済み URL に置き換えている＝aLay.src と同じく「store 上は常に解決済み」の約束（[save]にも
+	//	解決済み URL のまま載る＝fn=/src と同じ扱い。GLSL 本体と違い機微情報ではないので問題ない）
+	tex?	: string;
 	// [def_fx pad=]／[def_fx pad_b=]（基本画像**高さ**に対する比率）。fx キャンバスを
 	//	naturalW/H の外側へ広げ、立ち絵レイヤをそのまま（別レイヤや余白 png 無しで）
 	//	画像の枠外までシェーダ出力できるようにする（オーラ等）。上左右は pad、下端は padB。
@@ -222,6 +236,9 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,
 		...(args.color !== undefined ? {color: parseRGB(args.color)} : {}),
+		// tex=（uniform sampler2D uTex2）。ここでは生の論理名のまま持つ（パス解決は
+		//	ScriptMng.#applyAction() の仕事。pure な bldFx() は I/O をしない）
+		...(args.tex !== undefined ? {tex: args.tex} : {}),
 		// [def_fx pad=／pad_b=] 宣言ぶんの余白（基本画像高さ比）。0／未宣言は持たない
 		...(meta.pad ? {pad: meta.pad} : {}),
 		...(meta.padB ? {padB: meta.padB} : {}),

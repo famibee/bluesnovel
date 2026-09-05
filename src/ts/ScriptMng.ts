@@ -1894,10 +1894,16 @@ export class ScriptMng {
 		case 'defFx':	// [def_fx]：ユーザープリセットGLSLをレジストリへ。storeもタイマーも触らない
 			defFx(act.name, act.glsl);
 			break;
-		case 'addFx':
-			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
+		case 'addFx': {
+			// tex=（uniform sampler2D uTex2）はbldFx()時点では生の論理名。fn=と同じpath.json解決を
+			//	ここで済ませてからstoreへ積む（aLay.srcと同じ「store上は常に解決済みURL」の約束。
+			//	Fx.ts T_FX.texのコメント参照）。#searchPicは見つからなければ''を返して表示エラーに
+			//	留める（1エフェクトのテクスチャが無いだけでゲームごと止めない、#searchPicと同じ方針）
+			const fx = act.fx.tex !== undefined ? {...act.fx, tex: this.#searchPic('add_fx', act.fx.tex)} : act.fx;
+			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx});
 			this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る
 			break;
+		}
 		case 'clearFx':
 			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'clear', names: act.names});
 			this.#dropFxTimers(t=> (act.page === 'both' || t.page === 'both' || t.page === act.page)

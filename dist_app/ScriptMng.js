@@ -4619,14 +4619,19 @@ var yo = class p {
 			case "defFx":
 				m(e.name, e.glsl);
 				break;
-			case "addFx":
+			case "addFx": {
+				let t = e.fx.tex === void 0 ? e.fx : {
+					...e.fx,
+					tex: this.#Je("add_fx", e.fx.tex)
+				};
 				this.$fncs.chgFx({
 					aLayNm: e.aLayNm,
 					page: e.page,
 					mode: "add",
-					fx: e.fx
+					fx: t
 				}), this.#pe(e);
 				break;
+			}
 			case "clearFx":
 				this.$fncs.chgFx({
 					aLayNm: e.aLayNm,

@@ -35,18 +35,9 @@ wave / rgbShift / snow / rain / fireworks / blur / grayscale / sepia、生シェ
 組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋
 `test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
 
-残り：
-
-- [ ] プリセット追加（**随時**）。技法から再実装（MIT 相当）。1 個 20–50 行。候補：
-      タイル塗り＋スクロール／桜（花びら）／モザイク
-      （花火 = `fireworks` は sn_gallery の `[def_fx name=花火2]` を組み込み化して済。
-      `blur`/`grayscale`/`sepia`/`negative`/`tint` は 2026-09-04 に
-      「ランプ型」基盤〈`progress`/`reverse`/`keep`/`done`〉ごと実装して済。色行列系の残り
-      〈`hue`/`contrast`/`night`/`predator`/`to_bgr`/`lsd` …〉は同じ 5–10 行パターンで随時）
-- [ ] sn_gallery `prj/add_fx/` の実演拡充＋ギャラリー掲載候補の調査（ライセンス明示・
-      動作確認ページ URL 付き。§7 の調査候補）。ノベル素材との組合せで役立つものだけ
-      （全画面壮大風景は対象外）。**随時・終わりなし**
-      （2026-09-04：blur/grayscale/sepia の進み・戻りボタンを `prj/add_fx/mat/main.sn` へ追加済み）
+プリセット追加はここで一区切り（組み込み：wave/rgbShift/snow/rain/fireworks/blur/grayscale/sepia/
+negative/tint。sn_gallery `[def_fx]` デモ：stand_aura/fire 系/hanafubuki/rain_window/tile）。
+以降は候補を積まず、要る時に個別に追加する。
 
 ## 保留
 

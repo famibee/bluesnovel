@@ -28,6 +28,10 @@
 //	  汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
 //	・preserveDrawingBuffer:true は [snapshot]（Snapshot.ts の canvas→toDataURL 差し替え）対策で
 //	  3d_layer / live2d_layer と同じ理由。
+//	・fx.tex（[add_fx tex=]。uniform sampler2D uTex2）は基本画像とは別に読む追加テクスチャ。
+//	  url→WebGLTexture キャッシュ（getTex2）を runFx 呼び出し単位（＝canvas 1 枚）で持ち、
+//	  ロードは非同期だが setup()/update() は同期のまま＝ロード完了までは 1×1 透明を返すだけ。
+//	  「専用レイヤを増やして重ねる」代わりに 1 レイヤ・1 パスで完結させる用途（ext_fx_tile.sn 等）。
 
 import {A_FX_PARAM, type T_FX} from './Fx';
 import {V_SRC, PASSTHRU_SRC, HEAD, H_FX_FRAG} from './fxPresets';
@@ -146,6 +150,8 @@ type T_PASS = {
 	// スカラ入力ポート（amp/freq/shift/p1〜p4）。名前は Fx.ts の A_FX_PARAM が唯一の台帳
 	uParam	: {readonly [k: string]: WebGLUniformLocation | null};
 	uColor	: WebGLUniformLocation | null;	// color=（uniform vec3 color。0..1 RGB）
+	uTex2	: WebGLUniformLocation | null;	// tex=（uniform sampler2D uTex2）。実テクスチャは
+											//	drawPass が p.fx.tex から毎フレーム引く（下記 getTex2）
 	fx		: T_FX;
 	pausedAccMs	: number;	// [pause_fx] で止まっていた合計時間（この分だけ tick を巻き戻す）
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
@@ -163,8 +169,30 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uProg	: gl.getUniformLocation(pg, 'progress'),
 			uParam	: Object.fromEntries(A_FX_PARAM.map(k=> [k, gl.getUniformLocation(pg, k)])),
 			uColor	: gl.getUniformLocation(pg, 'color'),
+			uTex2	: gl.getUniformLocation(pg, 'uTex2'),
 		};
 	};
+
+	// tex=（uniform sampler2D uTex2）の実テクスチャキャッシュ。url→WebGLTexture（この gl 専用。
+	//	WebGLTexture は他の canvas/context と共有できないので runFx 呼び出し単位で持つ）。
+	//	ロード完了までは 1×1 透明のプレースホルダをそのまま返す＝mkPass/update を同期のまま保てる
+	//	（画像ロードで setup() をブロックしない。初回フレームはただの透明＝画面が崩れて見えない）
+	const hTex2 = new Map<string, WebGLTexture>();
+	const getTex2 = (url: string): WebGLTexture => {
+		const cached = hTex2.get(url);
+		if (cached) return cached;
+		const tx = mkTex(gl, null, 1, 1);
+		hTex2.set(url, tx);
+		loadImg(url).then(im=> {
+			if (! live) return;	// dispose() 済みなら gl 操作しない
+			gl.bindTexture(gl.TEXTURE_2D, tx);
+			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+		}).catch(e=> console.error(`[add_fx] tex= の読み込みに失敗: ${String(e)}`));
+		return tx;
+	};
+
 	// 組み込みプリセット（HEAD 込みで H_FX_FRAG が持つ）か、[def_fx] のユーザープリセット
 	//	（本体だけレジストリに登録されているので HEAD を前置）。fx 名は Fx.bldFx() で検査済み
 	const fsOf = (fx: T_FX)=> {
@@ -208,6 +236,14 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.useProgram(p.pg);
+		// tex=（uniform sampler2D uTex2）はユニット1へ。uSampler（ユニット0）より先に済ませ、
+		//	最後に activeTexture を 0 へ戻す＝「呼び出し後は常にユニット0が active」という
+		//	既存の前提（render() 冒頭の dyn ソース texImage2D 等）を崩さない
+		if (p.uTex2 && p.fx.tex) {
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, getTex2(p.fx.tex));
+			gl.uniform1i(p.uTex2, 1);
+		}
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, inTex);
 		if (p.uSampler) gl.uniform1i(p.uSampler, 0);
@@ -339,6 +375,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			gl.deleteShader(vs);
 			gl.deleteTexture(texSrc);
 			for (const {tex, fb} of ping) {gl.deleteTexture(tex); gl.deleteFramebuffer(fb)}
+			for (const tex of hTex2.values()) gl.deleteTexture(tex);	// tex=（uTex2）ぶん
 			gl.deleteBuffer(buf);
 			for (const p of aPass) gl.deleteProgram(p.pg);
 			gl.deleteProgram(pgPass.pg);
