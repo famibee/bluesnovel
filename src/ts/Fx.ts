@@ -152,7 +152,20 @@ export type T_FX = {
 	// tex=（uniform sampler2D uTex2）。bldFx() が返す時点では args.tex の生の論理名（fn= と同じ
 	//	path.json 参照）だが、store（aFx）に入る頃には ScriptMng.#applyAction() が #searchPic() で
 	//	解決済み URL に置き換えている＝aLay.src と同じく「store 上は常に解決済み」の約束（[save]にも
-	//	解決済み URL のまま載る＝fn=/src と同じ扱い。GLSL 本体と違い機微情報ではないので問題ない）
+	//	解決済み URL のまま載る＝fn=/src と同じ扱い。GLSL 本体と違い機微情報ではないので問題ない）。
+	//	crypto:true 構成では chgPic と同じ #decryptPic() を通し、復号済み Blob URL を積む
+	//	（ScriptMng.ts #searchPic()/#decryptPic() 呼び出し箇所参照）。
+	//	[save]/[load] は aPage 全体を JSON で丸ごとスナップショット（store.getPagesJson()/replace()）
+	//	なので tex も他フィールドと同じく素通り＝特別な復元処理は不要（test/store_lay.test.ts）。
+	//	【アプリ間の可搬性】非 crypto 構成の #searchPic() が返す URL は sys.arg.cur（プロジェクトルート
+	//	からの相対パス。例 "prj/xxx/mat/f_fog.png"）ベース＝絶対パス・ホスト名を含まず、[export_data]/
+	//	[import_data] で別マシン・別OSへ持って行っても崩れない（aLay.src と全く同じ性質）。
+	//	一方 crypto:true 構成の Blob URL（chgPic の src も tex も同様）は URL.createObjectURL() の
+	//	ドキュメント寿命限りのもの＝ページ再読み込みや別マシンでは無効になる。sPages（getPagesJson）に
+	//	その時点の Blob URL 文字列がそのまま焼かれてしまうため、[save]直後に同一セッション内で
+	//	[load]する分には（Blob が生きている間は）動くが、リロード後の[load]や[export_data]した
+	//	プレイデータを別セッション／別マシンで[import_data]した場合は崩れる。これは tex= 固有ではなく
+	//	crypto:true 構成の画像全般（aLay.src）が元々持つ制約で、この変更で新たに生じたものではない
 	tex?	: string;
 	// [def_fx pad=]／[def_fx pad_b=]（基本画像**高さ**に対する比率）。fx キャンバスを
 	//	naturalW/H の外側へ広げ、立ち絵レイヤをそのまま（別レイヤや余白 png 無しで）

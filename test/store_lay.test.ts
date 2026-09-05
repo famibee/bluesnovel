@@ -292,6 +292,17 @@ it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを�
 	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1', 'rs', '#fx2']);
 });
 
+it('chgFx_tex= もしおり round-trip で残る（[save]時点で ScriptMng が解決済みURLへ置き換え済みの想定。plain な文字列なので他フィールドと同じく getPagesJson/replace で素通り）', ()=> {
+	// bldFx() は生の論理名のまま返す（ScriptMng.#applyAction()の解決はここではしない。Fx.ts参照）が、
+	//	round-trip の仕組み自体は文字列1個の域を出ないので、ここでは解決後URLを模した値で確認すれば足りる
+	addFx('a', {fx: 'wave', tex: 'prj/add_fx/mat/f_fog.png', name: 't'});
+	expect(fxOf('a')![0]).toMatchObject({tex: 'prj/add_fx/mat/f_fog.png'});
+	const json = S().getPagesJson();
+	useStore.setState({aPage: [[], []], foreIdx: 0});
+	S().replace(json);
+	expect(fxOf('a')![0]).toMatchObject({tex: 'prj/add_fx/mat/f_fog.png'});
+});
+
 it('chgFx_mode:done は one-shot 記述子へ done を焼く（[load] 復元用。ScriptMng.#markFxDone）', ()=> {
 	addFx('a', {fx: 'blur', name: 'b', loop: 'false'});	// time=800・keep
 	addFx('a', {fx: 'wave'});							// time=0（無限）＝done 対象外

@@ -1702,6 +1702,9 @@ export class ScriptMng {
 	// chgPicの非同期解決が追い越されたとき、古い方でstoreを上書きしないための世代カウンタ
 	//	（key: `${nm}:${page}`）
 	readonly #picReqSeq = new Map<string, number>();
+	// [add_fx tex=]（crypto:true時の復号待ち）が追い越されたとき、古い方でstoreを
+	//	上書きしないための世代カウンタ（#picReqSeqと同じ流儀。key: `${aLayNm}:${page}:${name}`）
+	readonly #fxReqSeq = new Map<string, number>();
 
 	// 画像の先読み（本家SpritesMngのロード済みキャッシュ相当。todo.md参照）。crypto:true構成は
 	//	fetch→復号→Blob URL化に時間がかかり、[lay fn=]を跨いで一瞬空白が出ていた
@@ -1899,9 +1902,32 @@ export class ScriptMng {
 			//	ここで済ませてからstoreへ積む（aLay.srcと同じ「store上は常に解決済みURL」の約束。
 			//	Fx.ts T_FX.texのコメント参照）。#searchPicは見つからなければ''を返して表示エラーに
 			//	留める（1エフェクトのテクスチャが無いだけでゲームごと止めない、#searchPicと同じ方針）
-			const fx = act.fx.tex !== undefined ? {...act.fx, tex: this.#searchPic('add_fx', act.fx.tex)} : act.fx;
-			this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx});
-			this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る
+			if (act.fx.tex === undefined) {
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
+				this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る
+				break;
+			}
+			const rawUrl = this.#searchPic('add_fx', act.fx.tex);
+			if (! this.sys.crypto) {
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex: rawUrl}});
+				this.#addFxTimer(act);
+				break;
+			}
+			// crypto:true構成：chgPicと同じ#decryptPic()で復号済みBlob URLへ差し替える。復号はfetchを
+			//	挟むため同期では返せない＝tex解決を待ってから1回だけchgFxする（chgPicのように
+			//	「空でまず確定→差し替え」の2段にしないのは、addFxには「空の状態」に相当する意味が無い
+			//	＝待っている間は単に直前のfx構成のままでよいため。この遅延ぶんは#addFxTimerのコメント
+			//	「[add_fx]は通常[lay]直後で画像ロード済み」と同種の許容差分）。
+			//	連続して同じ枠（layer集合+page+name）へ[add_fx tex=]が来た場合、後発を追い越して
+			//	古い方がstoreを上書きしないよう#picReqSeqと同じ流儀で世代カウンタを使う
+			const key = `${act.aLayNm?.join(',') ?? ''}:${act.page}:${act.fx.name}`;
+			const seq = (this.#fxReqSeq.get(key) ?? 0) + 1;
+			this.#fxReqSeq.set(key, seq);
+			void this.#decryptPic(rawUrl).then(dSrc=> {
+				if (this.#fxReqSeq.get(key) !== seq) return;	// 追い越された
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex: dSrc}});
+			}).catch((e: unknown)=> this.myTrace(`[add_fx] tex= の復号に失敗しました fn:${act.fx.tex} ${String(e)}`, 'E'));
+			this.#addFxTimer(act);
 			break;
 		}
 		case 'clearFx':

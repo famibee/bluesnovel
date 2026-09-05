@@ -3559,7 +3559,7 @@ var Co = class f {
 		this.sys = e, this.#m = new ue(e, ""), this.#w = new ae((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#nt(e), this.#t.log = (e) => this.#it(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#rt(e), this.#t.log = (e) => this.#at(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	destroy() {
 		this.cancelAuto(), clearTimeout(this.#H), clearTimeout(this.#J), clearTimeout(this.#$), this.#_e(() => !0);
@@ -3719,7 +3719,7 @@ var Co = class f {
 	}
 	#y;
 	async #b(e) {
-		return this.#n[e] ??= new x(e, await this.#tt(e), this.#S());
+		return this.#n[e] ??= new x(e, await this.#nt(e), this.#S());
 	}
 	#x;
 	#S() {
@@ -4295,7 +4295,7 @@ var Co = class f {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#et(e);
+					for (let e of t) this.#tt(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#q(n.canskip);
@@ -4358,7 +4358,7 @@ var Co = class f {
 						return;
 					}
 					if (n?.t !== "loadScript") {
-						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#$e();
+						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#et();
 						return;
 					}
 					try {
@@ -4508,7 +4508,8 @@ var Co = class f {
 	}
 	#Ze = /* @__PURE__ */ new Map();
 	#Qe = /* @__PURE__ */ new Map();
-	#$e() {
+	#$e = /* @__PURE__ */ new Map();
+	#et() {
 		let e = this.#r;
 		if (e) for (let t of new Set(e.peekUpcomingPicFn())) {
 			let e;
@@ -4521,10 +4522,10 @@ var Co = class f {
 				new Image().src = e;
 				continue;
 			}
-			this.#Qe.has(e) || this.#Qe.set(e, this.#Xe(e));
+			this.#$e.has(e) || this.#$e.set(e, this.#Xe(e));
 		}
 	}
-	#et(e) {
+	#tt(e) {
 		switch (e.t) {
 			case "addLay":
 				switch (e.cls) {
@@ -4593,8 +4594,8 @@ var Co = class f {
 					})) }
 				});
 				let s = (e) => {
-					let t = this.#Qe.get(e);
-					return t && this.#Qe.delete(e), t ?? this.#Xe(e);
+					let t = this.#$e.get(e);
+					return t && this.#$e.delete(e), t ?? this.#Xe(e);
 				};
 				Promise.all([s(t), ...i?.map((e) => s(e.src)) ?? []]).then(([t, ...s]) => {
 					this.#Ze.get(a) === o && this.$fncs.chgPic({
@@ -4746,16 +4747,40 @@ var Co = class f {
 				p(e.name, e.glsl);
 				break;
 			case "addFx": {
-				let t = e.fx.tex === void 0 ? e.fx : {
-					...e.fx,
-					tex: this.#Je("add_fx", e.fx.tex)
-				};
-				this.$fncs.chgFx({
-					aLayNm: e.aLayNm,
-					page: e.page,
-					mode: "add",
-					fx: t
-				}), this.#pe(e);
+				if (e.fx.tex === void 0) {
+					this.$fncs.chgFx({
+						aLayNm: e.aLayNm,
+						page: e.page,
+						mode: "add",
+						fx: e.fx
+					}), this.#pe(e);
+					break;
+				}
+				let t = this.#Je("add_fx", e.fx.tex);
+				if (!this.sys.crypto) {
+					this.$fncs.chgFx({
+						aLayNm: e.aLayNm,
+						page: e.page,
+						mode: "add",
+						fx: {
+							...e.fx,
+							tex: t
+						}
+					}), this.#pe(e);
+					break;
+				}
+				let n = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, r = (this.#Qe.get(n) ?? 0) + 1;
+				this.#Qe.set(n, r), this.#Xe(t).then((t) => {
+					this.#Qe.get(n) === r && this.$fncs.chgFx({
+						aLayNm: e.aLayNm,
+						page: e.page,
+						mode: "add",
+						fx: {
+							...e.fx,
+							tex: t
+						}
+					});
+				}).catch((t) => this.myTrace(`[add_fx] tex= の復号に失敗しました fn:${e.fx.tex} ${String(t)}`, "E")), this.#pe(e);
 				break;
 			}
 			case "clearFx":
@@ -4942,10 +4967,10 @@ var Co = class f {
 				break;
 			case "pageTo": break;
 			case "trace":
-				this.#nt({ text: e.text });
+				this.#rt({ text: e.text });
 				break;
 			case "log":
-				this.#it({ text: e.text }, e.fn, e.lineNum);
+				this.#at({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "loadScript": break;
 			case "stop": {
@@ -4964,7 +4989,7 @@ var Co = class f {
 			}
 		}
 	}
-	async #tt(e) {
+	async #nt(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, u.SCRIPT), n = "";
 			try {
@@ -4985,13 +5010,13 @@ var Co = class f {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#nt(e) {
+	#rt(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#rt = !0;
-	#it(n, r, i) {
+	#it = !0;
+	#at(n, r, i) {
 		let a = "";
-		return this.#rt && (this.#rt = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
+		return this.#it && (this.#it = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";
