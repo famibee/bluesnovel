@@ -688,7 +688,7 @@ export class ScriptMng {
 	//	（演出が既に終わっている・鳴っていない等）と判断したら undefined を渡す＝待たずに続きを回す
 	//	（#runStep() の中＝#busy 中なので、#busy が下りてから goSafe する）
 	#armWait(w: T_WAIT | undefined) {
-		if (w) {this.#curWait = w; return}
+		if (w) {this.#curWait = w; this.#noticeBreak(true); return}	// [dump_script]：待ちも停止として知らせる
 		setTimeout(()=> this.#goSafe(), 0);
 	}
 	// 待ち対象が終わった通知（各サブシステムの終了口＝#finishTrans/#endWait/#onTsyEnd/… から）。
@@ -1360,6 +1360,7 @@ export class ScriptMng {
 		if (this.#busy) {++this.#cntResv; return}
 
 		this.#busy = true;
+		this.#noticeBreak(false);	// [dump_script]：シナリオ再開（本家 Main.ts:205 noticeBreak(false)）
 		// **ページの先頭**（本文がまだ出ていない状態）を控える。停止点でページログへ積む。
 		//	??= なのは、1ページの途中で一旦返る経路（[add_frame]・[snapshot]・スクリプト切替）から
 		//	戻ってきたときに取り直さないため
@@ -2237,6 +2238,10 @@ export class ScriptMng {
 			// 実処理は既存の#log()へそのまま委譲
 			this.#log({text: act.text}, act.fn, act.lineNum);
 			break;
+		case 'dumpScript':
+			// 実処理は #dumpScript()（globalThis 上のコールバックを解決して登録）
+			this.#dumpScript(act.setFnc, act.breakFnc, act.needErr);
+			break;
 		case 'loadScript':
 			// 実処理は#runStep()側（fetch→switchScript）。表示への影響は無い
 			break;
@@ -2277,6 +2282,7 @@ export class ScriptMng {
 			//	既読状態から決まる。**本家はトークンごとに読むが、こちらは停止点ごとに1回**
 			//	——Reactが描くのは停止点の後なので、1停止点の間で値が変わっても絵には出ない
 			if (this.#engine) this.$fncs.setChWait(this.#engine.chWait);
+			this.#noticeBreak(true);	// [dump_script]：停止点（本家 Main.ts:212 noticeBreak(true)）
 			break;
 		}
 		}	// switch
@@ -2345,6 +2351,53 @@ export class ScriptMng {
 		);
 
 		return false;
+	}
+
+	// [dump_script]：実行中スクリプト全文と停止行を globalThis 上のコールバックへ渡す
+	//	デバッグ用フック（本家 ScriptIterator.ts:796 #dump_script()）。実利用者は sn_gallery の
+	//	プレイグラウンドページ（index.html の set_ed / break_ed ＝埋め込み ACE エディタ）。
+	//	set_fnc(全文) はスクリプトが変わった時だけ、break_fnc(行, goto) は停止・再開のたびに呼ぶ
+	#fncDumpSet?	: (txt: string)=> void;
+	#fncDumpBreak?	: (lineNum: number, goto: boolean)=> void;
+	#fnLastDump		= '';	// 直近に set_fnc へ全文を渡したスクリプト名
+	readonly #hScrCache4Dump: {[fn: string]: string} = Object.create(null);	// fn→全文（本家 :835）
+	#dumpScript(setFnc: string, breakFnc: string, needErr: boolean) {
+		const g = globalThis as Record<string, unknown>;
+		const fSet = g[setFnc];
+		if (typeof fSet !== 'function') {
+			if (needErr) this.myTrace(`[dump_script] globalThis に関数 ${setFnc} が見つかりません`, 'ET');
+			return;	// need_err=false なら黙って無効のまま（本家 :805-806）
+		}
+		this.#fncDumpSet = fSet as (txt: string)=> void;
+
+		if (breakFnc) {
+			const fBrk = g[breakFnc];
+			if (typeof fBrk === 'function') this.#fncDumpBreak = fBrk as (l: number, gt: boolean)=> void;
+			else if (needErr) this.myTrace(`[dump_script] globalThis に関数 ${breakFnc} が見つかりません`, 'ET');
+		}
+
+		this.#noticeBreak(true);	// 初回通知（本家 :818。まだ読んでいないので break_fnc 側は実質スルー）
+	}
+	// 停止（goto=true）・再開（goto=false）のたびに現在行をコールバックへ知らせる
+	//	（本家 Main.ts:205/212 の noticeBreak(false)/noticeBreak(true) 相当）
+	#noticeBreak(goto: boolean) {
+		const eng = this.#engine;
+		if (! this.#fncDumpSet || ! eng) return;
+
+		// 行番号が NaN のときは知らせない。[call fn=ext_*] 等ワイルドカード展開で挿入された
+		//	トークン（aLNum が NaN。Grammar #replaceScript_Wildcard）に #idx が乗っている瞬間に
+		//	#noticeBreak が走ることがあり（[dump_script]登録時など）、NaN を break_fnc へ渡すと
+		//	受け側（ギャラリーの ACE エディタ gotoLine(NaN)）が壊れる。本家は #lineNum を
+		//	インクリメントで持つのでこの状態にならない。次の実停止点で正しい行が届く
+		const ln = eng.lineNum;
+		if (! Number.isFinite(ln)) return;
+
+		const fn = eng.fn;
+		if (fn !== this.#fnLastDump) {	// スクリプトが変わった時だけ全文を送る（本家 :810-814）
+			this.#fnLastDump = fn;
+			this.#fncDumpSet(this.#hScrCache4Dump[fn] ??= this.#hScript[fn]?.aToken.join('') ?? '');
+		}
+		this.#fncDumpBreak?.(ln, goto);
 	}
 	readonly	myTrace: T_TRACE = (txt, lvl = 'E')=> {
 		let sty = '';

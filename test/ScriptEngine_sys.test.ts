@@ -82,6 +82,27 @@ it('dumpLay_someLayers', ()=> {
 });
 
 
+// ============ [dump_script] ============
+// エンジンは属性を解釈して dumpScript アクションを積むだけ。globalThis 上の
+//	コールバック解決と通知は ScriptMng.#dumpScript()／#noticeBreak() の担当（E2E で検証）
+
+it('dumpScript_pushesAction', ()=> {
+	expect(acts('[dump_script set_fnc=set_ed break_fnc=break_ed need_err=false][s]')
+		.find(v=> v.t === 'dumpScript'))
+		.toEqual({t: 'dumpScript', setFnc: 'set_ed', breakFnc: 'break_ed', needErr: false});
+});
+
+it('dumpScript_defaults', ()=> {
+	// break_fnc 省略は空文字、need_err 省略は true（本家 argChk_Boolean の既定）
+	expect(acts('[dump_script set_fnc=set_ed][s]').find(v=> v.t === 'dumpScript'))
+		.toEqual({t: 'dumpScript', setFnc: 'set_ed', breakFnc: '', needErr: true});
+});
+
+it('dumpScript_setFncRequired', ()=> {
+	expect(()=> acts('[dump_script break_fnc=break_ed][s]')).toThrow('set_fncは必須です');
+});
+
+
 // ============ [pop_stack] ============
 
 it('popStack_popsOne', ()=> {

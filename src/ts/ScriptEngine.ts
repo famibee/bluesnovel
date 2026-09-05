@@ -168,6 +168,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'importData'}	// [import]。プレイデータをファイルから読み込む
 	| {t: 'fullScrKey'; key: string}	// [toggle_full_screen key=…]。そのキーで全画面切替できるようにする常駐予約
 	| {t: 'dumpLay'; aLayNm: string[] | null}	// [dump_lay]。レイヤの状態をデバッグ表示へ。nullは全レイヤ
+	| {t: 'dumpScript'; setFnc: string; breakFnc: string; needErr: boolean}	// [dump_script]。実行中スクリプト全文と停止行をglobalThis上のコールバック（set_fnc/break_fnc）へ渡すデバッグ用フック。実処理はScriptMng.ts #dumpScript()（本家 ScriptIterator.ts:796 #dump_script()）
 	// HTMLフレーム（本家 FrameMng.ts）。中身は生きたHTML文書なのでストアには入れず、
 	//	FrameMng（DOM側）が抱える。エンジンは組み込み変数 const.sn.frm.<id> だけを見る
 	| {t: 'addFrame'; id: string; src: string; sty: T_FRM_STY}	// [add_frame]。HTMLの読込が要るのでstep()はここで一旦返る
@@ -601,7 +602,7 @@ export class ScriptEngine {
 		'let_replace', 'let_round', 'let_search', 'let_substr',
 		'tsy', 'tsy_frame', 'wait_tsy', 'stop_tsy', 'pause_tsy', 'resume_tsy',
 		'quake', 'stop_quake', 'wq',
-		'title', 'toggle_full_screen', 'dump_lay', 'dump_val', 'dump_stack', 'pop_stack',
+		'title', 'toggle_full_screen', 'dump_lay', 'dump_script', 'dump_val', 'dump_stack', 'pop_stack',
 		'clear_text', 'rec_ch', 'rec_r', 'reset_rec',
 		'ch_in_style', 'ch_out_style', 'autowc',
 		'navigate_to', 'loadplugin', 'snapshot',
@@ -2390,6 +2391,19 @@ export class ScriptEngine {
 		case 'dump_lay':	// レイヤのダンプ（本家 LayerMng.ts:1068 #dump_lay()）
 			aAct.push({t: 'dumpLay', aLayNm: ScriptEngine.#argLayNames(args.layer)});
 			return 'skip';
+
+		case 'dump_script': {	// 外部へスクリプトを表示（本家 ScriptIterator.ts:796 #dump_script()）
+			// set_fnc/break_fnc は globalThis 上のコールバック名。実際に引くのは ScriptMng。
+			//	エンジンは属性の解釈だけ（[event key='dom=…']/[set_focus] の needErr と同じ分業）
+			if (! args.set_fnc) throw 'set_fncは必須です';
+			aAct.push({
+				t		: 'dumpScript',
+				setFnc	: args.set_fnc,
+				breakFnc: args.break_fnc ?? '',
+				needErr	: (args.need_err ?? 'true') !== 'false',	// 既定 true（本家 argChk_Boolean の既定）
+			});
+			return 'skip';	// 表示に影響せず同期完結（本家も return false）
+		}
 
 		case 'pop_stack': {	// コールスタック破棄（本家 ScriptIterator.ts:984 #pop_stack()）
 			// [return]で戻らずにサブルーチンを抜ける時に使う（本家サンプルでは

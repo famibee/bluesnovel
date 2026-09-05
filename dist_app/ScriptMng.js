@@ -3721,7 +3721,7 @@ var yo = class p {
 	#I;
 	#L(e) {
 		if (e) {
-			this.#I = e;
+			this.#I = e, this.#ht(!0);
 			return;
 		}
 		setTimeout(() => this.#N(), 0);
@@ -4155,7 +4155,7 @@ var yo = class p {
 				++this.#Ie;
 				return;
 			}
-			this.#Fe = !0, this.#l ??= {
+			this.#Fe = !0, this.#ht(!1), this.#l ??= {
 				...e.nowScrIdx(),
 				mark: this.#v(),
 				clearOnResume: e.clearOnResume
@@ -4907,6 +4907,9 @@ var yo = class p {
 			case "log":
 				this.#lt({ text: e.text }, e.fn, e.lineNum);
 				break;
+			case "dumpScript":
+				this.#mt(e.setFnc, e.breakFnc, e.needErr);
+				break;
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
@@ -4919,7 +4922,7 @@ var yo = class p {
 						...e.mark
 					});
 				}
-				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || c), this.#r && this.$fncs.setChWait(this.#r.chWait);
+				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || c), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#ht(!0);
 				break;
 			}
 		}
@@ -4952,6 +4955,30 @@ var yo = class p {
 	#lt(n, r, i) {
 		let a = "";
 		return this.#ct && (this.#ct = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
+	}
+	#ut;
+	#dt;
+	#ft = "";
+	#pt = Object.create(null);
+	#mt(e, t, n) {
+		let r = globalThis, i = r[e];
+		if (typeof i != "function") {
+			n && this.myTrace(`[dump_script] globalThis に関数 ${e} が見つかりません`, "ET");
+			return;
+		}
+		if (this.#ut = i, t) {
+			let e = r[t];
+			typeof e == "function" ? this.#dt = e : n && this.myTrace(`[dump_script] globalThis に関数 ${t} が見つかりません`, "ET");
+		}
+		this.#ht(!0);
+	}
+	#ht(e) {
+		let t = this.#r;
+		if (!this.#ut || !t) return;
+		let n = t.lineNum;
+		if (!Number.isFinite(n)) return;
+		let r = t.fn;
+		r !== this.#ft && (this.#ft = r, this.#ut(this.#pt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#dt?.(n, e);
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";

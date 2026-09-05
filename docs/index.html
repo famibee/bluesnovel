@@ -333,9 +333,9 @@ footer a:hover{color:#fff}
 
 <div class="stats">
 	<div class="wrap">
-		<div class="stat"><b>119</b><span>の移植済みタグ<br/>SKYNovelプロジェクトが<br/>ほぼそのまま動く</span></div>
-		<div class="stat"><b>1784</b><span>の単体テスト（全pass）<br/>ブラウザを立ち上げず実行</span></div>
-		<div class="stat"><b>297</b><span>のE2Eテスト<br/>Playwrightで実ブラウザ検証</span></div>
+		<div class="stat"><b>120</b><span>の移植済みタグ<br/>SKYNovelプロジェクトが<br/>ほぼそのまま動く</span></div>
+		<div class="stat"><b>1787</b><span>の単体テスト（全pass）<br/>ブラウザを立ち上げず実行</span></div>
+		<div class="stat"><b>299</b><span>のE2Eテスト<br/>Playwrightで実ブラウザ検証</span></div>
 		<div class="stat"><b>MIT</b><span>ライセンス<br/>npmで公開</span></div>
 	</div>
 </div>
@@ -563,7 +563,7 @@ footer a:hover{color:#fff}
 		<div class="grid" style="margin-top:1.5rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
 			<div class="card">
 				<h3>ブラウザ無しでテスト</h3>
-				<p>シナリオ処理だけを切り出して検証。1784本の単体テストが、ヘッドレスブラウザもGPUも使わずNode上で回る。</p>
+				<p>シナリオ処理だけを切り出して検証。1787本の単体テストが、ヘッドレスブラウザもGPUも使わずNode上で回る。</p>
 			</div>
 			<div class="card">
 				<h3>結果が決定的</h3>
@@ -641,18 +641,16 @@ footer a:hover{color:#fff}
 		</div>
 		<div class="dep-panel">
 			<div class="dep-panel-head">
-				<div class="dep-count"><b>98%</b><span>SKYNovelタグの<br/>移植カバー率</span></div>
-				<p>標準タグ121種のうち119種が実装済み。残るは <code>[dump_stack]</code>（一部）と <code>[dump_script]</code>（未実装。VSCode拡張との連携タグ）のみ。マーク別の内訳は<a href="tag.html">タグリファレンス</a>の目次で 🟢／🟡／🔴 として確認できる。</p>
+				<div class="dep-count"><b>99%</b><span>SKYNovelタグの<br/>移植カバー率</span></div>
+				<p>標準タグ121種のうち120種が実装済み。残るは <code>[dump_stack]</code>（行番号・桁まで出さない一部実装）のみ。マーク別の内訳は<a href="tag.html">タグリファレンス</a>の目次で 🟢／🟡 として確認できる。</p>
 			</div>
-			<div class="cov-bar" role="img" aria-label="実装済み119 / 一部1 / 未実装1">
-				<span class="cov-seg cov-done" style="flex:119"></span>
+			<div class="cov-bar" role="img" aria-label="実装済み120 / 一部1">
+				<span class="cov-seg cov-done" style="flex:120"></span>
 				<span class="cov-seg cov-part" style="flex:1"></span>
-				<span class="cov-seg cov-none" style="flex:1"></span>
 			</div>
 			<div class="cov-legend">
-				<span>🟢 実装済み 119</span>
+				<span>🟢 実装済み 120</span>
 				<span>🟡 一部 1</span>
-				<span>🔴 未実装 1</span>
 			</div>
 		</div>
 	</div>
@@ -683,7 +681,7 @@ footer a:hover{color:#fff}
 				<tr>
 					<td>エンジンのテスト</td>
 					<td>シナリオ処理がUI(DOM/GUI)と密結合で、実機確認に頼りがち</td>
-					<td class="us">エンジンをDOM/fetchから分離し、ヘッドレスで単体テストを自動化（1784件・全pass）</td>
+					<td class="us">エンジンをDOM/fetchから分離し、ヘッドレスで単体テストを自動化（1787件・全pass）</td>
 				</tr>
 				<tr>
 					<td>配布形態</td>

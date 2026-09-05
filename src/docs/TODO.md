@@ -19,15 +19,13 @@
 ## メンテ時の注意
 
 - タグを実装・凍結解除したら `docs/tag.html` の 🟢/🟡/🔴 に加えて **`docs/index.html` も更新**：
-  移植カバー率パネル（`.cov-*`、現 98% / 実装済み119・一部1・未実装1）と stats strip の
-  「119 の移植済みタグ」。数値の出どころは `docs/tag.html` 目次（左サイドバー）の
+  移植カバー率パネル（`.cov-*`、現 99% / 実装済み120・一部1・未実装0）と stats strip の
+  「120 の移植済みタグ」。数値の出どころは `docs/tag.html` 目次（左サイドバー）の
   `<li class="mb1"><a href="#…">` 行のマーク集計（`txtlay`/`grplay` は `[lay]` の小見出しなので
-  除外、詳細部の 🟢 は数えない）。
+  除外、詳細部の 🟢 は数えない）。残る 🟡 は `[dump_stack]` のみ。
 
 ## 保留
 
-- [ ] `[dump_script]`（本家は VSCode 拡張との連携）：sn_extension は公開停止中で再申請は8月下旬
-      （8/25頃）。連携先が無い状態での実装は着手しない
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE = false`）：調整結果の書き戻し先を
       決めてから。グループ位置指定・Moveable リサイズ追随も同時に。詳細 [deferred-infra.md](deferred-infra.md)
 - [ ] ESLint 復活（TS 7.1 対応待ち）時に `eslint-plugin-import` → `eslint-plugin-import-x`

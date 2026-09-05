@@ -1,0 +1,14 @@
+{
+	"main": {
+		":cnt": 1,
+		"sn": "main.sn"
+	},
+	"ext_a": {
+		":cnt": 1,
+		"sn": "ext_a.sn"
+	},
+	"ext_b": {
+		":cnt": 1,
+		"sn": "ext_b.sn"
+	}
+}

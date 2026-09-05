@@ -57,6 +57,14 @@ AudioContext.prototype.createGain = function(this: AudioContext) {
 	return origCreateGain.call(this);
 };
 
+// dump_script.e2e.ts用：[dump_script]がglobalThis上のコールバックを本当に呼ぶか、
+//	渡された全文と (行, goto) の履歴を貯めて__sn経由で覗く。関数名 set_ed/break_ed と役割は
+//	sn_gallery/index.html（埋め込みACEエディタ）と同じ。src/側は無改変
+const dumpSet: string[] = [];
+const dumpBreak: {ln: number; goto: boolean}[] = [];
+(globalThis as any).set_ed = (txt: string)=> {dumpSet.push(txt)};
+(globalThis as any).break_ed = (ln: number, goto: boolean)=> {dumpBreak.push({ln, goto})};
+
 // ?prj=plg だけ本家互換プラグイン機構（SysBase.#initPlg()/addLayCls）の疎通確認用ダミープラグインを注入
 const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')}
 	: prj === 'plg' ? {dmyPlg: await import('./dmyPlg')}
@@ -66,4 +74,5 @@ const sys = new SysWeb(hPlg, {cur: `/test/e2e/app/prj_${prj}/`, crypto: isCrypto
 // isAutoPending: オート読み・既読スキップが次の停止点へ本当に落ち着いたか（waitIdle参照）。
 //	scrMngはloaded()完了後にしか生えないので都度sys.scrMngを引き直す（キャッシュしない）
 (globalThis as any).__sn = {store: useStore, freezeRaf, gainNodeCount: ()=> gainNodeCount,
-	isAutoPending: ()=> sys.scrMng?.isAutoPending ?? false};
+	isAutoPending: ()=> sys.scrMng?.isAutoPending ?? false,
+	dumpSet: ()=> dumpSet, dumpBreak: ()=> dumpBreak};

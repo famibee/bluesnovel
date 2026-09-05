@@ -291,10 +291,8 @@
 	</ul>
 	<p>デバッグ・その他</p>
 	<ul class="anchors list-reset m0 p0 px1">
-		<li class="mb1"><a href="#dump_lay">🟢 [dump_lay] 外部へスクリプトを表示</a></li>
-<!--
-		<li class="mb1"><a href="#dump_script">🔴 [dump_script] 外部へスクリプトを表示</a></li>
--->
+		<li class="mb1"><a href="#dump_lay">🟢 [dump_lay] レイヤのダンプ</a></li>
+		<li class="mb1"><a href="#dump_script">🟢 [dump_script] 外部へスクリプトを表示</a></li>
 		<li class="mb1"><a href="#dump_stack">🟡 [dump_stack] スタックのダンプ</a></li>
 		<li class="mb1"><a href="#dump_val">🟢 [dump_val] 変数のダンプ</a></li>
 		<li class="mb1"><a href="#log">🟢 [log] ログ出力</a></li>
@@ -3220,20 +3218,18 @@ Linuxは 100MB 越えなので上げられていません。</p></blockquote>
 </table>
 
 </p>
-<!--
-
 <h2 id="dump_script" class="w-heading">[dump_script]外部へスクリプトを表示</h2>
-<h4>レイヤの内容をデバッグ表示する</h4>
+<p class="mb2 px1" style="border-left:3px solid #3b3;padding-left:.6em"><b>bluesnovel</b>🟢：実行中スクリプトの全文と停止行を、<code>globalThis</code> 上のコールバック関数へ渡すデバッグ用フック（本家 <code>ScriptIterator.ts:796</code>）。実利用者は <a href="https://github.com/famibee/SKYNovel_gallery">SKYNovel_gallery</a> のプレイグラウンドページ（<code>index.html</code> の <code>set_ed</code>／<code>break_ed</code> ＝埋め込みエディタへ「今どこを実行中か」を表示）。<code>set_fnc</code> はスクリプトが変わった時だけ全文（文字列）で、<code>break_fnc</code> は停止・再開のたびに <code>(行番号, goto)</code> で呼ばれる。関数が見つからない時は <code>need_err</code> に従う（true でエラー、false なら黙って無効）。VSCode 拡張のデバッガとは無関係（あちらは別系統）。</p>
+<h4>実行中スクリプトを外部の関数へ渡す</h4>
 <p class="mb2 px1">
 
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
-<tr><td>set_fnc</td><td>y</td><td></td><td>GlobalThis要素名</td><td>...（内部APIにつき説明省略）</td></tr>
-<tr><td>need_err</td><td></td><td>true</td><td>true、false</td><td>
-	HTML内にセレクタ（set_fnc属性）に対応する要素が見つからない場合にエラーを出すか
-</td></tr>
+<tr class="y"><td>set_fnc</td><td>y</td><td></td><td>globalThis 上の関数名</td><td>スクリプト全文（文字列）を受け取るコールバック。スクリプトが切り替わった時だけ呼ばれる</td></tr>
+<tr><td>break_fnc</td><td></td><td>何もしない</td><td>globalThis 上の関数名</td><td><code>(行番号, goto)</code> を受け取るコールバック。停止（goto=true）・再開（goto=false）のたびに呼ばれる</td></tr>
+<tr><td>need_err</td><td></td><td>true</td><td>true、false</td><td><code>globalThis</code> に指定名の関数が見つからない場合にエラーを出すか</td></tr>
 </table>
 
--->
+</p>
 <h2 id="dump_stack" class="w-heading">[dump_stack]スタックのダンプ</h2>
 <p class="mb2 px1" style="border-left:3px solid #db3;padding-left:.6em"><b>bluesnovel</b>🟡：現在位置・コールスタック・ifスタックをデバッグ表示へ出す。本家のように行番号・桁までは出さず、スクリプト名とトークン索引まで。</p>
 <h4>[call]等によるコールスタックの内容をデバッグ表示する</h4>

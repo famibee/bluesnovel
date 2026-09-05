@@ -266,9 +266,9 @@ it('step_jumpLabel_anonymousAfter', ()=> {
 });
 
 it('step_unknownTagIgnored', ()=> {
-	// [dump_script]はGrammar.tsのT_HTagには居るが未実装（todo.md参照。本家はVSCode拡張との連携で、
-	//	こちらは対応する拡張が無い）＝「宣言はあるが#execTag()にcaseが無いタグ」の実例として使う
-	const se = new ScriptEngine('t1', '[dump_script text=hello]あ[s]');
+	// #execTag()のswitchに無いタグ（プラグインタグ・マクロ名でもない）はdefault:で無言で無視する。
+	//	T_HTag全タグにcaseが付いた今、この動作は未知タグ／プラグイン未登録の時だけ効く
+	const se = new ScriptEngine('t1', '[no_such_tag foo=bar]あ[s]');
 	const a = se.step();
 	expect(a).toEqual([
 		{t: 'chgStr', nm: 'mes', page: 'fore', str: 'あ'},

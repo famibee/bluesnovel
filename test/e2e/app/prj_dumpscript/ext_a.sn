@@ -1,0 +1,3 @@
+; [call fn=ext_*] のワイルドカード展開先（aLNum が NaN になるトークンを main.sn へ挿入させる）
+[macro name=ext_a_noop][endmacro]
+[return]

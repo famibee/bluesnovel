@@ -1,0 +1,14 @@
+[call label=*init]
+[add_lay layer=mes class=txt][current layer=mes]
+いちぎょうめ[p]
+にぎょうめ[p]
+さんぎょうめ[s]
+
+*init
+	; [dump_script]登録の直後にワイルドカード[call]（別ファイル読込＝step()打ち切り）を置く。
+	;	この瞬間、engine の #idx はワイルドカード展開で挿入された aLNum=NaN のトークンに乗る。
+	;	登録時の #noticeBreak(true) が NaN 行を break_fnc へ渡さないこと（ギャラリーの
+	;	ACE エディタ gotoLine(NaN) 対策）の回帰。展開先は ext_a.sn / ext_b.sn
+	[dump_script set_fnc=set_ed break_fnc=break_ed need_err=false]
+	[call fn=ext_*]
+[return]

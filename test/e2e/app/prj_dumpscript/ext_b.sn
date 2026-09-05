@@ -1,0 +1,3 @@
+; ワイルドカードが複数ファイルへ展開するのを確かめるための2つめ
+[macro name=ext_b_noop][endmacro]
+[return]
