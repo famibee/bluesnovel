@@ -108,7 +108,7 @@ function c(c, l) {
 		enabled: (c.enabled ?? "true") !== "false",
 		params: f,
 		...c.color === void 0 ? {} : { color: a(c.color) },
-		...c.tex === void 0 ? {} : { tex: c.tex },
+		...c.tex === void 0 ? {} : { texFn: c.tex },
 		...d.pad ? { pad: d.pad } : {},
 		...d.padB ? { padB: d.padB } : {},
 		...h ? { reverse: !0 } : {},

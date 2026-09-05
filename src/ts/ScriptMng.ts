@@ -1517,6 +1517,12 @@ export class ScriptMng {
 			engine.restoreMarkPart(mark);
 			this.#restoreLoopSnd(engine);		// BGM等の復元（本家 SoundMng.playLoopFromSaveObj()）
 			this.$fncs.replace(mark.sPages);	// 表裏ページを丸ごと戻す
+			// crypto:true構成の[load]（永続化されたしおり＝別セッションのものかもしれない）だけ、
+			//	画像・テクスチャのsrc/texを再解決し直す。Blob URL（URL.createObjectURL）はドキュメント
+			//	寿命限りなので、replace()直後のsrc/texは前セッションの死んだBlob URLのことがある
+			//	（#refreshCryptoAssets参照）。[reload_script]の#markは今のセッションで作ったばかりの
+			//	スナップショットなのでBlob URLはまだ生きている＝対象外（呼んでも無駄なfetchが増えるだけ）
+			if (act.t === 'load' && this.sys.crypto) await this.#refreshCryptoAssets();
 			this.#plgLayMng.setPageState(this.$fncs.getForeIdx(), false);	// 復元後の foreIdx を先に伝える
 			this.#plgLayMng.playback(mark.hPlgLay, []);
 			this.#pageLog.clear();				// 読み戻し履歴は繋がらないので捨てる
@@ -1566,6 +1572,39 @@ export class ScriptMng {
 		}
 		this.#procing = false;
 		this.#goSafe();
+	}
+
+	// crypto:true構成の[load]専用（#procLoad参照）：Blob URL（URL.createObjectURL）はドキュメント
+	//	寿命限りなので、replace()直後のsrc/texは前セッションの死んだBlob URLのことがある。
+	//	論理名（fn/texFn）はJSONスナップショットに残ったまま（[dump_lay]・デバッグ用に消さない
+	//	約束のfn/src。Fx.ts T_FX.texFnも同じ流儀）なので、そこから#searchPic()＋#decryptPic()を
+	//	やり直してsrc/texだけを差し替える（fn/texFn自体・その他のfx params等はいじらない）。
+	//	対象はgrpレイヤの基本画像・face・aFxのtex、文字レイヤのb_pic。プラグインレイヤー
+	//	（isGrpLay/isTxtLayどちらも false）はstoreに中身を持たないのでここでは触らない
+	async #refreshCryptoAssets() {
+		const {fore, back} = this.$fncs.getPages();
+		for (const [aLay, page] of [[fore, 'fore'], [back, 'back']] as const) {
+			for (const e of aLay) {
+				if (isGrpLay(e)) {
+					if (e.fn) {
+						const [src, aFace] = await Promise.all([
+							this.#decryptPic(this.#searchPic('lay', e.fn)),
+							Promise.all(e.aFace.map(async f=> ({...f, src: await this.#decryptPic(this.#searchPic('add_face', f.fn))}))),
+						]);
+						this.$fncs.chgPic({nm: e.nm, page, fn: e.fn, src, isSheet: e.isSheet, isMovie: e.isMovie, aFace});
+					}
+					if (e.aFx) for (const fx of e.aFx) {
+						if (! fx.texFn) continue;
+						const tex = await this.#resolveFxTex(fx.texFn);
+						this.$fncs.chgFx({aLayNm: [e.nm], page, mode: 'add', fx: {...fx, tex}});
+					}
+				}
+				else if (isTxtLay(e) && e.b_pic) {
+					const src = await this.#decryptPic(this.#searchPic('lay', e.b_pic));
+					this.$fncs.chgBPic({nm: e.nm, page, fn: e.b_pic, src});
+				}
+			}
+		}
 	}
 
 	// [loadplugin join=true]／[snapshot]：DOM絡みの非同期処理を終えてから続きを回す。
@@ -1705,6 +1744,12 @@ export class ScriptMng {
 	// [add_fx tex=]（crypto:true時の復号待ち）が追い越されたとき、古い方でstoreを
 	//	上書きしないための世代カウンタ（#picReqSeqと同じ流儀。key: `${aLayNm}:${page}:${name}`）
 	readonly #fxReqSeq = new Map<string, number>();
+	// tex=（texFn）→実URL解決（#searchPic）＋crypto:true構成なら#decryptPic()での復号までを1本化。
+	//	case 'addFx'と#refreshCryptoAssets()の両方から使う共通部分
+	#resolveFxTex(texFn: string): Promise<string> {
+		const rawUrl = this.#searchPic('add_fx', texFn);
+		return this.sys.crypto ? this.#decryptPic(rawUrl) : Promise.resolve(rawUrl);
+	}
 
 	// 画像の先読み（本家SpritesMngのロード済みキャッシュ相当。todo.md参照）。crypto:true構成は
 	//	fetch→復号→Blob URL化に時間がかかり、[lay fn=]を跨いで一瞬空白が出ていた
@@ -1898,18 +1943,19 @@ export class ScriptMng {
 			defFx(act.name, act.glsl);
 			break;
 		case 'addFx': {
-			// tex=（uniform sampler2D uTex2）はbldFx()時点では生の論理名。fn=と同じpath.json解決を
-			//	ここで済ませてからstoreへ積む（aLay.srcと同じ「store上は常に解決済みURL」の約束。
-			//	Fx.ts T_FX.texのコメント参照）。#searchPicは見つからなければ''を返して表示エラーに
-			//	留める（1エフェクトのテクスチャが無いだけでゲームごと止めない、#searchPicと同じ方針）
-			if (act.fx.tex === undefined) {
+			// tex=（uniform sampler2D uTex2）はbldFx()時点ではtexFn（生の論理名）だけを持つ。
+			//	fn=と同じpath.json解決＋crypto:true構成なら#decryptPic()での復号をここで済ませ、
+			//	texFnはそのまま・texへ解決済みURLを足してstoreへ積む（aLay.fn/srcと同じ
+			//	「論理名と解決済みURLを分けて持つ」流儀。Fx.ts T_FX.texFn/texのコメント参照）
+			if (act.fx.texFn === undefined) {
 				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: act.fx});
 				this.#addFxTimer(act);	// time>0 のone-shotは[wait_fx]用にタイマーを張る
 				break;
 			}
-			const rawUrl = this.#searchPic('add_fx', act.fx.tex);
 			if (! this.sys.crypto) {
-				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex: rawUrl}});
+				// 非crypto構成は#searchPicが同期関数なので即座に解決できる
+				const tex = this.#searchPic('add_fx', act.fx.texFn);
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex}});
 				this.#addFxTimer(act);
 				break;
 			}
@@ -1923,10 +1969,10 @@ export class ScriptMng {
 			const key = `${act.aLayNm?.join(',') ?? ''}:${act.page}:${act.fx.name}`;
 			const seq = (this.#fxReqSeq.get(key) ?? 0) + 1;
 			this.#fxReqSeq.set(key, seq);
-			void this.#decryptPic(rawUrl).then(dSrc=> {
+			void this.#resolveFxTex(act.fx.texFn).then(tex=> {
 				if (this.#fxReqSeq.get(key) !== seq) return;	// 追い越された
-				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex: dSrc}});
-			}).catch((e: unknown)=> this.myTrace(`[add_fx] tex= の復号に失敗しました fn:${act.fx.tex} ${String(e)}`, 'E'));
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, tex}});
+			}).catch((e: unknown)=> this.myTrace(`[add_fx] tex= の復号に失敗しました fn:${act.fx.texFn} ${String(e)}`, 'E'));
 			this.#addFxTimer(act);
 			break;
 		}
