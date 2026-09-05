@@ -36,22 +36,30 @@ premultiply）ので、この乗せ戻しは表現できない。
 pixi 側＝乗算後クランプに合わせないと合わない）。色味を厳密に一致させる必要はない判断のため、
 **凍結**（2026-09-05、TODO.md「タグ・変数の残り」から移動）。
 
-## `[add_filter] blur` の pixi 専用パラメータ（対応不可・凍結）
+## `[add_filter] blur` の pixi 専用パラメータ（未対応・にじみ方は完全一致しない）
 
 2026-08-27 調査（本家 `Layer.ts:115-127` と `src/ts/Filter.ts` を突き合わせ）。
+2026-09-06 に下記へ整理して完了扱い（利用者向けの要約は `docs/tag.html` の blur 属性表）。
 
-- `quality`/`resolution`/`kernel_size` は WebGL レンダーパイプライン内部の実装詳細（ぼかしの
-  パス数・内部レンダーテクスチャ解像度・ボックスぼかし近似のカーネル幅）で、CSS の
-  `filter: blur()` にも SVG の `feGaussianBlur` にも対応する差し込み口が無いため**対応不可**。
-- `repeat_edge_pixels`（既定 `false`。`true` でエッジをクランプ＝引き伸ばす）だけは SVG
-  `feGaussianBlur` の `edgeMode` 属性（`"duplicate"`/`"none"`）で近似できる余地があるが、
-  `blur_x`/`blur_y` 指定時（SVG の `feGaussianBlur` 経路。`src/ts/Filter.ts:254-257`）でしか
-  効かせられない：`blur_x`/`blur_y` 未指定時に使う CSS の `blur()` 関数は CSS Filter Effects
-  仕様上常に `edgeMode="duplicate"` 相当に固定されており、本家の既定 `repeat_edge_pixels=false`
-  （エッジ透明）とは異なる見た目になっている可能性がある（未実機検証）。近似の余地はあるが
-  優先度低いため、こちらも**凍結**（2026-09-05、TODO.md「タグ・変数の残り」から移動）。
+- `quality`/`resolution`/`kernel_size`：WebGL レンダーパイプライン内部の実装詳細（ぼかしの
+  パス数・内部レンダーテクスチャ解像度・ボックスぼかし近似のカーネル幅）。CSS の
+  `filter: blur()` にも SVG の `feGaussianBlur` にも差し込み口が無く、**原理的に対応不可**。
+  属性を書いても黙って無視する。
+- `repeat_edge_pixels`（既定 `false`＝エッジ透明。`true` でエッジをクランプ＝引き伸ばす）：
+  SVG `feGaussianBlur` の `edgeMode` 属性（`none`/`duplicate`）で近似できる余地はあるが、
+  効かせられるのは `blur_x`/`blur_y` 指定時（SVG 経路。`src/ts/Filter.ts:259-263` /
+  `Stage.tsx:520-526`）のみ。`blur_x`/`blur_y` 未指定時の CSS `blur()` 関数には `edgeMode`
+  相当の指定口が無い。実シナリオでこの属性に触ることはまず無いため **`repeat_edge_pixels`
+  だけ凍結**（2026-09-05、TODO.md「タグ・変数の残り」から凍結へ移動）。
 
-2026-08-20、`docs/tag.html` 整理時に `noise` の陰に隠れていたのを発見。優先度低いため保留。
+**にじみ方について**：現状 `feGaussianBlur` は `edgeMode` を書かず（`Stage.tsx:523`）、CSS
+`blur()` ともどもブラウザ既定のぼかしに任せている。「エッジの外を透明として扱う」点では
+pixi の既定（`repeat_edge_pixels=false`）と方向は揃うが、ガウスカーネルの実装・端の畳み込み・
+アンチエイリアスまで一致する保証は無く、**縁のにじみは厳密には同じにならない**（gallery
+`prj/filter` での実機ピクセル比較は未実施。`predator`/`color_tone`/`noise` と同じ温度感で、
+ぼかし強度が合っていれば深追いしない）。
+
+2026-08-20、`docs/tag.html` 整理時に `noise` の陰に隠れていたのを発見。
 
 **「時間をかけて元絵→ぼかしへ変化」は `[add_fx fx=blur]`**（分家独自のシェーダエフェクト。
 [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7 step 7）。`[add_filter] blur` は静的値専用で

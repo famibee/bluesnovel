@@ -29,7 +29,7 @@ bun run docs                            # docs/ プレイグラウンド
 `bun run build` / `watch` は `src/build.ts` が Vite の `build()` を 4 回呼ぶ
 （`src/web.ts`→`dist/`、`src/{app,appMain,preload}.ts`→`dist_app/`）。`.d.ts` はその後
 `tsc -p tsconfig.dts.json` で**`dist/` にだけ**出す（watch 時はスキップ＝`watch` だけ回していると
-`.d.ts` は古いまま）。本家と違い `vite-plugin-dts` は使わない（build 単位で走るので `dist_app/` にも
+`.d.ts` は古いまま）。`vite-plugin-dts` は使わない（build 単位で走るので `dist_app/` にも
 同じ木が出て型が2組になる／`test/**` まで公開物に混じる）。`dist_app/*.js` の型は `package.json` の
 `exports` の `types` 条件で `dist/` 側を指す。lint スクリプトは無い。
 

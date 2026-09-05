@@ -38,13 +38,15 @@
 ---
 ## description（説明）
 
+- [紹介ページ](docs/index.html)
+
 ---
 ## api (method)
 
-- [タグリファレンス](https://famibee.github.io/bluesnovel/tag.html)
-- [マクロ・プラグイン](https://famibee.github.io/bluesnovel/macro_plg.html)
-- [開発者向け情報](https://famibee.github.io/bluesnovel/dev.html)
-	- [組み込み変数](https://famibee.github.io/bluesnovel/dev.html#reserve_value_save)
+- [タグリファレンス](docs/tag.html)
+- [マクロ・プラグイン](docs/macro_plg.html)
+- [開発者向け情報](docs/dev.html)
+	- [組み込み変数](docs/dev.html#reserve_value_save)
 
 ---
 ## 拡張機能 / Extension

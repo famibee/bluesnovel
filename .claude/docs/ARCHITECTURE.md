@@ -70,12 +70,14 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
 - **`src/sn/`** — 本家から持ってきた土台（`SysBase`, `Config`, `Grammar`, `CmnLib`,
   `AnalyzeTagArg`, `Areas`, `CallStack`）。
 - **`src/ts/SndMng.ts`/`src/ts/SndBuf.ts`** — 音声層。DOM/WebAudio を直接触るのは `ScriptMng` から
-  見てここだけ（`ScriptEngine.ts` は属性の解釈と `save:`/`sys:` の帳簿付けだけを行う）。本家は
-  howler（Howl）を積むが、こちらは Web Audio API を直接使う自前の薄い層。**1 バッファ＝1
-  インスタンス、停止＝破棄**という単純な作りで、本家の状態機械（`StLoading`〜`StStop` の 6
-  クラス。退場処理が無く不備の温床だった）は持たない。`[ws]`/`[wl]`/`[wf]`/`[wb]` の待ち合わせは
-  `SndBuf` ではなく **`ScriptMng` が持つ**（`[trans]`/`[tsy]` と同じ設計。詳細は
-  [PITFALLS.md](PITFALLS.md)）。
+  見てここだけ（`ScriptEngine.ts` は属性の解釈と `save:`/`sys:` の帳簿付けだけを行う）。サードパーティ
+  音声ライブラリ（howler 等）は積まず、Web Audio API を直接使う自前の薄い層。**1 バッファ＝1
+  インスタンス、停止＝破棄**という単純な作りで、状態機械を持たない（本家 `SndBuf.ts` は 2026-08
+  時点で `StLoading`〜`StStop` の 6 状態を `sb.stt = new XXX(…)` の代入だけで渡り歩く状態機械を
+  持ち、退場処理が無く不備の温床だった。本家は同時期に音声ライブラリを Web Audio API 直接へ
+  切り替えたが、この状態機械自体は 2026-08 時点でも残っている。詳細は [PITFALLS.md](PITFALLS.md)）。
+  `[ws]`/`[wl]`/`[wf]`/`[wb]` の待ち合わせは `SndBuf` ではなく **`ScriptMng` が持つ**
+  （`[trans]`/`[tsy]` と同じ設計）。
 - **`src/ts/Tw.ts`** — トゥイーン本体。`motion`（2026-08-19 に GSAP から移行、経緯・罠は
   [PITFALLS.md](PITFALLS.md)）の薄いラッパーで、本家 `CmnTween.ts` の `Tw` クラスを移植した。
   `[tsy]`/`[tsy_frame]`（store のレイヤ属性・`FrameMng` の見た目）と `[fadese]`/`[fadebgm]`
@@ -87,8 +89,10 @@ SysWeb (web.ts) ─▶ SysBase.loaded ─▶ ScriptMng.load(fn)
   純粋部分。本家のフラグメントシェーダ（`LayerMng.ts` の `#srcRuleTransFragment`）を、WebGL を
   使わず SVG フィルタ＋CSS マスクへ置き換えるための「進度→見た目」計算だけを切り出してある。
 - **`src/ts/Swipe.ts`** — スワイプ判定（`swipeleft`/`swiperight`/`swipeup`/`swipedown`）の純粋関数
-  `detectSwipe`。本家は `tinygesture` の一括処理だが、bluesnovel は tap/longpress を React 標準/
-  `react-use` で代替済みのため未実装だったスワイプ判定だけを自作した（2026-08-19）。
+  `detectSwipe`。tinygesture 等の一括処理ライブラリは積まず、tap/longpress を React 標準/
+  `react-use` で代替済みのため未実装だったスワイプ判定だけを自作した（2026-08-19）。本家は当時
+  `tinygesture` に依存していたが、その後 `tinygesture` を撤去し、この `Swipe.ts` を移植する形で
+  自作判定へ切り替えている（`src/sn/Swipe.ts` のコメント参照）。
 - **本家互換プラグイン機構（`[add_lay class=…]`→`addLayCls`）** — 本家では Pixi 前提の 3D/Live2D 等の
   プラグイン（`sn_gallery/src/plugin/3d_layer`・`live2d_layer` 等）を DOM 版へ書き換えて移植できる
   ようにする土台（2026-08-24）。

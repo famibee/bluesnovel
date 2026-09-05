@@ -14,8 +14,8 @@ playwright-report/
 blob-report/
 /.playwright/
 
-# playwright-cli スキルのスナップショット出力
-/.playwright-cli/
+# playwright-cli スキルのスナップショット出力（docs/ 等の作業ディレクトリ直下にも出るので非アンカー）
+.playwright-cli/
 
 # 手動確認用スクリーンショットの置き場所（コミット対象外）
 /test/.ss/

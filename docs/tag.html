@@ -100,7 +100,7 @@
 			<a href="macro_plg.html" class="text-decoration-none block">マクロ・プラグイン</a>
 		</li>
 		<li class="ampstart-nav-item abe-nav-list">
-			<a href="dev.html" class="text-decoration-none block">開発者向け情報</a>
+			<a href="dev.html" class="text-decoration-none block">開発ガイド</a>
 		</li>
 		<li class="ampstart-nav-item abe-nav-list">
 			<a href="https://github.com/famibee/bluesnovel" class="text-decoration-none block">github</a>
@@ -152,7 +152,7 @@
 		<li class="mb1"><a href="#grplay">　🟢 レイヤ設定(画像レイヤ)</a></li>
 		<li class="mb1"><a href="#trans">🟢 [trans] ページ裏表を交換</a></li>
 		<li class="mb1"><a href="#wt">🟢 [wt] トランス終了待ち</a></li>
-		<li class="mb1"><a href="#add_filter">🟡 [add_filter] フィルター追加</a></li>
+		<li class="mb1"><a href="#add_filter">🟢 [add_filter] フィルター追加</a></li>
 		<li class="mb1"><a href="#clear_filter">🟢 [clear_filter] フィルター全削除</a></li>
 		<li class="mb1"><a href="#enable_filter">🟢 [enable_filter] フィルター個別切替</a></li>
 	</ul>
@@ -819,14 +819,15 @@
 　（bluesnovel）<code>multiply</code>属性は全フィルター共通で無視される（指定してもしなくても結果は同じ）。<br/>
 
 <h4>フィルター「blur」に指定できる属性</h4>
+<p>（bluesnovel）ぼかしは CSS <code>filter: blur()</code>／SVG <code>feGaussianBlur</code> のネイティブ実装。エッジの外を透明として扱う方向は本家（pixi）と同じだが、カーネルや端の畳み込みまでは揃わず<b>縁のにじみ方は完全一致しない</b>。<code>quality</code>／<code>resolution</code>／<code>kernel_size</code> は WebGL 内部パラメータで相当が無く無視、<code>repeat_edge_pixels</code> は <code>true</code> のみ未対応（凍結）</p>
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr><td>strength</td><td></td><td>8</td><td>整数</td><td>強さ</td></tr>
-<tr><td>🟡 quality</td><td></td><td>4</td><td>整数</td><td>品質<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
-<tr><td>🟡 resolution</td><td></td><td>0</td><td>整数</td><td>解像度<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
-<tr><td>🟡 kernel_size</td><td></td><td>5</td><td>5、7、9、11、13、15</td><td>カーネルサイズ<br/>（bluesnovel）未対応：pixi前提のパラメータ</td></tr>
+<tr><td>🟡 quality</td><td></td><td>4</td><td>整数</td><td>品質<br/>（bluesnovel）無視（上記）</td></tr>
+<tr><td>🟡 resolution</td><td></td><td>0</td><td>整数</td><td>解像度<br/>（bluesnovel）無視（上記）</td></tr>
+<tr><td>🟡 kernel_size</td><td></td><td>5</td><td>5、7、9、11、13、15</td><td>カーネルサイズ<br/>（bluesnovel）無視（上記）</td></tr>
 <tr><td>blur_x</td><td></td><td>2</td><td>整数</td><td>X強度</td></tr>
 <tr><td>blur_y</td><td></td><td>2</td><td>整数</td><td>Y強度</td></tr>
-<tr><td>🟡 repeat_edge_pixels</td><td></td><td>false</td><td>整数</td><td>true に設定すると、ターゲットのエッジがクランプされます<br/>（bluesnovel）未対応：SVG feGaussianBlurのedgeModeで近似する余地はある（blur_x/blur_y指定時限定）が、優先度低く凍結</td></tr>
+<tr><td>🟡 repeat_edge_pixels</td><td></td><td>false</td><td>true、false</td><td>true でエッジをクランプ（引き伸ばす）<br/>（bluesnovel）既定の false 相当のみ。true は未対応・凍結（上記）</td></tr>
 </table>
 
 <h4>フィルター「noise」に指定できる属性</h4>
@@ -1875,7 +1876,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1">
 
 	注：これは HTML要素の iframe（インラインフレーム要素）で、フレームは全てのレイヤの手前に表示され、互い違いに重ねられない。<br/>
-	<a href="dev.htm#reserve_value_tmp">const.sn.frm.（フレーム名）系</a>の値もセットする。
+	<a href="dev.html#reserve_value_tmp">const.sn.frm.（フレーム名）系</a>の値もセットする。
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>id</td><td>y</td><td></td><td>文字列</td><td>フレーム名。他のタグなどで操作・参照する歳の名前となる</td></tr>
 <tr class="y"><td>src</td><td>y</td><td></td><td>
@@ -2443,14 +2444,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 
 	属性無し。<br/>
 	<br/>
-	詳細は【<a href="dev.htm#cond" target="_blank" rel="noopener">開発者向け情報：式の評価と条件分岐</a>】をご覧下さい。
+	詳細は【<a href="dev.html#cond" target="_blank" rel="noopener">開発ガイド：式の評価と条件分岐</a>】をご覧下さい。
 
 </p>
 <h2 id="elsif" class="w-heading">[elsif]別条件のifブロック開始</h2>
 <h4>プログラム言語における、条件分岐のelsif文。</h4>
 <p class="mb2 px1">
 
-	詳細は【<a href="dev.htm#cond" target="_blank" rel="noopener">開発者向け情報：式の評価と条件分岐</a>】をご覧下さい。
+	詳細は【<a href="dev.html#cond" target="_blank" rel="noopener">開発ガイド：式の評価と条件分岐</a>】をご覧下さい。
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>exp</td><td>y</td><td></td><td>条件式</td><td>trueの場合処理は直後にうつる。<br/>falseなら次の<a href="tag.html#elsif" target="_blank" rel="noopener">[elsif]</a>や<a href="tag.html#else" target="_blank" rel="noopener">[else]</a>の評価を行なう</td></tr>
 </table>
@@ -2461,14 +2462,14 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p class="mb2 px1">
 
 	属性無し。<br/>
-	詳細は【<a href="dev.htm#cond" target="_blank" rel="noopener">開発者向け情報：式の評価と条件分岐</a>】をご覧下さい。
+	詳細は【<a href="dev.html#cond" target="_blank" rel="noopener">開発ガイド：式の評価と条件分岐</a>】をご覧下さい。
 
 </p>
 <h2 id="if" class="w-heading">[if]ifブロックの開始</h2>
 <h4>プログラム言語における、条件分岐のif文。</h4>
 <p class="mb2 px1">
 
-	詳細は【<a href="dev.htm#cond" target="_blank" rel="noopener">開発者向け情報：式の評価と条件分岐</a>】をご覧下さい。
+	詳細は【<a href="dev.html#cond" target="_blank" rel="noopener">開発ガイド：式の評価と条件分岐</a>】をご覧下さい。
 <table><tr><th>属性</th><th>必須</th><th>省略時</th><th>値域・型</th><th>コメント</th></tr>
 <tr class="y"><td>exp</td><td>y</td><td></td><td>条件式</td><td>trueの場合処理は直後にうつる。<br/>falseなら次の<a href="tag.html#elsif" target="_blank" rel="noopener">[elsif]</a>や<a href="tag.html#else" target="_blank" rel="noopener">[else]</a>の評価を行なう</td></tr>
 </table>

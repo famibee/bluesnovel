@@ -159,12 +159,14 @@ E2E が旧（バグ）挙動に依存して壊れていたことがある（2026
 
 ## ＢＧＭ・効果音：状態機械を持たず、待ち合わせは `ScriptMng` が持つ
 
-本家 `SndBuf.ts` は howler を積み、`StLoading`〜`StStop` の 6 状態を `sb.stt = new XXX(…)` の代入
-だけで渡り歩く状態機械を持つ。退場処理が無いまま終端の `StStop` だけが副作用の塊で、
-「`[wf]` 待機中に音が自然終了すると誰も終了通知を出さずスクリプトが永久停止する」
-「フェード停止時に `StStop` が 2 回構築される」等の不備の温床になっていた（2026-08 の
-skynovel_esm 調査で判明）。bluesnovel は howler を積まず、Web Audio API を直接使う自前の薄い層
-（`src/ts/SndMng.ts`/`SndBuf.ts`）にして設計自体を変えた。
+本家 `SndBuf.ts` は 2026-08 時点で howler を積み、`StLoading`〜`StStop` の 6 状態を
+`sb.stt = new XXX(…)` の代入だけで渡り歩く状態機械を持っていた。退場処理が無いまま終端の
+`StStop` だけが副作用の塊で、「`[wf]` 待機中に音が自然終了すると誰も終了通知を出さずスクリプトが
+永久停止する」「フェード停止時に `StStop` が 2 回構築される」等の不備の温床になっていた（2026-08 の
+skynovel_esm 調査で判明）。本家は同時期に howler を撤去し Web Audio API 直接制御へ移行したが、
+この 6 状態の状態機械自体は 2026-08 時点でも残っている。bluesnovel は howler 等の音声ライブラリを
+積まず、状態機械そのものを持たない Web Audio API 直接制御の薄い層（`src/ts/SndMng.ts`/`SndBuf.ts`）
+にして設計自体を変えた。
 
 - **停止＝破棄**。`SndBuf` は 1 バッファ＝1 インスタンスで、状態は持たない（`#destroyed` フラグの
   みで冪等）。同じ `buf` への `[playse]` は**ファイルが違えば**前のインスタンスを即座に破棄して
@@ -278,7 +280,7 @@ GreenSock(GSAP)のstandard licenseが非OSIで、MIT公開かつ`src/build.ts`�
   にしか効かない）。
 - repeat の無限表現が GSAP 規約の `-1` から motion 規約の `Infinity` へ変更（`ScriptEngine.ts`）。
   音声フェードの既定 ease も GSAP 時代の `power1.out` から等速へ変更（本家 howler の `fade()` も
-  線形）。
+  線形だった。本家は現在は howler を積んでいない）。
 - **E2Eの全体凍結手段が変わった**: `test/e2e/trans.e2e.ts` が `gsap.globalTimeline.pause()` で
   行っていた「以後作られる分も含めた全体凍結」は motion に相当 API が無いため、
   `globalThis.requestAnimationFrame` 自体を差し替える `__sn.freezeRaf()`（`test/e2e/app/main.ts`）
