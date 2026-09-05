@@ -52,7 +52,23 @@ test('暗号化アニメpngシートが.json/シート画像とも復号され�
 	expect(await traceText(page)).toBe('');
 });
 
+test('暗号化文字レイヤ枠画像(b_pic)が復号されてBlob URLで表示される', async ({page})=> {
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('わくがぞう。');
+
+	// ScriptMng#applyAction chgBPicケースがdecryptPicUrl経由でBlob URL化し、
+	//	文字レイヤの::before（background-image）へ渡す（TxtLayer.tsx参照）。
+	//	#refreshCryptoAssets()と違いライブ経路は元々#decryptPic()を通していなかった不具合の確認
+	const bg = await page.$eval('#skynovel [data-page="fore"] [data-lay="mes"]',
+		el=> getComputedStyle(el, '::before').backgroundImage);
+	expect(bg).toContain('blob:');
+	expect(await traceText(page)).toBe('');
+});
+
 test('暗号化音声が復号されてデコード・再生できる', async ({page})=> {
+	await pressKey(page, 'Space');
 	await pressKey(page, 'Space');
 	await pressKey(page, 'Space');
 	const before = await gainNodeCount(page);
@@ -67,6 +83,7 @@ test('暗号化音声が復号されてデコード・再生できる', async ({
 });
 
 test('暗号化HTMLフレームと、フレーム内の暗号化画像が復号される', async ({page})=> {
+	await pressKey(page, 'Space');
 	await pressKey(page, 'Space');
 	await pressKey(page, 'Space');
 	await pressKey(page, 'Space');

@@ -61,6 +61,7 @@ fs.writeFileSync(`${DIR}pic.png`, await encAB(fs.readFileSync(`${SRC}prj_pic/bg.
 fs.writeFileSync(`${DIR}clock.5x8.png`, await encAB(fs.readFileSync(`${SRC}prj_anime/anime.4x1.png`)));
 fs.writeFileSync(`${DIR}snd.wav`, await encAB(fs.readFileSync(`${SRC}prj_snd/se.wav`)));
 fs.writeFileSync(`${DIR}frame_pic.png`, await encAB(fs.readFileSync(`${SRC}prj_pic/face_a.png`)));
+fs.writeFileSync(`${DIR}bpic.png`, await encAB(fs.readFileSync(`${SRC}prj_pic/wide.png`)));
 
 // --- アニメpngシート定義（.jsonはテキスト暗号化。中のmeta.imageはclock.5x8.pngに向け直す）
 const animeJson = fs.readFileSync(`${SRC}prj_anime/anime.json`, 'utf-8').replace('anime.4x1.png', 'clock.5x8.png');
@@ -82,6 +83,11 @@ const SN = `; 暗号化アセット（sys.arg.crypto）のリソース検査用�
 ;	シート画像（meta.imageが指すpng）は decryptPicUrl で複号する
 [lay layer=bg fn=clock]
 あにめ。[p]
+
+; 暗号化文字レイヤ枠画像 → ScriptMng#applyAction chgBPicケースが#decryptPic()を通す
+;	（chgPicと同じ非同期分岐。#refreshCryptoAssets()と違いライブ経路は元々通していなかった）
+[lay layer=mes b_pic=bpic]
+わくがぞう。[p]
 
 ; 暗号化音声 → SndMng の #decode が decodeAudioData の直前で decAB を通す
 [playbgm fn=snd join=false]
@@ -128,6 +134,7 @@ const PATH = {
 	clock		: {':cnt': 1, json: 'clock.json'},
 	'clock.5x8'	: {':cnt': 1, png: 'clock.5x8.png'},
 	frame_pic	: {':cnt': 1, png: 'frame_pic.png'},
+	bpic		: {':cnt': 1, png: 'bpic.png'},
 };
 fs.writeFileSync(`${DIR}prj.json`, await encTx(JSON.stringify(PRJ)));
 fs.writeFileSync(`${DIR}path.json`, await encTx(JSON.stringify(PATH)));

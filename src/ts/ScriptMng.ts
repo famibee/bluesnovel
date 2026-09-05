@@ -1747,6 +1747,10 @@ export class ScriptMng {
 	// chgPicの非同期解決が追い越されたとき、古い方でstoreを上書きしないための世代カウンタ
 	//	（key: `${nm}:${page}`）
 	readonly #picReqSeq = new Map<string, number>();
+	// chgBPic（文字レイヤ枠画像）版の#picReqSeq。chgPicと同じ`${nm}:${page}`キーを使い回すと
+	//	同一レイヤへ[lay fn=]と[lay b_pic=]が連続で来た時に互いを誤って「追い越された」と
+	//	判定しかねないので別マップにする
+	readonly #bPicReqSeq = new Map<string, number>();
 	// [add_fx tex=]（crypto:true時の復号待ち）が追い越されたとき、古い方でstoreを
 	//	上書きしないための世代カウンタ（#picReqSeqと同じ流儀。key: `${aLayNm}:${page}:${name}`）
 	readonly #fxReqSeq = new Map<string, number>();
@@ -1852,11 +1856,31 @@ export class ScriptMng {
 				...(act.isFixed === undefined ? {} : {isFixed: act.isFixed}),
 			});
 			break;
-		case 'chgBPic':
+		case 'chgBPic': {
 			// 文字レイヤ背後の枠画像。画像レイヤ（chgPic）と同じくここでパスを解決する
-			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn,
-				src: act.fn ? this.#searchPic('lay b_pic', act.fn) : ''});
+			if (! act.fn) {
+				this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src: ''});
+				break;
+			}
+			const src = this.#searchPic('lay b_pic', act.fn);
+			if (! this.sys.crypto) {
+				this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src});
+				break;
+			}
+
+			// crypto時：chgPicケースと同じく、まず空で確定させてから#decryptPic()で差し替える
+			//	（#refreshCryptoAssets()は復号済みで確定させるが、ライブ経路は#decryptPic()を
+			//	通していなかった＝非対称だった不具合。世代カウンタで追い越しに備えるのもchgPicと同じ）
+			const key = `${act.nm}:${act.page}`;
+			const seq = (this.#bPicReqSeq.get(key) ?? 0) + 1;
+			this.#bPicReqSeq.set(key, seq);
+			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src: ''});
+			void this.#decryptPic(src).then(dSrc=> {
+				if (this.#bPicReqSeq.get(key) !== seq) return;	// 追い越された
+				this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc});
+			});
 			break;
+		}
 		case 'chgBackClear':
 			this.$fncs.chgBackClear({nm: act.nm, page: act.page});
 			break;

@@ -3559,7 +3559,7 @@ var Co = class f {
 		this.sys = e, this.#m = new ue(e, ""), this.#w = new ae((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#at(e), this.#t.log = (e) => this.#st(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#ot(e), this.#t.log = (e) => this.#ct(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	destroy() {
 		this.cancelAuto(), clearTimeout(this.#H), clearTimeout(this.#J), clearTimeout(this.#$), this.#_e(() => !0);
@@ -3719,7 +3719,7 @@ var Co = class f {
 	}
 	#y;
 	async #b(e) {
-		return this.#n[e] ??= new x(e, await this.#it(e), this.#S());
+		return this.#n[e] ??= new x(e, await this.#at(e), this.#S());
 	}
 	#x;
 	#S() {
@@ -4295,7 +4295,7 @@ var Co = class f {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#rt(e);
+					for (let e of t) this.#it(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#q(n.canskip);
@@ -4358,7 +4358,7 @@ var Co = class f {
 						return;
 					}
 					if (n?.t !== "loadScript") {
-						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#nt();
+						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#rt();
 						return;
 					}
 					try {
@@ -4458,7 +4458,7 @@ var Co = class f {
 			})());
 			for (let t of e.aFx ?? []) {
 				let r = t.tex;
-				r && n.push(this.#et(r).then((n) => this.$fncs.chgFx({
+				r && n.push(this.#tt(r).then((n) => this.$fncs.chgFx({
 					aLayNm: [e.nm],
 					page: o,
 					mode: "add",
@@ -4549,11 +4549,12 @@ var Co = class f {
 	}
 	#Qe = /* @__PURE__ */ new Map();
 	#$e = /* @__PURE__ */ new Map();
-	#et(e) {
+	#et = /* @__PURE__ */ new Map();
+	#tt(e) {
 		return this.#Ze(this.#Ye("add_fx", e));
 	}
-	#tt = /* @__PURE__ */ new Map();
-	#nt() {
+	#nt = /* @__PURE__ */ new Map();
+	#rt() {
 		let e = this.#r;
 		if (e) for (let t of new Set(e.peekUpcomingPicFn())) {
 			let e;
@@ -4566,10 +4567,10 @@ var Co = class f {
 				new Image().src = e;
 				continue;
 			}
-			this.#tt.has(e) || this.#tt.set(e, this.#Ze(e));
+			this.#nt.has(e) || this.#nt.set(e, this.#Ze(e));
 		}
 	}
-	#rt(e) {
+	#it(e) {
 		switch (e.t) {
 			case "addLay":
 				switch (e.cls) {
@@ -4638,8 +4639,8 @@ var Co = class f {
 					})) }
 				});
 				let s = (e) => {
-					let t = this.#tt.get(e);
-					return t && this.#tt.delete(e), t ?? this.#Ze(e);
+					let t = this.#nt.get(e);
+					return t && this.#nt.delete(e), t ?? this.#Ze(e);
 				};
 				Promise.all([s(t), ...i?.map((e) => s(e.src)) ?? []]).then(([t, ...s]) => {
 					this.#Qe.get(a) === o && this.$fncs.chgPic({
@@ -4665,14 +4666,42 @@ var Co = class f {
 					...e.isFixed === void 0 ? {} : { isFixed: e.isFixed }
 				});
 				break;
-			case "chgBPic":
-				this.$fncs.chgBPic({
+			case "chgBPic": {
+				if (!e.fn) {
+					this.$fncs.chgBPic({
+						nm: e.nm,
+						page: e.page,
+						fn: e.fn,
+						src: ""
+					});
+					break;
+				}
+				let t = this.#Ye("lay b_pic", e.fn);
+				if (!this.sys.crypto) {
+					this.$fncs.chgBPic({
+						nm: e.nm,
+						page: e.page,
+						fn: e.fn,
+						src: t
+					});
+					break;
+				}
+				let n = `${e.nm}:${e.page}`, r = (this.#$e.get(n) ?? 0) + 1;
+				this.#$e.set(n, r), this.$fncs.chgBPic({
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
-					src: e.fn ? this.#Ye("lay b_pic", e.fn) : ""
+					src: ""
+				}), this.#Ze(t).then((t) => {
+					this.#$e.get(n) === r && this.$fncs.chgBPic({
+						nm: e.nm,
+						page: e.page,
+						fn: e.fn,
+						src: t
+					});
 				});
 				break;
+			}
 			case "chgBackClear":
 				this.$fncs.chgBackClear({
 					nm: e.nm,
@@ -4800,9 +4829,9 @@ var Co = class f {
 					}), this.#pe(e);
 					break;
 				}
-				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#$e.get(t) ?? 0) + 1;
-				this.#$e.set(t, n), this.#et(e.fx.tex).then((r) => {
-					this.#$e.get(t) === n && this.$fncs.chgFx({
+				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#et.get(t) ?? 0) + 1;
+				this.#et.set(t, n), this.#tt(e.fx.tex).then((r) => {
+					this.#et.get(t) === n && this.$fncs.chgFx({
 						aLayNm: e.aLayNm,
 						page: e.page,
 						mode: "add",
@@ -4998,10 +5027,10 @@ var Co = class f {
 				break;
 			case "pageTo": break;
 			case "trace":
-				this.#at({ text: e.text });
+				this.#ot({ text: e.text });
 				break;
 			case "log":
-				this.#st({ text: e.text }, e.fn, e.lineNum);
+				this.#ct({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "loadScript": break;
 			case "stop": {
@@ -5020,7 +5049,7 @@ var Co = class f {
 			}
 		}
 	}
-	async #it(e) {
+	async #at(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, u.SCRIPT), n = "";
 			try {
@@ -5041,13 +5070,13 @@ var Co = class f {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#at(e) {
+	#ot(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#ot = !0;
-	#st(n, r, i) {
+	#st = !0;
+	#ct(n, r, i) {
 		let a = "";
-		return this.#ot && (this.#ot = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
+		return this.#st && (this.#st = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";
