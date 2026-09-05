@@ -694,6 +694,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.12.1](https://github.com/famibee/bluesnovel/compare/v0.12.0...v0.12.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **sn:** プロジェクト切替を跨いだプラグインresumeが旧ScriptMngを起こす不具合を修正 ([eb34835](https://github.com/famibee/bluesnovel/commit/eb34835c7eddb03b6dada35a77ae891281fde625))
+
 ## [0.12.0](https://github.com/famibee/bluesnovel/compare/v0.11.0...v0.12.0) (2026-09-05)
 
 
