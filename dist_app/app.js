@@ -91,30 +91,30 @@ var i = "skynovel", a = class {
 		})();
 		f.parentElement === document.body && (document.body.style.backgroundColor = t.bgColor);
 		let p = new o(this);
-		this.scrMng = p, await this.#r(p), this.#e = n(f), r(this.#e, {
+		this.scrMng = p, await this.#r(), this.#e = n(f), r(this.#e, {
 			heStage: f,
 			sys: this,
 			scrMng: p
 		}, () => queueMicrotask(() => p.load("main")));
 	}
 	#n = !1;
-	async #r(e) {
+	async #r() {
 		if (this.#n) return;
 		this.#n = !0;
-		let n = Object.values(this.hPlg);
-		if (n.length === 0) return;
-		let [{ addLayCls: r }, { ScriptEngine: i }] = await Promise.all([import("./LayCls.js").then((e) => e.t), import("./ScriptEngine.js")]);
-		await Promise.all(n.map((n) => n.init({
+		let e = Object.values(this.hPlg);
+		if (e.length === 0) return;
+		let [{ addLayCls: n }, { ScriptEngine: r }] = await Promise.all([import("./LayCls.js").then((e) => e.t), import("./ScriptEngine.js")]);
+		await Promise.all(e.map((e) => e.init({
 			getInfo: () => ({ window: {
 				width: t.stageW,
 				height: t.stageH
 			} }),
-			addTag: (e, t) => i.registerPlgTag(e, t),
-			addLayCls: r,
+			addTag: (e, t) => r.registerPlgTag(e, t),
+			addLayCls: n,
 			searchPath: (e, t) => this.cfg.searchPath(e, t),
-			getVal: (t, n) => e.getVal(t, n),
+			getVal: (e, t) => this.scrMng?.getVal(e, t) ?? t,
 			resume: () => {
-				e.resumePlg();
+				this.scrMng?.resumePlg();
 			},
 			render: () => {},
 			setDec: () => {},

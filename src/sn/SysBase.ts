@@ -151,7 +151,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 
 		const scrMng = new ScriptMng(this);
 		this.scrMng = scrMng;	// E2Eのwindow.__snから覗くためだけに保持（本体は使わない）
-		await this.#initPlg(scrMng);
+		await this.#initPlg();
 		this.#root = createRoot(he);
 		initMain(this.#root, {heStage: he, sys: this, scrMng}, ()=> queueMicrotask(()=> scrMng.load('main')));
 	}
@@ -161,7 +161,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	//	CmnLib.stageW/Hが確定済み（Config.generate()の後）かつmain.snが動き出す前（initMain()の前）
 	//	でなければならない：getInfo()が正しい寸法を返せず、addLayCls登録もmain.sn実行前に済んでいる必要があるため
 	#plgInited = false;
-	async #initPlg(scrMng: ScriptMng) {
+	async #initPlg() {
 		// プロジェクト切替（run()の2回目以降）では再実行しない。addLayClsのレジストリ（LayCls.ts）は
 		//	モジュールレベル＝ページのライフタイムで生きているため、再登録は「すでに定義済み」でthrowする
 		if (this.#plgInited) return;
@@ -178,10 +178,17 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			addTag		: (name, fnc)=> ScriptEngine.registerPlgTag(name, fnc),
 			addLayCls,
 			searchPath	: (fn, extptn)=> this.cfg.searchPath(fn, extptn),
-			getVal		: (nm, def)=> scrMng.getVal(nm, def),
+			// getVal/resumeはthis.scrMng（プロジェクト切替のたびrun()で差し替わる「今の」インスタンス）
+			//	を都度読む必要がある。#initPlgは初回のプラグインinit()にしか呼ばれないため、
+			//	ここでscrMngを引数として一度だけクロージャに固定すると、Live2D等モデル読み込みが
+			//	重くプロジェクト切替を跨いで完了するプラグインで、resume()が旧プロジェクトの
+			//	（既にdestroy済みの）ScriptMngを起こしてしまう（旧#runStep()の残りが新プロジェクトの
+			//	サーチパスで動き「画像が見つかりません」エラーになる不具合。sn_gallery
+			//	top→live2d prj切替で発覚。TODO.md「prj切替時のrace condition」参照）
+			getVal		: (nm, def)=> this.scrMng?.getVal(nm, def) ?? def,
 			// resumeはaddLayCls（[lay]のisWait対応）とaddTagの両方が使う共通の再開口。
 			//	addTag側はresumePlg()でないと#procingが下りず無視される（ScriptMng.resumePlg()参照）
-			resume		: ()=> {scrMng.resumePlg()},
+			resume		: ()=> {this.scrMng?.resumePlg()},
 			// pixi.js専用（DisplayObjectのRenderTexture焼き）。bluesnovelはDOMへ直接描くので不要
 			render		: ()=> { /* empty */ },
 			// snsys_pre専用のフック。一般プラグインからは使わない想定（本家 SysBase.ts:196-200も同じくno-op）

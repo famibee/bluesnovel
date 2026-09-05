@@ -97,6 +97,8 @@ export class ScriptMng {
 	//	紛れ込む（#finishTrans等は$fncs＝旧Main.tsxのstoreセッターを直接叩くため、
 	//	unmount後に発火するとリセット直後のストアを壊しうる）
 	destroy() {
+		this.#destroyed = true;	// resumePlg()用。プラグイン（Live2D等）の非同期ロードはここでは止められないため、
+			// 破棄後に届いたresumeコールバックはフラグで無視する（下記resumePlg()参照）
 		this.cancelAuto();
 		clearTimeout(this.#transTimer);
 		clearTimeout(this.#quakeTimer);
@@ -440,7 +442,10 @@ export class ScriptMng {
 	//	ただのgo()と違う（#procPlgTag()/#procPlgLay()がisWait=trueの間は#procing=trueの
 	//	ままにしてあるので、下ろさずgoSafe()だけ呼んでも「DOM絡みの非同期処理中」判定
 	//	（#goSafe()の#procingチェック）に引っかかって無視されてしまう）
+	#destroyed = false;
 	resumePlg() {
+		if (this.#destroyed) return;	// Live2D等、プロジェクト切替を跨いでロードが続くプラグインからの
+			// 遅延resumeを無視する（SysBase.#initPlgのコメント参照。sn_gallery top→live2d prj切替で発覚）
 		this.#procing = false;
 		this.#goSafe();
 	}
