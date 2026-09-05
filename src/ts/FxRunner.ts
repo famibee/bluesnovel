@@ -28,8 +28,8 @@
 //	  汚染し texImage2D が失敗する（[snapshot] と同じ制約）。
 //	・preserveDrawingBuffer:true は [snapshot]（Snapshot.ts の canvas→toDataURL 差し替え）対策で
 //	  3d_layer / live2d_layer と同じ理由。
-//	・fx.tex（[add_fx tex=]。uniform sampler2D uTex2）は基本画像とは別に読む追加テクスチャ。
-//	  url→WebGLTexture キャッシュ（getTex2）を runFx 呼び出し単位（＝canvas 1 枚）で持ち、
+//	・fx.texSrc（[add_fx tex=]。uniform sampler2D uTex2）は基本画像とは別に読む追加テクスチャ。
+//	  実テクスチャ（T_PASS.tex2）はパスごとに持ち、url が変わったら即差し替える（ensureTex2）。
 //	  ロードは非同期だが setup()/update() は同期のまま＝ロード完了までは 1×1 透明を返すだけ。
 //	  「専用レイヤを増やして重ねる」代わりに 1 レイヤ・1 パスで完結させる用途（ext_fx_tile.sn 等）。
 
@@ -92,6 +92,17 @@ function link(gl: WebGLRenderingContext, vs: WebGLShader, fsSrc: string): WebGLP
 	return pg;
 }
 
+// 基本画像は y-up にして上げる（FBO と同じ向き）。頂点シェーダで反転しない代わり
+//	＝ping-pong のパス数が奇数でも偶数でも上下が崩れない（fxPresets.ts V_SRC のコメント）。
+//	mkTex の初期アップロード・動的ソースの毎フレーム転写・tex=（uTex2）の非同期ロード完了時、
+//	3 箇所とも「同じテクスチャへこの向きで texImage2D する」だけなので 1 箇所にまとめる
+function uploadFlipped(gl: WebGLRenderingContext, tx: WebGLTexture, img: TexImageSource) {
+	gl.bindTexture(gl.TEXTURE_2D, tx);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+}
+
 // NPOT 安全なテクスチャ（立ち絵は 2 の冪とは限らない）
 function mkTex(gl: WebGLRenderingContext, img: TexImageSource | null, w: number, h: number): WebGLTexture {
 	const tx = gl.createTexture()!;
@@ -100,13 +111,7 @@ function mkTex(gl: WebGLRenderingContext, img: TexImageSource | null, w: number,
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	if (img) {
-		// 基本画像は y-up にして上げる（FBO と同じ向き）。頂点シェーダで反転しない代わり
-		//	＝ping-pong のパス数が奇数でも偶数でも上下が崩れない（fxPresets.ts V_SRC のコメント）
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-	}
+	if (img) uploadFlipped(gl, tx, img);
 	else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 	return tx;
 }
@@ -150,8 +155,10 @@ type T_PASS = {
 	// スカラ入力ポート（amp/freq/shift/p1〜p4）。名前は Fx.ts の A_FX_PARAM が唯一の台帳
 	uParam	: {readonly [k: string]: WebGLUniformLocation | null};
 	uColor	: WebGLUniformLocation | null;	// color=（uniform vec3 color。0..1 RGB）
-	uTex2	: WebGLUniformLocation | null;	// tex=（uniform sampler2D uTex2）。実テクスチャは
-											//	drawPass が p.fx.tex から毎フレーム引く（下記 getTex2）
+	uTex2	: WebGLUniformLocation | null;	// tex=（uniform sampler2D uTex2）。実テクスチャは下記 tex2
+	// tex=（texSrc）の実テクスチャ。url が変わるまではこのパスが所有し続ける（ensureTex2 参照）。
+	//	null＝tex= 未指定、またはまだ一度も ensureTex2 を通していない
+	tex2	: {url: string; tx: WebGLTexture} | null;
 	fx		: T_FX;
 	pausedAccMs	: number;	// [pause_fx] で止まっていた合計時間（この分だけ tick を巻き戻す）
 	pausedAt	: number;	// 現在の一時停止の開始時刻（performance.now()。0＝停止していない）
@@ -162,7 +169,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 	const mkPass = (fsSrc: string, fx: T_FX): T_PASS => {
 		const pg = link(gl, vs, fsSrc);
 		return {
-			pg, fx, pausedAccMs: 0, pausedAt: 0,
+			pg, fx, tex2: null, pausedAccMs: 0, pausedAt: 0,
 			uSampler: gl.getUniformLocation(pg, 'uSampler'),
 			uTick	: gl.getUniformLocation(pg, 'tick'),
 			uRes	: gl.getUniformLocation(pg, 'resolution'),
@@ -172,23 +179,25 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			uTex2	: gl.getUniformLocation(pg, 'uTex2'),
 		};
 	};
+	const deleteTex2 = (p: T_PASS)=> {if (p.tex2) {gl.deleteTexture(p.tex2.tx); p.tex2 = null}};
 
-	// tex=（uniform sampler2D uTex2）の実テクスチャキャッシュ。url→WebGLTexture（この gl 専用。
-	//	WebGLTexture は他の canvas/context と共有できないので runFx 呼び出し単位で持つ）。
-	//	ロード完了までは 1×1 透明のプレースホルダをそのまま返す＝mkPass/update を同期のまま保てる
+	// tex=（uniform sampler2D uTex2）の実テクスチャを p.tex2 として**パスごとに**持つ（url→texture
+	//	キャッシュを全パス共有にしないのは、crypto:true 構成の tex= は #searchPic()/#decryptPic() の
+	//	たびに新しい Blob URL を返す＝[load] を繰り返すたびキャッシュキーが増え続けて溜まるため。
+	//	パス所有にすれば url が変わった瞬間に前のテクスチャを即 delete でき、1 パスにつき最大 1 枚で済む）。
+	//	ロード完了までは 1×1 透明のプレースホルダを返す＝mkPass/update を同期のまま保てる
 	//	（画像ロードで setup() をブロックしない。初回フレームはただの透明＝画面が崩れて見えない）
-	const hTex2 = new Map<string, WebGLTexture>();
-	const getTex2 = (url: string): WebGLTexture => {
-		const cached = hTex2.get(url);
-		if (cached) return cached;
+	const ensureTex2 = (p: T_PASS): WebGLTexture | null => {
+		const url = p.fx.texSrc;
+		if (! url) {deleteTex2(p); return null}
+		if (p.tex2?.url === url) return p.tex2.tx;
+
+		deleteTex2(p);	// url が変わった＝前のテクスチャはもう要らない
 		const tx = mkTex(gl, null, 1, 1);
-		hTex2.set(url, tx);
+		p.tex2 = {url, tx};
 		loadImg(url).then(im=> {
-			if (! live) return;	// dispose() 済みなら gl 操作しない
-			gl.bindTexture(gl.TEXTURE_2D, tx);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+			if (! live || p.tex2?.tx !== tx) return;	// dispose()済み、または既に別urlへ差し替え済み
+			uploadFlipped(gl, tx, im);
 		}).catch(e=> console.error(`[add_fx] tex= の読み込みに失敗: ${String(e)}`));
 		return tx;
 	};
@@ -239,10 +248,13 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		// tex=（uniform sampler2D uTex2）はユニット1へ。uSampler（ユニット0）より先に済ませ、
 		//	最後に activeTexture を 0 へ戻す＝「呼び出し後は常にユニット0が active」という
 		//	既存の前提（render() 冒頭の dyn ソース texImage2D 等）を崩さない
-		if (p.uTex2 && p.fx.tex) {
-			gl.activeTexture(gl.TEXTURE1);
-			gl.bindTexture(gl.TEXTURE_2D, getTex2(p.fx.tex));
-			gl.uniform1i(p.uTex2, 1);
+		if (p.uTex2) {
+			const tx2 = ensureTex2(p);
+			if (tx2) {
+				gl.activeTexture(gl.TEXTURE1);
+				gl.bindTexture(gl.TEXTURE_2D, tx2);
+				gl.uniform1i(p.uTex2, 1);
+			}
 		}
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, inTex);
@@ -278,10 +290,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 		// 動的ソース（アニメ png シート face）は毎フレーム texSrc へ吸い上げる。可視ページのみ
 		//	（不可視 back ページでは転写もしない＝空回しにならない）。face が動いている限り rAF を回す
 		if (dyn && active) {
-			gl.bindTexture(gl.TEXTURE_2D, texSrc);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, dyn());
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+			uploadFlipped(gl, texSrc, dyn());
 			anyActive = true;
 		}
 
@@ -337,7 +346,7 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 					//	タイムライン（pausedAccMs/pausedAt）を引き継ぐ——これをしないと、別 fx を足した
 					//	だけで保持中の keep/done パスが 0 から再ランプし、wave 等も位相が飛ぶ
 					const oldByFx = new Map(aPass.map(p=> [p.fx, p]));
-					for (const p of aPass) gl.deleteProgram(p.pg);
+					for (const p of aPass) {gl.deleteProgram(p.pg); deleteTex2(p)}
 					for (let k = 0; k < built.length; ++k) {
 						const old = oldByFx.get(newAFx[k]!);
 						if (old) {built[k]!.pausedAccMs = old.pausedAccMs; built[k]!.pausedAt = old.pausedAt}
@@ -375,9 +384,8 @@ function setup(gl: WebGLRenderingContext, cvs: HTMLCanvasElement, aFx: T_FX[], i
 			gl.deleteShader(vs);
 			gl.deleteTexture(texSrc);
 			for (const {tex, fb} of ping) {gl.deleteTexture(tex); gl.deleteFramebuffer(fb)}
-			for (const tex of hTex2.values()) gl.deleteTexture(tex);	// tex=（uTex2）ぶん
 			gl.deleteBuffer(buf);
-			for (const p of aPass) gl.deleteProgram(p.pg);
+			for (const p of aPass) {gl.deleteProgram(p.pg); deleteTex2(p)}
 			gl.deleteProgram(pgPass.pg);
 			gl.getExtension('WEBGL_lose_context')?.loseContext();
 			dyn?.dispose?.();	// 動画 face 用の detached な <video> を解放（あれば）

@@ -292,19 +292,19 @@ it('chgFx_しおり round-trip で #fxN が復元される（別カウンタを�
 	expect(fxOf('a')!.map(f=> f.name)).toEqual(['#fx1', 'rs', '#fx2']);
 });
 
-it('chgFx_tex=（texFn/tex）もしおり round-trip で残る（ScriptMng が texFn から tex を解決してstoreへ積む想定。plain な文字列2個なので他フィールドと同じく getPagesJson/replace で素通り）', ()=> {
-	// bldFx() はtexFn（生の論理名）だけを返す（ScriptMng.#applyAction()がtexFnからtexを解決して
+it('chgFx_tex=（tex/texSrc）もしおり round-trip で残る（ScriptMng が tex から texSrc を解決してstoreへ積む想定。plain な文字列2個なので他フィールドと同じく getPagesJson/replace で素通り）', ()=> {
+	// bldFx() はtex（生の論理名）だけを返す（ScriptMng.#applyAction()がtexからtexSrcを解決して
 	//	足す。Fx.ts参照）。round-tripの仕組み自体は文字列の域を出ないので、ここではScriptMngが
-	//	解決済みだと仮定した状態（texFn・tex両方セット）を直接組み立てて確認すれば足りる
+	//	解決済みだと仮定した状態（tex・texSrc両方セット）を直接組み立てて確認すれば足りる
 	addFx('a', {fx: 'wave', tex: 'f_fog', name: 't'});
-	expect(fxOf('a')![0]).toMatchObject({texFn: 'f_fog'});
-	// ScriptMng.#applyAction()相当：texFnから解決したtexを足して同名で置き換える（本物のchgFxを使う）
-	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'add', fx: {...fxOf('a')![0]!, tex: 'prj/add_fx/mat/f_fog.png'}});
-	expect(fxOf('a')![0]).toMatchObject({texFn: 'f_fog', tex: 'prj/add_fx/mat/f_fog.png'});
+	expect(fxOf('a')![0]).toMatchObject({tex: 'f_fog'});
+	// ScriptMng.#applyAction()相当：texから解決したtexSrcを足して同名で置き換える（本物のchgFxを使う）
+	S().chgFx({aLayNm: ['a'], page: 'fore', mode: 'add', fx: {...fxOf('a')![0]!, texSrc: 'prj/add_fx/mat/f_fog.png'}});
+	expect(fxOf('a')![0]).toMatchObject({tex: 'f_fog', texSrc: 'prj/add_fx/mat/f_fog.png'});
 	const json = S().getPagesJson();
 	useStore.setState({aPage: [[], []], foreIdx: 0});
 	S().replace(json);
-	expect(fxOf('a')![0]).toMatchObject({texFn: 'f_fog', tex: 'prj/add_fx/mat/f_fog.png'});
+	expect(fxOf('a')![0]).toMatchObject({tex: 'f_fog', texSrc: 'prj/add_fx/mat/f_fog.png'});
 });
 
 it('chgFx_mode:done は one-shot 記述子へ done を焼く（[load] 復元用。ScriptMng.#markFxDone）', ()=> {

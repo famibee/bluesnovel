@@ -37,15 +37,8 @@
 //	  uniform vec2      resolution    … canvas 実ピクセルサイズ
 //	  ＋ プリセット固有 uniform（amp/freq/shift。作者が uniform 宣言し [add_fx] で値を渡す）
 //	  ＋ uniform sampler2D uTex2      … [add_fx tex=]（対象レイヤの基本画像とは別の追加テクスチャ。
-//	                                     作者が uniform sampler2D uTex2; を宣言した時だけ意味を持つ）
-//	uTex2 は「対象レイヤ自身の画像は変えず、別の画像をシェーダの入力として重ねたい」ケース向け
-//	（[add_fx fx=tile tex=…] が想定例。ext_fx_tile.sn 参照）。専用レイヤを増やして重ねる代わりに
-//	1 レイヤ・1 パスで完結する。tex= は fn=（layer= の基本画像）と同じ論理名（path.json）を取るが、
-//	基本画像を差し替えるわけではないので別属性名にした。パス解決は ScriptMng.#applyAction() が
-//	fn= と同じ #searchPic() で行い（crypto:true 構成なら #decryptPic() での復号まで）、store（aFx）
-//	には解決済み URL を積む（bldFx() 直後は生の fn＝T_FX.texFn のまま＝ここは純粋関数で I/O を
-//	持たない）。テクスチャのロードは非同期（FxRunner.ts）だが、ロード完了までは 1×1 透明テクスチャを
-//	束の間サンプルするだけ＝画面が一瞬崩れることはない
+//	                                     作者が uniform sampler2D uTex2; を宣言した時だけ意味を持つ。
+//	                                     詳細・パス解決の流儀は下記 T_FX.tex/texSrc のコメント参照）
 //	[def_fx] は組み込みプリセットと同じく **HEAD（precision／上記共通 uniform／varying の宣言）を
 //	FxRunner が前置する**（[trans glsl=] は自前で書くが、[def_fx] は「プリセット追加」なので統一）。
 //	作者が書くのは main() と固有 uniform だけ（共通分を再宣言するとコンパイルエラー）。
@@ -150,19 +143,20 @@ export type T_FX = {
 	enabled	: boolean;	// [pause_fx]/[resume_fx]。false でそのパスの rAF を止める（記述子は残す。tick は凍結）
 	params	: {[k: string]: number};	// スカラ入力ポート（amp/freq/shift/p1〜p4。A_FX_PARAM の範囲）
 	color?	: readonly [number, number, number];	// color=（uniform vec3 color。0..1 RGB）。未指定は uniform へ vec3(0)
-	// tex=（uniform sampler2D uTex2）。aLay の fn/src と同じ「論理名／解決済み URL を分けて持つ」
-	//	流儀：texFn が bldFx() の返す生の論理名（fn= と同じ path.json 参照。以後書き換えない）、
-	//	tex が ScriptMng.#applyAction() が #searchPic()（＋crypto:true なら #decryptPic()）で
-	//	都度解決した URL（FxRunner はこちらだけを読む）。texFn を残しておくのは、crypto:true 構成の
-	//	Blob URL が URL.createObjectURL() のドキュメント寿命限り＝[load] 復元直後は前セッションの
-	//	死んだ Blob URL のことがあるため、ScriptMng.#refreshCryptoAssets() が texFn から
-	//	tex を再解決できるようにするため（aLay.fn/src が [dump_lay]・デバッグ用に残るのと同じ理由に
-	//	もう一つ「再解決の種」という役目が増えた形。ScriptMng.ts 参照）
-	texFn?	: string;
-	tex?	: string;
-	// 【アプリ間の可搬性】非 crypto 構成の #searchPic() が返す URL は sys.arg.cur（プロジェクトルート
+	// tex=（uniform sampler2D uTex2）。aLay の fn/src・[lay b_pic=]の b_pic/b_src と同じ
+	//	「論理名／解決済み URL を分けて持つ」流儀：tex が bldFx() の返す生の論理名（fn= と同じ
+	//	path.json 参照。以後書き換えない）、texSrc が ScriptMng.#applyAction() が #searchPic()
+	//	（＋crypto:true なら #decryptPic()）で都度解決した URL（FxRunner はこちらだけを読む）。
+	//	tex を残しておくのは、crypto:true 構成の Blob URL が URL.createObjectURL() のドキュメント
+	//	寿命限り＝[load] 復元直後は前セッションの死んだ Blob URL のことがあるため、
+	//	ScriptMng.#refreshCryptoAssets() が tex から texSrc を再解決できるようにするため
+	//	（aLay.fn/src が [dump_lay]・デバッグ用に残るのと同じ理由に、もう一つ「再解決の種」
+	//	という役目が増えた形。ScriptMng.ts 参照）。
+	//	【アプリ間の可搬性】非 crypto 構成の #searchPic() が返す URL は sys.arg.cur（プロジェクトルート
 	//	からの相対パス。例 "prj/xxx/mat/f_fog.png"）ベース＝絶対パス・ホスト名を含まず、[export_data]/
 	//	[import_data] で別マシン・別OSへ持って行っても崩れない（aLay.src と全く同じ性質）
+	tex?	: string;
+	texSrc?	: string;
 	// [def_fx pad=]／[def_fx pad_b=]（基本画像**高さ**に対する比率）。fx キャンバスを
 	//	naturalW/H の外側へ広げ、立ち絵レイヤをそのまま（別レイヤや余白 png 無しで）
 	//	画像の枠外までシェーダ出力できるようにする（オーラ等）。上左右は pad、下端は padB。
@@ -245,10 +239,10 @@ export function bldFx(args: {[k: string]: string}, hDefFx?: {readonly [name: str
 		enabled	: (args.enabled ?? 'true') !== 'false',	// [add_fx enabled=false] で止まった状態から始めることも一応可
 		params,
 		...(args.color !== undefined ? {color: parseRGB(args.color)} : {}),
-		// tex=（uniform sampler2D uTex2）。ここでは生の論理名（texFn）として持つだけ（パス解決・
-		//	crypto復号はScriptMng.#applyAction()の仕事。pure な bldFx() は I/O をしない）。
-		//	tex（解決済み）は ScriptMng が texFn から作って別途足す
-		...(args.tex !== undefined ? {texFn: args.tex} : {}),
+		// tex=（uniform sampler2D uTex2）。ここでは生の論理名として持つだけ（パス解決・crypto復号は
+		//	ScriptMng.#applyAction()の仕事。pure な bldFx() は I/O をしない）。
+		//	texSrc（解決済み）は ScriptMng が tex から作って別途足す
+		...(args.tex !== undefined ? {tex: args.tex} : {}),
 		// [def_fx pad=／pad_b=] 宣言ぶんの余白（基本画像高さ比）。0／未宣言は持たない
 		...(meta.pad ? {pad: meta.pad} : {}),
 		...(meta.padB ? {padB: meta.padB} : {}),

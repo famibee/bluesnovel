@@ -4439,45 +4439,45 @@ var Co = class f {
 		this.#P = !1, this.#M();
 	}
 	async #Ve() {
-		let { fore: e, back: t } = this.$fncs.getPages();
-		for (let [n, a] of [[e, "fore"], [t, "back"]]) for (let e of n) if (i(e)) {
-			if (e.fn) {
+		let { fore: e, back: t } = this.$fncs.getPages(), n = [];
+		for (let [a, o] of [[e, "fore"], [t, "back"]]) for (let e of a) if (i(e)) {
+			e.fn && n.push((async () => {
 				let [t, n] = await Promise.all([this.#Ze(this.#Ye("lay", e.fn)), Promise.all(e.aFace.map(async (e) => ({
 					...e,
 					src: await this.#Ze(this.#Ye("add_face", e.fn))
 				})))]);
 				this.$fncs.chgPic({
 					nm: e.nm,
-					page: a,
+					page: o,
 					fn: e.fn,
 					src: t,
 					isSheet: e.isSheet,
 					isMovie: e.isMovie,
 					aFace: n
 				});
-			}
-			if (e.aFx) for (let t of e.aFx) {
-				if (!t.texFn) continue;
-				let n = await this.#et(t.texFn);
-				this.$fncs.chgFx({
+			})());
+			for (let t of e.aFx ?? []) {
+				let r = t.tex;
+				r && n.push(this.#et(r).then((n) => this.$fncs.chgFx({
 					aLayNm: [e.nm],
-					page: a,
+					page: o,
 					mode: "add",
 					fx: {
 						...t,
-						tex: n
+						texSrc: n
 					}
-				});
+				})));
 			}
-		} else if (r(e) && e.b_pic) {
-			let t = await this.#Ze(this.#Ye("lay", e.b_pic));
-			this.$fncs.chgBPic({
+		} else if (r(e)) {
+			let t = e.b_pic;
+			t && n.push(this.#Ze(this.#Ye("lay", t)).then((n) => this.$fncs.chgBPic({
 				nm: e.nm,
-				page: a,
-				fn: e.b_pic,
-				src: t
-			});
+				page: o,
+				fn: t,
+				src: n
+			})));
 		}
+		await Promise.all(n);
 	}
 	async #He(e) {
 		try {
@@ -4550,8 +4550,7 @@ var Co = class f {
 	#Qe = /* @__PURE__ */ new Map();
 	#$e = /* @__PURE__ */ new Map();
 	#et(e) {
-		let t = this.#Ye("add_fx", e);
-		return this.sys.crypto ? this.#Ze(t) : Promise.resolve(t);
+		return this.#Ze(this.#Ye("add_fx", e));
 	}
 	#tt = /* @__PURE__ */ new Map();
 	#nt() {
@@ -4792,7 +4791,7 @@ var Co = class f {
 				p(e.name, e.glsl);
 				break;
 			case "addFx": {
-				if (e.fx.texFn === void 0) {
+				if (e.fx.tex === void 0) {
 					this.$fncs.chgFx({
 						aLayNm: e.aLayNm,
 						page: e.page,
@@ -4801,31 +4800,18 @@ var Co = class f {
 					}), this.#pe(e);
 					break;
 				}
-				if (!this.sys.crypto) {
-					let t = this.#Ye("add_fx", e.fx.texFn);
-					this.$fncs.chgFx({
-						aLayNm: e.aLayNm,
-						page: e.page,
-						mode: "add",
-						fx: {
-							...e.fx,
-							tex: t
-						}
-					}), this.#pe(e);
-					break;
-				}
 				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#$e.get(t) ?? 0) + 1;
-				this.#$e.set(t, n), this.#et(e.fx.texFn).then((r) => {
+				this.#$e.set(t, n), this.#et(e.fx.tex).then((r) => {
 					this.#$e.get(t) === n && this.$fncs.chgFx({
 						aLayNm: e.aLayNm,
 						page: e.page,
 						mode: "add",
 						fx: {
 							...e.fx,
-							tex: r
+							texSrc: r
 						}
 					});
-				}).catch((t) => this.myTrace(`[add_fx] tex= の復号に失敗しました fn:${e.fx.texFn} ${String(t)}`, "E")), this.#pe(e);
+				}).catch((t) => this.myTrace(`[add_fx] tex= の解決に失敗しました fn:${e.fx.tex} ${String(t)}`, "E")), this.#pe(e);
 				break;
 			}
 			case "clearFx":

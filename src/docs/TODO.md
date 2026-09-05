@@ -18,26 +18,15 @@
 
 - [ ] （優先度低）フィルタ `color_tone` の色味差（pixi シェーダの `rgb *= result.a` を feColorMatrix で表現できない。マルチプリミティブ構成なら近似可）。詳細 [filters.md](filters.md)
 - [ ] （優先度低）`[add_filter] blur` の`repeat_edge_pixels` 近似余地（SVG `feGaussianBlur` の `edgeMode`。**静的フィルタの話で `[add_fx fx=blur]` とは別件**）。詳細 [filters.md](filters.md)
-
-## WebGL エフェクト
-
-コードを追った実現性検討は [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) の §6・§7。gl-react/R3F は不要。
-`[trans] glsl=` は実装済み（`src/ts/TransGlsl.ts`。§7）。
-
-### シェーダエフェクト（`[add_fx]` 一族）— 正式化（2026-08-28）
-
-`[def_fx]`/`[add_fx]`/`[clear_fx]`/`[wait_fx]`/`[pause_fx]`/`[resume_fx]`、組み込みプリセット
-wave / rgbShift / snow / rain / fireworks / blur / grayscale / sepia、生シェーダは `[def_fx name= glsl=]` でユーザープリセット定義
-（契約は `[trans glsl=]` と統一・HEAD 自動前置・セーブ非対象＝起動スクリプトで再定義する運用）、
-基本画像は静止画・アニメ png シート・動画
-いずれも可、face 合成（静止＋アニメ png シート＋動画＝毎フレーム転写）、`[trans]` 後の不可視 back
-ページで rAF 凍結、構成切替で一瞬消えない（fx 変化は canvas を作り直さず同コンテキストでプログラム
-組み直し）——ここまで実装済み（`test/ScriptEngine_fx.test.ts`＋`test/store_lay.test.ts`＋
-`test/e2e/fx.e2e.ts`）。設計・GLSL 契約・棲み分けは [ANIMATION_RESEARCH.md](ANIMATION_RESEARCH.md) §7。
-
-プリセット追加はここで一区切り（組み込み：wave/rgbShift/snow/rain/fireworks/blur/grayscale/sepia/
-negative/tint。sn_gallery `[def_fx]` デモ：stand_aura/fire 系/hanafubuki/rain_window/tile）。
-以降は候補を積まず、要る時に個別に追加する。
+- [ ] （優先度低）`ScriptMng.#refreshCryptoAssets()` の一般化：今は grp レイヤの基本画像・face・
+      `[add_fx tex=]`・文字レイヤ `b_pic` を個別に列挙する専用メソッドになっており、新しい fn/src 型
+      フィールドが増えるたびここへ追記が要る。理想は `[load]` 復元後に `chgPic`/`chgBPic`/`addFx`
+      相当のアクションを合成し、既存の `#applyAction()` 経由で流す形（解決ロジックを1箇所に保つ）。
+      2026-09-05 の `/simplify`（altitude 観点）で指摘・見送り（アクション経路を変える改修になるため）
+- [ ] （優先度低）`[lay b_pic=]`（`chgBPic`）のライブ経路が `crypto:true` 構成で復号していない
+      （`#searchPic()` のみで `#decryptPic()` を通さない。`chgPic` は通す）。`#refreshCryptoAssets()`
+      側は復号している＝ライブ実行と `[load]` 復元とで挙動が非対称。`chgBPic` にも `chgPic` と同じ
+      復号分岐を足すのが筋。2026-09-05 の `/simplify` で発見・見送り（正当性修正のため対象外にした）
 
 ## 保留
 
