@@ -264,8 +264,10 @@ it('dumpStack_showsPositionAndStacks', ()=> {
 [return]`);
 	const t = se.step().find(v=> v.t === 'trace');
 	const o = JSON.parse(t!.text.slice('[dump_stack] '.length)) as {
-		now: {fn: string}; aCallStk: {fn: string}[]; aIfStk: number[]};
+		now: {fn: string; line: number; col: number}; aCallStk: {fn: string}[]; aIfStk: number[]};
 	expect(o.now.fn).toBe('t1');
+	expect(o.now.line).toBe(3);			// [dump_stack] は3行目
+	expect(o.now.col).toBe(2);			// 行頭のタブ1つ分の次（1始まり）
 	expect(o.aCallStk).toHaveLength(1);	// [call]で1段積まれている
 	expect(o.aIfStk).toEqual([-1]);		// [call]が積む「壁」
 });

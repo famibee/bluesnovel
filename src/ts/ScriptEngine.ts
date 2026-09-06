@@ -755,6 +755,20 @@ export class ScriptEngine {
 	// [log]の表示用（本家 ScriptIterator.lineNum 相当）。#idxが末尾ちょうど（atEnd）の時は
 	// 1つ前のトークンの行番号を返す（末尾に対応する行番号そのものが無いため）
 	get lineNum() {return this.#script.aLNum[Math.min(this.#idx, this.#script.len -1)] ?? NaN}
+	// 直近に読んだトークン（＝停止タグ[l]/[p]/[s]や[dump_stack]自身）の桁位置（1始まり）。
+	//	本家 ScriptIterator #dump_stack() が出す col:col_s+1 相当。#idxは読んだ次を指すので
+	//	#idx-1がそのトークン。同じ行の先頭トークンから長さを足して桁を得る（純粋計算、状態は持たない）。
+	//	[dump_stack]の桁出力と[dump_script]のbreak_fnc(行,桁,goto)で共用する
+	get colNum() {
+		const i = Math.min(Math.max(this.#idx -1, 0), this.#script.len -1);
+		const ln = this.#script.aLNum[i];
+		if (! Number.isFinite(ln)) return NaN;
+		let j = i;
+		while (j > 0 && this.#script.aLNum[j -1] === ln) --j;
+		let col = 1;
+		for (let k = j; k < i; ++k) col += this.#script.aToken[k]!.length;
+		return col;
+	}
 	get atEnd() {return this.#idx >= this.#script.len}
 
 	// 画像の先読み用：現在位置から次の停止点（[l]/[p]/[s]/[waitclick]）またはスクリプト終端までに
@@ -2381,8 +2395,10 @@ export class ScriptEngine {
 			return 'skip';
 
 		case 'dump_stack':	// スタックのダンプ（本家 ScriptIterator.ts:739 #dump_stack()）
+			// 本家は fn:… line:… col:… まで出す。分家も行・桁までそろえた（col は colNum＝
+			//	トークン長の積算。本家のような実行時の遅延計算はしない簡略版）
 			aAct.push({t: 'trace', text: `[dump_stack] ${JSON.stringify({
-				now		: {fn: this.fn, idx: this.#idx},
+				now		: {fn: this.fn, line: this.lineNum, col: this.colNum},
 				aCallStk: this.#aCallStk.map(cs=> ({fn: cs.fn, returnIdx: cs.returnIdx})),
 				aIfStk	: [...this.#aIfStk],
 			})}`});

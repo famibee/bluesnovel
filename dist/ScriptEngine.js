@@ -1511,6 +1511,15 @@ var Se = class r {
 	get lineNum() {
 		return this.#b.aLNum[Math.min(this.#x, this.#b.len - 1)] ?? NaN;
 	}
+	get colNum() {
+		let e = Math.min(Math.max(this.#x - 1, 0), this.#b.len - 1), t = this.#b.aLNum[e];
+		if (!Number.isFinite(t)) return NaN;
+		let n = e;
+		for (; n > 0 && this.#b.aLNum[n - 1] === t;) --n;
+		let r = 1;
+		for (let t = n; t < e; ++t) r += this.#b.aToken[t].length;
+		return r;
+	}
 	get atEnd() {
 		return this.#x >= this.#b.len;
 	}
@@ -2457,7 +2466,8 @@ var Se = class r {
 				text: `[dump_stack] ${JSON.stringify({
 					now: {
 						fn: this.fn,
-						idx: this.#x
+						line: this.lineNum,
+						col: this.colNum
 					},
 					aCallStk: this.#V.map((e) => ({
 						fn: e.fn,

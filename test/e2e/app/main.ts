@@ -58,12 +58,12 @@ AudioContext.prototype.createGain = function(this: AudioContext) {
 };
 
 // dump_script.e2e.ts用：[dump_script]がglobalThis上のコールバックを本当に呼ぶか、
-//	渡された全文と (行, goto) の履歴を貯めて__sn経由で覗く。関数名 set_ed/break_ed と役割は
-//	sn_gallery/index.html（埋め込みACEエディタ）と同じ。src/側は無改変
+//	渡された全文と (行, 桁, goto) の履歴を貯めて__sn経由で覗く。関数名 set_ed/break_ed と役割は
+//	sn_gallery/index.html（内蔵スクリプトビューア）と同じ。src/側は無改変
 const dumpSet: string[] = [];
-const dumpBreak: {ln: number; goto: boolean}[] = [];
+const dumpBreak: {ln: number; col: number; goto: boolean}[] = [];
 (globalThis as any).set_ed = (txt: string)=> {dumpSet.push(txt)};
-(globalThis as any).break_ed = (ln: number, goto: boolean)=> {dumpBreak.push({ln, goto})};
+(globalThis as any).break_ed = (ln: number, col: number, goto: boolean)=> {dumpBreak.push({ln, col, goto})};
 
 // ?prj=plg だけ本家互換プラグイン機構（SysBase.#initPlg()/addLayCls）の疎通確認用ダミープラグインを注入
 const hPlg = isCrypto ? {snsys_pre: await import('./snsys_pre')}

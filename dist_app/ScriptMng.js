@@ -4978,7 +4978,7 @@ var yo = class p {
 		let n = t.lineNum;
 		if (!Number.isFinite(n)) return;
 		let r = t.fn;
-		r !== this.#ft && (this.#ft = r, this.#ut(this.#pt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#dt?.(n, e);
+		r !== this.#ft && (this.#ft = r, this.#ut(this.#pt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#dt?.(n, t.colNum, e);
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";

@@ -2358,7 +2358,7 @@ export class ScriptMng {
 	//	プレイグラウンドページ（index.html の set_ed / break_ed ＝埋め込み ACE エディタ）。
 	//	set_fnc(全文) はスクリプトが変わった時だけ、break_fnc(行, goto) は停止・再開のたびに呼ぶ
 	#fncDumpSet?	: (txt: string)=> void;
-	#fncDumpBreak?	: (lineNum: number, goto: boolean)=> void;
+	#fncDumpBreak?	: (lineNum: number, colNum: number, goto: boolean)=> void;
 	#fnLastDump		= '';	// 直近に set_fnc へ全文を渡したスクリプト名
 	readonly #hScrCache4Dump: {[fn: string]: string} = Object.create(null);	// fn→全文（本家 :835）
 	#dumpScript(setFnc: string, breakFnc: string, needErr: boolean) {
@@ -2372,7 +2372,7 @@ export class ScriptMng {
 
 		if (breakFnc) {
 			const fBrk = g[breakFnc];
-			if (typeof fBrk === 'function') this.#fncDumpBreak = fBrk as (l: number, gt: boolean)=> void;
+			if (typeof fBrk === 'function') this.#fncDumpBreak = fBrk as (l: number, c: number, gt: boolean)=> void;
 			else if (needErr) this.myTrace(`[dump_script] globalThis に関数 ${breakFnc} が見つかりません`, 'ET');
 		}
 
@@ -2397,7 +2397,8 @@ export class ScriptMng {
 			this.#fnLastDump = fn;
 			this.#fncDumpSet(this.#hScrCache4Dump[fn] ??= this.#hScript[fn]?.aToken.join('') ?? '');
 		}
-		this.#fncDumpBreak?.(ln, goto);
+		// 桁も渡す（停止タグ[l]/[p]の位置を行内で指すため）。ln が有限なら col も有限
+		this.#fncDumpBreak?.(ln, eng.colNum, goto);
 	}
 	readonly	myTrace: T_TRACE = (txt, lvl = 'E')=> {
 		let sty = '';
