@@ -243,10 +243,19 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <li><a href="#wc" data-t="wc [wc] 文字数分のウェイトを入れる">[wc] 文字数分のウェイトを入れる</a></li>
 <li><a href="#plc" data-t="plc [plc] 改ページ">[plc] 改ページ</a></li>
 <li><a href="#after_choice" data-t="after_choice [after_choice] 選択肢直後処理">[after_choice] 選択肢直後処理</a></li>
+<li><a href="#sys_resume_load" data-t="sys_resume_load [sys_resume_load] レジューム処理">[sys_resume_load] レジューム処理</a></li>
+<li><a href="#sys_resume_save" data-t="sys_resume_save [sys_resume_save] レジューム退避処理">[sys_resume_save] レジューム退避処理</a></li>
 <li><a href="#txt_lay_v_left" data-t="txt_lay_v_left [txt_lay_v_left] テキストレイヤ縦書き左設定">[txt_lay_v_left] テキストレイヤ縦書き左設定 <span class="sbadge txt">暫定</span></a></li>
 <li><a href="#txt_lay_v_center" data-t="txt_lay_v_center [txt_lay_v_center] テキストレイヤ縦書き中設定">[txt_lay_v_center] テキストレイヤ縦書き中設定 <span class="sbadge txt">暫定</span></a></li>
 <li><a href="#txt_lay_v_center_wide" data-t="txt_lay_v_center_wide [txt_lay_v_center_wide] テキストレイヤ縦書きwide中設定">[txt_lay_v_center_wide] テキストレイヤ縦書きWide中設定 <span class="sbadge txt">暫定</span></a></li>
 <li><a href="#txt_lay_fullscreen" data-t="txt_lay_fullscreen [txt_lay_fullscreen] テキストレイヤ全画面設定">[txt_lay_fullscreen] テキストレイヤ全画面設定 <span class="sbadge txt">暫定</span></a></li>
+<li><a href="#txt_lay_h_bottom_wide" data-t="txt_lay_h_bottom_wide [txt_lay_h_bottom_wide] テキストレイヤ横書きwide下設定">[txt_lay_h_bottom_wide] テキストレイヤ横書きWide下設定 <span class="sbadge txt">暫定</span></a></li>
+<li><a href="#txt_lay_window_top" data-t="txt_lay_window_top [txt_lay_window_top] テキストレイヤ横書き上小窓設定">[txt_lay_window_top] テキストレイヤ横書き上小窓設定 <span class="sbadge txt">暫定</span></a></li>
+<li><a href="#txt_lay_window_bottom" data-t="txt_lay_window_bottom [txt_lay_window_bottom] テキストレイヤ横書き下小窓設定">[txt_lay_window_bottom] テキストレイヤ横書き下小窓設定 <span class="sbadge txt">暫定</span></a></li>
+<li><a href="#txt_lay_window_middle" data-t="txt_lay_window_middle [txt_lay_window_middle] テキストレイヤ横書き中央小窓設定">[txt_lay_window_middle] テキストレイヤ横書き中央小窓設定 <span class="sbadge txt">暫定</span></a></li>
+<li><a href="#sysmenu_draw_v" data-t="sysmenu_draw_v [sysmenu_draw_v] システムメニュー描画処理（縦書き）">[sysmenu_draw_v] システムメニュー描画処理（縦書き）</a></li>
+<li><a href="#sysmenu_draw_h" data-t="sysmenu_draw_h [sysmenu_draw_h] システムメニュー描画処理（横書き）">[sysmenu_draw_h] システムメニュー描画処理（横書き）</a></li>
+<li><a href="#sys_menu" data-t="sys_menu [sys_menu] システムメニュー表示切り替え">[sys_menu] システムメニュー表示切り替え</a></li>
 <li><a href="#grp" data-t="grp [grp] 場面転換">[grp] 場面転換</a></li>
 <li><a href="#bgm" data-t="bgm [bgm] ｂｇｍ切り替え">[bgm] ＢＧＭ切り替え</a></li>
 <li><a href="#se" data-t="se [se] 効果音を再生">[se] 効果音を再生</a></li>
@@ -264,11 +273,30 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <li><a href="#fg_squat" data-t="fg_squat [fg_squat] レイヤを屈伸させる">[fg_squat] レイヤを屈伸させる</a></li>
 <li><a href="#fg_shake" data-t="fg_shake [fg_shake] レイヤを震わせる">[fg_shake] レイヤを震わせる</a></li>
 <li><a href="#fg_sidestep" data-t="fg_sidestep [fg_sidestep] レイヤを反復横跳びさせる">[fg_sidestep] レイヤを反復横跳びさせる</a></li>
+<li><a href="#zoom_tsy" data-t="zoom_tsy [zoom_tsy] ズームイン・アウトのトゥイーン">[zoom_tsy] ズームイン・アウトのトゥイーン</a></li>
+</ul>
+<p class="side-h"><a href="#sec-fg2">ext_fg2.sn の定義マクロ</a></p>
+<ul>
+<li><a href="#fg2" data-t="fg2 [fg2] 立ち絵の扱いが簡単な[fg]">[fg2] 立ち絵の扱いが簡単な[fg]</a></li>
+<li><a href="#fg2_squat" data-t="fg2_squat [fg2_squat] 立ち絵を屈伸させる">[fg2_squat] 立ち絵を屈伸させる</a></li>
+<li><a href="#fg2_shake" data-t="fg2_shake [fg2_shake] 立ち絵を震わせる">[fg2_shake] 立ち絵を震わせる</a></li>
+<li><a href="#fg2_sidestep" data-t="fg2_sidestep [fg2_sidestep] 立ち絵を反復横跳びさせる">[fg2_sidestep] 立ち絵を反復横跳びさせる</a></li>
+</ul>
+<p class="side-h"><a href="#sec-voice">ext_voice.sn の定義マクロ</a></p>
+<ul>
+<li><a href="#voice" data-t="voice [voice] 音声を再生">[voice] 音声を再生</a></li>
+<li><a href="#repeat_voice" data-t="repeat_voice [repeat_voice] あの素晴らしい声をもう一度">[repeat_voice] あの素晴らしい声をもう一度</a></li>
+<li><a href="#voice_ex" data-t="voice_ex [voice_ex] 連番ファイル名の音声を再生">[voice_ex] 連番ファイル名の音声を再生</a></li>
+<li><a href="#voice_ex_set" data-t="voice_ex_set [voice_ex_set] 内部カウンターを変更する">[voice_ex_set] 内部カウンターを変更する</a></li>
 </ul>
 <p class="side-h"><a href="#sec-4">ext_for_call.sn の定義マクロ</a></p>
 <ul>
 <li><a href="#for_call" data-t="for_call [for_call] 変数の値を増やしながら[call]する">[for_call] 変数の値を増やしながら[call]する</a></li>
 <li><a href="#for_call_break" data-t="for_call_break [for_call_break] ループを中断する">[for_call_break] ループを中断する</a></li>
+</ul>
+<p class="side-h"><a href="#sec-main">main.sn の定義マクロ</a></p>
+<ul>
+<li><a href="#lr" data-t="lr [lr] クリック待ち改行">[lr] クリック待ち改行</a></li>
 </ul>
 <p class="side-h"><a href="#sec-5">humaneプラグイン</a></p>
 <ul>
@@ -280,7 +308,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h1 class="doc-title">マクロ・プラグイン</h1>
 <aside class="callout warn">
 このページが載せているのは <b>UC サンプル（『櫻の樹の下には』）用テンプレート</b>の定義マクロです。テンプレートは本家 SKYNovel と共通で、bluesnovel でもそのまま動きます。<br>
-<b>未掲載のマクロがあります</b>——<code>[fg2]</code>系・<code>[voice]</code>系・<code>[sys_resume_load/save]</code>・<code>[sysmenu_draw_h]</code>・<code>[txt_lay_h_bottom_wide]</code>・<code>[txt_lay_window_*]</code>・<code>[zoom_tsy]</code>・<code>[lr]</code> など。一次情報は各テンプレ <code>.sn</code> の <code>;@</code> コメント。<br>
+一次情報は各テンプレ <code>.sn</code> の <code>;@</code> コメント（本家 <code>tmp_esm_uc/doc/prj/</code> と分家 <code>tmp_blues/doc/prj/</code> でマクロ一覧は一致）。掲載は代表的なもののみで、内部用マクロ（<code>[fg2_ini_save_const]</code>・<code>[fg2_attention]</code> など）は割愛しています。<br>
 <code>[sysmenu_draw]</code> は現行テンプレでは <code>[sysmenu_draw_v]</code>（縦書き）/<code>[sysmenu_draw_h]</code>（横書き）に分かれています。
 </aside>
 <h2 class="sec" id="sec-1">sub.sn の定義マクロ</h2>
@@ -309,6 +337,15 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h3 class="tag" id="after_choice"><a class="hash" href="#after_choice" tabindex="-1" aria-hidden="true">#</a><span class="tn">[after_choice]</span> <span class="td">選択肢直後処理</span></h3>
 <p class="lead">[<a href="tag.html#link">link</a>]など選択肢直後にコールする。</p>
 <p>引数無し。<br/> [<a href="tag.html#record_place">record_place</a>]などを呼んでいます。</p>
+<h3 class="tag" id="sys_resume_load"><a class="hash" href="#sys_resume_load" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sys_resume_load]</span> <span class="td">レジューム処理</span></h3>
+<p class="lead">前回終了ポイントからの再開（レジューム）を行なう。</p>
+<p>引数無し。<br/> <code>sys:doResume</code> が false なら何もせず抜ける。<br/> <code>autoResume</code> が false のときは [<a href="#ask_ync">ask_ync</a>] で「前回終了ポイントから再開しますか？」と確認し、「いいえ」なら抜ける。<br/> 再開する場合は <code>_archive.sn</code> の <code>*do_load_resume</code> へジャンプする。<br/> <br/> テンプレでは <code>main.sn</code> の起動処理末尾で <code>[sys_resume_load cond=!const.sn.key.escape]</code> として呼んでいる（Esc 押下起動でレジュームを飛ばせる）。</p>
+<h3 class="tag" id="sys_resume_save"><a class="hash" href="#sys_resume_save" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sys_resume_save]</span> <span class="td">レジューム退避処理</span></h3>
+<p class="lead">現在のゲーム状態をレジューム用スロットへ退避する。</p>
+<p>引数無し。<br/> <code>_archive.sn</code> の <code>*do_save_resume</code> を [<a href="tag.html#call">call</a>] する。<br/> テンプレでは [<a href="#plc">plc</a>]（改ページ）と [<a href="#after_choice">after_choice</a>]（選択肢直後）から呼ばれる。</p>
+<aside class="callout warn">
+[sys_resume_save] より後ろに書いた処理は、レジュームロード時には実行されない（そこを通らずに復帰する）。ロード後に必ず通したい共通処理は <code>_archive.sn</code> の <code>*do_load_init</code> に書く。
+</aside>
 <h3 class="tag" id="txt_lay_v_left"><a class="hash" href="#txt_lay_v_left" tabindex="-1" aria-hidden="true">#</a><span class="tn">[txt_lay_v_left]</span> <span class="td">テキストレイヤ縦書き左設定</span></h3>
 <p class="lead">文字レイヤを設定する。サンプルゲーム「櫻の樹の下には」の縦書き設定。</p>
 <p>このマクロで文字レイヤ（page=back）に設定しておき、<br/> <a href="#grp" target="_blank" rel="noopener">[grp]</a>で場面転換と共に文字レイヤの設定を変えるような使い方をする</p>
@@ -355,15 +392,39 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 	<tr><td>b_color</td><td></td><td>0x000000</td><td>色指定。0x000000など</td><td>テキストウインドウの背景色</td></tr>
 	<tr><td>b_alpha</td><td></td><td>sys:TextLayer.Back.Alpha</td><td>0.0〜1.0（実数）</td><td>テキストウインドウの背景の透過度。<br/>0（完全透明）〜0.5（半透明）〜1（不透明）</td></tr>
 	</table></div>
-<h3 class="tag" id="sysmenu_draw"><a class="hash" href="#sysmenu_draw" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sysmenu_draw]</span> <span class="td">システムメニュー描画処理</span></h3>
-<p class="lead">文字レイヤ mes_sysmenu に表示するシステムメニューを設定する。</p>
-<p>このマクロを改造し、ボタンの画像変更・位置変更・増減を行える。</p>
+<h3 class="tag" id="txt_lay_h_bottom_wide"><a class="hash" href="#txt_lay_h_bottom_wide" tabindex="-1" aria-hidden="true">#</a><span class="tn">[txt_lay_h_bottom_wide]</span> <span class="td">テキストレイヤ横書きWide下設定</span></h3>
+<p class="lead">文字レイヤを設定する。「<a href="#txt_lay_fullscreen" target="_blank" rel="noopener">txt_lay_fullscreen（テキストレイヤ全画面設定）</a>」を画面下に移動し、幅を広げたもの。</p>
+<p>実体は <code>[txt_lay_fullscreen * t=472 h=266 max_row=6]</code>。引数（layer / page / visible / fcol / b_color / b_alpha / style / r_style / r_align など）は [<a href="#txt_lay_fullscreen">txt_lay_fullscreen</a>] と同じで、指定すればそのまま渡される。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>t</td><td></td><td>472</td><td>実数</td><td>テキストウインドウの上端</td></tr>
+	</table></div>
+<h3 class="tag" id="txt_lay_window_top"><a class="hash" href="#txt_lay_window_top" tabindex="-1" aria-hidden="true">#</a><span class="tn">[txt_lay_window_top]</span> <span class="td">テキストレイヤ横書き上小窓設定</span></h3>
+<p class="lead">画面上端に寄せた横書きの小窓テキストレイヤ。</p>
+<p>実体は <code>[txt_lay_fullscreen]</code> を座標指定つきで呼ぶラッパー（各座標は 1.28 倍でスケール、<code>sysmenu_top=-200</code> でシステムメニューを窓の上へ寄せる）。引数は [<a href="#txt_lay_fullscreen">txt_lay_fullscreen</a>] と同じ（layer / page / visible / fcol / b_color / b_alpha / style / r_style / r_align など）。</p>
+<h3 class="tag" id="txt_lay_window_bottom"><a class="hash" href="#txt_lay_window_bottom" tabindex="-1" aria-hidden="true">#</a><span class="tn">[txt_lay_window_bottom]</span> <span class="td">テキストレイヤ横書き下小窓設定</span></h3>
+<p class="lead">画面下端に寄せた横書きの小窓テキストレイヤ。</p>
+<p>実体は座標指定つきの <code>[txt_lay_fullscreen]</code> ラッパー。引数は [<a href="#txt_lay_fullscreen">txt_lay_fullscreen</a>] と同じ。</p>
+<h3 class="tag" id="txt_lay_window_middle"><a class="hash" href="#txt_lay_window_middle" tabindex="-1" aria-hidden="true">#</a><span class="tn">[txt_lay_window_middle]</span> <span class="td">テキストレイヤ横書き中央小窓設定</span></h3>
+<p class="lead">画面中央に寄せた横書きの小窓テキストレイヤ。</p>
+<p>実体は座標指定つきの <code>[txt_lay_fullscreen]</code> ラッパー。引数は [<a href="#txt_lay_fullscreen">txt_lay_fullscreen</a>] と同じ。</p>
+<h3 class="tag" id="sysmenu_draw_v"><a class="hash" href="#sysmenu_draw_v" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sysmenu_draw_v]</span> <span class="td">システムメニュー描画処理（縦書き）</span></h3>
+<p class="lead">文字レイヤ mes_sysmenu に表示する縦書き用システムメニューを設定する。</p>
+<p>このマクロを改造し、ボタンの画像変更・位置変更・増減を行える。<br/> [<a href="#txt_lay_v_left">txt_lay_v_left</a>] 系の縦書きテキストレイヤ設定から呼ばれる。<code>useSysMenu</code> が false なら何もしない。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>no_sysmenu_draw</td><td></td><td>なにもしない</td><td>Boolean</td><td>trueを指定すると、次の<a href="#grp">[grp]</a>などでの文字レイヤ<a href="tag.html#trans">[trans]</a>などでシステムメニューを表示しない</td></tr>
+	</table></div>
+<h3 class="tag" id="sysmenu_draw_h"><a class="hash" href="#sysmenu_draw_h" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sysmenu_draw_h]</span> <span class="td">システムメニュー描画処理（横書き）</span></h3>
+<p class="lead">文字レイヤ mes_sysmenu に表示する横書き用システムメニューを設定する。</p>
+<p>[<a href="#sysmenu_draw_v">sysmenu_draw_v</a>] の横書き版。ボタンを回転させず横一列に並べる。<br/> [<a href="#txt_lay_fullscreen">txt_lay_fullscreen</a>] / [<a href="#txt_lay_h_bottom_wide">txt_lay_h_bottom_wide</a>] 系の横書きテキストレイヤ設定から呼ばれる。<code>useSysMenu</code> が false なら何もしない。</p>
 <div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 	<tr><td>no_sysmenu_draw</td><td></td><td>なにもしない</td><td>Boolean</td><td>trueを指定すると、次の<a href="#grp">[grp]</a>などでの文字レイヤ<a href="tag.html#trans">[trans]</a>などでシステムメニューを表示しない</td></tr>
 	</table></div>
 <h3 class="tag" id="sys_menu"><a class="hash" href="#sys_menu" tabindex="-1" aria-hidden="true">#</a><span class="tn">[sys_menu]</span> <span class="td">システムメニュー表示切り替え</span></h3>
-<p class="lead">文字レイヤ mes_sysmenu に表示するシステムメニューを設定する。</p>
+<p class="lead">文字レイヤ mes_sysmenu のシステムメニューを表示／非表示する。</p>
 <p>このマクロを改造し、ボタンの画像変更・位置変更・増減を行える。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>visible</td><td></td><td>true</td><td>Boolean</td><td>true：表示、false：非表示（<code>useSysMenu</code> が true のときのみ効く）</td></tr>
+	</table></div>
 <h3 class="tag" id="grp"><a class="hash" href="#grp" tabindex="-1" aria-hidden="true">#</a><span class="tn">[grp]</span> <span class="td">場面転換</span></h3>
 <p class="lead">画面を暗転し背景を変更する。</p>
 <p>文字レイヤをフェードアウトし、<br/> クロスフェードしながら背景画像（レイヤ名baseの画像レイヤ）を変更、<br/> 前景レイヤ（レイヤ名0〜2の画像レイヤ）をクリアor画像変更し、<br/> 文字レイヤをフェードインする。</p>
@@ -473,6 +534,94 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h3 class="tag" id="fg_sidestep"><a class="hash" href="#fg_sidestep" tabindex="-1" aria-hidden="true">#</a><span class="tn">[fg_sidestep]</span> <span class="td">レイヤを反復横跳びさせる</span></h3>
 <p class="lead">クロスフェードしながらレイヤ画像を変更する</p>
 <div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr><tr><td>layer</td><td></td><td>0</td><td>レイヤ名</td><td>処理対象のレイヤ</td></tr><tr><td>time</td><td></td><td>250</td><td>ミリ秒数</td><td>一動作にかける時間（実際に掛かる時間 = time * 4）</td></tr><tr><td>x</td><td></td><td>25</td><td>ドット数</td><td>左右へ揺らす移動量</td></tr><tr><td><span class="must">必須</span></td><td></td><td>25</td><td>ドット数</td><td>下へ沈ませる移動量</td></tr><tr><td>repeats</td><td></td><td>1</td><td>0〜（整数）</td><td>繰返し回数。0は無限ループ</td></tr><tr><td>no_wait</td><td></td><td>false</td><td>Boolean</td><td>trueを指定すると、終了を待たない</td></tr></table></div>
+<h3 class="tag" id="zoom_tsy"><a class="hash" href="#zoom_tsy" tabindex="-1" aria-hidden="true">#</a><span class="tn">[zoom_tsy]</span> <span class="td">ズームイン・アウトのトゥイーン</span></h3>
+<p class="lead">レイヤをレイヤ中心を軸にズームさせながら出現／退場させる。</p>
+<p>visible=true なら拡大率 0.5→1 で出現、false なら 1→0.5 で退場（退場後 visible=false）。トゥイーンは <code>Back.InOut</code> で行ない、[<a href="tag.html#wait_tsy">wait_tsy</a>] で終了を待つ。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>layer</td><td></td><td>0</td><td>レイヤ名</td><td>処理対象のレイヤ</td></tr>
+	<tr><td>fn</td><td></td><td>レイヤをクリア</td><td>差分名称（カンマ区切りで複数可）</td><td>基本画像ファイルを指定する</td></tr>
+	<tr><td>time</td><td></td><td>250</td><td>0〜；ミリ秒</td><td>一動作にかける時間（実際に掛かる時間 = time * 4）</td></tr>
+	<tr><td>visible</td><td></td><td>true</td><td>Boolean</td><td>true：ズームインで表示、false：ズームアウトで非表示</td></tr>
+	<tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>値変化のイージング（値の変化の仕方）を指定する</td></tr>
+	</table></div>
+
+<h2 class="sec" id="sec-fg2">ext_fg2.sn の定義マクロ</h2>
+<p>立ち絵を【名前】で扱う簡易 [<a href="#fg">fg</a>]。表示中の立ち絵を画面幅で自動的に均等配置し、<code>add</code>／<code>del</code>／<code>swap</code> で出し入れする。<code>const.fg2_attention_filter</code> を立てると「最後に動いた立ち絵」を目立たせ、他を暗くできる（フィルタ名は <code>sn.fg2.attention_filter</code>）。同時表示できるレイヤ数はレイヤ 0〜2（自動調査で増やせる）。</p>
+<h3 class="tag" id="fg2"><a class="hash" href="#fg2" tabindex="-1" aria-hidden="true">#</a><span class="tn">[fg2]</span> <span class="td">立ち絵の扱いが簡単な[fg]</span></h3>
+<p class="lead">レイヤ画像を変更する。立ち絵の扱いが簡単な [<a href="#fg">fg</a>]。</p>
+<p>画像ファイル名は【名前_表情やポーズ】形式。同じ【名前】を再指定すると既存レイヤの差分だけ差し替え、未登場なら空きレイヤへ [<a href="tag.html#tsy">tsy</a>] で移動＋フェードインする。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>fn</td><td></td><td></td><td>【名前_表情やポーズ】形式の画像ファイル名</td><td>差分名称（カンマ区切りで複数可）</td></tr>
+	<tr><td>face</td><td></td><td>何もしない</td><td>差分名称（カンマ区切りで複数可）</td><td>差分名称または画像ファイル名。<code>[fg2 fn="a" face="b,c,d"]</code> なら「基本a」の上に b, c, d を順に重ねる</td></tr>
+	<tr><td>add</td><td></td><td>自動で追加位置を決定</td><td>l、cl、c、cr、r</td><td>追加位置ヒント。左／中左／中央／中右／右への追加をうながす</td></tr>
+	<tr><td>del</td><td></td><td>なにもしない</td><td>追加時の【名前】</td><td>指定した立ち絵を削除する</td></tr>
+	<tr><td>swap</td><td></td><td>なにもしない</td><td>追加時の【名前】</td><td>fnと同時に指定すると、swapを退場・fnを入場と入れ替わりに出現させる</td></tr>
+	<tr><td>alpha</td><td></td><td>1.0</td><td>0.0〜1.0（実数）</td><td>フェードイン先の透過度</td></tr>
+	<tr><td>time</td><td></td><td>500</td><td>0〜；ミリ秒</td><td>移動・フェードにかける時間</td></tr>
+	<tr><td>ease</td><td></td><td>Cubic.Out</td><td>イージング名</td><td>移動のイージング</td></tr>
+	</table></div>
+<h3 class="tag" id="fg2_squat"><a class="hash" href="#fg2_squat" tabindex="-1" aria-hidden="true">#</a><span class="tn">[fg2_squat]</span> <span class="td">立ち絵を屈伸させる</span></h3>
+<p class="lead">【名前】で指定した立ち絵を屈伸させる。[<a href="#fg_squat">fg_squat</a>] を名前引きで呼ぶラッパー。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr class="y"><td>name</td><td><span class="must">必須</span></td><td></td><td>追加時の【名前】</td><td>対象の立ち絵</td></tr>
+	<tr><td>time</td><td></td><td>250</td><td>0〜；ミリ秒</td><td>変化にかける時間</td></tr>
+	<tr><td>y</td><td></td><td>50</td><td>ドット数</td><td>下へ沈ませる移動量</td></tr>
+	<tr><td>ease</td><td></td><td>Linear.None</td><td>イージング名</td><td>揺れのイージング</td></tr>
+	<tr><td>repeats</td><td></td><td>1</td><td>0〜（整数）</td><td>繰返し回数。0は無限ループ</td></tr>
+	<tr><td>no_wait</td><td></td><td>false</td><td>Boolean</td><td>trueを指定すると、終了を待たない</td></tr>
+	</table></div>
+<h3 class="tag" id="fg2_shake"><a class="hash" href="#fg2_shake" tabindex="-1" aria-hidden="true">#</a><span class="tn">[fg2_shake]</span> <span class="td">立ち絵を震わせる</span></h3>
+<p class="lead">【名前】で指定した立ち絵を震わせる。[<a href="#fg_shake">fg_shake</a>] を名前引きで呼ぶラッパー。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr class="y"><td>name</td><td><span class="must">必須</span></td><td></td><td>追加時の【名前】</td><td>対象の立ち絵</td></tr>
+	<tr><td>time</td><td></td><td>250</td><td>0〜；ミリ秒</td><td>ひと揺れにかける時間（実際に掛かる時間 = time * repeats * 5）</td></tr>
+	<tr><td>x</td><td></td><td>5</td><td>ドット数</td><td>左右へ揺らす最大移動量</td></tr>
+	<tr><td>repeats</td><td></td><td>5</td><td>0〜（整数）</td><td>繰返し回数。0は無限ループ</td></tr>
+	<tr><td>no_wait</td><td></td><td>false</td><td>Boolean</td><td>trueを指定すると、終了を待たない</td></tr>
+	</table></div>
+<h3 class="tag" id="fg2_sidestep"><a class="hash" href="#fg2_sidestep" tabindex="-1" aria-hidden="true">#</a><span class="tn">[fg2_sidestep]</span> <span class="td">立ち絵を反復横跳びさせる</span></h3>
+<p class="lead">【名前】で指定した立ち絵を反復横跳びさせる。[<a href="#fg_sidestep">fg_sidestep</a>] を名前引きで呼ぶラッパー。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr class="y"><td>name</td><td><span class="must">必須</span></td><td></td><td>追加時の【名前】</td><td>対象の立ち絵</td></tr>
+	<tr><td>time</td><td></td><td>250</td><td>0〜；ミリ秒</td><td>一動作にかける時間（実際に掛かる時間 = time * 4）</td></tr>
+	<tr><td>x</td><td></td><td>25</td><td>ドット数</td><td>左右へ揺らす移動量</td></tr>
+	<tr><td>y</td><td></td><td>25</td><td>ドット数</td><td>下へ沈ませる移動量</td></tr>
+	<tr><td>repeats</td><td></td><td>1</td><td>0〜（整数）</td><td>繰返し回数。0は無限ループ</td></tr>
+	<tr><td>no_wait</td><td></td><td>false</td><td>Boolean</td><td>trueを指定すると、終了を待たない</td></tr>
+	</table></div>
+
+<h2 class="sec" id="sec-voice">ext_voice.sn の定義マクロ</h2>
+<h3 class="tag" id="voice"><a class="hash" href="#voice" tabindex="-1" aria-hidden="true">#</a><span class="tn">[voice]</span> <span class="td">音声を再生</span></h3>
+<p class="lead">音声を再生する。[<a href="#se">se</a>] を <code>join=true</code> で再生し、最後に再生した音声名を <code>lastVoice</code> に保存したもの。</p>
+<p>fn 省略時はサウンドバッファを停止する。引数は [<a href="tag.html#playse">playse</a>] とほぼ共通。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>fn</td><td></td><td>音声停止</td><td>音声ファイル名</td><td>再生する音声ファイル名</td></tr>
+	<tr><td>buf</td><td></td><td>VOICE</td><td>サウンドバッファ名</td><td>バッファを変えれば同時に複数の音を操作できる</td></tr>
+	<tr><td>loop</td><td></td><td>false</td><td>Boolean</td><td>trueでBGMのようにループ再生する</td></tr>
+	<tr><td>volume</td><td></td><td>1.0</td><td>0.0〜1.0</td><td>再生音量（音量システム変数は変更しない）</td></tr>
+	<tr><td>speed</td><td></td><td>1.0</td><td>0.0〜1.0</td><td>再生速度（0:遅い、1.0:元のまま）</td></tr>
+	<tr><td>pan</td><td></td><td>0.0</td><td>-1.0〜1.0</td><td>音を出す左右位置（-1.0=左端、0.0=中央、1.0=右端）</td></tr>
+	<tr><td>join</td><td></td><td>true</td><td>Boolean</td><td>trueで読み込みを待って次のタグへ進む</td></tr>
+	<tr><td>canskip</td><td></td><td>true</td><td>Boolean</td><td>trueでキー押下Skip中なら再生をしない</td></tr>
+	<tr><td>start_ms</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>再生の開始位置。0は冒頭</td></tr>
+	<tr><td>end_ms</td><td></td><td>末端</td><td>整数；ミリ秒</td><td>再生の終了位置。正値は「冒頭から何ms目」、負値は「末尾から何ms手前」</td></tr>
+	<tr><td>ret_ms</td><td></td><td>0</td><td>0〜；ミリ秒</td><td>ループ戻り位置。loop=false のときは無視される</td></tr>
+	</table></div>
+<h3 class="tag" id="repeat_voice"><a class="hash" href="#repeat_voice" tabindex="-1" aria-hidden="true">#</a><span class="tn">[repeat_voice]</span> <span class="td">あの素晴らしい声をもう一度</span></h3>
+<p class="lead">直前に [<a href="#voice">voice</a>] で再生した音声（<code>lastVoice</code>）を再生し直す。</p>
+<p>引数無し。<code>lastVoice</code> が空なら何もしない。テンプレでは <code>v</code> キーにグローバルイベントとして割り当てられている。</p>
+<h3 class="tag" id="voice_ex"><a class="hash" href="#voice_ex" tabindex="-1" aria-hidden="true">#</a><span class="tn">[voice_ex]</span> <span class="td">連番ファイル名の音声を再生</span></h3>
+<p class="lead">連番ファイル名の音声を手軽に再生する。括弧マクロ〔〕でさらに簡略化できる。</p>
+<p>音声ファイル名は【人物名_000.???】形式。呼ぶたびに人物ごとの内部カウンター（<code>save:db_v_cnt</code>）が進む。<br/> <b>下準備が必要：</b><code>const.db</code>（人物名→ファイル名対応）と <code>save:db_v_cnt</code> を JSON などで初期化しておく。一本道でない作品はスクリプト冒頭で [<a href="#voice_ex_set">voice_ex_set</a>] によりカウンターを合わせる。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr class="y"><td>text</td><td><span class="must">必須</span></td><td></td><td>人物名</td><td>連番管理している人物ごとの区別名</td></tr>
+	</table></div>
+<h3 class="tag" id="voice_ex_set"><a class="hash" href="#voice_ex_set" tabindex="-1" aria-hidden="true">#</a><span class="tn">[voice_ex_set]</span> <span class="td">内部カウンターを変更する</span></h3>
+<p class="lead">[<a href="#voice_ex">voice_ex</a>] が次に再生する音声ファイル名カウンターを変更する。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr class="y"><td>name</td><td><span class="must">必須</span></td><td></td><td>人物名</td><td>連番管理している人物ごとの区別名</td></tr>
+	<tr><td>text</td><td></td><td>0</td><td>Number</td><td>次に再生すべき音声ファイル名カウンター</td></tr>
+	</table></div>
 
 <h2 class="sec" id="sec-4">ext_for_call.sn の定義マクロ</h2>
 <h3 class="tag" id="for_call"><a class="hash" href="#for_call" tabindex="-1" aria-hidden="true">#</a><span class="tn">[for_call]</span> <span class="td">変数の値を増やしながら[call]する</span></h3>
@@ -484,6 +633,11 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h3 class="tag" id="for_call_break"><a class="hash" href="#for_call_break" tabindex="-1" aria-hidden="true">#</a><span class="tn">[for_call_break]</span> <span class="td">ループを中断する</span></h3>
 <p class="lead">内側一つだけ脱出する</p>
 <p>[for_call]呼び先サブルーチンで使用すると、ループを終了し[for_call]の次に戻る。<br/> [for_call_break]の直後に[return]が必要。<br/> 引数無し。<br/> <br/> ※使用例は[for_call]を参照。</p>
+
+<h2 class="sec" id="sec-main">main.sn の定義マクロ</h2>
+<h3 class="tag" id="lr"><a class="hash" href="#lr" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lr]</span> <span class="td">クリック待ち改行</span></h3>
+<p class="lead">音声・クエリ待ちを挟んでからクリック待ち改行する。行末クリック待ちの定型。</p>
+<p>引数無し。処理は次の順。<br/> 1. 自動読み進み中かつ Skip 中でないなら、サウンドバッファ <code>VOICE</code> の再生終了を待つ（[<a href="tag.html#ws">ws</a>] <code>canskip=true</code>）。<br/> 2. [<a href="tag.html#wq">wq</a>]（クエリ待ち）。<br/> 3. [<a href="tag.html#l">l</a>]（クリック待ち改行）。<br/> <br/> テンプレでは <code>[char2macro char=@ name=lr]</code> により <code>@</code> がこのマクロの別名になっている（本文で <code>@</code> と書けば <code>[lr]</code>）。あわせて <code>[char2macro char=\ name=plc]</code> で <code>\</code> が [<a href="#plc">plc</a>]（改ページ）の別名になっている。</p>
 
 <h2 class="sec" id="sec-5">humaneプラグイン</h2>
 <p>プラグインは core/plugin/ 下に配置し使用します。</p>

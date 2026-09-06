@@ -21,13 +21,7 @@
 
 ## ドキュメント
 
-（`docs/{tag,macro_plg,dev}.html` は 2026-09-06 に AMP から案B へ刷新済。以下は積み残し）
-
-- [ ] `docs/macro_plg.html`：未掲載マクロ約20個の本文執筆。`[fg2]`系・`[voice]`系・
-      `[sys_resume_load/save]`・`[sysmenu_draw_h]`・`[txt_lay_h_bottom_wide]`・
-      `[txt_lay_window_top/middle/bottom]`・`[zoom_tsy]`・`[lr]`。一次情報はテンプレ
-      `.sn` の `;@EXT_DESC`／`;@` 引数コメント（本家 `tmp_esm_uc/doc/prj/` と分家
-      `tmp_blues/doc/prj/` でマクロ一覧は一致）。冒頭コールアウトで欠落は明示済み。
+（`docs/{tag,macro_plg,dev}.html` は 2026-09-06 に AMP から案B へ刷新済。積み残しは無し）
 
 ## 保留
 
