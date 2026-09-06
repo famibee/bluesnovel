@@ -91,6 +91,8 @@ section h2{font-size:1.9rem;text-align:center;margin-bottom:.4rem}
 .topnav ul{list-style:none;display:flex;gap:1.5rem;margin:0;padding:0}
 .topnav a.navlink{text-decoration:none;color:var(--fg-muted);font-size:.9rem;white-space:nowrap}
 .topnav a.navlink:hover{color:var(--fg)}
+/* li は ul(flex) に stretch されるので height:100% で SVG を文字と同じ高さに中央寄せ（無いと li 上端に張り付いて文字より上にずれる） */
+.topnav a.navlink-icon{display:flex;align-items:center;height:100%}
 .topnav ul{overflow-x:auto;scrollbar-width:none}
 .topnav ul::-webkit-scrollbar{display:none}
 
@@ -172,7 +174,8 @@ section h2{font-size:1.9rem;text-align:center;margin-bottom:.4rem}
 .pnode.pure{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .pnode.pure b{color:var(--accent)}
 .parrow{flex:0 0 auto;display:flex;align-items:center;padding:0 .6rem;color:rgba(255,255,255,.4);font-size:1.3rem}
-.pipeline-note{text-align:center;color:var(--fg-muted);font-size:.85rem;margin-top:1rem}
+/* .pipeline は暗い --code-bg 背景。--fg-muted だとライト時にコントラスト不足なので明色で上書き */
+.pipeline-note{text-align:center;color:#a7a4cf;font-size:.85rem;margin-top:1rem}
 
 /* ---- dependency swap panel ---- */
 .dep-panel{
@@ -236,23 +239,18 @@ section h2{font-size:1.9rem;text-align:center;margin-bottom:.4rem}
 .showcase p{color:#c9c4f0;font-size:.8rem;margin:1.5rem 0 0}
 .showcase code{color:#fff}
 
-/* ---- evolution table ---- */
-.evo{width:100%;border-collapse:collapse;font-size:.9rem}
-.evo th,.evo td{padding:.9rem 1rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
-.evo th{font-family:var(--font-head);font-size:.75rem;letter-spacing:.05em;text-transform:uppercase;color:var(--fg-muted);border-bottom:2px solid var(--border)}
-.evo td.before{color:var(--fg-muted)}
-.evo td.after b{color:var(--accent-2)}
-@media (prefers-color-scheme:dark){.evo td.after b{color:#5fe0c0}}
-.evo td.effect{color:var(--fg-muted);font-size:.85rem}
+/* ---- evolution rows（旧 .evo テーブルから div 化）---- */
+.evo-row{padding:1rem 0}
+.evo-row+.evo-row{border-top:1px solid var(--border)}
+.evo-top{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.evo-effect{margin:.6rem 0 0;color:var(--fg-muted);font-size:.85rem}
 .tablewrap{overflow-x:auto;background:var(--bg-raise);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-.tablewrap .evo{margin:0}
-.tablewrap .evo th:first-child,.tablewrap .evo td:first-child{padding-left:1.4rem}
 
 /* ---- comparison ---- */
 .cmp{width:100%;border-collapse:collapse;font-size:.9rem}
 .cmp th,.cmp td{padding:1rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
-.cmp th{font-family:var(--font-head);font-size:.78rem;color:var(--fg-muted);letter-spacing:.03em}
-.cmp td:first-child{font-weight:600;white-space:nowrap;color:var(--fg)}
+.cmp thead th{font-family:var(--font-head);font-size:.78rem;color:var(--fg-muted);letter-spacing:.03em}
+.cmp td:first-child,.cmp th[scope="row"]{font-weight:600;white-space:nowrap;color:var(--fg);font-family:var(--font-body);font-size:.9rem}
 .cmp td.us{background:color-mix(in srgb, var(--accent) 8%, transparent)}
 
 /* ---- creator ---- */
@@ -275,7 +273,7 @@ section h2{font-size:1.9rem;text-align:center;margin-bottom:.4rem}
 /* ---- footer ---- */
 footer{background:var(--brand-1);color:#cfcaf0;padding:3rem 0 2.2rem}
 footer .wrap{display:flex;flex-wrap:wrap;gap:2rem;justify-content:space-between}
-footer h4{color:#fff;font-size:.85rem;letter-spacing:.05em}
+footer h2{color:#fff;font-size:.85rem;letter-spacing:.05em}
 footer ul{list-style:none;margin:0;padding:0}
 footer li{margin-bottom:.4rem}
 footer a{color:#cfcaf0;text-decoration:none;font-size:.88rem}
@@ -287,13 +285,36 @@ footer a:hover{color:#fff}
 
 @media (max-width:640px){
 	section{padding:3rem 0}
-	.evo th:nth-child(3),.evo td:nth-child(3){display:none}
+}
+@media (max-width:480px){
+	.xs-hide{display:none}
+}
+
+/* ---- skip link（キーボード操作でナビを飛ばして本文へ）---- */
+.skip-link{
+	position:absolute;left:.5rem;top:-3rem;z-index:100;
+	background:var(--bg-raise);color:var(--fg);border:1px solid var(--border);
+	border-radius:8px;padding:.5em 1em;font-size:.9rem;text-decoration:none;
+	transition:top .15s ease;
+}
+.skip-link:focus{top:.5rem}
+
+/* ---- 動きの抑制設定を尊重 ---- */
+@media (prefers-reduced-motion:reduce){
+	html{scroll-behavior:auto}
+	*,*::before,*::after{
+		animation-duration:.001ms!important;animation-iteration-count:1!important;
+		transition-duration:.001ms!important;
+	}
+	.btn:hover,.card:hover{transform:none}
 }
 </style>
 </head>
 <body>
 
-<nav class="topnav">
+<a class="skip-link" href="#main">本文へスキップ</a>
+
+<nav class="topnav" aria-label="サイト内ナビゲーション">
 	<div class="wrap">
 		<a class="brand" href="index.html"><img src="logo.png" alt="" width="24" height="24">Blue<span class="s-mark">S</span>Novel</a>
 		<ul>
@@ -305,14 +326,14 @@ footer a:hover{color:#fff}
 			<li><a class="navlink" href="tag.html">タグ</a></li>
 			<li><a class="navlink" href="macro_plg.html">マクロ・プラグイン</a></li>
 			<li><a class="navlink" href="dev.html">開発ガイド</a></li>
-			<li><a class="navlink" href="https://github.com/famibee/bluesnovel">github</a></li>
+			<li><a class="navlink navlink-icon" href="https://github.com/famibee/bluesnovel" aria-label="GitHub リポジトリ"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a></li>
 		</ul>
 	</div>
 </nav>
 
 <header class="hero">
 	<div class="wrap">
-		<span class="eyebrow">TypeScript NovelGame Framework</span>
+		<span class="eyebrow" lang="en">TypeScript NovelGame Framework</span>
 		<h1>Blue<span class="s-mark">S</span>Novel</h1>
 		<p class="tagline">
 			モダンなWeb標準技術で再構築した<br class="xs-hide">
@@ -322,11 +343,6 @@ footer a:hover{color:#fff}
 			<span class="pill">Browser / Electron</span>
 			<span class="pill">Windows</span>
 			<span class="pill">macOS</span>
-		</div>
-		<div class="ctarow">
-			<a class="btn btn-ghost" href="tag.html">Tag Reference</a>
-			<a class="btn btn-primary" href="https://github.com/famibee/bluesnovel">GitHub</a>
-			<a class="btn btn-ghost" href="https://www.npmjs.com/package/@famibee/bluesnovel">npm</a>
 		</div>
 	</div>
 </header>
@@ -340,11 +356,11 @@ footer a:hover{color:#fff}
 	</div>
 </div>
 
-<main>
+<main id="main">
 
 <section id="audience">
 	<div class="wrap">
-		<span class="eyebrow" style="display:block;text-align:center">Who is this for</span>
+		<span class="eyebrow" style="display:block;text-align:center" lang="en">Who is this for</span>
 		<h2>人によって、気になる場所は違う</h2>
 		<p class="section-lede">
 			気になるところからどうぞ。
@@ -352,21 +368,21 @@ footer a:hover{color:#fff}
 		<div class="grid">
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 6h10a4 4 0 0 1 4 4l1 5a2.5 2.5 0 0 1-4.5 1.5L16 15H8l-1.5 1.5A2.5 2.5 0 0 1 2 15l1-5a4 4 0 0 1 4-4z"/><path d="M6 11h4M8 9v4"/><circle cx="17" cy="10" r="1"/><circle cx="15" cy="13" r="1"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 6h10a4 4 0 0 1 4 4l1 5a2.5 2.5 0 0 1-4.5 1.5L16 15H8l-1.5 1.5A2.5 2.5 0 0 1 2 15l1-5a4 4 0 0 1 4-4z"/><path d="M6 11h4M8 9v4"/><circle cx="17" cy="10" r="1"/><circle cx="15" cy="13" r="1"/></svg></div>
 				<h3>動きを見たい人へ</h3>
 				<p>ブラウザでそのまま試せる。</p>
 				<a href="https://famibee.github.io/SKYNovel_gallery/">動くサンプルを見る →</a>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
 				<h3>物語を書く人へ</h3>
 				<p>原作テキストにタグを並べてスクリプトが書ける。ルビも禁則処理もサポート。</p>
 				<a href="#scripter">書く人向けの機能を見る →</a>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
 				<h3>技術面が気になる人へ</h3>
 				<p>TypeScript / React 上に構築された、テスト済みのコード。</p>
 				<a href="#features">技術的な特徴を見る →</a>
@@ -404,7 +420,7 @@ footer a:hover{color:#fff}
 
 <section id="scripter">
 	<div class="wrap">
-		<span class="eyebrow" style="display:block;text-align:center">For Scripter</span>
+		<span class="eyebrow" style="display:block;text-align:center" lang="en">For Scripter</span>
 		<h2>書く人がうれしい、細部のこだわり</h2>
 		<p class="section-lede">
 			本文中のルビも書きやすい記法。
@@ -412,7 +428,7 @@ footer a:hover{color:#fff}
 
 		<div class="showcase">
 			<div class="ruby-line">
-				彼は<ruby>雷の指<rt>ひげこがし</rt></ruby>を彼女は<ruby>雷<rt>いかずち</rt></ruby>の指を<ruby>一期一会<rt>いちごいちえ</rt></ruby><ruby>冬虫夏草<rt>とうちゅうかそう</rt></ruby><br>
+				彼は<ruby>雷の指<rt>ひげこがし</rt></ruby>を彼女は<ruby>雷<rt>いかずち</rt></ruby>の指を<ruby>一期一会<rt>いちごいちえ</rt></ruby><ruby>冬虫夏草<rt>とうちゅうかそう</rt></ruby><br/>
 				<ruby>一応<rt>いちおう</rt></ruby><ruby>何時<rt>いつ</rt></ruby>もの<ruby>一瀉千里<rt>いっしゃせんり</rt></ruby>
 			</div>
 			<p><code>彼は｜雷の指《ひげこがし》を<br/>
@@ -430,13 +446,13 @@ footer a:hover{color:#fff}
 			<div class="dep-row">
 				<span class="dep-cat">NScripter</span>
 				<span class="dep-old">(記述/きじゅつ)</span>
-				<span class="dep-arrow">→</span>
+				<span class="dep-arrow" aria-hidden="true">→</span>
 				<span class="dep-new">｜記述《きじゅつ》</span>
 			</div>
 			<div class="dep-row">
 				<span class="dep-cat">吉里吉里</span>
 				<span class="dep-old">[ruby text="ひ"]向[ruby text="まわ"]日[ruby text="り"]葵</span>
-				<span class="dep-arrow">→</span>
+				<span class="dep-arrow" aria-hidden="true">→</span>
 				<span class="dep-new">｜向日葵《ひまわり》</span>
 			</div>
 		</div>
@@ -466,7 +482,7 @@ footer a:hover{color:#fff}
 				</p>
 				<p style="margin:.8rem 0;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
 					<span class="dep-old">不覚を[l]生ずるゆえんを考えうるに、[plc]</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">不覚を@生ずるゆえんを考えうるに、¥</span>
 				</p>
 				<p style="margin-top:.5rem;font-size:.8rem">短く書けるだけで、動作はまったく同じ。</p>
@@ -482,7 +498,7 @@ footer a:hover{color:#fff}
 
 <section id="features" style="background:var(--bg-sunken)">
 	<div class="wrap">
-		<span class="eyebrow" style="display:block;text-align:center">For Programmer</span>
+		<span class="eyebrow" style="display:block;text-align:center" lang="en">For Programmer</span>
 		<h2>特徴</h2>
 		<p class="section-lede">
 			長年運用してきた SKYNovel, AIRNovel の設計資産を引き継ぎつつ、<br/>
@@ -491,43 +507,43 @@ footer a:hover{color:#fff}
 		<div class="grid">
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51z"/><path d="M13 13l6 6"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51z"/><path d="M13 13l6 6"/></svg></div>
 				<h3>WebGL不要な基本表示</h3>
 				<p>既定の画面転換・フィルタはCSS/SVGだけ。WebGLが無くても崩れない。GLSLシェーダ演出（<code>[add_fx]</code>等）を使う場合のみWebGLが必要。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
 				<h3>宣言的な状態管理</h3>
 				<p>React 19 + Zustandの単一store。差分だけが流れる一方向データフロー。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6L4 20a1 1 0 0 0 1 2h14a1 1 0 0 0 1-2L15 8V2"/><path d="M9 2h6"/><path d="M6.5 15h11"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6L4 20a1 1 0 0 0 1 2h14a1 1 0 0 0 1-2L15 8V2"/><path d="M9 2h6"/><path d="M6.5 15h11"/></svg></div>
 				<h3>純粋なシナリオエンジン</h3>
 				<p>DOMもfetchも持たない純粋関数。ブラウザ抜きでシナリオ処理だけを単体テストでき、同じ入力なら必ず同じ結果になる。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
 				<h3>strict TypeScript</h3>
 				<p><code>noUncheckedIndexedAccess</code>まで含む可能な限り厳しいstrict設定。型の緩みはコンパイル時に落ちる。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4a2 2 0 0 0 2 2h2l5 4V4L8 8H6a2 2 0 0 0-2 2z"/><path d="M18 8a5 5 0 0 1 0 8"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 10v4a2 2 0 0 0 2 2h2l5 4V4L8 8H6a2 2 0 0 0-2 2z"/><path d="M18 8a5 5 0 0 1 0 8"/></svg></div>
 				<h3>自前のWeb Audio層</h3>
 				<p>音声ライブラリを積まず、Web Audio APIを直接制御。停止＝破棄の1パターン。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div>
 				<h3>1ソースツリーから2プラットフォーム</h3>
 				<p>同じソースコードから、ブラウザ版とアプリ版を両方出力。</p>
 			</div>
 
 			<div class="card">
-				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 8.5v7M8.2 5l7.5 5.5M8.2 19l7.5-5.5"/></svg></div>
+				<div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 8.5v7M8.2 5l7.5 5.5M8.2 19l7.5-5.5"/></svg></div>
 				<h3>SKYNovel互換プラグイン機構</h3>
 				<p>SKYNovelの3D/Live2DプラグインをDOM版へ移植できる土台を用意。</p>
 			</div>
@@ -540,20 +556,20 @@ footer a:hover{color:#fff}
 	<div class="wrap">
 		<h2>基本設計</h2>
 		<p class="section-lede">
-			中心にあるのは「純粋なシナリオエンジンとUIの分離」。緑枠の1ステップだけが、
-			ブラウザや通信を一切知らない純粋関数。
+			中心にあるのは「純粋なシナリオエンジンとUIの分離」。<br/>
+			緑枠の1ステップだけが、ブラウザや通信を一切知らない純粋関数。
 		</p>
 		<div class="pipeline">
 			<div class="pnode"><b>SysWeb</b>読み込み完了</div>
-			<div class="parrow">→</div>
+			<div class="parrow" aria-hidden="true">→</div>
 			<div class="pnode"><b>ScriptMng</b>.load(fn)</div>
-			<div class="parrow">→</div>
-			<div class="pnode pure"><b>ScriptEngine</b>.step()<br>（pure）</div>
-			<div class="parrow">→</div>
+			<div class="parrow" aria-hidden="true">→</div>
+			<div class="pnode pure"><b>ScriptEngine</b>.step()<br/>（pure）</div>
+			<div class="parrow" aria-hidden="true">→</div>
 			<div class="pnode"><b>T_ENGINE_ACTION[]</b>差分アクション</div>
-			<div class="parrow">→</div>
+			<div class="parrow" aria-hidden="true">→</div>
 			<div class="pnode"><b>store</b>へ反映</div>
-			<div class="parrow">→</div>
+			<div class="parrow" aria-hidden="true">→</div>
 			<div class="pnode"><b>React</b>が再描画</div>
 		</div>
 		<p class="pipeline-note">
@@ -589,7 +605,7 @@ footer a:hover{color:#fff}
 				<div class="evo-top">
 					<span class="dep-cat">画面転換・フィルタ</span>
 					<span class="dep-old">Pixi.js + WebGL</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">SVGフィルタ + CSSマスク</span>
 				</div>
 				<p class="evo-effect">基本機能をWebGL非依存に（GLSL演出を使う場合のみWebGLが要る）</p>
@@ -598,7 +614,7 @@ footer a:hover{color:#fff}
 				<div class="evo-top">
 					<span class="dep-cat">サウンドの状態モデル</span>
 					<span class="dep-old">6状態の状態機械</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">停止＝破棄の1パターン</span>
 				</div>
 				<p class="evo-effect">退場処理漏れの温床になりやすい状態遷移を単純化</p>
@@ -607,7 +623,7 @@ footer a:hover{color:#fff}
 				<div class="evo-top">
 					<span class="dep-cat">ページ読み戻り時の画面更新</span>
 					<span class="dep-old">pixiの表示ツリーをタグ順に組み直す</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">storeを更新するだけ。Reactが差分だけ再描画</span>
 				</div>
 				<p class="evo-effect">設計自体は本家から継承（[page]タグは両方にある）。戻り先が近くても遠くても表示更新の仕組みは同じで済み、Reactの宣言的再描画が構造的に有利に働く。</p>
@@ -622,19 +638,19 @@ footer a:hover{color:#fff}
 				<div class="dep-row">
 					<span class="dep-cat">音声</span>
 					<span class="dep-old">howler等</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">Web Audio API直接制御</span>
 				</div>
 				<div class="dep-row">
 					<span class="dep-cat">ジェスチャー判定</span>
 					<span class="dep-old">tinygesture等</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">自作 <code>detectSwipe</code></span>
 				</div>
 				<div class="dep-row">
 					<span class="dep-cat">型定義出力</span>
 					<span class="dep-old">vite-plugin-dts等</span>
-					<span class="dep-arrow">→</span>
+					<span class="dep-arrow" aria-hidden="true">→</span>
 					<span class="dep-new">tsc標準機能のみ</span>
 				</div>
 			</div>
@@ -663,31 +679,31 @@ footer a:hover{color:#fff}
 		<div class="tablewrap">
 		<table class="cmp">
 			<thead>
-				<tr><th>観点</th><th>ノベルゲームエンジンで多いパターン</th><th>BlueSNovel</th></tr>
+				<tr><th scope="col">観点</th><th scope="col">ノベルゲームエンジンで多いパターン</th><th scope="col">BlueSNovel</th></tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td>実行方式</td>
+					<th scope="row">実行方式</th>
 					<td>独自のバイトコード／インタプリタをアプリに同梱</td>
 					<td class="us">ブラウザ・Node標準のJS/TSとしてそのまま実行</td>
 				</tr>
 				<tr>
-					<td>描画方式</td>
+					<th scope="row">描画方式</th>
 					<td>Pixi.js/WebGL等、GPU前提のレンダラを内蔵</td>
 					<td class="us">基本描画はCSS/SVGベース。GLSLシェーダ演出を使わない限りWebGLは不要</td>
 				</tr>
 				<tr>
-					<td>エンジンのテスト</td>
+					<th scope="row">エンジンのテスト</th>
 					<td>シナリオ処理がUI(DOM/GUI)と密結合で、実機確認に頼りがち</td>
 					<td class="us">エンジンをDOM/fetchから分離し、ヘッドレスで単体テストを自動化（1787件・全pass）</td>
 				</tr>
 				<tr>
-					<td>配布形態</td>
+					<th scope="row">配布形態</th>
 					<td>プラットフォームごとに別ビルド・別管理になりやすい</td>
 					<td class="us">1つのソースツリーからブラウザ版・Electron版を同時出力</td>
 				</tr>
 				<tr>
-					<td>型の保証</td>
+					<th scope="row">型の保証</th>
 					<td>JavaScriptのみ、または型定義が後付け</td>
 					<td class="us">strict TypeScriptをソース全体に適用</td>
 				</tr>
@@ -703,7 +719,7 @@ footer a:hover{color:#fff}
 	     のリンクのみに留め、npm コマンドや拡張の案内は載せていない。
 	     拡張が復帰したら、テンプレートからの開始手順をここへ追加する。 -->
 	<div class="wrap" style="text-align:center">
-		<span class="eyebrow" style="display:block;text-align:center">Get Started</span>
+		<span class="eyebrow" style="display:block;text-align:center" lang="en">Get Started</span>
 		<h2>始める</h2>
 		<p class="section-lede">
 			まずは動くサンプルを触るのが早い。書き方はタグリファレンスへ。
@@ -721,11 +737,11 @@ footer a:hover{color:#fff}
 <footer>
 	<div class="wrap">
 		<div>
-			<h4>Blue<span style="color:#8fd8ff;margin:0 -.08em">S</span>Novel</h4>
+			<h2>Blue<span style="color:#8fd8ff;margin:0 -.08em">S</span>Novel</h2>
 			<p style="max-width:22rem;color:#b3aee0;font-size:.88rem">SKYNovelを土台にした、TypeScript製ノベルゲームフレームワーク。</p>
 		</div>
 		<div>
-			<h4>ドキュメント</h4>
+			<h2>ドキュメント</h2>
 			<ul>
 				<li><a href="tag.html">タグリファレンス</a></li>
 				<li><a href="macro_plg.html">マクロ・プラグイン</a></li>
@@ -733,7 +749,7 @@ footer a:hover{color:#fff}
 			</ul>
 		</div>
 		<div>
-			<h4>プロジェクト</h4>
+			<h2>プロジェクト</h2>
 			<ul>
 				<li><a href="https://github.com/famibee/bluesnovel">GitHub</a></li>
 				<li><a href="https://www.npmjs.com/package/@famibee/bluesnovel">npm</a></li>
@@ -741,7 +757,7 @@ footer a:hover{color:#fff}
 			</ul>
 		</div>
 		<div>
-			<h4>関連</h4>
+			<h2>関連</h2>
 			<ul>
 				<li><a href="https://github.com/famibee/SKYNovel">SKYNovel（本家）</a></li>
 				<li><a href="https://famibee.blog.fc2.com/">famibee blog</a></li>
