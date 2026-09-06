@@ -19,6 +19,16 @@
 （標準タグ121種すべて 🟢。本家に新タグは増えない前提なので、以降ここに積まれるのは
 属性の凍結解除・不具合のみ。`docs/tag.html`／`docs/index.html` のカバー率表示は 100% で固定）
 
+## ドキュメント
+
+（`docs/{tag,macro_plg,dev}.html` は 2026-09-06 に AMP から案B へ刷新済。以下は積み残し）
+
+- [ ] `docs/macro_plg.html`：未掲載マクロ約20個の本文執筆。`[fg2]`系・`[voice]`系・
+      `[sys_resume_load/save]`・`[sysmenu_draw_h]`・`[txt_lay_h_bottom_wide]`・
+      `[txt_lay_window_top/middle/bottom]`・`[zoom_tsy]`・`[lr]`。一次情報はテンプレ
+      `.sn` の `;@EXT_DESC`／`;@` 引数コメント（本家 `tmp_esm_uc/doc/prj/` と分家
+      `tmp_blues/doc/prj/` でマクロ一覧は一致）。冒頭コールアウトで欠落は明示済み。
+
 ## 保留
 
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE = false`）：調整結果の書き戻し先を

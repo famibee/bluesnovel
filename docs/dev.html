@@ -238,8 +238,8 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <input type="search" class="filter" id="filter" placeholder="項目を絞り込み…" aria-label="項目を絞り込み">
 <p class="side-h"><a href="#sec-1">入門編</a></p>
 <ul>
-<li><a href="#isit" data-t="isit skynovelとは">SKYNovelとは</a></li>
-<li><a href="#howto_start" data-t="howto_start skynovelのはじめかた">SKYNovelのはじめかた</a></li>
+<li><a href="#isit" data-t="isit bluesnovelとは skynovelとは">BluesNovelとは</a></li>
+<li><a href="#howto_start" data-t="howto_start bluesnovelのはじめかた skynovelのはじめかた">BluesNovelのはじめかた</a></li>
 <li><a href="#inst_vscode" data-t="inst_vscode vscodeをインストール">VSCodeをインストール</a></li>
 <li><a href="#inst_vscex" data-t="inst_vscex 拡張機能をインストール">拡張機能をインストール</a></li>
 <li><a href="#inst_other" data-t="inst_other あとは 拡張機能 skynovel の指示に従って……">あとは 拡張機能 SKYNovel の指示に従って……</a></li>
@@ -252,7 +252,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 </ul>
 <p class="side-h"><a href="#sec-2">初級テクニック</a></p>
 <ul>
-<li><a href="#upd_sn" data-t="upd_sn skynovelを更新しよう">SKYNovelを更新しよう</a></li>
+<li><a href="#upd_sn" data-t="upd_sn bluesnovelを更新しよう skynovelを更新しよう">BluesNovelを更新しよう</a></li>
 <li><a href="#lay" data-t="lay （未作成）レイヤなどについて">（未作成）レイヤなどについて</a></li>
 <li><a href="#materials" data-t="materials サポートする画像・音声ファイルなど">サポートする画像・音声ファイルなど</a></li>
 </ul>
@@ -277,14 +277,18 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <div class="doc-in">
 <h1 class="doc-title">開発ガイド</h1>
 <h2 class="sec" id="sec-1">入門編</h2>
-<h3 class="tag" id="isit"><a class="hash" href="#isit" tabindex="-1" aria-hidden="true">#</a> <span class="td">SKYNovelとは</span></h3>
-<p class="lead">WebGL・JavaScriptを中心としたWeb技術によるノベルゲームシステムです。</p>
+<aside class="callout warn">
+<p>この「入門編」が案内する <b>VSCode 用拡張機能「SKYNovel」</b>（インストールからテンプレートウィザードまで）は、2026-09 時点で<b>公開停止中</b>です。以下の手順とスクリーンショットは拡張機能の再公開後に有効になります。</p>
+<p>いま試すなら、まず<a href="https://famibee.github.io/SKYNovel_gallery/" target="_blank" rel="noopener">動くサンプルギャラリー</a>を触り、書き方は<a href="tag.html">タグリファレンス</a>を参照してください。テンプレートは <a href="https://github.com/famibee/bluesnovel" target="_blank" rel="noopener">GitHub</a> から取得できます。</p>
+</aside>
+<h3 class="tag" id="isit"><a class="hash" href="#isit" tabindex="-1" aria-hidden="true">#</a> <span class="td">BluesNovelとは</span></h3>
+<p class="lead">WebGL・JavaScriptを中心としたWeb技術によるノベルゲームシステムです。作者の旧エンジン SKYNovel を React／TypeScript で書き直したものです。</p>
 <ul type="disc">
-	<li>参考記事：<a href="https://famibee.blog.fc2.com/blog-entry-604.html">一般公開開始時の概要記事</a></li>
+	<li>参考記事：<a href="https://famibee.blog.fc2.com/blog-entry-604.html">一般公開開始時の概要記事（SKYNovel）</a></li>
 	<li><a href="https://famibee.github.io/SKYNovel_gallery/" target="_blank" rel="noopener">どんな事が出来るの？ What can SKYNovel do? sample</a><br/>
 		ブラウザから直接動かせるサンプルギャラリーです（ソースファイル）</li>
 	</ul>
-<h3 class="tag" id="howto_start"><a class="hash" href="#howto_start" tabindex="-1" aria-hidden="true">#</a> <span class="td">SKYNovelのはじめかた</span></h3>
+<h3 class="tag" id="howto_start"><a class="hash" href="#howto_start" tabindex="-1" aria-hidden="true">#</a> <span class="td">BluesNovelのはじめかた</span></h3>
 <p class="lead">すべてGUIによるインストールです。</p>
 <ul type="disc">
 		<li><a href="https://code.visualstudio.com/" target="_blank" rel="noopener">Visual Studio Code</a>（以後VSCode）をインストール</li>
@@ -292,80 +296,80 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 		<li>あとは 拡張機能 SKYNovel の指示に従って……</li>
 	</ul>
 <h3 class="tag" id="inst_vscode"><a class="hash" href="#inst_vscode" tabindex="-1" aria-hidden="true">#</a> <span class="td">VSCodeをインストール</span></h3>
-<p>VSCodeは多機能なテキストエディタで、SKYNovel開発環境のベースとなります。フリーウェアです。<br/> <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">ダウンロード</a>してインストールしていきます。<br/> <img src="pic/inst_vscode0.webp" width="500" height="600" alt="" loading="lazy"></p>
-<p><br/> <img src="pic/inst_vscode1.png" width="484" height="120" alt="" loading="lazy"></p>
-<p>Macの場合も同様です。<br/> <img src="pic/inst_vscode0m.png" width="292" height="79" alt="" loading="lazy"><br/> <img src="pic/inst_vscode1m.png" width="480" height="120" alt="" loading="lazy"><br/> Macの場合はzipを解凍するとappファイルが入っていますので、それを「アプリケーション」フォルダに移動するだけです。<br/> <img src="pic/inst_vscode2m.jpg" width="451" height="100" alt="" loading="lazy"><br/> あとはアプリケーションとして起動できます。</p>
-<p>以後は Windowsの場合について解説していきます。<br/> exeを開くとインストーラーが起動します。<br/> <img src="pic/inst_vscode1.png" width="484" height="120" alt="" loading="lazy"><br/> あとはよくあるソフトのインストールですが、注意点だけ赤丸しておきます。<br/> <img src="pic/inst_vscode10.webp" width="510" height="401" alt="" loading="lazy"></p>
-<p><br/> <img src="pic/inst_vscode11.webp" width="508" height="397" alt="" loading="lazy"></p>
-<p><br/> <img src="pic/inst_vscode12.webp" width="508" height="394" alt="" loading="lazy"></p>
-<p><br/> <img src="pic/inst_vscode13.webp" width="506" height="395" alt="" loading="lazy"></p>
-<p><br/> <img src="pic/inst_vscode14.jpg" width="508" height="397" alt="" loading="lazy"><br/> <img src="pic/inst_vscode15.jpg" width="506" height="393" alt="" loading="lazy"><br/> <img src="pic/inst_vscode16.png" width="507" height="393" alt="" loading="lazy"><br/> インストールを完了し、起動できました。<br/> 右下に【日本語言語パック】のインストールをうながす通知があるので、クリックして下さい。メニューなどGUIが日本語化されます。<br/> VSCodeの最低限の設定は以上です。<br/> <img src="pic/inst_vscode17.png" width="2074" height="1558" alt="" loading="lazy"></p>
+<p>VSCodeは多機能なテキストエディタで、BluesNovel開発環境のベースとなります。フリーウェアです。<br/> <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">ダウンロード</a>してインストールしていきます。<br/> <img src="pic/inst_vscode0.webp" width="500" height="600" alt="VSCode 公式サイトのダウンロードページ" loading="lazy"></p>
+<p><br/> <img src="pic/inst_vscode1.png" width="484" height="120" alt="ダウンロードした Windows 用 VSCode インストーラー（exe）のファイル" loading="lazy"></p>
+<p>Macの場合も同様です。<br/> <img src="pic/inst_vscode0m.png" width="292" height="79" alt="ダウンロードページの Mac 版 VSCode のリンク" loading="lazy"><br/> <img src="pic/inst_vscode1m.png" width="480" height="120" alt="ダウンロードした Mac 版 VSCode の zip ファイル" loading="lazy"><br/> Macの場合はzipを解凍するとappファイルが入っていますので、それを「アプリケーション」フォルダに移動するだけです。<br/> <img src="pic/inst_vscode2m.jpg" width="451" height="100" alt="解凍された VSCode.app を「アプリケーション」フォルダへ移動する様子" loading="lazy"><br/> あとはアプリケーションとして起動できます。</p>
+<p>以後は Windowsの場合について解説していきます。<br/> exeを開くとインストーラーが起動します。<br/> <img src="pic/inst_vscode1.png" width="484" height="120" alt="VSCode インストーラー（exe）を起動する" loading="lazy"><br/> あとはよくあるソフトのインストールですが、注意点だけ赤丸しておきます。<br/> <img src="pic/inst_vscode10.webp" width="510" height="401" alt="VSCode インストーラーの設定画面。注意箇所を赤丸で示している" loading="lazy"></p>
+<p><br/> <img src="pic/inst_vscode11.webp" width="508" height="397" alt="VSCode インストーラーの設定画面（続き）" loading="lazy"></p>
+<p><br/> <img src="pic/inst_vscode12.webp" width="508" height="394" alt="VSCode インストーラーの設定画面（続き）" loading="lazy"></p>
+<p><br/> <img src="pic/inst_vscode13.webp" width="506" height="395" alt="VSCode インストーラーの設定画面（続き）" loading="lazy"></p>
+<p><br/> <img src="pic/inst_vscode14.jpg" width="508" height="397" alt="VSCode インストーラーの設定画面（続き）" loading="lazy"><br/> <img src="pic/inst_vscode15.jpg" width="506" height="393" alt="VSCode インストーラーの設定画面（続き）" loading="lazy"><br/> <img src="pic/inst_vscode16.png" width="507" height="393" alt="インストールが完了した VSCode インストーラーの最終画面" loading="lazy"><br/> インストールを完了し、起動できました。<br/> 右下に【日本語言語パック】のインストールをうながす通知があるので、クリックして下さい。メニューなどGUIが日本語化されます。<br/> VSCodeの最低限の設定は以上です。<br/> <img src="pic/inst_vscode17.png" width="2074" height="1558" alt="起動直後の VSCode。右下に日本語言語パックのインストールを促す通知が出ている" loading="lazy"></p>
 <h3 class="tag" id="inst_vscex"><a class="hash" href="#inst_vscex" tabindex="-1" aria-hidden="true">#</a> <span class="td">VSCode用拡張機能 SKYNovel をインストール</span></h3>
 <p class="lead">起動したVSCodeからインストールできます。</p>
-<p>左端の「Activity Bar」上から５つ目をクリックし、<br/> 検索窓に「skynovel」（大文字小文字関係なく）入力すると、<br/> SKYNovel と書いてあるのが（恐らく）一つだけ検索に引っかかるので「インストール」を押して下さい。それだけです。<br/> <img src="pic/inst_vscex0.jpg" width="850" height="539" alt="" loading="lazy"></p>
+<p>左端の「Activity Bar」上から５つ目をクリックし、<br/> 検索窓に「skynovel」（大文字小文字関係なく）入力すると、<br/> SKYNovel と書いてあるのが（恐らく）一つだけ検索に引っかかるので「インストール」を押して下さい。それだけです。<br/> <img src="pic/inst_vscex0.jpg" width="850" height="539" alt="VSCode の拡張機能ビューで「skynovel」を検索し、拡張機能 SKYNovel を表示したところ" loading="lazy"></p>
 <p>以降の説明では <a href="https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme" target="_blank" rel="noopener">Material Icon Theme - Visual Studio Marketplace</a> という拡張機能もインストールし、アイコンもカラフルにしています。</p>
 <h3 class="tag" id="inst_other"><a class="hash" href="#inst_other" tabindex="-1" aria-hidden="true">#</a> <span class="td">あとは 拡張機能 SKYNovel の指示に従って……</span></h3>
 <p class="lead">Node.jsなどをインストールしていきます。</p>
-<p>左端の「Activity Bar」に拡張機能 SKYNovelの「丸に紙飛行機」ロゴマークが表示されているので、クリックして下さい。<br/> <img src="pic/inst_other1.jpg" width="125" height="590" alt="" loading="lazy"></p>
-<p>一番上に開発環境の状況が表示されています。エラーっぽい表示がされていますね。<br/> 環境設定がまだすこし残っているわけです。<br/> <br/> 同時に「SKYNovel開発環境　準備の手引き」というページが開かれていますか？<br/> 開かれていない場合は、【Node.js】の行にマウスカーソルを乗せたときに表示される【矢印ボタン】を押してください。<br/> <img src="pic/inst_other2.jpg" width="585" height="400" alt="" loading="lazy"></p>
-<p>図は「SKYNovel開発環境　準備の手引き」というページです。<br/> あとはその指示に従ってインストールを続けて下さい。<br/> <img src="pic/inst_other3.jpg" width="672" height="358" alt="" loading="lazy"></p>
-<p>すると……<br/> エラーが消えました！<br/> <img src="pic/inst_other4.jpg" width="585" height="400" alt="" loading="lazy"></p>
+<p>左端の「Activity Bar」に拡張機能 SKYNovelの「丸に紙飛行機」ロゴマークが表示されているので、クリックして下さい。<br/> <img src="pic/inst_other1.jpg" width="125" height="590" alt="VSCode の Activity Bar に並ぶ拡張機能 SKYNovel（丸に紙飛行機）のアイコン" loading="lazy"></p>
+<p>一番上に開発環境の状況が表示されています。エラーっぽい表示がされていますね。<br/> 環境設定がまだすこし残っているわけです。<br/> <br/> 同時に「SKYNovel開発環境　準備の手引き」というページが開かれていますか？<br/> 開かれていない場合は、【Node.js】の行にマウスカーソルを乗せたときに表示される【矢印ボタン】を押してください。<br/> <img src="pic/inst_other2.jpg" width="585" height="400" alt="拡張機能 SKYNovel の開発環境ビュー。Node.js の行に矢印ボタンが表示されている" loading="lazy"></p>
+<p>図は「SKYNovel開発環境　準備の手引き」というページです。<br/> あとはその指示に従ってインストールを続けて下さい。<br/> <img src="pic/inst_other3.jpg" width="672" height="358" alt="拡張機能が開く「SKYNovel開発環境 準備の手引き」ページ" loading="lazy"></p>
+<p>すると……<br/> エラーが消えました！<br/> <img src="pic/inst_other4.jpg" width="585" height="400" alt="環境設定が完了し、エラー表示が消えた開発環境ビュー" loading="lazy"></p>
 <p>環境設定はここまでです。</p>
 <h3 class="tag" id="start_tmp"><a class="hash" href="#start_tmp" tabindex="-1" aria-hidden="true">#</a> <span class="td">テンプレートで始めよう</span></h3>
 <p class="lead">すでに動くゲームをオープンソースで提供しており、これを改造していきます。</p>
 <p>例えば自作の小説本を出版するとします。<br/> その際、パルプの生成方法、紙の刷り方、印刷技術、装丁デザインの勉強等までする必要があるでしょうか？<br/> 本来小説を書くというのは、紙とペンを用意し、書き始めることだけのはずです。<br/> 良い小説を書くために「小説の書き方本」を読みあさり、知らない事を勉強する方向へ労力を注ぎ、胃を壊すぐらいコーヒーを飲みたいのではないでしょうか？<br/> 同じように、まずはあなたの作品を造り上げることに専念して下さい。<br/> <br/> <br/> ●ではどうやって本にするのか？<br/> 今ここに本があります。<br/> 梶井基次郎 原作の短編ノベルゲーム「桜の樹の下には」または拙作「初音館にて」です。<br/> 実はこれは鉛筆で書かれています。<br/> まずはこの本を消しゴム掛けして、元の文章をあなたの原作に書き換えてしまいましょう。<br/> 本を作るところから、始める必要はありません。<br/> これはもちろんたとえ話ですが──同じようにして、あなたの本が完成するのです。<br/> <br/> 作品を書いているうちに装丁を考えたり、紙質や手触りに凝ったりしたくなるかも知れません。<br/> その時は初級・中級・上級へと読み進めていって下さい。<br/> 今度は小説を書く楽しみではなく、本を作る楽しみが待っています。</p>
-<p>どんなものか、お試しでやってみましょう。<br/> <br/> 【ワークスペース】ビューにある「テンプレートから始める」ボタンを押します。<br/> <img src="pic/TempWizard1.jpg" width="939" height="660" alt="" loading="lazy"></p>
-<p>【テンプレートから始める】画面が表示されます。<br/> <img src="pic/TempWizard2.jpg" width="1500" height="1639" alt="" loading="lazy"></p>
-<p>上部に【プロジェクトフォルダ名】を入力します。半角英数記号を推奨しており、それ以外はエラーになります。<br/> この例では、【yokogaki】としておきます。<br/> <ul> <li>横書きノベルゲーム</li> <li>縦書きノベルゲーム</li> <li>小さなサンプル</li> </ul> ……などのタブを選択し、新規作成プロジェクトの基にしたいテンプレを選択します。<br/> <img src="pic/TempWizard3.jpg" width="798" height="390" alt="" loading="lazy"></p>
-<p>決めたら、【このテンプレを基にする】をクリック。<br/> フォルダ選択ダイアログが表示されるので、プロジェクトフォルダを置く場所を指定して下さい。<br/> <img src="pic/TempWizard10.jpg" width="1500" height="1639" alt="" loading="lazy"></p>
-<p>右下に進捗が表示されます。ネット回線が速いなら一分以内に完了し、フォルダを開きます。<br/> <img src="pic/TempWizard11.jpg" width="750" height="216" alt="" loading="lazy"></p>
-<p>新プロジェクトが開かれました。<br/> ※一部の特殊なフォルダでは図のようなセキュリティダイアログが表示されるので、【はい】をクリックします。<br/> <img src="pic/TempWizard12.jpg" width="857" height="587" alt="" loading="lazy"></p>
-<p>また、フォルダを開いた際、初回のみ初期化処理が走ります。しばしお待ち下さい。<br/> <img src="pic/TempWizard13.jpg" width="447" height="374" alt="" loading="lazy"></p>
-<p>このようなセキュリティダイアログも同様に【続行】をクリック。<br/> <img src="pic/TempWizard14.jpg" width="757" height="460" alt="" loading="lazy"></p>
-<p>下方の【ターミナル】も停止し、準備完了です。<br/> readme.txtが開かれ、サイドバーにはエクスプローラーやFinderのようなファイル一覧が表示されています。大文字表示ですが【yokogaki】フォルダ内です。<br/> <img src="pic/TempWizard15.jpg" width="1499" height="1639" alt="" loading="lazy"></p>
-<p>SKYNovelロゴをクリックすると、ワークスペースに現在開かれているプロジェクト（フォルダ）一覧が表示されます。ここでは【yokogaki】です。<br/> またプロジェクトごとにライブラリを更新したり、ブラウザ版を起動したり、ワンタッチで様々な操作ができるようになっています。詳細はまた別項にて解説します。<br/> <img src="pic/TempWizard16.jpg" width="1500" height="1639" alt="" loading="lazy"></p>
-<p>試しに【設定】をクリックしてみると、プロジェクトの様々な設定が入力できる画面が表示されます。<br/> プロジェクト名が【yokogaki】です。<br/> ※変更すると、フォルダ名はそのままにプロジェクト名のみが変更されます。パッケージのファイル名などがプロジェクト名を基にしています。<br/> <img src="pic/TempWizard17.jpg" width="1500" height="1639" alt="" loading="lazy"></p>
-<p>今度は【起動：ブラウザ版】右にマウスカーソルを乗せると現われる、【再生ボタン】をクリックしてみましょう。<br/> <img src="pic/inst_other5.jpg" width="620" height="373" alt="" loading="lazy"></p>
-<p>ブラウザが起動し、テンプレを基にしたブラウザ版ゲームが起動します。<br/> <br/> 画像や音楽の素材を差し替えたり、スクリプトを書き換えたり。<br/> これを改造して、自分のゲームへと作り込んでいくわけです。<br/> <img src="pic/inst_other6.jpg" width="1207" height="906" alt="" loading="lazy"></p>
+<p>どんなものか、お試しでやってみましょう。<br/> <br/> 【ワークスペース】ビューにある「テンプレートから始める」ボタンを押します。<br/> <img src="pic/TempWizard1.jpg" width="939" height="660" alt="拡張機能のワークスペースビューにある「テンプレートから始める」ボタン" loading="lazy"></p>
+<p>【テンプレートから始める】画面が表示されます。<br/> <img src="pic/TempWizard2.jpg" width="1500" height="1639" alt="「テンプレートから始める」ウィザード画面" loading="lazy"></p>
+<p>上部に【プロジェクトフォルダ名】を入力します。半角英数記号を推奨しており、それ以外はエラーになります。<br/> この例では、【yokogaki】としておきます。<br/> <ul> <li>横書きノベルゲーム</li> <li>縦書きノベルゲーム</li> <li>小さなサンプル</li> </ul> ……などのタブを選択し、新規作成プロジェクトの基にしたいテンプレを選択します。<br/> <img src="pic/TempWizard3.jpg" width="798" height="390" alt="テンプレート選択画面。横書き／縦書き／小さなサンプルのタブが並ぶ" loading="lazy"></p>
+<p>決めたら、【このテンプレを基にする】をクリック。<br/> フォルダ選択ダイアログが表示されるので、プロジェクトフォルダを置く場所を指定して下さい。<br/> <img src="pic/TempWizard10.jpg" width="1500" height="1639" alt="プロジェクトフォルダの置き場所を選ぶフォルダ選択ダイアログ" loading="lazy"></p>
+<p>右下に進捗が表示されます。ネット回線が速いなら一分以内に完了し、フォルダを開きます。<br/> <img src="pic/TempWizard11.jpg" width="750" height="216" alt="右下に表示されるテンプレート展開の進捗" loading="lazy"></p>
+<p>新プロジェクトが開かれました。<br/> ※一部の特殊なフォルダでは図のようなセキュリティダイアログが表示されるので、【はい】をクリックします。<br/> <img src="pic/TempWizard12.jpg" width="857" height="587" alt="フォルダを信頼するか尋ねる VSCode のセキュリティダイアログ" loading="lazy"></p>
+<p>また、フォルダを開いた際、初回のみ初期化処理が走ります。しばしお待ち下さい。<br/> <img src="pic/TempWizard13.jpg" width="447" height="374" alt="初回起動時の初期化処理中の表示" loading="lazy"></p>
+<p>このようなセキュリティダイアログも同様に【続行】をクリック。<br/> <img src="pic/TempWizard14.jpg" width="757" height="460" alt="もう一つのセキュリティダイアログ（続行をクリックする）" loading="lazy"></p>
+<p>下方の【ターミナル】も停止し、準備完了です。<br/> readme.txtが開かれ、サイドバーにはエクスプローラーやFinderのようなファイル一覧が表示されています。大文字表示ですが【yokogaki】フォルダ内です。<br/> <img src="pic/TempWizard15.jpg" width="1499" height="1639" alt="新規プロジェクトが開かれた VSCode。readme.txt とファイル一覧が表示されている" loading="lazy"></p>
+<p>SKYNovelロゴをクリックすると、ワークスペースに現在開かれているプロジェクト（フォルダ）一覧が表示されます。ここでは【yokogaki】です。<br/> またプロジェクトごとにライブラリを更新したり、ブラウザ版を起動したり、ワンタッチで様々な操作ができるようになっています。詳細はまた別項にて解説します。<br/> <img src="pic/TempWizard16.jpg" width="1500" height="1639" alt="拡張機能 SKYNovel のワークスペースビュー。開いているプロジェクト一覧が並ぶ" loading="lazy"></p>
+<p>試しに【設定】をクリックしてみると、プロジェクトの様々な設定が入力できる画面が表示されます。<br/> プロジェクト名が【yokogaki】です。<br/> ※変更すると、フォルダ名はそのままにプロジェクト名のみが変更されます。パッケージのファイル名などがプロジェクト名を基にしています。<br/> <img src="pic/TempWizard17.jpg" width="1500" height="1639" alt="プロジェクト設定画面。プロジェクト名は yokogaki" loading="lazy"></p>
+<p>今度は【起動：ブラウザ版】右にマウスカーソルを乗せると現われる、【再生ボタン】をクリックしてみましょう。<br/> <img src="pic/inst_other5.jpg" width="620" height="373" alt="「起動：ブラウザ版」の行にマウスを乗せると現れる再生ボタン" loading="lazy"></p>
+<p>ブラウザが起動し、テンプレを基にしたブラウザ版ゲームが起動します。<br/> <br/> 画像や音楽の素材を差し替えたり、スクリプトを書き換えたり。<br/> これを改造して、自分のゲームへと作り込んでいくわけです。<br/> <img src="pic/inst_other6.jpg" width="1207" height="906" alt="ブラウザで起動したテンプレート版ゲームのタイトル画面" loading="lazy"></p>
 <h3 class="tag" id="remodel_title"><a class="hash" href="#remodel_title" tabindex="-1" aria-hidden="true">#</a> <span class="td">改造してみよう</span></h3>
 <p class="lead">テンプレートを改造してみましょう。まずはタイトル画面から。</p>
-<p>自由な文字列からボタンを作れる「文字ボタン」という機能があります。<br/> テンプレートのタイトル画面でも使用されていますので、これを変更してみましょう。<br/> <img src="pic/remodel_title0.jpg" width="1024" height="768" alt="" loading="lazy"></p>
-<p>「Activity Bar」一番上の「エクスプローラー」を選択します。<br/> 【prj/script フォルダ】下の【main.sn】をクリックすると、そのファイルが開かれます。<br/> この拡張子【.sn】のファイルはスクリプトというテキストファイルで、シナリオや様々な演出はこのファイルを変更・記述していきます。<br/> <img src="pic/remodel_title1.jpg" width="1024" height="768" alt="" loading="lazy"> <br/> 「わけの分からないことが書いてある！　意味不明！」<br/> ですが、いまは置いといてください。おいおい解説しますので。<br/> <br/> （余談）（慣れればお好きなテキストエディタで変更して構いません）<br/> ※文字コードはUTF-8、改行コードは LF 固定です。文字コード・改行コードを間違うミスに注意。</p>
-<p>ここで55行目付近にある「ロード」という文字を「つづきから」に変えてみます。<br/> メニューの【ファイル】-【保存】、あるいは Ctrl+Sショートカットで保存します。<br/> <img src="pic/remodel_title2.jpg" width="1024" height="768" alt="" loading="lazy"></p>
-<p>自動で再読み込みされます。<br/> （自動でされなければ、ブラウザの再読み込みボタンを押します）<br/> <img src="pic/remodel_title3.jpg" width="474" height="278" alt="" loading="lazy"></p>
-<p>文字が変更されました！　ボタンもちゃんと押せます。<br/> <img src="pic/remodel_title4.jpg" width="1024" height="768" alt="" loading="lazy"></p>
+<p>自由な文字列からボタンを作れる「文字ボタン」という機能があります。<br/> テンプレートのタイトル画面でも使用されていますので、これを変更してみましょう。<br/> <img src="pic/remodel_title0.jpg" width="1024" height="768" alt="テンプレートのタイトル画面。文字ボタンでメニューが作られている" loading="lazy"></p>
+<p>「Activity Bar」一番上の「エクスプローラー」を選択します。<br/> 【prj/script フォルダ】下の【main.sn】をクリックすると、そのファイルが開かれます。<br/> この拡張子【.sn】のファイルはスクリプトというテキストファイルで、シナリオや様々な演出はこのファイルを変更・記述していきます。<br/> <img src="pic/remodel_title1.jpg" width="1024" height="768" alt="VSCode で prj/script/main.sn を開いたところ" loading="lazy"> <br/> 「わけの分からないことが書いてある！　意味不明！」<br/> ですが、いまは置いといてください。おいおい解説しますので。<br/> <br/> （余談）（慣れればお好きなテキストエディタで変更して構いません）<br/> ※文字コードはUTF-8、改行コードは LF 固定です。文字コード・改行コードを間違うミスに注意。</p>
+<p>ここで55行目付近にある「ロード」という文字を「つづきから」に変えてみます。<br/> メニューの【ファイル】-【保存】、あるいは Ctrl+Sショートカットで保存します。<br/> <img src="pic/remodel_title2.jpg" width="1024" height="768" alt="main.sn の「ロード」を「つづきから」に書き換えたエディタ" loading="lazy"></p>
+<p>自動で再読み込みされます。<br/> （自動でされなければ、ブラウザの再読み込みボタンを押します）<br/> <img src="pic/remodel_title3.jpg" width="474" height="278" alt="スクリプト保存後にブラウザが自動で再読み込みされる様子" loading="lazy"></p>
+<p>文字が変更されました！　ボタンもちゃんと押せます。<br/> <img src="pic/remodel_title4.jpg" width="1024" height="768" alt="ボタンの文字が「つづきから」に変わったタイトル画面" loading="lazy"></p>
 <p>さて、いまわざと触れませんでしたが、いま変更したのは「[button]タグのtext属性」というものです。<br/> 「タグ？？？　属性？？？」<br/> 新しい言葉が出てきましたね。タグについて解説していきます。</p>
 <h3 class="tag" id="autosave"><a class="hash" href="#autosave" tabindex="-1" aria-hidden="true">#</a> <span class="td">（豆知識）VSCodeで自動保存</span></h3>
 <p class="lead">スクリプトを変更するたびに保存を選んだり、毎回ショートカットを押すのは面倒！</p>
-<p>そこで、VSCode に保存を任せてしまいましょう。<br/> こちらの記事を参考に、VSCode を便利に設定してみて下さい。<br/> →<a href="https://notti-blog.com/entry/vscode-auto-save/" target="_blank" rel="noopener">[VS Code] 自動保存するように設定する | あいすのブログ</a> <a href="http://web.archive.org/web/20190521162502/https://notti-blog.com/entry/vscode-auto-save/" target="_blank" rel="noopener">（web.archive.org）</a><br/> <img src="pic/vscode_autosave.jpg" width="725" height="373" alt="" loading="lazy"> （注意）設定画面の「ダーティーファイル」というのは、「変更したけど保存してないファイル」という意味合いです。</p>
+<p>そこで、VSCode に保存を任せてしまいましょう。<br/> こちらの記事を参考に、VSCode を便利に設定してみて下さい。<br/> →<a href="https://notti-blog.com/entry/vscode-auto-save/" target="_blank" rel="noopener">[VS Code] 自動保存するように設定する | あいすのブログ</a> <a href="http://web.archive.org/web/20190521162502/https://notti-blog.com/entry/vscode-auto-save/" target="_blank" rel="noopener">（web.archive.org）</a><br/> <img src="pic/vscode_autosave.jpg" width="725" height="373" alt="VSCode の設定画面で自動保存（Auto Save）を設定しているところ" loading="lazy"> （注意）設定画面の「ダーティーファイル」というのは、「変更したけど保存してないファイル」という意味合いです。</p>
 <p>自分も「onFocusChange」にしてます。別のアプリをクリックしただけで保存してくれます。この辺はお好みで。<br/> スクリプトの変更を戻したい場合は、メニューの【編集】-【元に戻す】にて。「アンドゥ（UNDO）」というやつです。</p>
 <p>VSCode には他にも様々な便利設定があります。どんどん使いやすくしていきましょう！</p>
 <h3 class="tag" id="script"><a class="hash" href="#script" tabindex="-1" aria-hidden="true">#</a> <span class="td">スクリプトとは</span></h3>
 <p class="lead">スクリプトってなんでしょう？</p>
-<p>SKYNovelにおけるスクリプトとは、<br/> テキストファイルに書いた「小説」に、タグなどによる「演出」を書き加えたものです。<br/> <br/> 実際に見てみましょう。【main.sn】と同じフォルダにある、【ss_000.sn】を開いて下さい。<br/> <img src="pic/script0.png" width="379" height="285" alt="" loading="lazy"></p>
-<p>「小説」は【君の部屋に行こう】という文字の部分です。<br/> 「タグなどの命令」は「[」と「]」の半角文字の大括弧に挟まれた、英語や数字や記号の部分です。<br/> <img src="pic/script1.jpg" width="480" height="451" alt="" loading="lazy"><br/> （余談）「;」で始まる部分はコメントや注釈と呼ばれるもので、制作者がメモを書ける機能です。SKYNovel 自体は読み飛ばしますので、スルーして下さい。</p>
-<p>７行目は「[r]」ですね。これを今後は「タグ名が r だ」と言い、「rタグ」と呼び、今後この文章（SKYNovel 開発者向け情報）では[r]と書きます。<br/> <br/> 【bg=white】とか【visible=false】とか、たくさん「おまけ」が付いてる[grp]や18行目の[plc]に注目です。<br/> 「おまけ」は、「属性」と呼びます。<br/> 一つの働きをするタグに、細かい指示をする記述の事です。<br/> 半角空白や改行で途切れて、複数指定できます。（タグがサポートしてない属性は無視されます）<br/> <br/> 属性って色んなものにありますよね。<br/> 呪文にも「タイプは炎系。力の源は闇。攻撃力は２５。水棲生物に強い」<br/> 女性キャラクターなら「年齢は十四歳。メガネは必須！　髪色は黒髪、背はちょっと高めなのを気にしている。スリーサイズはそれぞれ……」<br/> 某ラーメン屋なら「アブラナシヤサイカラメマシニンニクスクナメ」<br/> <br/> 同様に[sys_scenario_start]、最後に[grp]などなど。<br/> それぞれが小さな機能を持っています。それらを積み木のように組み合わせて、演出をしていきます。</p>
-<p>試しに [r] について知りましょう。<br/> タグの機能については「タグリファレンス」というWeb上の資料で確認できます。<br/> このページの左上の【タグ】からでもいいですが、リンクを張っておきます。<br/> →<a href="tag.html#r" target="_blank" rel="noopener">SKYNovel タグリファレンス Tag Reference [r]</a><br/> 「文字レイヤ」とか「ページ」とか色々不明の言葉がありますが──<br/> とにかく、【改行を出力する】機能を持っています。</p>
+<p>BluesNovelにおけるスクリプトとは、<br/> テキストファイルに書いた「小説」に、タグなどによる「演出」を書き加えたものです。<br/> <br/> 実際に見てみましょう。【main.sn】と同じフォルダにある、【ss_000.sn】を開いて下さい。<br/> <img src="pic/script0.png" width="379" height="285" alt="エクスプローラーで ss_000.sn を選んだところ" loading="lazy"></p>
+<p>「小説」は【君の部屋に行こう】という文字の部分です。<br/> 「タグなどの命令」は「[」と「]」の半角文字の大括弧に挟まれた、英語や数字や記号の部分です。<br/> <img src="pic/script1.jpg" width="480" height="451" alt="ss_000.sn のスクリプト。角括弧で囲まれたタグと本文が並ぶ" loading="lazy"><br/> （余談）「;」で始まる部分はコメントや注釈と呼ばれるもので、制作者がメモを書ける機能です。BluesNovel 自体は読み飛ばしますので、スルーして下さい。</p>
+<p>７行目は「[r]」ですね。これを今後は「タグ名が r だ」と言い、「rタグ」と呼び、今後この文章（BluesNovel 開発者向け情報）では[r]と書きます。<br/> <br/> 【bg=white】とか【visible=false】とか、たくさん「おまけ」が付いてる[grp]や18行目の[plc]に注目です。<br/> 「おまけ」は、「属性」と呼びます。<br/> 一つの働きをするタグに、細かい指示をする記述の事です。<br/> 半角空白や改行で途切れて、複数指定できます。（タグがサポートしてない属性は無視されます）<br/> <br/> 属性って色んなものにありますよね。<br/> 呪文にも「タイプは炎系。力の源は闇。攻撃力は２５。水棲生物に強い」<br/> 女性キャラクターなら「年齢は十四歳。メガネは必須！　髪色は黒髪、背はちょっと高めなのを気にしている。スリーサイズはそれぞれ……」<br/> 某ラーメン屋なら「アブラナシヤサイカラメマシニンニクスクナメ」<br/> <br/> 同様に[sys_scenario_start]、最後に[grp]などなど。<br/> それぞれが小さな機能を持っています。それらを積み木のように組み合わせて、演出をしていきます。</p>
+<p>試しに [r] について知りましょう。<br/> タグの機能については「タグリファレンス」というWeb上の資料で確認できます。<br/> このページの左上の【タグ】からでもいいですが、リンクを張っておきます。<br/> →<a href="tag.html#r" target="_blank" rel="noopener">BluesNovel タグリファレンス Tag Reference [r]</a><br/> 「文字レイヤ」とか「ページ」とか色々不明の言葉がありますが──<br/> とにかく、【改行を出力する】機能を持っています。</p>
 <p>タグは言うなれば魔法の呪文。<br/> RPGなら暗い洞窟を明るく照らしたり、仲間の体力を回復したり、扉の鍵を開けたり。<br/> 呪文は一つ一つに意味があり、役割があります。便利で頼りになる道具です。<br/> でも瀕死の仲間を明るく照らしたり、扉の体力（？）を回復したりしても意味はありません。<br/> タグの使い道を正しく理解し、よりよいノベルゲーム制作という冒険を進めましょう。<br/> <br/> 「タグなどの命令」は一見ややこしく難しそうに見えます。<br/> ですが、「今すぐ」「全てを」理解する必要はありません。</p>
 <p><a href="tag.html" target="_blank" rel="noopener">タグリファレンス</a>というカンニングペーパー、辞書があります。<br/> タグを使いこなすのに、「あんなタグがあったな」となんとなく憶えておけば、あとはタグリファレンスという辞書を引きながら記述していけばよいのです。</p>
-<p>例えばさっき「ロード」という文字を「つづきから」に変えたのは、<a href="tag.html#button" target="_blank" rel="noopener">[button]</a> タグの text属性 を変更したのだった、というわけです。<br/> <img src="pic/remodel_title1.jpg" width="1024" height="768" alt="" loading="lazy"></p>
+<p>例えばさっき「ロード」という文字を「つづきから」に変えたのは、<a href="tag.html#button" target="_blank" rel="noopener">[button]</a> タグの text属性 を変更したのだった、というわけです。<br/> <img src="pic/remodel_title1.jpg" width="1024" height="768" alt="VSCode で prj/script/main.sn を開いたところ" loading="lazy"></p>
 <h3 class="tag" id="bracket"><a class="hash" href="#bracket" tabindex="-1" aria-hidden="true">#</a> <span class="td">（豆知識）引用符っているの？ いらないの？</span></h3>
 <p class="lead">属性の値の引用符について。</p>
-<p>引用符、すなわち。<br/> 属性の値でアポストロフィー【'】やクオーテーションマーク【"】で囲っていたりいなかったり、表記が揺れているのが分かるでしょうか？<br/> 先ほど変更した[button]ですら、三種類が混在しています。<br/> <br/> [button text='つづきから' left=350 top=360 width=90 call=true label=*load hint="セーブ箇所から続ける" enterse=&sysse_choice clickse=&sysse_ok1]<br/> <br/> これはどの書き方でも同じ動作をします。ので、制作上はどれでも構いません。<br/> （見た目があまり美しくないので、揃えたほうが良さげですが……）<br/> ただ、「引用符に囲まないと半角空白が表現できない」などの理由で、この文法が用意されています。<br/> 変更前に text=' ロード ' という記述だったのもそれです。<br/> （引用符を使わないと、属性の区切りと見なされエラーになってしまいます）<br/> <br/> 引用符を文字として値にしたい場合もあります。<br/> その場合は text='太郎"うひょー"' という感じで指定できます。<br/> 両方の引用符を使いたいときは……？<br/> 実は【#】（半角いげたマーク）も引用符に使えるようになっています。<br/> text=#太郎"うひょー"　花子'むきょー'#<br/> <br/> では三種類の引用符を同時に文字としたいときは……？<br/> SKYNovel v1.18.8 より、エスケープシーケンスというものが導入されました。<br/> "\"'#"<br/> '"\'#'<br/> #"'\##<br/> というように、「\」を前に付けて下さい。</p>
+<p>引用符、すなわち。<br/> 属性の値でアポストロフィー【'】やクオーテーションマーク【"】で囲っていたりいなかったり、表記が揺れているのが分かるでしょうか？<br/> 先ほど変更した[button]ですら、三種類が混在しています。<br/> <br/> [button text='つづきから' left=350 top=360 width=90 call=true label=*load hint="セーブ箇所から続ける" enterse=&sysse_choice clickse=&sysse_ok1]<br/> <br/> これはどの書き方でも同じ動作をします。ので、制作上はどれでも構いません。<br/> （見た目があまり美しくないので、揃えたほうが良さげですが……）<br/> ただ、「引用符に囲まないと半角空白が表現できない」などの理由で、この文法が用意されています。<br/> 変更前に text=' ロード ' という記述だったのもそれです。<br/> （引用符を使わないと、属性の区切りと見なされエラーになってしまいます）<br/> <br/> 引用符を文字として値にしたい場合もあります。<br/> その場合は text='太郎"うひょー"' という感じで指定できます。<br/> 両方の引用符を使いたいときは……？<br/> 実は【#】（半角いげたマーク）も引用符に使えるようになっています。<br/> text=#太郎"うひょー"　花子'むきょー'#<br/> <br/> では三種類の引用符を同時に文字としたいときは……？<br/> 本家 SKYNovel v1.18.8 で導入されたエスケープシーケンスに対応しています。<br/> "\"'#"<br/> '"\'#'<br/> #"'\##<br/> というように、「\」を前に付けて下さい。</p>
 <h3 class="tag" id="replace_bgm"><a class="hash" href="#replace_bgm" tabindex="-1" aria-hidden="true">#</a> <span class="td">ＢＧＭ素材を差し替えよう</span></h3>
 <p class="lead">素材を差し替えて、よりあなたの作品らしく</p>
-<p>audio フォルダに様々な mp3 ファイルが入っています。<br/> これらは効果音やＢＧＭ（バックグラウンドミュージック）のファイルです。<br/> タイトル画面でもＢＧＭが流れていますが、これを変更してみましょう。<br/> <img src="pic/replace_bgm0.jpg" width="379" height="285" alt="" loading="lazy"><br/> 再び【main.sn】を開いて、64行目辺りにある<a href="macro_plg.htm#bgm" target="_blank" rel="noopener">[bgm]</a>に注目して下さい。</p>
+<p>audio フォルダに様々な mp3 ファイルが入っています。<br/> これらは効果音やＢＧＭ（バックグラウンドミュージック）のファイルです。<br/> タイトル画面でもＢＧＭが流れていますが、これを変更してみましょう。<br/> <img src="pic/replace_bgm0.jpg" width="379" height="285" alt="エクスプローラーの audio フォルダに並ぶ mp3 ファイル" loading="lazy"><br/> 再び【main.sn】を開いて、64行目辺りにある<a href="macro_plg.htm#bgm" target="_blank" rel="noopener">[bgm]</a>に注目して下さい。</p>
 <p>fn="free10" となっているので、値をfree04に変更してみましょう。<br/> 拡張子は省略できる、というのもポイントです。<br/> <br/> ページを再読み込みすると、なんだか明るい雰囲気のタイトル画面になりました。<br/> 画像素材なども同じように変更・差し替えていくことができます。</p>
 
 <h2 class="sec" id="sec-2">初級テクニック</h2>
-<h3 class="tag" id="upd_sn"><a class="hash" href="#upd_sn" tabindex="-1" aria-hidden="true">#</a> <span class="td">SKYNovelを更新しよう</span></h3>
-<p class="lead">SKYNovelは随時更新されています。更新の通知と手段を知りましょう</p>
-<p>VSCode起動時、時々右下にポップアップが現われることがあります。<br/> <img src="pic/upd_sn0.png" width="463" height="139" alt="" loading="lazy"></p>
-<p>上部【開発環境】にネット上の最新バージョン、<br/> 下部【開発ツール】にあなたのPC/Mac上のバージョンが表示されます。<br/> 値が異なりますね。最新版に更新しましょう。<br/> <img src="pic/upd_sn1.jpg" width="324" height="404" alt="" loading="lazy"></p>
-<p>とはいっても、右にあるボタンを押すだけです。<br/> しばらく待つと、最新バージョンに更新されます。簡単ですね。<br/> <img src="pic/upd_sn2.png" width="488" height="194" alt="" loading="lazy"></p>
+<h3 class="tag" id="upd_sn"><a class="hash" href="#upd_sn" tabindex="-1" aria-hidden="true">#</a> <span class="td">BluesNovelを更新しよう</span></h3>
+<p class="lead">BluesNovelは随時更新されています。更新の通知と手段を知りましょう</p>
+<p>VSCode起動時、時々右下にポップアップが現われることがあります。<br/> <img src="pic/upd_sn0.png" width="463" height="139" alt="VSCode 起動時に右下へ出る更新通知ポップアップ" loading="lazy"></p>
+<p>上部【開発環境】にネット上の最新バージョン、<br/> 下部【開発ツール】にあなたのPC/Mac上のバージョンが表示されます。<br/> 値が異なりますね。最新版に更新しましょう。<br/> <img src="pic/upd_sn1.jpg" width="324" height="404" alt="拡張機能ビューの開発環境／開発ツールのバージョン表示（値が食い違っている）" loading="lazy"></p>
+<p>とはいっても、右にあるボタンを押すだけです。<br/> しばらく待つと、最新バージョンに更新されます。簡単ですね。<br/> <img src="pic/upd_sn2.png" width="488" height="194" alt="更新ボタンを押して最新バージョンへ更新している表示" loading="lazy"></p>
 <h3 class="tag" id="lay"><a class="hash" href="#lay" tabindex="-1" aria-hidden="true">#</a> <span class="td">（レイヤなどについて）</span></h3>
 <p class="lead">（未作成）</p>
-<p>SKYNovel でも AIRNovel と概念は変わらないので、AIRNovel の解説文へのリンクでお茶を濁します。いずれ書きなおしたいです……。<br/> →<a href="https://famibee.web.fc2.com/tag_dev/dev.htm#layer">AIRNovel 開発者向け情報</a></p>
+<p>BluesNovel でも AIRNovel と概念は変わらないので、AIRNovel の解説文へのリンクでお茶を濁します。いずれ書きなおしたいです……。<br/> →<a href="https://famibee.web.fc2.com/tag_dev/dev.htm#layer">AIRNovel 開発者向け情報</a></p>
 <p>（予定稿・順不同）<br/> レイヤとは<br/> レイヤには裏表がある<br/> 使用できる素材ファイル<br/> フォルダの追加削除<br/> ジャンプしてみる<br/> 選択肢を作る<br/> スクリプト文法・詳細編<br/> <br/> マクロ</p>
 <h3 class="tag" id="materials"><a class="hash" href="#materials" tabindex="-1" aria-hidden="true">#</a> <span class="td">サポートする画像・音声ファイルなど</span></h3>
 <p class="lead">（未作成）</p>
@@ -375,11 +379,11 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h2 class="sec" id="sec-3">中級テクニック</h2>
 <h3 class="tag" id="val_debug"><a class="hash" href="#val_debug" tabindex="-1" aria-hidden="true">#</a> <span class="td">変数・定数の可視化機能</span></h3>
 <p class="lead">デベロッパーツールから変数や定数を確認できる機能です。</p>
-<p>ブラウザ版では、デベロッパーツール（ChromeやSafariの機能）を開いて【Application】-【Local Storage】から、システム変数(sys:)などの内容が見えます。<br/> ※直接値の変更・クリアができます。jsonで記入して下さい。<br/> ※暗号化もします。<br/> <img src="pic/val_debug0.png" width="934" height="602" alt="" loading="lazy"></p>
-<p>またプロジェクトファイル（prj.json）を右クリック-【SKYNovel GUIで編集する】から【variable】にチェックすると、 <img src="pic/val_debug1a.png" width="568" height="514" alt="" loading="lazy"> <img src="pic/val_debug1b.png" width="515" height="275" alt="" loading="lazy"> 全ての変数が可視化されます。（Session Storageのほうに表示される）<br/> ※こちらは値の変更をサポートしていません。[s][l]などの停止時に出力するだけです。<br/> ※暗号化ON/OFFも予定しています。<br/> <img src="pic/val_debug2.png" width="674" height="368" alt="" loading="lazy"></p>
+<p>ブラウザ版では、デベロッパーツール（ChromeやSafariの機能）を開いて【Application】-【Local Storage】から、システム変数(sys:)などの内容が見えます。<br/> ※直接値の変更・クリアができます。jsonで記入して下さい。<br/> ※暗号化もします。<br/> <img src="pic/val_debug0.png" width="934" height="602" alt="ブラウザのデベロッパーツール。Application の Local Storage にシステム変数が並ぶ" loading="lazy"></p>
+<p>またプロジェクトファイル（prj.json）を右クリック-【SKYNovel GUIで編集する】から【variable】にチェックすると、 <img src="pic/val_debug1a.png" width="568" height="514" alt="prj.json の GUI 編集画面で variable にチェックを入れるところ" loading="lazy"> <img src="pic/val_debug1b.png" width="515" height="275" alt="variable 設定の詳細部分" loading="lazy"> 全ての変数が可視化されます。（Session Storageのほうに表示される）<br/> ※こちらは値の変更をサポートしていません。[s][l]などの停止時に出力するだけです。<br/> ※暗号化ON/OFFも予定しています。<br/> <img src="pic/val_debug2.png" width="674" height="368" alt="Session Storage に可視化された全変数" loading="lazy"></p>
 <h3 class="tag" id="reserve_value_save"><a class="hash" href="#reserve_value_save" tabindex="-1" aria-hidden="true">#</a> <span class="td">セーブ変数(save:)</span></h3>
 <p class="lead">セーブデータにセーブされる変数</p>
-<p>[record_place]と[save]でセーブデータに保存され、[load]で回復できる変数。<br/> 同じ変数でもセーブデータ個別に違う値になる想定で使う。<br/> 別のセーブデータを[load]すると、現在のセーブ変数は上書きされる。<br/> <br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、SKYNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はSKYNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にSKYNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「&sn.auto.enabled=true」は自動読みすすみモードを有効にします。</p>
+<p>[record_place]と[save]でセーブデータに保存され、[load]で回復できる変数。<br/> 同じ変数でもセーブデータ個別に違う値になる想定で使う。<br/> 別のセーブデータを[load]すると、現在のセーブ変数は上書きされる。<br/> <br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、BluesNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はBluesNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にBluesNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「&sn.auto.enabled=true」は自動読みすすみモードを有効にします。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">変数名</th><th scope="col">初期値</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>save:const.sn.autowc.enabled</td><td>false</td><td>true、false</td><td>[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）enabled属性で指定した値。</td></tr>
 <tr><td>save:const.sn.autowc.text</td><td rowspan="2">''</td><td rowspan="2">文字列</td><td rowspan="2">[<a href="tag.html#current" target="_blank" rel="noopener">autowc</a>]（文字ごとのウェイト）同名属性で指定した値。<br/>
@@ -430,7 +434,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h3 class="tag" id="reserve_value_sys"><a class="hash" href="#reserve_value_sys" tabindex="-1" aria-hidden="true">#</a> <span class="td">システム変数(sys:)</span></h3>
 <p><p style="font-size:.9em">bluesnovel：sys:の変数は起動時と[<a href="tag.html#clearsysvar">clearsysvar</a>]時に本家と同じ初期値が入り、<b>停止点ごとにlocalStorageへ保存される</b>（本家と同じ「skynovel.《save_ns》 - sys」キー）。<br/> ⚠️の付いた変数は読み書きはできるが、実際に参照して使う機能がまだ無い（値を変更しても見た目や挙動には反映されない）。理由は各行のコメント欄に補足する。</p>
 <p class="lead">（セーブデータに関わらず）共通でセーブされる変数</p>
-<p>変数の変更が即時に保存される変数。<br/> セーブデータに関わらず、共通して使用する情報を保存する用途。（例：アルバム解放情報・ゲームの達成率など）<br/> <br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、SKYNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はSKYNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にSKYNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「&sys:TextLayer.Back.Alpha」はテキストウインドウの背景の濃度を変更できます。</p>
+<p>変数の変更が即時に保存される変数。<br/> セーブデータに関わらず、共通して使用する情報を保存する用途。（例：アルバム解放情報・ゲームの達成率など）<br/> <br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、BluesNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はBluesNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にBluesNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「&sys:TextLayer.Back.Alpha」はテキストウインドウの背景の濃度を変更できます。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">変数名</th><th scope="col">初期値</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>sys:const.sn.aPageLog</td><td>'[]'</td><td>文字列</td><td>
 	ページ遷移用情報（JSON文字列）。<b>bluesnovel</b>：<code>[{fn, idx, place}, …]</code>＝<b>位置だけ</b>を出す（本家はしおりごと出すが、読む用途が「何ページ分あるか」しかないため）
@@ -478,11 +482,11 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 </table></div>
 <h3 class="tag" id="reserve_value_tmp"><a class="hash" href="#reserve_value_tmp" tabindex="-1" aria-hidden="true">#</a> <span class="td">雑用変数(tmp:)</span></h3>
 <p class="lead">雑用の変数</p>
-<p>保存しない変数です。セーブデータを読み込んでも変化せず、ゲームを終了すると消え去ります。<br/> SKYNovelが「保存する必要は無いけど値を使いたいだろうから変数に」している変数もあります。<br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、SKYNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はSKYNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にSKYNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「sn.auto.enabled」は自動読みすすみモードかどうかを変更できます。</p>
+<p>保存しない変数です。セーブデータを読み込んでも変化せず、ゲームを終了すると消え去ります。<br/> BluesNovelが「保存する必要は無いけど値を使いたいだろうから変数に」している変数もあります。<br/> <br/> ※スクリプターが自由に新たに値セット・取得できますが、BluesNovelが値を設定している変数や定数もあります。<br/> const.sn.〜、sn.〜という名前はBluesNovelが使いますので、皆さんは新規に作成しないで下さい。<br/> 以下の表にあるモノを使うの（読み・書き）は全然ＯＫです！<br/> （const.sn.〜は必ずしも定数ではなく、一部は実行中にBluesNovelが値を変更する場合があります）<br/> <br/> 冒頭がconstな変数は、書く（設定）することができません。<br/> constでない変数は、設定するとその値がシステムに反映されます。<br/> 例えば「sn.auto.enabled」は自動読みすすみモードかどうかを変更できます。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">変数名</th><th scope="col">初期値</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>const.Date.getDateStr</td><td>取得の瞬間の日時</td><td>"2019/02/10 15:47"形式</td><td>変数参照時の日時を返す</td></tr>
 <tr><td>const.Date.getTime</td><td></td><td>0〜；ミリ秒</td><td>JavaScriptの(new Date).getTime()</td></tr>
-<tr><td>const.sn.bookmark.json</td><td>'[]'</td><td>json</td><td>SKYNovel内部によるsave:の管理用<br/>bluesnovel：[<a href="tag.html#save">save</a>]の属性に<code>place</code>を足した配列。ロード画面（テンプレの frames/_archive.sn）がこれを読んで枠を並べる</td></tr>
+<tr><td>const.sn.bookmark.json</td><td>'[]'</td><td>json</td><td>BluesNovel内部によるsave:の管理用<br/>bluesnovel：[<a href="tag.html#save">save</a>]の属性に<code>place</code>を足した配列。ロード画面（テンプレの frames/_archive.sn）がこれを読んで枠を並べる</td></tr>
 <tr><td>const.sn.config.（略）</td><td></td><td></td><td>
 	prj.jsonの内容を返す。<br/>
 	例えば「const.sn.config.window.width」だと画面の横幅を返す。
@@ -605,14 +609,14 @@ const.sn.log.json
 <p>は</p>
 <aside class="callout note">安全｜剃刀《かみそり》の</aside>
 <p>と同様です。</p>
-<p><img src="pic/ruby1.png" width="77" height="147" alt="" loading="lazy"></p>
+<p><img src="pic/ruby1.png" width="77" height="147" alt="「安全剃刀の」に『かみそり』のルビが付いた表示" loading="lazy"></p>
 <p></li> <li> ｜（全角縦線）は漢字と平仮名・句読点などの境界なら省略できます。</p>
 <aside class="callout note">心を撲《う》たずには</aside>
 <p></li> <li> ルビを半角空白で区切ると、その文字群単位で親文字にルビを振ります。</p>
 <aside class="callout note">、所謂《いはゆる》〜（省略）〜廻つた独楽《こ ま》が</aside>
-<p><img src="pic/ruby2.png" width="125" height="171" alt="" loading="lazy"><br/> 「こ」と「ま」の間に半角空白が入っているので、独に「こ」、楽に「ま」がルビとして振られます。<br/> <br/> </li> <li> ルビのルビ揃えは、[lay][span]のr_align属性で文字レイヤに設定しますが、ルビごとに指定することも出来ます。<br/> 記法は《》（二重山括弧）の中に「r_align属性 ＋ ｜（全角縦線）＋ルビ文字」です。<br/> 文字レイヤのr_align属性がenter（中付き）だとして……</p>
+<p><img src="pic/ruby2.png" width="125" height="171" alt="「独楽」の各文字に「こ」「ま」を分けて振ったルビ表示" loading="lazy"><br/> 「こ」と「ま」の間に半角空白が入っているので、独に「こ」、楽に「ま」がルビとして振られます。<br/> <br/> </li> <li> ルビのルビ揃えは、[lay][span]のr_align属性で文字レイヤに設定しますが、ルビごとに指定することも出来ます。<br/> 記法は《》（二重山括弧）の中に「r_align属性 ＋ ｜（全角縦線）＋ルビ文字」です。<br/> 文字レイヤのr_align属性がenter（中付き）だとして……</p>
 <aside class="callout note">雷《いかずち》さらに雷《left｜いかずち》さらに雷《right｜いかずち》さらに雷《いかずち》を</aside>
-<p><img src="pic/ruby3.png" width="383" height="55" alt="" loading="lazy"><br/> <br/> left（肩付き）で「先頭親文字から揃え」られ、<br/> right（右／下揃え）で「末尾親文字から揃え」られています。<br/> 省略時は文字レイヤへの[lay][span]のr_align属性に従います。<br/> <br/> </li> <li> 《*》（半角アスタリスクを一文字）で傍点を打ちます。<br/> 親文字全てに一つずつ自動で打ちます。<br/> ルビ揃えは自動で「center」になります。<br/> <br/> </li> <li> 《*★》とすると傍点を変更でき、「★」で傍点を打ちます。<br/> 傍点は文法が破綻しないもの（「》｜」以外）なら自由です。<br/> <br/> </li> <li> ルビ記法《》内は URLエスケープされます。これにより文法上直接記述できない文字（｜や《》や一文字マクロ）も表示できるようになります。<br/> ｜（縦棒）を使用する場合、「%ef%bd%9c」と記述します。<br/> 《》（二重山括弧）を使用する場合、「%e3%80%8a」「%e3%80%8b」と記述します。<br/> 「%」を使用する場合、「%25」と記述します。<br/> <br/> </li> <li> ルビ揃えや URLエスケープを組み合わせることができます。</p>
+<p><img src="pic/ruby3.png" width="383" height="55" alt="同じルビを中付き・肩付き・右揃えで並べた比較" loading="lazy"><br/> <br/> left（肩付き）で「先頭親文字から揃え」られ、<br/> right（右／下揃え）で「末尾親文字から揃え」られています。<br/> 省略時は文字レイヤへの[lay][span]のr_align属性に従います。<br/> <br/> </li> <li> 《*》（半角アスタリスクを一文字）で傍点を打ちます。<br/> 親文字全てに一つずつ自動で打ちます。<br/> ルビ揃えは自動で「center」になります。<br/> <br/> </li> <li> 《*★》とすると傍点を変更でき、「★」で傍点を打ちます。<br/> 傍点は文法が破綻しないもの（「》｜」以外）なら自由です。<br/> <br/> </li> <li> ルビ記法《》内は URLエスケープされます。これにより文法上直接記述できない文字（｜や《》や一文字マクロ）も表示できるようになります。<br/> ｜（縦棒）を使用する場合、「%ef%bd%9c」と記述します。<br/> 《》（二重山括弧）を使用する場合、「%e3%80%8a」「%e3%80%8b」と記述します。<br/> 「%」を使用する場合、「%25」と記述します。<br/> <br/> </li> <li> ルビ揃えや URLエスケープを組み合わせることができます。</p>
 <aside class="callout note">「｜考えるな《center｜Don't%20think,》。｜感じる《Feel.》んだ」</aside>
 <p></li> </ul></p>
 <h3 class="tag" id="font"><a class="hash" href="#font" tabindex="-1" aria-hidden="true">#</a> <span class="td">フォントの導入</span></h3>
@@ -626,11 +630,11 @@ const.sn.log.json
 <p class="lead">2.使用する字形だけ入ったフォントファイルを作成</p>
 <p>・<a href="https://opentype.jp/subsetfontmk.html">サブセットフォントメーカー</a>（Win / Mac版あり）<br/> 【フォントに格納する文字】へ本文をコピペして、ツールに貼って変換します。<br/> ※【書体名を変更する】は使わない<br/> ※ただ縦書きフォントでは「──」【……】を渡すと横書き文字が入って上手くいかないので、削除しておく。<br/> <br/> 全ての文字が入ったフォントファイルは大きすぎる。ロード時間も掛かる。<br/> 上記手順で、「初音館にて」ではサイズが1/100ほどになった。<br/> ・ipamjm.woff2<br/> 23.1MB（全部入り）<br/> 344 KB（初音館で使用しているモノのみ）<br/> 343540 /23065440 = 0.014894145</p>
 <p class="lead">3.（可能なら圧縮率の高い）woff2に変換</p>
-<p>・<a href="https://memorva.jp/memo/html/css_webfont_woff_woff2_converter_henkan_soft.php">WebフォントWOFF、WOFF2形式に変換できるフリーソフト</a><br/> ・<a href="https://opentype.jp/woffconv.html">WOFFコンバータ</a>（Win / Mac版あり）<br/> SKYNovelがサポートするフォント拡張子は「woff2, otf, ttf」です。※ブラウザによる</p>
+<p>・<a href="https://memorva.jp/memo/html/css_webfont_woff_woff2_converter_henkan_soft.php">WebフォントWOFF、WOFF2形式に変換できるフリーソフト</a><br/> ・<a href="https://opentype.jp/woffconv.html">WOFFコンバータ</a>（Win / Mac版あり）<br/> BluesNovelがサポートするフォント拡張子は「woff2, otf, ttf」です。※ブラウザによる</p>
 <p class="lead">4.生成ファイルをプロジェクトフォルダにコピー</p>
 <p>※どこでもいいが、サンプルでは script フォルダに。</p>
 <p class="lead">5.設定画面（またはsetting.sn）の「def_fonts」でフォント名を指定すると、本文に反映される</p>
-<p><img src="pic/font0.jpg" width="500" height="144" alt="" loading="lazy"> sn.button.fontFamily で文字ボタンのフォントを指定できます。</p>
+<p><img src="pic/font0.jpg" width="500" height="144" alt="設定画面の def_fonts でフォント名を指定するところ" loading="lazy"> sn.button.fontFamily で文字ボタンのフォントを指定できます。</p>
 <p class="lead">6.部分的・一時的に変更したい場合は、</p>
 <p>[span style='font-family: QuiMi_mincho;']フォント[span] などと使う。<br/> 戻すときも同様。</p>
 <p class="lead">7.フォント利用サンプル</p>
@@ -638,33 +642,33 @@ const.sn.log.json
 <h3 class="tag" id="psd"><a class="hash" href="#psd" tabindex="-1" aria-hidden="true">#</a> <span class="td">立ち絵素材生成機能</span></h3>
 <p class="lead">PSDから立ち絵素材を生成する機能について。</p>
 <p class="lead">1.立ち絵 psd ファイルを作成します。</p>
-<p>「目」「口」などごとに、切り替え可能なレイヤをフォルダにまとめて下さい。<br/> 図の例では、「のっぺらぼうの身体」「目」「口」を重ねて人物の立ち絵、としています。シンプルな例です。<br/> <img src="pic/psd_psd_1.png" width="1638" height="1592" alt="" loading="lazy"> ※レイヤ名やフォルダ名は短いとあとあと都合が良いです。というのも「_」で繋がれて一つの長いファイル名となるので。<br/> ※フォルダ名やレイヤ名は「ガギグゲゴ」のような濁点(゛)・半濁点(゜)など合成文字を避けて下さい。これは後にファイル名になりトラブル（NFC/NFD問題）の元だからです。例の画像でレイヤ名が「ゴージャス」ではなく「Gorgeous」となっているのはそのためです。</p>
-<p>「目」「口」など表情の上に乗りあげるメガネなどはメガネだけで一つのレイヤに。「青ざめる」「赤面」などは独立したレイヤにするのをオススメします。<br/> 他にも「前髪」「帽子」など、キャラクターによってレイヤが増えると思います。<br/> <img src="pic/psd_psd_2.png" width="1086" height="1124" alt="" loading="lazy"> 「目」ならなんでもかんでも一つのフォルダに入れないといけない、という事はありません。メガネ＋目の「メガネ目」という画像群入りのフォルダが、裸眼の「目」という画像群入りのフォルダと別に存在していても構いません。</p>
+<p>「目」「口」などごとに、切り替え可能なレイヤをフォルダにまとめて下さい。<br/> 図の例では、「のっぺらぼうの身体」「目」「口」を重ねて人物の立ち絵、としています。シンプルな例です。<br/> <img src="pic/psd_psd_1.png" width="1638" height="1592" alt="立ち絵 PSD のレイヤ構成。身体・目・口をフォルダで整理した例" loading="lazy"> ※レイヤ名やフォルダ名は短いとあとあと都合が良いです。というのも「_」で繋がれて一つの長いファイル名となるので。<br/> ※フォルダ名やレイヤ名は「ガギグゲゴ」のような濁点(゛)・半濁点(゜)など合成文字を避けて下さい。これは後にファイル名になりトラブル（NFC/NFD問題）の元だからです。例の画像でレイヤ名が「ゴージャス」ではなく「Gorgeous」となっているのはそのためです。</p>
+<p>「目」「口」など表情の上に乗りあげるメガネなどはメガネだけで一つのレイヤに。「青ざめる」「赤面」などは独立したレイヤにするのをオススメします。<br/> 他にも「前髪」「帽子」など、キャラクターによってレイヤが増えると思います。<br/> <img src="pic/psd_psd_2.png" width="1086" height="1124" alt="表情パーツごとにフォルダを分けた PSD レイヤの例" loading="lazy"> 「目」ならなんでもかんでも一つのフォルダに入れないといけない、という事はありません。メガネ＋目の「メガネ目」という画像群入りのフォルダが、裸眼の「目」という画像群入りのフォルダと別に存在していても構いません。</p>
 <p>※Photoshop ブレンドモード名は限定されており、<a href="tag.html#blendMode">【normal】【add】【multiply】【screen】のみサポート</a>してます。</p>
 <p class="lead">2.ESM テンプレートにおける src/resource 下に psd ファイルをドロップすると、自動で変換処理が走ります。</p>
-<p><img src="pic/psd_exp_1esm.png" width="566" height="1046" alt="" loading="lazy"> cjs テンプレートでは core/resource 下になります。<br/> <img src="pic/psd_exp_2cjs.png" width="466" height="926" alt="" loading="lazy"> doc/prj/face/下に【レイヤごとの png 画像ファイル】と【faceスクリプト】が生成されます。</p>
+<p><img src="pic/psd_exp_1esm.png" width="566" height="1046" alt="ESM テンプレートの src/resource に psd を置いたエクスプローラー" loading="lazy"> cjs テンプレートでは core/resource 下になります。<br/> <img src="pic/psd_exp_2cjs.png" width="466" height="926" alt="cjs テンプレートの core/resource に psd を置いたエクスプローラー" loading="lazy"> doc/prj/face/下に【レイヤごとの png 画像ファイル】と【faceスクリプト】が生成されます。</p>
 <p class="lead">3.レイヤごとの png 画像ファイル</p>
-<p><img src="pic/psd_png_1.png" width="580" height="1044" alt="" loading="lazy"> psdファイル名・フォルダ名・レイヤ名が「_」で繋がれて一つの長いファイル名となっています。</p>
+<p><img src="pic/psd_png_1.png" width="580" height="1044" alt="生成されたレイヤ別 png 画像の一覧。名前が「_」で連結されている" loading="lazy"> psdファイル名・フォルダ名・レイヤ名が「_」で繋がれて一つの長いファイル名となっています。</p>
 <p class="lead">4.faceスクリプト（face_**.sn）</p>
-<p>レイヤごとの画像ファイルを[add_face]するスクリプトです。<br/> <img src="pic/psd_sn_1.png" width="1170" height="1086" alt="" loading="lazy"> ※一番下になるレイヤかフォルダは「あえて」コメントアウトされています。画像レイヤとしてのベースであり、[add_face]が不要であるからです。</p>
+<p>レイヤごとの画像ファイルを[add_face]するスクリプトです。<br/> <img src="pic/psd_sn_1.png" width="1170" height="1086" alt="生成された face スクリプト。各レイヤを [add_face] する内容" loading="lazy"> ※一番下になるレイヤかフォルダは「あえて」コメントアウトされています。画像レイヤとしてのベースであり、[add_face]が不要であるからです。</p>
 <p class="lead">5.生成画像は faceスクリプトから差分定義され、faceスクリプト自体はテンプレの sub.sn ですべて [call] されます。</p>
-<p><img src="pic/psd_sn_2.png" width="1096" height="522" alt="" loading="lazy"> ※[call] するタイミングはタイトル画面からゲーム開始ボタンを押してから本文が表示される過程です。タイトル画面までは不要であり、ゲーム起動速度をかせぐためです。</p>
+<p><img src="pic/psd_sn_2.png" width="1096" height="522" alt="sub.sn が各 face スクリプトを [call] している箇所" loading="lazy"> ※[call] するタイミングはタイトル画面からゲーム開始ボタンを押してから本文が表示される過程です。タイトル画面までは不要であり、ゲーム起動速度をかせぐためです。</p>
 <p class="lead">6.立ち絵を使用します。</p>
-<p><img src="pic/psd_fg_1.png" width="1270" height="224" alt="" loading="lazy"> 立ち絵表示マクロの [fg] や [fg2] での fn,face 属性にて【レイヤごとの画像ファイル名】を列挙すると、立ち絵として表示されます。<br/> ※イメージ的には左が一番下、右に向かって上に重ねていくイメージです。<br/> ※画像の例では fn属性もface属性も使用していますが、fn属性のみでカンマ区切りでつなげても構いません。</p>
+<p><img src="pic/psd_fg_1.png" width="1270" height="224" alt="[fg] の fn・face 属性にレイヤ別画像名を列挙したスクリプト" loading="lazy"> 立ち絵表示マクロの [fg] や [fg2] での fn,face 属性にて【レイヤごとの画像ファイル名】を列挙すると、立ち絵として表示されます。<br/> ※イメージ的には左が一番下、右に向かって上に重ねていくイメージです。<br/> ※画像の例では fn属性もface属性も使用していますが、fn属性のみでカンマ区切りでつなげても構いません。</p>
 <h3 class="tag" id="crypt"><a class="hash" href="#crypt" tabindex="-1" aria-hidden="true">#</a> <span class="td">素材や・変数データを暗号化</span></h3>
 <p class="lead">暗号化機能について解説していきます。</p>
 <p class="lead">1.暗号化する</p>
-<p>※<a href="https://marketplace.visualstudio.com/items?itemName=famibee2.skynovel2" target="_blank" rel="noopener">VSCode用拡張機能 SKYNovel</a> の【開発ツール】の【暗号化】がその機能です。<br/> <img src="pic/crypt0.png" width="500" height="360" alt="" loading="lazy"> <br/> 「暗号化」の「しない」を「する」に変更すると、暗号化します。<br/> <img src="pic/crypt1.png" width="500" height="128" alt="" loading="lazy"></p>
+<p>※<a href="https://marketplace.visualstudio.com/items?itemName=famibee2.skynovel2" target="_blank" rel="noopener">VSCode用拡張機能 SKYNovel</a> の【開発ツール】の【暗号化】がその機能です。<br/> <img src="pic/crypt0.png" width="500" height="360" alt="拡張機能の開発ツールにある「暗号化」の項目" loading="lazy"> <br/> 「暗号化」の「しない」を「する」に変更すると、暗号化します。<br/> <img src="pic/crypt1.png" width="500" height="128" alt="暗号化の設定を「しない」から「する」へ切り替えたところ" loading="lazy"></p>
 <p class="lead">2.「snスクリプト」「path.json」「prj.json」などの様子</p>
-<p>※暗号化ファイルは、「prj下」から「crypt_prj下」に変換・出力されます。<br/> <img src="pic/crypt2.jpg" width="500" height="1688" alt="" loading="lazy"></p>
+<p>※暗号化ファイルは、「prj下」から「crypt_prj下」に変換・出力されます。<br/> <img src="pic/crypt2.jpg" width="500" height="1688" alt="prj 下のファイルが crypt_prj 下へ暗号化出力された様子" loading="lazy"></p>
 <p class="lead">3.セーブデータ、ブラウザ版はこの通り。「sys_」とかです。</p>
-<p><img src="pic/crypt3.png" width="1500" height="668" alt="" loading="lazy"></p>
+<p><img src="pic/crypt3.png" width="1500" height="668" alt="暗号化されたブラウザ版セーブデータ。Local Storage のキー名が sys_ など" loading="lazy"></p>
 <p class="lead">4.セーブデータ、アプリ版はこの通り。</p>
-<p><img src="pic/crypt4.png" width="1456" height="950" alt="" loading="lazy"> 暗号化データは「data_.json」です。<br/> 暗号化アプリリリース時は「data.json」は作らず、暗号化データのみで動作します。</p>
+<p><img src="pic/crypt4.png" width="1456" height="950" alt="暗号化されたアプリ版セーブデータ（data_.json）" loading="lazy"> 暗号化データは「data_.json」です。<br/> 暗号化アプリリリース時は「data.json」は作らず、暗号化データのみで動作します。</p>
 <h3 class="tag" id="save_path"><a class="hash" href="#save_path" tabindex="-1" aria-hidden="true">#</a> <span class="td">セーブデータの保存場所</span></h3>
 <p class="subhead">A)ブラウザ版</p>
 <p class="lead">OSに関わらず、ブラウザのローカルストレージに保存されます。</p>
-<p>Chrome なら [Application]タブ - [Storage] - [Local Storage]下で、[プロジェクト名]と同じ[Key]の三つ（kidoku・mark・sys）です。<br/> <img src="pic/save_path_web.jpg" width="500" height="328" alt="" loading="lazy"></p>
+<p>Chrome なら [Application]タブ - [Storage] - [Local Storage]下で、[プロジェクト名]と同じ[Key]の三つ（kidoku・mark・sys）です。<br/> <img src="pic/save_path_web.jpg" width="500" height="328" alt="ブラウザ版のセーブ先。Local Storage に kidoku・mark・sys の3キー" loading="lazy"></p>
 <p class="subhead">B)アプリ版（通常実行）</p>
 <p class="lead">1.Macの場合は下記のPathにファイルが保存されます。</p>
 <p>/Users/&lt;ユーザー名&gt;/Library/Application Support/&lt;アプリ名&gt;/storage/data.json</p>
@@ -672,10 +676,10 @@ const.sn.log.json
 <p>C:\Users\&lt;ユーザー名&gt;\AppData\Roaming\&lt;アプリ名&gt;\storage\data.json</p>
 <p class="lead">3.Linuxの場合は下記のPathにファイルが保存されます</p>
 <p>~/.config/&lt;アプリ名&gt;/storage/data.json</p>
-<p><img src="pic/save_path_app.jpg" width="500" height="326" alt="" loading="lazy"></p>
+<p><img src="pic/save_path_app.jpg" width="500" height="326" alt="アプリ版（通常実行）のセーブファイル data.json の保存場所" loading="lazy"></p>
 <p class="subhead">C)アプリ版（デバッグ実行）</p>
 <p class="lead">OSに関わらず、下記のPathにファイルが保存されます。</p>
-<p>【プロジェクトフォルダ】/.vscode/storage/<br/> <img src="pic/save_path_dbg.png" width="500" height="342" alt="" loading="lazy"></p>
+<p>【プロジェクトフォルダ】/.vscode/storage/<br/> <img src="pic/save_path_dbg.png" width="500" height="342" alt="アプリ版（デバッグ実行）のセーブ先 .vscode/storage フォルダ" loading="lazy"></p>
 <h3 class="tag" id="on_browser"><a class="hash" href="#on_browser" tabindex="-1" aria-hidden="true">#</a> <span class="td">ブラウザ版の公開方法</span></h3>
 <p class="lead">1.必要なもの、以下の三つのみです。</p>
 <p>・web.htm（web/web.jsへのパスが記述されている。必要なら変更）<br/> ・web/web.js<br/> ・prjフォルダ丸ごと（web.htmと同じフォルダに入れる）<br/> ※暗号化した場合は crypt_prjフォルダです。</p>
