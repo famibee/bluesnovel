@@ -694,6 +694,15 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.13.0](https://github.com/famibee/bluesnovel/compare/v0.12.1...v0.13.0) (2026-09-06)
+
+
+### Features
+
+* **sn:** [dump_script]を実装（実行中スクリプトの外部エディタ連携） ([922b16a](https://github.com/famibee/bluesnovel/commit/922b16a738057fceb2029c8d13cd1affc5d0b9e6))
+* **sn:** [dump_script]を実装（実行中スクリプトの外部エディタ連携） ([922b16a](https://github.com/famibee/bluesnovel/commit/922b16a738057fceb2029c8d13cd1affc5d0b9e6))
+* **sn:** [dump_script]実装と[dump_stack]の桁対応 ([54edc97](https://github.com/famibee/bluesnovel/commit/54edc97fc5bf3a0d113fa3e3bd7aca26328d3c4a))
+
 ## [0.12.1](https://github.com/famibee/bluesnovel/compare/v0.12.0...v0.12.1) (2026-09-05)
 
 
