@@ -298,6 +298,14 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <ul>
 <li><a href="#lr" data-t="lr [lr] クリック待ち改行">[lr] クリック待ち改行</a></li>
 </ul>
+<p class="side-h"><a href="#sec-fx">add_fx プリセット拡張</a></p>
+<ul>
+<li><a href="#ext_fx_aura" data-t="ext_fx_aura stand_aura [add_fx fx=stand_aura] スタンドのオーラ ext_fx_aura.sn">[fx=stand_aura] スタンドのオーラ</a></li>
+<li><a href="#ext_fx_fire" data-t="ext_fx_fire fire fire_floor fire_b fire_c [add_fx fx=fire] 炎 4種 ext_fx_fire.sn">[fx=fire ほか] 炎 4種</a></li>
+<li><a href="#ext_fx_hanafubuki" data-t="ext_fx_hanafubuki hanafubuki [add_fx fx=hanafubuki] 桜が舞い散る ext_fx_hanafubuki.sn">[fx=hanafubuki] 桜が舞い散る</a></li>
+<li><a href="#ext_fx_rain_window" data-t="ext_fx_rain_window rain_window [add_fx fx=rain_window] 窓を流れる雨 ext_fx_rain_window.sn">[fx=rain_window] 窓を流れる雨</a></li>
+<li><a href="#ext_fx_tile" data-t="ext_fx_tile tile [add_fx fx=tile] タイル無限スクロール ext_fx_tile.sn">[fx=tile] タイル無限スクロール</a></li>
+</ul>
 <p class="side-h"><a href="#sec-5">humaneプラグイン</a></p>
 <ul>
 <li><a href="#notice" data-t="notice [notice] humane.js 通知パネル">[notice] humane.js 通知パネル</a></li>
@@ -307,7 +315,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <div class="doc-in">
 <h1 class="doc-title">マクロ・プラグイン</h1>
 <aside class="callout warn">
-このページが載せているのは <b>UC サンプル（『櫻の樹の下には』）用テンプレート</b>の定義マクロです。テンプレートは本家 SKYNovel と共通で、bluesnovel でもそのまま動きます。<br>
+このページの大半は <b>UC サンプル（『櫻の樹の下には』）用テンプレート</b>の定義マクロです。テンプレートは本家 SKYNovel と共通で、bluesnovel でもそのまま動きます（末尾の「add_fx プリセット拡張」だけは機能ギャラリー由来の bluesnovel 専用）。<br>
 一次情報は各テンプレ <code>.sn</code> の <code>;@</code> コメント（本家 <code>tmp_esm_uc/doc/prj/</code> と分家 <code>tmp_blues/doc/prj/</code> でマクロ一覧は一致）。掲載は代表的なもののみで、内部用マクロ（<code>[fg2_ini_save_const]</code>・<code>[fg2_attention]</code> など）は割愛しています。<br>
 <code>[sysmenu_draw]</code> は現行テンプレでは <code>[sysmenu_draw_v]</code>（縦書き）/<code>[sysmenu_draw_h]</code>（横書き）に分かれています。
 </aside>
@@ -638,6 +646,73 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <h3 class="tag" id="lr"><a class="hash" href="#lr" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lr]</span> <span class="td">クリック待ち改行</span></h3>
 <p class="lead">音声・クエリ待ちを挟んでからクリック待ち改行する。行末クリック待ちの定型。</p>
 <p>引数無し。処理は次の順。<br/> 1. 自動読み進み中かつ Skip 中でないなら、サウンドバッファ <code>VOICE</code> の再生終了を待つ（[<a href="tag.html#ws">ws</a>] <code>canskip=true</code>）。<br/> 2. [<a href="tag.html#wq">wq</a>]（クエリ待ち）。<br/> 3. [<a href="tag.html#l">l</a>]（クリック待ち改行）。<br/> <br/> テンプレでは <code>[char2macro char=@ name=lr]</code> により <code>@</code> がこのマクロの別名になっている（本文で <code>@</code> と書けば <code>[lr]</code>）。あわせて <code>[char2macro char=\ name=plc]</code> で <code>\</code> が [<a href="#plc">plc</a>]（改ページ）の別名になっている。</p>
+
+<h2 class="sec" id="sec-fx">add_fx プリセット拡張（ギャラリー add_fx サンプル）</h2>
+<aside class="callout warn">
+これらは UC テンプレートには含まれない。機能ギャラリー <a href="https://github.com/famibee/SKYNovel_gallery" target="_blank" rel="noopener">SKYNovel_gallery</a> の <code>add_fx</code> サンプル（<code>public/prj/add_fx/mat/ext_fx_*.sn</code>）にあるシェーダプリセット定義ファイルで、使いたいものを自分のプロジェクトの <code>mat/</code> へコピーして使う。<br>
+各ファイルは中身が [<a href="tag.html#def_fx">def_fx</a>] 1〜4 本だけ。<b>bluesnovel 専用</b>（本家 SKYNovel では動かない）で、GLSL 本体はセーブに焼かれないため、テンプレ起動時に必ず通る処理（<code>[call fn=ext_*]</code> 等）から一度 <code>[call fn=ext_fx_<i>名前</i>]</code> して毎回定義し直す運用。<br>
+<code>[add_fx]</code> / <code>[def_fx]</code> 自体と組み込みプリセット（<code>wave</code> / <code>rain</code> / <code>fireworks</code> / <code>blur</code> ほか）は <a href="tag.html#sec-3">タグリファレンスのシェーダエフェクト節</a>。
+</aside>
+<aside class="callout tip">本家（SKYNovel）には無い分家独自機能。<code>ext_fx_tst.sn</code> は空の開発用ひな形なので掲載しない。</aside>
+<h3 class="tag" id="ext_fx_aura"><a class="hash" href="#ext_fx_aura" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx fx=stand_aura]</span> <span class="td">スタンドのオーラ</span></h3>
+<p class="lead">立ち絵の輪郭から外へ滲み出る、いわゆる「スタンドのオーラ」。<code>ext_fx_aura.sn</code>。</p>
+<p>立ち絵（顔差分つきでよい）の grp レイヤへ<b>直接</b>掛ける（オーラ専用の別レイヤは不要）。透過画素にだけオーラを描き、立ち絵のピクセルには乗らない。プリセットは <code>[def_fx pad=0.28]</code> 宣言つきで、fx キャンバスが基本画像の枠外へ広がる。レイヤごと [<a href="tag.html#tsy">tsy</a>] / Moveable してもオーラは追従する。<code>amp=-1</code> でオフ（記述子は残る）、撤去は [<a href="tag.html#clear_fx">clear_fx</a>]。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>amp</td><td></td><td>1.0</td><td>実数</td><td>オーラの明るさ・広がりの総合。負値でオフ（素の立ち絵へ戻す）</td></tr>
+	<tr><td>freq</td><td></td><td>1.0</td><td>0.5〜2.0 目安</td><td>ゆらめきの細かさ</td></tr>
+	<tr><td>p1</td><td></td><td>1.0</td><td>0.6〜3.0 目安</td><td>広がり幅の倍率（1 で板高の約 4.5%）</td></tr>
+	<tr><td>p2</td><td></td><td>1.0</td><td>実数</td><td>脈動・呼吸の速さ</td></tr>
+	<tr><td>color</td><td></td><td>紫</td><td>0xrrggbb ／ "#rrggbb" ／ r,g,b</td><td>オーラ色。<code>0xffcc33</code> で黄金</td></tr>
+	</table></div>
+<h3 class="tag" id="ext_fx_fire"><a class="hash" href="#ext_fx_fire" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx fx=fire_floor / fire / fire_b / fire_c]</span> <span class="td">炎 4種</span></h3>
+<p class="lead">炎のシェーダエフェクト 4 種を 1 ファイルで定義。<code>ext_fx_fire.sn</code>。</p>
+<p>不透明な背景（grp）レイヤへ掛ける。炎は加算合成し、背景は <code>shift</code> ぶん露出を落として返す。<code>amp</code> 負値でオフ、撤去は [<a href="tag.html#clear_fx">clear_fx</a>]、一時停止は [<a href="tag.html#pause_fx">pause_fx</a>] / [<a href="tag.html#resume_fx">resume_fx</a>]。</p>
+<p class="subhead">共通属性</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>amp</td><td></td><td>各fx既定</td><td>実数</td><td>炎の勢い・明るさ。負値でオフ（素通し・記述子は残る）</td></tr>
+	<tr><td>freq</td><td></td><td>各fx既定</td><td>0.5〜2.0 目安</td><td>ゆらぎ／乱流のディテール</td></tr>
+	<tr><td>shift</td><td></td><td>各fx既定</td><td>実数</td><td>炎に照らされて背景が沈む量。負値で背景そのまま</td></tr>
+	<tr><td>p1</td><td></td><td>各fx既定</td><td>実数</td><td>炎の高さ（基準は fx により異なる。下表）</td></tr>
+	<tr><td>p2</td><td></td><td>0（中央）</td><td>-1〜1</td><td>横位置＝画面幅に対する割合（±1 で画面端）</td></tr>
+	<tr><td>p3</td><td></td><td>—</td><td>実数</td><td><code>fire_b</code> / <code>fire_c</code> のみ使用（下表）</td></tr>
+	<tr><td>color</td><td></td><td>橙</td><td>0xrrggbb ／ "#rrggbb" ／ r,g,b</td><td>炎の色づけ</td></tr>
+	</table></div>
+<p class="subhead">プリセットごとの違い</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">fx</th><th scope="col">用途</th><th scope="col">p1 既定（範囲）</th><th scope="col">shift 既定</th><th scope="col">p3</th></tr>
+	<tr><td>fire_floor</td><td>画面下端いっぱいから立ち上がる炎（火事場・炎上する床）</td><td>0.55（0.2〜1.1）＝画面下からの割合</td><td>0.8</td><td>—</td></tr>
+	<tr><td>fire</td><td>1 本の炎（キャンプファイア／松明。涙滴形の炎柱）</td><td>0.62（0.12〜1.4）＝画面に対する割合</td><td>0.6</td><td>—</td></tr>
+	<tr><td>fire_b</td><td>THREE.Fire 系のボリューム炎（円筒座標＋レイマーチ）</td><td>1.05（0.12〜2.0）＝根元は下端固定で上へ</td><td>0.6</td><td>magnitude＝乱流が参照位置をずらす量。既定 1.3（0.6〜2.2）</td></tr>
+	<tr><td>fire_c</td><td>fire ＋内部ムラ（fbm で中央を抜いて背景を透かす）</td><td>fire と同じ（0.62）</td><td>0.6</td><td>内部の透け・ムラの強さ。既定 0.7、負値でムラ無し</td></tr>
+	</table></div>
+<h3 class="tag" id="ext_fx_hanafubuki"><a class="hash" href="#ext_fx_hanafubuki" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx fx=hanafubuki]</span> <span class="td">桜が舞い散る</span></h3>
+<p class="lead">桜の花びらが舞い散る、イメージ重視の情景エフェクト。<code>ext_fx_hanafubuki.sn</code>。</p>
+<p>不透明な背景（grp）レイヤへ掛ける。花びらを重ね、<code>shift</code> で情景の仕上げ（淡い発光・光のかすみ・彩度・周辺減光。背景自体はぼかさない）を掛ける。<code>amp=-1</code> でオフ。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>amp</td><td></td><td>1.0（約38枚）</td><td>実数（上限で約46枚）</td><td>花びらの密度・枚数。負値でオフ</td></tr>
+	<tr><td>freq</td><td></td><td>1.0</td><td>0.5〜2.0 目安</td><td>舞い落ちる速さ（ドリフト＋回転）</td></tr>
+	<tr><td>shift</td><td></td><td>1.0</td><td>0〜2 目安</td><td>情景の仕上げ量。負値で仕上げ無し（花びらの合成だけ）</td></tr>
+	<tr><td>p1</td><td></td><td>1.0</td><td>0.5〜2.0 目安</td><td>花びらの大きさ</td></tr>
+	<tr><td>p2</td><td></td><td>0（そよ風）</td><td>-1〜1</td><td>風向き＝横流れの割合（±1 で強い横風）</td></tr>
+	<tr><td>color</td><td></td><td>桜色パレット</td><td>0xrrggbb ／ "#rrggbb" ／ r,g,b</td><td>花びらの色。指定するとその色へ寄せる（<code>0xffffff</code> で白い花びら）</td></tr>
+	</table></div>
+<h3 class="tag" id="ext_fx_rain_window"><a class="hash" href="#ext_fx_rain_window" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx fx=rain_window]</span> <span class="td">窓ガラスを流れ落ちる雨</span></h3>
+<p class="lead">窓ガラスを蛇行しながら垂れて尾を引く雨滴。<code>ext_fx_rain_window.sn</code>。</p>
+<p>不透明な背景（grp）レイヤへ掛ける。<code>color=0x991418</code> で「血の雨」アレンジ（水滴・尾を赤く）。<code>amp=-1</code> で水滴なし＝素通し（ガラスの曇りだけ残る）。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>amp</td><td></td><td>0.7 相当</td><td>実数</td><td>雨量・水滴の活発さ。負値で水滴オフ（ガラスだけ）</td></tr>
+	<tr><td>freq</td><td></td><td>1.0</td><td>0.5〜2.0 目安</td><td>水滴グリッドの密度</td></tr>
+	<tr><td>shift</td><td></td><td>1.0</td><td>0〜3 目安</td><td>ガラスの曇り／ボケの強さ</td></tr>
+	<tr><td>color</td><td></td><td>色づけなし</td><td>0xrrggbb ／ "#rrggbb" ／ r,g,b</td><td>水滴・尾の色づけ。<code>0x991418</code> で血の雨</td></tr>
+	</table></div>
+<h3 class="tag" id="ext_fx_tile"><a class="hash" href="#ext_fx_tile" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx fx=tile]</span> <span class="td">タイル無限スクロール</span></h3>
+<p class="lead">別画像をタイル状に敷き詰め、一定方向へ無限スクロールさせる汎用エフェクト（棚引く霧・煙・雨脚の帯など）。<code>ext_fx_tile.sn</code>。</p>
+<p><code>tex=</code> で対象レイヤの基本画像とは別の画像を渡す（<code>[add_fx]</code> の <code>uTex2</code> 口）。対象レイヤ自身の画像はそのまま表示され、<code>tex=</code> の画像だけをタイル＋スクロールして重ねる＝専用の重ねレイヤが要らない（<code>[add_fx layer=bg fx=tile tex=…]</code> でよい）。タイル画像は端がシームレスに継げるものを使う。撤去は [<a href="tag.html#clear_fx">clear_fx</a>] だけで元通り。</p>
+<div class="tbl-wrap">	<table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
+	<tr><td>tex</td><td></td><td>なし（何も重ならない）</td><td><code>fn=</code>と同じ論理名（path.json）</td><td>タイル化して重ねる画像</td></tr>
+	<tr><td>amp</td><td></td><td>4</td><td>実数</td><td>タイル数（画面いっぱいに何回繰り返すか）</td></tr>
+	<tr><td>p1</td><td></td><td>0（静止）</td><td>実数</td><td>横方向のスクロール速度（1 秒あたり何タイルぶんずらすか。正で +x）</td></tr>
+	<tr><td>p2</td><td></td><td>0（静止）</td><td>実数</td><td>縦方向のスクロール速度（正で +y。シェーダ座標系は y-up なので見た目は上向き）</td></tr>
+	</table></div>
 
 <h2 class="sec" id="sec-5">humaneプラグイン</h2>
 <p>プラグインは core/plugin/ 下に配置し使用します。</p>
