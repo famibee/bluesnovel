@@ -694,6 +694,21 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.14.0](https://github.com/famibee/bluesnovel/compare/v0.13.0...v0.14.0) (2026-09-07)
+
+
+### Features
+
+* **page:** [page place=N] でバックログ行から場面へジャンプ（分家独自） ([45c822c](https://github.com/famibee/bluesnovel/commit/45c822cb6f1c6b2f9fae601f4f45bbc3088a7298))
+
+
+### Bug Fixes
+
+* **app:** preload の contextBridge 公開を待ってから IPC を呼ぶ ([c2f5718](https://github.com/famibee/bluesnovel/commit/c2f5718d933ddd385358089c44b26cdc43c23d9c))
+* **docs/tag.html:** 内部リンク dev.md → dev.html ([2829c67](https://github.com/famibee/bluesnovel/commit/2829c67c013be37c4b8801ab18a23656e626f48c))
+* **txt:** [l]/[p] visible=false で待ちマーク（改ページ記号）を描かない ([d2dff2a](https://github.com/famibee/bluesnovel/commit/d2dff2a3d5c561925892b4470ce4de498f3fb192))
+* **txt:** 文字レイヤの box-sizing を本家準拠の border-box に戻す ([c2f5718](https://github.com/famibee/bluesnovel/commit/c2f5718d933ddd385358089c44b26cdc43c23d9c))
+
 ## [0.13.0](https://github.com/famibee/bluesnovel/compare/v0.12.1...v0.13.0) (2026-09-06)
 
 
