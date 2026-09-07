@@ -165,7 +165,7 @@ it('page_clearFalseDoesNothing', ()=> {
 });
 
 it('page_noAttrThrows', ()=> {
-	expect(()=> acts(`${LAYS}[page][s]`)).toThrow('[page] clear,style,to いずれかは必須です');
+	expect(()=> acts(`${LAYS}[page][s]`)).toThrow('[page] clear,style,to,place いずれかは必須です');
 });
 
 it('page_keyは移動中に効くキーの限定', ()=> {
@@ -198,6 +198,19 @@ it('page_toの値域', ()=> {
 		expect(acts(`${LAYS}[page to=${to}][s]`).find(v=> v.t === 'pageTo')).toEqual({t: 'pageTo', to});
 	}
 	expect(()=> acts(`${LAYS}[page to=よそ][s]`)).toThrow('[page] 属性to「よそ」は異常です');
+});
+
+it('page_placeはバックログ行→場面ジャンプ（分家独自）', ()=> {
+	// 演じ直せる停止点がまだ無い（バックログ空）なら何もしない＝pageToPlaceを積まない。
+	//	実際のジャンプ経路は test/e2e/page.e2e.ts（Log↔PageLogの対応が要るためE2E）
+	const a = acts(`${LAYS}[page place=0][s]`);
+	expect(a.some(v=> v.t === 'pageToPlace')).toBe(false);
+	expect(a.some(v=> v.t === 'trace')).toBe(true);	// 「演じ直せる停止点がまだありません」
+});
+
+it('page_placeの値域', ()=> {
+	expect(()=> acts(`${LAYS}[page place=-1][s]`)).toThrow('0以上の整数');
+	expect(()=> acts(`${LAYS}[page place=1.5][s]`)).toThrow('0以上の整数');
 });
 
 

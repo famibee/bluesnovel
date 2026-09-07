@@ -1178,11 +1178,22 @@ var _e = class {
 	#e = [];
 	#t = "";
 	#n = {};
+	#r = "";
 	constructor(e = () => he) {
 		this.maxLen = e;
 	}
 	add(e) {
 		this.#t += e;
+	}
+	setPlaceKey(e) {
+		if (!e) {
+			this.#r = "";
+			return;
+		}
+		this.#r ||= e;
+	}
+	placeKeyOf(e) {
+		return e < 0 ? "" : e < this.#e.length ? this.#e[e]?.place ?? "" : e === this.#e.length ? this.#r : "";
 	}
 	setAttr(e) {
 		this.#n = e;
@@ -1191,20 +1202,24 @@ var _e = class {
 		let e = Q(this.#t);
 		this.#t = "";
 		let t = this.#n;
-		if (this.#n = {}, !e) return;
-		let n = this.maxLen();
+		this.#n = {};
+		let n = this.#r;
+		if (this.#r = "", !e) return;
+		let r = this.maxLen();
 		this.#e.push({
 			...t,
-			text: e
-		}) > n && (this.#e = this.#e.slice(-n));
+			text: e,
+			...n ? { place: n } : {}
+		}) > r && (this.#e = this.#e.slice(-r));
 	}
 	reset(e = "") {
-		this.#e = [], this.#t = e, this.#n = {};
+		this.#e = [], this.#t = e, this.#n = {}, this.#r = "";
 	}
 	json() {
 		return JSON.stringify([...this.#e, {
 			...this.#n,
-			text: Q(this.#t)
+			text: Q(this.#t),
+			...this.#r ? { place: this.#r } : {}
 		}]);
 	}
 	playback(e) {
@@ -1214,7 +1229,7 @@ var _e = class {
 		} catch {
 			this.#e = [];
 		}
-		this.#t = "", this.#n = {};
+		this.#t = "", this.#n = {}, this.#r = "";
 	}
 }, $ = /* @__PURE__ */ new Map();
 function ve(e, t) {
@@ -1588,6 +1603,9 @@ var Se = class r {
 	}
 	setSys(e) {
 		this.#P.setNs("sys", e);
+	}
+	setPageLogKey(e) {
+		this.#L.setPlaceKey(e);
 	}
 	transDone(e) {
 		for (let t of Object.keys(this.#C)) (!e || e.includes(t)) && (this.#C[t] = this.#w[t] ?? "");
@@ -2363,7 +2381,7 @@ var Se = class r {
 				}), "skip";
 			}
 			case "page": {
-				if (!("clear" in t || "to" in t || "style" in t)) throw "[page] clear,style,to いずれかは必須です";
+				if (!("clear" in t || "to" in t || "style" in t || "place" in t)) throw "[page] clear,style,to,place いずれかは必須です";
 				if (t.key !== void 0 && a.push({
 					t: "pageKeys",
 					aKey: t.key ? t.key.split(",") : []
@@ -2372,6 +2390,18 @@ var Se = class r {
 					style: t.style
 				}), "skip";
 				if (t.clear === "true") return a.push({ t: "clearPageLog" }), "skip";
+				if (t.place !== void 0) {
+					let e = r.#n("page", "place", t.place);
+					if (!Number.isInteger(e) || e < 0) throw `[page] 属性place「${t.place}」は0以上の整数で指定してください`;
+					let n = this.#L.placeKeyOf(e);
+					return n ? (a.push({
+						t: "pageToPlace",
+						placeKey: n
+					}), "stop") : (a.push({
+						t: "trace",
+						text: `[page place=${String(e)}] 演じ直せる停止点がまだありません`
+					}), "skip");
+				}
 				if (t.to === void 0) return "skip";
 				let e = t.to;
 				if (!l.includes(e)) throw `[page] 属性to「${t.to}」は異常です`;

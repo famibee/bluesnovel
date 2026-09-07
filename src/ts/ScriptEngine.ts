@@ -153,6 +153,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'pageStyle'; style: string}	// [page style=…]。読み戻り中の本文の見た目
 	| {t: 'pageKeys'; aKey: string[]}	// [page key=…]。読み戻り中に効くイベントキーの限定
 	| {t: 'pageTo'; to: T_PAGE_TO}	// [page to=…]。ページ移動。演じ直しは非同期なのでstep()は一旦返る
+	| {t: 'pageToPlace'; placeKey: string}	// [page place=N]（分家独自）。バックログ行→場面ジャンプ。pageToと同じくstep()は一旦返る
 	| {t: 'title'; text: string}	// [title text=…]。ウインドウ（ブラウザタブ）のタイトル
 	| {t: 'toggleFullScr'}		// [toggle_full_screen]。全画面状態の切替
 	| {t: 'navigateTo'; url: string}	// [navigate_to url=…]。別タブでURLを開く
@@ -905,6 +906,10 @@ export class ScriptEngine {
 	// sys:名前空間の出し入れ（永続化用。本家 SysBase.data.sys ↔ Variable の sys スコープ）
 	cloneSys(): {[k: string]: T_VAL_D} {return this.#val.cloneNs('sys')}
 	setSys(h: {[k: string]: T_VAL_D}) {this.#val.setNs('sys', h)}
+
+	// [page place=N]用（分家独自）。ScriptMng が停止点ごとに「今の PageLog エントリの key」を渡し、
+	//	Log がページ内の最初の分を焼き込んで const.sn.log.json の place 欄に載せる（Log.ts）
+	setPageLogKey(key: string) {this.#log.setPlaceKey(key)}
 
 	// [trans]の演出完了時、交換対象レイヤの本文蓄積を表裏入れ替える（本家 Pages.transPage 相当）。
 	//	store側のfinTrans()（store.tsx）は交換対象レイヤについて「新しい表＝古い裏」「新しい裏＝
@@ -2251,7 +2256,7 @@ export class ScriptEngine {
 		case 'page': {	// ページ移動（本家 Reading.ts:343 page()）
 			// 本家の[page]は「裏表（レイヤページ）」ではなく**読み戻り用のページログ**を操作するタグ。
 			//	CLAUDE.md「『ページ』が2つの別物を指す」の後者
-			if (! ('clear' in args || 'to' in args || 'style' in args)) throw '[page] clear,style,to いずれかは必須です';
+			if (! ('clear' in args || 'to' in args || 'style' in args || 'place' in args)) throw '[page] clear,style,to,place いずれかは必須です';
 
 			// key=は移動中に効くイベントキーの限定。単独では何もしないので他と同時指定できる
 			//	（本家も style/clear/to の判定より前に見る）
@@ -2259,6 +2264,22 @@ export class ScriptEngine {
 			// style=・clear=は本家も「指定されていたらそれだけやって戻る」（to=とは同時に効かない）
 			if (args.style !== undefined) {aAct.push({t: 'pageStyle', style: args.style}); return 'skip'}
 			if (args.clear === 'true') {aAct.push({t: 'clearPageLog'}); return 'skip'}
+
+			// place=N（分家独自）：バックログ（本文履歴）の N 番目の行が指す場面へ跳ぶ。
+			//	N は const.sn.log.json の並び（テンプレ frames/_log.htm の行番号）。演じ直す
+			//	停止点は Log が焼き込んだ key で引く（ズレの経緯は PageLog.ts T_PAGE_PLACE）。
+			//	まだその行を通っていない＝演じ直し先が無いときは何もしない（[return]へ抜ける）
+			if (args.place !== undefined) {
+				const n = ScriptEngine.#argNum('page', 'place', args.place);
+				if (! Number.isInteger(n) || n < 0) throw `[page] 属性place「${args.place}」は0以上の整数で指定してください`;
+				const placeKey = this.#log.placeKeyOf(n);
+				if (! placeKey) {
+					aAct.push({t: 'trace', text: `[page place=${String(n)}] 演じ直せる停止点がまだありません`});
+					return 'skip';
+				}
+				aAct.push({t: 'pageToPlace', placeKey});
+				return 'stop';
+			}
 			if (args.to === undefined) return 'skip';
 
 			const to = args.to as T_PAGE_TO;

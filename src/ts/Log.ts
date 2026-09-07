@@ -22,6 +22,9 @@
 import {splitCh, type T_CH} from './Txt';
 
 
+//	`place` は分家独自：そのページを演じ直す PageLog エントリの key（`${idx}:${fn}`）。
+//	`[page place=N]`（バックログ行→場面ジャンプ）が使う。ScriptMng がページ内の最初の停止点で
+//	焼き込み、改ページで clear する（PageLog.ts の T_PAGE_PLACE 説明）
 export type T_LOG_ENTRY = {text: string; [k: string]: string};
 
 // prj.jsonの`log.max_len`（ConfigBase.tsの既定と同じ値）。
@@ -62,12 +65,30 @@ export class Log {
 	// `[rec_ch]`のtext以外の属性（本家 #LastLog がhArgを丸ごと持つのと同じ、ページ単位の
 	//	任意メタデータ）。**そのページ内の直近の指定が丸ごと勝つ**（本家 Log.ts:67）
 	#attr	: Record<string, string> = {};
+	// 書きかけの現ページを演じ直す PageLog エントリの key（分家独自。[page place=N]用）。
+	//	**そのページ内の最初の停止点の分が勝つ**（[l]で複数エントリができても頭を指す）。
+	//	改ページで空へ戻す
+	#placeKey = '';
 
 	// max_lenは遅延で読む。prj.jsonを読み込む前にエンジンが立つため
 	constructor(private readonly maxLen: ()=> number = ()=> MAX_LEN_DEF) {}
 
 	// 本文の追記（地の文・`[r]`・`[rec_ch]`・`[rec_r]`）
 	add(txt: string) {this.#last += txt}
+
+	// 現ページの演じ直し key を控える（ScriptMng が停止点ごとに呼ぶ）。**そのページ内で最初の
+	//	1回だけ採る**（[l]で停止点が複数あってもページ頭を指す）。空文字は明示クリア（[page clear]）
+	setPlaceKey(key: string) {
+		if (! key) {this.#placeKey = ''; return}
+		if (! this.#placeKey) this.#placeKey = key;
+	}
+	// `[page place=N]`：N 番目のバックログ行を演じ直す PageLog key。書きかけの現ページ
+	//	（json()の末尾＝#aLog.length 番）も引ける。範囲外・未確定は ''（＝跳べない）
+	placeKeyOf(n: number): string {
+		if (n < 0) return '';
+		if (n < this.#aLog.length) return this.#aLog[n]?.place ?? '';
+		return n === this.#aLog.length ? this.#placeKey : '';
+	}
 
 	// `[rec_ch]`のtext以外の属性を差し替える（本家 Log.ts:67）
 	setAttr(attr: Record<string, string>) {this.#attr = attr}
@@ -79,18 +100,23 @@ export class Log {
 		this.#last = '';
 		const attr = this.#attr;
 		this.#attr = {};
+		const place = this.#placeKey;
+		this.#placeKey = '';	// 次ページの停止点で採り直す
 		if (! text) return;
 
 		const max = this.maxLen();
-		if (this.#aLog.push({...attr, text}) > max) this.#aLog = this.#aLog.slice(-max);
+		if (this.#aLog.push({...attr, text, ...(place ? {place} : {})}) > max) {
+			this.#aLog = this.#aLog.slice(-max);
+		}
 	}
 
 	// `[reset_rec]`。textで置き換え値を設定できる（本家 Log.ts:90）
-	reset(text = '') {this.#aLog = []; this.#last = text; this.#attr = {}}
+	reset(text = '') {this.#aLog = []; this.#last = text; this.#attr = {}; this.#placeKey = ''}
 
 	// 組み込み変数 `const.sn.log.json`（本家 Log.ts:39 defTmp）。
 	//	本家と同じく**書きかけの現ページも末尾に含める**（履歴画面は「今読んでいる文」まで見せる）
-	json(): string {return JSON.stringify([...this.#aLog, {...this.#attr, text: htmlOf(this.#last)}])}
+	json(): string {return JSON.stringify([...this.#aLog,
+		{...this.#attr, text: htmlOf(this.#last), ...(this.#placeKey ? {place: this.#placeKey} : {})}])}
 
 	// `save:const.sn.sLog`からの復帰（本家 Log.ts:113 playback()）。
 	//	本家と同じく書きかけページは捨て、保存時点の全ページを確定ページとして読み直す
@@ -102,5 +128,6 @@ export class Log {
 		catch {this.#aLog = []}	// 壊れていても履歴が消えるだけ。進行は止めない
 		this.#last = '';
 		this.#attr = {};
+		this.#placeKey = '';	// 演じ直し先はロードで PageLog ごと消える（ScriptMng #procLoad）
 	}
 }

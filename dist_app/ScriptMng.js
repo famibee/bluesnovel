@@ -4224,6 +4224,10 @@ var yo = class p {
 						this.#F = !0, this.#p(n.to).catch(this.#i);
 						return;
 					}
+					if (n?.t === "pageToPlace") {
+						this.#F = !0, this.#p({ placeKey: n.placeKey }).catch(this.#i);
+						return;
+					}
 					if (n?.t === "plgTag") {
 						this.#Re(n);
 						return;
@@ -4892,7 +4896,7 @@ var yo = class p {
 				this.sys.updateCheck(e.url);
 				break;
 			case "clearPageLog":
-				this.#c.clear(), this.#l = void 0, this.#r?.setValNochk("save:const.sn.styPaging", o), this.#f();
+				this.#c.clear(), this.#l = void 0, this.#r?.setPageLogKey(""), this.#r?.setValNochk("save:const.sn.styPaging", o), this.#f();
 				break;
 			case "pageStyle":
 				this.#r?.setValNochk("save:const.sn.styPaging", e.style), this.#f();
@@ -4900,7 +4904,8 @@ var yo = class p {
 			case "pageKeys":
 				this.#u = e.aKey;
 				break;
-			case "pageTo": break;
+			case "pageTo":
+			case "pageToPlace": break;
 			case "trace":
 				this.#st({ text: e.text });
 				break;
@@ -4913,7 +4918,7 @@ var yo = class p {
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
-				if (this.#l = void 0, t && this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#d = !1, this.#f(), e.kind === "l" || e.kind === "p" || e.kind === "waitclick") {
+				if (this.#l = void 0, t && (this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#r?.setPageLogKey(`${String(t.idx)}:${t.fn}`)), this.#d = !1, this.#f(), e.kind === "l" || e.kind === "p" || e.kind === "waitclick") {
 					let t = e.kind === "waitclick" ? void 0 : this.#Ye(e.kind);
 					this.$fncs.setWait({
 						nm: e.nm,

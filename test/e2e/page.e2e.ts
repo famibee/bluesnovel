@@ -79,6 +79,34 @@ test('[page to=load]は見ているページから読み進められる', async 
 	expect(await mesStr(page)).toBe('さん');
 });
 
+test('[page place=N]でバックログのN行目が指す場面へ跳ぶ（分家独自）', async ({page})=> {
+	// frames/_log.htm の行番号ボタンから撃つ形。N は const.sn.log.json の並び。
+	//	演じ直す停止点は Log が焼き込んだ key で引く（PageLog のインデックスとはズレるため）
+	await readToEnd(page);
+
+	await pressKey(page, 'Escape');	// *place → [page place=1]（＝「に」の行）
+	expect(await mesStr(page)).toBe('に');
+	expect((await snap(page)).isReadBack).toBe(true);
+
+	// 跳んだ先から読み進められる（tail は切り捨てない＝to=oldest と同じ）
+	await pressKey(page, 'PageDown');	// [page to=next]
+	expect(await mesStr(page)).toBe('さん');
+
+	await pressKey(page, 'End');	// [page to=exit]で最新へ
+	expect(await mesStr(page)).toBe('よん');
+	expect((await snap(page)).isReadBack).toBe(false);
+});
+
+test('[page place=N]がまだ通っていない行なら何もしない', async ({page})=> {
+	// 冒頭（「いち」表示中）。バックログにまだ何も無い＝演じ直し先が無いので [return] へ抜ける
+	expect(await mesStr(page)).toBe('いち');
+	await pressKey(page, 'Escape');
+	await waitIdle(page);
+
+	expect(await mesStr(page)).toBe('いち');
+	expect((await snap(page)).isReadBack).toBe(false);
+});
+
 test('端まで来たら動かない', async ({page})=> {
 	// 最初の停止点でPageUpしても何も起きない（本家も pos===0 なら false を返して終わり）
 	expect(await mesStr(page)).toBe('いち');

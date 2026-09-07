@@ -23,9 +23,13 @@
     スキップしていた。呼び元（`_submenu.sn *title` 等）は「`ask_ync` がイベントを再有効化して返す」前提のため、
     記憶済みでスキップするとタイトル画面のボタンが全て無反応になる。→ ガード脱出時にも
     `[enable_event enabled=true]`×2＋`[set_focus to=null]` を通すよう修正（`_yesno.sn`、フラグ `_ry_hit` 方式）。
-- **未解決（pre-existing、bluesnovel app版側）**：`bun run app`（dev）で文字レイヤ・システムメニューの
-  表示位置が崩れる（web版は正常）。ベースライン（フェーズ1適用前）でも再現。起動時に出ることがある
-  `window.electron` undefined（ESM preload のレース、`IpcRenderer.ts`/`app.ts:45`）とあわせて要調査。
+- **解決済み（pre-existing、bluesnovel 側。`c2f5718`）**：app版で文字レイヤ・システムメニューの
+  表示位置が崩れていた件は 2 原因の合わせ技だった。(1) 文字レイヤの `box-sizing` が 2026-08-25 に
+  `content-box` へ変わっており、本家準拠の `border-box` に戻した（`padding` ぶん箱が膨らんでいた）。
+  (2) `window.electron` undefined（ESM preload のレース）で `SysApp.loaded()` が丸ごと落ち
+  `CmnLib.stageW/H` が 0 のまま座標計算が全崩壊していた → `loaded()` 冒頭で `waitElectronBridge()` を
+  await（最大3秒ポーリング）。`electron` バイナリ未取得（`Error: Electron uninstall`）は
+  `package.json` の `trustedDependencies: ["electron"]` で対処済み。
 - フェーズ2以降（`[page place=N]`／フォント選択／小窓プレビュー等）は未着手。
 
 ---
@@ -62,7 +66,7 @@
 | 2b | ダイアログ「次から確認しない」 | ▲ | マクロ+フレーム | 小 | 中 | やる |
 | 3 | ボイスカット | ●● | マクロ+フレーム | 小〜中 | 高 | やる |
 | 4 | 便利セーブ（複数クイック枠 / ホバー枠） | ● | フレーム+`_archive.sn` | 小〜中 | 中〜高 | 段階的にやる |
-| 5 | バックログ→ページジャンプ | ▲ | エンジン小+フレーム | 中 | 中 | 次点。#7 もこれで足りる |
+| 5 | バックログ→ページジャンプ | ▲ | エンジン小+フレーム | 中 | 中 | **完了**（2026-09-07。`[page place=N]`）。#7 もこれで足りる |
 | 6 | バックログ→小窓プレビュー | ● | エンジン中+バックログ改修 | 中〜大 | 中 | 次点 |
 | 8 | 非アクティブ時ホイール進行 | ● | 検証(+electron) | 小 | 中 | まず実機検証 |
 | ~~7~~ | ~~シナリオ検索~~ | ●● | — | — | — | **対象外**。バックログのスクロール＋目視＋#5のジャンプで実用上足りる |
@@ -210,7 +214,8 @@ sys:sn.sound.voice_cut = 'continue' | 'cut'
 4. クイックセーブの複数枠ローテーション（#4①）
 
 **フェーズ2（中、エンジン小改修 or フレーム増設）**
-5. `[page place=N]`（数値シーク）を追加 → バックログ・ページジャンプ（#5）
+5. ~~`[page place=N]` を追加 → バックログ・ページジャンプ（#5）~~ **2026-09-07 実装済み**
+   （key 照合方式。数値シークではなく Log がページごとに演じ直し key を焼き込む。詳細は「5. 残件」）
 6. 便利セーブのホバー枠＋サムネ（#4②）
 
 **フェーズ3（中〜大、要設計）**
@@ -277,34 +282,55 @@ bluesnovel には2層あり、そのまま使える：
 ## 5. 残件（2026-09-07 時点）
 
 コミット済み：`tmp_blues` に フェーズ1 実装（`69d3ab7`）＋ その後の修正2件
-（`ask_ync` ガードのイベント再有効化 `60fbc4f`、否定を記憶しない修正）。
+（`ask_ync` ガードのイベント再有効化 `60fbc4f`、否定を記憶しない修正 `3b0a53c`）。
+bluesnovel 側にこの検討メモ（`system-ui-research.md`＋`README.md` 索引1行）と
+pre-existing バグ修正を `c2f5718` でコミット済み。
 
-### すぐ
+### 済（2026-09-07）
 
 - **app版での修正確認**：右クリックメニュー →「タイトルに戻る」の各経路
   （通常／チェック＋了解でスキップ登録／チェック＋キャンセルは登録しない）でボタンが
-  死なないこと。web版は確認済み。
-- **この検討メモ（`system-ui-research.md` 新規、`README.md` 索引1行）を bluesnovel にコミットするか判断**。
+  死なないこと。web版・app版とも確認済み。
+- **この検討メモの bluesnovel へのコミット**：`c2f5718` で実施済み。
+- **pre-existing バグ（bluesnovel 側・フェーズ1とは無関係）**：`c2f5718` で修正済み。
+  - app版の **文字レイヤ・システムメニューの表示位置崩れ** → `box-sizing` を本家準拠の
+    `border-box` へ戻す ＋ `window.electron` undefined（ESM preload のレース）で
+    `SysApp.loaded()` が落ちて `CmnLib.stageW/H` が 0 になる件を `waitElectronBridge()` の
+    await で解消。
+  - `Error: Electron uninstall`（`node_modules/electron/dist` 未取得）→ `package.json` の
+    `trustedDependencies: ["electron"]` で bun が postinstall を走らせる。
 
-### pre-existing バグ（bluesnovel app版側・フェーズ1とは無関係。要別対応）
+### #5 バックログ→ページジャンプ（2026-09-07 実装。エンジン＋テンプレ＋テスト＋docs）
 
-- `bun run app`（dev）で **文字レイヤ・システムメニューの表示位置が崩れる**。web版は正常。
-  フェーズ1適用前のベースラインでも再現。
-- 起動時に時々 **`window.electron` undefined**（ESM preload のレース、`IpcRenderer.ts:37` /
-  `app.ts:45`、非決定的）。壊れた状態で起動するとフレームの入力が効かなくなる。
-- `node_modules/electron/dist` 未インストールで `bun run app` が `Error: Electron uninstall`。
-  今回は `node node_modules/electron/install.js` で対処。`package.json` に
-  `"postinstall": "node node_modules/electron/install.js"` を足すと再発防止。
+- **前提のズレ**：本節（2.5）の「目次（`Log`）と `PageLog` は同じ停止点で積まれるのでインデックスが
+  揃う」は**誤り**。`Log`（バックログ本文）は `plc`/`[p]` 区切り・空ページは積まない、`PageLog` は
+  `[l]/[p]/[s]` の全停止点。テンプレは `[l]`（`@`マクロ含む）を多用するので 1 バックログページ内に
+  `PageLog` エントリが複数できる。本家 `Reading.ts:261/287/312` も `[l]/[p]/[s]` 全部で `recodePage()`
+  を呼ぶので本家の `aPageLog` も同じ（本家にこの実績機能は無い）。
+- **対応**：`Log` の各確定ページに「そのページを演じ直す `PageLog` エントリの key（`${idx}:${fn}`）」を
+  焼き込む（`Log.#placeKey`、`const.sn.log.json` の `place` 欄）。ScriptMng がページ内の**最初の停止点**で
+  渡し、`Log` は最初の 1 回だけ採る（`[l]` 複数でもページ頭を指す）。改ページで clear。
+  key は**位置不変**なので `log.max_len`（64）で `PageLog` の頭が削れてもズレない（数値インデックスだと
+  削れた数だけずれる）。
+- **`[page place=N]`（分家独自。本家に無い）**：N＝`const.sn.log.json` の並び。`ScriptEngine` が
+  `Log.placeKeyOf(N)` で key を引き `{t:'pageToPlace'}` を積んで停止、`PageLog.move({placeKey})` が
+  key 照合で演じ直し先を決める。**`to=oldest` と同じく tail は切り捨てない**（跳んだ先から読み進め可）。
+  まだ通っていない行＝key 空なら何もせず `[return]` へ。
+- **テンプレ配線**：`frames/_log.htm` の行番号ボタン（`data-place`）→ `#log` へ委譲したクリックで
+  隠し `#do_jump` を疑似クリック → `frames/_log.sn` `*jump` が `[let_frame]` で拾って
+  `[page place=&const.sn.frm.log.val_place]`。`updateRow`（再利用行）もボタン化して見た目を揃えた。
+- **テスト**：`Log.test.ts`（place 焼き込み・`placeKeyOf`）、`PageLog.test.ts`（key 照合 move・
+  未発見は最古へ・tail 保持）、`ScriptEngine_trans.test.ts`（`[page place]` の値域・空バックログ no-op）、
+  `page.e2e.ts` ＋ `prj_page/main.sn`（escape→`[page place=1]` で「に」へ跳び読み進め／未訪問は no-op）。
+- **未検証**：テンプレ（`tmp_blues` frames）の実ブラウザ確認。bluesnovel 側の型・単体・E2E は緑。
 
 ### 未着手（フェーズ2以降。#9/#10/#11 は対象外で確定）
 
-- **#5 バックログ→ページジャンプ**：エンジンに `[page place=N]`（数値シーク。`PageLog.move()` に分岐追加）、
-  `_log.htm` の行番号ボタンから発火。シナリオ検索の代替も兼ねる。
 - **#4② 便利セーブ・ホバー枠**：セーブボタンのホバーでスロット一覧＋サムネ（`[snapshot]` 系流用）。
 - **#6 バックログ小窓プレビュー**：停止点ごとの軽量シーン状態を `PageLog` に同梱し、行ホバーで
   `GrpLayer` 等を縮小レンダリング。バックログの iframe→ネイティブReact化とセットで検討。
 
-推奨着手順：#5 → #4② → #6。
+推奨着手順：#4② → #6。
 
 ### 軽微
 

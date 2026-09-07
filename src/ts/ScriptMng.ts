@@ -22,7 +22,7 @@ import {getPlgTag} from '../sn/PlgTag';
 import {focusMng} from './FocusMng';
 import {dlFn, mimeOfFn, rgbaOf, savePic, snapshotToPng} from './Snapshot';
 import {SaveMng, type T_MARK} from './SaveMng';
-import {INI_STYPAGE, PageLog, type T_PAGE_TO} from './PageLog';
+import {INI_STYPAGE, PageLog, type T_PAGE_PLACE, type T_PAGE_TO} from './PageLog';
 import {plainOf, setEscape, splitCh} from './Txt';
 import {addFontFaces} from './Font';
 import {DEF_BTN_FONT, type T_CHGLAY, type T_LAY_STY_ARG} from '../store/store';
@@ -309,15 +309,16 @@ export class ScriptMng {
 		this.#procing = true;
 		this.#procPage(to).catch(this.#catchErr);
 	}
-	// 移動先のページを演じ直す。しおりの復元は[load]と同じ手順（#procLoad参照）
-	async #procPage(to: T_PAGE_TO) {
+	// 移動先のページを演じ直す。しおりの復元は[load]と同じ手順（#procLoad参照）。
+	//	to が {placeKey} なら [page place=N]（バックログ行→場面ジャンプ。key で演じ直し先を引く）
+	async #procPage(to: T_PAGE_TO | T_PAGE_PLACE) {
 		const engine = this.#engine;
 		if (! engine) {this.#procing = false; return}
 
 		try {
 			const ent = this.#pageLog.move(to);
 			if (! ent) {
-				// 動かなかった（端まで来ている／to=load）。to=loadはここから読み進めるだけ
+				// 動かなかった（端まで来ている／to=load／place先が空）。to=loadはここから読み進めるだけ
 				this.#applyPaging();
 				this.#procing = false;
 				return;
@@ -1420,6 +1421,12 @@ export class ScriptMng {
 					this.#procPage(last.to).catch(this.#catchErr);
 					return;
 				}
+				// [page place=N]（バックログ行→場面ジャンプ）。演じ直し先は key で引く
+				if (last?.t === 'pageToPlace') {
+					this.#procing = true;
+					this.#procPage({placeKey: last.placeKey}).catch(this.#catchErr);
+					return;
+				}
 				// プラグインが addTag で登録したタグ。同期で完了するかisWait（要resume）かは
 				//	呼んでみないと分からないので、#procPlgTag()内で判定する
 				if (last?.t === 'plgTag') {this.#procPlgTag(last); return}
@@ -2214,6 +2221,7 @@ export class ScriptMng {
 			//	本家同様、読み戻り中の見た目（styPaging）も既定へ戻す
 			this.#pageLog.clear();
 			this.#pageStart = undefined;
+			this.#engine?.setPageLogKey('');	// [page place=N]の演じ直し先も消える
 			this.#engine?.setValNochk('save:const.sn.styPaging', INI_STYPAGE);
 			this.#applyPaging();
 			break;
@@ -2228,6 +2236,7 @@ export class ScriptMng {
 			this.#aKeysAtPaging = act.aKey;
 			break;
 		case 'pageTo':
+		case 'pageToPlace':
 			// 実処理は#runStep()側（しおりを戻して演じ直す。#procPage）
 			break;
 		case 'trace':
@@ -2251,7 +2260,14 @@ export class ScriptMng {
 			//	同じ位置は積み直さないので、[page]で戻って演じ直しても増えない
 			const ps = this.#pageStart;
 			this.#pageStart = undefined;
-			if (ps) this.#pageLog.push(ps.fn, ps.idx, ps.mark, ps.clearOnResume);
+			if (ps) {
+				this.#pageLog.push(ps.fn, ps.idx, ps.mark, ps.clearOnResume);
+				// [page place=N]用：この停止点＝今読んでいる区間の先頭位置を Log へ渡す。
+				//	Log 側がページ内の最初の1回だけ採るので、[l]で複数停止してもページ頭を指す。
+				//	PageLog.curKey でなく ps を使うのは、演じ直し中は dedup で #pos が固まって
+				//	curKey がジャンプ先に貼り付くため（読み進めた先も同じ key になってしまう）
+				this.#engine?.setPageLogKey(`${String(ps.idx)}:${ps.fn}`);
+			}
 			this.#pageReplaying = false;	// 演じ直しはここで完了。以降はisPagingの実値どおりに戻す
 			this.#applyPaging();
 			// [l]/[p]待ち中マーカー表示（[s]はマーカーなし＝上のsetWait(null)のままにする）。

@@ -89,6 +89,27 @@ it('move_loadは見ているページより後を捨てる', ()=> {
 	expect(lg.isPaging).toBe(false);	// 最新＝見ていたページになった
 });
 
+it('move_placeKey_keyで演じ直し先を引く（tailは切り捨てない）', ()=> {
+	// [page place=N]（バックログ行→場面ジャンプ）。key=`${idx}:${fn}`
+	const lg = lg3();
+	expect(lg.move({placeKey: '10:main'})?.mark.sPages).toBe('b');
+	expect(lg.pos).toBe(1);
+	expect(lg.len).toBe(3);				// to=load と違い後続は残す
+	expect(lg.isPaging).toBe(true);
+	expect(to(lg, 'next')).toBe('c');	// 跳んだ先から読み進められる
+});
+
+it('move_placeKey_見つからなければ残っている最古へ', ()=> {
+	// maxLenで頭が削れて演じ直し先が消えた行をクリックした場合
+	const lg = lg3();
+	expect(lg.move({placeKey: '999:gone'})?.mark.sPages).toBe('a');
+	expect(lg.pos).toBe(0);
+});
+
+it('move_placeKey_空ログではundefined', ()=> {
+	expect(new PageLog(()=> 100).move({placeKey: '0:main'})).toBeUndefined();
+});
+
 it('clear_空にすると何もできない', ()=> {
 	// [page clear=true]。本編を始める前などに呼び、タイトル画面まで戻れてしまうのを防ぐ
 	const lg = lg3();

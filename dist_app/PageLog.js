@@ -628,6 +628,10 @@ var H = [
 	move(e) {
 		let t = this.#e.length - 1;
 		if (!(t < 0)) {
+			if (typeof e != "string") {
+				let t = this.#e.findIndex((t) => t.key === e.placeKey);
+				return this.#t = t < 0 ? 0 : t, this.#e[this.#t];
+			}
 			switch (e) {
 				case "oldest":
 					this.#t = 0;

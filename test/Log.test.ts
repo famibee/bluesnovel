@@ -88,6 +88,40 @@ it('Log_resetは全消去、textで置き換えられる', ()=> {
 	expect(JSON.parse(lg.json())).toEqual([{text: 'さん'}]);
 });
 
+it('Log_place_ページ内で最初のsetPlaceKeyだけを焼き込む', ()=> {
+	// [page place=N]用（分家独自）。[l]で停止点が複数できてもページ頭を指すよう最初の1回が勝つ
+	const lg = new Log;
+	lg.setPlaceKey('0:main');
+	lg.add('いち');
+	lg.setPlaceKey('5:main');	// ページ途中の[l]の分。無視される
+	lg.pagebreak();
+	lg.setPlaceKey('9:main');	// 次ページの頭
+	lg.add('に');
+	expect(JSON.parse(lg.json())).toEqual([
+		{text: 'いち', place: '0:main'},
+		{text: 'に', place: '9:main'},
+	]);
+});
+
+it('Log_place_空文字で明示クリア（[page clear=true]）', ()=> {
+	const lg = new Log;
+	lg.setPlaceKey('0:main');
+	lg.setPlaceKey('');
+	lg.add('いち');
+	lg.pagebreak();
+	expect(JSON.parse(lg.json())).toEqual([{text: 'いち'}, {text: ''}]);	// place無し
+});
+
+it('Log_placeKeyOf_行番号→演じ直しkey（書きかけ現ページも引ける）', ()=> {
+	const lg = new Log;
+	lg.setPlaceKey('0:main'); lg.add('いち'); lg.pagebreak();
+	lg.setPlaceKey('9:main'); lg.add('に');
+	expect(lg.placeKeyOf(0)).toBe('0:main');
+	expect(lg.placeKeyOf(1)).toBe('9:main');	// 書きかけの現ページ
+	expect(lg.placeKeyOf(2)).toBe('');			// 範囲外
+	expect(lg.placeKeyOf(-1)).toBe('');
+});
+
 it('Log_playbackは確定ページを読み直し、書きかけは捨てる', ()=> {
 	// 本家 Log.ts:113 と同じ。ロード直後は「まだ何も読んでいない」状態から始まる
 	const lg = new Log;

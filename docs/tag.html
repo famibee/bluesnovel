@@ -2020,10 +2020,11 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <p>さらにラベル名を考えるのが面倒なとき、「無名ラベル」ともいうべき機能が使えます。 「**after」は「そのタグ以降で最初に見つかった**ラベルに」 「**before」は「そのタグ以前で最初に見つかった**ラベルに」 ジャンプ・コールする、という指定です。次のように書きます。 ; ======================= [jump label=****after] *** ** も [jump label=**after] ;** っ ** [l] ぷ [jump label=**before] ** ＠[s] ** **** す [jump label=***before] ; ======================= この例では「すもぷぷぷ……」と文字が表示されます。 「**」とか「***」とかアスタリスクは二個以上の任意の数が使え、同じ数同士が対応するラベルとなります。 が、上記例で見るとおりあんまり複雑に使うと可読性が下がってしまう気がしますので、局所的な用途に限ったほうが良さげです。 </pre></p>
 <h3 class="tag" id="page"><a class="hash" href="#page" tabindex="-1" aria-hidden="true">#</a><span class="tn">[page]</span> <span class="td">ページ移動</span></h3>
 <aside class="callout warn">全属性に対応。<br/> <b>読み戻りは本家と同じ「演じ直す」方式</b>（<code>src/ts/PageLog.ts</code>）。停止点ごとに「そのページの本文が出る前の位置＋しおり」を積んでおき、戻るときはそのしおりを復元してその位置からシナリオを動かし直す。画面のスナップショットを貼り直す方式では <code>to=load</code>（見ているページから再開）でエンジンの位置が繋がらないため。<br/> 組み込みの <b>PageUp／PageDown も同じ経路</b>（<code>to=prev</code>／<code>to=next</code>）なので、キー操作とシナリオからの指定が同じ動きになる。<br/> <b>相違</b>：端まで来ていて位置が動かない場合も<b>今のページを演じ直す</b>（本家は何もしない）。[page]へ来た時点で（[p]の直後なら）本文がすでに消えているので、演じ直さないと画面が空のまま残るため。</aside>
+<aside class="callout tip"><code>place</code> は<b>本家に無い分家独自</b>。バックログ（本文履歴）の行から、その場面へ戻すためのもの（テンプレ <code>frames/_log.htm</code> の行番号ボタン → <code>frames/_log.sn</code> の <code>*jump</code> が <code>[page place=&amp;const.sn.frm.log.val_place]</code>）。<br/> 行番号は <code>const.sn.log.json</code> の並び（＝バックログのページ番号）で、<code>[l]/[p]/[s]</code> 全部で積む <code>PageLog</code> のインデックスとは揃わないため、演じ直す停止点は Log が各ページに焼き込んだ key（<code>place</code> 欄）で引く。<br/> まだ通っていない行を指した場合は何もしない。<code>to=oldest</code> と同じく後続ページは切り捨てない（跳んだ先から読み進められる）。</aside>
 <p class="lead">ページ移動状態に入り、[p]停止位置を一つ移動する</p>
 <p>[p]などの停止位置を「ページ」とみなし、既読ページを戻ったり進んだりできる。<br/> （レイヤの .page とページ移動の [page] の言葉混乱注意）<br/> ・save:sn.doRecLog の影響を受け、true の状態でのみページ移動履歴が記録される。<br/> [l][p][s]など（[wait]は対象外）で停止した際にそのページ状態の記録を行う。<br/> ・save変数も復元する。<br/> ・前述二項の理由により、冒頭ページに &save:sn.doRecLog = true と [record_place]が必須。<br/> （save変数復元で &save:sn.doRecLog = false になるケースがある）<br/> <br/> ページ移動状態かは tmp:const.sn.isPaging（Boolean値）でわかる。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
-<tr><td>clear</td><td rowspan="3">いずれかを指定</td><td>なにもしない</td><td>true、false</td><td>trueでページ状態記録をクリアする</td></tr>
+<tr><td>clear</td><td rowspan="4">いずれかを指定</td><td>なにもしない</td><td>true、false</td><td>trueでページ状態記録をクリアする</td></tr>
 <tr><td>to</td><td>なにもしない</td><td>oldest、prev、next、newest、exit、load</td><td>
 	oldest：最古のページに移動<br/>
 	prev：ひとつ前のページに戻る<br/>
@@ -2032,6 +2033,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 	exit：ページ移動状態から抜ける<br/>
 	load：（ページ移動状態から）表示中ページからロードする<br/>
 </td></tr>
+<tr><td>place</td><td>なにもしない</td><td>0以上の整数</td><td><b>分家独自</b>。バックログ（<code>const.sn.log.json</code>）の N 行目が指す場面へ跳ぶ。上のcalloutを参照</td></tr>
 <tr><td>style</td><td>なにもしない</td><td>CSS style</td><td>ページ移動中の既読文字に適用する CSS スタイル。初期値は【color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;】</td></tr>
 <tr><td>key</td><td>なにもしない</td><td>なにもしない</td><td>イベント名（カンマ区切りで複数可）</td><td>
 	ページ移動状態中に有効にするグローバルイベントを限定できる。<br/>

@@ -35,6 +35,14 @@ export type T_PAGE_ENT = {
 export type T_PAGE_TO = 'oldest' | 'prev' | 'next' | 'newest' | 'exit' | 'load';
 export const A_PAGE_TO: T_PAGE_TO[] = ['oldest', 'prev', 'next', 'newest', 'exit', 'load'];
 
+// [page place=N]（分家独自。本家に無い）。バックログ（本文履歴）の行から、その場面へ跳ぶ。
+//	行番号は Log（本文履歴）のページ番号なので PageLog のインデックスとは揃わない
+//	（Log は plc/[p] 区切り、PageLog は [l]/[p]/[s] の全停止点。本家 Reading.ts:261/287/312 も同じ）。
+//	→ Log の各ページに「そのページを演じ直す PageLog エントリの key」を焼き込んでおき（Log.ts、
+//	 const.sn.log.json の place 欄）、ここへは key を渡して照合する。**key は位置不変**なので
+//	 maxLen で PageLog の頭が削れても壊れない（数値インデックスだと削れた数だけずれる）
+export type T_PAGE_PLACE = {placeKey: string};
+
 // [page style=…]の既定（本家 ReadingState.INI_STYPAGE）。読み戻り中の本文の見た目
 export const INI_STYPAGE = 'color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;';
 
@@ -69,9 +77,18 @@ export class PageLog {
 	//	端まで来ていて位置が動かない場合も**今のページを返す**：本家は「動かないなら何もしない」
 	//	だが、こちらは[page]へ来た時点で（[p]の直後なら）本文がすでに消されているので、
 	//	演じ直さないと画面が空のまま残る
-	move(to: T_PAGE_TO): T_PAGE_ENT | undefined {
+	move(to: T_PAGE_TO | T_PAGE_PLACE): T_PAGE_ENT | undefined {
 		const last = this.#a.length -1;
 		if (last < 0) return undefined;
+
+		// [page place=N]：Log 側から渡された key で演じ直し先を引く。**tail は残す**
+		//	（to=oldest/newest と同じ。跳んだ先から読み進められ、next/prev でも往復できる）。
+		//	削れて見つからないときは残っている最古へ（跳べる限界まで戻す）
+		if (typeof to !== 'string') {
+			const i = this.#a.findIndex(v=> v.key === to.placeKey);
+			this.#pos = i < 0 ? 0 : i;
+			return this.#a[this.#pos];
+		}
 
 		switch (to) {
 		case 'oldest':	this.#pos = 0;								break;

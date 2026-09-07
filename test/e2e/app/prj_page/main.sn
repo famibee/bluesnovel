@@ -6,6 +6,9 @@
 [add_lay layer=mes class=txt]
 [current layer=mes]
 
+; 本文履歴（バックログ）に積む＝[page place=N]の演じ直し先ができる
+[let name=save:sn.doRecLog text=true]
+
 ; 読み戻り中の本文の見た目。既定（黄色＋黒フチ）から変えられることを見る
 [page style="color: rgb(0, 128, 0);"]
 
@@ -15,6 +18,10 @@
 [event key=end      label=*page arg=exit   global=true]
 [event key=enter    label=*page arg=load   global=true]
 
+; escape → [page place=1]（バックログの2行目＝「に」の場面へジャンプ。
+;	frames/_log.htm の行番号ボタンと同じ形。N は const.sn.log.json の並び）
+[event key=escape label=*place global=true]
+
 いち[p]
 に[p]
 さん[p]
@@ -22,4 +29,8 @@
 
 *page
 	[page to=&sn.eventArg]
+[return]
+
+*place
+	[page place=1]
 [return]
