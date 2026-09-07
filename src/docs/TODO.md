@@ -23,24 +23,6 @@
 
 （`docs/{tag,macro_plg,dev}.html` は 2026-09-06 に AMP から案B へ刷新済。積み残しは無し）
 
-## app版（`tmp_blues` の `bun run app` 実機テストで発覚 2026-09-07）
-
-`tmp_blues` 側でエロゲ/ノベルゲUI標準機能フェーズ1（ボイスカット・`ask_ync` の「次から確認しない」）を
-実装・web版で検証中に確認した既存不具合。フェーズ1の変更（`.sn`/`.htm`）とは無関係。検討メモ：`system-ui-research.md` §5。
-
-- [ ] **preload レース（`window.electron` undefined）— 対策済み、コールドスタート実機での再検証待ち**。
-      起動直後、非決定的に `[Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'ipcRenderer')`。
-      ESM preload（`preload.mjs`）の `contextBridge` 公開が renderer の `DOMContentLoaded`→`new SysApp()`→
-      `SysApp.loaded()` に間に合わないレース。負けると `#em.invoke('getInfo')` が投げて `loaded()` が丸ごと死に、
-      **Config 未生成＝`CmnLib.stageW/H` 0 のまま座標計算が全崩壊**する（フレーム入力も効かない）。app固有。
-      **対策**：`SysApp.loaded()` 先頭で `waitElectronBridge()`（`src/IpcRenderer.ts`）を await、
-      `window.electron.ipcRenderer` が生えるまで最大3秒ポーリング。CDP調査では10回リロードでレースを踏めず
-      （コールドスタート限定）、`bun run app` の実機コールドスタート反復で再現しないことを確認したら消す。
-- [ ] （テンプレ側・参考）`node_modules/electron/dist` 未インストールで `bun run app` が
-      `Error: Electron uninstall`。`node node_modules/electron/install.js` で復旧。bun は
-      `trustedDependencies` があっても postinstall を確実には走らせないので、`tmp_blues/package.json` に
-      `"postinstall": "node node_modules/electron/install.js"` を足す手も。
-
 ## 保留
 
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE = false`）：調整結果の書き戻し先を
