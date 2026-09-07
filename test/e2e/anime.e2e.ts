@@ -11,7 +11,7 @@
 //	シートの.jsonが<img>として描かれてしまわないこと。
 
 import {expect, test} from '@playwright/test';
-import {SEL_FORE, gotoSn, mesStr, pressKeyToWaitMark, snap} from './snPage';
+import {SEL_FORE, gotoSn, mesStr, pressKey, pressKeyToWaitMark, snap} from './snPage';
 
 
 test.beforeEach(async ({page})=> {await gotoSn(page, 'anime')});
@@ -155,4 +155,23 @@ test('不可視 back ページではシートのコマ送りが止まる（anima
 	// trans 後：foreIdx 反転。新しい表は回り続け、旧表＝いまの裏ページは止まる
 	expect(await playState(SEL_FORE)).toBe('running');
 	expect(await playState('#skynovel [data-page="back"]')).toBe('paused');
+});
+
+test('[p visible=false]（テンプレの[plc visible=false]）は待つが待ちマークを描かない', async ({page})=> {
+	// breakline/breakpage 素材を持つ prj_anime でも、visible=false なら ▼ を出さない
+	//	（本家 Reading.ts:498/518。待ち＝stop 自体は行う）
+	for (let i = 0; i < 6; ++i) await pressKeyToWaitMark(page, 'Space');	// 「backページ停止」の次の [p visible=false] まで
+	expect(await mesStr(page)).toBe('きえるまえ');
+
+	const {wait} = await snap(page);
+	expect(wait).toMatchObject({nm: 'mes', kind: 'p', noMark: true});
+
+	// 待ちマーク用スロット（data-lay の2つめの子）に breakpage の絵が出ていないこと
+	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	await expect(mark.locator('img')).toHaveCount(0);
+	await expect(mark.locator('span[class^="sn_ani"]')).toHaveCount(0);
+
+	// それでもクリックで進める（待ち自体はしている）
+	await pressKey(page, 'Space');
+	expect(await mesStr(page)).toBe('きえたあと');
 });

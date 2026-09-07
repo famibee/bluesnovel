@@ -80,6 +80,7 @@ export type T_WAIT = {
     y?: number;
     width?: number;
     height?: number;
+    noMark?: true;
 } | null;
 export type T_PAGE = 'fore' | 'back';
 export type T_PAGE_BOTH = T_PAGE | 'both';

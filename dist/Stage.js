@@ -10702,7 +10702,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			e = !1;
 		};
 	}, [ze, Be]);
-	let Ue = a && !oe && !ce && fe !== null && fe.nm === r, We = Ue && fe.kind !== "waitclick", Ge = We && (!!Ve || !!ze && !Be), Ke = Ue && B, [qe, Je] = (0, W.useState)(!1);
+	let Ue = a && !oe && !ce && fe !== null && fe.nm === r, We = Ue && fe.kind !== "waitclick" && !fe.noMark, Ge = We && (!!Ve || !!ze && !Be), Ke = Ue && B, [qe, Je] = (0, W.useState)(!1);
 	(0, W.useLayoutEffect)(() => {
 		let e = be.current;
 		Je(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));

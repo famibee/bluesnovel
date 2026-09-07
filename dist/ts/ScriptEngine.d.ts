@@ -342,6 +342,7 @@ export type T_ENGINE_ACTION = {
     nm: string;
     resume?: T_RESUME;
     mark?: T_MARK_STY;
+    noMark?: true;
 } | {
     t: 'enableEvent';
     nm: string;

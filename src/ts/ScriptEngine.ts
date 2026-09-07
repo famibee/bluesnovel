@@ -179,7 +179,7 @@ export type T_ENGINE_ACTION =
 	| {t: 'setFocus'; mode: 'add' | 'del' | 'null' | 'next' | 'prev'; rawKey?: string; needErr?: boolean}	// [set_focus]。キーボードフォーカスの順番管理
 	| {t: 'trace'; text: string}	// [trace text=...]。表示には影響しない。実処理はScriptMng.ts #trace()（myTrace経由でデバッグ表示へ出力）
 	| {t: 'log'; text: string; fn: string; lineNum: number}	// [log text=...]。履歴（Log.ts）とは別物。実処理はScriptMng.ts #log()（downloads/log.txtへ追記）。fn/lineNumはpush時点のもの（同じstep()内で後続タグが進んだ後にActionを処理してもズレないよう、ここで確定させておく）
-	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME; mark?: T_MARK_STY}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）。markは[l]/[p]の待ちマークの位置・寸法
+	| {t: 'stop'; kind: T_STOP_KIND; key: string; nm: string; resume?: T_RESUME; mark?: T_MARK_STY; noMark?: true}	// 状態確定ポイント（Caretakerキー、nmは待ち中の文字レイヤ）。resume指定時はクリック待ちせず自動進行（オート読み／既読スキップ）。markは[l]/[p]の待ちマークの位置・寸法。noMarkは[l]/[p]にvisible=falseが付いた＝待ちマーク（改ページ記号）を描かない（本家 Reading.ts:498/518 の argChk_Boolean(hArg,'visible') 分岐相当）
 	| {t: 'enableEvent'; nm: string; enabled: boolean}	// [enable_event]。文字レイヤのボタン等を有効／無効にする
 	| {t: 'wait'; msec: number; canskip: boolean}	// [wait time=…]。実際に待つのはScriptMngの担当なので、step()はここで一旦返る
 	| {t: 'tsy'; tw_nm: string; nm: string; page: T_PAGE; msec: number; delay: number; ease: string; repeat: number; yoyo: boolean; hTo: T_TSY_TO; aPath?: T_TSY_TO[]; chain?: string; backlay: boolean}	// [tsy]。トゥイーン開始。回すのはScriptMng（motion）で、ここは属性の解釈だけ。hToのrel（相対指定）はレイヤの現在値が要るのでScriptMng側で解決する。repeatはmotion規約（0=1回だけ、Infinity=無限）。aPathは[tsy path=…]の後続区間、chainは他トゥイーンの終了に繋ぐ指定。backlayはトゥイーン終了時に最終値を裏ページへも反映するか（本家 CmnTween.ts backlay）
@@ -2664,8 +2664,12 @@ export class ScriptEngine {
 				const v = args[k];
 				if (v !== undefined) mark[k] = ScriptEngine.#argNum(name, k, v);
 			}
+			// [l]/[p] の visible=false は「待ちは行うが改ページ記号（▼）を描かない」
+			//	（本家 Reading.ts:498/518。テンプレの [plc visible=false] がこれ）。
+			//	[s]/[waitclick] はもともとマーカーを出さないので visible は無視
+			const noMark = (name === 'l' || name === 'p') && args.visible === 'false';
 			aAct.push({t: 'stop', kind: name, key: `${this.fn}:${String(this.#idx)}`, nm: this.#curTxtLayer,
-				...resume ? {resume} : {}, ...Object.keys(mark).length > 0 ? {mark} : {}});
+				...resume ? {resume} : {}, ...Object.keys(mark).length > 0 ? {mark} : {}, ...noMark ? {noMark: true} : {}});
 			return 'stop';
 		}
 

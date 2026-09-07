@@ -494,8 +494,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	isTypingを含めてガード：タイプ演出開始時は表示せず、最後の文字のアニメが終了（isTypingがfalseに）した同時/以降に表示する
 	//	表裏2ページとも常にマウントされており同名レイヤが両方に居るので、裏側には出さない
 	const wantWaitEl = isFore && ! isReadBack && ! isTyping && wait !== null && wait.nm === nm;
-	// マーカー画像を実際に描くのは[l]/[p]だけ（[waitclick]は本家どおりマーカーなし）
-	const showWaitMark = wantWaitEl && wait!.kind !== 'waitclick';
+	// マーカー画像を実際に描くのは[l]/[p]だけ（[waitclick]は本家どおりマーカーなし）。
+	//	[l]/[p]でも visible=false（テンプレの[plc visible=false]）なら描かない（本家 Reading.ts:498/518）
+	const showWaitMark = wantWaitEl && wait!.kind !== 'waitclick' && ! wait!.noMark;
 	// 実際に見た目のマークを描くか。本家はbreakline/breakpage素材がプロジェクトに無ければ
 	//	breakLine/breakPageを空実装のまま（本家 LayerMng.ts:159-168,318-319）にする＝何も描かない。
 	//	素材未指定時に絵文字で代替していた旧表示は本家の見た目と食い違うため廃止（2026-08-23）

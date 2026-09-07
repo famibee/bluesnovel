@@ -36,3 +36,9 @@
 [trans]
 [wt]
 backページ停止[l]
+
+[er]
+; [p]/[l] visible=false：待ち（stop）は行うが breakline/breakpage の待ちマーク（改ページ記号）を
+;	描かない（本家 Reading.ts:498/518。テンプレの [plc visible=false] がこれ）
+きえるまえ[p visible=false]
+きえたあと[s]

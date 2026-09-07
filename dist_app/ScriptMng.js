@@ -4919,7 +4919,8 @@ var yo = class p {
 						nm: e.nm,
 						kind: e.kind,
 						...t ? { src: t } : {},
-						...e.mark
+						...e.mark,
+						...e.noMark ? { noMark: !0 } : {}
 					});
 				}
 				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || c), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#ht(!0);

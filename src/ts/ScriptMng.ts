@@ -2261,7 +2261,8 @@ export class ScriptMng {
 			//	戻らず読み進められなくなる」不具合対応）
 			if (act.kind === 'l' || act.kind === 'p' || act.kind === 'waitclick') {
 				const src = act.kind === 'waitclick' ? undefined : this.#srcBreak(act.kind);
-				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {}), ...act.mark});
+				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {}), ...act.mark,
+					...(act.noMark ? {noMark: true} : {})});	// [plc visible=false]＝改ページ記号を出さない
 			}
 			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる
 			//	（[waitclick]は同じ「マーカー無しの停止」だがクリックで進む）

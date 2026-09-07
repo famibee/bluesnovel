@@ -121,3 +121,25 @@ it('waitclick_cancelsAutoSkip', ()=> {
 	expect((a.at(-1) as {resume?: unknown}).resume).toBeUndefined();	// 自動進行しない
 	expect(se.autoEnabled).toBe(false);
 });
+
+
+// ============ [l]/[p] visible=false（改ページ記号を出さない。テンプレの[plc visible=false]） ============
+
+it('p_visibleFalse_setsNoMark', ()=> {
+	// 本家 Reading.ts:498/518：visible=false なら breakLine/breakPage を呼ばない＝▼を描かない。
+	//	待ち（stop）自体は行う
+	const a = acts(`${LAYS}あ[p visible=false]い[s]`);
+	const stop = a.find(v=> v.t === 'stop' && v.kind === 'p');
+	expect(stop).toMatchObject({t: 'stop', kind: 'p', noMark: true});
+});
+
+it('l_visibleFalse_setsNoMark', ()=> {
+	const a = acts(`${LAYS}あ[l visible=false]い[s]`);
+	expect(a.find(v=> v.t === 'stop' && v.kind === 'l')).toMatchObject({kind: 'l', noMark: true});
+});
+
+it('p_visibleDefault_noNoMark', ()=> {
+	// 既定（visible 省略）は ▼ を描く＝noMark を立てない
+	const stop = acts(`${LAYS}あ[p]い[s]`).find(v=> v.t === 'stop' && v.kind === 'p') as {noMark?: true};
+	expect(stop.noMark).toBeUndefined();
+});

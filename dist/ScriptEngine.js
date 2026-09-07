@@ -2667,13 +2667,15 @@ var Se = class r {
 					let a = t[n];
 					a !== void 0 && (i[n] = r.#n(e, n, a));
 				}
+				let o = (e === "l" || e === "p") && t.visible === "false";
 				return a.push({
 					t: "stop",
 					kind: e,
 					key: `${this.fn}:${String(this.#x)}`,
 					nm: this.#S,
 					...n ? { resume: n } : {},
-					...Object.keys(i).length > 0 ? { mark: i } : {}
+					...Object.keys(i).length > 0 ? { mark: i } : {},
+					...o ? { noMark: !0 } : {}
 				}), "stop";
 			}
 			case "playse":
