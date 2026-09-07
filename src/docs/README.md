@@ -15,6 +15,7 @@
 | [backpage-perf.md](backpage-perf.md) | `[trans]` 後の不可視 back ページで動き続けるもの（プラグイン rAF・無限 `[tsy]`・動画・CSS シート）の調査と修正優先順。`[add_fx]` は対応済み。図解は [backpage-perf.html](backpage-perf.html)（ブラウザで開く） |
 | [deferred-infra.md](deferred-infra.md) | 着手保留の基盤（デザインモード・ESLint・moveable・vertglyph フィクスチャ・フレーム幅） |
 | [refactor-candidates.md](refactor-candidates.md) | `/simplify` 分家全体スイープ（2026-09-03）で挙がった構造リファクタ案の控え（待ち合わせ機構の統一・属性キー台帳化・レイヤの memo 化ほか）。即着手しないもの |
+| [system-ui-research.md](system-ui-research.md) | 商業エロゲ/ノベルゲのシステムUI標準機能（ボイスカット・便利セーブ・バックログのジャンプ/小窓プレビュー・非アクティブ時ホイール進行ほか）の分家テンプレ実装検討・難易度評価・ロードマップ |
 
 ⚠️ 決着・凍結した判断のうち対応コードがあるものは、そのソースのコメントへ書いてある
 （重複回避）。ここにあるのは対応コードが無い判断・未着手の宿題・再検討を避けるための実測値。

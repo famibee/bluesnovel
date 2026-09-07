@@ -1,7 +1,7 @@
 ## 知見
 ![alt text](<test/Claude Schedule.svg>)
 - /compact はコンテキスト80～90%程度で実行が推奨
-- brew upgrade -y && bun update && bun outdated
+- brew upgrade && bun update && bun outdated
 
 
 ## 後ほど

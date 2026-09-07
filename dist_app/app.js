@@ -232,21 +232,32 @@ async function d(e, t) {
 }
 //#endregion
 //#region src/IpcRenderer.ts
-var f = class {
+async function f(e = 3e3) {
+	if (window.electron?.ipcRenderer) return;
+	let t = performance.now();
+	for (; !window.electron?.ipcRenderer;) {
+		if (performance.now() - t > e) {
+			console.error(`[SysApp] preload の window.electron が ${String(e)}ms 待っても現れませんでした。以降の IPC は失敗します`);
+			return;
+		}
+		await new Promise((e) => setTimeout(e, 16));
+	}
+}
+var p = class {
 	send(e, ...t) {
 		window.electron.ipcRenderer.send(e, ...t);
 	}
 	invoke(e, ...t) {
 		return window.electron.ipcRenderer.invoke(e, ...t);
 	}
-}, p = class {
+}, m = class {
 	on(e, t) {
 		return window.electron.ipcRenderer.on(e, t);
 	}
 	once(e, t) {
 		return window.electron.ipcRenderer.once(e, t);
 	}
-}, m = class extends a {
+}, h = class extends a {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
 		crypto: !1,
@@ -254,8 +265,8 @@ var f = class {
 	}]) {
 		super(e, t), queueMicrotask(async () => this.loaded(e, t));
 	}
-	#e = new f();
-	#t = new p();
+	#e = new p();
+	#t = new m();
 	#n = {
 		getAppPath: "",
 		isPackaged: !1,
@@ -267,6 +278,7 @@ var f = class {
 		arch: ""
 	};
 	async loaded(...[e, t]) {
+		await f();
 		let r = this.#n = await this.#e.invoke("getInfo");
 		this.$path_downloads = r.downloads.replaceAll("\\", "/") + "/", this.$path_userdata = r.userData.replaceAll("\\", "/") + "/", this.#t.on("log", (e, t) => console.info("main: %o", t)), this.#t.on("fire", (e, t) => document.dispatchEvent(new KeyboardEvent("keydown", {
 			key: t,
@@ -332,6 +344,6 @@ var f = class {
 	}
 };
 //#endregion
-export { m as SysApp };
+export { h as SysApp };
 
 //# sourceMappingURL=app.js.map

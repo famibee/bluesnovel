@@ -196,15 +196,17 @@ test('pl/pr/pt/pb は文字表示領域の内側余白（指定した辺だけ�
 		const cs = getComputedStyle(el);
 		return {
 			pl: cs.paddingLeft, pr: cs.paddingRight, pt: cs.paddingTop, pb: cs.paddingBottom,
-			w: el.offsetWidth,	// transformの拡縮に影響されない論理px
+			w: el.offsetWidth,	// border-box 外形（padding 込み）。transform の拡縮に影響されない論理 px
+			innerW: el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
 		};
 	});
 	expect(r.pl).toBe('10px');
 	expect(r.pr).toBe('20px');
 	expect(r.pt).toBe('30px');
 	expect(r.pb).toBe('40px');
-	// content-box（既定のまま）なので[lay width=300]は内側の文字表示領域の幅、
-	//	paddingはその外側に足される（本家の画像レイヤ同様、bluesnovelのwidthは常に「中身」の寸法）
-	expect(r.w).toBe(300 + 10 + 20);
+	// box-sizing: border-box（本家 TxtLayer.ts:112 準拠）なので[lay width=300]は**外形**300px、
+	//	pl/pr はその内側の余白＝文字表示領域は 300 − 10 − 20（詳細は txtbox.e2e.ts）
+	expect(r.w).toBe(300);
+	expect(r.innerW).toBe(300 - 10 - 20);
 });
 

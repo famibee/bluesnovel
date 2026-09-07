@@ -291,6 +291,11 @@ export type T_ENGINE_ACTION = {
     t: 'dumpLay';
     aLayNm: string[] | null;
 } | {
+    t: 'dumpScript';
+    setFnc: string;
+    breakFnc: string;
+    needErr: boolean;
+} | {
     t: 'addFrame';
     id: string;
     src: string;
@@ -482,6 +487,7 @@ export declare class ScriptEngine {
     get fn(): string;
     get idx(): number;
     get lineNum(): number;
+    get colNum(): number;
     get atEnd(): boolean;
     peekUpcomingPicFn(): string[];
     jumpToLabel(label: string): void;

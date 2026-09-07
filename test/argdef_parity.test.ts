@@ -84,16 +84,17 @@ const A_CSS_DEF: {[attr: string]: string} = {
 	//	本家 TxtLayer.ts:272 のコンストラクタ既定（ステージいっぱい）に合わせwidth/heightどちらも
 	//	揃えた（2026-08-25。heightは当初widthだけ直したところ、masumeガイド枠（TxtLayer.tsx
 	//	CmnLib.masume）がステージ下端まで届かない食い違いが実機比較で見つかり追随）。
-	//	widthプロパティ自体は指定せず`right: 0`（heightも同様に`bottom: 0`）で表す：widthは常に
-	//	「中身の寸法」でpaddingは外側に足す設計（下記の本テストファイル内「pl/pr/pt/pbは文字表示
-	//	領域の内側余白」参照）。`calc(100% - 3em/2em)`という固定引き算値でも一度試したが、
+	//	widthプロパティ自体は指定せず`right: 0`（heightも同様に`bottom: 0`）で表す。明示時は
+	//	box-sizing:border-box（本家 TxtLayer.ts:112 準拠）なので[lay width=N]は**外形**＝本家
+	//	TxtStage の $width と一致し、paddingはその内側（下記「pl/pr/pt/pbは文字表示領域の内側余白」
+	//	＋ test/e2e/txtbox.e2e.ts）。`calc(100% - 3em/2em)`という固定引き算値も試したが、
 	//	[lay style="padding-bottom: …px;"]でpaddingを個別変更するプロジェクト（sn_gallery
 	//	line_breaking_rules）でズレて外形がステージをはみ出した。`right: 0`ならpaddingがどんな
 	//	値でも自動的に内側へ収まる。単純な100%（right:0を足さない）だとpaddingぶん外形が
 	//	ステージをはみ出し、[l]/[p]待ちマーカーがステージのoverflow:hiddenで切られて消える
 	//	（E2E test/e2e/wait.e2e.ts等が実際に回帰した）
-	width	: 'CSSのwidth既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでright:0により自動算出',
-	height	: 'CSSのheight既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでbottom:0により自動算出',
+	width	: 'CSSのwidth既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでright:0により自動算出（明示時はborder-boxで外形）',
+	height	: 'CSSのheight既定=auto（画像は自然サイズ）。本家の既定0は採らない。文字レイヤはstyTxtでbottom:0により自動算出（明示時はborder-boxで外形）',
 };
 
 // **本家に既定はあるが、bluesnovelでは別の場所・別の形で持っているもの**。

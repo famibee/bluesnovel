@@ -16,11 +16,12 @@ type T_IPC_RENDERER = {
 };
 declare global {
     interface Window {
-        electron: {
+        electron?: {
             ipcRenderer: T_IPC_RENDERER;
         };
     }
 }
+export declare function waitElectronBridge(timeout?: number): Promise<void>;
 export declare class IpcEmitter<T extends IpcEventMap> {
     send<E extends keyof ExtractArgs<T>>(channel: Extract<E, string>, ...args: ExtractArgs<T>[E]): void;
     invoke<E extends keyof ExtractHandler<T>>(channel: Extract<E, string>, ...args: Parameters<ExtractHandler<T>[E]>): Promise<ReturnType<ExtractHandler<T>[E]>>;

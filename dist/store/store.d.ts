@@ -194,7 +194,7 @@ export type T_CHGFILTER = {
 export type T_CHGFX = {
     aLayNm: string[] | null;
     page: T_PAGE_BOTH;
-    mode: 'add' | 'clear' | 'enable';
+    mode: 'add' | 'clear' | 'enable' | 'done';
     fx?: T_FX;
     names?: string[] | null;
     index?: number;

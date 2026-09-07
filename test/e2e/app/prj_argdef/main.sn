@@ -30,8 +30,8 @@
 たてがき[l]
 よこ[l]
 
-; pl/pr/pt/pb：文字表示領域の内側余白。content-box（既定）のため[lay width=]は中身の幅で、
-;	paddingはその外側に足される（他のwidth/heightと同じ「エンジンは実寸を知らない」流儀）
+; pl/pr/pt/pb：文字表示領域の内側余白（padding）。box-sizing:border-box（本家 TxtLayer.ts:112）
+;	なので[lay width=]は**外形**の幅で、paddingはその内側。文字表示領域＝width − pl − pr
 [add_lay layer=p class=txt]
 [lay layer=p width=300 height=200 pl=10 pr=20 pt=30 pb=40]
 よはく[s]

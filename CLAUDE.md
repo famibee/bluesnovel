@@ -36,6 +36,12 @@ bun run docs                            # docs/ プレイグラウンド
 **ブラウザ手動確認は `playwright-cli` スキルを使う**（playwright MCP は deny 済み。応答が全部
 コンテキストに載って高い）。ストア確認は `window.__sn.store.getState()`。
 
+**playwright 系（`playwright-cli`／自前スクリプトの `chromium.launch`／Electron の CDP 接続とも）は
+ミュート起動を基本とする**。bluesnovel は Web Audio で実際に音を鳴らすため、`--mute-audio`
+（＋必要なら `--autoplay-policy=no-user-gesture-required`）を必ず付ける。app 版を CDP で覗くときは
+electron メインで `app.commandLine.appendSwitch('mute-audio')`（自動メモリ
+`feedback-mute-playwright-audio` に経緯）。
+
 ## Architecture（概要）
 
 **純粋なシナリオエンジンと UI の分離**が中心。だからシナリオ処理はブラウザ無しで単体テストできる。

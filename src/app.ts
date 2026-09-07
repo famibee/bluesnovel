@@ -25,7 +25,7 @@ import type {T_HINFO} from './appMain_cmn';
 import {decTransportField, type T_DATA4VARI, type T_DATA4VARI_TRANSPORT} from './ts/SaveMng';
 import {updateCheck} from './UpdateCheck';
 
-import {IpcEmitter, IpcListener} from './IpcRenderer';
+import {IpcEmitter, IpcListener, waitElectronBridge} from './IpcRenderer';
 
 
 export class SysApp extends SysBase {
@@ -40,6 +40,13 @@ export class SysApp extends SysBase {
 	#hInfo	: T_HINFO	= {getAppPath: '', isPackaged: false, downloads: '', userData: '', getVersion: '', env: {}, platform: '', arch: ''};
 
 	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
+		// preload（ESM preload＝`preload.mjs`）の `contextBridge` 公開が renderer の
+		//	`DOMContentLoaded`→`new SysApp()` に間に合わないことがある（非決定的）。待たずに
+		//	下の `#em.invoke` へ入ると `window.electron` undefined で TypeError になり、
+		//	loaded() が丸ごと死んで Config 未生成＝`CmnLib.stageW/H` 0 のまま座標計算が全崩壊する
+		//	（本文が寄る／システムメニューのボタンが左上で重なる／フレーム入力が効かない）。詳細は IpcRenderer.ts
+		await waitElectronBridge();
+
 		// 主処理からアプリの情報を貰う。**Configより先**：`userdata:/`・`downloads:/`の
 		//	解決先（Config.searchPath）がこれで決まるため
 		const hInfo = this.#hInfo = await this.#em.invoke('getInfo');

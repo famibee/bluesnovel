@@ -672,13 +672,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
 			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
 		isolation: isolate;
-		/* **明示が要る**：sn_galleryなどBootstrapを読み込むホストは全称セレクタで
-			box-sizing: border-box をグローバルに敷いており、何も書かなければこちらが
-			それをそのまま継承してしまう（E2Eの自前テストアプリにはBootstrapが無いため
-			気付かれなかった）。[lay width=/height=]は常に「中身の寸法」という設計
-			（test/e2e/argdef.e2e.ts「pl/pr/pt/pbは文字表示領域の内側余白」参照）なので、
-			border-boxのままだと明示指定時にpx値の意味が変わってしまう（2026-08-25発覚） */
-		box-sizing: content-box;
+		/* **本家 TxtLayer.ts:112 に合わせて border-box**（＝width/height は padding 込みの外形）。
+			以前は content-box にして「[lay width=] は文字表示領域の寸法・padding は外側に足す」
+			という独自解釈を採っていたが、本家サンプル由来のテンプレ（桜の樹の下には等）は
+			[lay style="width: 310px; height: 768px; padding-left: 26px; …"] を **本家と同じ
+			border-box 前提**で書いており、content-box だと箱が padding ぶん（この例で横 62px・
+			縦 46px）膨らんでステージからはみ出していた（2026-09-07、tmp_blues 実機で発覚）。
+			本家準拠へ戻す＝[lay width=N] も b_pic 自動サイズも「N＝外形」で本家 TxtStage の
+			infTL.$width（setMySize / lay style 由来）と一致する。既定の全画面サイズは下の
+			right: 0 / bottom: 0 が担うので border-box でも padding は内側に収まる。
+			sn_gallery 等 Bootstrap 常駐ホストが全称セレクタで border-box を敷くのとも一致。 */
+		box-sizing: border-box;
 		/* 本家 TxtLayer.ts:271-272（const padding = 16;）に合わせ4辺均一の16px。
 			以前は1em 1.5em（上下24px・左右36px、非対称）だったが、本家と数値が食い違っており、
 			masumeガイド枠（CmnLib.masume）の見え方が本家（緑と青がほぼ重なり太い青一色に
@@ -728,18 +732,14 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			ままで、widthだけ直した直後の実機比較でmasumeガイド枠がステージ下端に届かない食い違いが
 			見つかったため同時に揃えた。
 			**widthプロパティ自体は指定せず、right: 0（下のheightも同様にbottom: 0）で表す**：
-			bluesnovelのwidth/heightは常に「中身（文字表示領域）の寸法」で、paddingはその外側に
-			足す設計（test/e2e/argdef.e2e.ts「pl/pr/pt/pbは文字表示領域の内側余白」参照）。
-			width: calc(100% - 3em)のようにpaddingを差し引く固定値でも一度試したが、
-			[lay style="padding-bottom: …px;"]でpaddingを個別変更するプロジェクト
-			（sn_galleryのline_breaking_rules）でズレて逆にステージをはみ出した。
-			right: 0ならtop/left:0と合わせて要素の外形が常にcontaining block（ステージ）
-			いっぱいになり、paddingがどんな値でもbox-sizingに関わらず内側に自動で確保される
-			（box-sizing: border-boxでpadding込み外形をステージに合わせる案も試したが、
-			[lay width=/height=]やb_picの自然サイズ調整の「常に中身の寸法」という意味が
-			壊れるため撤回した）。
-			[lay width=/height=]明示時はLay.tsのstyLay()がインラインでpx指定するので、
-			left+width+rightが揃うCSSの規則でrightは自動的に無視される（衝突しない） */
+			top/left:0 と合わせて要素の外形が常に containing block（ステージ）いっぱいになり、
+			padding がどんな値でも（上の box-sizing: border-box のもと）内側に自動で収まる。
+			width: calc(100% - 3em) のように padding を差し引く固定値でも一度試したが、
+			[lay style="padding-bottom: …px;"] で padding を個別変更するプロジェクト
+			（sn_gallery の line_breaking_rules）でズレて逆にステージをはみ出した。
+			[lay width=/height=] 明示時は Lay.ts の styLay() がインラインで px 指定するので、
+			left+width+right が揃う CSS の規則で right は自動的に無視される（衝突しない）。
+			その px 値は border-box なので padding 込みの外形＝本家 TxtStage の $width と一致する */
 		right: 0;
 		bottom: 0;
 		white-space: pre-wrap;

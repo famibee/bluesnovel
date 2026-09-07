@@ -568,8 +568,8 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>middle</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン中央の画面上端からの距離</td></tr>
 <tr><td>bottom</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン下端の画面上端からの距離</td></tr>
 <tr><td>s_bottom</td><td></td><td>0</td><td>実数</td><td>レイヤやボタン下端の画面下端からの距離</td></tr>
-<tr><td>width</td><td></td><td>自然サイズ</td><td>1〜；横幅</td><td>レイヤの横幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の横幅になる。<code>height</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
-<tr><td>height</td><td></td><td>自然サイズ</td><td>1〜；縦幅</td><td>レイヤの縦幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤは文字表示領域の縦幅になる。<code>width</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
+<tr><td>width</td><td></td><td>自然サイズ</td><td>1〜；横幅</td><td>レイヤの横幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤはレイヤ外形の横幅（<code>box-sizing: border-box</code>。<code>pl</code>/<code>pr</code> はこの内側）。<code>height</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
+<tr><td>height</td><td></td><td>自然サイズ</td><td>1〜；縦幅</td><td>レイヤの縦幅。画像レイヤは画像を指定サイズへ拡縮（縦横比は無視）、文字レイヤはレイヤ外形の縦幅（<code>box-sizing: border-box</code>。<code>pt</code>/<code>pb</code> はこの内側）。<code>width</code>と片方だけ指定しても、もう片方は自然サイズを保つ</td></tr>
 <tr><td>rotation</td><td></td><td>0</td><td>-180〜180；回転角度</td><td>回転角を度単位で指定。時計回りは0～180、反時計回りは0～-180を指定。 左上を中心に回る</td></tr>
 <tr><td>scale_x</td><td></td><td>1.0</td><td>実数</td><td>横方向を何倍に拡大／縮小するか。負の値ならレイヤを左右反転</td></tr>
 <tr><td>scale_y</td><td></td><td>1.0</td><td>実数</td><td>縦方向を何倍に拡大／縮小するか。負の値ならレイヤを上下反転</td></tr>
@@ -623,9 +623,9 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>b_color</td><td></td><td>(↑と同じ)</td><td>色指定。0x000000など</td><td>テキスト背後の矩形色。初期値は 0x000000（黒）</td></tr>
 <tr><td>b_alpha</td><td></td><td>(↑と同じ)</td><td>実数：0.0（透明）〜1.0（不透過）</td><td>テキスト背後の矩形不透明度。実際の不透明度は<code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code>（設定画面の「バック不透明度」）になる。<br/>表示しない場合は0を指定。初期値は 0</td></tr>
 <tr><td>b_alpha_isfixed</td><td></td><td>現在値</td><td>true、false</td><td>true：テキスト背後の矩形不透明度を、「b_alpha属性と sys:TextLayer.Back.Alpha の掛け算とせず」、b_alpha属性値そのものにする。（これは2017/2/13以前の仕様）</td></tr>
-<tr><td>b_pic</td><td></td><td>(↑と同じ)</td><td>画像ファイル名</td><td>文字レイヤ背後の枠画像を指定する。b_alphaの影響を受ける。指定すると文字表示領域が枠画像の自然サイズへ自動調整される（<code>width</code>／<code>height</code>の明示があればそちらが勝つ）。<br/>（これを指定するとb_colorは無視される）</td></tr>
+<tr><td>b_pic</td><td></td><td>(↑と同じ)</td><td>画像ファイル名</td><td>文字レイヤ背後の枠画像を指定する。b_alphaの影響を受ける。指定するとレイヤ外形が枠画像の自然サイズへ自動調整される（<code>width</code>／<code>height</code>の明示があればそちらが勝つ）。<br/>（これを指定するとb_colorは無視される）</td></tr>
 <tr><td>back_clear</td><td></td><td>現在値</td><td>true、false</td><td>true：背景（<code>b_color</code>／<code>b_alpha</code>／<code>b_alpha_isfixed</code>／<code>b_pic</code>）を初期状態へ戻す。<code>b_pic=</code>等と同時に指定した場合、他のb_*属性は無視される</td></tr>
-<tr><td>pl</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の左内側余白（padding-left）。content-boxのため<code>width</code>で指定した文字表示領域の幅とは別に外側へ足される（画像レイヤの<code>width</code>と同じ「エンジンは実寸を知らない」流儀）</td></tr>
+<tr><td>pl</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の左内側余白（padding-left）。<code>box-sizing: border-box</code>（本家準拠）なので <code>width</code> はレイヤ外形の幅で、文字表示領域はそこから <code>pl</code>＋<code>pr</code> を引いたぶん</td></tr>
 <tr><td>pr</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の右内側余白（padding-right）</td></tr>
 <tr><td>pt</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の上内側余白（padding-top）</td></tr>
 <tr><td>pb</td><td></td><td>16px</td><td>実数（px）</td><td>文字表示領域の下内側余白（padding-bottom）</td></tr>

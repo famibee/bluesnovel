@@ -1,0 +1,20 @@
+; E2E用シナリオ（txtbox.e2e.ts が使用）
+;	文字レイヤの外形＝box-sizing の検証。本家 TxtLayer.ts:112 は border-box で、
+;	`width`/`height` は padding 込みの外形（本家サンプル由来テンプレ「桜の樹の下には」の
+;	sysmenu 縦書き設定マクロがこの前提で `[lay style="width: 310px; padding: …"]` と書く）。
+[add_lay layer=mes class=txt]
+[current layer=mes]
+
+きほん[p]
+
+; (1) style= で width/height/padding を本家サンプルと同じ書き方で与える。
+;	border-box なら外形は指定どおり 310x400（padding は内側）。
+;	content-box だと 310+26+36=372 x 400+30+22=452 に膨らむ（＝旧不具合）。
+[lay layer=mes page=fore style="writing-mode: vertical-rl; width: 310px; height: 400px; padding: 30px 36px 22px 26px;"]
+すたいる[p]
+
+; (2) [lay width=/height=] 属性でも同じ＝外形（本家 TxtStage の $width と一致）。
+;	pl/pr/pt/pb は外形の内側の余白。
+[add_lay layer=attr class=txt]
+[lay layer=attr page=fore width=300 height=200 pl=10 pr=20 pt=30 pb=40]
+ぞくせい[s]
