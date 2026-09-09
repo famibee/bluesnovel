@@ -4,7 +4,7 @@
 
 <h1 align="center">BlueSNovel</h1>
 
-<p align="center"><em>NovelGame framework by JS</em></p>
+<p align="center"><em>TS NovelGame framework</em></p>
 <br />
 
 
