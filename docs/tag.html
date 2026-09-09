@@ -244,7 +244,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <li><a href="#clearsysvar" data-t="clearsysvar [clearsysvar] システム変数の全消去">[clearsysvar] システム変数の全消去</a></li>
 <li><a href="#clearvar" data-t="clearvar [clearvar] ゲーム変数の全消去">[clearvar] ゲーム変数の全消去</a></li>
 <li><a href="#let_abs" data-t="let_abs [let_abs] 絶対値">[let_abs] 絶対値</a></li>
-<li><a href="#let_char_at" data-t="let_char_at [let_char_at] 文字列から一字取りだし">[let_char_at] 文字列から一字取りだし</a></li>
+<li><a href="#let_char_at" data-t="let_char_at [let_char_at] 文字列から一字取得">[let_char_at] 文字列から一字取得</a></li>
 <li><a href="#let_index_of" data-t="let_index_of [let_index_of] 文字列で検索">[let_index_of] 文字列で検索</a></li>
 <li><a href="#let_length" data-t="let_length [let_length] 文字列の長さ">[let_length] 文字列の長さ</a></li>
 <li><a href="#let_ml" data-t="let_ml [let_ml] インラインテキスト代入">[let_ml] インラインテキスト代入</a></li>
@@ -261,8 +261,8 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <li><a href="#finish_trans" data-t="finish_trans [finish_trans] トランス強制終了">[finish_trans] トランス強制終了</a></li>
 <li><a href="#lay" data-t="lay [lay] レイヤ設定(共通)">[lay] レイヤ設定(共通)</a></li>
 <li><a href="#blendMode" data-t="blendmode blendmodeの解説">blendModeの解説</a></li>
-<li><a href="#txtlay" data-t="txtlay レイヤ設定(文字レイヤ)">レイヤ設定(文字レイヤ)</a></li>
-<li><a href="#grplay" data-t="grplay レイヤ設定(画像レイヤ)">レイヤ設定(画像レイヤ)</a></li>
+<li><a href="#txtlay" data-t="txtlay 文字レイヤ設定">文字レイヤ設定</a></li>
+<li><a href="#grplay" data-t="grplay 画像レイヤ設定">画像レイヤ設定</a></li>
 <li><a href="#trans" data-t="trans [trans] ページ裏表を交換">[trans] ページ裏表を交換</a></li>
 <li><a href="#wt" data-t="wt [wt] トランス終了待ち">[wt] トランス終了待ち</a></li>
 <li><a href="#add_filter" data-t="add_filter [add_filter] フィルター追加">[add_filter] フィルター追加</a></li>
@@ -272,11 +272,11 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <p class="side-h"><a href="#sec-3">シェーダエフェクト（bluesnovel独自）</a></p>
 <ul>
 <li><a href="#def_fx" data-t="def_fx [def_fx] シェーダプリセット定義">[def_fx] シェーダプリセット定義</a></li>
-<li><a href="#add_fx" data-t="add_fx [add_fx] シェーダエフェクト">[add_fx] シェーダエフェクト</a></li>
+<li><a href="#add_fx" data-t="add_fx [add_fx] シェーダエフェクト追加">[add_fx] シェーダエフェクト追加</a></li>
 <li><a href="#clear_fx" data-t="clear_fx [clear_fx] シェーダエフェクト撤去">[clear_fx] シェーダエフェクト撤去</a></li>
-<li><a href="#wait_fx" data-t="wait_fx [wait_fx] シェーダエフェクト終了待ち">[wait_fx] シェーダエフェクト終了待ち</a></li>
-<li><a href="#pause_fx" data-t="pause_fx [pause_fx] シェーダエフェクト一時停止">[pause_fx] シェーダエフェクト一時停止</a></li>
-<li><a href="#resume_fx" data-t="resume_fx [resume_fx] シェーダエフェクト再開">[resume_fx] シェーダエフェクト再開</a></li>
+<li><a href="#wait_fx" data-t="wait_fx [wait_fx] シェーダ変化終了待ち">[wait_fx] シェーダ変化終了待ち</a></li>
+<li><a href="#pause_fx" data-t="pause_fx [pause_fx] シェーダ変化一時停止">[pause_fx] シェーダ変化一時停止</a></li>
+<li><a href="#resume_fx" data-t="resume_fx [resume_fx] シェーダ変化再開">[resume_fx] シェーダ変化再開</a></li>
 </ul>
 <p class="side-h"><a href="#sec-4">トゥイーンアニメ</a></p>
 <ul>
@@ -318,7 +318,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <li><a href="#frame" data-t="frame [frame] フレームに設定">[frame] フレームに設定</a></li>
 <li><a href="#let_frame" data-t="let_frame [let_frame] フレーム変数を取得">[let_frame] フレーム変数を取得</a></li>
 <li><a href="#set_frame" data-t="set_frame [set_frame] フレーム変数に設定">[set_frame] フレーム変数に設定</a></li>
-<li><a href="#tsy_frame" data-t="tsy_frame [tsy_frame] フレームをトゥイーン開始">[tsy_frame] フレームをトゥイーン開始</a></li>
+<li><a href="#tsy_frame" data-t="tsy_frame [tsy_frame] フレームトゥイーン開始">[tsy_frame] フレームトゥイーン開始</a></li>
 </ul>
 <p class="side-h"><a href="#sec-8">イベント</a></p>
 <ul>
@@ -405,7 +405,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <p class="side-h"><a href="#sec-16">デバッグ・その他</a></p>
 <ul>
 <li><a href="#dump_lay" data-t="dump_lay [dump_lay] レイヤのダンプ">[dump_lay] レイヤのダンプ</a></li>
-<li><a href="#dump_script" data-t="dump_script [dump_script] 外部へスクリプトを表示">[dump_script] 外部へスクリプトを表示</a></li>
+<li><a href="#dump_script" data-t="dump_script [dump_script] 外部スクリプト連携">[dump_script] 外部スクリプト連携</a></li>
 <li><a href="#dump_stack" data-t="dump_stack [dump_stack] スタックのダンプ">[dump_stack] スタックのダンプ</a></li>
 <li><a href="#dump_val" data-t="dump_val [dump_val] 変数のダンプ">[dump_val] 変数のダンプ</a></li>
 <li><a href="#log" data-t="log [log] ログ出力">[log] ログ出力</a></li>
@@ -431,7 +431,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr class="y"><td>text</td><td><span class="must">必須</span></td><td></td><td>実数</td><td>絶対値を求める数</td></tr>
 <tr><td>cast</td><td></td><td>出来るだけ数値変換</td><td>num、int、uint、bool、str</td><td>値をセットする際の型。（詳細は[let]を参照）</td></tr>
 </table></div>
-<h3 class="tag" id="let_char_at"><a class="hash" href="#let_char_at" tabindex="-1" aria-hidden="true">#</a><span class="tn">[let_char_at]</span> <span class="td">文字列から一字取りだし</span></h3>
+<h3 class="tag" id="let_char_at"><a class="hash" href="#let_char_at" tabindex="-1" aria-hidden="true">#</a><span class="tn">[let_char_at]</span> <span class="td">文字列から一字取得</span></h3>
 <p class="lead">文字列中の一文字を取り出す。結果を変数に代入する</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr class="y"><td>name</td><td><span class="must">必須</span></td><td></td><td>代入変数名</td><td>代入する変数</td></tr>
@@ -618,7 +618,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>xor			</td><td>	</td><td></td></tr>
 -->
 </table></div>
-<h3 class="tag" id="txtlay"><a class="hash" href="#txtlay" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lay]</span> <span class="td">レイヤ設定(文字レイヤ)</span></h3>
+<h3 class="tag" id="txtlay"><a class="hash" href="#txtlay" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lay]</span> <span class="td">文字レイヤ設定</span></h3>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>b_color</td><td></td><td>(↑と同じ)</td><td>色指定。0x000000など</td><td>テキスト背後の矩形色。初期値は 0x000000（黒）</td></tr>
 <tr><td>b_alpha</td><td></td><td>(↑と同じ)</td><td>実数：0.0（透明）〜1.0（不透過）</td><td>テキスト背後の矩形不透明度。実際の不透明度は<code>b_alpha</code> × <code>sys:TextLayer.Back.Alpha</code>（設定画面の「バック不透明度」）になる。<br/>表示しない場合は0を指定。初期値は 0</td></tr>
@@ -722,7 +722,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>v_scroll</td><td></td><td></td><td>ピクセル数</td><td>縦スクロールさせる量</td></tr>
 <tr><td>mouse_wheel_enabled</td><td></td><td></td><td>true、false</td><td>マウスホイールでスクロール許可するか否か</td></tr>
 </table></div>
-<h3 class="tag" id="grplay"><a class="hash" href="#grplay" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lay]</span> <span class="td">レイヤ設定(画像レイヤ)</span></h3>
+<h3 class="tag" id="grplay"><a class="hash" href="#grplay" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lay]</span> <span class="td">画像レイヤ設定</span></h3>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr class="y"><td>fn</td><td><span class="must">必須</span></td><td>何もしない</td><td>画像ファイル名</td><td>
 	基本画像・動画ファイルを指定する<br/>
@@ -952,7 +952,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td><code>float progress</code></td><td>単発（<code>time=</code>／<code>loop=false</code>）の進行度 <code>0..1</code>。<code>time=0</code>（無限）のときは常に <code>0</code>。<code>[add_fx reverse=true]</code>なら <code>1→0</code> で届く（反転はエンジンが1箇所で行う）。「元絵→目標へ変化しきる度合い」として素直に使う（ランプ型プリセット）。周期系（wave/rain 等）は宣言しなければよい</td><td><code>iTime/尺</code></td></tr>
 </table></div>
 <p>Shadertoy（<code>mainImage</code>＋<code>i*</code> uniform）はエンジンでは吸収しない。開発時に上表で手変換する（1本 ~5行の機械置換）。</p>
-<h3 class="tag" id="add_fx"><a class="hash" href="#add_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx]</span> <span class="td">シェーダエフェクト</span></h3>
+<h3 class="tag" id="add_fx"><a class="hash" href="#add_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[add_fx]</span> <span class="td">シェーダエフェクト追加</span></h3>
 <p class="lead">grpレイヤにシェーダエフェクトを重ねる。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可）</td><td>非grpレイヤを指定するとエラー</td></tr>
@@ -1020,7 +1020,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>page</td><td></td><td>fore</td><td>fore、back、both</td><td>ページの裏表（both指定で両面）</td></tr>
 <tr><td>name</td><td></td><td>そのレイヤのfx全部</td><td>識別子（カンマ区切りで複数可）</td><td>指定した名前のfxだけ撤去する。省略するとそのレイヤのfxを全撤去。自動採番された無名fx（<code>#fxN</code>）は名前で狙えないので、無名fxを消すには<code>name=</code>を省略する</td></tr>
 </table></div>
-<h3 class="tag" id="wait_fx"><a class="hash" href="#wait_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[wait_fx]</span> <span class="td">シェーダエフェクト終了待ち</span></h3>
+<h3 class="tag" id="wait_fx"><a class="hash" href="#wait_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[wait_fx]</span> <span class="td">シェーダ変化終了待ち</span></h3>
 <p class="lead"><code>[add_fx time&gt;0]</code> の one-shot エフェクトが経過するまで待ち、再開する。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>layer</td><td></td><td></td><td>レイヤ名（カンマ区切りで複数可）</td><td>このレイヤに載っている fx を待つ。<code>name=</code>と併用でそのレイヤの一致名だけ。無名fxを待つ手段</td></tr>
@@ -1028,8 +1028,8 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>canskip</td><td></td><td>true</td><td>true、false</td><td>クリックなどでウエイトをキャンセルできるか</td></tr>
 </table></div>
 <p><code>layer=</code>／<code>name=</code>は最低どちらか一方が必須（両方指定でAND）。一致するセレクタの <code>[add_fx time&gt;0]</code>が全部経過するまで待つ。一致が無ければ待たずに続行（<a href="#wait_tsy">[wait_tsy]</a>と同じ）。<br/> <code>time=0</code>（無限＝常時ゆらぎ）は終わりが無いので待ちの対象外。<code>page=</code>は受けない。<br/> 実際に待つのは <b>ScriptMng</b>（<code>[add_fx]</code>の<code>time=</code>をそのままタイマーにする。<a href="#wait_tsy">[wait_tsy]</a>と 同じ設計で、WebGLランナーからの終了通知は作らない）。<a href="#clear_fx">[clear_fx]</a>／<a href="#clear_lay">[clear_lay]</a>／ ページ演じ直しでタイマーも畳む。<code>[pause_fx]</code>で止めている間はこのタイマーも止まる（残時間を保持）。</p>
-<h3 class="tag" id="pause_fx"><a class="hash" href="#pause_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[pause_fx]</span> <span class="td">シェーダエフェクト一時停止</span></h3>
-<h3 class="tag" id="resume_fx"><a class="hash" href="#resume_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[resume_fx]</span> <span class="td">シェーダエフェクト再開</span></h3>
+<h3 class="tag" id="pause_fx"><a class="hash" href="#pause_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[pause_fx]</span> <span class="td">シェーダ変化一時停止</span></h3>
+<h3 class="tag" id="resume_fx"><a class="hash" href="#resume_fx" tabindex="-1" aria-hidden="true">#</a><span class="tn">[resume_fx]</span> <span class="td">シェーダ変化再開</span></h3>
 <p class="lead">fx の描画（rAF）を止める／止めた続きから戻す。記述子は残る（<a href="#pause_tsy">[pause_tsy]</a>／<a href="#resume_tsy">[resume_tsy]</a>と同型）。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>layer</td><td></td><td></td><td>レイヤ名（カンマ区切りで複数可）</td><td>このレイヤの fx が対象。<code>name=</code>／<code>index=</code>と併用で絞り込み</td></tr>
@@ -1440,7 +1440,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>out_style</td><td></td><td>現在値</td><td>文字消去演出名</td><td><a href="tag.html#ch_out_style" target="_blank" rel="noopener">[ch_out_style]</a>で定義した文字消去演出名。<code>in_style</code>と同様レイヤ状態</td></tr>
 <tr><td>ch_in_style</td><td></td><td>何もしない</td><td>文字出現演出名</td><td>この[span]区間の文字だけに効く文字出現演出名（<code>in_style</code>はレイヤ全体、こちらは文字ごと）。次の[span]まで、属性なしの[span]で解除</td></tr>
 <tr><td>ch_out_style</td><td></td><td>何もしない</td><td>文字消去演出名</td><td>この[span]区間の文字だけに効く文字消去演出名</td></tr>
-<tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>レイヤ設定(文字レイヤ)」を参照
+<tr><td>r_align</td><td></td><td>現在値</td><td></td><td>ルビ揃えを指定する。<br/>設定値は「<a href="tag.html#lay" target="_blank" rel="noopener">[lay]</a>文字レイヤ設定」を参照
 </td></tr>
 </table></div>
 <aside class="callout tip"><code>style</code>・<code>r_style</code>・<code>wait</code>・<code>r_align</code>・<code>ch_in_style</code>・<code>ch_out_style</code>・<code>layer</code>／<code>page</code>に対応 （次の[span]まで効き、属性なしの[span]で解除。ただし<code>r_align</code>だけは本家同様、 指定時のみ上書きし属性なしの[span]でも解除しない）。 本家と同じく本文ストリームへ<code>span｜…</code>を埋め込む方式。<br/> <code>in_style</code>／<code>out_style</code>は例外で本文ストリームに載せず<code>[lay]</code>と同じレイヤ状態 へ書く（本家 <code>TxtLayer.ts:357</code> <code>#$ch_in_style</code>。<code>[clear_text]</code>で本文が 捨てられても演出指定は残す＝<code>[span in_style=X][clear_text]</code>が効く）。</aside>
@@ -1544,7 +1544,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr class="y"><td>var_name</td><td><span class="must">必須</span></td><td></td><td>文字列</td><td>フレーム内の変数名</td></tr>
 <tr class="y"><td>text</td><td><span class="must">必須</span></td><td></td><td></td><td>フレーム内の変数にセットする値</td></tr>
 </table></div>
-<h3 class="tag" id="tsy_frame"><a class="hash" href="#tsy_frame" tabindex="-1" aria-hidden="true">#</a><span class="tn">[tsy_frame]</span> <span class="td">フレームをトゥイーン開始</span></h3>
+<h3 class="tag" id="tsy_frame"><a class="hash" href="#tsy_frame" tabindex="-1" aria-hidden="true">#</a><span class="tn">[tsy_frame]</span> <span class="td">フレームトゥイーン開始</span></h3>
 <p class="lead">フレームのトゥイーンアニメを行なう</p>
 <aside class="callout tip"><a href="#tsy">[tsy]</a>と同じ仕組み（motion）で、動かす先がストアのレイヤではなく <code>FrameMng</code> が抱えるiframeの見た目。<code>path</code>／<code>chain</code>も同様に使える。<br/>目標値は <code>alpha</code>／<code>x</code>／<code>y</code>／<code>width</code>／<code>height</code>／<code>scale_x</code>／<code>scale_y</code>／<b><code>rotate</code></b>（上の表は <code>rotation</code> と書いているが、本家の実装・<a href="#frame">[frame]</a>と揃えて <code>rotate</code>）。フレームは <code>x</code>／<code>y</code> が実名なので、レイヤ側のような <code>left</code>／<code>top</code> への読み替えは無い。<br/>途中経過は毎フレーム組み込み変数 <code>const.sn.frm.&lt;id&gt;.*</code> へも書き戻す（本家と同じ）。トゥイーン名は <code>frm\nID</code> なので、<a href="#wait_tsy">[wait_tsy]</a>等は <code>id=</code> で指せる。</aside>
 <p>フレームのトゥイーンアニメを開始したあと、id属性指定により以下のタグを使用できる。<br/> <a href="tag.html#pause_tsy" target="_blank" rel="noopener">[pause_tsy]</a>（一時停止）<br/> <a href="tag.html#resume_tsy" target="_blank" rel="noopener">[resume_tsy]</a>（一時停止再開）<br/> <a href="tag.html#stop_tsy" target="_blank" rel="noopener">[stop_tsy]</a>（トゥイーン中断）<br/> <a href="tag.html#wait_tsy" target="_blank" rel="noopener">[wait_tsy]</a>（トゥイーン終了待ち）</p>
@@ -2263,7 +2263,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>layer</td><td></td><td>全てのレイヤ</td><td>レイヤ名（カンマ区切りで複数可）</td><td>デバッグ表示するレイヤ名を指定。半角カンマ区切りで複数レイヤを指定可能</td></tr>
 </table></div>
-<h3 class="tag" id="dump_script"><a class="hash" href="#dump_script" tabindex="-1" aria-hidden="true">#</a><span class="tn">[dump_script]</span> <span class="td">外部へスクリプトを表示</span></h3>
+<h3 class="tag" id="dump_script"><a class="hash" href="#dump_script" tabindex="-1" aria-hidden="true">#</a><span class="tn">[dump_script]</span> <span class="td">外部スクリプト連携</span></h3>
 <aside class="callout tip">実行中スクリプトの全文と停止行を、<code>globalThis</code> 上のコールバック関数へ渡すデバッグ用フック（本家 <code>ScriptIterator.ts:796</code>）。実利用者は <a href="https://github.com/famibee/SKYNovel_gallery">SKYNovel_gallery</a> のプレイグラウンドページ（<code>index.html</code> の <code>set_ed</code>／<code>break_ed</code> ＝埋め込みエディタへ「今どこを実行中か」を表示）。<code>set_fnc</code> はスクリプトが変わった時だけ全文（文字列）で、<code>break_fnc</code> は停止・再開のたびに <code>(行番号, 桁, goto)</code> で呼ばれる（桁は停止タグ <code>[l]</code>/<code>[p]</code>/<code>[s]</code> の行内位置、1始まり）。関数が見つからない時は <code>need_err</code> に従う（true でエラー、false なら黙って無効）。VSCode 拡張のデバッガとは無関係（あちらは別系統）。</aside>
 <p class="lead">実行中スクリプトを外部の関数へ渡す</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
