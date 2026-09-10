@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.15.0](https://github.com/famibee/bluesnovel/compare/v0.14.0...v0.15.0) (2026-09-10)
+
+
+### Features
+
+* **blendmode:** CSS &lt;blend-mode&gt; 全種を受け付ける（分家独自） ([8490baf](https://github.com/famibee/bluesnovel/commit/8490baf75f826d00f62ba2ca9a818cc52cce609d))
+
 ## [0.14.0](https://github.com/famibee/bluesnovel/compare/v0.13.0...v0.14.0) (2026-09-07)
 
 
