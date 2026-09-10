@@ -10,6 +10,8 @@ export declare class Log {
     private readonly maxLen;
     constructor(maxLen?: () => number);
     add(txt: string): void;
+    setPlaceKey(key: string): void;
+    placeKeyOf(n: number): string;
     setAttr(attr: Record<string, string>): void;
     pagebreak(): void;
     reset(text?: string): void;

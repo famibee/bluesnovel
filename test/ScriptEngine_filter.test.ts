@@ -265,9 +265,10 @@ it('matsOf_有効な行列だけを集める', ()=> {
 //	CSSは要素につきmix-blend-modeを1つしか持てないので、実際に効くのは
 //	Lay.ts styLay()が[lay blendmode=]の枠へ合流させた先。ここではFilter.ts側の純粋部分だけ見る
 
-it('bldFilter_blendmodeは4種のみ受ける（[lay]/[button]と同じ表）', ()=> {
+it('bldFilter_blendmodeはCSS <blend-mode> 全種を受ける（[lay]/[button]と同じ表）', ()=> {
 	expect(bldFilter({filter: 'sepia', blendmode: 'screen'}).blendmode).toBe('screen');
 	expect(bldFilter({filter: 'sepia', blendmode: 'add'}).blendmode).toBe('plus-lighter');	// CSSに同名が無いので加算合成へ
+	expect(bldFilter({filter: 'sepia', blendmode: 'overlay'}).blendmode).toBe('overlay');
 	expect(bldFilter({filter: 'sepia'}).blendmode).toBeUndefined();	// 省略時は持たない
 	expect(()=> bldFilter({filter: 'sepia', blendmode: 'なぞ'})).toThrow('はサポートされない blendmode です');
 });

@@ -63,10 +63,11 @@ it('btnSty_enabled', ()=> {
 });
 
 it('btnSty_blendmode', ()=> {
-	// [lay blendmode=…]と同じ変換（本家の4種だけを受けてCSSのmix-blend-mode値へ）
+	// [lay blendmode=…]と同じ変換（CSS <blend-mode> 全種を受けてmix-blend-mode値へ）
 	expect(styOf('[button text=x label=*a blendmode=add]')).toEqual({...DEF, blendmode: 'plus-lighter'});
-	expect(()=> styOf('[button text=x label=*a blendmode=overlay]'))
-		.toThrow('overlay はサポートされない blendmode です');
+	expect(styOf('[button text=x label=*a blendmode=overlay]')).toEqual({...DEF, blendmode: 'overlay'});
+	expect(()=> styOf('[button text=x label=*a blendmode=subtract]'))
+		.toThrow('subtract はサポートされない blendmode です');
 });
 
 it('btnSty_notNumber', ()=> {

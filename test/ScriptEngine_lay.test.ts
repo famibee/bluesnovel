@@ -152,18 +152,22 @@ it('lay_pivot_notNumber', ()=> {
 });
 
 it('lay_blendmode', ()=> {
-	// 本家（Layer.getBlendmodeNum()）が受け付ける4種だけを通し、CSSのmix-blend-mode値へ変換する。
+	// 分家はCSSのmix-blend-modeで合成するのでCSS <blend-mode> 全種を通す。
 	//	addはCSSに同名が無いのでplus-lighter（加算合成）
 	expect(styOf('[lay layer=base blendmode=normal]')).toEqual({blendmode: 'normal'});
 	expect(styOf('[lay layer=base blendmode=multiply]')).toEqual({blendmode: 'multiply'});
 	expect(styOf('[lay layer=base blendmode=screen]')).toEqual({blendmode: 'screen'});
 	expect(styOf('[lay layer=base blendmode=add]')).toEqual({blendmode: 'plus-lighter'});
+	expect(styOf('[lay layer=base blendmode=overlay]')).toEqual({blendmode: 'overlay'});
+	expect(styOf('[lay layer=base blendmode=hard-light]')).toEqual({blendmode: 'hard-light'});
+	expect(styOf('[lay layer=base blendmode=color-dodge]')).toEqual({blendmode: 'color-dodge'});
+	expect(styOf('[lay layer=base blendmode=luminosity]')).toEqual({blendmode: 'luminosity'});
 });
 
 it('lay_blendmode_unsupported', ()=> {
-	// 本家と同じ文言で弾く（CSSにはあるがpixiの表に無い値も同様）
-	expect(()=> styOf('[lay layer=base blendmode=overlay]'))
-		.toThrow('overlay はサポートされない blendmode です');
+	// 本家と同じ文言で弾く（CSSのmix-blend-modeにも無い値。減算＝subtract等）
+	expect(()=> styOf('[lay layer=base blendmode=subtract]'))
+		.toThrow('subtract はサポートされない blendmode です');
 });
 
 
@@ -383,18 +387,20 @@ it('lay_backClear_skipsOtherBAttrs', ()=> {
 // ============ blendmode（[lay]／[add_face]／[button]で同じ扱い） ============
 
 it('blendmode_convertsToCss', ()=> {
-	// 本家（Layer.getBlendmodeNum()）が受けるのはpixiのBLEND_MODESへ引ける4種だけ。
+	// 分家はCSSのmix-blend-modeで合成するのでCSS <blend-mode> 全種を通す。
 	//	addはCSSに同名が無いのでplus-lighter（加算合成）を当てる
 	expect(styOf('[lay layer=base blendmode=normal]')).toEqual({blendmode: 'normal'});
 	expect(styOf('[lay layer=base blendmode=add]')).toEqual({blendmode: 'plus-lighter'});
 	expect(styOf('[lay layer=base blendmode=multiply]')).toEqual({blendmode: 'multiply'});
 	expect(styOf('[lay layer=base blendmode=screen]')).toEqual({blendmode: 'screen'});
+	expect(styOf('[lay layer=base blendmode=soft-light]')).toEqual({blendmode: 'soft-light'});
+	expect(styOf('[lay layer=base blendmode=exclusion]')).toEqual({blendmode: 'exclusion'});
 });
 
 it('blendmode_unsupportedThrows', ()=> {
-	// CSSにはあるが本家が受けない値（overlay等）は弾く。文言も本家に合わせてある
-	expect(()=> styOf('[lay layer=base blendmode=overlay]'))
-		.toThrow('overlay はサポートされない blendmode です');
+	// CSSのmix-blend-modeにも無い値は弾く。文言も本家に合わせてある
+	expect(()=> styOf('[lay layer=base blendmode=subtract]'))
+		.toThrow('subtract はサポートされない blendmode です');
 });
 
 it('blendmode_addFaceUsesSameTable', ()=> {
@@ -405,8 +411,8 @@ it('blendmode_addFaceUsesSameTable', ()=> {
 });
 
 it('blendmode_addFaceUnsupportedThrows', ()=> {
-	expect(()=> acts('[add_face name=f1 blendmode=overlay][s]'))
-		.toThrow('overlay はサポートされない blendmode です');
+	expect(()=> acts('[add_face name=f1 blendmode=subtract][s]'))
+		.toThrow('subtract はサポートされない blendmode です');
 });
 
 

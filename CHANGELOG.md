@@ -18,6 +18,19 @@
 
 - [ ]
 
+- [x] **`blendmode` を CSS `<blend-mode>` 全種へ拡張**（2026-09-11）
+  - 分家はレイヤ合成を CSS `mix-blend-mode` で行う（`Stage` が `style.mixBlendMode` へ代入）のに、
+    `Blendmode.ts` の許可表が本家準拠の4種（`normal`/`add`/`multiply`/`screen`）に絞られていた。
+    `overlay`/`hard-light`/`soft-light`/`color-dodge`/`color-burn`/`darken`/`lighten`/`difference`/
+    `exclusion`/`hue`/`saturation`/`color`/`luminosity`＋`plus-lighter`/`plus-darker` を追加。
+    `add`→`plus-lighter` の読み替えは従来どおり。CSS に無い値（減算 `subtract`、pixi の `*_npm`・
+    `src_in` 等）は従来どおりエラー。
+  - `[lay]`・`[add_face]`・`[button]`・`[add_filter]` の4タグとも `argBlendmode()` を通すので一括で反映。
+  - docs：`tag.html` の blendMode 解説表を CSS 対応列つきで書き直し（`color_dodge`→`color-dodge` 等
+    ハイフン表記に統一）。`[add_filter]`／`[add_face]` の「4種のみ」注記も更新。
+  - test：`ScriptEngine_lay` / `_btn` / `_filter` に `overlay` 等の通過ケースを追加、未対応例を
+    `overlay`→`subtract` に差し替え。
+
 - [x] **`[def_fx pad= / pad_b=]` を追加：fx キャンバスを対象レイヤの基本画像の枠外へ広げる**（2026-09-03）
   - 立ち絵の背後に出すオーラ・炎のように「画像の透明部分より外」へシェーダ出力したいプリセット向け。
     従来は「余白を広く取った専用 png ＋別レイヤ」しか手が無く、別レイヤだとレイヤごと `[tsy]` できなかった。

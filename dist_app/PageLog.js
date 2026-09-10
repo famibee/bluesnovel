@@ -3,8 +3,23 @@ import { c as e, s as t } from "./CmnLib.js";
 var n = {
 	normal: "normal",
 	add: "plus-lighter",
+	"plus-lighter": "plus-lighter",
+	"plus-darker": "plus-darker",
 	multiply: "multiply",
-	screen: "screen"
+	screen: "screen",
+	overlay: "overlay",
+	darken: "darken",
+	lighten: "lighten",
+	"color-dodge": "color-dodge",
+	"color-burn": "color-burn",
+	"hard-light": "hard-light",
+	"soft-light": "soft-light",
+	difference: "difference",
+	exclusion: "exclusion",
+	hue: "hue",
+	saturation: "saturation",
+	color: "color",
+	luminosity: "luminosity"
 };
 function r(e) {
 	let t = n[e];

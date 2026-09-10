@@ -16,6 +16,7 @@
 | [deferred-infra.md](deferred-infra.md) | 着手保留の基盤（デザインモード・ESLint・moveable・vertglyph フィクスチャ・フレーム幅） |
 | [refactor-candidates.md](refactor-candidates.md) | `/simplify` 分家全体スイープ（2026-09-03）で挙がった構造リファクタ案の控え（待ち合わせ機構の統一・属性キー台帳化・レイヤの memo 化ほか）。即着手しないもの |
 | [system-ui-research.md](system-ui-research.md) | 商業エロゲ/ノベルゲのシステムUI標準機能（ボイスカット・便利セーブ・バックログのジャンプ/小窓プレビュー・非アクティブ時ホイール進行ほか）の分家テンプレ実装検討・難易度評価・ロードマップ |
+| [kag3-migration.md](kag3-migration.md) | KAG3(吉里吉里2)製の既存ノベルゲームを分家テンプレへ載せ替える知見（タグ対応表・字句差・立ち絵差分 `dic_face`→`[add_face]`・素材パイプライン・Flash→mp4） |
 
 ⚠️ 決着・凍結した判断のうち対応コードがあるものは、そのソースのコメントへ書いてある
 （重複回避）。ここにあるのは対応コードが無い判断・未着手の宿題・再検討を避けるための実測値。

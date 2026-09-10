@@ -236,6 +236,9 @@ export type T_ENGINE_ACTION = {
     t: 'pageTo';
     to: T_PAGE_TO;
 } | {
+    t: 'pageToPlace';
+    placeKey: string;
+} | {
     t: 'title';
     text: string;
 } | {
@@ -529,6 +532,7 @@ export declare class ScriptEngine {
     setSys(h: {
         [k: string]: T_VAL_D;
     }): void;
+    setPageLogKey(key: string): void;
     transDone(aLayNm: string[] | null): void;
     get isKidoku(): boolean;
     getKidoku(): {

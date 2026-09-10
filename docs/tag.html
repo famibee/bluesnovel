@@ -582,41 +582,32 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <tr><td>enable_filter</td><td></td><td>true</td><td>true、false</td><td>フィルターを有効にするか</td></tr>
 </table></div>
 <h3 class="tag" id="blendMode"><a class="hash" href="#blendMode" tabindex="-1" aria-hidden="true">#</a> <span class="td">blendModeの解説</span></h3>
-<div class="tbl-wrap"><table><tr><th scope="col">SKYNovel での blendmode 属性の値</th><th scope="col">Photoshop ブレンドモード名</th><th scope="col">コメント</th></tr>
-<tr><td>normal		</td><td>標準	</td><td>表示オブジェクトは、背景の前に表示されます。（なにもしない）</td></tr>
-<tr><td>add			</td><td>加算	</td><td>表示オブジェクトの要素カラーの値を背景色に加算し、その際に上限 0xFF を適用します</td></tr>
-<tr><td>multiply	</td><td>乗算	</td><td>表示オブジェクトの要素カラーの値と背景色の要素カラーの値を乗算した後、0xFF で割って正規化し、色を暗くします</td></tr>
-<tr><td>screen		</td><td>スクリーン	</td><td>表示オブジェクトの色の補数（逆）と背景色の補数を乗算して、ブリーチ効果を得ます</td></tr>
-<!--
-<tr><td>overlay		</td><td>オーバーレイ	</td><td>背景の暗さに基づいて、各ピクセルの色を調整します</td></tr>
-<tr><td>darken		</td><td>比較 (暗)	</td><td>表示オブジェクトの要素カラーと背景色のうち暗い方（値が小さい方）の色を選択します</td></tr>
-<tr><td>lighten		</td><td>比較 (明)	</td><td>表示オブジェクトの要素カラーと背景色のうち明るい方（値が大きい方）の色を選択します</td></tr>
-<tr><td>color_dodge	</td><td>	</td><td></td></tr>
-<tr><td>color_burn	</td><td>	</td><td></td></tr>
-<tr><td>hard_light	</td><td>ハードライト	</td><td>表示オブジェクトの暗さに基づいて、各ピクセルの色を調整します</td></tr>
-<tr><td>soft_light	</td><td>	</td><td></td></tr>
-<tr><td>difference	</td><td>差の絶対値	</td><td>表示オブジェクトの各ピクセルのアルファ値を背景に適用します</td></tr>
-<tr><td>exclusion	</td><td>	</td><td></td></tr>
-<tr><td>hue			</td><td>	</td><td></td></tr>
-<tr><td>saturation	</td><td>	</td><td></td></tr>
-<tr><td>color		</td><td>	</td><td></td></tr>
-<tr><td>luminosity	</td><td>	</td><td></td></tr>
-<tr><td>normal_npm	</td><td>	</td><td></td></tr>
-<tr><td>add_npm		</td><td>	</td><td></td></tr>
-<tr><td>screen_npm	</td><td>	</td><td></td></tr>
-<tr><td>none		</td><td>	</td><td></td></tr>
-<tr><td>src_in		</td><td>	</td><td></td></tr>
-<tr><td>src_out		</td><td>	</td><td></td></tr>
-<tr><td>src_atop	</td><td>	</td><td></td></tr>
-<tr><td>dst_over	</td><td>	</td><td></td></tr>
-<tr><td>dst_in		</td><td>	</td><td></td></tr>
-<tr><td>dst_out		</td><td>	</td><td></td></tr>
-<tr><td>dst_atop	</td><td>	</td><td></td></tr>
-<tr><td>subtract	</td><td>減算	</td><td>結果の下限を 0 として、表示オブジェクトの要素カラーの値をその背景色の値から減算します</td></tr>
-<tr><td>src_over	</td><td>	</td><td></td></tr>
-<tr><td>erase		</td><td>消去	</td><td>表示オブジェクトのアルファ値に基づいて背景を消去します</td></tr>
-<tr><td>xor			</td><td>	</td><td></td></tr>
--->
+<p>分家はレイヤ合成を CSS の <code>mix-blend-mode</code> で行うため、CSS <code>&lt;blend-mode&gt;</code>
+全種（＋ <code>plus-lighter</code> / <code>plus-darker</code>）を指定できます。本家は
+<code>normal</code> / <code>add</code> / <code>multiply</code> / <code>screen</code> の4種のみ。
+<code>add</code> は CSS に同名が無いため <code>plus-lighter</code>（加算合成）に読み替えます。
+CSS の <code>mix-blend-mode</code> に無い値（減算 <code>subtract</code> など、pixi の
+<code>src_in</code> ・ <code>*_npm</code> 等の合成オペレータ）はエラーになります。</p>
+<div class="tbl-wrap"><table><tr><th scope="col">blendmode 属性の値</th><th scope="col">CSS mix-blend-mode</th><th scope="col">Photoshop ブレンドモード名</th><th scope="col">コメント</th></tr>
+<tr><td>normal		</td><td>normal		</td><td>標準	</td><td>表示オブジェクトは、背景の前に表示されます。（なにもしない）</td></tr>
+<tr><td>add			</td><td>plus-lighter</td><td>加算	</td><td>表示オブジェクトの要素カラーの値を背景色に加算します</td></tr>
+<tr><td>plus-lighter</td><td>plus-lighter</td><td>加算	</td><td><code>add</code> の別名（CSS 名そのまま）</td></tr>
+<tr><td>plus-darker	</td><td>plus-darker	</td><td>	</td><td>加算した上で 1 を引く（暗い側の加算合成）</td></tr>
+<tr><td>multiply	</td><td>multiply	</td><td>乗算	</td><td>要素カラー同士を乗算して正規化し、色を暗くします</td></tr>
+<tr><td>screen		</td><td>screen		</td><td>スクリーン	</td><td>色の補数同士を乗算してブリーチ効果を得ます</td></tr>
+<tr><td>overlay		</td><td>overlay		</td><td>オーバーレイ	</td><td>背景の明暗に応じて multiply / screen を切り替えます</td></tr>
+<tr><td>darken		</td><td>darken		</td><td>比較 (暗)	</td><td>暗い方（値が小さい方）の色を選択します</td></tr>
+<tr><td>lighten		</td><td>lighten		</td><td>比較 (明)	</td><td>明るい方（値が大きい方）の色を選択します</td></tr>
+<tr><td>color-dodge	</td><td>color-dodge	</td><td>覆い焼き (カラー)	</td><td>背景を明るくして前景色を反映します</td></tr>
+<tr><td>color-burn	</td><td>color-burn	</td><td>焼き込み (カラー)	</td><td>背景を暗くして前景色を反映します</td></tr>
+<tr><td>hard-light	</td><td>hard-light	</td><td>ハードライト	</td><td>前景の明暗に応じて screen / multiply を切り替えます</td></tr>
+<tr><td>soft-light	</td><td>soft-light	</td><td>ソフトライト	</td><td>ハードライトを柔らかくしたもの</td></tr>
+<tr><td>difference	</td><td>difference	</td><td>差の絶対値	</td><td>要素カラーの差の絶対値をとります</td></tr>
+<tr><td>exclusion	</td><td>exclusion	</td><td>除外	</td><td>差の絶対値を柔らかくしたもの</td></tr>
+<tr><td>hue			</td><td>hue			</td><td>色相	</td><td>前景の色相＋背景の彩度・輝度</td></tr>
+<tr><td>saturation	</td><td>saturation	</td><td>彩度	</td><td>前景の彩度＋背景の色相・輝度</td></tr>
+<tr><td>color		</td><td>color		</td><td>カラー	</td><td>前景の色相・彩度＋背景の輝度</td></tr>
+<tr><td>luminosity	</td><td>luminosity	</td><td>輝度	</td><td>前景の輝度＋背景の色相・彩度</td></tr>
 </table></div>
 <h3 class="tag" id="txtlay"><a class="hash" href="#txtlay" tabindex="-1" aria-hidden="true">#</a><span class="tn">[lay]</span> <span class="td">文字レイヤ設定</span></h3>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
@@ -912,7 +903,7 @@ h3.tag:hover .hash,h3.tag:focus-within .hash{opacity:.7;}
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
 <tr><td>multiply</td><td></td><td>false</td><td>true、false</td><td>true の場合、現在の行列と行列を乗算</td></tr>
 </table></div>
-<aside class="callout warn"><code>blendmode</code>（フィルター単位のブレンド）は<a href="#lay">[lay blendmode=]</a>と同じ枠へ合流する （有効なフィルターの中で最後に指定されたものが勝つ。<code>[lay blendmode=]</code>が明示されていれば そちらが優先）。複数フィルターがそれぞれ別のblendmodeを持つケースは表現できない。値は <a href="#lay">[lay]</a>・<a href="#button">[button]</a>と同じ4種のみ。<br/> <code>blur</code>の<code>blur_x</code>／<code>blur_y</code>を明示指定した場合はそちらが効き、 無指定時は<code>strength</code>をそのままぼかし半径として使う。</aside>
+<aside class="callout warn"><code>blendmode</code>（フィルター単位のブレンド）は<a href="#lay">[lay blendmode=]</a>と同じ枠へ合流する （有効なフィルターの中で最後に指定されたものが勝つ。<code>[lay blendmode=]</code>が明示されていれば そちらが優先）。複数フィルターがそれぞれ別のblendmodeを持つケースは表現できない。値は <a href="#lay">[lay]</a>・<a href="#button">[button]</a>と同じ表（CSS <code>&lt;blend-mode&gt;</code> 全種）。<br/> <code>blur</code>の<code>blur_x</code>／<code>blur_y</code>を明示指定した場合はそちらが効き、 無指定時は<code>strength</code>をそのままぼかし半径として使う。</aside>
 <h3 class="tag" id="clear_filter"><a class="hash" href="#clear_filter" tabindex="-1" aria-hidden="true">#</a><span class="tn">[clear_filter]</span> <span class="td">フィルター全削除</span></h3>
 <p class="lead">レイヤのフィルターを全削除する。</p>
 <div class="tbl-wrap"><table><tr><th scope="col">属性</th><th scope="col">必須</th><th scope="col">省略時</th><th scope="col">値域・型</th><th scope="col">コメント</th></tr>
@@ -1474,7 +1465,7 @@ Sinusoidal.In、Sinusoidal.InOut、Sinusoidal.Out<br/>
 <tr><td>dy</td><td></td><td>0</td><td>実数；縦座標</td><td>基本画像左上を原点とする差分画像の表示縦位置</td></tr>
 <tr><td>blendmode</td><td></td><td>何もしない</td><td>ブレンドモード名</td><td>このレイヤと下のレイヤとの重なりにおいて、<br/>ドット単位で色のブレンド演算を行なう。<br/>詳細は<a href="tag.html#blendMode" target="_blank" rel="noopener">blendModeの解説</a>を参照</td></tr>
 </table></div>
-<aside class="callout tip"><code>name</code>／<code>fn</code>／<code>dx</code>／<code>dy</code>／<code>blendmode</code>に対応。 <b><code>blendmode</code>は[<a href="#lay">lay</a>]・[<a href="#button">button</a>]と同じ4種</b>（<code>normal</code>／<code>add</code>／ <code>multiply</code>／<code>screen</code>）だけを受けてCSSの<code>mix-blend-mode</code>へ直す （<code>add</code>はCSSに同名が無いので<code>plus-lighter</code>＝加算合成）。以前はCSSの値を素通ししていた。 例えば同じ画像で差分表示位置やブレンドモードが違う登録をしたい場合、<br/> [add_face name="a_normal" fn="画像" dx=0 dy=0]<br/> [add_face name="a_10_10" fn="画像" dx=10 dy=10]<br/> [add_face name="a_screen" fn="画像" dx=0 dy=0 blendmode="screen"]<br/> とnameを変えることで登録できます。</aside>
+<aside class="callout tip"><code>name</code>／<code>fn</code>／<code>dx</code>／<code>dy</code>／<code>blendmode</code>に対応。 <b><code>blendmode</code>は[<a href="#lay">lay</a>]・[<a href="#button">button</a>]と同じ表</b>（CSS <code>&lt;blend-mode&gt;</code> 全種）を受けてCSSの<code>mix-blend-mode</code>へ直す （<code>add</code>はCSSに同名が無いので<code>plus-lighter</code>＝加算合成。本家は4種のみ）。以前はCSSの値を素通ししていた。 例えば同じ画像で差分表示位置やブレンドモードが違う登録をしたい場合、<br/> [add_face name="a_normal" fn="画像" dx=0 dy=0]<br/> [add_face name="a_10_10" fn="画像" dx=10 dy=10]<br/> [add_face name="a_screen" fn="画像" dx=0 dy=0 blendmode="screen"]<br/> とnameを変えることで登録できます。</aside>
 <h3 class="tag" id="wv"><a class="hash" href="#wv" tabindex="-1" aria-hidden="true">#</a><span class="tn">[wv]</span> <span class="td">動画再生終了待ち</span></h3>
 <p class="lead">[lay]で開始したムービー再生の終了を待つ</p>
 <aside class="callout tip"><b>レイヤ名でなくファイル名（<code>fn</code>）</b>で<code>&lt;video&gt;</code>要素を探し、その<code>'ended'</code>（自然終了）まで待つ（本家 SpritesMng.wv()）。<code>fn</code>は<a href="#lay">[lay fn=…]</a>で置いた論理名と同じもの（動画は本家同様<code>[lay layer=… fn=movie]</code>で画像レイヤにそのまま貼る方式で、専用の再生タグは無い）。対象の動画が無い・ループ中・既に終了していれば待たない。<code>stop</code>（既定<code>true</code>）は自然終了時・クリック打ち切り時のどちらでも動画を<code>pause()</code>+<code>currentTime = duration</code>で確定させる（本家 <code>stopVideo()</code>相当。<code>#hFn2hve</code>からの先削除によるblob URLのリークは移植しない）。<br/>未対応：<code>global</code>。</aside>

@@ -8,6 +8,9 @@ export type T_PAGE_ENT = {
 };
 export type T_PAGE_TO = 'oldest' | 'prev' | 'next' | 'newest' | 'exit' | 'load';
 export declare const A_PAGE_TO: T_PAGE_TO[];
+export type T_PAGE_PLACE = {
+    placeKey: string;
+};
 export declare const INI_STYPAGE = "color: yellow; text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000;";
 export declare class PageLog {
     #private;
@@ -18,6 +21,6 @@ export declare class PageLog {
     get isPaging(): boolean;
     push(fn: string, idx: number, mark: T_MARK, clearOnResume: boolean): void;
     clear(): void;
-    move(to: T_PAGE_TO): T_PAGE_ENT | undefined;
+    move(to: T_PAGE_TO | T_PAGE_PLACE): T_PAGE_ENT | undefined;
     json(): string;
 }
