@@ -10853,11 +10853,15 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が
 			埋もれて読めなくなる */
 		color: white;
-		/* [enable_event enabled=false]：**本文中の[link]もクリックを受けなくする**
-			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
-			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
-			クリックはステージへ抜けるので、読み進め自体は止まらない */
-		${B ? "" : "pointer-events: none;"}
+		/* **文字レイヤのルート自体は常にpointer-events:none**（todo.md「テキストレイヤーの透明領域が
+			クリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。b_src/sty未指定時は
+			このspanがright:0/bottom:0でステージ全面に広がるため、実要素の無い透明部分まで
+			クリックを拾うと、DOM順で後（画面手前）のレイヤーが先（画面奥）の別レイヤーの[link]を
+			覆い隠して無反応にしてしまう。実際にクリックを受けるべき本文（charsRef）側だけJSXの
+			inline styleでpointer-events: autoを明示する設計にし、それ以外はクリックがステージへ
+			素通りして読み進めを妨げないようにする（[enable_event enabled=false]の間はcharsRef側も
+			noneにするので、本家同様[link]もクリックを受けなくなる。TxtLayer.ts:838） */
+		pointer-events: none;
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${N ?? ""}
@@ -10933,7 +10937,10 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			"data-lay": r,
 			style: ye,
 			children: [
-				/* @__PURE__ */ z("span", { ref: xe }),
+				/* @__PURE__ */ z("span", {
+					ref: xe,
+					style: { pointerEvents: B ? "auto" : "none" }
+				}),
 				i.masume && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ z("span", { style: {
 					position: "absolute",
 					inset: 0,

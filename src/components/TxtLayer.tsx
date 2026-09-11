@@ -750,11 +750,15 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が
 			埋もれて読めなくなる */
 		color: white;
-		/* [enable_event enabled=false]：**本文中の[link]もクリックを受けなくする**
-			（本家は文字レイヤのコンテナごと ctn.interactiveChildren=false にするので、
-			ボタンもリンクもまとめて効かなくなる。TxtLayer.ts:838）。
-			クリックはステージへ抜けるので、読み進め自体は止まらない */
-		${enabled ? '' : 'pointer-events: none;'}
+		/* **文字レイヤのルート自体は常にpointer-events:none**（todo.md「テキストレイヤーの透明領域が
+			クリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。b_src/sty未指定時は
+			このspanがright:0/bottom:0でステージ全面に広がるため、実要素の無い透明部分まで
+			クリックを拾うと、DOM順で後（画面手前）のレイヤーが先（画面奥）の別レイヤーの[link]を
+			覆い隠して無反応にしてしまう。実際にクリックを受けるべき本文（charsRef）側だけJSXの
+			inline styleでpointer-events: autoを明示する設計にし、それ以外はクリックがステージへ
+			素通りして読み進めを妨げないようにする（[enable_event enabled=false]の間はcharsRef側も
+			noneにするので、本家同様[link]もクリックを受けなくなる。TxtLayer.ts:838） */
+		pointer-events: none;
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${sCss ?? ''}
@@ -832,7 +836,12 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	}
 	return <>
 		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={styBox}>
-			<span ref={charsRef}></span>
+			{/* 本文はここ（charsRef）だけpointer-events:autoで受ける：親のstyTxtがルート全体を
+				pointer-events:noneにしたので、実際に文字がある領域（＝このspanが内容ぶんだけ占める
+				範囲）だけクリックを拾い、文字の無い透明部分は下のレイヤーへ素通りする。
+				[enable_event enabled=false]の間はここもnoneにして[link]ごとクリックを止める
+				（本家 TxtLayer.ts:838 と同じ） */}
+			<span ref={charsRef} style={{pointerEvents: enabled ? 'auto' : 'none'}}></span>
 			{/* masumeガイド枠（本家 TxtStage.ts:329-341相当）。外側＝レイヤ全体（padding込み。
 				絶対配置のinset:0はboxRef自身のpadding-boxまでなので、これでちょうど全体を覆う）、
 				内側＝paddingを除いた実表示領域（上のuseLayoutEffectがinsetを実測して書く）。
