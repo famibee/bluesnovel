@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.15.3](https://github.com/famibee/bluesnovel/compare/v0.15.2...v0.15.3) (2026-09-11)
+
+
+### Bug Fixes
+
+* **txt-layer:** 文字レイヤの常時オレンジ点線ボーダーを削除 ([ba6bedd](https://github.com/famibee/bluesnovel/commit/ba6bedd0d01ac41999a3a0dc38006ec9fa4f1571))
+
 ## [0.15.2](https://github.com/famibee/bluesnovel/compare/v0.15.1...v0.15.2) (2026-09-11)
 
 
