@@ -655,15 +655,17 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	設定の「バック不透明度」に影響されたくない層のための指定）
 	const backAlpha = useStore(s=> s.backAlpha);
 	const bAlpha = b_alpha * (b_alpha_isfixed ? 1 : backAlpha);
-	// **[lay b_color=…]が無い層には箱（背景＋枠）を描かない**（本家準拠。文字の有無は問わない）。
+	// **[lay b_color=…]が無い層には箱（背景）を描かない**（本家準拠。文字の有無は問わない）。
 	//	以前は文字が無い層だけを対象にaquamarine背景＋点線枠を*目印*として出していたが
 	//	（本来見えない文字層の位置・大きさをテンプレ作者へ伝える暫定的な可視化）、通常の文字レイヤにも
-	//	本家に無い色が付いて見た目が食い違うため廃止（2026-08-23）。位置・大きさの可視化は
-	//	デザインモード側（todo.md）の課題として分離する。
-	//	ただし[lay b_color=…]で色を明示した層は「意図して置いた板」なので描く。
-	//	**背景が完全に透明なら箱も描かない**：枠はCSSのborderでb_alphaが効かないため、
-	//	これが無いと「透明な板」に点線だけが残る。テンプレの[txt_lay_fullscreen b_alpha=0]が
-	//	まさにその形（b_colorは書くが透過度0）で、全画面の文字レイヤが点線矩形として見えていた
+	//	本家に無い色が付いて見た目が食い違うため廃止（2026-08-23）。
+	//	点線枠は「[lay b_color=…]で色を明示した層」全てに常時出る実装のまま残っていたため、
+	//	本番プレイでも文字ウィンドウにオレンジ点線が出続ける不具合になっていた（2026-09-11 発覚）。
+	//	位置・大きさの可視化が要るなら別途デザインモード側（todo.md）でやる。枠は常時なし
+	//	（下の styTxt の border は 'none' 固定）。
+	//	**背景が完全に透明なら箱も描かない**：以前は枠がCSSのborderでb_alphaの影響を受けず、
+	//	「透明な板」に点線だけが残っていた。枠自体を廃止した今も、背景色を描くかどうかの
+	//	条件としてはこのまま使う。
 	const noBox = bAlpha === 0 || b_color === undefined;
 	const styTxt = css`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
@@ -698,7 +700,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
 		background-color: ${noBox || b_src ? 'transparent' : `rgba(${r}, ${g}, ${b}, ${bAlpha})`};
-		border: ${noBox || b_src ? 'none' : 'dotted 6px #ffa500'};
+		border: none;
 		${b_src ? `
 		&::before {
 			content: '';
