@@ -586,14 +586,14 @@ function D(e) {
 	return [n, e.slice(1 + n.length, -1)];
 }
 function ue(e) {
-	let t = e.replaceAll("==", "＝").replaceAll("!=", "≠").split("="), n = t.length;
+	let t = e.replaceAll("===", "≡").replaceAll("==", "＝").replaceAll("!=", "≠").split("="), n = t.length;
 	if (n < 2 || n > 3) throw "「&計算」書式では「=」指定が一つか二つ必要です";
 	let [r, i, a] = t;
 	if (i.startsWith("&")) throw "「&計算」書式では「&」指定が不要です";
 	return {
-		name: r.replaceAll("＝", "==").replaceAll("≠", "!="),
-		text: i.replaceAll("＝", "==").replaceAll("≠", "!="),
-		...n === 3 ? { cast: a.trim() } : {}
+		name: r.replaceAll("≡", "===").replaceAll("＝", "==").replaceAll("≠", "!="),
+		text: i.replaceAll("≡", "===").replaceAll("＝", "==").replaceAll("≠", "!="),
+		...n === 3 ? { cast: a.replaceAll("≡", "===").replaceAll("＝", "==").replaceAll("≠", "!=").trim() } : {}
 	};
 }
 var O = class {

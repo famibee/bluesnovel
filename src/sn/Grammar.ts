@@ -381,17 +381,19 @@ export function	splitAmpersand(token: string): {
 		text: string;
 		cast?: string;
 } {	// テスト用にpublic
-	const equa = token.replaceAll('==', '＝').replaceAll('!=', '≠').split('=');
-		// != を弾けないので中途半端ではある
+	const equa = token.replaceAll('===', '≡').replaceAll('==', '＝').replaceAll('!=', '≠').split('=');
+		// 長い演算子から退避：'===' を先に潰さないと "===" の3連続が「==」+ 食い残し「=」に分かれ、
+		// 食い残しが代入区切りと誤認されて3分割に化ける。'!==' は「!」+「==」なので'==' 側の退避で
+		// 巻き込まれ、なお != を弾けないので中途半端ではある
 	const cnt_equa = equa.length;
 	if (cnt_equa < 2 || cnt_equa > 3) throw '「&計算」書式では「=」指定が一つか二つ必要です';
 
 	const [e0, e1, e2] = equa;
 	if (e1!.startsWith('&')) throw '「&計算」書式では「&」指定が不要です';
 	return {
-		name: e0!.replaceAll('＝', '==').replaceAll('≠', '!='),
-		text: e1!.replaceAll('＝', '==').replaceAll('≠', '!='),
-		...cnt_equa === 3 ?{cast: e2!.trim()} :{},
+		name: e0!.replaceAll('≡', '===').replaceAll('＝', '==').replaceAll('≠', '!='),
+		text: e1!.replaceAll('≡', '===').replaceAll('＝', '==').replaceAll('≠', '!='),
+		...cnt_equa === 3 ?{cast: e2!.replaceAll('≡', '===').replaceAll('＝', '==').replaceAll('≠', '!=').trim()} :{},
 	};
 }
 

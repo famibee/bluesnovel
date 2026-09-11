@@ -1390,6 +1390,20 @@ it('test_mth_splitAmpersand4', ()=> {
 	expect(o.text).toBe(' (1 != 0) ');
 	expect(o.cast).toBe('int');
 });
+it('test_mth_splitAmpersand5', ()=> {
+	const o = splitAmpersand(
+		'b = (1 === 0) = uint');
+	expect(o.name).toBe('b ');
+	expect(o.text).toBe(' (1 === 0) ');
+	expect(o.cast).toBe('uint');
+});
+it('test_mth_splitAmpersand6', ()=> {
+	const o = splitAmpersand(
+		'b = (1 !== 0) = int');
+	expect(o.name).toBe('b ');
+	expect(o.text).toBe(' (1 !== 0) ');
+	expect(o.cast).toBe('int');
+});
 
 it('test_mth_splitAmpersand_err0', ()=> {
 	try {
