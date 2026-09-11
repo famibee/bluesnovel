@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.15.2](https://github.com/famibee/bluesnovel/compare/v0.15.1...v0.15.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **grammar:** splitAmpersand()が===を含む式を誤分解するバグを修正 ([cb988d8](https://github.com/famibee/bluesnovel/commit/cb988d849f3c5a8129093d1e8613feda00014507))
+
 ## [0.15.1](https://github.com/famibee/bluesnovel/compare/v0.15.0...v0.15.1) (2026-09-11)
 
 
