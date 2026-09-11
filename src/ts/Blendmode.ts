@@ -9,15 +9,16 @@
 //	本家（Layer.getBlendmodeNum()）はpixiのBLEND_MODESへ引ける4種（normal/add/multiply/
 //	screen）しか受け付けないが、分家はレイヤ合成をCSSのmix-blend-modeで行うため、
 //	CSS <blend-mode> 全種（overlay/hard-light/soft-light/color-dodge/color-burn/darken/
-//	lighten/difference/exclusion/hue/saturation/color/luminosity）＋ plus-lighter/
-//	plus-darker を通す。addはCSSに同名が無いので plus-lighter（加算合成）を当てる。
+//	lighten/difference/exclusion/hue/saturation/color/luminosity）＋ plus-lighter を
+//	通す。addはCSSに同名が無いので plus-lighter（加算合成）を当てる。plus-darkerは
+//	Canvas 2D の globalCompositeOperation 専用の値で mix-blend-mode には存在しないため
+//	（ブラウザに無効値として無視され normal のまま描画される）受け付けない。
 //	[lay]・[add_face]・[button]・[add_filter]の4タグとも**ここを通す**（受ける名前と例外の
 //	文言を揃えるため。ScriptEngine.tsとFilter.tsの両方から使うのでここへ独立させてある）
 const H_BLENDMODE: {[nm: string]: string} = {
 	normal: 'normal',
 	add: 'plus-lighter',	// 本家互換の別名
 	'plus-lighter': 'plus-lighter',
-	'plus-darker': 'plus-darker',
 	multiply: 'multiply',
 	screen: 'screen',
 	overlay: 'overlay',

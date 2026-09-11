@@ -4,7 +4,6 @@ var n = {
 	normal: "normal",
 	add: "plus-lighter",
 	"plus-lighter": "plus-lighter",
-	"plus-darker": "plus-darker",
 	multiply: "multiply",
 	screen: "screen",
 	overlay: "overlay",
