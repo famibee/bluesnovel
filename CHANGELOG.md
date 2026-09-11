@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.15.4](https://github.com/famibee/bluesnovel/compare/v0.15.3...v0.15.4) (2026-09-11)
+
+
+### Bug Fixes
+
+* **txt-layer:** テキストレイヤーの透明領域が下のレイヤーの[link]クリックを奪う不具合を修正 ([b61fc6b](https://github.com/famibee/bluesnovel/commit/b61fc6b0a43267abe5afb41a1699f189e0f8d18f))
+
 ## [0.15.3](https://github.com/famibee/bluesnovel/compare/v0.15.2...v0.15.3) (2026-09-11)
 
 
