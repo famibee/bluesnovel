@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.15.1](https://github.com/famibee/bluesnovel/compare/v0.15.0...v0.15.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **blendmode:** plus-darkerをサポート対象から除外 ([4825312](https://github.com/famibee/bluesnovel/commit/4825312f74c83273c13c75eeadbc5912e40d7a65))
+
 ## [0.15.0](https://github.com/famibee/bluesnovel/compare/v0.14.0...v0.15.0) (2026-09-10)
 
 
