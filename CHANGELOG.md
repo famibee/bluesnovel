@@ -707,6 +707,19 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.16.0](https://github.com/famibee/bluesnovel/compare/v0.15.4...v0.16.0) (2026-09-12)
+
+
+### Features
+
+* **app:** update_checkのURL上書き機構を本家から移植 ([c10e6c9](https://github.com/famibee/bluesnovel/commit/c10e6c9fba90bcebd894fc5cf85f6effc057cc44))
+
+
+### Bug Fixes
+
+* **app:** update_checkがサーバーに接続できない場合のエラーメッセージを改善 ([eec8e0c](https://github.com/famibee/bluesnovel/commit/eec8e0cda591b4c9da6dc596d2f1ef2284a33665))
+* **app:** マルチモニタ構成変更後にウインドウが画面外へ出て非表示になる不具合を修正 ([ae00ca8](https://github.com/famibee/bluesnovel/commit/ae00ca81f6e21916a6196d9bd78ca9e9e6cce1f8))
+
 ## [0.15.4](https://github.com/famibee/bluesnovel/compare/v0.15.3...v0.15.4) (2026-09-11)
 
 
