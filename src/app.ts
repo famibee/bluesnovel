@@ -38,7 +38,7 @@ export class SysApp extends SysBase {
 	readonly #em	= new IpcEmitter<T_IpcEvents>;
 	readonly #ipc	= new IpcListener<T_IpcRendererEvent>;
 
-	#hInfo	: T_HINFO	= {getAppPath: '', isPackaged: false, downloads: '', userData: '', getVersion: '', env: {}, platform: '', arch: ''};
+	#hInfo	: T_HINFO	= {getAppPath: '', isPackaged: false, downloads: '', userData: '', getVersion: '', homepage: '', env: {}, platform: '', arch: ''};
 
 	protected override async loaded(...[hPlg, arg]: T_SysBaseLoadedParams) {
 		// preload（ESM preload＝`preload.mjs`）の `contextBridge` 公開が renderer の
@@ -119,6 +119,7 @@ export class SysApp extends SysBase {
 			// bluesnovelは本家と違いcrypto有無でdocフォルダを分けていない（配布構成が別物のため）
 			iconPath	: this.#hInfo.getAppPath.replaceAll('\\', '/') +'/doc/icon.png',
 			bookTitle	: this.cfg.oCfg.book.title,
+			homepage	: this.#hInfo.homepage,
 			isMac		: CmnLib.isMac,
 			debugLog	: CmnLib.debugLog,
 		}).catch((e: unknown)=> console.error(`[update_check] ${String(e)}`));

@@ -167,17 +167,33 @@ var i = "skynovel", a = class {
 	}
 }, o = "upd_url.json";
 async function s(e, t) {
-	let n = await c(e, t), r = await t.fetchText(n + "_index.json"), i = {
+	let n = await l(e, t), r = {
 		title: "アプリ更新",
 		icon: t.iconPath,
 		buttons: ["OK", "Cancel"],
 		defaultId: 0,
 		cancelId: 1,
 		message: `アプリ【${t.bookTitle}】に更新があります。\nダウンロードしますか？`
-	};
-	r.ok ? await l(r.txt, n, i, t) : await u(n, i, t);
+	}, i;
+	try {
+		i = await t.fetchText(n + "_index.json");
+	} catch (e) {
+		await c(r, t, e);
+		return;
+	}
+	i.ok ? await u(i.txt, n, r, t) : await d(n, r, t);
 }
-async function c(e, t) {
+async function c(e, t, n) {
+	console.error(`[update_check] ${String(n)}`), await t.showMessageBox({
+		...e,
+		buttons: ["OK"],
+		defaultId: 0,
+		cancelId: 0,
+		message: `アプリ【${t.bookTitle}】の更新確認に失敗しました。\n更新サーバーに接続できません。`,
+		detail: "配布元がアップデート機能の提供を終了している可能性があります。" + (t.homepage ? `\n配布元にお問い合わせください: ${t.homepage}` : "")
+	});
+}
+async function l(e, t) {
 	let n = t.userDataDir + o;
 	try {
 		if (!await t.existsSync(n)) return e;
@@ -188,25 +204,25 @@ async function c(e, t) {
 		return console.error(`[update_check] ${o} 読込失敗、既定URLにフォールバック ${String(t)}`), e;
 	}
 }
-async function l(e, t, n, r) {
+async function u(e, t, n, r) {
 	let i = JSON.parse(e);
-	if (!await d(i.version, n, r)) return;
+	if (!await f(i.version, n, r)) return;
 	let a = r.platform + "_" + r.arch, o = i[a];
 	if (o && typeof o == "object") {
 		let { cn: e, path: i } = o;
-		await f(t, a + "-" + e, i, r), await p(n, r);
+		await p(t, a + "-" + e, i, r), await m(n, r);
 		return;
 	}
 	let s = "", c = RegExp("^" + r.platform + "_"), l = Object.entries(i).flatMap(([e, n]) => {
 		if (typeof n != "object" || !c.test(e)) return [];
 		let { path: i, cn: a } = n;
-		return s += "\n- " + i, [f(t, e + "-" + a, i, r)];
+		return s += "\n- " + i, [p(t, e + "-" + a, i, r)];
 	});
 	n.message = `CPU = ${r.arch}\nに対応するファイルが見つかりません。同じOSのファイルをすべてダウンロードしますか？`, n.detail = `${String(l.length)} 個ファイルがあります` + s;
 	let { response: u } = await r.showMessageBox(n);
-	u > 0 || (await Promise.allSettled(l), await p(n, r));
+	u > 0 || (await Promise.allSettled(l), await m(n, r));
 }
-async function u(e, t, n) {
+async function d(e, t, n) {
 	let r = await n.fetchText(e + `latest${n.isMac ? "-mac" : ""}.yml`);
 	if (!r.ok) {
 		if (n.debugLog) throw "[update_check] .ymlが見つかりません";
@@ -214,7 +230,7 @@ async function u(e, t, n) {
 	}
 	let i = r.txt, a = /version: (.+)/.exec(i)?.[1];
 	if (!a) throw "[update_check] .yml に version が見つかりません";
-	if (!await d(a, t, n)) return;
+	if (!await f(a, t, n)) return;
 	let o = /path: (.+)/.exec(i);
 	if (!o) throw "[update_check] path が見つかりません";
 	let [, s] = o;
@@ -224,24 +240,24 @@ async function u(e, t, n) {
 		"",
 		""
 	];
-	await f(e, c + "-" + n.arch + l, s, n), await p(t, n);
+	await p(e, c + "-" + n.arch + l, s, n), await m(t, n);
 }
-async function d(e, t, n) {
+async function f(e, t, n) {
 	if (e === n.appVersion) return !1;
 	t.detail = `現在 NOW ver ${n.appVersion}\n新規 NEW ver ${e}`;
 	let { response: r } = await n.showMessageBox(t);
 	return r === 0;
 }
-async function f(e, t, n, r) {
+async function p(e, t, n, r) {
 	let i = await r.fetchAb(e + t);
 	i.ok && await r.writeFile(r.downloadsDir + "/" + n, new DataView(i.ab));
 }
-async function p(e, t) {
+async function m(e, t) {
 	e.buttons.pop(), e.message = `アプリ【${t.bookTitle}】の更新パッケージを\nダウンロードしました`, await t.showMessageBox(e);
 }
 //#endregion
 //#region src/IpcRenderer.ts
-async function m(e = 3e3) {
+async function h(e = 3e3) {
 	if (window.electron?.ipcRenderer) return;
 	let t = performance.now();
 	for (; !window.electron?.ipcRenderer;) {
@@ -252,21 +268,21 @@ async function m(e = 3e3) {
 		await new Promise((e) => setTimeout(e, 16));
 	}
 }
-var h = class {
+var g = class {
 	send(e, ...t) {
 		window.electron.ipcRenderer.send(e, ...t);
 	}
 	invoke(e, ...t) {
 		return window.electron.ipcRenderer.invoke(e, ...t);
 	}
-}, g = class {
+}, _ = class {
 	on(e, t) {
 		return window.electron.ipcRenderer.on(e, t);
 	}
 	once(e, t) {
 		return window.electron.ipcRenderer.once(e, t);
 	}
-}, _ = class extends a {
+}, v = class extends a {
 	constructor(...[e = {}, t = {
 		cur: "prj/",
 		crypto: !1,
@@ -274,20 +290,21 @@ var h = class {
 	}]) {
 		super(e, t), queueMicrotask(async () => this.loaded(e, t));
 	}
-	#e = new h();
-	#t = new g();
+	#e = new g();
+	#t = new _();
 	#n = {
 		getAppPath: "",
 		isPackaged: !1,
 		downloads: "",
 		userData: "",
 		getVersion: "",
+		homepage: "",
 		env: {},
 		platform: "",
 		arch: ""
 	};
 	async loaded(...[e, t]) {
-		await m();
+		await h();
 		let r = this.#n = await this.#e.invoke("getInfo");
 		this.$path_downloads = r.downloads.replaceAll("\\", "/") + "/", this.$path_userdata = r.userData.replaceAll("\\", "/") + "/", this.#t.on("log", (e, t) => console.info("main: %o", t)), this.#t.on("fire", (e, t) => document.dispatchEvent(new KeyboardEvent("keydown", {
 			key: t,
@@ -338,6 +355,7 @@ var h = class {
 			arch: this.#n.arch,
 			iconPath: this.#n.getAppPath.replaceAll("\\", "/") + "/doc/icon.png",
 			bookTitle: this.cfg.oCfg.book.title,
+			homepage: this.#n.homepage,
 			isMac: t.isMac,
 			debugLog: t.debugLog
 		}).catch((e) => console.error(`[update_check] ${String(e)}`));
@@ -357,6 +375,6 @@ var h = class {
 	}
 };
 //#endregion
-export { _ as SysApp };
+export { v as SysApp };
 
 //# sourceMappingURL=app.js.map

@@ -25,6 +25,7 @@ export type T_UpdateCheckDeps = {
 	arch		: string;
 	iconPath	: string;
 	bookTitle	: string;
+	homepage	: string;	// package.jsonのhomepage（配布元）。空なら案内文で省く
 	isMac		: boolean;
 	debugLog	: boolean;
 };
@@ -65,7 +66,6 @@ type T_UpdIdxJson = {
 
 export async function updateCheck(urlArg: string, deps: T_UpdateCheckDeps): Promise<void> {
 	const url = await resolveUpdUrl(urlArg, deps);
-	const o = await deps.fetchText(url +'_index.json');
 	const mbo: T_MessageBoxOptions = {
 		title		: 'アプリ更新',
 		icon		: deps.iconPath,
@@ -74,8 +74,35 @@ export async function updateCheck(urlArg: string, deps: T_UpdateCheckDeps): Prom
 		cancelId	: 1,
 		message		: `アプリ【${deps.bookTitle}】に更新があります。\nダウンロードしますか？`,
 	};
+
+	let o: {ok: boolean; txt: string};
+	try {
+		o = await deps.fetchText(url +'_index.json');
+	}
+	catch (e) {
+		// パッチサーバー自体に繋がらない（DNS切れ等で配布元が更新機能を止めている場合が多い）。
+		//	従来はここでthrowし呼び出し元（app.ts）がconsole.errorへ流すだけで、配布先の
+		//	プレイヤーには「Error invoking remote method 'fetch': …」という生の例外しか見えず
+		//	不親切だった（src/docs/TODO.md「過去アプリのケア」参照）。upd_url.jsonでのURL上書きに
+		//	気付けるよう案内し、配布元がわかればhomepageも添える
+		await connFailed(mbo, deps, e);
+		return;
+	}
 	if (o.ok) await idxjsFound(o.txt, url, mbo, deps);
 	else await idxjsNotFound(url, mbo, deps);
+}
+
+async function connFailed(mbo: T_MessageBoxOptions, deps: T_UpdateCheckDeps, e: unknown) {
+	console.error(`[update_check] ${String(e)}`);
+	await deps.showMessageBox({
+		...mbo,
+		buttons	: ['OK'],
+		defaultId	: 0,
+		cancelId	: 0,
+		message	: `アプリ【${deps.bookTitle}】の更新確認に失敗しました。\n更新サーバーに接続できません。`,
+		detail	: '配布元がアップデート機能の提供を終了している可能性があります。'
+			+ (deps.homepage ? `\n配布元にお問い合わせください: ${deps.homepage}` : ''),
+	});
 }
 
 // userData直下に upd_url.json（暗号化可）があれば、シナリオ指定のurlより優先して使う

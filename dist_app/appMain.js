@@ -19,6 +19,7 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 		downloads: t.getPath("downloads"),
 		userData: t.getPath("userData"),
 		getVersion: "",
+		homepage: "",
 		env: { ...process.env },
 		platform: process.platform,
 		arch: process.arch
@@ -27,48 +28,48 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 	#i = 0;
 	#a = 0;
 	#o = 0;
-	constructor(t, r) {
+	constructor(t, r, i = "") {
 		this.bw = t, this.version = r;
-		let i = e.#e;
-		this.#t = process.platform === "win32", t.webContents.on("devtools-opened", () => this.#l()), i.handle("openDevTools", () => t.webContents.openDevTools()), this.#n.getVersion = r, i.handle("getInfo", () => this.#n), i.handle("inited", (e, t, n) => this.#s(t, n)), i.handle("fetch", async (e, t) => {
+		let a = e.#e;
+		this.#t = process.platform === "win32", t.webContents.on("devtools-opened", () => this.#l()), a.handle("openDevTools", () => t.webContents.openDevTools()), this.#n.getVersion = r, this.#n.homepage = i, a.handle("getInfo", () => this.#n), a.handle("inited", (e, t, n) => this.#s(t, n)), a.handle("fetch", async (e, t) => {
 			let n = await fetch(t, { cache: "no-store" });
 			return {
 				ok: n.ok,
 				txt: await n.text()
 			};
-		}), i.handle("fetchAb", async (e, t) => {
+		}), a.handle("fetchAb", async (e, t) => {
 			let n = await fetch(t, { cache: "no-store" });
 			return {
 				ok: n.ok,
 				ab: await n.arrayBuffer()
 			};
-		}), i.handle("existsSync", (e, t) => g(t)), i.handle("copy", (e, t, n) => m(t, n)), i.handle("remove", (e, t) => v(t)), i.handle("ensureFile", (e, t) => h(t)), i.handle("readFile", (e, t, n) => b(t, n)), i.handle("writeFile", (e, t, n, r) => y(t, n, r)), i.handle("appendFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), i.handle("outputFile", (e, t, n) => _(t, n).catch((e) => console.error(e))), i.handle("win_close", () => t.close()), i.handle("win_setTitle", (e, n) => t.setTitle(n)), i.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), i.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), i.handle("capturePage", async (e, n, r, i, a) => {
+		}), a.handle("existsSync", (e, t) => g(t)), a.handle("copy", (e, t, n) => m(t, n)), a.handle("remove", (e, t) => v(t)), a.handle("ensureFile", (e, t) => h(t)), a.handle("readFile", (e, t, n) => b(t, n)), a.handle("writeFile", (e, t, n, r) => y(t, n, r)), a.handle("appendFile", (e, t, n) => p(t, n).catch((e) => console.error(e))), a.handle("outputFile", (e, t, n) => _(t, n).catch((e) => console.error(e))), a.handle("win_close", () => t.close()), a.handle("win_setTitle", (e, n) => t.setTitle(n)), a.handle("showMessageBox", (e, r) => n.showMessageBox(t, r)), a.handle("showOpenDialog", (e, r) => n.showOpenDialog(t, r)), a.handle("capturePage", async (e, n, r, i, a) => {
 			let o = (await t.webContents.capturePage(n)).resize({
 				width: r,
 				height: i,
 				quality: "best"
 			});
 			return a === "image/jpeg" ? `data:image/jpeg;base64,${o.toJPEG(80).toString("base64")}` : o.toDataURL();
-		}), i.handle("navigate_to", (e, t) => s.openExternal(t));
-		let a;
-		i.handle("Store", (e, t) => {
-			a = new l(t);
-		}), i.handle("flush", (e, t) => {
-			a.store = t;
-		}), i.handle("Store_isEmpty", () => a.size === 0), i.handle("Store_get", () => a.store), i.handle("zip", async (e, t, n) => {
+		}), a.handle("navigate_to", (e, t) => s.openExternal(t));
+		let o;
+		a.handle("Store", (e, t) => {
+			o = new l(t);
+		}), a.handle("flush", (e, t) => {
+			o.store = t;
+		}), a.handle("Store_isEmpty", () => o.size === 0), a.handle("Store_get", () => o.store), a.handle("zip", async (e, t, n) => {
 			let r = new u();
 			r.addLocalFolder(t), await r.writeZipPromise(n);
-		}), i.handle("unzip", async (e, t, n) => {
+		}), a.handle("unzip", async (e, t, n) => {
 			await v(n), await x(n), new u(t).extractAllTo(n, !0);
-		}), i.handle("isSimpleFullScreen", () => t.simpleFullScreen), this.#t ? (i.handle("setSimpleFullScreen", (e, n) => {
+		}), a.handle("isSimpleFullScreen", () => t.simpleFullScreen), this.#t ? (a.handle("setSimpleFullScreen", (e, n) => {
 			this.#p = () => {}, t.setSimpleFullScreen(n), n || (t.setPosition(this.#r, this.#i), t.setContentSize(this.#a, this.#o)), this.#p = () => this.#m();
 		}), t.on("enter-full-screen", () => {
 			this.#p = () => {}, t.setContentSize(this.#d.width, this.#d.height), this.#p = () => this.#m();
 		}), t.on("leave-full-screen", () => {
 			this.#g(!1, this.#r, this.#i, this.#a, this.#o);
-		})) : i.handle("setSimpleFullScreen", (e, n) => {
+		})) : a.handle("setSimpleFullScreen", (e, n) => {
 			t.setSimpleFullScreen(n), !n && t.setContentSize(this.#a, this.#o);
-		}), i.handle("window", (e, t, n, r, i, a) => this.#g(t, n, r, i, a)), t.on("move", () => this.#p()), t.on("resize", () => this.#p()), this.#u();
+		}), a.handle("window", (e, t, n, r, i, a) => this.#g(t, n, r, i, a)), t.on("move", () => this.#p()), t.on("resize", () => this.#p()), this.#u();
 	}
 	#s(e, t) {
 		let { width: n, height: r } = e.window, { c: i, x: a, y: o, w: s } = t;
@@ -160,10 +161,10 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 			return r !== e && !r.startsWith(e + "/") ? new Response("Forbidden", { status: 403 }) : i.fetch(d(r).toString());
 		});
 	}
-	static initRenderer(n, r) {
-		let i, a = () => {};
+	static initRenderer(n, r, i = "") {
+		let a, o = () => {};
 		try {
-			S.init(new C()), i = new e({
+			S.init(new C()), a = new e({
 				show: !1,
 				minWidth: 300,
 				minHeight: 300,
@@ -174,12 +175,12 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 					sandbox: !1
 				}
 			});
-			let o = new t(i, r);
-			a = () => o.openDevTools();
+			let s = new t(a, r, i);
+			o = () => s.openDevTools();
 		} catch (e) {
-			throw console.error(`early err:${String(e)}`), a(), "initRenderer error";
+			throw console.error(`early err:${String(e)}`), o(), "initRenderer error";
 		}
-		return i;
+		return a;
 	}
 	#e = new w();
 	sendShutdown() {

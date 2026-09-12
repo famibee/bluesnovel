@@ -39,6 +39,7 @@ export	type	T_HINFO	= {
 	downloads	: string;
 	userData	: string;
 	getVersion	: string;
+	homepage	: string;	// package.jsonのhomepage（update_check失敗時の案内表示に使う。空なら未設定）
 	env			: {
 		SKYNOVEL_DBG?	: string;
 		SKYNOVEL_PORT?	: string;
@@ -67,6 +68,7 @@ export class appMain_cmn {
 		downloads	: app.getPath('downloads'),
 		userData	: app.getPath('userData'),
 		getVersion	: '',	// constructor で
+		homepage	: '',	// constructor で
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, no-process-env
 		env			: <any>{...process.env},
 		platform	: process.platform,
@@ -78,7 +80,7 @@ export class appMain_cmn {
 	#csH	= 0;
 
 
-	constructor(protected readonly bw: BrowserWindow, readonly version: string) {
+	constructor(protected readonly bw: BrowserWindow, readonly version: string, homepage = '') {
 		const ipc = appMain_cmn.#ipc;
 		this.#isWin = process.platform === 'win32';
 
@@ -87,6 +89,7 @@ export class appMain_cmn {
 		ipc.handle('openDevTools', ()=> bw.webContents.openDevTools());
 
 		this.#hInfo.getVersion = version;
+		this.#hInfo.homepage = homepage;
 		ipc.handle('getInfo', ()=> this.#hInfo);
 		ipc.handle('inited', (_, c: T_CFG, tagW: TAG_WINDOW)=> this.#inited(c, tagW));
 

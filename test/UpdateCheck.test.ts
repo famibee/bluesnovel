@@ -48,6 +48,7 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 		arch		: 'arm64',
 		iconPath	: '/app/doc/icon.png',
 		bookTitle	: 'テスト作品',
+		homepage	: '',
 		isMac		: true,
 		debugLog	: false,
 		...restOver,
@@ -206,6 +207,28 @@ it('upd_url.jsonの読込・復号に失敗しても既定urlへフォールバ�
 	await updateCheck('https://example.com/upd/', deps);	// throwしない
 
 	expect(deps.aFetchText).toEqual(['https://example.com/upd/_index.json']);
+});
+
+it('パッチサーバーに接続できない（fetchTextが例外）場合は親切なメッセージのダイアログを1つ出す', async ()=> {
+	const deps = mkDeps({
+		fetchText: async ()=> { throw new TypeError('fetch failed') },
+	});
+	await updateCheck('https://example.com/upd/', deps);	// throwしない
+
+	expect(deps.aFetchAb).toEqual([]);
+	expect(deps.aMbo.length).toBe(1);
+	expect(deps.aMbo[0]?.buttons).toEqual(['OK']);
+	expect(deps.aMbo[0]?.message).toContain('更新確認に失敗しました');
+});
+
+it('パッチサーバーに接続できない場合、homepageがあれば案内文に含める', async ()=> {
+	const deps = mkDeps({
+		fetchText: async ()=> { throw new TypeError('fetch failed') },
+		homepage: 'https://example.com/game/',
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aMbo[0]?.detail).toContain('https://example.com/game/');
 });
 
 it('ダウンロード先のファイルが見つからなければ黙って諦める（機種不一致時）', async ()=> {

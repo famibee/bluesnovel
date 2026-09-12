@@ -38,7 +38,7 @@ export class appMain extends appMain_cmn {
 		});
 	}
 
-	static	initRenderer(preload: string, version: string): BrowserWindow {
+	static	initRenderer(preload: string, version: string, homepage = ''): BrowserWindow {
 		let bw: BrowserWindow;
 		let opLocalDevTools = ()=> { /* empty */ };
 		try {
@@ -66,7 +66,7 @@ export class appMain extends appMain_cmn {
 			// console.log = (arg: unknown)=> bw.webContents.send('log', arg);
 				// 有効にするとエラーにもならず終了
 
-			const am = new appMain(bw, version);
+			const am = new appMain(bw, version, homepage);
 			opLocalDevTools = ()=> am.openDevTools();
 		}
 		catch (e) {
