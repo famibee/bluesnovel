@@ -31,11 +31,10 @@ jobs:
         manifest-file: .release-please-manifest.json
 
     - name: 🔀 Enable auto-merge on Release PR（レビュー通過後に自動マージ）
-      if: ${{ steps.release.outputs.release_created != 'true' }}
+      if: ${{ steps.release.outputs.prs_created == 'true' }}
       env:
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        PR_JSON: ${{ steps.release.outputs.pr }}
       run: |
-        PR_NUMBER=$(gh pr list -R famibee/bluesnovel --label "autorelease: pending" --state open --json number --jq '.[0].number')
-        if [ -n "$PR_NUMBER" ]; then
-          gh pr merge -R famibee/bluesnovel --auto --squash "$PR_NUMBER"
-        fi
+        PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+        gh pr merge -R famibee/bluesnovel --auto --squash "$PR_NUMBER"
