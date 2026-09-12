@@ -707,6 +707,15 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.16.1](https://github.com/famibee/bluesnovel/compare/v0.16.0...v0.16.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ci:** release PRの自動マージが検索インデックス遅延で無効化される不具合を修正 ([5257010](https://github.com/famibee/bluesnovel/commit/5257010e8b657a6000032cfda4711cb8ab304783))
+* **sn:** [l]直後の禁則番兵をダミー全角スペースから実文字先読みへ ([dff50e5](https://github.com/famibee/bluesnovel/commit/dff50e5583b46b38ab5fddc139a38b750a56dabd))
+* **text:** 縦書きで複数文字ルビが列頭に来ると隙間が異常に広くなる不具合を修正 ([dff50e5](https://github.com/famibee/bluesnovel/commit/dff50e5583b46b38ab5fddc139a38b750a56dabd))
+
 ## [0.16.0](https://github.com/famibee/bluesnovel/compare/v0.15.4...v0.16.0) (2026-09-12)
 
 
