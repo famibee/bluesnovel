@@ -234,6 +234,14 @@ export class appMain_cmn {
 	}
 	#scrSize: Size;
 
+	// 指定した矩形が、現在接続中のいずれか1枚のディスプレイに完全に収まっているか
+	// （一部重なりだけを許すと「1pxだけ画面に掛かっている」状態も合格にしてしまい、
+	// タイトルバーを掴んで戻すことすらできない実質見えない配置を素通ししてしまうため）
+	#isFullyOnAnyDisplay(x: number, y: number, w: number, h: number) {
+		return screen.getAllDisplays().some(({bounds: db})=>
+			x >= db.x && y >= db.y && x + w <= db.x + db.width && y + h <= db.y + db.height);
+	}
+
 	#onMove = ()=> { /* empty */ };
 	#onMove_Proc() {
 		if (this.#tid) return;
@@ -271,6 +279,14 @@ export class appMain_cmn {
 			// winでのみ全画面移行時に【setContentSize】から発生
 
 console.log(`fn:appMain.ts window c:${String(ic)} (${String(ix)},${String(iy)},${String(iw)},${String(ih)}) scr(${String(this.#scrSize.width)},${String(this.#scrSize.height)})`);
+		// 前回終了時の座標は、モニタ構成を変えた後（外部モニタを外す／並びを変える等）だと
+		// 現在どのディスプレイの範囲にも入らないことがある。setPosition() はその値をそのまま
+		// 受け取ってしまい、ウインドウが画面外へ配置されて表示上「消えた」ように見える
+		// （bw.show() 自体は呼ばれている）。保存データを消して初回起動扱いにすると
+		// #inited() の c=true でセンタリングされ直り"表示されるようになる"のはこのため。
+		// → 保存座標がどの画面とも重ならない場合はセンタリングへフォールバックする
+		if (! ic && ! this.#isFullyOnAnyDisplay(ix, iy, iw, ih)) ic = true;
+
 		this.#onMove = ()=> { /* empty */ };
 		const x = this.#winX = Math.round(ic
 			? (this.#scrSize.width - iw) *0.5

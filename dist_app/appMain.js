@@ -61,20 +61,20 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 		}), i.handle("unzip", async (e, t, n) => {
 			await v(n), await x(n), new u(t).extractAllTo(n, !0);
 		}), i.handle("isSimpleFullScreen", () => t.simpleFullScreen), this.#t ? (i.handle("setSimpleFullScreen", (e, n) => {
-			this.#f = () => {}, t.setSimpleFullScreen(n), n || (t.setPosition(this.#r, this.#i), t.setContentSize(this.#a, this.#o)), this.#f = () => this.#p();
+			this.#p = () => {}, t.setSimpleFullScreen(n), n || (t.setPosition(this.#r, this.#i), t.setContentSize(this.#a, this.#o)), this.#p = () => this.#m();
 		}), t.on("enter-full-screen", () => {
-			this.#f = () => {}, t.setContentSize(this.#d.width, this.#d.height), this.#f = () => this.#p();
+			this.#p = () => {}, t.setContentSize(this.#d.width, this.#d.height), this.#p = () => this.#m();
 		}), t.on("leave-full-screen", () => {
-			this.#h(!1, this.#r, this.#i, this.#a, this.#o);
+			this.#g(!1, this.#r, this.#i, this.#a, this.#o);
 		})) : i.handle("setSimpleFullScreen", (e, n) => {
 			t.setSimpleFullScreen(n), !n && t.setContentSize(this.#a, this.#o);
-		}), i.handle("window", (e, t, n, r, i, a) => this.#h(t, n, r, i, a)), t.on("move", () => this.#f()), t.on("resize", () => this.#f()), this.#u();
+		}), i.handle("window", (e, t, n, r, i, a) => this.#g(t, n, r, i, a)), t.on("move", () => this.#p()), t.on("resize", () => this.#p()), this.#u();
 	}
 	#s(e, t) {
 		let { width: n, height: r } = e.window, { c: i, x: a, y: o, w: s } = t;
 		this.#c = n / r;
 		let c = s === n ? r : s / this.#c;
-		if (this.#t || this.bw.setAspectRatio(this.#c), this.#h(i, a, o, s, c), this.bw.show(), this.#f = () => this.#p(), e.debug.devtool) {
+		if (this.#t || this.bw.setAspectRatio(this.#c), this.#g(i, a, o, s, c), this.bw.show(), this.#p = () => this.#m(), e.debug.devtool) {
 			this.#l = () => {}, this.openDevTools = () => this.bw.webContents.openDevTools({ mode: "detach" }), this.openDevTools();
 			return;
 		}
@@ -89,27 +89,30 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 		this.#d = t.workAreaSize;
 	}
 	#d;
-	#f = () => {};
-	#p() {
-		if (this.#m) return;
-		this.#f = () => {};
+	#f(e, t, n, r) {
+		return o.getAllDisplays().some(({ bounds: i }) => e >= i.x && t >= i.y && e + n <= i.x + i.width && t + r <= i.y + i.height);
+	}
+	#p = () => {};
+	#m() {
+		if (this.#h) return;
+		this.#p = () => {};
 		let [e, t] = this.bw.getPosition(), [n, r] = this.bw.getContentSize();
-		this.#m = setTimeout(() => {
-			this.#m = void 0;
+		this.#h = setTimeout(() => {
+			this.#h = void 0;
 			let [i = 0, a = 0] = this.bw.getPosition(), [o = 0, s = 0] = this.bw.getContentSize();
 			if (e !== i || t !== a || n !== o || r !== s) {
-				this.#p();
+				this.#m();
 				return;
 			}
-			this.#f = () => this.#p();
+			this.#p = () => this.#m();
 			let c = o, l = s;
-			this.#t && (n === o ? l = o / this.#c : c = s * this.#c), this.#h(!1, i, a, c, l);
+			this.#t && (n === o ? l = o / this.#c : c = s * this.#c), this.#g(!1, i, a, c, l);
 		}, 1e3 / 60 * 10);
 	}
-	#m = void 0;
-	#h(e, t, n, r, i) {
+	#h = void 0;
+	#g(e, t, n, r, i) {
 		if (this.bw.simpleFullScreen) return;
-		console.log(`fn:appMain.ts window c:${String(e)} (${String(t)},${String(n)},${String(r)},${String(i)}) scr(${String(this.#d.width)},${String(this.#d.height)})`), this.#f = () => {};
+		console.log(`fn:appMain.ts window c:${String(e)} (${String(t)},${String(n)},${String(r)},${String(i)}) scr(${String(this.#d.width)},${String(this.#d.height)})`), !e && !this.#f(t, n, r, i) && (e = !0), this.#p = () => {};
 		let a = this.#r = Math.round(e ? (this.#d.width - r) * .5 : t), o = this.#i = Math.round(e ? (this.#d.height - i) * .5 : n);
 		this.bw.setPosition(a, o);
 		let s = this.#a = Math.round(r), c = this.#o = Math.round(i);
@@ -118,7 +121,7 @@ var { appendFile: p, copy: m, ensureFile: h, existsSync: g, outputFile: _, remov
 			y: o,
 			w: s,
 			h: c
-		}), this.#f = () => this.#p();
+		}), this.#p = () => this.#m();
 	}
 	sendShutdown() {}
 	sendSaveWinInf(e) {}
