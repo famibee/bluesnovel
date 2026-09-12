@@ -377,7 +377,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		if (aCh.length <= cache.length) {
 			// 既知の範囲内（読み戻り、または既知長への復帰）：新規アニメ不要。
 			//	ただしbura/kinsoku_*だけが変わってこの効果が再実行された場合もあるので禁則は掛け直す
-			applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
+			applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki(),
+				useStore.getState().nextChHint ?? ' ');
 			setIsTyping(false);
 			return;
 		}
@@ -420,7 +421,8 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 
 		// 計測が祖先/自身のtransformで汚染されないうちに禁則を掛ける（Web Animations APIの
 		//	Animationはまだ1つも作っていない＝この時点でnewSpansは全て素のDOM既定値のまま）
-		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki());
+		applyKinsoku(el, cache, chRef.current, kin, bura ?? false, isTategaki(),
+			useStore.getState().nextChHint ?? ' ');
 
 		if (isReadBack || skipping) {
 			// 読み戻り中／既読スキップ中：新規spanは最初から素の表示状態（＝演出の終端と同じ）
@@ -966,16 +968,21 @@ function mkKinCh(aCh: readonly T_CH[]): {kc: T_KIN_CH[]; idx: number[]; sub: num
 //	親文字だけはelCh()が内部に1文字ずつのspanを作るので、そちらを測る＝subで判別）。
 //	1つ`<br>`を挿すたびに後続文字の位置が変わるので、違反が無くなるまで測り直しながら繰り返す
 function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aCh: readonly T_CH[],
-	kin: Kinsoku, bura: boolean, tategaki: boolean): void {
+	kin: Kinsoku, bura: boolean, tategaki: boolean, sentinelCh: string): void {
 	const {kc, idx, sub} = mkKinCh(aCh);
 	if (kc.length < 2) return;
 
 	// mkKinCh()の末尾番兵（idx=-1）を測るための使い捨てDOM要素。本家 #SPAN_LAST と同じ役割
 	//	（最後の1文字にも「次に置いたらはみ出すか」の判定材料を与える）。測定後は必ず取り除き、
-	//	文字出現演出やcache/childNodes数の前提（呼び出し元）には一切関与させない
+	//	文字出現演出やcache/childNodes数の前提（呼び出し元）には一切関与させない。
+	//	中身はダミーの全角スペースではなく、可能なら「実際に次へ表示される1文字」（呼び出し元が
+	//	store.nextChHintから渡す。先読みできない場合は' 'にフォールバック）を使う。
+	//	空白のままだと次に続く文字が禁則対象記号だった場合に判定が食い違い、[l]再開後に
+	//	折り返し位置がズレて見える不具合になる（src/docs/text-rendering.md
+	//	「[l]境界をまたぐ禁則ズレ」参照）
 	const sentinel = document.createElement('span');
 	sentinel.style.display = 'inline-block';
-	sentinel.textContent = ' ';
+	sentinel.textContent = sentinelCh;
 	el.appendChild(sentinel);
 
 	try {
@@ -1020,11 +1027,17 @@ function applyKinsoku(el: HTMLSpanElement, cache: readonly HTMLSpanElement[], aC
 		const outer = br.nextElementSibling as HTMLElement | null;
 		const rt = outer?.querySelector('rt');
 		if (! rt) return;
-		// offsetHeightは要素自身にも祖先にもtransformの影響を受けないレイアウト値。
-		//	getBoundingClientRect().heightだと祖先のtransform: scale(cvsScale)（Stage.tsx）を
-		//	含んだ値になり、cvsScale!==1（ウインドウ実寸依存の非整数）のときmarginがcvsScale倍
-		//	ズレる実バグだった（リサイズ時に再計算もされないため一度ズレると直らない）
-		outer!.style.marginBlockStart = `${String(rt.offsetHeight)}px`;
+		// <rt>が「1つ前の列」側へはみ出す量＝block軸方向の厚み。横書き（block軸=垂直）なら
+		//	物理縦幅のoffsetHeight、縦書きvertical-rl（block軸=水平）なら物理横幅のoffsetWidthが
+		//	これにあたる。tategaki判定なしに常にoffsetHeightを使っていたため、縦書きで複数文字
+		//	ルビ（安全｜剃刀《かみそり》のかみそり4文字等）が列の先頭に来ると、ルビ自身がその場で
+		//	縦に並ぶ長さ（offsetHeight）がそのままmarginになり、実際に必要なブロック方向の厚み
+		//	（offsetWidth）よりはるかに広い隙間が列間に空いてしまっていた
+		//	（2026-09-12 ss_000.sn:24 実機で発覚）。
+		//	offsetHeight/offsetWidthはoffsetHeight同様、要素自身にも祖先にもtransformの影響を
+		//	受けないレイアウト値（getBoundingClientRect()は祖先のtransform: scale(cvsScale)
+		//	（Stage.tsx）を含んでしまいcvsScale!==1のとき狂う）
+		outer!.style.marginBlockStart = `${String(tategaki ? rt.offsetWidth : rt.offsetHeight)}px`;
 	});
 }
 

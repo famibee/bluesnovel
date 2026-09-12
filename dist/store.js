@@ -448,6 +448,8 @@ var j = x()((e, t) => ({
 	setIsTyping: (t) => e(() => ({ isTyping: t })),
 	backAlpha: 1,
 	setBackAlpha: (t) => e(() => ({ backAlpha: t })),
+	nextChHint: void 0,
+	setNextChHint: (t) => e(() => ({ nextChHint: t })),
 	btnFont: C,
 	setBtnFont: (t) => e(() => ({ btnFont: t })),
 	skipReq: 0,

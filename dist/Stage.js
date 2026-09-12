@@ -10639,7 +10639,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		for (; e.childNodes.length > d;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < d;) e.appendChild(u[e.childNodes.length]);
 		if (c.length <= u.length) {
-			Hu(e, u, Te.current, Fe, p ?? !1, Ie()), le(!1);
+			Hu(e, u, Te.current, Fe, p ?? !1, Ie(), D.getState().nextChHint ?? " "), le(!1);
 			return;
 		}
 		let f = c.slice(u.length), m = document.createDocumentFragment(), h = f.map((e) => {
@@ -10654,7 +10654,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				i.join && (e += a), ke.current.push(i.join ? e : 0);
 			}
 		}
-		if (Hu(e, u, Te.current, Fe, p ?? !1, Ie()), oe || de) {
+		if (Hu(e, u, Te.current, Fe, p ?? !1, Ie(), D.getState().nextChHint ?? " "), oe || de) {
 			le(!1);
 			return;
 		}
@@ -11076,28 +11076,28 @@ function Vu(e) {
 		sub: r
 	};
 }
-function Hu(e, t, n, r, i, a) {
-	let { kc: o, idx: s, sub: c } = Vu(n);
-	if (o.length < 2) return;
-	let l = document.createElement("span");
-	l.style.display = "inline-block", l.textContent = " ", e.appendChild(l);
+function Hu(e, t, n, r, i, a, o) {
+	let { kc: s, idx: c, sub: l } = Vu(n);
+	if (s.length < 2) return;
+	let u = document.createElement("span");
+	u.style.display = "inline-block", u.textContent = o, e.appendChild(u);
 	try {
-		let n = 2, u = Array(o.length).fill(0);
-		for (let d = 0; d <= o.length; ++d) {
-			for (let e = n; e < o.length; ++e) {
-				let n = s[e], r = n < 0 ? l : t[n], i = c[e], o = (i < 0 ? r : r.firstElementChild?.children[i] ?? r).getBoundingClientRect();
-				u[e] = a ? o.top : o.left;
+		let n = 2, o = Array(s.length).fill(0);
+		for (let d = 0; d <= s.length; ++d) {
+			for (let e = n; e < s.length; ++e) {
+				let n = c[e], r = n < 0 ? u : t[n], i = l[e], s = (i < 0 ? r : r.firstElementChild?.children[i] ?? r).getBoundingClientRect();
+				o[e] = a ? s.top : s.left;
 			}
-			let d = r.scan(o, u, i, n);
+			let d = r.scan(s, o, i, n);
 			if (!d) break;
-			e.insertBefore(document.createElement("br"), t[s[d.ins]]), n = d.resumeAt;
+			e.insertBefore(document.createElement("br"), t[c[d.ins]]), n = d.resumeAt;
 		}
 	} finally {
-		l.remove();
+		u.remove();
 	}
 	t.forEach((e) => e.style.marginBlockStart = ""), e.querySelectorAll(":scope > br").forEach((e) => {
 		let t = e.nextElementSibling, n = t?.querySelector("rt");
-		n && (t.style.marginBlockStart = `${String(n.offsetHeight)}px`);
+		n && (t.style.marginBlockStart = `${String(a ? n.offsetWidth : n.offsetHeight)}px`);
 	});
 }
 function Uu(e, t, n) {

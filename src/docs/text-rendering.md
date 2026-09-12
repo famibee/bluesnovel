@@ -23,6 +23,52 @@
 `r_size`（ルビサイズ）は本家にもない属性で、`r_style="font-size:…"` で代替できるため専用属性は
 追加しない。
 
+### `[l]`境界をまたぐ禁則ズレ（対応済み）
+
+2026-09-12、ユーザーから「`[l]`などページ中文字が一部のみ表示された状態と、すべて表示された
+状態では追い出し判定などが変化してしまう」との懸念で調査・対応。
+
+**問題の実体**：`applyKinsoku()`（`TxtLayer.tsx:963-`）は行末の最後の表示単位に「次に何か
+置いたら溢れるか」を判定させるため、末尾に番兵1文字を一時的に追加・計測・即除去している
+（`TxtLayer.tsx:976-`）。この計測は同期的な`appendChild→getBoundingClientRect→remove`の
+ワンショットで、ペイントを挟まないためユーザーには一切見えない（`visibility:hidden`等のCSSは
+使っていないし、変更の必要もない）。番兵は**全角スペース（U+2003 EM SPACE）**で、対策前は
+常にこの固定文字だった。
+
+しかし`[l]`直後に実際に続く文字は、スクリプト上なんの制約もなく句読点等の禁則対象文字
+（「、」「」」等）でありえる（`ScriptEngine.step()`のトークン処理に「`[l]`直後に来てはいけない
+文字」という制約は無い）。番兵を固定の全角スペースで計測した場合と、実際に続く文字で計測した
+場合とで禁則区分・幅が異なるため、`[l]`直前で確定した折り返し位置が、クリック後に文字が
+増えたときの「本来あるべき折り返し」と食い違いうる。これが「ガクッ」の技術的原因。
+`test/Hyphenation.test.ts`の「番兵=ダミー空白では違反なしと判定される」テストで、
+`Kinsoku.scan()`レベルで実際に判定が変わることを確認済み。
+
+**対応**：番兵の`textContent`を、`[l]`直後を先読みした実際の次文字に差し替えた（先読み不可なら
+全角スペースへフォールバックし、対策前と同じ挙動を維持）。
+
+- `ScriptEngine.ts` `peekNextDisplayChar()`：`peekUpcomingPicFn()`と同じ「`#idx`を変更しない
+  読み取り専用の前方走査」。`\n`/`\t`はスキップしてさらに次を見る、地の文（プレーンテキスト）
+  なら先頭1文字を返す、タグ・`&式&`・コメント・ラベル等に当たったら実行しないと値が定まらない
+  ため`undefined`を返す（呼び出し側がフォールバックする）。
+- `ScriptMng.ts` `#applyAction()`の`case 'stop':`：`backAlpha`/`chWait`と同じ「エンジンが持つ値を
+  停止点ごとにストアへ写す」場所で`this.$fncs.setNextChHint(this.#engine?.peekNextDisplayChar())`
+  を呼ぶ。
+- `store/store.tsx`：`nextChHint: string | undefined`＋`setNextChHint`を追加（`T_INIT_FNCS`にも
+  Pick）。
+- `TxtLayer.tsx`：`applyKinsoku()`に`sentinelCh`引数を追加し、呼び出し側で
+  `useStore.getState().nextChHint ?? ' '`を渡す。**`chWait`/`autowc`と同じ理由で
+  `useStore(s=> s.nextChHint)`のような購読はしない**（effectの依存配列に入れると、新規文字が
+  増えていないのに`nextChHint`だけ変わった瞬間にも禁則処理が走り直してしまうため。両者は同じ
+  `#applyAction()`呼び出し内で一緒に更新されるので、`aCh`の変化をトリガに`getState()`で読めば
+  取りこぼしはない）。
+
+回帰テスト：`test/ScriptEngine_peekNextDisplayChar.test.ts`（先読みルールの単体テスト）。
+実際に折り返し位置が変わることの再現は`test/Hyphenation.test.ts`の`scan()`テストを参照。
+
+コメント（`;`）は`\n`/`\t`と違って読み飛ばさず`undefined`へ倒す簡略化のまま
+（「マニアックな仕様まで目指さない」方針。コメント直後に実文字が続くレアケースは
+フォールバックで対策前と同じ挙動になるだけで、後退はしない）。
+
 ## `ch_in_style` / `ch_out_style`
 
 ### 出現（`ch_in_style`）
@@ -122,6 +168,27 @@ live DOM に残したまま** 各 `.sn_ch` に `go_ch_out_<name>` の CSS アニ
 実装機会も無い。[tag-notes.md](tag-notes.md) 参照）か、先頭に来るケース自体を折返し計算で避ける、
 といった対応が無い限りこれ以上は縮まらないため凍結継続（詳細はセッション 2026-08-10・
 2026-08-12・2026-08-18 の CHANGELOG.md 参照）。
+
+### 縦書きで複数文字ルビが列の先頭に来ると隙間が異常に広い（対応済み）
+
+2026-09-12、ユーザーから `tmp_blues/doc/prj/script/ss_000.sn:24`（実際には本家サンプルの同一行）
+の実機縦書き表示で「改行（列の区切り）ごとの間隔が広すぎる」との報告で調査・対応。
+
+**原因**：上の凍結セクションの計測（`<rt>` の高さぶん広がる）は横書きが前提だった。横書きの
+ルビ注釈は複数文字でも base 文字と同じ向き（左→右）に並ぶため `<rt>` の `offsetHeight`（物理縦幅）
+はルビの文字数によらずほぼ一定（1行ぶん）に収まる。ところが縦書き（`vertical-rl`）では `<rt>` も
+書字方向を継承し、ルビ文字が base 文字と同じく上→下に**積み上がる**——つまり `offsetHeight` は
+ルビの文字数に比例して増える値になる。`applyKinsoku()`（`TxtLayer.tsx:1014-1035`）は
+書字方向を無視して常に `rt.offsetHeight` を `marginBlockStart` に使っていたため、複数文字ルビ
+（`安全｜剃刀《かみそり》` のかみそり4文字等）が列の先頭に来ると、本来必要な「列間へのはみ出し幅」
+（block軸方向の厚み＝物理横幅）よりはるかに大きい値が余白として入っていた。
+
+**対応**：`tategaki`（縦書き判定。関数は元々引数で持っていた）で分岐し、縦書きなら
+`rt.offsetWidth`（物理横幅＝block軸方向の厚み）、横書きなら従来どおり `rt.offsetHeight` を使う。
+回帰テストは `test/e2e/app/prj_ruby/main.sn` 末尾に追加した縦書き専用シーン（`writing-mode:
+vertical-rl; height: 4em` の固定幅monospaceで `｜剃刀《かみそり》` が自然折返しで列頭に来る）と
+`test/e2e/ruby.e2e.ts`「縦書きで列の先頭に来た複数文字ルビの…」（`marginBlockStart` が
+`offsetWidth` に一致し `offsetHeight` とは明確に異なることを確認）。
 
 ## 縦書きで `〈`/`〉`（U+3008/3009）だけ90°回転しない（凍結）
 

@@ -256,6 +256,38 @@ test('行/列の先頭に来たルビ付き文字spanは<rt>の高さぶんmargi
 	expect(marginTop).toBeCloseTo(rtHeight, 0);
 });
 
+test('縦書きで列の先頭に来た複数文字ルビのmargin-block-startは<rt>のoffsetWidthぶん（offsetHeightではない）', async ({page})=> {
+	// 縦書き（writing-mode: vertical-rl）ではblock軸（=列の並ぶ方向）が水平になるため、
+	//	<rt>が隣の列へはみ出す量は物理縦幅のoffsetHeightでなく物理横幅のoffsetWidth。
+	//	offsetHeightのままだと複数文字ルビ（かみそり＝4文字）ぶん縦に積み上がった長さが
+	//	そのままmarginになり、列間が異常に広く空く不具合だった（2026-09-12、
+	//	ss_000.sn:24「安全｜剃刀《かみそり》」の実機表示で発覚）
+	await gotoSesame(page);
+	await pressKey(page, 'Space');	// r_alignのシーンへ
+	await pressKey(page, 'Space');	// linkのシーンへ
+	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await waitIdle(page);
+	await pressKey(page, 'Space');	// layer=/page=対応の確認ブロックへ
+	await pressKey(page, 'Space');	// margin-block-start確認ブロック（横書き）へ
+	await pressKey(page, 'Space');	// margin-block-start確認ブロック（縦書き）へ
+
+	expect(await mesStr(page)).toBe('あいうえ剃刀お');
+	const {marginBlockStart, rtOffsetWidth, rtOffsetHeight} = await page.$eval(
+		`${SEL_FORE} span[data-lay="mes"] ruby`,
+		el=> {
+			const parent = el.parentElement!;
+			const rt = el.querySelector('rt')!;
+			return {
+				marginBlockStart: parseFloat(getComputedStyle(parent).marginBlockStart),
+				rtOffsetWidth: rt.offsetWidth,
+				rtOffsetHeight: rt.offsetHeight,
+			};
+		},
+	);
+	expect(rtOffsetHeight).toBeGreaterThan(rtOffsetWidth);	// このケースで両者に意味のある差があることの前提確認
+	expect(marginBlockStart).toBeCloseTo(rtOffsetWidth, 0);	// offsetWidthぶん（offsetHeightぶんではない）
+});
+
 test('プロジェクト同梱フォントが@font-faceとして登録される', async ({page})=> {
 	// path.jsonにあるフォントは全部、拡張子を除いたファイル名がそのままfont-family名になる
 	//	（本家 TxtLayer.ts:97。シナリオ側に読み込みタグは無い）。

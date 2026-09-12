@@ -805,6 +805,28 @@ export class ScriptEngine {
 		return aFn;
 	}
 
+	// 禁則処理の番兵用：現在位置（次の停止点の直後）から、実際に次へ表示される1文字を先読みする。
+	//	src/docs/text-rendering.md「[l]境界をまたぐ禁則ズレ」参照。TxtLayer.tsxのapplyKinsoku()は
+	//	行末の最後の表示単位に「次に何か置いたら溢れるか」を判定させるため固定の全角スペースを
+	//	番兵にしていたが、[l]直後に実際に続く文字が禁則対象記号だと判定が食い違いうる。
+	//	**実行を伴わない走査**（peekUpcomingPicFnと同じ方針）。\n/\tは表示に寄与しないため
+	//	読み飛ばし、地の文（プレーンテキスト）の先頭1文字が静的に確定できればそれを返す。
+	//	タグ・変数展開・コメント・ラベル等、実行しないと値が定まらないものに当たったら
+	//	諦めてundefinedを返す（呼び出し側は固定の全角スペースへフォールバックする。エスケープシーケンスの
+	//	1文字目だけ剥がす処理もstep()同様に必要だが、番兵はbest-effortでよいため簡略化し、
+	//	タグ開始と紛らわしい記号もundefinedへ倒す）
+	peekNextDisplayChar(): string | undefined {
+		for (let i = this.#idx; i < this.#script.len; ++i) {
+			const token = this.#script.aToken[i]!;
+			const uc = token.charCodeAt(0);
+			if (uc === 9 || uc === 10) continue;	// \t / \n はスキップしてさらに次を見る
+			// [ タグ / & 変数操作・表示 / ; コメント / *ラベル定義 は実行しないと文字が定まらない
+			if (uc === 91 || uc === 38 || uc === 59 || (uc === 42 && token.length > 1)) return undefined;
+			return token.charAt(0);	// 地の文（プレーンテキスト）の先頭1文字
+		}
+		return undefined;	// スクリプト終端
+	}
+
 	// [button]クリック時に呼ばれる：指定ラベルへ直接ジャンプする（読み進め＝Caretaker等には触れない。呼び出し側の責務）
 	jumpToLabel(label: string) {
 		const to = this.#script.label2idx(label, this.#idx, this.#isInMacro());

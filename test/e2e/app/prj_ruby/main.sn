@@ -67,4 +67,13 @@
 [er]
 [clear_lay layer=mes page=fore]
 [lay layer=mes style='width: 4em; padding: 0; margin: 0; font-family: monospace; font-size: 20px;']
-あいうえ字《じ》お[s]
+あいうえ字《じ》お[l]
+
+; 縦書き（writing-mode: vertical-rl）でも列の先頭に来た複数文字ルビのmargin-block-startは
+;	<rt>のoffsetWidth（列間へのはみ出し幅）ぶんであるべきで、offsetHeight（ルビ自体が縦に
+;	並ぶ長さ）を使うと複数文字ルビほど無意味に広い隙間になる不具合だった（2026-09-12発覚）。
+;	高さ固定・monospaceで自然折返しさせ、2列目の先頭に複数文字ルビ（｜剃刀《かみそり》）が来るようにする
+[er]
+[clear_lay layer=mes page=fore]
+[lay layer=mes style='writing-mode: vertical-rl; height: 4em; width: auto; padding: 0; margin: 0; font-family: monospace; font-size: 20px;']
+あいうえ｜剃刀《かみそり》お[s]

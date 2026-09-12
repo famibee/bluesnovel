@@ -2293,6 +2293,9 @@ export class ScriptMng {
 			// 設定画面で変わりうる「バック不透明度」をストアへ写す（本家 LayerMng.ts:205 の
 			//	val.defValTrg('sys:TextLayer.Back.Alpha', …) 相当。全文字レイヤの背景に掛かる）
 			this.$fncs.setBackAlpha(Number(this.#engine?.getVal('sys:TextLayer.Back.Alpha') ?? 1));
+			// 禁則処理の番兵用：次にこの停止点の続きから実際に表示される1文字（先読み不可ならundefined）。
+			//	TxtLayer.tsxのapplyKinsoku()がダミー空白の代わりに使う（src/docs/text-rendering.md参照）
+			this.$fncs.setNextChHint(this.#engine?.peekNextDisplayChar());
 			// [button]の文字フォント（本家 LayerMng.ts:209 の val.defValTrg('tmp:sn.button.fontFamily', …)）も同様に
 			this.$fncs.setBtnFont(String(this.#engine?.getVal('tmp:sn.button.fontFamily') ?? '') || DEF_BTN_FONT);
 			// 1文字あたりの待ち（本家 ScriptIterator.normalWait）。設定画面のsys:sn.tagCh.*と

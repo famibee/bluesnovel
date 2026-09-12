@@ -1555,6 +1555,12 @@ var Se = class r {
 		}
 		return e;
 	}
+	peekNextDisplayChar() {
+		for (let e = this.#x; e < this.#b.len; ++e) {
+			let t = this.#b.aToken[e], n = t.charCodeAt(0);
+			if (n !== 9 && n !== 10) return n === 91 || n === 38 || n === 59 || n === 42 && t.length > 1 ? void 0 : t.charAt(0);
+		}
+	}
 	jumpToLabel(e) {
 		let t = this.#b.label2idx(e, this.#x, this.#I());
 		if (t === void 0) throw `[button] ラベル【${e}】が見つかりません`;

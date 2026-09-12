@@ -120,6 +120,12 @@ type T_STATE = {
 	backAlpha	: number;
 	setBackAlpha: (v: number)=> void;
 
+	// 禁則処理の番兵用：次の停止点直後に実際に表示される1文字（静的に確定できない場合はundefined）。
+	//	変数と同じくエンジン(ScriptEngine.peekNextDisplayChar())が持つので、ScriptMngが停止点ごとに
+	//	ここへ写す（src/docs/text-rendering.md「[l]境界をまたぐ禁則ズレ」参照）
+	nextChHint	: string | undefined;
+	setNextChHint: (c: string | undefined)=> void;
+
 	// tmp:sn.button.fontFamily（[button]の文字フォント。本家 LayerMng.ts:209）。
 	//	backAlphaと同じくエンジンが変数を持つので、ScriptMngが停止点ごとにここへ写す
 	btnFont		: string;
@@ -311,7 +317,7 @@ export type T_ADDBTN = {
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'chgFx'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'>
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'chgFx'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'|'setNextChHint'>
 	// 文字送り演出（Web Animations API）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
 	//	演出完了まで遅らせるため（ScriptMng#scheduleResume）。isTypingはstateの値そのものだと
 	//	attachTsx時点のスナップショットで固まってしまうので、関数越しに読む
@@ -768,6 +774,8 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	setIsTyping	: b=> set(()=> ({isTyping: b})),
 	backAlpha	: 1,
 	setBackAlpha: v=> set(()=> ({backAlpha: v})),
+	nextChHint	: undefined,
+	setNextChHint: c=> set(()=> ({nextChHint: c})),
 
 	btnFont		: DEF_BTN_FONT,
 	setBtnFont	: v=> set(()=> ({btnFont: v})),
