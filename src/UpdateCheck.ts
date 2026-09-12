@@ -15,6 +15,10 @@ export type T_UpdateCheckDeps = {
 	fetchAb		: (url: string)=> Promise<{ok: boolean; ab: ArrayBuffer}>;
 	writeFile	: (path: string, data: NodeJS.ArrayBufferView)=> Promise<void>;
 	showMessageBox	: (o: T_MessageBoxOptions)=> Promise<{response: number}>;
+	existsSync	: (path: string)=> Promise<boolean>;
+	readFile	: (path: string)=> Promise<string>;
+	dec		: (ext: string, tx: string)=> Promise<string>;
+	userDataDir	: string;	// 末尾スラッシュ有り
 	downloadsDir	: string;	// 末尾スラッシュ無し
 	appVersion	: string;
 	platform	: string;
@@ -24,6 +28,11 @@ export type T_UpdateCheckDeps = {
 	isMac		: boolean;
 	debugLog	: boolean;
 };
+
+// userData直下のURL上書きファイル名（本家 SysApp.ts:25 FN_UPD_URL_OVERRIDE）
+const FN_UPD_URL_OVERRIDE = 'upd_url.json';
+
+type T_UpdUrlOverride = {url: string};
 
 // electron/rendererのMessageBoxOptionsは今回使うフィールドだけの最小型に絞る
 //	（web版ビルドへelectron型を持ち込まないため。app.ts側で実型と互換）
@@ -54,7 +63,8 @@ type T_UpdIdxJson = {
 //	実装のまま（未検証）で移植する。ダウンロード実行ファイル自体の署名検証はOS側（Gatekeeper／
 //	Windows SmartScreen）の領分という判断は本家から変えていない
 
-export async function updateCheck(url: string, deps: T_UpdateCheckDeps): Promise<void> {
+export async function updateCheck(urlArg: string, deps: T_UpdateCheckDeps): Promise<void> {
+	const url = await resolveUpdUrl(urlArg, deps);
 	const o = await deps.fetchText(url +'_index.json');
 	const mbo: T_MessageBoxOptions = {
 		title		: 'アプリ更新',
@@ -66,6 +76,27 @@ export async function updateCheck(url: string, deps: T_UpdateCheckDeps): Promise
 	};
 	if (o.ok) await idxjsFound(o.txt, url, mbo, deps);
 	else await idxjsNotFound(url, mbo, deps);
+}
+
+// userData直下に upd_url.json（暗号化可）があれば、シナリオ指定のurlより優先して使う
+//（本家 SysApp.ts:331 #resolveUpdUrl。配布済みアプリのパッチサーバーURLが恒久的に死んだ場合の
+// 唯一の変更手段。ファイル形式・配置場所は src/docs/TODO.md 参照）
+async function resolveUpdUrl(defaultUrl: string, deps: T_UpdateCheckDeps): Promise<string> {
+	const path = deps.userDataDir + FN_UPD_URL_OVERRIDE;
+	try {
+		if (! await deps.existsSync(path)) return defaultUrl;
+
+		const tx = await deps.readFile(path);
+		const {url} = <T_UpdUrlOverride>JSON.parse(await deps.dec('json', tx));
+		if (! url || ! url.endsWith('/')) throw `${FN_UPD_URL_OVERRIDE} の url が不正です（末尾/が必要）`;
+
+		if (deps.debugLog) console.info(`[update_check] ${FN_UPD_URL_OVERRIDE} でURLを上書きしました url=${url}`);
+		return url;
+	}
+	catch (e) {
+		console.error(`[update_check] ${FN_UPD_URL_OVERRIDE} 読込失敗、既定URLにフォールバック ${String(e)}`);
+		return defaultUrl;
+	}
 }
 
 async function idxjsFound(txt: string, url: string, mbo: T_MessageBoxOptions, deps: T_UpdateCheckDeps) {

@@ -27,6 +27,9 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 		fetchText	: fetchTextImpl	= async ()=> ({ok: false, txt: ''}),
 		fetchAb		: fetchAbImpl	= async ()=> ({ok: true, ab: new ArrayBuffer(4)}),
 		showMessageBox	: showMessageBoxImpl	= async ()=> ({response: 0}),
+		existsSync	: existsSyncImpl	= async ()=> false,	// 既定：upd_url.json 無し
+		readFile	: readFileImpl	= async ()=> '',
+		dec		: decImpl	= async (_ext, tx)=> tx,
 		...restOver
 	} = over;
 	return {
@@ -35,6 +38,10 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 		fetchAb		: async u=> {aFetchAb.push(u); return fetchAbImpl(u)},
 		writeFile	: async (path, data)=> {aWriteFile.push({path, len: data.byteLength})},
 		showMessageBox	: async o=> {aMbo.push(structuredClone(o)); return showMessageBoxImpl(o)},
+		existsSync	: existsSyncImpl,
+		readFile	: readFileImpl,
+		dec		: decImpl,
+		userDataDir	: '/userdata/',
 		downloadsDir	: '/downloads',
 		appVersion	: '1.0.0',
 		platform	: 'darwin',
@@ -155,6 +162,50 @@ it('.ymlも無くdebugLogがtrueならthrowする', async ()=> {
 		fetchText	: async ()=> ({ok: false, txt: ''}),
 	});
 	await expect(updateCheck('https://example.com/upd/', deps)).rejects.toBe('[update_check] .ymlが見つかりません');
+});
+
+it('upd_url.jsonがあればシナリオ指定のurlより優先して使う', async ()=> {
+	const deps = mkDeps({
+		fetchText	: async _u=> ({ok: true, txt: IDX_JSON_MATCH}),
+		existsSync	: async _p=> true,
+		readFile	: async _p=> JSON.stringify({url: 'https://override.example.com/upd/'}),
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aFetchText).toEqual(['https://override.example.com/upd/_index.json']);
+	expect(deps.aFetchAb).toEqual(['https://override.example.com/upd/darwin_arm64-CN=abc']);
+});
+
+it('upd_url.jsonのurlが末尾/無しなら不正として既定urlへフォールバックする', async ()=> {
+	const deps = mkDeps({
+		fetchText	: async _u=> ({ok: true, txt: IDX_JSON_MATCH}),
+		existsSync	: async _p=> true,
+		readFile	: async _p=> JSON.stringify({url: 'https://override.example.com/upd'}),
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aFetchText).toEqual(['https://example.com/upd/_index.json']);
+});
+
+it('upd_url.jsonが無ければ既定urlのまま進む', async ()=> {
+	const deps = mkDeps({
+		fetchText	: async _u=> ({ok: true, txt: IDX_JSON_MATCH}),
+		existsSync	: async _p=> false,
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aFetchText).toEqual(['https://example.com/upd/_index.json']);
+});
+
+it('upd_url.jsonの読込・復号に失敗しても既定urlへフォールバックする', async ()=> {
+	const deps = mkDeps({
+		fetchText	: async _u=> ({ok: true, txt: IDX_JSON_MATCH}),
+		existsSync	: async _p=> true,
+		readFile	: async _p=> {throw new Error('read error')},
+	});
+	await updateCheck('https://example.com/upd/', deps);	// throwしない
+
+	expect(deps.aFetchText).toEqual(['https://example.com/upd/_index.json']);
 });
 
 it('ダウンロード先のファイルが見つからなければ黙って諦める（機種不一致時）', async ()=> {

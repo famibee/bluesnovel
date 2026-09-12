@@ -26,6 +26,7 @@ import {decTransportField, type T_DATA4VARI, type T_DATA4VARI_TRANSPORT} from '.
 import {updateCheck} from './UpdateCheck';
 
 import {IpcEmitter, IpcListener, waitElectronBridge} from './IpcRenderer';
+import type {readFile} from 'fs-extra';
 
 
 export class SysApp extends SysBase {
@@ -107,6 +108,10 @@ export class SysApp extends SysBase {
 			fetchAb		: u=> this.#em.invoke('fetchAb', u),
 			writeFile	: (path, data)=> this.#em.invoke('writeFile', path, data),
 			showMessageBox	: o=> this.#em.invoke('showMessageBox', o),
+			existsSync	: path=> this.#em.invoke('existsSync', path),
+			readFile	: path=> this.#em.invoke('readFile', path, <Parameters<typeof readFile>[1]><unknown>'utf8'),
+			dec		: this.dec,
+			userDataDir	: this.$path_userdata,
 			downloadsDir	: this.#hInfo.downloads.replaceAll('\\', '/'),
 			appVersion	: this.#hInfo.getVersion,
 			platform	: this.#hInfo.platform,
