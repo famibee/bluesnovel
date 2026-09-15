@@ -695,6 +695,22 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.18.0](https://github.com/famibee/bluesnovel/compare/v0.17.0...v0.18.0) (2026-09-15)
+
+
+### Features
+
+* **snapshot:** b_color属性でCSS色名を受け付けるように ([c0be241](https://github.com/famibee/bluesnovel/commit/c0be241900a28e25fe8e252c69ab69be12dc53cc))
+
+
+### Bug Fixes
+
+* **CmnLib,ScriptEngine:** [lay b_color=]がCSS色名を受け付けない不具合を修正 ([aa76c21](https://github.com/famibee/bluesnovel/commit/aa76c21b66957188ad463f0716c92b40e2945186))
+* **ScriptMng:** 暗号化構成で[trans]と画像復号待ちが競合し真っ暗になる不具合を修正 ([aa76c21](https://github.com/famibee/bluesnovel/commit/aa76c21b66957188ad463f0716c92b40e2945186))
+* **Stage:** 全画面時、窓がステージより狭いと二重に縮小される不具合を修正 ([c0be241](https://github.com/famibee/bluesnovel/commit/c0be241900a28e25fe8e252c69ab69be12dc53cc))
+* **store:** [clear_lay]がボタンの位置(left/top)まで消してしまう不具合を修正 ([63f2cce](https://github.com/famibee/bluesnovel/commit/63f2cce1d9a895ef341755fede0173cd32496fe1))
+* **TxtLayer:** レイヤ自体のleft/topがボタンに伝わっていなかった不具合を修正 ([63f2cce](https://github.com/famibee/bluesnovel/commit/63f2cce1d9a895ef341755fede0173cd32496fe1))
+
 ## [0.17.0](https://github.com/famibee/bluesnovel/compare/v0.16.1...v0.17.0) (2026-09-15)
 
 
