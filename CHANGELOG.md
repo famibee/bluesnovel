@@ -4,18 +4,6 @@
 - brew upgrade && bun update && bun outdated
 
 
-## 後ほど
-- SKYNovel拡張機能( https://github.com/famibee/SKYNovel-vscode-extension )のLSP部分にmcpサーバー機能を追加したい。いずれはあなたに接続し、マクロ定義位置などわかるようにしたい
-- 「MCPサーバーをVSCode拡張そのものに埋め込む」よりも、VSCode拡張とMCPをメッセージでつなぐ（IPC / stdio / WebSocket）構成で保守しやすく
-
-- 【electron-vite を廃止し Vite + vite-plugin-electron 構成に移行するツール】
-- 【ARINovelプロジェクトをSKYNovelに移行するツール】
-とかを作らせるといいかも
-
-- Web（claude.ai/code）: ブラウザから Claude Code を使える環境
-- サブエージェント
-	- Claude Code には Explore・Plan・general-purpose といった組み込みのサブエージェントが用意されています。自分でカスタムサブエージェントを作ることも可能
-
 - [ ]
 
 - [x] **`blendmode` を CSS `<blend-mode>` 全種へ拡張**（2026-09-11）

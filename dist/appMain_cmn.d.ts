@@ -10,6 +10,7 @@ export type T_HINFO = {
     downloads: string;
     userData: string;
     getVersion: string;
+    homepage: string;
     env: {
         SKYNOVEL_DBG?: string;
         SKYNOVEL_PORT?: string;
@@ -22,7 +23,7 @@ export declare class appMain_cmn {
     protected readonly bw: BrowserWindow;
     readonly version: string;
     static init(ipc: T_ipc_appMain_cmn): void;
-    constructor(bw: BrowserWindow, version: string);
+    constructor(bw: BrowserWindow, version: string, homepage?: string);
     protected sendShutdown(): void;
     protected sendSaveWinInf(_arg: SAVE_WIN_INF): void;
     openDevTools: () => void;

@@ -494,6 +494,7 @@ export declare class ScriptEngine {
     get colNum(): number;
     get atEnd(): boolean;
     peekUpcomingPicFn(): string[];
+    peekNextDisplayChar(): string | undefined;
     jumpToLabel(label: string): void;
     callToLabel(label: string, freezeClearOnResume?: boolean): void;
     callToScript(scr: Script, label?: string, freezeClearOnResume?: boolean): void;

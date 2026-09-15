@@ -19,7 +19,7 @@ import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {RubySpliter} from '../sn/RubySpliter';
 import {Areas, type T_H_Areas} from '../sn/Areas';
-import {getDateStr, int, parseArgNum, uint} from '../sn/CmnLib';
+import {getDateStr, int, parseArgColor, parseArgNum, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
@@ -1352,7 +1352,7 @@ export class ScriptEngine {
 		if (args.blendmode !== undefined) sty.blendmode = argBlendmode(args.blendmode);
 		if (! isPlg) {
 			// back_clear指定時はb_colorも本家同様に無視する（#drawBack()の同じ早期returnに含まれる）
-			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = ScriptEngine.#argNum('lay', 'b_color', args.b_color);
+			if (args.b_color !== undefined && args.back_clear !== 'true') sty.b_color = parseArgColor(args.b_color, '[lay] b_color');
 			if (args.style !== undefined) sty.style = args.style;
 			// 文字表示領域の内側余白（本家 TxtStage.ts の pl/pr/pt/pb）
 			if (args.pl !== undefined) sty.pl = ScriptEngine.#argNum('lay', 'pl', args.pl);

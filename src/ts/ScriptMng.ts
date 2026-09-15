@@ -1767,6 +1767,16 @@ export class ScriptMng {
 	// [add_fx tex=]（crypto:true時の復号待ち）が追い越されたとき、古い方でstoreを
 	//	上書きしないための世代カウンタ（#picReqSeqと同じ流儀。key: `${aLayNm}:${page}:${name}`）
 	readonly #fxReqSeq = new Map<string, number>();
+	// chgPic/chgBPic/chgFxはpage（'fore'|'back'という論理名）をstore側のpickPage()がその場のforeIdxで
+	//	都度解決する。crypto:true構成の復号待ち（Promise.then）の間に[trans]が挟まりforeIdxが反転すると、
+	//	開始時点で意図した物理面と逆へ書き込んでしまう（例：裏面へ仕込んだはずの画像が、反転後は新しい表面
+	//	＝画面に見えない側に書かれ、見えている新しい表面には反映されないまま＝真っ暗になる）。
+	//	#pageIdx()で開始時点の物理面（wantIdx）を固定し、.then()側は完了時点のforeIdxからその物理面に
+	//	対応する論理名を引き直すことで、間に挟まった[trans]の有無によらず狙った面へ書き込めるようにする
+	#fixPage(page: T_PAGE): ()=> T_PAGE {
+		const wantIdx = this.#pageIdx(page);
+		return ()=> wantIdx === this.$fncs.getForeIdx() ? 'fore' : 'back';
+	}
 	// tex=→実URL解決（#searchPic）＋#decryptPic()での復号を1本化。呼び出し元（case 'addFx'の
 	//	crypto分岐と#refreshCryptoAssets()）はどちらもcrypto:true確定後にしか呼ばないので、
 	//	ここでは常に復号する（#decryptPic自身もcrypto:false時は素通しなので二重の分岐は不要）
@@ -1850,6 +1860,7 @@ export class ScriptMng {
 			this.#picReqSeq.set(key, seq);
 			this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: '', isSheet, isMovie,
 				...(aFace && {aFace: aFace.map(f=> ({...f, src: ''}))})});
+			const resolvePage = this.#fixPage(act.page);
 			const takePreloaded = (u: string)=> {
 				const p = this.#picPreloadCache.get(u);
 				if (p) this.#picPreloadCache.delete(u);	// 使い終わったら捨てる（無制限に溜めない）
@@ -1858,7 +1869,7 @@ export class ScriptMng {
 			void Promise.all([takePreloaded(src), ...(aFace?.map(f=> takePreloaded(f.src)) ?? [])])
 			.then(([dSrc, ...aFaceSrc])=> {
 				if (this.#picReqSeq.get(key) !== seq) return;	// 追い越された
-				this.$fncs.chgPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc, isSheet, isMovie,
+				this.$fncs.chgPic({nm: act.nm, page: resolvePage(), fn: act.fn, src: dSrc, isSheet, isMovie,
 					...(aFace && {aFace: aFace.map((f, i)=> ({...f, src: aFaceSrc[i] ?? ''}))})});
 			});
 			break;
@@ -1888,9 +1899,10 @@ export class ScriptMng {
 			const seq = (this.#bPicReqSeq.get(key) ?? 0) + 1;
 			this.#bPicReqSeq.set(key, seq);
 			this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src: ''});
+			const resolveBPage = this.#fixPage(act.page);
 			void this.#decryptPic(src).then(dSrc=> {
 				if (this.#bPicReqSeq.get(key) !== seq) return;	// 追い越された
-				this.$fncs.chgBPic({nm: act.nm, page: act.page, fn: act.fn, src: dSrc});
+				this.$fncs.chgBPic({nm: act.nm, page: resolveBPage(), fn: act.fn, src: dSrc});
 			});
 			break;
 		}
@@ -2007,9 +2019,11 @@ export class ScriptMng {
 			const key = `${act.aLayNm?.join(',') ?? ''}:${act.page}:${act.fx.name}`;
 			const seq = (this.#fxReqSeq.get(key) ?? 0) + 1;
 			this.#fxReqSeq.set(key, seq);
+			// 'both'は表裏両方へ書くため[trans]のforeIdx反転による影響を受けない（#fixPage対象外）
+			const resolveFxPage: ()=> T_PAGE_BOTH = act.page === 'both' ?(()=> 'both') :this.#fixPage(act.page);
 			void this.#resolveFxTex(act.fx.tex).then(texSrc=> {
 				if (this.#fxReqSeq.get(key) !== seq) return;	// 追い越された
-				this.$fncs.chgFx({aLayNm: act.aLayNm, page: act.page, mode: 'add', fx: {...act.fx, texSrc}});
+				this.$fncs.chgFx({aLayNm: act.aLayNm, page: resolveFxPage(), mode: 'add', fx: {...act.fx, texSrc}});
 			}).catch((e: unknown)=> this.myTrace(`[add_fx] tex= の解決に失敗しました fn:${act.fx.tex} ${String(e)}`, 'E'));
 			this.#addFxTimer(act);
 			break;

@@ -69,6 +69,8 @@ type T_STATE = {
     setWait: (w: T_WAIT) => void;
     backAlpha: number;
     setBackAlpha: (v: number) => void;
+    nextChHint: string | undefined;
+    setNextChHint: (c: string | undefined) => void;
     btnFont: string;
     setBtnFont: (v: string) => void;
 };
@@ -227,7 +229,7 @@ export type T_ADDBTN = {
     sty?: T_BTN_STY;
 };
 export declare const DEF_BTN_FONT = "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '\u6E38\u30B4\u30B7\u30C3\u30AF Medium', meiryo, sans-serif";
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'chgBackClear' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getForeIdx' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'chgFx' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake' | 'setReadBack' | 'setStyPaging'> & {
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer' | 'chgPic' | 'chgBAlpha' | 'chgBPic' | 'chgBackClear' | 'setBackAlpha' | 'setBtnFont' | 'chgStr' | 'chgLay' | 'defChStyle' | 'setChWait' | 'setAutowc' | 'getLaySty' | 'getForeIdx' | 'getPages' | 'getPagesJson' | 'replace' | 'clearLay' | 'clearTxtLay' | 'moveLay' | 'chgFilter' | 'chgFx' | 'enableEvent' | 'addBtn' | 'addTitle' | 'toggleFullScr' | 'setWait' | 'requestSkip' | 'setSkipping' | 'startTrans' | 'finishTrans' | 'startQuake' | 'finishQuake' | 'setReadBack' | 'setStyPaging' | 'setNextChHint'> & {
     isTyping: () => boolean;
 }>;
 export declare const useStore: import("zustand").UseBoundStore<import("zustand").StoreApi<T_STATE>>;

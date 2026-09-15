@@ -109,6 +109,24 @@ it('lay_bColorAcceptsHex', ()=> {
 	expect(styOf('[lay layer=mes b_color=0xFF8000]')).toEqual({b_color: 0xFF8000});
 });
 
+it('lay_bColorAcceptsColorName', ()=> {
+	// CSS色名でも書ける（本家 parseColor() 互換。CmnLib.ts parseArgColor参照）
+	expect(styOf('[lay layer=mes b_color=black]')).toEqual({b_color: 0x000000});
+	expect(styOf('[lay layer=mes b_color=white]')).toEqual({b_color: 0xFFFFFF});
+	expect(styOf('[lay layer=mes b_color=CornflowerBlue]')).toEqual({b_color: 0x6495ED});
+});
+
+it('lay_bColorAcceptsSharpHex', ()=> {
+	// #RRGGBB形式（CSSそのまま）でも書ける。#はSKYNovel記法上のクォート文字でもあるため
+	//	クォートで囲む必要がある（AnalyzeTagArg.ts #REG_TAGARG参照）
+	expect(styOf('[lay layer=mes b_color="#ff8000"]')).toEqual({b_color: 0xFF8000});
+});
+
+it('lay_bColor_invalid', ()=> {
+	expect(()=> styOf('[lay layer=mes b_color=no_such_color]'))
+		.toThrow('[lay] b_colorの値が不正です：no_such_color');
+});
+
 it('lay_style', ()=> {
 	expect(styOf(`[lay layer=mes style="color: red; font-size: 20px;"]`))
 		.toEqual({style: 'color: red; font-size: 20px;'});

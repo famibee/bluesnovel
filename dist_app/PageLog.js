@@ -1,4 +1,4 @@
-import { c as e, s as t } from "./CmnLib.js";
+import { c as e, l as t } from "./CmnLib.js";
 //#region src/ts/Blendmode.ts
 var n = {
 	normal: "normal",
@@ -27,9 +27,9 @@ function r(e) {
 }
 //#endregion
 //#region src/ts/Filter.ts
-function i(e, n, r) {
-	let i = e[n];
-	return i === void 0 ? r : t(i, `[add_filter] ${n}`);
+function i(t, n, r) {
+	let i = t[n];
+	return i === void 0 ? r : e(i, `[add_filter] ${n}`);
 }
 var a = (e) => [
 	(e >> 16 & 255) / 255,
@@ -417,10 +417,10 @@ var f = ([e, t]) => `${String(e)} ${String(t)}`;
 function p([e, t]) {
 	return `sn_nz_${String(e)}_${String(t)}`;
 }
-function m(t) {
-	let { filter: n = "" } = t, a = t.blendmode === void 0 ? void 0 : r(t.blendmode), u = (t.enable_filter ?? "true") !== "false";
-	if (n === "blur" && (t.blur_x !== void 0 || t.blur_y !== void 0)) {
-		let n = [e(i(t, "blur_x", 2)), e(i(t, "blur_y", 2))];
+function m(e) {
+	let { filter: n = "" } = e, a = e.blendmode === void 0 ? void 0 : r(e.blendmode), u = (e.enable_filter ?? "true") !== "false";
+	if (n === "blur" && (e.blur_x !== void 0 || e.blur_y !== void 0)) {
+		let n = [t(i(e, "blur_x", 2)), t(i(e, "blur_y", 2))];
 		return {
 			css: `url(#${d(n)})`,
 			enabled: u,
@@ -429,28 +429,28 @@ function m(t) {
 		};
 	}
 	if (n === "noise") {
-		let e = [i(t, "noise", .5), "seed" in t ? Math.trunc(i(t, "seed", 0)) : 0];
+		let t = [i(e, "noise", .5), "seed" in e ? Math.trunc(i(e, "seed", 0)) : 0];
 		return {
-			css: `url(#${p(e)})`,
+			css: `url(#${p(t)})`,
 			enabled: u,
-			noise: e,
+			noise: t,
 			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
 	let f = c[n];
 	if (f) {
-		let e = f(t);
+		let t = f(e);
 		return {
-			css: `url(#${l(e)})`,
+			css: `url(#${l(t)})`,
 			enabled: u,
-			mat: e,
+			mat: t,
 			...a === void 0 ? {} : { blendmode: a }
 		};
 	}
 	let m = o[n];
 	if (!m) throw s.includes(n) ? `filter【${n}】はbluesnovelでは未対応です（CSSのfilterにもSVGのfeColorMatrixにも相当が無いため）` : "filter が異常です";
 	return {
-		css: m(t),
+		css: m(e),
 		enabled: u,
 		...a === void 0 ? {} : { blendmode: a }
 	};

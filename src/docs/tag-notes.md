@@ -2,6 +2,17 @@
 
 対応コードが無い（または本家自体が未接続の）ものだけをここに置く。
 
+## `[snapshot b_color=]` のCSS色名（保留）
+
+`[lay b_color=]`は2026-09-15、`getStK`/画像`.bin`化/`[trans]`競合による暗号化構成の不具合調査
+（sn_kowloon実機）の副産物として、本家 `argChk_Color`（Canvasの`fillStyle`トリックで色名を解決）
+相当の `CmnLib.parseArgColor()`（静的テーブル方式、DOM非依存）で色名対応済み（`black`等）。
+
+`[snapshot b_color=]`は対象外のまま。理由は値の意味が別物なこと：`[lay b_color=]`は
+`0xRRGGBB`だが`[snapshot b_color=]`は**アルファ付き `0xAARRGGBB`**（`Snapshot.ts:65`
+コメント参照）で、色名（アルファ情報を持たない）では表現できない。対応するなら
+`色名|アルファ`のような別記法を新設するか、アルファは別属性に分離するかの設計判断が要る。
+
 ## `[link]` / `[button]` の `onenter` / `onleave`（実装済み 2026-08-31）
 
 本家（`EventMng.ts:427-442`）は `pointerover`/`pointerout` で「キー＝`key+ラベル名`」の予約イベントを

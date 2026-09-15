@@ -3183,7 +3183,7 @@ var qa = class f {
 		this.sys = e, this.#m = new ue(e, ""), this.#T = new ae((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#st(e), this.#t.log = (e) => this.#lt(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#ct(e), this.#t.log = (e) => this.#ut(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	destroy() {
 		this.#C = !0, this.cancelAuto(), clearTimeout(this.#U), clearTimeout(this.#Y), clearTimeout(this.#ee), this.#ve(() => !0);
@@ -3343,7 +3343,7 @@ var qa = class f {
 	}
 	#y;
 	async #b(e) {
-		return this.#n[e] ??= new x(e, await this.#ot(e), this.#S());
+		return this.#n[e] ??= new x(e, await this.#st(e), this.#S());
 	}
 	#x;
 	#S() {
@@ -3471,7 +3471,7 @@ var qa = class f {
 	#I;
 	#L(e) {
 		if (e) {
-			this.#I = e, this.#ht(!0);
+			this.#I = e, this.#gt(!0);
 			return;
 		}
 		setTimeout(() => this.#N(), 0);
@@ -3905,7 +3905,7 @@ var qa = class f {
 				++this.#Ie;
 				return;
 			}
-			this.#Fe = !0, this.#ht(!1), this.#l ??= {
+			this.#Fe = !0, this.#gt(!1), this.#l ??= {
 				...e.nowScrIdx(),
 				mark: this.#v(),
 				clearOnResume: e.clearOnResume
@@ -3920,7 +3920,7 @@ var qa = class f {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#at(e);
+					for (let e of t) this.#ot(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#J(n.canskip);
@@ -3987,7 +3987,7 @@ var qa = class f {
 						return;
 					}
 					if (n?.t !== "loadScript") {
-						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#it();
+						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#at();
 						return;
 					}
 					try {
@@ -4087,7 +4087,7 @@ var qa = class f {
 			})());
 			for (let t of e.aFx ?? []) {
 				let r = t.tex;
-				r && n.push(this.#nt(r).then((n) => this.$fncs.chgFx({
+				r && n.push(this.#rt(r).then((n) => this.$fncs.chgFx({
 					aLayNm: [e.nm],
 					page: o,
 					mode: "add",
@@ -4180,10 +4180,14 @@ var qa = class f {
 	#et = /* @__PURE__ */ new Map();
 	#tt = /* @__PURE__ */ new Map();
 	#nt(e) {
+		let t = this.#D(e);
+		return () => t === this.$fncs.getForeIdx() ? "fore" : "back";
+	}
+	#rt(e) {
 		return this.#Qe(this.#Xe("add_fx", e));
 	}
-	#rt = /* @__PURE__ */ new Map();
-	#it() {
+	#it = /* @__PURE__ */ new Map();
+	#at() {
 		let e = this.#r;
 		if (e) for (let t of new Set(e.peekUpcomingPicFn())) {
 			let e;
@@ -4196,10 +4200,10 @@ var qa = class f {
 				new Image().src = e;
 				continue;
 			}
-			this.#rt.has(e) || this.#rt.set(e, this.#Qe(e));
+			this.#it.has(e) || this.#it.set(e, this.#Qe(e));
 		}
 	}
-	#at(e) {
+	#ot(e) {
 		switch (e.t) {
 			case "addLay":
 				switch (e.cls) {
@@ -4267,21 +4271,21 @@ var qa = class f {
 						src: ""
 					})) }
 				});
-				let s = (e) => {
-					let t = this.#rt.get(e);
-					return t && this.#rt.delete(e), t ?? this.#Qe(e);
+				let s = this.#nt(e.page), c = (e) => {
+					let t = this.#it.get(e);
+					return t && this.#it.delete(e), t ?? this.#Qe(e);
 				};
-				Promise.all([s(t), ...i?.map((e) => s(e.src)) ?? []]).then(([t, ...s]) => {
+				Promise.all([c(t), ...i?.map((e) => c(e.src)) ?? []]).then(([t, ...c]) => {
 					this.#$e.get(a) === o && this.$fncs.chgPic({
 						nm: e.nm,
-						page: e.page,
+						page: s(),
 						fn: e.fn,
 						src: t,
 						isSheet: n,
 						isMovie: r,
 						...i && { aFace: i.map((e, t) => ({
 							...e,
-							src: s[t] ?? ""
+							src: c[t] ?? ""
 						})) }
 					});
 				});
@@ -4321,10 +4325,12 @@ var qa = class f {
 					page: e.page,
 					fn: e.fn,
 					src: ""
-				}), this.#Qe(t).then((t) => {
+				});
+				let i = this.#nt(e.page);
+				this.#Qe(t).then((t) => {
 					this.#et.get(n) === r && this.$fncs.chgBPic({
 						nm: e.nm,
-						page: e.page,
+						page: i(),
 						fn: e.fn,
 						src: t
 					});
@@ -4459,14 +4465,16 @@ var qa = class f {
 					break;
 				}
 				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#tt.get(t) ?? 0) + 1;
-				this.#tt.set(t, n), this.#nt(e.fx.tex).then((r) => {
+				this.#tt.set(t, n);
+				let r = e.page === "both" ? (() => "both") : this.#nt(e.page);
+				this.#rt(e.fx.tex).then((i) => {
 					this.#tt.get(t) === n && this.$fncs.chgFx({
 						aLayNm: e.aLayNm,
-						page: e.page,
+						page: r(),
 						mode: "add",
 						fx: {
 							...e.fx,
-							texSrc: r
+							texSrc: i
 						}
 					});
 				}).catch((t) => this.myTrace(`[add_fx] tex= の解決に失敗しました fn:${e.fx.tex} ${String(t)}`, "E")), this.#me(e);
@@ -4657,13 +4665,13 @@ var qa = class f {
 			case "pageTo":
 			case "pageToPlace": break;
 			case "trace":
-				this.#st({ text: e.text });
+				this.#ct({ text: e.text });
 				break;
 			case "log":
-				this.#lt({ text: e.text }, e.fn, e.lineNum);
+				this.#ut({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "dumpScript":
-				this.#mt(e.setFnc, e.breakFnc, e.needErr);
+				this.#ht(e.setFnc, e.breakFnc, e.needErr);
 				break;
 			case "loadScript": break;
 			case "stop": {
@@ -4678,12 +4686,12 @@ var qa = class f {
 						...e.noMark ? { noMark: !0 } : {}
 					});
 				}
-				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setNextChHint(this.#r?.peekNextDisplayChar()), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || s), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#ht(!0);
+				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setNextChHint(this.#r?.peekNextDisplayChar()), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || s), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#gt(!0);
 				break;
 			}
 		}
 	}
-	async #ot(e) {
+	async #st(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, u.SCRIPT), n = "";
 			try {
@@ -4704,37 +4712,37 @@ var qa = class f {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#st(e) {
+	#ct(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#ct = !0;
-	#lt(n, r, i) {
+	#lt = !0;
+	#ut(n, r, i) {
 		let a = "";
-		return this.#ct && (this.#ct = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
+		return this.#lt && (this.#lt = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
 	}
-	#ut;
 	#dt;
-	#ft = "";
-	#pt = Object.create(null);
-	#mt(e, t, n) {
+	#ft;
+	#pt = "";
+	#mt = Object.create(null);
+	#ht(e, t, n) {
 		let r = globalThis, i = r[e];
 		if (typeof i != "function") {
 			n && this.myTrace(`[dump_script] globalThis に関数 ${e} が見つかりません`, "ET");
 			return;
 		}
-		if (this.#ut = i, t) {
+		if (this.#dt = i, t) {
 			let e = r[t];
-			typeof e == "function" ? this.#dt = e : n && this.myTrace(`[dump_script] globalThis に関数 ${t} が見つかりません`, "ET");
+			typeof e == "function" ? this.#ft = e : n && this.myTrace(`[dump_script] globalThis に関数 ${t} が見つかりません`, "ET");
 		}
-		this.#ht(!0);
+		this.#gt(!0);
 	}
-	#ht(e) {
+	#gt(e) {
 		let t = this.#r;
-		if (!this.#ut || !t) return;
+		if (!this.#dt || !t) return;
 		let n = t.lineNum;
 		if (!Number.isFinite(n)) return;
 		let r = t.fn;
-		r !== this.#ft && (this.#ft = r, this.#ut(this.#pt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#dt?.(n, t.colNum, e);
+		r !== this.#pt && (this.#pt = r, this.#dt(this.#mt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#ft?.(n, t.colNum, e);
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";

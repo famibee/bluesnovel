@@ -11,12 +11,19 @@ export type T_UpdateCheckDeps = {
     showMessageBox: (o: T_MessageBoxOptions) => Promise<{
         response: number;
     }>;
+    existsSync: (path: string) => Promise<boolean>;
+    readFile: (path: string) => Promise<string>;
+    dec: (ext: string, tx: string) => Promise<string>;
+    userDataDir: string;
     downloadsDir: string;
     appVersion: string;
     platform: string;
     arch: string;
     iconPath: string;
     bookTitle: string;
+    homepage: string;
+    pubUrl: string;
+    navigateTo: (url: string) => void;
     isMac: boolean;
     debugLog: boolean;
 };
@@ -29,4 +36,4 @@ export type T_MessageBoxOptions = {
     message: string;
     detail?: string;
 };
-export declare function updateCheck(url: string, deps: T_UpdateCheckDeps): Promise<void>;
+export declare function updateCheck(urlArg: string, deps: T_UpdateCheckDeps): Promise<void>;
