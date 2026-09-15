@@ -300,7 +300,7 @@ var j = x()((e, t) => ({
 	})),
 	clearLay: ({ aLayNm: t, page: n }) => e((e) => {
 		let i = (e) => {
-			for (let t of c) t !== "visible" && delete e[t];
+			for (let t of c) t !== "visible" && t !== "left" && t !== "top" && t !== "align_x" && t !== "align_y" && t !== "s_right" && t !== "s_bottom" && delete e[t];
 			a(e) ? (e.fn = "", e.src = "", e.aFace = []) : r(e) && (e.str = "", e.aCh = [], e.clrGen = (e.clrGen ?? 0) + 1, e.aBtn = [], delete e.b_color, delete e.style, delete e.ffs, delete e.noffs, delete e.r_align, delete e.b_pic, delete e.b_src, delete e.b_alpha_isfixed, e.b_alpha = 1, delete e.pl, delete e.pr, delete e.pt, delete e.pb);
 		};
 		return E(e, n, (e) => D(e, t, i));

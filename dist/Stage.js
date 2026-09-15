@@ -10759,7 +10759,8 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 	}, et = Fu`
 		display: flex;
 		flex-wrap: wrap;
-		top: 70%;
+		${n.top !== void 0 && n.top !== "auto" ? `top: calc(70% + ${String(n.top)});` : "top: 70%;"}
+		${n.left !== void 0 && n.left !== "auto" ? `left: ${String(n.left)};` : ""}
 		isolation: isolate;
 		${B ? "" : "pointer-events: none;"}
 	`, { display: tt, opacity: nt, mixBlendMode: rt, filter: it } = n, at = {
@@ -10767,10 +10768,15 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		...nt === void 0 ? {} : { opacity: nt },
 		...rt === void 0 ? {} : { mixBlendMode: rt },
 		...it === void 0 ? {} : { filter: it }
-	}, ot = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, st = ee.filter((e) => !ot(e)), ct = ee.filter(ot), lt = Fu`
+	}, { left: ot, top: st, translate: ct } = n, lt = {
+		...at,
+		...ot === void 0 ? {} : { left: ot },
+		...st === void 0 ? {} : { top: st },
+		...ct === void 0 ? {} : { translate: ct }
+	}, ut = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, dt = ee.filter((e) => !ut(e)), ft = ee.filter(ut), pt = Fu`
 		isolation: isolate;
 		${B ? "" : "pointer-events: none;"}
-	`, { r: ut, g: dt, b: ft } = Ju(O), pt = D((e) => e.backAlpha), mt = k * (A ? 1 : pt), ht = Fu`
+	`, { r: mt, g: ht, b: gt } = Ju(O), _t = D((e) => e.backAlpha), vt = k * (A ? 1 : _t), yt = Fu`
 		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
 			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
 			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
@@ -10802,7 +10808,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${mt === 0 || O === void 0 || j ? "transparent" : `rgba(${ut}, ${dt}, ${ft}, ${mt})`};
+		background-color: ${vt === 0 || O === void 0 || j ? "transparent" : `rgba(${mt}, ${ht}, ${gt}, ${vt})`};
 		border: none;
 		${j ? `
 		&::before {
@@ -10812,7 +10818,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			background-image: url(${JSON.stringify(j)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${mt};
+			opacity: ${vt};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10870,7 +10876,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
 		${oe ? se : ""}
-	`, gt = Fu`
+	`, bt = Fu`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10925,14 +10931,14 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [_t, vt] = (0, W.useState)("");
-	(0, W.useEffect)(() => vt(s), [s]);
-	let yt = (0, W.useRef)(null), bt = (e, t) => {
+	`, [xt, St] = (0, W.useState)("");
+	(0, W.useEffect)(() => St(s), [s]);
+	let Ct = (0, W.useRef)(null), wt = (e, t) => {
 		_(), e.transform = t;
 	};
 	return /* @__PURE__ */ M(I, { children: [
 		/* @__PURE__ */ M("span", {
-			css: [e, ht],
+			css: [e, yt],
 			ref: be,
 			"data-lay": r,
 			style: ye,
@@ -10980,11 +10986,11 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				})
 			]
 		}),
-		st.length > 0 && /* @__PURE__ */ z("span", {
+		dt.length > 0 && /* @__PURE__ */ z("span", {
 			css: [e, et],
 			"data-lay": r,
 			style: at,
-			children: st.map((e) => /* @__PURE__ */ z(zu, {
+			children: dt.map((e) => /* @__PURE__ */ z(zu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -10999,11 +11005,11 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				onHoverCall: ae
 			}, e.nm))
 		}),
-		ct.length > 0 && /* @__PURE__ */ z("span", {
-			css: [e, lt],
+		ft.length > 0 && /* @__PURE__ */ z("span", {
+			css: [e, pt],
 			"data-lay": r,
-			style: at,
-			children: ct.map((e) => /* @__PURE__ */ z(zu, {
+			style: lt,
+			children: ft.map((e) => /* @__PURE__ */ z(zu, {
 				text: e.text,
 				label: e.label,
 				call: e.call ?? !1,
@@ -11022,37 +11028,37 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			target: be,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => bt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => wt(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				bt(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				wt(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => bt(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => wt(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				bt(e, n), e.transformOrigin = t;
+				wt(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ M("label", {
-			css: gt,
-			ref: yt,
+			css: bt,
+			ref: Ct,
 			children: ["テキスト入力", /* @__PURE__ */ z("textarea", {
 				rows: 3,
-				value: _t,
-				onChange: (e) => vt(e.target.value)
+				value: xt,
+				onChange: (e) => St(e.target.value)
 			})]
 		}), /* @__PURE__ */ z(pu, {
-			target: yt,
+			target: Ct,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => bt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => wt(e, t),
 			preventDefault: !1
 		})] })
 	] });

@@ -131,10 +131,13 @@ test('[add_filter]が重なってCSSのfilterになり、[enable_filter]で個�
 test('[clear_lay]は見た目を初期値へ戻し中身も捨てるが、visibleは触らない', async ({page})=> {
 	for (let i = 0; i < 10; ++i) await pressKey(page, 'Space');	// [clear_lay]まで進める
 
-	// 見た目の指定が全て「未指定」へ戻る（＝TxtLayerのCSS既定に従う状態）
+	// 見た目の指定が「未指定」へ戻る（＝TxtLayerのCSS既定に従う状態）。
+	//	**位置（left/top）だけは例外**：本家 Layer.clearLay()（Layer.ts:292）は
+	//	alpha・blendMode・pivot・rotation・scaleしか戻さず、ctn.x/yには最初から
+	//	触れない（[clear_lay]は位置を変えない仕様）。直前の[lay left=40 top=50]がそのまま残る
 	const lay = (await snap(page)).aLay.find(l=> l.nm === 'mes');
-	expect(lay?.left).toBeUndefined();
-	expect(lay?.top).toBeUndefined();
+	expect(lay?.left).toBe(40);
+	expect(lay?.top).toBe(50);
 	expect(lay?.alpha).toBeUndefined();
 	expect(lay?.rotation).toBeUndefined();
 	expect(lay?.scale_x).toBeUndefined();

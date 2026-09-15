@@ -133,14 +133,16 @@ it('chgLay_leftWithAlignXOverwrites', ()=> {
 it('clearLay_allLayers', ()=> {
 	S().chgPic({nm: 'a', page: 'fore', fn: 'pa', src: '/pa.png', isSheet: false, isMovie: false, aFace: []});
 	S().chgPic({nm: 'c', page: 'fore', fn: 'pc', src: '/pc.png', isSheet: false, isMovie: false, aFace: []});
-	S().chgLay({nm: 'a', page: 'fore', sty: {left: 10, visible: false}});
+	S().chgLay({nm: 'a', page: 'fore', sty: {left: 10, alpha: 0.5, visible: false}});
 
 	S().clearLay({aLayNm: null, page: 'fore'});	// layer省略＝全レイヤ
 
 	const fore = useStore.getState().aPage[0];
 	expect(fore.map(e=> isGrpLay(e) ? e.fn : '')).toEqual(['', '', '']);
-	// 見た目は「未指定」へ戻すが、**visibleだけは触らない**（本家 Layer.clearLay()）
-	expect(fore[0]!.left).toBeUndefined();
+	// 見た目は「未指定」へ戻すが、**visibleと位置（left/top等）だけは触らない**
+	//	（本家 Layer.clearLay() は alpha・blendmode・pivot・rotation・scaleのみ戻し、x/yには触れない）
+	expect(fore[0]!.left).toBe(10);
+	expect(fore[0]!.alpha).toBeUndefined();
 	expect(fore[0]!.visible).toBe(false);
 });
 

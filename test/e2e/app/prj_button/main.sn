@@ -25,6 +25,11 @@
 [l]
 [lay layer=mes page=fore visible=true alpha=0.5]
 [l]
+; レイヤ自体のleft/topは、座標指定ありのボタン（原点に加算）・座標指定なしの流し込み配置
+;	（top:70%に上乗せ）の両方に効く（本家はボタンがレイヤのコンテナの子なので自動追従。
+;	分家はボタンの箱を本文spanの兄弟にしているため橋渡しが要る。2026-09-15）
+[lay layer=mes page=fore left=300 top=200]
+[l]
 ; ボタンの文字フォントは組み込み変数で差し替えられる（本家 LayerMng.ts:209。全ボタン共通）
 &sn.button.fontFamily = 'monospace'
 ＋そのまま進んだ。[s]

@@ -618,23 +618,30 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	前面へ動かしてもボタンだけは常に最前面に居座ってしまう（DOM順で並べたはずが
 	//	z-indexありの要素だけが順序を無視するため）。閉じ込めることで、ボタンを持つ層自体は
 	//	他のGrpLayer/TxtLayerと同じくDOM順（＝float等の並び替え）で前後関係が決まるようにする
+	// 流し込み配置（top:70%固定）も、レイヤ自体のleft/top（[lay layer=... left=/top=]）を
+	//	上乗せする。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、レイヤの位置が
+	//	動けば座標省略のボタンも自動で追従する（本家に「座標省略時は画面下へ自動整列」という
+	//	概念自体は無いが、レイヤが動けば動いた分だけボタンも動く、という点は座標指定の有無を
+	//	問わない）。top:70%はその上からのオフセット原点として扱い、calc()で合成する
+	//	（sty.topが'auto'＝s_bottom指定時はcalc対象外。上下寄せの意味が変わるため）
 	const styBtnBox = css`
 		display: flex;
 		flex-wrap: wrap;
-		top: 70%;
+		${sty.top !== undefined && sty.top !== 'auto' ? `top: calc(70% + ${String(sty.top)});` : 'top: 70%;'}
+		${sty.left !== undefined && sty.left !== 'auto' ? `left: ${String(sty.left)};` : ''}
 		isolation: isolate;
 		${enabled ? '' : 'pointer-events: none;'}
 	`;
 	// [button left=/top=]で座標指定されたボタンは**ステージ原点基準**の絶対配置にする
-	//	（本家 Button.ts はステージ左上からの絶対配置）。上の流し込み用の箱（top:70%）へ
+	//	（本家 Button.ts はステージ左上からの絶対配置）。上の流し込み用の箱（top:70%＋レイヤ位置）へ
 	//	入れると、その箱の位置を基準にleft/topが効いてしまい画面外へずれる（タイトル画面のボタンで露見）。
-	//	原点の箱（styChild＝top:0/left:0）へ分けて置けば、書いたleft/topがそのままステージ座標になる
+	//	原点の箱（styChild＝top:0/left:0）へ分けて置き、下のstyBtnPosCmnで改めてレイヤ位置を足す
 	// [lay]のうち**位置・変形以外**（visible→display / alpha→opacity / blendmode / filter）は
 	//	ボタンの箱にも効かせる。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、
 	//	コンテナへ掛けた分がそのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**に
 	//	している（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
-	//	その差をここで埋める。left/top/transform/transformOriginは持ち込まない
-	//	（ボタンはステージ原点基準に置くという上のとおり）。
+	//	その差をここで埋める。transform/transformOriginは持ち込まない（回転・拡縮はレイヤでなく
+	//	個々のボタンが[button rotation=/scale_x=/scale_y=]で持つ）。
 	//	これが無いと[sys_menu visible=false]でシステムボタンが消えない
 	const {display, opacity, mixBlendMode, filter} = sty;
 	const styBtnCmn: CSSProperties = {
@@ -642,6 +649,22 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		...opacity !== undefined ? {opacity} : {},
 		...mixBlendMode !== undefined ? {mixBlendMode} : {},
 		...filter !== undefined ? {filter} : {},
+	};
+	// [button left=/top=]で座標指定されたボタン（styBtnPosBox＝styChild基準）だけは、
+	//	レイヤ自体のleft/top/寄せ（[lay layer=... left=/top=/align_x=/align_y=]）を原点として
+	//	乗せる。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、コンテナのx/yが
+	//	そのままボタン座標の原点になる（[button top=0]でも、レイヤ自体がtop=40ならワールド座標は
+	//	y=40）。分家はボタンの箱を本文spanの兄弟にしているため、上のstyBtnCmn（visible等）だけでは
+	//	レイヤの位置がボタンまで届かず、レイヤ自体を動かすテンプレ（sn_kowloonの
+	//	[txt_lay_fullscreen top=40]等）でボタンだけステージ原点(0,0)基準のまま取り残され、
+	//	本家より上に詰まって表示される不具合になっていた（2026-09-15発覚）。
+	//	流し込み側（aBtnFlow・top:70%固定）には持ち込まない：topを上書きすると70%の意味が壊れる
+	const {left: layLeft, top: layTop, translate: layTranslate} = sty;
+	const styBtnPosCmn: CSSProperties = {
+		...styBtnCmn,
+		...layLeft !== undefined ? {left: layLeft} : {},
+		...layTop !== undefined ? {top: layTop} : {},
+		...layTranslate !== undefined ? {translate: layTranslate} : {},
 	};
 	const isPosBtn = (b: T_BTN)=> b.sty?.left !== undefined || b.sty?.top !== undefined;
 	const aBtnFlow = aBtn.filter(b=> ! isPosBtn(b));
@@ -870,7 +893,7 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
 			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
 		</span>}
-		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnCmn}>
+		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnPosCmn}>
 			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
 		</span>}
 		{isDesignMode && <Moveable target={boxRef}

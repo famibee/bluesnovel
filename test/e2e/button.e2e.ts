@@ -99,7 +99,7 @@ test('[button url=…]はジャンプせず別タブでURLを開く（[link url=
 });
 
 test('ボタンを押さずキーで進めた場合は、ボタンと無関係に次の停止点へ進む', async ({page})=> {
-	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// [l]3つを越えて[s]まで
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');	// [l]4つを越えて[s]まで
 
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect((await snap(page)).wait).toBeNull();
@@ -166,7 +166,7 @@ test('[button enabled=false]は灰色でクリックを受けない', async ({pa
 	// pointer-events: none なので、その位置のクリックはステージへ抜けて「読み進め」になる
 	await page.getByText('無効').click({force: true});
 	await waitIdle(page);
-	for (let i = 0; i < 2; ++i) await pressKey(page, 'Space');	// 残りの[l]を越えて[s]まで
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// 残りの[l]を越えて[s]まで
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 });
 
@@ -236,7 +236,7 @@ test('sn.button.fontFamilyで全ボタンの文字フォントを差し替えら
 	const font = ()=> page.getByText('ジャンプする').evaluate(el=> getComputedStyle(el).fontFamily);
 	expect(await font()).toContain('Hiragino Sans');	// 既定（本家 CmnInterface.ts:349 と同じスタック）
 
-	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect(await font()).toBe('monospace');
 });
@@ -258,4 +258,37 @@ test('[lay visible=false]はボタンも隠し、alphaも効く', async ({page})
 	await pressKey(page, 'Space');	// [lay visible=true alpha=0.5]
 	await expect(btn).toBeVisible();
 	expect(await btn.evaluate(el=> getComputedStyle(el.parentElement!).opacity)).toBe('0.5');
+});
+
+test('[lay layer=... left=/top=]は、座標指定あり/なし両方のボタンに追従する', async ({page})=> {
+	// 本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、レイヤの位置（x/y）が
+	//	動けば座標指定の有無を問わず自動で追従する。分家はボタンの箱を本文spanの兄弟にして
+	//	いるため橋渡しが要る：座標指定あり（[button left=/top=]）はレイヤのleft/topを原点に
+	//	加算、座標指定なし（流し込み配置のtop:70%）はレイヤのleft/topをcalc()で上乗せする。
+	//	sn_kowloonのタイトル画面で、[txt_lay_fullscreen top=40]によるレイヤ移動がボタンに
+	//	反映されず本家より上に詰まって見える不具合の回帰確認（2026-09-15）
+	for (let i = 0; i < 2; ++i) await pressKey(page, 'Space');	// visible=false→true=alpha0.5
+
+	// 窓寸法(prj.json 800x600)とステージ実寸の比からcvsScaleを逆算し、boundingBoxの
+	//	実測px（拡縮後）を論理px（シナリオで書いた値）へ戻す（resize.e2e.tsと同じ手法）
+	const scale = (await page.locator('#skynovel').boundingBox())!.width / 800;
+
+	const posBtn = page.getByRole('button', {name: '座標指定'});
+	const flowBtn = page.getByRole('button', {name: 'ジャンプする'});
+	const posBefore = await posBtn.boundingBox();
+	const flowBefore = await flowBtn.boundingBox();
+
+	await pressKey(page, 'Space');	// [lay layer=mes left=300 top=200]
+
+	// 座標指定あり：[button left=250 top=360]にレイヤのleft=300/top=200がそのまま加算される
+	const posAfter = await posBtn.boundingBox();
+	expect((posAfter!.x - posBefore!.x) / scale).toBeCloseTo(300, 0);
+	expect((posAfter!.y - posBefore!.y) / scale).toBeCloseTo(200, 0);
+
+	// 座標指定なし（流し込み配置）：top:70%の基準点自体がleft/top分だけ動く
+	const flowAfter = await flowBtn.boundingBox();
+	expect((flowAfter!.x - flowBefore!.x) / scale).toBeCloseTo(300, 0);
+	expect((flowAfter!.y - flowBefore!.y) / scale).toBeCloseTo(200, 0);
+
+	await pressKey(page, 'Space');
 });

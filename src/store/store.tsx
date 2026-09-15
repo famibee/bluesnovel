@@ -586,8 +586,18 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	clearLay: ({aLayNm, page}: T_CLEARLAY)=> set(s=> {
 		const clr1 = (e: T_LAY)=> {
 			// 見た目は「未指定」へ戻す（＝各レイヤのCSS既定に従う）。
-			//	**visibleだけは触らない**（本家 Layer.clearLay() のコメントそのまま）
-			for (const k of A_LAY_STY_KEY) if (k !== 'visible') delete e[k];
+			//	**visibleと位置（left/top・寄せ・s_right/s_bottom）には触らない**。本家
+			//	Layer.clearLay()（Layer.ts:292）は alpha・blendMode・pivot・angle・scale
+			//	（＋clear_filter時のfilters）しか戻さず、ctn.x/yには最初から触れていない。
+			//	以前はvisible以外のA_LAY_STY_KEY全部を消しており、位置系まで巻き込んで
+			//	消していた（sn_kowloon実機で発覚：[txt_lay_fullscreen]がtop=40で置いた
+			//	mesレイヤが、直後の[clear_lay layer=mes]でtop=undefinedへ戻り、ボタンが
+			//	本家よりずっと上に詰まって表示される不具合になっていた。2026-09-15）
+			for (const k of A_LAY_STY_KEY) {
+				if (k === 'visible' || k === 'left' || k === 'top'
+				|| k === 'align_x' || k === 'align_y' || k === 's_right' || k === 's_bottom') continue;
+				delete e[k];
+			}
 			if (isGrpLay(e)) {e.fn = ''; e.src = ''; e.aFace = []}
 			// bura/kinsoku_*は[clear_lay]で変更しない（本家 TxtLayer.ts:857 #clearLay()もHyphenationに触らない。
 			//	docs/tag.htmlのbura欄も既定値「現在値」＝クリアしても引き継ぐ、と明記）
