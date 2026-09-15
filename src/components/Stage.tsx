@@ -344,6 +344,13 @@ export default function Stage({
 			（上の useLayoutEffect のコメント参照） */
 		transform-origin: ${isFullscreen ? 'center' : 'left top'};
 		transform: scale(${String(cvsScale)});
+		/* 全画面時、親 heStage が flex center（上のuseLayoutEffect）になる副作用で、
+			flexアイテムの既定 flex-shrink:1 がこの箱（stageW×stageH、scale適用前の等倍サイズ）を
+			ウインドウ幅に収まるよう縮めてしまい、transform:scaleと二重に縮小されて画面より
+			小さく表示される不具合になっていた（実機解像度がstageW×stageHよりウインドウが
+			狭い時に発生。sn_kowloon実機で発覚、2026-09-15）。scaleだけで見た目を決めたいので
+			flexのshrinkは止める */
+		flex-shrink: 0;
 	`;
 	// HTMLフレーム（[add_frame]）の置き場所。**JSXでは子を持たない空div**にしてあり、
 	//	FrameMng（DOM側）がここへiframeを足す。Reactは自分が作った子しか触らないので衝突しない。

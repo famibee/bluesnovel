@@ -134,6 +134,29 @@ test('全画面にすると背景・前景・ボタンは画面の左上を基�
 	await page.keyboard.press('w');	// 元へ戻す
 });
 
+test('窓がステージより狭い状態で全画面にしても、縮小率どおりに収まる（flexのshrinkで二重に縮まない）', async ({page})=> {
+	// Stage.tsxのstyStageにflex-shrink:0が無いと、全画面時に親heStageがflex centerになる
+	//	副作用で、この箱（stageW×stageHの等倍サイズ）自体がheStageの実寸（＝窓の実解像度。
+	//	今回はPRJ_Wより狭い）に収まるようflexで縮められ、transform:scaleと二重に縮小されて
+	//	窓幅より小さく表示される不具合になっていた（sn_kowloon実機、窓がステージ解像度より
+	//	狭い環境で発覚。2026-09-15）
+	await page.setViewportSize({width: Math.round(PRJ_W * 0.6), height: Math.round(PRJ_H * 0.6)});
+	await expect.poll(async ()=> (await page.locator('#skynovel').boundingBox())!.width, {timeout: 5_000})
+		.toBeCloseTo(PRJ_W * 0.6, -1);
+
+	await page.keyboard.press('w');
+	await expect.poll(async ()=> page.evaluate(()=> document.fullscreenElement !== null),
+		{timeout: 5_000}).toBe(true);
+
+	const {scale, stage, base, btnA} = await boxes(page);
+	closePx(scale, 0.6, 0.05);	// 二重縮小が起きていれば scale はこれよりずっと小さくなる
+	closePx(stage.width, Math.round(PRJ_W * 0.6));
+	closePx(base.width, PRJ_W * scale);
+	closePx(btnA.x - stage.x, 250 * scale);
+
+	await page.keyboard.press('w');	// 元へ戻す
+});
+
 test('全画面を解除すると、元のウインドウサイズに応じた表示へ戻る', async ({page})=> {
 	await page.keyboard.press('w');
 	await expect.poll(async ()=> page.evaluate(()=> document.fullscreenElement !== null),

@@ -19,7 +19,7 @@ import {Script} from './Script';
 import {AnalyzeTagArg} from '../sn/AnalyzeTagArg';
 import {RubySpliter} from '../sn/RubySpliter';
 import {Areas, type T_H_Areas} from '../sn/Areas';
-import {getDateStr, int, parseArgColor, parseArgNum, uint} from '../sn/CmnLib';
+import {getDateStr, int, parseArgColor, parseArgColorSnapshot, parseArgNum, uint} from '../sn/CmnLib';
 import {A_TSY_FRM_PRP, chkEase, cnvTweenArg, parseTsyPath, tsyName, type T_TSY_TO} from './Tsy';
 import type {T_FRM_ORDER, T_FRM_STY} from './FrameMng';
 import {bldFilter, type T_FLT} from './Filter';
@@ -2415,8 +2415,10 @@ export class ScriptEngine {
 				height: ScriptEngine.#argNumDef('snapshot', 'height', args.height, 0),
 				smoothing: args.smoothing === 'true',	// 既定false（本家 LayerMng.ts:386 の antialias）
 				// **b_colorだけは 0xAARRGGBB**（[lay b_color=]の0xRRGGBBと違う。tag.html#snapshot
-				//	「透過2桁＋赤2桁＋緑2桁＋青2桁」）。0x0で完全透過、不透明な黒は0xFF000000
-				...(args.b_color === undefined ? {} : {b_color: ScriptEngine.#argNum('snapshot', 'b_color', args.b_color)}),
+				//	「透過2桁＋赤2桁＋緑2桁＋青2桁」）。0x0で完全透過、不透明な黒は0xFF000000。
+				//	CSS色名も受け付ける（parseArgColorSnapshot。色名はアルファ情報を持たないため
+				//	不透明固定になる。tag-notes.md参照）
+				...(args.b_color === undefined ? {} : {b_color: parseArgColorSnapshot(args.b_color, '[snapshot] b_color')}),
 			});
 			return 'stop';	// 画像化は非同期＝ScriptMng待ち（本家も撮り終わるまで進めない）
 		}

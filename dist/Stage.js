@@ -1,5 +1,5 @@
 import { r as e, t } from "./rolldown-runtime.js";
-import { n, t as r, u as i } from "./CmnLib.js";
+import { d as n, n as r, t as i } from "./CmnLib.js";
 import { t as a } from "./react.js";
 import { t as o } from "./FocusMng.js";
 import { C as s, E as c, S as l, T as u, _ as d, a as f, b as p, c as m, d as h, f as g, g as _, h as v, m as y, o as b, p as x, s as S, w as C, x as w, y as T } from "./PageLog.js";
@@ -10301,7 +10301,7 @@ function Ru(e, t) {
 	}
 	return e.pic && e.src && (n.backgroundImage = `url("${e.src}")`, n.backgroundSize = e.enabled === !1 ? "100% 100%" : "300% 100%", n.backgroundRepeat = "no-repeat"), e.alpha !== void 0 && (n.opacity = e.alpha), h(e, n), e.blendmode !== void 0 && (n.mixBlendMode = e.blendmode), e.enabled === !1 && (n.color = "gray", n.pointerEvents = "none"), n;
 }
-function zu({ text: e, label: t, call: n, fn: i, arg: a, url: s, sty: c, enabled: l, onActivate: u, onNavigate: d, onSe: f, onHoverCall: p }) {
+function zu({ text: e, label: t, call: n, fn: r, arg: a, url: s, sty: c, enabled: l, onActivate: u, onNavigate: d, onSe: f, onHoverCall: p }) {
 	let m = l && c?.enabled !== !1, h = D((e) => e.btnFont), g = (0, W.useRef)(null);
 	(0, W.useEffect)(() => {
 		let e = g.current;
@@ -10463,7 +10463,7 @@ function zu({ text: e, label: t, call: n, fn: i, arg: a, url: s, sty: c, enabled
 			d(s);
 			return;
 		}
-		u(t, n ?? !1, i, a);
+		u(t, n ?? !1, r, a);
 	}, N = (e) => {
 		e.stopPropagation(), m && (Nu.hide(), A("clickse", "clicksebuf"), j());
 	}, P = () => {
@@ -10480,10 +10480,10 @@ function zu({ text: e, label: t, call: n, fn: i, arg: a, url: s, sty: c, enabled
 			(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), m && (Nu.hide(), A("clickse", "clicksebuf"), j()));
 		},
 		onMouseEnter: () => {
-			P(), A("enterse", "entersebuf"), m && c?.onenter && p(c.onenter, i);
+			P(), A("enterse", "entersebuf"), m && c?.onenter && p(c.onenter, r);
 		},
 		onMouseLeave: () => {
-			Nu.hide(), A("leavese", "leavesebuf"), m && c?.onleave && p(c.onleave, i);
+			Nu.hide(), A("leavese", "leavesebuf"), m && c?.onleave && p(c.onleave, r);
 		},
 		onFocus: P,
 		onBlur: () => Nu.hide(),
@@ -10492,7 +10492,7 @@ function zu({ text: e, label: t, call: n, fn: i, arg: a, url: s, sty: c, enabled
 			ref: _,
 			style: T.x !== 1 || T.y !== 1 ? { transform: `scale(${String(T.x)}, ${String(T.y)})` } : void 0,
 			children: e
-		}), r.masume && /* @__PURE__ */ z("span", { style: {
+		}), i.masume && /* @__PURE__ */ z("span", { style: {
 			position: "absolute",
 			inset: 0,
 			boxSizing: "border-box",
@@ -10504,7 +10504,7 @@ function zu({ text: e, label: t, call: n, fn: i, arg: a, url: s, sty: c, enabled
 }
 //#endregion
 //#region src/components/TxtLayer.tsx
-function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, str: s, aCh: c, clrGen: l, ffs: u, noffs: d, bura: p, kinsoku_sol: h, kinsoku_eol: g, kinsoku_dns: v, kinsoku_bura: y, r_align: x, break_fixed: C, break_fixed_left: w, break_fixed_top: T, b_color: O, b_alpha: k, b_alpha_isfixed: A, b_src: j, styTxt: N, pl: P, pr: F, pt: L, pb: R, enabled: B, aBtn: ee, in_style: V, out_style: H, onActivate: te, onNavigate: re, onSe: ie, onHoverCall: ae }) {
+function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, str: s, aCh: c, clrGen: l, ffs: u, noffs: d, bura: p, kinsoku_sol: h, kinsoku_eol: g, kinsoku_dns: v, kinsoku_bura: y, r_align: x, break_fixed: C, break_fixed_left: w, break_fixed_top: T, b_color: O, b_alpha: k, b_alpha_isfixed: A, b_src: j, styTxt: N, pl: P, pr: F, pt: L, pb: R, enabled: B, aBtn: ee, in_style: V, out_style: H, onActivate: te, onNavigate: re, onSe: ie, onHoverCall: ae }) {
 	let oe = D((e) => e.isReadBack), se = D((e) => e.styPaging), ce = D((e) => e.isTyping), le = D((e) => e.setIsTyping), ue = D((e) => e.skipReq), de = D((e) => e.skipping), fe = D((e) => e.wait), pe = D((e) => e.hChIn), me = D((e) => e.hChOut), he = (e) => pe[e ?? V ?? "default"] ?? f, ge = (e) => me[e ?? H ?? "default"] ?? b, [_e, ve] = (0, W.useState)(null);
 	(0, W.useEffect)(() => {
 		if (!j) {
@@ -10593,7 +10593,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		y
 	]), Ie = () => !!be.current && globalThis.getComputedStyle(be.current).writingMode.startsWith("vertical");
 	(0, W.useLayoutEffect)(() => {
-		if (!r.masume) return;
+		if (!i.masume) return;
 		let e = be.current, t = Se.current;
 		if (!e || !t) return;
 		let n = globalThis.getComputedStyle(e);
@@ -10630,10 +10630,10 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		++De.current;
 		for (let e of Ee.current) e.cancel();
 		Ee.current = [];
-		let i = Oe.current !== l;
+		let r = Oe.current !== l;
 		Oe.current = l;
 		let a = Te.current, o = Math.min(a.length, c.length), s = 0;
-		if (!i) for (; s < o && a[s].c === c[s].c && a[s].r === c[s].r && a[s].s === c[s].s && a[s].rs === c[s].rs;) ++s;
+		if (!r) for (; s < o && a[s].c === c[s].c && a[s].r === c[s].r && a[s].s === c[s].s && a[s].rs === c[s].rs;) ++s;
 		we.current.length > 0 && s < we.current.length && !oe && !de && (Me(we.current, Te.current, ke.current), we.current = [], Te.current = [], ke.current = [], e.textContent = ""), s < o && (we.current = [], Te.current = [], ke.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
 		let u = we.current, d = Math.min(c.length, u.length);
 		for (; e.childNodes.length > d;) e.removeChild(e.lastChild);
@@ -10644,7 +10644,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		}
 		let f = c.slice(u.length), m = document.createDocumentFragment(), h = f.map((e) => {
 			let t = document.createElement("span");
-			return t.style.display = e.c === "\n" ? "inline" : "inline-block", r.masume && (t.style.outline = "1px solid rgb(255, 51, 0)", t.style.backgroundColor = "rgba(102, 204, 255, 0.5)"), t.appendChild(Wu(e, x, Ce, Pe, ie, ae)), m.appendChild(t), t;
+			return t.style.display = e.c === "\n" ? "inline" : "inline-block", i.masume && (t.style.outline = "1px solid rgb(255, 51, 0)", t.style.backgroundColor = "rgba(102, 204, 255, 0.5)"), t.appendChild(Wu(e, x, Ce, Pe, ie, ae)), m.appendChild(t), t;
 		});
 		Te.current = [...Te.current, ...f], u.push(...h), e.appendChild(m);
 		{
@@ -10702,7 +10702,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 			e = !1;
 		};
 	}, [ze, Be]);
-	let Ue = a && !oe && !ce && fe !== null && fe.nm === i, We = Ue && fe.kind !== "waitclick" && !fe.noMark, Ge = We && (!!Ve || !!ze && !Be), Ke = Ue && B, [qe, Je] = (0, W.useState)(!1);
+	let Ue = a && !oe && !ce && fe !== null && fe.nm === r, We = Ue && fe.kind !== "waitclick" && !fe.noMark, Ge = We && (!!Ve || !!ze && !Be), Ke = Ue && B, [qe, Je] = (0, W.useState)(!1);
 	(0, W.useLayoutEffect)(() => {
 		let e = be.current;
 		Je(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
@@ -10934,14 +10934,14 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		/* @__PURE__ */ M("span", {
 			css: [e, ht],
 			ref: be,
-			"data-lay": i,
+			"data-lay": r,
 			style: ye,
 			children: [
 				/* @__PURE__ */ z("span", {
 					ref: xe,
 					style: { pointerEvents: B ? "auto" : "none" }
 				}),
-				r.masume && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ z("span", { style: {
+				i.masume && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ z("span", { style: {
 					position: "absolute",
 					inset: 0,
 					boxSizing: "border-box",
@@ -10982,7 +10982,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		}),
 		st.length > 0 && /* @__PURE__ */ z("span", {
 			css: [e, et],
-			"data-lay": i,
+			"data-lay": r,
 			style: at,
 			children: st.map((e) => /* @__PURE__ */ z(zu, {
 				text: e.text,
@@ -11001,7 +11001,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: i, isFore: a, s
 		}),
 		ct.length > 0 && /* @__PURE__ */ z("span", {
 			css: [e, lt],
-			"data-lay": i,
+			"data-lay": r,
 			style: at,
 			children: ct.map((e) => /* @__PURE__ */ z(zu, {
 				text: e.text,
@@ -11101,23 +11101,23 @@ function Hu(e, t, n, r, i, a, o) {
 	});
 }
 function Uu(e, t, n) {
-	let i = e.length * 2;
-	if (i - t.length < 0) return `text-align: ${n};`;
-	if (r.isFirefox) switch (n) {
+	let r = e.length * 2;
+	if (r - t.length < 0) return `text-align: ${n};`;
+	if (i.isFirefox) switch (n) {
 		case "left": return "ruby-align: start;";
 		case "center": return "ruby-align: center;";
 		case "right": return "ruby-align: start;";
 		case "justify": return "ruby-align: space-between;";
 		case "121": return "ruby-align: space-around;";
-		case "even": return `ruby-align: space-between; padding-inline: ${String((i - t.length) / (t.length + 1))}em;`;
+		case "even": return `ruby-align: space-between; padding-inline: ${String((r - t.length) / (t.length + 1))}em;`;
 		case "1ruby": return "ruby-align: space-between; padding-inline: 1em;";
 		default: return `text-align: ${n};`;
 	}
-	let a = (e) => r.isSafari ? `text-align: start; inline-size: ${String(i)}em; padding-inline: ${e};` : `text-align: justify; text-align-last: justify; padding-inline: ${e};`;
+	let a = (e) => i.isSafari ? `text-align: start; inline-size: ${String(r)}em; padding-inline: ${e};` : `text-align: justify; text-align-last: justify; padding-inline: ${e};`;
 	switch (n) {
 		case "justify": return a("0");
-		case "121": return a(`calc(${String((i - t.length) / (t.length * 2))}em)`);
-		case "even": return a(`calc(${String((i - t.length) / (t.length + 1))}em)`);
+		case "121": return a(`calc(${String((r - t.length) / (t.length * 2))}em)`);
+		case "even": return a(`calc(${String((r - t.length) / (t.length + 1))}em)`);
 		case "1ruby": return a("1em");
 		default: return `text-align: ${n};`;
 	}
@@ -11260,21 +11260,21 @@ var ed = Fu`position: absolute; top: 0; left: 0;`, td = Fu`
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-`, nd = (0, W.memo)(function({ idx: e, isFore: t, trans: n, aLay: i, cmn: a, scrMng: o, pgRef: s }) {
+`, nd = (0, W.memo)(function({ idx: e, isFore: t, trans: n, aLay: r, cmn: a, scrMng: o, pgRef: s }) {
 	let c = t || !!n;
 	return /* @__PURE__ */ z("div", {
 		ref: s,
 		"data-page": t ? "fore" : "back",
 		css: td,
 		style: {
-			backgroundColor: r.bgColor,
+			backgroundColor: i.bgColor,
 			zIndex: +!!t,
 			visibility: c ? "visible" : "hidden",
 			pointerEvents: t ? "auto" : "none",
 			"--sn-ani-play": c ? "running" : "paused",
 			...n?.ruleSrc && !n.glslSrc && t ? { mask: "url(#sn_rule_msk)" } : {}
 		},
-		children: i.map((n) => {
+		children: r.map((n) => {
 			let r = {
 				...a.sty4Moveable,
 				...d(n)
@@ -11339,7 +11339,7 @@ var ed = Fu`position: absolute; top: 0; left: 0;`, td = Fu`
 		})
 	});
 });
-function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next: o }) {
+function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: r, prev: a, next: o }) {
 	let d = D((e) => e.aPage), f = D((e) => e.foreIdx), m = D((e) => e.trans), h = (0, W.useRef)(null), _ = (0, W.useRef)(null), v = [h, _], b = (0, W.useRef)(null), S = (0, W.useRef)(null), E = (0, W.useRef)(null);
 	(0, W.useEffect)(() => {
 		S.current !== null && cancelAnimationFrame(S.current), S.current = null;
@@ -11413,7 +11413,7 @@ function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next:
 		}
 		return t(), globalThis.addEventListener("resize", t), () => globalThis.removeEventListener("resize", t);
 	}, [P]);
-	let { cvsScale: B } = id(L, P), { stageW: H, stageH: te } = r, ne = (0, W.useRef)(null), U = D((e) => e.fullScr), re = D((e) => e.setFullScr), ae = D((e) => e.toggleFullScr);
+	let { cvsScale: B } = id(L, P), { stageW: H, stageH: te } = i, ne = (0, W.useRef)(null), U = D((e) => e.fullScr), re = D((e) => e.setFullScr), ae = D((e) => e.toggleFullScr);
 	se((0, W.useRef)(e), U, { onClose: () => re(!1) }), (0, W.useEffect)(() => {
 		n.setFullScr(j);
 	}, [j]), (0, W.useLayoutEffect)(() => {
@@ -11429,7 +11429,7 @@ function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next:
 		width: ${H}px;
 		height: ${te}px;
 		overflow: hidden;
-		background-color: ${r.bgColor};
+		background-color: ${i.bgColor};
 
 		/* ステージ既定フォント。本家 TxtLayer.ts:272 のメッセージ層デフォルトと同じ Hiragino 系スタック。
 			ここへ置けば各レイヤ（文字メッセージ等）が継承する。ボタンは本家 sn.button.fontFamily 相当を
@@ -11441,6 +11441,13 @@ function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next:
 			（上の useLayoutEffect のコメント参照） */
 		transform-origin: ${j ? "center" : "left top"};
 		transform: scale(${String(B)});
+		/* 全画面時、親 heStage が flex center（上のuseLayoutEffect）になる副作用で、
+			flexアイテムの既定 flex-shrink:1 がこの箱（stageW×stageH、scale適用前の等倍サイズ）を
+			ウインドウ幅に収まるよう縮めてしまい、transform:scaleと二重に縮小されて画面より
+			小さく表示される不具合になっていた（実機解像度がstageW×stageHよりウインドウが
+			狭い時に発生。sn_kowloon実機で発覚、2026-09-15）。scaleだけで見た目を決めたいので
+			flexのshrinkは止める */
+		flex-shrink: 0;
 	`, ce = Fu`
 		position: absolute; top: 0; left: 0;
 		width: 100%; height: 100%;
@@ -11528,7 +11535,7 @@ function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next:
 	}), [t, me]);
 	return /* @__PURE__ */ M("div", {
 		css: oe,
-		onClick: i,
+		onClick: r,
 		onPointerDown: _e,
 		onPointerUp: ve,
 		ref: ne,
@@ -11686,7 +11693,7 @@ function rd({ arg: { heStage: e, sys: t, scrMng: n }, onClick: i, prev: a, next:
 }
 function id({ width: e, height: t }, a) {
 	let o = 0, s = 0, c = 1;
-	return a ? (o = Math.min(e, r.stageW), s = i(r.stageH / r.stageW * o), c = o / r.stageW) : n(r.hDip, "expanding", !0) || r.stageW > e || r.stageH > t ? (r.stageW / r.stageH <= e / t ? (s = t, o = i(r.stageW / r.stageH * t)) : (o = e, s = i(r.stageH / r.stageW * e)), c = o / r.stageW) : (o = r.stageW, s = r.stageH, c = 1), {
+	return a ? (o = Math.min(e, i.stageW), s = n(i.stageH / i.stageW * o), c = o / i.stageW) : r(i.hDip, "expanding", !0) || i.stageW > e || i.stageH > t ? (i.stageW / i.stageH <= e / t ? (s = t, o = n(i.stageW / i.stageH * t)) : (o = e, s = n(i.stageH / i.stageW * e)), c = o / i.stageW) : (o = i.stageW, s = i.stageH, c = 1), {
 		cvsScale: c,
 		cvsWidth: o,
 		cvsHeight: s

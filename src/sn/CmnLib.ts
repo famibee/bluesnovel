@@ -166,6 +166,29 @@ export function parseArgColor(v: string, errHead: string): number {
 	throw `${errHead}の値が不正です：${v}`;
 }
 
+// [snapshot b_color=]専用の色パース。0xAARRGGBB（アルファ付き。Snapshot.ts:65コメント参照）
+//	数値表現はそのまま返すが、CSS色名はアルファ情報を持たないため、色名指定時は不透明
+//	（0xFF）を補って返す。本家 argChk_Color も同じ関数を[lay]/[snapshot]両方のb_colorに使うが、
+//	本家のアルファ扱いは元々「値の有無」の二値判定（LayerMng.ts:387 `b_color > 0x1000000`）
+//	でしかなく、色名指定（＝24bit値）は常に不透明扱いになる。ここはそれに倣い、透過込みで
+//	使いたい場合は引き続き0xAARRGGBBの数値指定を使ってもらう（tag-notes.md「保留」から昇格）
+export function parseArgColorSnapshot(v: string, errHead: string): number {
+	const s = v.trim();
+	if (s === '') throw `${errHead}の値が不正です：${v}`;
+	if (s.startsWith('#')) {
+		const n = parseInt(s.slice(1), 16);
+		if (Number.isFinite(n)) return n;
+	}
+	else {
+		const n = s.startsWith('0x') ? parseInt(s.slice(2), 16) : Number(s);
+		if (Number.isFinite(n)) return n;
+		const c = H_CSS_COLOR_NAME[s.toLowerCase()];
+		// 0xFF000000は最上位ビットが立ち`|`が符号付き32bit変換で負値化するため`+`で加算する
+		if (c !== undefined) return 0xFF000000 + c;
+	}
+	throw `${errHead}の値が不正です：${v}`;
+}
+
 /*
 	それぞれの型を Boolean 型に変換した場合の値は以下のようになります。
 

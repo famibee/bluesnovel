@@ -18,25 +18,20 @@
 分家独自の新機能・新案件はここに積む（[本家には追加しない](../../CLAUDE.md)方針のため、
 新タグ・新属性も含めここが唯一の置き場）。標準タグ121種は 🟢 済み。
 
-- BlueSNovel 拡張機能( https://github.com/famibee/SKYNovel-vscode-extension )のLSP部分にmcpサーバー機能を追加したい。いずれはあなたに接続し、マクロ定義位置などわかるようにしたい
-- 「MCPサーバーをVSCode拡張そのものに埋め込む」よりも、VSCode拡張とMCPをメッセージでつなぐ（IPC / stdio / WebSocket）構成で保守しやすく
-
-- 【electron-vite を廃止し Vite + vite-plugin-electron 構成に移行するツール】
-- 【ARINovelプロジェクトをBlueSNovelに移行するツール】とか？
-
-- Web（claude.ai/code）: ブラウザから Claude Code を使える環境
-- サブエージェント
-	- Claude Code には Explore・Plan・general-purpose といった組み込みのサブエージェントが用意されています。自分でカスタムサブエージェントを作ることも可能
-
 ## 保留
 
-- [ ] `[snapshot b_color=]` はCSS色名未対応のまま（`[lay b_color=]`は対応済み）
-      → [tag-notes.md](tag-notes.md)
 - [ ] デザインモード再開（`Stage.tsx` の `ENA_DESIGN_MODE=false`） → [deferred-infra.md](deferred-infra.md)
 - [ ] ESLint 復活（TS 7.1 対応待ち）時に `eslint-plugin-import` → `-import-x` へ切替
       → [deferred-infra.md](deferred-infra.md)
 - [ ] `test/e2e/app/prj_vertglyph/` フィクスチャ（`ipamjm.ttf` 46MB 非コミット）は再開時に再利用可能
       → [deferred-infra.md](deferred-infra.md)
+
+- BlueSNovel 拡張機能( https://github.com/famibee/SKYNovel-vscode-extension )のLSP部分にmcpサーバー機能を追加したい。いずれはAIに接続し、マクロ定義位置などわかるようにしたい
+- 「MCPサーバーをVSCode拡張そのものに埋め込む」よりも、VSCode拡張とMCPをメッセージでつなぐ（IPC / stdio / WebSocket）構成で保守しやすく
+
+- 【ARINovelプロジェクトをBlueSNovelに移行するツール】とか？
+
+- Web（claude.ai/code）: ブラウザから Claude Code を使える環境
 
 ## 凍結
 

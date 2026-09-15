@@ -179,21 +179,35 @@ function a(e, t) {
 	}
 	throw `${t}の値が不正です：${e}`;
 }
-function o(e, t, n) {
+function o(e, t) {
+	let n = e.trim();
+	if (n === "") throw `${t}の値が不正です：${e}`;
+	if (n.startsWith("#")) {
+		let e = parseInt(n.slice(1), 16);
+		if (Number.isFinite(e)) return e;
+	} else {
+		let e = n.startsWith("0x") ? parseInt(n.slice(2), 16) : Number(n);
+		if (Number.isFinite(e)) return e;
+		let t = i[n.toLowerCase()];
+		if (t !== void 0) return 4278190080 + t;
+	}
+	throw `${t}の値が不正です：${e}`;
+}
+function s(e, t, n) {
 	if (!(t in e)) return e[t] = n, n;
 	let r = e[t];
 	if (r === null) return !1;
 	let i = String(r);
 	return e[t] = i !== "false" && !!i;
 }
-function s(e) {
+function c(e) {
 	return typeof e == "number" ? `#${e.toString(16).padStart(6, "0")}` : e;
 }
-var c = /^[^/.]+$|[^/]+(?=\.)/;
-function l(e) {
-	return (c.exec(e) ?? [""])[0];
+var l = /^[^/.]+$|[^/]+(?=\.)/;
+function u(e) {
+	return (l.exec(e) ?? [""])[0];
 }
-var u = class {
+var d = class {
 	static init() {
 		let e = globalThis.navigator.userAgent;
 		this.platform = e, this.plat_desc = e, this.isSafari = /safari/i.test(e) && !/chrome|chromium|crios|edg|android|fxios/i.test(e), this.isFirefox = /firefox|fxios/i.test(e), this.isMac = /macintosh|mac os x/i.test(e) && !/iphone|ipad|ipod/i.test(e), this.isMobile = !/windows|macintosh|mac os x/i.test(e) || /iphone|ipad|ipod|android/i.test(e);
@@ -216,6 +230,6 @@ var u = class {
 	static cc4ColorName;
 };
 //#endregion
-export { l as a, r as c, n as i, t as l, o as n, e as o, s as r, a as s, u as t };
+export { u as a, o as c, n as i, r as l, s as n, e as o, c as r, a as s, d as t, t as u };
 
 //# sourceMappingURL=CmnLib.js.map

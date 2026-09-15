@@ -2,16 +2,22 @@
 
 対応コードが無い（または本家自体が未接続の）ものだけをここに置く。
 
-## `[snapshot b_color=]` のCSS色名（保留）
+## `[snapshot b_color=]` のCSS色名（実装済み 2026-09-15）
 
 `[lay b_color=]`は2026-09-15、`getStK`/画像`.bin`化/`[trans]`競合による暗号化構成の不具合調査
 （sn_kowloon実機）の副産物として、本家 `argChk_Color`（Canvasの`fillStyle`トリックで色名を解決）
 相当の `CmnLib.parseArgColor()`（静的テーブル方式、DOM非依存）で色名対応済み（`black`等）。
 
-`[snapshot b_color=]`は対象外のまま。理由は値の意味が別物なこと：`[lay b_color=]`は
-`0xRRGGBB`だが`[snapshot b_color=]`は**アルファ付き `0xAARRGGBB`**（`Snapshot.ts:65`
-コメント参照）で、色名（アルファ情報を持たない）では表現できない。対応するなら
-`色名|アルファ`のような別記法を新設するか、アルファは別属性に分離するかの設計判断が要る。
+`[snapshot b_color=]`は値の意味が別物（`[lay b_color=]`は`0xRRGGBB`だが、こちらは**アルファ付き
+`0xAARRGGBB`**。`Snapshot.ts:65`コメント参照）なため、当初は色名非対応のまま保留していた。
+
+調べ直すと、本家も`[lay]`/`[snapshot]`どちらのb_colorも同じ`argChk_Color()`を使っており、かつ
+本家のアルファ扱いは元々「値の有無」の二値判定でしかない（`LayerMng.ts:387`
+`backgroundAlpha: b_color > 0x1000000 ? 0 : 1`）：色名指定（＝24bit値）は常に不透明扱いになる。
+つまり「色名はアルファ情報を持たない」という前提は、本家の実際の挙動に照らせば
+「色名指定時は不透明固定でよい」と同義だった。新記法を起こさず、`CmnLib.parseArgColorSnapshot()`
+（`parseArgColor()`と同じ静的テーブル方式だが、色名ヒット時だけ`0xFF000000`を補って返す）で解決。
+数値表現（`0xAARRGGBB`）はこれまで通りそのまま。透過込みで使いたい場合は引き続き数値指定を使う。
 
 ## `[link]` / `[button]` の `onenter` / `onleave`（実装済み 2026-08-31）
 

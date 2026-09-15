@@ -241,6 +241,15 @@ it('snapshot_b_colorは0xAARRGGBB', ()=> {
 	expect(b('')).toBeUndefined();					// 未指定はステージと同じ背景色
 });
 
+it('snapshot_b_colorはCSS色名も受け付け、不透明として扱う', ()=> {
+	// 色名はアルファ情報を持たないため0xFFを補って不透明にする（tag-notes.md参照。
+	//	本家argChk_Colorも色名指定時は実質「不透明」二値判定になるのと同じ結果）
+	const b = (src: string)=> acts(`[snapshot ${src}][s]`).find(v=> v.t === 'snapshot')?.b_color;
+	expect(b('b_color=black')).toBe(0xFF000000);
+	expect(b('b_color=white')).toBe(0xFFFFFFFF);
+	expect(b('b_color=CornflowerBlue')).toBe(0xFF6495ED);
+});
+
 
 // ============ [dump_val] / [dump_stack] ============
 //	本家 Variable.ts:623 #dump_val() / ScriptIterator.ts:739 #dump_stack()。
