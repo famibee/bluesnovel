@@ -120,6 +120,8 @@ export class SysApp extends SysBase {
 			iconPath	: this.#hInfo.getAppPath.replaceAll('\\', '/') +'/doc/icon.png',
 			bookTitle	: this.cfg.oCfg.book.title,
 			homepage	: this.#hInfo.homepage,
+			pubUrl		: this.cfg.oCfg.book.pub_url,
+			navigateTo	: url=> {void this.#em.invoke('navigate_to', url)},
 			isMac		: CmnLib.isMac,
 			debugLog	: CmnLib.debugLog,
 		}).catch((e: unknown)=> console.error(`[update_check] ${String(e)}`));

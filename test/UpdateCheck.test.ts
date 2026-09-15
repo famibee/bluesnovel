@@ -18,11 +18,13 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 	aFetchAb	: string[];
 	aWriteFile	: {path: string; len: number}[];
 	aMbo		: T_MessageBoxOptions[];
+	aNavigateTo	: string[];
 } {
 	const aFetchText: string[] = [];
 	const aFetchAb: string[] = [];
 	const aWriteFile: {path: string; len: number}[] = [];
 	const aMbo: T_MessageBoxOptions[] = [];
+	const aNavigateTo: string[] = [];
 	const {
 		fetchText	: fetchTextImpl	= async ()=> ({ok: false, txt: ''}),
 		fetchAb		: fetchAbImpl	= async ()=> ({ok: true, ab: new ArrayBuffer(4)}),
@@ -33,7 +35,7 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 		...restOver
 	} = over;
 	return {
-		aFetchText, aFetchAb, aWriteFile, aMbo,
+		aFetchText, aFetchAb, aWriteFile, aMbo, aNavigateTo,
 		fetchText	: async u=> {aFetchText.push(u); return fetchTextImpl(u)},
 		fetchAb		: async u=> {aFetchAb.push(u); return fetchAbImpl(u)},
 		writeFile	: async (path, data)=> {aWriteFile.push({path, len: data.byteLength})},
@@ -49,6 +51,8 @@ function mkDeps(over: Partial<T_UpdateCheckDeps> = {}): T_UpdateCheckDeps & {
 		iconPath	: '/app/doc/icon.png',
 		bookTitle	: 'テスト作品',
 		homepage	: '',
+		pubUrl		: '',
+		navigateTo	: url=> {aNavigateTo.push(url)},
 		isMac		: true,
 		debugLog	: false,
 		...restOver,
@@ -229,6 +233,40 @@ it('パッチサーバーに接続できない場合、homepageがあれば案�
 	await updateCheck('https://example.com/upd/', deps);
 
 	expect(deps.aMbo[0]?.detail).toContain('https://example.com/game/');
+});
+
+it('パッチサーバーに接続できない場合、pubUrlが無ければサイトを開くか確認しない', async ()=> {
+	const deps = mkDeps({
+		fetchText: async ()=> { throw new TypeError('fetch failed') },
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aMbo.length).toBe(1);
+	expect(deps.aNavigateTo).toEqual([]);
+});
+
+it('パッチサーバーに接続できない場合、pubUrlがあればサイトを開くか確認しOKならnavigateToを呼ぶ', async ()=> {
+	const deps = mkDeps({
+		fetchText: async ()=> { throw new TypeError('fetch failed') },
+		pubUrl	: 'https://example.com/publisher/',
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aMbo.length).toBe(2);
+	expect(deps.aMbo[1]?.buttons).toEqual(['OK', 'Cancel']);
+	expect(deps.aMbo[1]?.message).toBe('出版者サイトを開きますか？');
+	expect(deps.aNavigateTo).toEqual(['https://example.com/publisher/']);
+});
+
+it('サイトを開くか確認してCancelされたらnavigateToを呼ばない', async ()=> {
+	const deps = mkDeps({
+		fetchText: async ()=> { throw new TypeError('fetch failed') },
+		pubUrl	: 'https://example.com/publisher/',
+		showMessageBox: async o=> ({response: o.buttons.length > 1 ? 1 : 0}),	// サイト確認だけCancel
+	});
+	await updateCheck('https://example.com/upd/', deps);
+
+	expect(deps.aNavigateTo).toEqual([]);
 });
 
 it('ダウンロード先のファイルが見つからなければ黙って諦める（機種不一致時）', async ()=> {

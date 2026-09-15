@@ -26,6 +26,8 @@ export type T_UpdateCheckDeps = {
 	iconPath	: string;
 	bookTitle	: string;
 	homepage	: string;	// package.jsonのhomepage（配布元）。空なら案内文で省く
+	pubUrl		: string;	// book.pub_url（出版社URL）。空なら「サイトを開くか」の案内自体を省く
+	navigateTo	: (url: string)=> void;	// 出版者サイトを開く（本家 navigate_to＝shell.openExternal相当）
 	isMac		: boolean;
 	debugLog	: boolean;
 };
@@ -103,6 +105,22 @@ async function connFailed(mbo: T_MessageBoxOptions, deps: T_UpdateCheckDeps, e: 
 		detail	: '配布元がアップデート機能の提供を終了している可能性があります。'
 			+ (deps.homepage ? `\n配布元にお問い合わせください: ${deps.homepage}` : ''),
 	});
+
+	// 開いてよいか確認した上でnavigateTo（shell.openExternal相当）に渡す
+	// （本家 SysApp.ts #updChkConnFailed と同じ方針）
+	if (! deps.pubUrl) return;
+
+	const {response} = await deps.showMessageBox({
+		...mbo,
+		buttons	: ['OK', 'Cancel'],
+		defaultId	: 0,
+		cancelId	: 1,
+		message	: '出版者サイトを開きますか？',
+		detail	: deps.pubUrl,
+	});
+	if (response > 0) return;
+
+	deps.navigateTo(deps.pubUrl);
 }
 
 // userData直下に upd_url.json（暗号化可）があれば、シナリオ指定のurlより優先して使う
