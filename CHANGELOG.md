@@ -707,6 +707,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.17.0](https://github.com/famibee/bluesnovel/compare/v0.16.1...v0.17.0) (2026-09-15)
+
+
+### Features
+
+* update_check失敗時に出版者サイトを開くか確認するダイアログを追加 ([df0cde6](https://github.com/famibee/bluesnovel/commit/df0cde630b3550364a4b7f1ae98bc5621ded9353))
+
 ## [0.16.1](https://github.com/famibee/bluesnovel/compare/v0.16.0...v0.16.1) (2026-09-12)
 
 
