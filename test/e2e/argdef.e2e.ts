@@ -174,7 +174,7 @@ test('縦書きでもクリック待ちマークは直前の文字の次（下�
 	await pressKey(page, 'Space');	// たてがき（縦書き＋待ちマーク）
 
 	const pos = await page.evaluate(()=> {
-		const mes = document.querySelector('#skynovel [data-page="fore"] span[data-lay="mes"]')!;
+		const mes = document.querySelector('#skynovel [data-page="fore"] span[data-lay-txt="mes"]')!;
 		const mark = mes.lastElementChild!.getBoundingClientRect();
 		// 本文の最後の文字＝マークの1つ前
 		const ch = mes.lastElementChild!.previousElementSibling!.getBoundingClientRect();
@@ -192,7 +192,7 @@ test('pl/pr/pt/pb は文字表示領域の内側余白（指定した辺だけ�
 	await pressKey(page, 'Space');	// よはく（pレイヤ配置）
 
 	const r = await page.evaluate(()=> {
-		const el = document.querySelector('#skynovel [data-page="fore"] [data-lay="p"]')! as HTMLElement;
+		const el = document.querySelector('#skynovel [data-page="fore"] [data-lay-txt="p"]')! as HTMLElement;
 		const cs = getComputedStyle(el);
 		return {
 			pl: cs.paddingLeft, pr: cs.paddingRight, pt: cs.paddingTop, pb: cs.paddingBottom,

@@ -182,12 +182,16 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		img.src = b_src;
 		return ()=> {alive = false};
 	}, [b_src]);
-	const styBox: CSSProperties = {
-		...(natBPic && (! ('width' in sty) || ! ('height' in sty))
-			? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
-				...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
-			: sty),
-		// [lay pl=/pr=/pt=/pb=]。指定された辺だけ既定のCSS padding（16px）を上書きする
+	// レイヤベース（新設）の外形・変形。natBPic自動サイズだけをここで補完し、padding系は
+	//	文字表示側（styPad）へ分ける（本家はボタンが文字レイヤのpixiコンテナの真の子なので、
+	//	コンテナのx/y・変形が本文・ボタン双方へ自動で伝播する。分家もそれに倣い、レイヤの外形は
+	//	ベースに集約してボタン箱の実の親にする。詳細refactor-candidates.md）
+	const styBoxBase: CSSProperties = natBPic && (! ('width' in sty) || ! ('height' in sty))
+		? {...sty, ...('width' in sty ? {} : {width: `${String(natBPic.w)}px`}),
+			...('height' in sty ? {} : {height: `${String(natBPic.h)}px`})}
+		: sty;
+	// [lay pl=/pr=/pt=/pb=]。指定された辺だけ既定のCSS padding（16px）を上書きする（文字表示側）
+	const styPad: CSSProperties = {
 		...(pl !== undefined ? {paddingLeft: `${String(pl)}px`} : {}),
 		...(pr !== undefined ? {paddingRight: `${String(pr)}px`} : {}),
 		...(pt !== undefined ? {paddingTop: `${String(pt)}px`} : {}),
@@ -199,6 +203,9 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	  前回からの差分（新規追加分）だけをspan化してアニメする
 	//	・isReadBack中（読み戻りで前のページを演じ直している間）は文字送り演出をせず瞬時に確定表示
 	//	・文字はboxRef直下のcharsRefに収め、待ちマーカー（下記）はReactが別途管理する兄弟スパンとして共存させる
+	// レイヤベース（新設）。位置・変形・display等の外形だけを持ち、文字表示span（boxRef）と
+	//	ボタン箱spanの共通の親になる（本家のLayer.ctn相当）
+	const baseRef = useRef<HTMLSpanElement>(null);
 	const boxRef = useRef<HTMLSpanElement>(null);
 	const charsRef = useRef<HTMLSpanElement>(null);
 	// masumeガイド枠（内側＝padding込みを除いた表示領域。外側の枠はCSSだけで足りるのでrefは
@@ -611,67 +618,30 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	};
 	// [button]タグでこの文字レイヤ（UIコンテナ）に乗せたボタン群のボックス。
 	//	独立レイヤにしないことで、この文字レイヤごと表示/非表示を一括に切り替えられる。
-	//	[enable_event enabled=false]の間はクリックを受けない（本家 TxtLayer.enabled 相当）
-	//	isolation: isolate は本文箱（styTxt）と同じ理由：BtnLayer.tsx の各ボタンが
+	//	[enable_event enabled=false]の間はクリックを受けない（本家 TxtLayer.enabled 相当）。
+	//	isolation: isolate はレイヤベース（styBase）側が持つ：BtnLayer.tsx の各ボタンが
 	//	`position: relative; z-index: 2`を持つため、これが無いとその2がStageレベルの
 	//	スタッキングコンテキストまで漏れ、[lay float=/index=/dive=]で他レイヤをどれだけ
-	//	前面へ動かしてもボタンだけは常に最前面に居座ってしまう（DOM順で並べたはずが
-	//	z-indexありの要素だけが順序を無視するため）。閉じ込めることで、ボタンを持つ層自体は
-	//	他のGrpLayer/TxtLayerと同じくDOM順（＝float等の並び替え）で前後関係が決まるようにする
-	// 流し込み配置（top:70%固定）も、レイヤ自体のleft/top（[lay layer=... left=/top=]）を
-	//	上乗せする。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、レイヤの位置が
-	//	動けば座標省略のボタンも自動で追従する（本家に「座標省略時は画面下へ自動整列」という
-	//	概念自体は無いが、レイヤが動けば動いた分だけボタンも動く、という点は座標指定の有無を
-	//	問わない）。top:70%はその上からのオフセット原点として扱い、calc()で合成する
-	//	（sty.topが'auto'＝s_bottom指定時はcalc対象外。上下寄せの意味が変わるため）
+	//	前面へ動かしてもボタンだけは常に最前面に居座ってしまう問題が起きる
+	// 流し込み配置（レイヤベース内の相対top:70%相当）。**ベース基準の%でなくステージ高の
+	//	固定pxにする**：[lay top=]でベースの高さ（bottom:0基準）が縮むと、ベース基準の70%は
+	//	基準点そのものが動いてしまい位置が変わる。ステージ高基準の固定pxならレイヤ移動にも
+	//	正しく追従する（ベースの実子になったことで、レイヤのleft/top/align/rotation/scale等は
+	//	構造的に伝播する。本家のLayer.ctnと同じ発想。詳細refactor-candidates.md）
 	const styBtnBox = css`
 		display: flex;
 		flex-wrap: wrap;
-		${sty.top !== undefined && sty.top !== 'auto' ? `top: calc(70% + ${String(sty.top)});` : 'top: 70%;'}
-		${sty.left !== undefined && sty.left !== 'auto' ? `left: ${String(sty.left)};` : ''}
-		isolation: isolate;
-		${enabled ? '' : 'pointer-events: none;'}
+		top: ${String(CmnLib.stageH * 0.7)}px;
+		${enabled ? 'pointer-events: auto;' : ''}
 	`;
 	// [button left=/top=]で座標指定されたボタンは**ステージ原点基準**の絶対配置にする
-	//	（本家 Button.ts はステージ左上からの絶対配置）。上の流し込み用の箱（top:70%＋レイヤ位置）へ
-	//	入れると、その箱の位置を基準にleft/topが効いてしまい画面外へずれる（タイトル画面のボタンで露見）。
-	//	原点の箱（styChild＝top:0/left:0）へ分けて置き、下のstyBtnPosCmnで改めてレイヤ位置を足す
-	// [lay]のうち**位置・変形以外**（visible→display / alpha→opacity / blendmode / filter）は
-	//	ボタンの箱にも効かせる。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、
-	//	コンテナへ掛けた分がそのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**に
-	//	している（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
-	//	その差をここで埋める。transform/transformOriginは持ち込まない（回転・拡縮はレイヤでなく
-	//	個々のボタンが[button rotation=/scale_x=/scale_y=]で持つ）。
-	//	これが無いと[sys_menu visible=false]でシステムボタンが消えない
-	const {display, opacity, mixBlendMode, filter} = sty;
-	const styBtnCmn: CSSProperties = {
-		...display !== undefined ? {display} : {},
-		...opacity !== undefined ? {opacity} : {},
-		...mixBlendMode !== undefined ? {mixBlendMode} : {},
-		...filter !== undefined ? {filter} : {},
-	};
-	// [button left=/top=]で座標指定されたボタン（styBtnPosBox＝styChild基準）だけは、
-	//	レイヤ自体のleft/top/寄せ（[lay layer=... left=/top=/align_x=/align_y=]）を原点として
-	//	乗せる。本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、コンテナのx/yが
-	//	そのままボタン座標の原点になる（[button top=0]でも、レイヤ自体がtop=40ならワールド座標は
-	//	y=40）。分家はボタンの箱を本文spanの兄弟にしているため、上のstyBtnCmn（visible等）だけでは
-	//	レイヤの位置がボタンまで届かず、レイヤ自体を動かすテンプレ（sn_kowloonの
-	//	[txt_lay_fullscreen top=40]等）でボタンだけステージ原点(0,0)基準のまま取り残され、
-	//	本家より上に詰まって表示される不具合になっていた（2026-09-15発覚）。
-	//	流し込み側（aBtnFlow・top:70%固定）には持ち込まない：topを上書きすると70%の意味が壊れる
-	const {left: layLeft, top: layTop, translate: layTranslate} = sty;
-	const styBtnPosCmn: CSSProperties = {
-		...styBtnCmn,
-		...layLeft !== undefined ? {left: layLeft} : {},
-		...layTop !== undefined ? {top: layTop} : {},
-		...layTranslate !== undefined ? {translate: layTranslate} : {},
-	};
+	//	（本家 Button.ts はステージ左上からの絶対配置）。styChild（top:0/left:0）基準のまま
+	//	置けば、レイヤベースの位置・変形は親（ベース）から自動で伝わる
 	const isPosBtn = (b: T_BTN)=> b.sty?.left !== undefined || b.sty?.top !== undefined;
 	const aBtnFlow = aBtn.filter(b=> ! isPosBtn(b));
 	const aBtnPos = aBtn.filter(isPosBtn);
 	const styBtnPosBox = css`
-		isolation: isolate;
-		${enabled ? '' : 'pointer-events: none;'}
+		${enabled ? 'pointer-events: auto;' : ''}
 	`;
 	// 背景色は[lay b_color=0xRRGGBB]。未指定時は本家準拠で背景・枠を描かない（後述noBox）
 	const {r, g, b} = rgbOf(b_color);
@@ -692,14 +662,38 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 	//	「透明な板」に点線だけが残っていた。枠自体を廃止した今も、背景色を描くかどうかの
 	//	条件としてはこのまま使う。
 	const noBox = bAlpha === 0 || b_color === undefined;
-	const styTxt = css`
-		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
-			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
-			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
-			sty4Moveableをデザインモード時のみに限定した際にこれが失われ、b_picの背景画像が
-			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
-			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
+	// レイヤベース（新設）。位置・変形・display等の「レイヤの外形」だけを持ち、文字表示固有の
+	//	CSS（padding/background/writing-mode/color等）は一切持たない（ボタンへ余計な文字系
+	//	スタイルが継承されるのを防ぐため）。**isolation: isolate**はここに集約する：
+	//	以前は文字表示側（styTxt）が持っており、z-index:-1の::before（b_pic背景。下記styTxt）を
+	//	この要素の子として背面に留める役だったが、ベースが実の親になった今もベースの
+	//	スタッキングコンテキスト内でz-index:autoの子（文字表示・ボタン箱）より奥に来るため
+	//	同じ効果を保つ。加えてBtnLayer.tsxの`z-index:2`をここで閉じ込め、[lay float=/index=/
+	//	dive=]の並べ替えがボタン込みのレイヤ単位で効くようにする（以前はstyBtnBox/
+	//	styBtnPosBox側が個別に持っていた役）
+	// **pointer-events: none**もここへ：ステージ全面を覆うレイヤベースの透明部分がクリックを
+	//	奪わないようにする（実際にクリックを受けるべき本文はcharsRef、ボタンはBtnLayer.tsx側で
+	//	pointer-events: autoを明示）
+	const styBase = css`
 		isolation: isolate;
+		pointer-events: none;
+		/* 既定サイズはステージいっぱい（本家 TxtLayer.ts:272 のコンストラクタ既定）。
+			**widthプロパティ自体は指定せず、right: 0（heightも同様にbottom: 0）で表す**：
+			styChild（top/left:0）と合わせて要素の外形が常にcontaining block（ステージ）
+			いっぱいになる。[lay width=/height=]明示時はstyLay()がstyBoxBase（inline style）で
+			px指定するので、left+width+rightが揃うCSSの規則でrightは自動的に無視される
+			（衝突しない）。s_right/s_bottom指定時は[lay]側でleft/topが'auto'になるため
+			shrink-to-fitで0に潰れる——**文字レイヤでのs_right/s_bottomは非対応**
+			//TODO: 文字レイヤでs_right/s_bottomを使うテンプレが出たら対応する
+			（画像レイヤは中の<img>が幅を作るため無事） */
+		right: 0;
+		bottom: 0;
+	`;
+	const styTxt = css`
+		/* レイヤベースの内寸いっぱい（本家のTextクラス相当）。ベース自身の位置・変形は
+			styBase/sty（styBoxBase）が持つので、ここはベース基準の絶対配置で完結する */
+		position: absolute;
+		inset: 0;
 		/* **本家 TxtLayer.ts:112 に合わせて border-box**（＝width/height は padding 込みの外形）。
 			以前は content-box にして「[lay width=] は文字表示領域の寸法・padding は外側に足す」
 			という独自解釈を採っていたが、本家サンプル由来のテンプレ（桜の樹の下には等）は
@@ -743,47 +737,23 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 			本家 TxtLayer.ts:272 のコンストラクタ既定（24px）に合わせる。xxx-large（≒48px）のままだと
 			下のwidthとの組み合わせで本文が箱から大きくはみ出す（sn_galleryのtopプロジェクトで発覚） */
 		font-size: 24px;
-		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
-			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
-			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
-			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
-			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた。
-			上のmarginを消したのも同じ理由：margin: 2em 0が残っていると、top:0を明示しても
-			上下96px（2em、font-size: xxx-largeぶん）ぶん箱がステージからはみ出し、b_picが
-			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
-			本家にも対応する概念が無い試作期の置き土産だった） */
-		top: 0;
-		/* width/heightの既定は本家 TxtLayer.ts:272 のコンストラクタ既定に合わせステージいっぱい。
+		/* 既定サイズはレイヤベース（styBase）いっぱい（position:absolute; inset:0;、上記）。
 			widthは以前意図的に70%へ違えていたが、ch_button/sound/importでリンクがクリック不能になる
 			実害や縦書き（line_breaking_rules）で本文がステージ左寄りに見える不具合の原因だったため、
-			本家準拠へ戻した（2026-08-25）。heightは元々CSS既定のauto（＝内容量ぶんだけの高さ）の
-			ままで、widthだけ直した直後の実機比較でmasumeガイド枠がステージ下端に届かない食い違いが
-			見つかったため同時に揃えた。
-			**widthプロパティ自体は指定せず、right: 0（下のheightも同様にbottom: 0）で表す**：
-			top/left:0 と合わせて要素の外形が常に containing block（ステージ）いっぱいになり、
-			padding がどんな値でも（上の box-sizing: border-box のもと）内側に自動で収まる。
-			width: calc(100% - 3em) のように padding を差し引く固定値でも一度試したが、
-			[lay style="padding-bottom: …px;"] で padding を個別変更するプロジェクト
-			（sn_gallery の line_breaking_rules）でズレて逆にステージをはみ出した。
-			[lay width=/height=] 明示時は Lay.ts の styLay() がインラインで px 指定するので、
-			left+width+right が揃う CSS の規則で right は自動的に無視される（衝突しない）。
-			その px 値は border-box なので padding 込みの外形＝本家 TxtStage の $width と一致する */
-		right: 0;
-		bottom: 0;
+			本家 TxtLayer.ts:272 のコンストラクタ既定（ステージいっぱい）へ戻した（2026-08-25）。
+			[lay width=/height=]明示時はLay.tsのstyLay()がベース側にpx指定するので、ベースの
+			外形が変わり、この要素はinset:0によりベースの内寸（＝border-box込みのその外形）に
+			追随する。px値はborder-boxなのでpadding込みの外形＝本家TxtStageの$widthと一致する */
 		white-space: pre-wrap;
 		/* 文字色の既定は白（本家 TxtLayer.ts:272 のコンストラクタ既定styleがcolor: white）。
 			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が
 			埋もれて読めなくなる */
 		color: white;
-		/* **文字レイヤのルート自体は常にpointer-events:none**（todo.md「テキストレイヤーの透明領域が
-			クリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。b_src/sty未指定時は
-			このspanがright:0/bottom:0でステージ全面に広がるため、実要素の無い透明部分まで
-			クリックを拾うと、DOM順で後（画面手前）のレイヤーが先（画面奥）の別レイヤーの[link]を
-			覆い隠して無反応にしてしまう。実際にクリックを受けるべき本文（charsRef）側だけJSXの
-			inline styleでpointer-events: autoを明示する設計にし、それ以外はクリックがステージへ
-			素通りして読み進めを妨げないようにする（[enable_event enabled=false]の間はcharsRef側も
+		/* **pointer-events:noneはレイヤベース（styBase）側**が持つ（todo.md「テキストレイヤーの
+			透明領域がクリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。
+			実際にクリックを受けるべき本文（charsRef）・ボタン箱（styBtnBox/styBtnPosBox）側だけが
+			pointer-events: autoを明示する設計（[enable_event enabled=false]の間はcharsRef側も
 			noneにするので、本家同様[link]もクリックを受けなくなる。TxtLayer.ts:838） */
-		pointer-events: none;
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${sCss ?? ''}
@@ -860,43 +830,49 @@ export default function TxtLayer({cmn: {styChild, isDesignMode}, sty, nm, isFore
 		style.transform = transform;
 	}
 	return <>
-		<span css={[styChild, styTxt]} ref={boxRef} data-lay={nm} style={styBox}>
-			{/* 本文はここ（charsRef）だけpointer-events:autoで受ける：親のstyTxtがルート全体を
-				pointer-events:noneにしたので、実際に文字がある領域（＝このspanが内容ぶんだけ占める
-				範囲）だけクリックを拾い、文字の無い透明部分は下のレイヤーへ素通りする。
-				[enable_event enabled=false]の間はここもnoneにして[link]ごとクリックを止める
-				（本家 TxtLayer.ts:838 と同じ） */}
-			<span ref={charsRef} style={{pointerEvents: enabled ? 'auto' : 'none'}}></span>
-			{/* masumeガイド枠（本家 TxtStage.ts:329-341相当）。外側＝レイヤ全体（padding込み。
-				絶対配置のinset:0はboxRef自身のpadding-boxまでなので、これでちょうど全体を覆う）、
-				内側＝paddingを除いた実表示領域（上のuseLayoutEffectがinsetを実測して書く）。
-				CmnLib.masume===falseならこのブロック自体を描画しない＝要素もエフェクトの仕事も増えない */}
-			{CmnLib.masume && <>
-				<span style={{position: 'absolute', inset: 0, boxSizing: 'border-box',
-					background: 'rgba(51, 255, 0, 0.2)', border: '1px solid rgb(51, 255, 0)', pointerEvents: 'none'}}/>
-				<span ref={masumeInnerRef} style={{position: 'absolute', boxSizing: 'border-box',
-					background: 'rgba(0, 51, 255, 0.2)', border: '2px solid rgb(0, 51, 255)', pointerEvents: 'none'}}/>
-			</>}
-			{wantWaitEl && <span ref={waitRef} css={styWaitMark} style={styWaitPos}
-				{...canFocusWait ? {tabIndex: 0, onKeyDown: onWaitKeyDown, 'data-wait-focus': true} : {}}>{
-				! showWaitMark ? null
-				// プロジェクトに`breakline`/`breakpage`があればそれを描画。無ければ本家準拠で
-				// 何も出さない（本家 LayerMng.ts breakLine/breakPageはexistsBreakline/
-				// existsBreakpageが無ければ空実装のまま＝呼ばれても何も描かれない）
-				: waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
-				: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom',
-					...wait!.width !== undefined || wait!.height !== undefined
-						? {width: '100%', height: '100%'} : {}}}/>
-				: null
-			}</span>}
+		{/* レイヤベース（新設）。文字表示span（boxRef）とボタン箱の実の親にすることで、
+			[lay]のleft/top/align/pivot/rotation/scale/opacity/display/blendmode/filterが
+			本家のLayer.ctnと同じように両方へ構造的に伝播する（styBtnCmn/styBtnPosCmn等の
+			個別継ぎ足しは撤去。詳細refactor-candidates.md） */}
+		<span css={[styChild, styBase]} ref={baseRef} data-lay={nm} style={styBoxBase}>
+			<span css={styTxt} ref={boxRef} data-lay-txt={nm} style={styPad}>
+				{/* 本文はここ（charsRef）だけpointer-events:autoで受ける：祖先のstyBaseがルート全体を
+					pointer-events:noneにしたので、実際に文字がある領域（＝このspanが内容ぶんだけ占める
+					範囲）だけクリックを拾い、文字の無い透明部分は下のレイヤーへ素通りする。
+					[enable_event enabled=false]の間はここもnoneにして[link]ごとクリックを止める
+					（本家 TxtLayer.ts:838 と同じ） */}
+				<span ref={charsRef} style={{pointerEvents: enabled ? 'auto' : 'none'}}></span>
+				{/* masumeガイド枠（本家 TxtStage.ts:329-341相当）。外側＝レイヤ全体（padding込み。
+					絶対配置のinset:0はboxRef自身のpadding-boxまでなので、これでちょうど全体を覆う）、
+					内側＝paddingを除いた実表示領域（上のuseLayoutEffectがinsetを実測して書く）。
+					CmnLib.masume===falseならこのブロック自体を描画しない＝要素もエフェクトの仕事も増えない */}
+				{CmnLib.masume && <>
+					<span style={{position: 'absolute', inset: 0, boxSizing: 'border-box',
+						background: 'rgba(51, 255, 0, 0.2)', border: '1px solid rgb(51, 255, 0)', pointerEvents: 'none'}}/>
+					<span ref={masumeInnerRef} style={{position: 'absolute', boxSizing: 'border-box',
+						background: 'rgba(0, 51, 255, 0.2)', border: '2px solid rgb(0, 51, 255)', pointerEvents: 'none'}}/>
+				</>}
+				{wantWaitEl && <span ref={waitRef} css={styWaitMark} style={styWaitPos}
+					{...canFocusWait ? {tabIndex: 0, onKeyDown: onWaitKeyDown, 'data-wait-focus': true} : {}}>{
+					! showWaitMark ? null
+					// プロジェクトに`breakline`/`breakpage`があればそれを描画。無ければ本家準拠で
+					// 何も出さない（本家 LayerMng.ts breakLine/breakPageはexistsBreakline/
+					// existsBreakpageが無ければ空実装のまま＝呼ばれても何も描かれない）
+					: waitSheet ? <span className={aniSpriteClass(waitSheet)}/>
+					: waitSrc && ! isWaitSheet ? <img src={waitSrc} style={{verticalAlign: 'text-bottom',
+						...wait!.width !== undefined || wait!.height !== undefined
+							? {width: '100%', height: '100%'} : {}}}/>
+					: null
+				}</span>}
+			</span>
+			{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]}>
+				{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
+			</span>}
+			{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]}>
+				{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
+			</span>}
 		</span>
-		{aBtnFlow.length > 0 && <span css={[styChild, styBtnBox]} data-lay={nm} style={styBtnCmn}>
-			{aBtnFlow.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
-		</span>}
-		{aBtnPos.length > 0 && <span css={[styChild, styBtnPosBox]} data-lay={nm} style={styBtnPosCmn}>
-			{aBtnPos.map(b=> <BtnLayer key={b.nm} text={b.text} label={b.label} call={b.call ?? false} fn={b.fn ?? ''} arg={b.arg} url={b.url} sty={b.sty} enabled={enabled} onActivate={onActivate} onNavigate={onNavigate} onSe={onSe} onHoverCall={onHoverCall}/>)}
-		</span>}
-		{isDesignMode && <Moveable target={boxRef}
+		{isDesignMode && <Moveable target={baseRef}
 			/* draggable */
 			draggable={true}
 			throttleDrag={1}

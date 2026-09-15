@@ -16,7 +16,7 @@ import {SEL_FORE, gotoSn, mesStr, pressKey, snap, waitIdle} from './snPage';
 
 // 表ページの文字レイヤに組まれたルビを「親文字:ルビ」の並びで拾う
 const aRuby = (page: import('@playwright/test').Page)=> page.$$eval(
-	`${SEL_FORE} span[data-lay="mes"] ruby`,
+	`${SEL_FORE} span[data-lay-txt="mes"] ruby`,
 	aEl=> aEl.map(el=> {
 		const rt = el.querySelector('rt');
 		const rb = el.textContent?.slice(0, el.textContent.length - (rt?.textContent?.length ?? 0));
@@ -37,7 +37,7 @@ test('行/列の先頭でないルビ付き文字spanはmargin-block-startを持
 	//	地続き（2文字目以降）なので不要——それでも足すと、その分だけ行/列全体が1つ前の
 	//	行/列側へ押し出されて隙間になる不具合だった（2026-08-18発覚、TxtLayer.tsx参照）。
 	//	このシナリオの「漢字《かんじ》」は文章の最初＝最初の行の先頭に来るケース
-	const marginTop = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
+	const marginTop = await page.$eval(`${SEL_FORE} span[data-lay-txt="mes"] ruby`,
 		el=> parseFloat(getComputedStyle(el.parentElement!).marginTop));
 	expect(marginTop).toBe(0);
 });
@@ -70,7 +70,7 @@ test('[er]で消えたら<ruby>も残らない（表示単位のキャッシュ�
 
 // 表示単位ごとの「文字と実際の色」。[span]/[ch]のstyleが当たっているかを見る
 const aColor = (page: import('@playwright/test').Page)=> page.$$eval(
-	`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+	`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child > span`,
 	aEl=> aEl.map(el=> {
 		const inner = el.firstElementChild ?? el;	// スタイル付きは内側のspan/ruby
 		const rt = inner.querySelector('rt');
@@ -104,7 +104,7 @@ test('[link]はクリックでジャンプし、argを飛び先へ渡す', async
 		'628:rgb(255, 255, 255)/炎:rgb(255, 255, 255)',	// [tcy]はルビ付きで1単位
 	]);
 	// 縦中横はCSSのtext-combine-uprightで組む（横書きなので見た目は変わらないが指定はされる）
-	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby > span`,
+	expect(await page.$eval(`${SEL_FORE} span[data-lay-txt="mes"] ruby > span`,
 		el=> getComputedStyle(el).textCombineUpright)).toBe('all');
 
 	await page.getByText('リ', {exact: true}).click();
@@ -122,13 +122,13 @@ test('[lay ffs=/noffs=]は1文字ずつ文字詰めを当てる', async ({page})
 
 	expect(await mesStr(page)).toBe('あ・い');
 	// noffsに挙げた文字だけ font-feature-settings が外れる（本家 TxtLayer.ts:480 #fncFFSStyle）
-	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+	expect(await page.$$eval(`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child > span`,
 		aEl=> aEl.map(el=> `${el.textContent ?? ''}:${getComputedStyle(el.firstElementChild ?? el).fontFeatureSettings}`)))
 		.toEqual(['あ:"palt"', '・:normal', 'い:"palt"']);
 
 	// 文字spanはブラウザ標準の行分割・禁則を無効化するためinline-block（禁則処理は
 	//	Hyphenation.tsの自前計算に一本化した。[lay bura=]の実効検証はkinsoku.e2e.ts）
-	expect(await page.$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+	expect(await page.$eval(`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child > span`,
 		el=> getComputedStyle(el).display)).toBe('inline-block');
 });
 
@@ -173,7 +173,7 @@ test('[lay r_align=…]はレイヤ既定のルビ位置になり、記法内指
 	await pressKey(page, 'Space');	// r_alignのシーンへ
 
 	expect(await mesStr(page)).toBe('永蜊');
-	const aAlign = await page.$$eval(`${SEL_FORE} span[data-lay="mes"] ruby rt`,
+	const aAlign = await page.$$eval(`${SEL_FORE} span[data-lay-txt="mes"] ruby rt`,
 		aEl=> aEl.map(el=> getComputedStyle(el).textAlign));
 	// 永＝レイヤ既定（[lay r_align=center]）、蜊＝ルビ記法内指定（left）が優先される
 	expect(aAlign).toEqual(['center', 'left']);
@@ -185,8 +185,8 @@ test('[link]のstyle_hover/style_clicked/r_style_hover/r_style_clickedが実際�
 	await pressKey(page, 'Space');	// linkのシーンへ
 
 	expect(await mesStr(page)).toBe('蜊');
-	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`);
-	const rt = page.locator(`${SEL_FORE} span[data-lay="mes"] ruby rt`);
+	const el = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] ruby`);
+	const rt = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] ruby rt`);
 
 	// 素の状態：style／r_style
 	expect(await el.evaluate(e=> getComputedStyle(e).color)).toBe('rgb(0, 0, 255)');
@@ -215,7 +215,7 @@ test('layer=/page=で別レイヤ・裏ページへ本当に書ける', async ({
 
 	// [link]をクリックして*goal2へジャンプ（「とどいた」）。本文は蜊《あさり》なので
 	//	textContentは"蜊あさり"になる（<rt>込み）——getByTextでなくruby要素自体をロケートする
-	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await page.locator(`${SEL_FORE} span[data-lay-txt="mes"] ruby`).click();
 	await waitIdle(page);
 	expect(await mesStr(page)).toBe('とどいた');
 
@@ -238,13 +238,13 @@ test('行/列の先頭に来たルビ付き文字spanは<rt>の高さぶんmargi
 	await gotoSesame(page);
 	await pressKey(page, 'Space');	// r_alignのシーンへ
 	await pressKey(page, 'Space');	// linkのシーンへ
-	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await page.locator(`${SEL_FORE} span[data-lay-txt="mes"] ruby`).click();
 	await waitIdle(page);
 	await pressKey(page, 'Space');	// layer=/page=対応の確認ブロックへ
 	await pressKey(page, 'Space');	// margin-block-start確認ブロックへ
 
 	expect(await mesStr(page)).toBe('あいうえ字お');
-	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay="mes"] ruby`,
+	const {marginTop, rtHeight} = await page.$eval(`${SEL_FORE} span[data-lay-txt="mes"] ruby`,
 		el=> {
 			const parent = el.parentElement!;
 			const rt = el.querySelector('rt')!;
@@ -265,7 +265,7 @@ test('縦書きで列の先頭に来た複数文字ルビのmargin-block-start�
 	await gotoSesame(page);
 	await pressKey(page, 'Space');	// r_alignのシーンへ
 	await pressKey(page, 'Space');	// linkのシーンへ
-	await page.locator(`${SEL_FORE} span[data-lay="mes"] ruby`).click();
+	await page.locator(`${SEL_FORE} span[data-lay-txt="mes"] ruby`).click();
 	await waitIdle(page);
 	await pressKey(page, 'Space');	// layer=/page=対応の確認ブロックへ
 	await pressKey(page, 'Space');	// margin-block-start確認ブロック（横書き）へ
@@ -273,7 +273,7 @@ test('縦書きで列の先頭に来た複数文字ルビのmargin-block-start�
 
 	expect(await mesStr(page)).toBe('あいうえ剃刀お');
 	const {marginBlockStart, rtOffsetWidth, rtOffsetHeight} = await page.$eval(
-		`${SEL_FORE} span[data-lay="mes"] ruby`,
+		`${SEL_FORE} span[data-lay-txt="mes"] ruby`,
 		el=> {
 			const parent = el.parentElement!;
 			const rt = el.querySelector('rt')!;

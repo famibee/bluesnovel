@@ -18,7 +18,7 @@ import {SEL_FORE, gotoSn, pressKey} from './snPage';
 // 表示単位spanのうち「その視覚行の先頭」に来ているものの文字を集める。
 //	先頭＝左端が最小（横書き）。inline-block化してあるので矩形は原子的で信頼できる。
 const lineHeads = (page: import('@playwright/test').Page)=> page.$eval(
-	`${SEL_FORE} span[data-lay="mes"] > span:first-child`,
+	`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child`,
 	el=> {
 		const spans = Array.from(el.children).filter(c=> c.nodeName === 'SPAN') as HTMLElement[];
 		if (spans.length === 0) return [];

@@ -241,45 +241,41 @@
   - 実測は headless E2E では不可（SwiftShader ＝ 4K fireworks で rAF が数秒停止）。
     代表値は実 GPU（playwright-cli／手動プロファイル）が要る。
 
-## `TxtLayer.tsx`：文字レイヤを「ベース／文字表示／ボタン群」の3層に分ける（未着手・ユーザー提案）
+## 適用済み・`TxtLayer.tsx` 3層化（2026-09-16）
 
 **発端**：sn_kowloon実機で `[txt_lay_fullscreen top=40]`（レイヤ自体をtop=40へ動かすマクロ）
 がタイトル画面のボタン位置に反映されず、本家より上に詰まって見える不具合（2026-09-15）。
-原因は `TxtLayer.tsx` の JSX ルートが `<>`（フラグメント）で、「文字表示部分」（`boxRef`、
-`styTxt`＝`sty`丸ごと＋padding/background/writing-mode等を1つのCSSブロックに混在）と
+原因は `TxtLayer.tsx` の JSX ルートが `<>`（フラグメント）で、「文字表示部分」（`boxRef`）と
 「ボタン群」（`aBtnFlow`/`aBtnPos`）が**兄弟**になっており、レイヤ自体のleft/top/align/pivot/
-rotation/scale等（`sty`）がボタン側には素通りしないため。応急として `styBtnPosCmn`
-（座標指定ありボタンにレイヤのleft/top/translateを再度加算）と `styBtnBox` の `top`/`left`
-（座標指定なし＝流し込み配置に対し `calc(70% + レイヤtop)` 等で合成）を追加して対症療法済み。
+rotation/scale等（`sty`）がボタン側には素通りしなかったため。
 
-**ユーザー提案（本質的な直し方）**：本家はボタンが文字レイヤのpixiコンテナ（`Layer.ctn`）の
-**真の子**なので、コンテナのx/y・変形が自動で子（本文・ボタン双方）に伝播する。分家もこれに
+**やったこと**：本家がボタンを文字レイヤのpixiコンテナ（`Layer.ctn`）の**真の子**にしているのに
 倣い、JSXを
 
 ```
-<レイヤベース>  ← position/left/top/width/height/transform/opacity/display/mixBlendMode/filter（sty丸ごと）
-  <文字表示部分>  ← padding/background/writing-mode/border-box等、文字表示固有のCSSのみ
-  <ボタン群>      ← styChild（top:0/left:0）基準のまま、ベースからの相対位置で済む
+<レイヤベース baseRef>  ← styChild + styBase（isolation/pointer-events/既定right:0,bottom:0）
+                        ＋ styBoxBase（sty丸ごと＋natBPic自動サイズ）
+  <文字表示 boxRef>      ← styTxt（position:absolute;inset:0 ＋ padding/background/
+                            writing-mode/border-box等、文字表示固有CSSのみ）＋ styPad
+  <ボタン群>             ← styChild基準のまま、ベースの実子になったことで自動追従
 </レイヤベース>
 ```
 
-の3層に分ければ、`align_x`/`align_y`/`s_right`/`s_bottom`/`pivot_x`/`pivot_y`/`rotation`/
-`scale_x`/`scale_y` 等、今回calc()で個別に継ぎ足さなかった属性も含めて構造的に解決する
-（今の対症療法はleft/topだけでalign等は未対応のまま）。
+の3層へ組み替えた。これにより `styBtnCmn`/`styBtnPosCmn`（display/opacity/mixBlendMode/
+filter/left/top/translateの個別継ぎ足し）と `styBtnBox` の `calc(70% + レイヤtop)` を全廃、
+`align_x`/`align_y`/`pivot_x`/`pivot_y`/`rotation`/`scale_x`/`scale_y` も含めて構造的に伝播する
+ようになった（`styBtnBox` の流し込み `top` はステージ高基準の固定pxへ変更：ベース基準の`%`だと
+`[lay top=]` でベースの高さ自体が縮んで基準点がズレるため）。
 
-**未着手の理由**：現状の `styTxt`（`TxtLayer.tsx` 703-784行目付近）は `top:0; right:0;
-bottom:0;` という位置・外形の既定値と、padding・背景色・`b_pic`背景画像・border-boxが
-1つのCSSブロックに混在しており、分離するには
+`data-lay`（`src/ts/Snapshot.ts` の `prune()` が `[snapshot layer=…]` の絞り込みに使う、
+レイヤの根1要素という前提）はベースへ移し、文字表示側は新設の `data-lay-txt` を持つ。
+影響したE2E（`test/e2e/*.e2e.ts` 多数、DOM階層1段深くなった分のセレクタ・`data-lay`→
+`data-lay-txt`の仕分け）と `test/e2e/snPage.ts` のヘルパ（`txtBoxStyle`＝文字表示側、
+新設`layBoxStyle`＝ベース側）を合わせて更新。`button.e2e.ts` にrotation/scale_*の伝播を
+検証する回帰テストを追加（boundingBoxの外接矩形は回転角度で非線形に変わるため、祖先の
+transformを実際に合成した実効スケールで検証する手法を採用）。
 
-- `sty`のうちレイヤの外形を決める分（left/top/right/bottom/translate/width/height/
-  transform/opacity/display/mixBlendMode/filter）をベースdivへ、padding・background・
-  writing-mode等の文字表示固有CSSを内側のdivへ、それぞれ再配分
-- 文字表示部分の`width`/`height`の既定（現状right:0/bottom:0でステージいっぱい）を
-  「ベースの100%」へ揃え直す
-- masumeガイド枠（`masumeInnerRef`の実測ロジック）・Moveable連携（デザインモード）・
-  `b_pic`自動サイズ検出（`natBPic`）など、`styBox`/`styTxt`を参照する周辺ロジック全部の
-  座標系の見直し
-
-が要り、`TxtLayer.tsx`全域に影響する規模のリファクタリングになるため。着手するなら
-1項目ずつ、E2E（`button.e2e.ts`／`lay.e2e.ts`／`focus.e2e.ts`等ボタン・文字レイヤ関連一式）
-で都度回帰確認しながら進める。
+**既知の非対応**：`[lay s_right=]`/`[lay s_bottom=]` を文字レイヤに書くと、ベースの子が全て
+絶対配置のため `left:auto + right:N` で幅が0に潰れる（画像レイヤは中の`<img>`が幅を作るので
+無事）。テンプレ・E2Eとも文字レイヤでの使用例が無いため保留（`TxtLayer.tsx` の `styBase` に
+`//TODO: ` コメントを残してある）。

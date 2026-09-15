@@ -22,7 +22,7 @@ test.beforeEach(async ({page})=> {await gotoSn(page, 'filter')});
 
 // 文字レイヤの背景の中心1点の色。画面を撮ってその座標を数える
 async function bgColor(page: Page): Promise<[number, number, number]> {
-	const box = (await page.locator(`${SEL_FORE} span[data-lay="mes"]`).boundingBox())!;
+	const box = (await page.locator(`${SEL_FORE} span[data-lay-txt="mes"]`).boundingBox())!;
 	const pt = {x: box.x + box.width / 2, y: box.y + box.height / 2};
 	const b64 = (await page.screenshot()).toString('base64');
 	return page.evaluate(async ({b64, pt})=> {
@@ -46,7 +46,7 @@ function near(a: [number, number, number], b: [number, number, number]) {
 
 // 文字レイヤ背景の中央付近を格子状に拾い、R チャンネルの分散を返す（ノイズの検出用）
 async function bgVariance(page: Page): Promise<number> {
-	const box = (await page.locator(`${SEL_FORE} span[data-lay="mes"]`).boundingBox())!;
+	const box = (await page.locator(`${SEL_FORE} span[data-lay-txt="mes"]`).boundingBox())!;
 	const b64 = (await page.screenshot()).toString('base64');
 	return page.evaluate(async ({b64, box})=> {
 		const img = new Image;

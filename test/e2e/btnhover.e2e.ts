@@ -15,7 +15,7 @@ import {gotoSn, mesStr, snap, waitIdle} from './snPage';
 test.beforeEach(async ({page})=> {await gotoSn(page, 'btnhover')});
 
 const foreMes = (page: import('@playwright/test').Page)=>
-	page.locator('#skynovel [data-page="fore"] [data-lay="mes"]');
+	page.locator('#skynovel [data-page="fore"] [data-lay-txt="mes"]');
 
 test('[button onenter=/onleave=] がホバーでラベルをコールし、[l] 待ちのまま戻る', async ({page})=> {
 	expect(await mesStr(page)).toBe('リンクどうぞ');

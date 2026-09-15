@@ -16,10 +16,10 @@
 import {expect, test} from '@playwright/test';
 import {gotoSn, pressKey} from './snPage';
 
-// [data-lay=nm] の1つめの span（＝文字レイヤ本体。2つめ以降はボタンの箱）の外形と算出 padding。
+// [data-lay-txt=nm]（文字表示span。TxtLayer.tsx参照）の外形と算出 padding。
 //	transform: scale されるステージの中なので、offsetWidth/Height（論理 px）で見る
 const box = (page: import('@playwright/test').Page, nm: string)=> page.evaluate(nm=> {
-	const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${nm}"]`) as HTMLElement | null;
+	const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay-txt="${nm}"]`) as HTMLElement | null;
 	if (! el) return null;
 	const cs = getComputedStyle(el);
 	return {

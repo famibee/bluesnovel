@@ -81,11 +81,10 @@ export async function waitIdle(page: Page) {
 		const lay = s.aPage[s.foreIdx].find((l: any)=> l.cls === 'txt');
 		if (! lay) return false;
 
-		// 文字レイヤ本体＝data-lay付きspanの1つめ（TxtLayer styTxt。2つめ以降はボタンの箱）。
-		//	その先頭の子spanに1文字=1spanで文字が入る。
-		//	裏ページにも同じ構造があるので、表ページのコンテナ配下だけを見る。
+		// 文字表示span（TxtLayer styTxt、data-lay-txt付き）。その先頭の子spanに1文字=1spanで
+		//	文字が入る。裏ページにも同じ構造があるので、表ページのコンテナ配下だけを見る。
 		//	**見た目（点線枠）では探さない**：文字が空の層は枠を描かないため（TxtLayer noBox）
-		const box = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${lay.nm as string}"]`);
+		const box = document.querySelector(`#skynovel [data-page="fore"] span[data-lay-txt="${lay.nm as string}"]`);
 		if (! box) return false;	// Stage未マウント（Loading表示中）
 
 		// ルビは<ruby>親文字<rt>ルビ</rt></ruby>で組まれる（TxtLayer elCh）ので、
@@ -235,11 +234,21 @@ export async function traceText(page: Page): Promise<string> {
 	return page.evaluate(()=> document.querySelector('body > span')?.textContent ?? '');
 }
 
-// 文字レイヤ本体（[lay b_alpha=...]を反映するspan）の算出スタイルを読む。
-//	読み戻り中の文字色（黄色）など、ストアだけでは確かめられない見た目の検証用
+// 文字表示span（[lay b_alpha=...]や[lay style=...]を反映するdata-lay-txt付きspan。
+//	TxtLayer.tsx styTxt）の算出スタイルを読む。読み戻り中の文字色（黄色）・padding・
+//	background・writing-mode等、文字表示固有のCSSの検証用
 export async function txtBoxStyle(page: Page, prop: string, nm = 'mes'): Promise<string> {
 	return page.evaluate(([p, nm])=> {
-		const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay="${nm!}"]`);
+		const el = document.querySelector(`#skynovel [data-page="fore"] span[data-lay-txt="${nm!}"]`);
+		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
+	}, [prop, nm]);
+}
+
+// レイヤベース（data-lay付きspan/div。TxtLayer.tsx styBase／Layer.tsx div0）の算出スタイルを読む。
+//	left/top/opacity/transform/mix-blend-mode/filter等、[lay]のレイヤ共通属性が落ちる先
+export async function layBoxStyle(page: Page, prop: string, nm: string): Promise<string> {
+	return page.evaluate(([p, nm])=> {
+		const el = document.querySelector(`#skynovel [data-page="fore"] [data-lay="${nm!}"]`);
 		return el ? getComputedStyle(el).getPropertyValue(p!) : '';
 	}, [prop, nm]);
 }

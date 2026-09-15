@@ -10521,33 +10521,32 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			e = !1;
 		};
 	}, [j]);
-	let ye = {
-		..._e && (!("width" in n) || !("height" in n)) ? {
-			...n,
-			..."width" in n ? {} : { width: `${String(_e.w)}px` },
-			..."height" in n ? {} : { height: `${String(_e.h)}px` }
-		} : n,
+	let ye = _e && (!("width" in n) || !("height" in n)) ? {
+		...n,
+		..."width" in n ? {} : { width: `${String(_e.w)}px` },
+		..."height" in n ? {} : { height: `${String(_e.h)}px` }
+	} : n, be = {
 		...P === void 0 ? {} : { paddingLeft: `${String(P)}px` },
 		...F === void 0 ? {} : { paddingRight: `${String(F)}px` },
 		...L === void 0 ? {} : { paddingTop: `${String(L)}px` },
 		...R === void 0 ? {} : { paddingBottom: `${String(R)}px` }
-	}, be = (0, W.useRef)(null), xe = (0, W.useRef)(null), Se = (0, W.useRef)(null), Ce = (e) => {
+	}, xe = (0, W.useRef)(null), Se = (0, W.useRef)(null), Ce = (0, W.useRef)(null), we = (0, W.useRef)(null), Te = (e) => {
 		if (e.url) {
 			re(e.url);
 			return;
 		}
 		te(e.label, e.call, e.fn, e.arg);
-	}, we = (0, W.useRef)([]), Te = (0, W.useRef)([]), Ee = (0, W.useRef)([]), De = (0, W.useRef)(0), Oe = (0, W.useRef)(l), ke = (0, W.useRef)([]), Ae = (0, W.useRef)(null), je = (0, W.useCallback)(() => {
-		let e = Ae.current;
+	}, Ee = (0, W.useRef)([]), De = (0, W.useRef)([]), Oe = (0, W.useRef)([]), ke = (0, W.useRef)(0), Ae = (0, W.useRef)(l), je = (0, W.useRef)([]), Me = (0, W.useRef)(null), Ne = (0, W.useCallback)(() => {
+		let e = Me.current;
 		if (e) {
-			Ae.current = null;
+			Me.current = null;
 			for (let t of e.anims) t.cancel();
 			e.el.remove();
 		}
-	}, []), Me = (0, W.useCallback)((e, t, n) => {
-		let r = be.current, i = xe.current;
+	}, []), Pe = (0, W.useCallback)((e, t, n) => {
+		let r = Se.current, i = Ce.current;
 		if (!r || !i || e.length === 0) return;
-		je();
+		Ne();
 		let a = document.createElement("span");
 		a.dataset.erase = "1", a.style.position = "absolute";
 		let o = globalThis.getComputedStyle(r);
@@ -10569,19 +10568,19 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			a.remove();
 			return;
 		}
-		Ae.current = {
+		Me.current = {
 			el: a,
 			anims: s
 		}, Promise.allSettled(s.map((e) => e.finished)).then(() => {
-			Ae.current?.el === a && je();
+			Me.current?.el === a && Ne();
 		});
 	}, [
 		me,
 		H,
-		je
+		Ne
 	]);
-	(0, W.useEffect)(() => je, [je]);
-	let Ne = (0, W.useMemo)(() => RegExp(`[　${d ?? ""}]`), [d]), Pe = (0, W.useCallback)((e) => u ? Ne.test(e) ? "" : u : "", [u, Ne]), Fe = (0, W.useMemo)(() => new E({
+	(0, W.useEffect)(() => Ne, [Ne]);
+	let Fe = (0, W.useMemo)(() => RegExp(`[　${d ?? ""}]`), [d]), Ie = (0, W.useCallback)((e) => u ? Fe.test(e) ? "" : u : "", [u, Fe]), Le = (0, W.useMemo)(() => new E({
 		sol: h,
 		eol: g,
 		dns: v,
@@ -10591,10 +10590,10 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		g,
 		v,
 		y
-	]), Ie = () => !!be.current && globalThis.getComputedStyle(be.current).writingMode.startsWith("vertical");
+	]), Re = () => !!Se.current && globalThis.getComputedStyle(Se.current).writingMode.startsWith("vertical");
 	(0, W.useLayoutEffect)(() => {
 		if (!i.masume) return;
-		let e = be.current, t = Se.current;
+		let e = Se.current, t = we.current;
 		if (!e || !t) return;
 		let n = globalThis.getComputedStyle(e);
 		t.style.inset = `${n.paddingTop} ${n.paddingRight} ${n.paddingBottom} ${n.paddingLeft}`;
@@ -10605,16 +10604,16 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		R,
 		N
 	]);
-	let [Le, Re] = (0, W.useState)({
+	let [ze, Be] = (0, W.useState)({
 		l: 16,
 		t: 16
 	});
 	(0, W.useLayoutEffect)(() => {
 		if (!C) return;
-		let e = be.current;
+		let e = Se.current;
 		if (!e) return;
 		let t = globalThis.getComputedStyle(e), n = parseFloat(t.paddingLeft) || 0, r = parseFloat(t.paddingTop) || 0;
-		Re((e) => e.l === n && e.t === r ? e : {
+		Be((e) => e.l === n && e.t === r ? e : {
 			l: n,
 			t: r
 		});
@@ -10624,41 +10623,41 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 		L,
 		N
 	]), (0, W.useLayoutEffect)(() => {
-		let e = xe.current;
+		let e = Ce.current;
 		if (!e) return;
 		let { chWait: t, autowc: n } = D.getState();
-		++De.current;
-		for (let e of Ee.current) e.cancel();
-		Ee.current = [];
-		let r = Oe.current !== l;
-		Oe.current = l;
-		let a = Te.current, o = Math.min(a.length, c.length), s = 0;
+		++ke.current;
+		for (let e of Oe.current) e.cancel();
+		Oe.current = [];
+		let r = Ae.current !== l;
+		Ae.current = l;
+		let a = De.current, o = Math.min(a.length, c.length), s = 0;
 		if (!r) for (; s < o && a[s].c === c[s].c && a[s].r === c[s].r && a[s].s === c[s].s && a[s].rs === c[s].rs;) ++s;
-		we.current.length > 0 && s < we.current.length && !oe && !de && (Me(we.current, Te.current, ke.current), we.current = [], Te.current = [], ke.current = [], e.textContent = ""), s < o && (we.current = [], Te.current = [], ke.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
-		let u = we.current, d = Math.min(c.length, u.length);
+		Ee.current.length > 0 && s < Ee.current.length && !oe && !de && (Pe(Ee.current, De.current, je.current), Ee.current = [], De.current = [], je.current = [], e.textContent = ""), s < o && (Ee.current = [], De.current = [], je.current = [], e.textContent = ""), e.querySelectorAll(":scope > br").forEach((e) => e.remove());
+		let u = Ee.current, d = Math.min(c.length, u.length);
 		for (; e.childNodes.length > d;) e.removeChild(e.lastChild);
 		for (; e.childNodes.length < d;) e.appendChild(u[e.childNodes.length]);
 		if (c.length <= u.length) {
-			Hu(e, u, Te.current, Fe, p ?? !1, Ie(), D.getState().nextChHint ?? " "), le(!1);
+			Hu(e, u, De.current, Le, p ?? !1, Re(), D.getState().nextChHint ?? " "), le(!1);
 			return;
 		}
 		let f = c.slice(u.length), m = document.createDocumentFragment(), h = f.map((e) => {
 			let t = document.createElement("span");
-			return t.style.display = e.c === "\n" ? "inline" : "inline-block", i.masume && (t.style.outline = "1px solid rgb(255, 51, 0)", t.style.backgroundColor = "rgba(102, 204, 255, 0.5)"), t.appendChild(Wu(e, x, Ce, Pe, ie, ae)), m.appendChild(t), t;
+			return t.style.display = e.c === "\n" ? "inline" : "inline-block", i.masume && (t.style.outline = "1px solid rgb(255, 51, 0)", t.style.backgroundColor = "rgba(102, 204, 255, 0.5)"), t.appendChild(Wu(e, x, Te, Ie, ie, ae)), m.appendChild(t), t;
 		});
-		Te.current = [...Te.current, ...f], u.push(...h), e.appendChild(m);
+		De.current = [...De.current, ...f], u.push(...h), e.appendChild(m);
 		{
 			let e = 0;
 			for (let r of f) {
 				let i = he(r.cis), a = r.w ?? (n.enabled ? n.h[r.c.at(0) ?? ""] ?? 0 : t);
-				i.join && (e += a), ke.current.push(i.join ? e : 0);
+				i.join && (e += a), je.current.push(i.join ? e : 0);
 			}
 		}
-		if (Hu(e, u, Te.current, Fe, p ?? !1, Ie(), D.getState().nextChHint ?? " "), oe || de) {
+		if (Hu(e, u, De.current, Le, p ?? !1, Re(), D.getState().nextChHint ?? " "), oe || de) {
 			le(!1);
 			return;
 		}
-		let g = De.current, _ = 0, v = [];
+		let g = ke.current, _ = 0, v = [];
 		if (h.forEach((e, r) => {
 			let i = f[r], a = he(i.cis), o = i.w ?? (n.enabled ? n.h[i.c.at(0) ?? ""] ?? 0 : t);
 			if (a.join && (_ += o / 1e3), a.wait <= 0) return;
@@ -10671,43 +10670,43 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			le(!1);
 			return;
 		}
-		Ee.current = v, le(!0), Promise.allSettled(v.map((e) => e.finished)).then(() => {
-			De.current === g && le(!1);
+		Oe.current = v, le(!0), Promise.allSettled(v.map((e) => e.finished)).then(() => {
+			ke.current === g && le(!1);
 		});
 	}, [
 		c,
 		l,
 		oe,
-		Pe,
+		Ie,
 		V,
 		pe,
 		p,
-		Fe,
+		Le,
 		x
 	]), (0, W.useEffect)(() => {
-		for (let e of Ee.current) e.playState !== "finished" && e.finish();
-		let e = Ae.current;
+		for (let e of Oe.current) e.playState !== "finished" && e.finish();
+		let e = Me.current;
 		if (e) for (let t of e.anims) t.playState !== "finished" && t.finish();
 	}, [ue]);
-	let ze = fe?.src ?? "", Be = ze.endsWith(".json"), [Ve, He] = (0, W.useState)(void 0);
+	let Ve = fe?.src ?? "", He = Ve.endsWith(".json"), [Ue, We] = (0, W.useState)(void 0);
 	(0, W.useEffect)(() => {
-		if (!Be) {
-			He(void 0);
+		if (!He) {
+			We(void 0);
 			return;
 		}
 		let e = !0;
-		return ne(ze).then((t) => {
-			e && He(t);
+		return ne(Ve).then((t) => {
+			e && We(t);
 		}), () => {
 			e = !1;
 		};
-	}, [ze, Be]);
-	let Ue = a && !oe && !ce && fe !== null && fe.nm === r, We = Ue && fe.kind !== "waitclick" && !fe.noMark, Ge = We && (!!Ve || !!ze && !Be), Ke = Ue && B, [qe, Je] = (0, W.useState)(!1);
+	}, [Ve, He]);
+	let Ge = a && !oe && !ce && fe !== null && fe.nm === r, Ke = Ge && fe.kind !== "waitclick" && !fe.noMark, qe = Ke && (!!Ue || !!Ve && !He), Je = Ge && B, [Ye, Xe] = (0, W.useState)(!1);
 	(0, W.useLayoutEffect)(() => {
-		let e = be.current;
-		Je(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
+		let e = Se.current;
+		Xe(!!e && globalThis.getComputedStyle(e).writingMode.startsWith("vertical"));
 	}, [N, n]);
-	let Ye = Fu`
+	let Ze = Fu`
 		display: inline-block;
 		/* **論理プロパティで書く**。縦書き（writing-mode: vertical-rl）では margin-left が
 			「次の行の方向」＝横へのずらしになってしまい、マークだけ本文から離れて隣の列へ寄る。
@@ -10724,12 +10723,12 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			あるが、実機検証で回転していないことを確認済み（inline-blockの中身は横書きのまま描画
 			される。orthogonal flowが効くのは子要素自身がwriting-modeを持つ場合で、この要素は
 			継承しているだけなので該当しない）。2026-08-26 復元 */
-		${qe ? "rotate: -90deg;" : ""}
+		${Ye ? "rotate: -90deg;" : ""}
 		/* [waitclick]用プロキシ、および[l]/[p]でbreakline/breakpage未指定のときは中身が空
 			（マーカーなし、本家準拠）。中身が無いinline-blockは0x0になりFocusMng.#canFocus()の
 			getClientRects()判定に落ちてフォーカスできなくなるため、widthやheightが明示されて
 			いない時だけ最小の当たり判定を確保する（見た目には出さない） */
-		${!Ge && fe?.width === void 0 && fe?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
+		${!qe && fe?.width === void 0 && fe?.height === void 0 ? "min-inline-size: 1em; min-block-size: 1em;" : ""}
 		/* マウスクリックのネイティブなtabIndexフォーカスではブラウザ既定の矩形を出さない
 			（todo.md「格好悪い」対応）。ゲームパッド／矢印キーでの移動は分かりやすさのため出したい
 			ので、キー操作由来のときだけ立つdata-focus-ring（FocusMng.ts）がある時に限り出す */
@@ -10738,52 +10737,50 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			outline: 2px solid Highlight;
 			outline-offset: 2px;
 		}
-	`, Xe = (0, W.useRef)(null), Ze = (0, W.useRef)(!1);
+	`, Qe = (0, W.useRef)(null), $e = (0, W.useRef)(!1);
 	(0, W.useEffect)(() => {
-		let e = Xe.current;
-		if (e && Ke) return o.add(e), Ze.current && (Ze.current = !1, e.focus()), () => {
-			Ze.current = o.isFocus(e), o.remove(e);
+		let e = Qe.current;
+		if (e && Je) return o.add(e), $e.current && ($e.current = !1, e.focus()), () => {
+			$e.current = o.isFocus(e), o.remove(e);
 		};
-	}, [Ke]);
-	let Qe = (e) => {
-		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), Xe.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
-	}, $e = {
+	}, [Je]);
+	let et = (e) => {
+		(e.key === "Enter" || e.key === " ") && (e.stopPropagation(), e.preventDefault(), Qe.current?.dispatchEvent(new MouseEvent("click", { bubbles: !0 })));
+	}, tt = {
 		...fe?.width === void 0 ? {} : { width: `${String(fe.width)}px` },
 		...fe?.height === void 0 ? {} : { height: `${String(fe.height)}px` },
 		...C ? {
 			position: "absolute",
-			left: `${String(Le.l + (w ?? 0))}px`,
-			top: `${String(Le.t + (T ?? 0))}px`
+			left: `${String(ze.l + (w ?? 0))}px`,
+			top: `${String(ze.t + (T ?? 0))}px`
 		} : {},
 		...fe?.x !== void 0 || fe?.y !== void 0 ? { translate: `${String(fe?.x ?? 0)}px ${String(fe?.y ?? 0)}px` } : {}
-	}, et = Fu`
+	}, nt = Fu`
 		display: flex;
 		flex-wrap: wrap;
-		${n.top !== void 0 && n.top !== "auto" ? `top: calc(70% + ${String(n.top)});` : "top: 70%;"}
-		${n.left !== void 0 && n.left !== "auto" ? `left: ${String(n.left)};` : ""}
+		top: ${String(i.stageH * .7)}px;
+		${B ? "pointer-events: auto;" : ""}
+	`, rt = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, it = ee.filter((e) => !rt(e)), at = ee.filter(rt), ot = Fu`
+		${B ? "pointer-events: auto;" : ""}
+	`, { r: st, g: ct, b: lt } = Ju(O), ut = D((e) => e.backAlpha), dt = k * (A ? 1 : ut), ft = dt === 0 || O === void 0, pt = Fu`
 		isolation: isolate;
-		${B ? "" : "pointer-events: none;"}
-	`, { display: tt, opacity: nt, mixBlendMode: rt, filter: it } = n, at = {
-		...tt === void 0 ? {} : { display: tt },
-		...nt === void 0 ? {} : { opacity: nt },
-		...rt === void 0 ? {} : { mixBlendMode: rt },
-		...it === void 0 ? {} : { filter: it }
-	}, { left: ot, top: st, translate: ct } = n, lt = {
-		...at,
-		...ot === void 0 ? {} : { left: ot },
-		...st === void 0 ? {} : { top: st },
-		...ct === void 0 ? {} : { translate: ct }
-	}, ut = (e) => e.sty?.left !== void 0 || e.sty?.top !== void 0, dt = ee.filter((e) => !ut(e)), ft = ee.filter(ut), pt = Fu`
-		isolation: isolate;
-		${B ? "" : "pointer-events: none;"}
-	`, { r: mt, g: ht, b: gt } = Ju(O), _t = D((e) => e.backAlpha), vt = k * (A ? 1 : _t), yt = Fu`
-		/* z-index:-1の::before（下記b_src分岐）を確実にこの要素の子として背面に留めるための
-			スタッキングコンテキスト。以前はStage.tsxのsty4Moveableが全レイヤへ恒等transformを
-			常時書いており、それが偶然スタッキングコンテキストを作っていたため気付かれていなかった。
-			sty4Moveableをデザインモード時のみに限定した際にこれが失われ、b_picの背景画像が
-			立ち絵レイヤの背後（コンテキストの外）へ回り込んで見えなくなる回帰を引き起こした。
-			transformの副作用に頼らず、目的（背面固定）に合ったisolation: isolateで明示的に持たせる */
-		isolation: isolate;
+		pointer-events: none;
+		/* 既定サイズはステージいっぱい（本家 TxtLayer.ts:272 のコンストラクタ既定）。
+			**widthプロパティ自体は指定せず、right: 0（heightも同様にbottom: 0）で表す**：
+			styChild（top/left:0）と合わせて要素の外形が常にcontaining block（ステージ）
+			いっぱいになる。[lay width=/height=]明示時はstyLay()がstyBoxBase（inline style）で
+			px指定するので、left+width+rightが揃うCSSの規則でrightは自動的に無視される
+			（衝突しない）。s_right/s_bottom指定時は[lay]側でleft/topが'auto'になるため
+			shrink-to-fitで0に潰れる——**文字レイヤでのs_right/s_bottomは非対応**
+			//TODO: 文字レイヤでs_right/s_bottomを使うテンプレが出たら対応する
+			（画像レイヤは中の<img>が幅を作るため無事） */
+		right: 0;
+		bottom: 0;
+	`, mt = Fu`
+		/* レイヤベースの内寸いっぱい（本家のTextクラス相当）。ベース自身の位置・変形は
+			styBase/sty（styBoxBase）が持つので、ここはベース基準の絶対配置で完結する */
+		position: absolute;
+		inset: 0;
 		/* **本家 TxtLayer.ts:112 に合わせて border-box**（＝width/height は padding 込みの外形）。
 			以前は content-box にして「[lay width=] は文字表示領域の寸法・padding は外側に足す」
 			という独自解釈を採っていたが、本家サンプル由来のテンプレ（桜の樹の下には等）は
@@ -10808,7 +10805,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			枠画像は左上を原点にそのままの大きさで置く（本家もレイヤ左上に等倍で置き、
 			文字表示領域のサイズを画像に合わせる）。b_alphaは画像・単色どちらにも効かせたいので、
 			画像のときは要素のopacityではなく擬似要素で敷いて透過させる */
-		background-color: ${vt === 0 || O === void 0 || j ? "transparent" : `rgba(${mt}, ${ht}, ${gt}, ${vt})`};
+		background-color: ${ft || j ? "transparent" : `rgba(${st}, ${ct}, ${lt}, ${dt})`};
 		border: none;
 		${j ? `
 		&::before {
@@ -10818,7 +10815,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			background-image: url(${JSON.stringify(j)});
 			background-repeat: no-repeat;
 			background-position: left top;
-			opacity: ${vt};
+			opacity: ${dt};
 			pointer-events: none;
 			z-index: -1;
 		}` : ""}
@@ -10827,47 +10824,23 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			本家 TxtLayer.ts:272 のコンストラクタ既定（24px）に合わせる。xxx-large（≒48px）のままだと
 			下のwidthとの組み合わせで本文が箱から大きくはみ出す（sn_galleryのtopプロジェクトで発覚） */
 		font-size: 24px;
-		/* top/leftの省略時既定はCSSの0（test/argdef_parity.test.ts A_CSS_DEF、本家 Layer.ts:512,538の
-			x/y初期値と同じ）。実際の本文レイヤは[txt_lay_fullscreen]等が必ずtop=を明示するため
-			この既定が表に出る場面は無いはずだったが、[lay b_pic=…]だけを指定するレイヤ（例：
-			タイトル画面のクリック待ちオーバーレイ mes_c2p）はtopを指定しないため、
-			ここが48%のままだと画面下寄りにずれて表示される不具合になっていた。
-			上のmarginを消したのも同じ理由：margin: 2em 0が残っていると、top:0を明示しても
-			上下96px（2em、font-size: xxx-largeぶん）ぶん箱がステージからはみ出し、b_picが
-			ステージ全体を覆いきれなかった（この既定margin自体、pl/pr/pt/pb同様の上書き手段が無く、
-			本家にも対応する概念が無い試作期の置き土産だった） */
-		top: 0;
-		/* width/heightの既定は本家 TxtLayer.ts:272 のコンストラクタ既定に合わせステージいっぱい。
+		/* 既定サイズはレイヤベース（styBase）いっぱい（position:absolute; inset:0;、上記）。
 			widthは以前意図的に70%へ違えていたが、ch_button/sound/importでリンクがクリック不能になる
 			実害や縦書き（line_breaking_rules）で本文がステージ左寄りに見える不具合の原因だったため、
-			本家準拠へ戻した（2026-08-25）。heightは元々CSS既定のauto（＝内容量ぶんだけの高さ）の
-			ままで、widthだけ直した直後の実機比較でmasumeガイド枠がステージ下端に届かない食い違いが
-			見つかったため同時に揃えた。
-			**widthプロパティ自体は指定せず、right: 0（下のheightも同様にbottom: 0）で表す**：
-			top/left:0 と合わせて要素の外形が常に containing block（ステージ）いっぱいになり、
-			padding がどんな値でも（上の box-sizing: border-box のもと）内側に自動で収まる。
-			width: calc(100% - 3em) のように padding を差し引く固定値でも一度試したが、
-			[lay style="padding-bottom: …px;"] で padding を個別変更するプロジェクト
-			（sn_gallery の line_breaking_rules）でズレて逆にステージをはみ出した。
-			[lay width=/height=] 明示時は Lay.ts の styLay() がインラインで px 指定するので、
-			left+width+right が揃う CSS の規則で right は自動的に無視される（衝突しない）。
-			その px 値は border-box なので padding 込みの外形＝本家 TxtStage の $width と一致する */
-		right: 0;
-		bottom: 0;
+			本家 TxtLayer.ts:272 のコンストラクタ既定（ステージいっぱい）へ戻した（2026-08-25）。
+			[lay width=/height=]明示時はLay.tsのstyLay()がベース側にpx指定するので、ベースの
+			外形が変わり、この要素はinset:0によりベースの内寸（＝border-box込みのその外形）に
+			追随する。px値はborder-boxなのでpadding込みの外形＝本家TxtStageの$widthと一致する */
 		white-space: pre-wrap;
 		/* 文字色の既定は白（本家 TxtLayer.ts:272 のコンストラクタ既定styleがcolor: white）。
 			inheritのままだと親の色（未指定なら黒）を継承してしまい、暗い背景画像に文字が
 			埋もれて読めなくなる */
 		color: white;
-		/* **文字レイヤのルート自体は常にpointer-events:none**（todo.md「テキストレイヤーの透明領域が
-			クリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。b_src/sty未指定時は
-			このspanがright:0/bottom:0でステージ全面に広がるため、実要素の無い透明部分まで
-			クリックを拾うと、DOM順で後（画面手前）のレイヤーが先（画面奥）の別レイヤーの[link]を
-			覆い隠して無反応にしてしまう。実際にクリックを受けるべき本文（charsRef）側だけJSXの
-			inline styleでpointer-events: autoを明示する設計にし、それ以外はクリックがステージへ
-			素通りして読み進めを妨げないようにする（[enable_event enabled=false]の間はcharsRef側も
+		/* **pointer-events:noneはレイヤベース（styBase）側**が持つ（todo.md「テキストレイヤーの
+			透明領域がクリックを奪い、下のレイヤーの[link]がクリック不能になる」対応）。
+			実際にクリックを受けるべき本文（charsRef）・ボタン箱（styBtnBox/styBtnPosBox）側だけが
+			pointer-events: autoを明示する設計（[enable_event enabled=false]の間はcharsRef側も
 			noneにするので、本家同様[link]もクリックを受けなくなる。TxtLayer.ts:838） */
-		pointer-events: none;
 
 		/* [lay style="..."]。上の既定を後から上書きできるよう最後に置く */
 		${N ?? ""}
@@ -10876,7 +10849,7 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 			**[lay style=…]よりさらに後**に置く：本家は読み戻り中だけ全文字レイヤへこのCSSを
 			当て直す（setAllStyle2TxtLay）ので、レイヤ自身が色を書いていても勝つ必要がある */
 		${oe ? se : ""}
-	`, bt = Fu`
+	`, ht = Fu`
 		position: absolute;
 		z-index: 1;
 		display: inline-block;
@@ -10931,134 +10904,138 @@ function Bu({ cmn: { styChild: e, isDesignMode: t }, sty: n, nm: r, isFore: a, s
 				border-color: #ff9900;
 			}
 		}
-	`, [xt, St] = (0, W.useState)("");
-	(0, W.useEffect)(() => St(s), [s]);
-	let Ct = (0, W.useRef)(null), wt = (e, t) => {
+	`, [gt, _t] = (0, W.useState)("");
+	(0, W.useEffect)(() => _t(s), [s]);
+	let vt = (0, W.useRef)(null), yt = (e, t) => {
 		_(), e.transform = t;
 	};
 	return /* @__PURE__ */ M(I, { children: [
 		/* @__PURE__ */ M("span", {
-			css: [e, yt],
-			ref: be,
+			css: [e, pt],
+			ref: xe,
 			"data-lay": r,
 			style: ye,
 			children: [
-				/* @__PURE__ */ z("span", {
-					ref: xe,
-					style: { pointerEvents: B ? "auto" : "none" }
-				}),
-				i.masume && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ z("span", { style: {
-					position: "absolute",
-					inset: 0,
-					boxSizing: "border-box",
-					background: "rgba(51, 255, 0, 0.2)",
-					border: "1px solid rgb(51, 255, 0)",
-					pointerEvents: "none"
-				} }), /* @__PURE__ */ z("span", {
+				/* @__PURE__ */ M("span", {
+					css: mt,
 					ref: Se,
-					style: {
-						position: "absolute",
-						boxSizing: "border-box",
-						background: "rgba(0, 51, 255, 0.2)",
-						border: "2px solid rgb(0, 51, 255)",
-						pointerEvents: "none"
-					}
-				})] }),
-				Ue && /* @__PURE__ */ z("span", {
-					ref: Xe,
-					css: Ye,
-					style: $e,
-					...Ke ? {
-						tabIndex: 0,
-						onKeyDown: Qe,
-						"data-wait-focus": !0
-					} : {},
-					children: We ? Ve ? /* @__PURE__ */ z("span", { className: U(Ve) }) : ze && !Be ? /* @__PURE__ */ z("img", {
-						src: ze,
-						style: {
-							verticalAlign: "text-bottom",
-							...fe.width !== void 0 || fe.height !== void 0 ? {
-								width: "100%",
-								height: "100%"
-							} : {}
-						}
-					}) : null : null
+					"data-lay-txt": r,
+					style: be,
+					children: [
+						/* @__PURE__ */ z("span", {
+							ref: Ce,
+							style: { pointerEvents: B ? "auto" : "none" }
+						}),
+						i.masume && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ z("span", { style: {
+							position: "absolute",
+							inset: 0,
+							boxSizing: "border-box",
+							background: "rgba(51, 255, 0, 0.2)",
+							border: "1px solid rgb(51, 255, 0)",
+							pointerEvents: "none"
+						} }), /* @__PURE__ */ z("span", {
+							ref: we,
+							style: {
+								position: "absolute",
+								boxSizing: "border-box",
+								background: "rgba(0, 51, 255, 0.2)",
+								border: "2px solid rgb(0, 51, 255)",
+								pointerEvents: "none"
+							}
+						})] }),
+						Ge && /* @__PURE__ */ z("span", {
+							ref: Qe,
+							css: Ze,
+							style: tt,
+							...Je ? {
+								tabIndex: 0,
+								onKeyDown: et,
+								"data-wait-focus": !0
+							} : {},
+							children: Ke ? Ue ? /* @__PURE__ */ z("span", { className: U(Ue) }) : Ve && !He ? /* @__PURE__ */ z("img", {
+								src: Ve,
+								style: {
+									verticalAlign: "text-bottom",
+									...fe.width !== void 0 || fe.height !== void 0 ? {
+										width: "100%",
+										height: "100%"
+									} : {}
+								}
+							}) : null : null
+						})
+					]
+				}),
+				it.length > 0 && /* @__PURE__ */ z("span", {
+					css: [e, nt],
+					children: it.map((e) => /* @__PURE__ */ z(zu, {
+						text: e.text,
+						label: e.label,
+						call: e.call ?? !1,
+						fn: e.fn ?? "",
+						arg: e.arg,
+						url: e.url,
+						sty: e.sty,
+						enabled: B,
+						onActivate: te,
+						onNavigate: re,
+						onSe: ie,
+						onHoverCall: ae
+					}, e.nm))
+				}),
+				at.length > 0 && /* @__PURE__ */ z("span", {
+					css: [e, ot],
+					children: at.map((e) => /* @__PURE__ */ z(zu, {
+						text: e.text,
+						label: e.label,
+						call: e.call ?? !1,
+						fn: e.fn ?? "",
+						arg: e.arg,
+						url: e.url,
+						sty: e.sty,
+						enabled: B,
+						onActivate: te,
+						onNavigate: re,
+						onSe: ie,
+						onHoverCall: ae
+					}, e.nm))
 				})
 			]
 		}),
-		dt.length > 0 && /* @__PURE__ */ z("span", {
-			css: [e, et],
-			"data-lay": r,
-			style: at,
-			children: dt.map((e) => /* @__PURE__ */ z(zu, {
-				text: e.text,
-				label: e.label,
-				call: e.call ?? !1,
-				fn: e.fn ?? "",
-				arg: e.arg,
-				url: e.url,
-				sty: e.sty,
-				enabled: B,
-				onActivate: te,
-				onNavigate: re,
-				onSe: ie,
-				onHoverCall: ae
-			}, e.nm))
-		}),
-		ft.length > 0 && /* @__PURE__ */ z("span", {
-			css: [e, pt],
-			"data-lay": r,
-			style: lt,
-			children: ft.map((e) => /* @__PURE__ */ z(zu, {
-				text: e.text,
-				label: e.label,
-				call: e.call ?? !1,
-				fn: e.fn ?? "",
-				arg: e.arg,
-				url: e.url,
-				sty: e.sty,
-				enabled: B,
-				onActivate: te,
-				onNavigate: re,
-				onSe: ie,
-				onHoverCall: ae
-			}, e.nm))
-		}),
 		t && /* @__PURE__ */ z(pu, {
-			target: be,
+			target: xe,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => wt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => yt(e, t),
 			resizable: !0,
 			keepRatio: !1,
 			onResize: ({ target: { style: e }, width: t, height: n, drag: { transform: r } }) => {
-				wt(e, r), e.width = `${t}px`, e.height = `${n}px`;
+				yt(e, r), e.width = `${t}px`, e.height = `${n}px`;
 			},
 			rotatable: !0,
 			throttleRotate: 0,
 			startDragRotate: 0,
 			throttleDragRotate: 0,
 			rotationPosition: "top",
-			onRotate: ({ target: { style: e }, drag: { transform: t } }) => wt(e, t),
+			onRotate: ({ target: { style: e }, drag: { transform: t } }) => yt(e, t),
 			originDraggable: !0,
 			onDragOrigin: ({ target: { style: e }, transformOrigin: t, drag: { transform: n } }) => {
-				wt(e, n), e.transformOrigin = t;
+				yt(e, n), e.transformOrigin = t;
 			}
 		}),
 		t && /* @__PURE__ */ M(I, { children: [/* @__PURE__ */ M("label", {
-			css: bt,
-			ref: Ct,
+			css: ht,
+			ref: vt,
 			children: ["テキスト入力", /* @__PURE__ */ z("textarea", {
 				rows: 3,
-				value: xt,
-				onChange: (e) => St(e.target.value)
+				value: gt,
+				onChange: (e) => _t(e.target.value)
 			})]
 		}), /* @__PURE__ */ z(pu, {
-			target: Ct,
+			target: vt,
 			origin: !1,
 			draggable: !0,
 			throttleDrag: 1,
-			onDrag: ({ target: { style: e }, transform: t }) => wt(e, t),
+			onDrag: ({ target: { style: e }, transform: t }) => yt(e, t),
 			preventDefault: !1
 		})] })
 	] });

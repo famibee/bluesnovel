@@ -30,8 +30,11 @@
 ;	z-indexで最前面に居座り続けてしまう回帰の確認（todo.md 2026-08-20の[lay float=true]不具合）。
 ;	alpha=1・blendmode=normalに戻しておく：opacity<1やmix-blend-mode!=normalはそれ自体がCSSの
 ;	スタッキングコンテキストを作ってしまい、上のz-index漏れをたまたま閉じ込めてしまうため
-;	（本題はalpha/blendmodeとも既定のレイヤで再現する不具合）
-[lay layer=mes alpha=1 blendmode=normal]
+;	（本題はalpha/blendmodeとも既定のレイヤで再現する不具合）。rotation/scale_*も0/1へ戻す：
+;	3層化（2026-09-16）でボタンがレイヤベースの実子になり、上のrotation=30 scale_x=2 scale_y=0.5
+;	pivot_x=50 pivot_y=80が残ったままだとボタンごと画面外まで飛んでしまう（本題どおりの
+;	正しい伝播だが、このブロックの検証対象ではないので消しておく）
+[lay layer=mes alpha=1 blendmode=normal rotation=0 scale_x=1 scale_y=1]
 [button layer=mes page=fore text=ぼたん label=*btn_zorder]
 [lay layer=base left=0 top=0 width=800 height=600 float=true]
 まえへ[p]

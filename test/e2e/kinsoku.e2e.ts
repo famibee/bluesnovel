@@ -17,7 +17,7 @@ import {SEL_FORE, gotoSn, pressKey} from './snPage';
 
 // charsRef（本文の流し込み先）直下の子ノードを「文字」と「<br>」の並びで拾う
 const domRow = (page: import('@playwright/test').Page)=> page.$eval(
-	`${SEL_FORE} span[data-lay="mes"] > span:first-child`,
+	`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child`,
 	el=> Array.from(el.childNodes).map(n=> n.nodeName === 'BR' ? '<br>' : (n.textContent ?? '')),
 );
 
@@ -107,7 +107,7 @@ test('回帰：自然折り返し受理後は新しい行を基準に測る（�
 });
 
 test('文字spanは[r]以外すべてinline-block（ブラウザ標準の行分割・禁則を無効化するため）', async ({page})=> {
-	expect(await page.$$eval(`${SEL_FORE} span[data-lay="mes"] > span:first-child > span`,
+	expect(await page.$$eval(`${SEL_FORE} span[data-lay-txt="mes"] > span:first-child > span`,
 		aEl=> aEl.map(el=> getComputedStyle(el).display)))
 		.toEqual(Array(16).fill('inline-block'));	// 「あいうえお。かきくけこさしすせそ」＝16文字
 });

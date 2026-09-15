@@ -19,16 +19,19 @@
 [button page=fore nm=btn_url text="URLを開く" url='https://example.com/']
 選んでください。[l]
 ; [lay visible=false]は**ボタンも隠す**。本家はボタンが文字レイヤのコンテナの子なので
-;	コンテナごと消えるが、こちらはボタンの箱を本文spanの兄弟にしているため橋渡しが要る。
-;	テンプレの[sys_menu visible=false]がこれ
+;	コンテナごと消える。分家もボタン箱をレイヤベースの実子にしたことで同じ構造になった
+;	（2026-09-16）。テンプレの[sys_menu visible=false]がこれ
 [lay layer=mes page=fore visible=false]
 [l]
 [lay layer=mes page=fore visible=true alpha=0.5]
 [l]
-; レイヤ自体のleft/topは、座標指定ありのボタン（原点に加算）・座標指定なしの流し込み配置
-;	（top:70%に上乗せ）の両方に効く（本家はボタンがレイヤのコンテナの子なので自動追従。
-;	分家はボタンの箱を本文spanの兄弟にしているため橋渡しが要る。2026-09-15）
+; レイヤ自体のleft/topは、座標指定ありのボタン・座標指定なしの流し込み配置の両方に効く
+;	（本家はボタンがレイヤのコンテナの子なので自動追従。分家もボタン箱をレイヤベースの実子に
+;	したことで橋渡し無しで追従する。2026-09-15発覚・2026-09-16構造修正）
 [lay layer=mes page=fore left=300 top=200]
+[l]
+; rotation/scale_*もボタンへ構造的に伝播する（3層化の本題そのものの回帰確認）
+[lay layer=mes page=fore rotation=20 scale_x=1.5 scale_y=1.5]
 [l]
 ; ボタンの文字フォントは組み込み変数で差し替えられる（本家 LayerMng.ts:209。全ボタン共通）
 &sn.button.fontFamily = 'monospace'

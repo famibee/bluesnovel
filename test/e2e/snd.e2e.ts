@@ -201,11 +201,11 @@ async function toLinkScene(page: import('@playwright/test').Page) {
 
 // [link]〜[endlink]は[button]と違い**本文中の1文字＝1span**（TxtLayer.tsx elCh()）で、
 //	ラベル文字列をまとめて包む要素が無い。getByText('クリック')は一致する要素が無く
-//	（4文字がそれぞれ別spanのため）、代わりに全体を包むレイヤ本体のspan（[data-lay="linkmes"]自身）
+//	（4文字がそれぞれ別spanのため）、代わりに全体を包む文字表示span（[data-lay-txt="linkmes"]自身）
 //	が集約テキストとしてヒットしてしまいstrict mode違反になる。
 //	そこで:text-is()（Playwright拡張CSS。子要素を持たない＝集約テキストでない葉要素だけを
 //	厳密一致させる）で各リンクから重複しない1文字を選んで指しておく
-const linkmesLoc = (page: import('@playwright/test').Page)=> page.locator('[data-lay="linkmes"]');
+const linkmesLoc = (page: import('@playwright/test').Page)=> page.locator('[data-lay-txt="linkmes"]');
 
 test('[link clickse=]は実際にクリック時効果音を鳴らす', async ({page})=> {
 	await toLinkScene(page);

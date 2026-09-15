@@ -99,7 +99,7 @@ test('[button url=…]はジャンプせず別タブでURLを開く（[link url=
 });
 
 test('ボタンを押さずキーで進めた場合は、ボタンと無関係に次の停止点へ進む', async ({page})=> {
-	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');	// [l]4つを越えて[s]まで
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');	// [l]5つを越えて[s]まで
 
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect((await snap(page)).wait).toBeNull();
@@ -166,7 +166,7 @@ test('[button enabled=false]は灰色でクリックを受けない', async ({pa
 	// pointer-events: none なので、その位置のクリックはステージへ抜けて「読み進め」になる
 	await page.getByText('無効').click({force: true});
 	await waitIdle(page);
-	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// 残りの[l]を越えて[s]まで
+	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');	// 残りの[l]を越えて[s]まで
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 });
 
@@ -236,7 +236,7 @@ test('sn.button.fontFamilyで全ボタンの文字フォントを差し替えら
 	const font = ()=> page.getByText('ジャンプする').evaluate(el=> getComputedStyle(el).fontFamily);
 	expect(await font()).toContain('Hiragino Sans');	// 既定（本家 CmnInterface.ts:349 と同じスタック）
 
-	for (let i = 0; i < 4; ++i) await pressKey(page, 'Space');
+	for (let i = 0; i < 5; ++i) await pressKey(page, 'Space');
 	expect(await mesStr(page)).toBe('選んでください。＋そのまま進んだ。');
 	expect(await font()).toBe('monospace');
 });
@@ -245,9 +245,8 @@ test('sn.button.fontFamilyで全ボタンの文字フォントを差し替えら
 
 test('[lay visible=false]はボタンも隠し、alphaも効く', async ({page})=> {
 	// 本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、コンテナへ掛けた分が
-	//	そのままボタンにも乗る。こちらはボタンの箱を本文spanの**兄弟**にしている
-	//	（本文側のwidth/writing-mode/paddingをボタンの座標計算へ持ち込まないため）ので、
-	//	位置・変形以外を橋渡ししないとボタンだけ残る。
+	//	そのままボタンにも乗る。分家もボタン箱をレイヤベース（TxtLayer.tsx styBase）の実子に
+	//	することで同じ構造にした（2026-09-16。以前は本文spanの兄弟で橋渡しが必要だった）。
 	//	テンプレの[sys_menu visible=false]でシステムボタンが消えなかったのがこれ
 	const btn = page.getByRole('button', {name: 'ジャンプする'});
 	await expect(btn).toBeVisible();
@@ -257,14 +256,15 @@ test('[lay visible=false]はボタンも隠し、alphaも効く', async ({page})
 
 	await pressKey(page, 'Space');	// [lay visible=true alpha=0.5]
 	await expect(btn).toBeVisible();
-	expect(await btn.evaluate(el=> getComputedStyle(el.parentElement!).opacity)).toBe('0.5');
+	// opacityはレイヤベース（ボタン箱のさらに親）が持つ
+	expect(await btn.evaluate(el=> getComputedStyle(el.closest('[data-lay]')!).opacity)).toBe('0.5');
 });
 
 test('[lay layer=... left=/top=]は、座標指定あり/なし両方のボタンに追従する', async ({page})=> {
 	// 本家はボタンが文字レイヤのコンテナ（Layer.ctn）の子なので、レイヤの位置（x/y）が
-	//	動けば座標指定の有無を問わず自動で追従する。分家はボタンの箱を本文spanの兄弟にして
-	//	いるため橋渡しが要る：座標指定あり（[button left=/top=]）はレイヤのleft/topを原点に
-	//	加算、座標指定なし（流し込み配置のtop:70%）はレイヤのleft/topをcalc()で上乗せする。
+	//	動けば座標指定の有無を問わず自動で追従する。分家もボタン箱をレイヤベースの実子にした
+	//	ことで同じ構造になり、座標指定あり・なし（流し込み）とも追加の橋渡し無しで追従する
+	//	（2026-09-16。以前は本文spanの兄弟で個別の継ぎ足しが必要だった）。
 	//	sn_kowloonのタイトル画面で、[txt_lay_fullscreen top=40]によるレイヤ移動がボタンに
 	//	反映されず本家より上に詰まって見える不具合の回帰確認（2026-09-15）
 	for (let i = 0; i < 2; ++i) await pressKey(page, 'Space');	// visible=false→true=alpha0.5
@@ -291,4 +291,36 @@ test('[lay layer=... left=/top=]は、座標指定あり/なし両方のボタ�
 	expect((flowAfter!.y - flowBefore!.y) / scale).toBeCloseTo(200, 0);
 
 	await pressKey(page, 'Space');
+});
+
+test('[lay layer=... rotation=/scale_*=]はボタンにも構造的に伝わる（3層化の本題そのもの）', async ({page})=> {
+	// TxtLayer.tsxの3層化（レイヤベース／文字表示／ボタン群）により、ボタン箱がレイヤベースの
+	//	実子になったため、本家同様レイヤの回転・拡縮もボタンへ構造的に伝わるようになった
+	//	（以前はstyBtnCmn/styBtnPosCmnが意図的にtransform/transformOriginを持ち込んでいなかった）
+	for (let i = 0; i < 3; ++i) await pressKey(page, 'Space');	// visible=false→true=alpha0.5→left/top
+
+	const posBtn = page.getByRole('button', {name: '座標指定'});
+	const flowBtn = page.getByRole('button', {name: 'ジャンプする'});
+	// boundingBox（軸並行外接矩形）の幅・高さは回転角度そのものに依存して非線形に変わるため
+	//	比較に使えない（座標指定ボタン自身が持つrotation=15度と、レイヤのrotation=20度が
+	//	合成されて35度になり、外接矩形の縦横比自体が変わる）。祖先を辿ってtransformを
+	//	実際に合成し、その行列の線形部分（等方拡大+回転ならa,b成分のノルムが拡大率そのもの）
+	//	から「実際に効いている拡大率」を求めれば、回転角度に関わらず正確に検証できる
+	const effectiveScale = (loc: import('@playwright/test').Locator)=> loc.evaluate(el=> {
+		let m = new DOMMatrix();
+		for (let e: Element | null = el; e; e = e.parentElement) {
+			const t = getComputedStyle(e).transform;
+			if (t !== 'none') m = new DOMMatrix(t).multiply(m);
+		}
+		return Math.sqrt(m.a * m.a + m.b * m.b);
+	});
+	const posBefore = await effectiveScale(posBtn);
+	const flowBefore = await effectiveScale(flowBtn);
+
+	await pressKey(page, 'Space');	// [lay layer=mes rotation=20 scale_x=1.5 scale_y=1.5]
+
+	const posAfter = await effectiveScale(posBtn);
+	const flowAfter = await effectiveScale(flowBtn);
+	expect(posAfter / posBefore).toBeCloseTo(1.5, 5);
+	expect(flowAfter / flowBefore).toBeCloseTo(1.5, 5);
 });

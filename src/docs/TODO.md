@@ -25,17 +25,11 @@
       → [deferred-infra.md](deferred-infra.md)
 - [ ] `test/e2e/app/prj_vertglyph/` フィクスチャ（`ipamjm.ttf` 46MB 非コミット）は再開時に再利用可能
       → [deferred-infra.md](deferred-infra.md)
-- [ ] `TxtLayer.tsx`：文字レイヤを「ベース／文字表示／ボタン群」の3層に分ける（本家はボタンが
-      レイヤのpixiコンテナの子。分家は兄弟にしているため、レイヤのalign_x/s_right/pivot/
-      rotation/scale等がボタンに伝わらない。left/topだけは応急対応済み）
-      → [refactor-candidates.md](refactor-candidates.md)
 
 - BlueSNovel 拡張機能( https://github.com/famibee/SKYNovel-vscode-extension )のLSP部分にmcpサーバー機能を追加したい。いずれはAIに接続し、マクロ定義位置などわかるようにしたい
 - 「MCPサーバーをVSCode拡張そのものに埋め込む」よりも、VSCode拡張とMCPをメッセージでつなぐ（IPC / stdio / WebSocket）構成で保守しやすく
 
 - 【ARINovelプロジェクトをBlueSNovelに移行するツール】とか？
-
-- Web（claude.ai/code）: ブラウザから Claude Code を使える環境
 
 ## 凍結
 

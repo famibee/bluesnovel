@@ -27,9 +27,9 @@ const advance = (page: Page, sec: number)=> page.evaluate(sec=> {
 	document.getAnimations().forEach(a=> {a.currentTime = (Number(a.currentTime) || 0) + sec * 1000});
 }, sec);
 
-// 消去中のゴースト span（`[data-lay="mes"]` 直下の `[data-erase]`）。無ければ null
+// 消去中のゴースト span（`[data-lay-txt="mes"]` 直下の `[data-erase]`）。無ければ null
 const ghost = (page: Page)=> page.evaluate(sel=> {
-	const g = document.querySelector(`${sel} span[data-lay="mes"] > span[data-erase]`);
+	const g = document.querySelector(`${sel} span[data-lay-txt="mes"] > span[data-erase]`);
 	if (! g) return null;
 	const clone = g.cloneNode(true) as HTMLElement;
 	clone.querySelectorAll('rt').forEach(e=> {e.remove()});

@@ -77,14 +77,14 @@ test('[graph]は本文中に画像を置く（アニメpngも同じ仕組み）'
 	expect(await mesStr(page)).toBe('本文中に　置く');
 
 	// 画像はシートなので<img>ではなくクラス付きのspan（GrpLayerと同じ再生CSS）
-	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] span[class^="sn_ani"]`);
+	const el = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] span[class^="sn_ani"]`);
 	await expect(el).toHaveCount(1);
 	expect(await el.evaluate(e=> getComputedStyle(e).backgroundImage)).toMatch(/anime\.4x1\.png/);
 });
 
 test('[l]/[p]の待ちマークはbreakline/breakpageの画像になる', async ({page})=> {
 	// [l]：breakline はアニメpng（.json）なので、読み終わるとクラス付きのspanが出る
-	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	const mark = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] > span:nth-child(2)`);
 	await expect(mark.locator('span[class^="sn_ani"]')).toHaveCount(1);
 	expect(await mark.textContent()).toBe('');	// 🩷は出ない
 
@@ -101,8 +101,8 @@ test('[graph]の寸法・ずらしが効く', async ({page})=> {
 	expect(await mesStr(page)).toBe('すんぽう　あり');
 
 	// **本文の中だけ**を見る（待ちマークのbreaklineも同じsn_aniクラスを持つため、
-	//	レイヤ全体で拾うと2つになる）。本文は data-lay の1つめの子（charsRef）
-	const el = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(1) span[class^="sn_ani"]`);
+	//	レイヤ全体で拾うと2つになる）。本文は data-lay-txt の1つめの子（charsRef）
+	const el = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] > span:nth-child(1) span[class^="sn_ani"]`);
 	await expect(el).toHaveCount(1);
 	const sty = await el.evaluate(e=> {
 		const cs = getComputedStyle(e);
@@ -118,7 +118,7 @@ test('[l]の待ちマークの位置・寸法が効く', async ({page})=> {
 	for (let i = 0; i < 3; ++i) await pressKeyToWaitMark(page, 'Space');
 	expect(await mesStr(page)).toBe('おわり');
 
-	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	const mark = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] > span:nth-child(2)`);
 	const sty = await mark.evaluate(e=> {
 		const cs = getComputedStyle(e);
 		return {w: cs.width, h: cs.height, t: cs.translate};
@@ -132,7 +132,7 @@ test('縦書きでは待ちマークを-90°回す', async ({page})=> {
 	// 背景画像も<img>も writing-mode では回らないので、横書き用に描かれた絵（▼＝次の行の方向を
 	//	指す）が縦書きでも下を向いたままになる。本家は待ちマークを本文とは別のpixiコンテナへ
 	//	固定位置で置くのでこの問題が出ない
-	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	const mark = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] > span:nth-child(2)`);
 	expect(await mark.evaluate(e=> getComputedStyle(e).rotate)).toBe('none');	// 横書きでは回さない
 
 	for (let i = 0; i < 4; ++i) await pressKeyToWaitMark(page, 'Space');
@@ -140,7 +140,7 @@ test('縦書きでは待ちマークを-90°回す', async ({page})=> {
 
 	expect(await mark.evaluate(e=> getComputedStyle(e).rotate)).toBe('-90deg');
 	// 本文自体が縦書きになっていることも確かめる（レイヤのstyleが効いていなければ意味がない）
-	expect(await page.locator(`${SEL_FORE} span[data-lay="mes"]`)
+	expect(await page.locator(`${SEL_FORE} span[data-lay-txt="mes"]`)
 		.evaluate(e=> getComputedStyle(e).writingMode)).toBe('vertical-rl');
 });
 
@@ -166,8 +166,8 @@ test('[p visible=false]（テンプレの[plc visible=false]）は待つが待�
 	const {wait} = await snap(page);
 	expect(wait).toMatchObject({nm: 'mes', kind: 'p', noMark: true});
 
-	// 待ちマーク用スロット（data-lay の2つめの子）に breakpage の絵が出ていないこと
-	const mark = page.locator(`${SEL_FORE} span[data-lay="mes"] > span:nth-child(2)`);
+	// 待ちマーク用スロット（data-lay-txt の2つめの子）に breakpage の絵が出ていないこと
+	const mark = page.locator(`${SEL_FORE} span[data-lay-txt="mes"] > span:nth-child(2)`);
 	await expect(mark.locator('img')).toHaveCount(0);
 	await expect(mark.locator('span[class^="sn_ani"]')).toHaveCount(0);
 

@@ -37,7 +37,7 @@ const freeze = (page: Page)=> page.evaluate(()=> {
 });
 // 本文の1文字＝1spanの算出値（charsRef直下に表示単位ごとに積まれる）
 const chStyles = (page: Page)=> page.evaluate(sel=> {
-	const mes = document.querySelector(`${sel} span[data-lay="mes"]`);
+	const mes = document.querySelector(`${sel} span[data-lay-txt="mes"]`);
 	const box = mes?.firstElementChild;
 	if (! box) return [];
 	return Array.from(box.children).map(el=> {

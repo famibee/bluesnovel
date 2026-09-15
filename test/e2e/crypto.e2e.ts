@@ -61,7 +61,7 @@ test('暗号化文字レイヤ枠画像(b_pic)が復号されてBlob URLで表�
 	// ScriptMng#applyAction chgBPicケースがdecryptPicUrl経由でBlob URL化し、
 	//	文字レイヤの::before（background-image）へ渡す（TxtLayer.tsx参照）。
 	//	#refreshCryptoAssets()と違いライブ経路は元々#decryptPic()を通していなかった不具合の確認
-	const bg = await page.$eval('#skynovel [data-page="fore"] [data-lay="mes"]',
+	const bg = await page.$eval('#skynovel [data-page="fore"] [data-lay-txt="mes"]',
 		el=> getComputedStyle(el, '::before').backgroundImage);
 	expect(bg).toContain('blob:');
 	expect(await traceText(page)).toBe('');
