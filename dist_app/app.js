@@ -184,14 +184,23 @@ async function s(e, t) {
 	i.ok ? await u(i.txt, n, r, t) : await d(n, r, t);
 }
 async function c(e, t, n) {
-	console.error(`[update_check] ${String(n)}`), await t.showMessageBox({
+	if (console.error(`[update_check] ${String(n)}`), await t.showMessageBox({
 		...e,
 		buttons: ["OK"],
 		defaultId: 0,
 		cancelId: 0,
 		message: `アプリ【${t.bookTitle}】の更新確認に失敗しました。\n更新サーバーに接続できません。`,
 		detail: "配布元がアップデート機能の提供を終了している可能性があります。" + (t.homepage ? `\n配布元にお問い合わせください: ${t.homepage}` : "")
+	}), !t.pubUrl) return;
+	let { response: r } = await t.showMessageBox({
+		...e,
+		buttons: ["OK", "Cancel"],
+		defaultId: 0,
+		cancelId: 1,
+		message: "出版者サイトを開きますか？",
+		detail: t.pubUrl
 	});
+	r > 0 || t.navigateTo(t.pubUrl);
 }
 async function l(e, t) {
 	let n = t.userDataDir + o;
@@ -356,6 +365,10 @@ var g = class {
 			iconPath: this.#n.getAppPath.replaceAll("\\", "/") + "/doc/icon.png",
 			bookTitle: this.cfg.oCfg.book.title,
 			homepage: this.#n.homepage,
+			pubUrl: this.cfg.oCfg.book.pub_url,
+			navigateTo: (e) => {
+				this.#e.invoke("navigate_to", e);
+			},
 			isMac: t.isMac,
 			debugLog: t.debugLog
 		}).catch((e) => console.error(`[update_check] ${String(e)}`));
