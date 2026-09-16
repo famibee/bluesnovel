@@ -695,6 +695,13 @@
     持ち越し。詳細はtodo.md引き継ぎ参照
 
 
+## [0.18.1](https://github.com/famibee/bluesnovel/compare/v0.18.0...v0.18.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **crypto:** 暗号化構成でアニメシート・ボタン画像が表示されない不具合を修正 ([486b27b](https://github.com/famibee/bluesnovel/commit/486b27b37c5f771bc83988c8dd7bbef7f0fa54ca))
+
 ## [0.18.0](https://github.com/famibee/bluesnovel/compare/v0.17.0...v0.18.0) (2026-09-15)
 
 
