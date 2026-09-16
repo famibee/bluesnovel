@@ -65,7 +65,7 @@ var i = "skynovel", a = class {
 	#e;
 	#t;
 	async run() {
-		let [{ createRoot: n }, { initMain: r }, { Config: a }, { ScriptMng: o }, { setFetch: s, setDecFncs: c }, { resetStore: l }] = await Promise.all([
+		let [{ createRoot: n }, { initMain: r }, { Config: a }, { ScriptMng: o }, { setFetch: s, setDecFncs: c, setSearchPath: l }, { resetStore: u }] = await Promise.all([
 			import("./client.js").then((t) => /* @__PURE__ */ e(t.default, 1)),
 			import("./Main.js").then((e) => e.t),
 			import("./Config.js"),
@@ -73,29 +73,29 @@ var i = "skynovel", a = class {
 			import("./Sprite.js").then((e) => e.t),
 			import("./store.js")
 		]);
-		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), l());
-		let u;
+		s((e, t) => this.fetch(e, t)), c((e, t) => this.dec(e, t), (e) => this.decAB(e), this.arg.crypto), this.#e && (this.scrMng?.destroy(), this.#e.unmount(), u());
+		let d;
 		try {
-			u = await a.generate(this);
+			d = await a.generate(this);
 		} catch (e) {
 			console.error("SysBase.run err e:%o", e), this.titleSub(e instanceof Error ? e.message : String(e));
 			return;
 		}
-		this.setMain(u);
-		let d = document.getElementById(i), f = this.#t ??= d instanceof HTMLCanvasElement ? (() => {
+		this.setMain(d), l((e, t) => d.searchPath(e, t));
+		let f = document.getElementById(i), p = this.#t ??= f instanceof HTMLCanvasElement ? (() => {
 			let e = document.createElement("div");
-			return e.id = i, e.className = d.className, d.replaceWith(e), e;
-		})() : d ?? (() => {
+			return e.id = i, e.className = f.className, f.replaceWith(e), e;
+		})() : f ?? (() => {
 			let e = document.createElement("div");
 			return e.id = i, document.body.appendChild(e), e;
 		})();
-		f.parentElement === document.body && (document.body.style.backgroundColor = t.bgColor);
-		let p = new o(this);
-		this.scrMng = p, await this.#r(), this.#e = n(f), r(this.#e, {
-			heStage: f,
+		p.parentElement === document.body && (document.body.style.backgroundColor = t.bgColor);
+		let m = new o(this);
+		this.scrMng = m, await this.#r(), this.#e = n(p), r(this.#e, {
+			heStage: p,
 			sys: this,
-			scrMng: p
-		}, () => queueMicrotask(() => p.load("main")));
+			scrMng: m
+		}, () => queueMicrotask(() => m.load("main")));
 	}
 	#n = !1;
 	async #r() {

@@ -1369,6 +1369,7 @@ export class ScriptMng {
 		try {
 			for (;;) {
 				this.$fncs.setWait(null);	// 前回の[l]/[p]待ちマーカーをまずクリア（クリックで削除して次の文字表示へ）
+				this.#waitBreakNm = undefined;	// crypto復号待ちの追い越しチェックもクリア
 
 				let aAct: T_ENGINE_ACTION[];
 				try {
@@ -1719,6 +1720,12 @@ export class ScriptMng {
 			? this.sys.cfg.searchPath(fn, SEARCH_PATH_ARG_EXT.SP_GSM)
 			: '';
 	}
+	// crypto:true構成での#srcBreak()の復号結果（種類ごとに1回だけfetch→復号すれば足りる。
+	// 停止点は高頻度なのでキャッシュ必須）。#decryptPic自身はキャッシュしない
+	readonly #hBreakDecrypted = new Map<'l' | 'p', Promise<string>>();
+	// crypto時、復号完了が別の停止点に追い越されていないかの見張り（#picReqSeqと同じ役目。
+	// setWait(null)でもクリアする）
+	#waitBreakNm: string | undefined;
 
 	// 画像のパス解決（path.json）。見つからなければ知らせて空を返す。
 	//	1枚の画像が無いだけでゲームごと止めるのはやり過ぎなので、'ET'ではなく'E'（表示のみ）
@@ -1955,11 +1962,31 @@ export class ScriptMng {
 		case 'addBtn': {
 			// 文字レイヤ（UIコンテナ）のaBtnに追加する（独立レイヤにはしない）。
 			//	画像（pic/b_pic）は論理名で来るので、ここで解決済みURLを足す（[lay fn=]と同じ）
+			const picPath = act.sty?.pic ? this.#searchPic('button pic', act.sty.pic) : undefined;
+			const bPicPath = act.sty?.b_pic ? this.#searchPic('button b_pic', act.sty.b_pic) : undefined;
+			// crypto:true構成は[lay fn=]同様、生の暗号化バイナリではブラウザが画像をデコードできない
+			//	（sn_kowloon実機で発覚：ボタン絵もクリック待ちマークもここだけ#decryptPic()を
+			//	通しておらず、pic側は絵の実寸が取れずBtnLayer.tsxのbtnBoxSize()が0のまま極小表示に
+			//	なっていた。2026-09-16）。まず空で確定させ、Blob URL化でき次第差し替える
+			const needDecrypt = this.sys.crypto && (picPath ?? bPicPath) !== undefined;
 			const sty = act.sty && {...act.sty,
-				...(act.sty.pic ? {src: this.#searchPic('button pic', act.sty.pic)} : {}),
-				...(act.sty.b_pic ? {b_src: this.#searchPic('button b_pic', act.sty.b_pic)} : {}),
+				...(picPath !== undefined ? {src: needDecrypt ? '' : picPath} : {}),
+				...(bPicPath !== undefined ? {b_src: needDecrypt ? '' : bPicPath} : {}),
 			};
-			this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.arg !== undefined ? {arg: act.arg} : {}), ...(act.url !== undefined ? {url: act.url} : {}), ...(sty !== undefined ? {sty} : {})});
+			// addBtnの戻り値は確定したボタン名（[button nm=…]省略時はstore側が通し番号を振るため、
+			//	呼び出し側からは分からない）。crypto時、復号完了後にこの名前で対象ボタンを引き直す
+			const resolvedNm = this.$fncs.addBtn({layerNm: act.layerNm, page: act.page, ...(act.nm !== undefined ? {nm: act.nm} : {}), text: act.text, label: act.label, ...(act.call !== undefined ? {call: act.call} : {}), ...(act.fn !== undefined ? {fn: act.fn} : {}), ...(act.arg !== undefined ? {arg: act.arg} : {}), ...(act.url !== undefined ? {url: act.url} : {}), ...(sty !== undefined ? {sty} : {})});
+
+			if (needDecrypt) {
+				const resolvePage = this.#fixPage(act.page);
+				void Promise.all([
+					picPath !== undefined ? this.#decryptPic(picPath) : Promise.resolve(undefined),
+					bPicPath !== undefined ? this.#decryptPic(bPicPath) : Promise.resolve(undefined),
+				]).then(([src, b_src])=> {
+					this.$fncs.chgBtnPic({layerNm: act.layerNm, page: resolvePage(), nm: resolvedNm,
+						...(src !== undefined ? {src} : {}), ...(b_src !== undefined ? {b_src} : {})});
+				});
+			}
 			break;
 		}
 		case 'chgLay':
@@ -2289,10 +2316,34 @@ export class ScriptMng {
 			//	「今読み進め可能な停止中か」を判定し、本文へのフォーカス対象（見た目には出ない
 			//	プロキシ要素）を輪へ登録する入り口として使い回すため（todo.md「本文にフォーカスが
 			//	戻らず読み進められなくなる」不具合対応）
-			if (act.kind === 'l' || act.kind === 'p' || act.kind === 'waitclick') {
-				const src = act.kind === 'waitclick' ? undefined : this.#srcBreak(act.kind);
-				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...(src ? {src} : {}), ...act.mark,
+			if (act.kind === 'waitclick') {
+				this.$fncs.setWait({nm: act.nm, kind: act.kind, ...act.mark,
 					...(act.noMark ? {noMark: true} : {})});	// [plc visible=false]＝改ページ記号を出さない
+			} else if (act.kind === 'l' || act.kind === 'p') {
+				const kind = act.kind;
+				const path = this.#srcBreak(kind);
+				if (! path || ! this.sys.crypto) {
+					this.$fncs.setWait({nm: act.nm, kind, ...(path ? {src: path} : {}), ...act.mark,
+						...(act.noMark ? {noMark: true} : {})});
+				} else {
+					// crypto:true構成は生の暗号化バイナリではブラウザが画像をデコードできない
+					//	（sn_kowloon実機で発覚：クリック待ちマークが出ないまま。2026-09-16）。
+					//	[lay fn=]と同じくまず空で確定させ、Blob URL化でき次第差し替える。
+					//	種類（l/p）ごとに1回復号すれば足りるのでキャッシュする（停止点は高頻度）
+					this.$fncs.setWait({nm: act.nm, kind, ...act.mark,
+						...(act.noMark ? {noMark: true} : {})});
+					this.#waitBreakNm = act.nm;
+					let p = this.#hBreakDecrypted.get(kind);
+					if (! p) {
+						p = this.#decryptPic(path);
+						this.#hBreakDecrypted.set(kind, p);
+					}
+					void p.then(src=> {
+						if (this.#waitBreakNm !== act.nm) return;	// 追い越された
+						this.$fncs.setWait({nm: act.nm, kind, src, ...act.mark,
+							...(act.noMark ? {noMark: true} : {})});
+					});
+				}
 			}
 			// [s]はここで完全停止。以降クリック・キーでは進まず、[event]/[button]の予約だけが動かせる
 			//	（[waitclick]は同じ「マーカー無しの停止」だがクリックで進む）

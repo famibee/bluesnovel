@@ -15,6 +15,8 @@
 //	**CSSのstepsアニメ**で背景位置をコマ送りする。JSは1回もフレームを跨がない。
 
 import {decryptPicUrl} from './Crypto';
+import {getFn} from '../sn/CmnLib';
+import {SEARCH_PATH_ARG_EXT} from '../sn/ConfigBase';
 
 // 1コマぶんの位置情報。x/yはシート画像内の実座標（TexturePackerが不規則パッキングするため、
 //	格子仮定では求まらない）。ox/oyはtrim分のオフセット（トリム無しなら0,0）
@@ -79,6 +81,10 @@ export function setFetch(f: typeof snFetch) {snFetch = f}
 //	**cryptoも一緒に渡す**——decryptPicUrl自身がcrypto:false時に素通しする作りなので、ここは
 //	sys.cryptoをそのまま伝えるだけでよい（渡し忘れるとcrypto:false構成でも無駄にBlob URL化される）
 export function setDecFncs(dec: typeof snDec, decAB: typeof snDecAB, crypto: boolean) {snDec = dec; snDecAB = decAB; snCrypto = crypto}
+// path.json解決（本家 SpritesMng.ts:322-323 getFn(meta.image)+cfg.searchPath()と同じ）。
+//	未注入（単体テスト等）はundefinedのままにし、sheetImgSrc()側で単純結合へフォールバックする
+let snSearchPath: ((fn: string, extptn: SEARCH_PATH_ARG_EXT)=> string) | undefined;
+export function setSearchPath(f: typeof snSearchPath) {snSearchPath = f}
 
 // .jsonのURLからシートを読む。**同じシートを何度も取りに行かないようここで覚える**
 //	（表裏ページ・複数レイヤが同じ画像を使う。モジュールレベルに置くのは FocusMng と同じ形）
@@ -106,9 +112,19 @@ function decodeText(buf: ArrayBuffer): string {
 	return new TextDecoder('utf-8').decode(buf);	// UTF-8 BOMもTextDecoderが読み飛ばす
 }
 
-// シート画像のURL。json内の`meta.image`を**jsonと同じ場所**から引く（本家も同じ扱い）
+// シート画像のURL。json内の`meta.image`（例：`breakline.5x20.webp`）は拡張子を除いた
+//	論理名でpath.json解決する（本家 SpritesMng.ts:322-323 getFn(meta.image)+cfg.searchPath()と
+//	同じ）。**「jsonと同じ場所に同名で置く」単純結合では暗号化構成(doc_crypto)で見つからない**：
+//	全ファイルがUUID名にリネームされ、meta.imageは元の平文ファイル名のまま残るため
+//	（sn_kowloon実機で発覚。fetchはVite devのSPAフォールバックでindex.htmlを200で返してしまい、
+//	それを画像として復号しようとしてOperationErrorになっていた。2026-09-16）。
+//	未注入（単体テスト等）や解決失敗時は従来どおりの単純結合にフォールバックする
 export function sheetImgSrc(jsonSrc: string, json: unknown): string {
 	const img = (json as T_SHEET_JSON).meta.image ?? '';
+	if (snSearchPath) {
+		try {return snSearchPath(getFn(img), SEARCH_PATH_ARG_EXT.SP_GSM)}
+		catch { /* フォールバックへ */ }
+	}
 	return jsonSrc.replace(/[^/]*$/, '') + img;
 }
 

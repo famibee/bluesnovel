@@ -51,7 +51,11 @@ type T_STATE = {
 	chgFilter: (arg: T_CHGFILTER)=> void,
 	chgFx	: (arg: T_CHGFX)=> void,
 	chgStr	: (arg: T_CHGSTR)=> void,
-	addBtn	: (arg: T_ADDBTN)=> void,
+	// 戻り値は確定したボタン名（[button nm=…]省略時はここで通し番号を振るため、
+	//	呼び出し側は実際に使われた名前を知りようが無い。crypto:true構成でpic/b_picの
+	//	復号完了後、chgBtnPic()で対象ボタンを引き直すのに使う）
+	addBtn	: (arg: T_ADDBTN)=> string,
+	chgBtnPic: (arg: T_CHGBTNPIC)=> void,
 
 	// 文字出現・消去演出の定義表（[ch_in_style]/[ch_out_style]）。本家は TxtStage の
 	//	staticな連想配列で、CSSの`@keyframes`をスタイルシートへ挿す。こちらはWeb Animations APIで
@@ -313,11 +317,21 @@ export type T_ADDBTN = {
 	url?	: string;	// [button url=...]指定時：ラベルへ飛ばず別タブでURLを開く（fn・labelより優先。本家 Main.ts:179）
 	sty?	: T_BTN_STY;	// 配置・寸法・変形（書かれた属性だけ）
 }
+// crypto:true構成での[button pic=/b_pic=]復号待ち専用（addBtnのfire-and-forget差し替え。
+//	[lay fn=]のchgPic/chgBPicと同じ「まず空で確定、Blob URL化でき次第差し替える」流儀）。
+//	対象がclear_lay等で既に消えていたら何もしない（ScriptMng.ts参照）
+export type T_CHGBTNPIC = {
+	layerNm	: string;
+	page	: T_PAGE;
+	nm		: string;
+	src?	: string;
+	b_src?	: string;
+}
 
 // [button]の既定フォント（本家 CmnInterface.ts:349 の sn.button.fontFamily と同じHiragino系スタック）
 export const DEF_BTN_FONT = `'Hiragino Sans', 'Hiragino Kaku Gothic ProN', '游ゴシック Medium', meiryo, sans-serif`;
 
-export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'chgFx'|'enableEvent'|'addBtn'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'|'setNextChHint'>
+export type T_INIT_FNCS = Readonly<Pick<T_STATE, 'addLayer'|'chgPic'|'chgBAlpha'|'chgBPic'|'chgBackClear'|'setBackAlpha'|'setBtnFont'|'chgStr'|'chgLay'|'defChStyle'|'setChWait'|'setAutowc'|'getLaySty'|'getForeIdx'|'getPages'|'getPagesJson'|'replace'|'clearLay'|'clearTxtLay'|'moveLay'|'chgFilter'|'chgFx'|'enableEvent'|'addBtn'|'chgBtnPic'|'addTitle'|'toggleFullScr'|'setWait'|'requestSkip'|'setSkipping'|'startTrans'|'finishTrans'|'startQuake'|'finishQuake'|'setReadBack'|'setStyPaging'|'setNextChHint'>
 	// 文字送り演出（Web Animations API）実行中かの最新値。オート読み・既読スキップの待ち時間カウント開始を
 	//	演出完了まで遅らせるため（ScriptMng#scheduleResume）。isTypingはstateの値そのものだと
 	//	attachTsx時点のスナップショットで固まってしまうので、関数越しに読む
@@ -443,18 +457,31 @@ export const useStore = create<T_STATE>()((set, get)=> ({	// わざとカーリ�
 	}),
 	// [button]タグ：指定した文字レイヤ（UIコンテナ）のaBtnにボタンを1件追加する。
 	//	独立レイヤ（cls:'btn'）としてはscopedしないことで、文字レイヤごと表示/非表示を一括で切り替えられる
-	addBtn	: ({layerNm, page, nm, text, label, call, fn, arg, url, sty}: T_ADDBTN)=> set(s=> {
+	addBtn	: ({layerNm, page, nm, text, label, call, fn, arg, url, sty}: T_ADDBTN)=> {
+		set(s=> {
+			const {idx, aLay} = pickPage(s, page);
+			const e = findLay(aLay, layerNm, 'txt');
+			// nmはReactのkeyになるので同一レイヤ内で一意でなければならない。
+			//	**本家にボタン名の概念は無い**（Buttonはコンテナの子として積まれるだけ）ので、
+			//	省略時は追加順の通し番号で振る。labelを流用していた頃は、テンプレの[sys_menu]が
+			//	fn違い・label=*mainのボタンを3つ並べるところで衝突していた。
+			//	aBtnは「追加」と「[clear_lay]で全消し」しかされないので、添字は一意で足りる
+			if (nm === undefined) nm = `${label || fn || 'btn'}#${String(e.aBtn.length)}`;
+			else if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
+
+			e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(arg !== undefined ? {arg} : {}), ...(url !== undefined ? {url} : {}), ...(sty !== undefined ? {sty} : {})}];
+			return putPage(s, idx, aLay);
+		});
+		return nm!;	// set()の中で確定させた値（未指定時の通し番号込み）をそのまま返す
+	},
+	// crypto:true構成で[button pic=/b_pic=]の復号が遅れて届いたときの差し替え専用（ScriptMng.ts参照）。
+	//	対象ボタンが[clear_lay]等で既に消えていたら何もしない
+	chgBtnPic: ({layerNm, page, nm, src, b_src}: T_CHGBTNPIC)=> set(s=> {
 		const {idx, aLay} = pickPage(s, page);
 		const e = findLay(aLay, layerNm, 'txt');
-		// nmはReactのkeyになるので同一レイヤ内で一意でなければならない。
-		//	**本家にボタン名の概念は無い**（Buttonはコンテナの子として積まれるだけ）ので、
-		//	省略時は追加順の通し番号で振る。labelを流用していた頃は、テンプレの[sys_menu]が
-		//	fn違い・label=*mainのボタンを3つ並べるところで衝突していた。
-		//	aBtnは「追加」と「[clear_lay]で全消し」しかされないので、添字は一意で足りる
-		if (nm === undefined) nm = `${label || fn || 'btn'}#${String(e.aBtn.length)}`;
-		else if (e.aBtn.some(b=> b.nm === nm)) throw `ボタン名 ${nm} はレイヤ ${layerNm} 内で既に使用されています`;
-
-		e.aBtn = [...e.aBtn, {nm, text, label, ...(call !== undefined ? {call} : {}), ...(fn !== undefined ? {fn} : {}), ...(arg !== undefined ? {arg} : {}), ...(url !== undefined ? {url} : {}), ...(sty !== undefined ? {sty} : {})}];
+		const btn = e.aBtn.find(b=> b.nm === nm);
+		if (! btn?.sty) return {};
+		btn.sty = {...btn.sty, ...(src !== undefined ? {src} : {}), ...(b_src !== undefined ? {b_src} : {})};
 		return putPage(s, idx, aLay);
 	}),
 	chgPic	: ({nm, page, fn, src, isSheet, isMovie, aFace}: T_CHGPIC)=> set(s=> {

@@ -81,7 +81,7 @@ export class SysBase implements T_SysRoots, T_SysBase {
 	#root: Root | undefined;
 	#heStage?: HTMLDivElement;
 	protected async run() {
-		const [{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch, setDecFncs}, {resetStore}] = await Promise.all([
+		const [{createRoot}, {initMain}, {Config}, {ScriptMng}, {setFetch, setDecFncs, setSearchPath}, {resetStore}] = await Promise.all([
 			import('react-dom/client'),
 			import('../components/Main'),
 			import('./Config'),
@@ -114,6 +114,9 @@ export class SysBase implements T_SysRoots, T_SysBase {
 			return;
 		}
 		this.setMain(cfg);
+		// アニメpngシートの内部参照画像（meta.image）もpath.json解決を経由させる（Sprite.ts参照）。
+		//	setFetch/setDecFncsと違いcfg生成後でないと呼べないのでここでまとめて注入する
+		setSearchPath((fn, extptn)=> cfg.searchPath(fn, extptn));
 
 		// 初回だけ：ホストHTMLの既存要素があればそれをそのままマウント先にし、無ければdivを新設する。
 		//	以後（プロジェクト切替）は同じ要素へ#rootを作り直すだけで、DOMは触らない

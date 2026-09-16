@@ -3057,7 +3057,7 @@ var Ua = class p {
 		this.sys = e, this.#m = new n(e, ""), this.#T = new oe((t, n) => e.cfg.searchPath(t, n), (t, n) => e.fetch(t, n), (t, n) => e.dec(t, n), (t) => e.decAB(t), e.crypto), this.#e = document.createElement("span"), this.#e.hidden = !0, this.#e.textContent = "", this.#e.style.cssText = `	z-index: ${2 ** 53 - 1};
 			position: absolute; left: 0; top: 0;
 			color: black;
-			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#ct(e), this.#t.log = (e) => this.#ut(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
+			background-color: rgba(255, 255, 255, 0.7);`, document.body.appendChild(this.#e), this.#t.trace = (e) => this.#ut(e), this.#t.log = (e) => this.#ft(e, this.#r?.fn ?? "", this.#r?.lineNum ?? NaN);
 	}
 	destroy() {
 		this.#C = !0, this.cancelAuto(), clearTimeout(this.#U), clearTimeout(this.#Y), clearTimeout(this.#ee), this.#ve(() => !0);
@@ -3217,7 +3217,7 @@ var Ua = class p {
 	}
 	#y;
 	async #b(e) {
-		return this.#n[e] ??= new S(e, await this.#st(e), this.#S());
+		return this.#n[e] ??= new S(e, await this.#lt(e), this.#S());
 	}
 	#x;
 	#S() {
@@ -3267,7 +3267,7 @@ var Ua = class p {
 	}
 	playButtonSe(e, t) {
 		if (!e) return;
-		let n = this.#Ze("button", e);
+		let n = this.#$e("button", e);
 		if (!n) return;
 		let r = Number(this.#r?.getVal(`sys:const.sn.sound.${t}.volume`) ?? 1);
 		this.#O.play(t, n, {
@@ -3345,7 +3345,7 @@ var Ua = class p {
 	#I;
 	#L(e) {
 		if (e) {
-			this.#I = e, this.#gt(!0);
+			this.#I = e, this.#vt(!0);
 			return;
 		}
 		setTimeout(() => this.#N(), 0);
@@ -3629,7 +3629,7 @@ var Ua = class p {
 		}
 	}
 	async #Se(e) {
-		let t = e.buf === "BGM" ? "playbgm" : "playse", n = this.#Ze(t, e.fn);
+		let t = e.buf === "BGM" ? "playbgm" : "playse", n = this.#$e(t, e.fn);
 		n && (this.#r?.setValNochk(`tmp:const.sn.sound.${e.buf}.playing`, !0), await this.#O.play(e.buf, n, e, (e) => {
 			this.#r?.setValNochk(`tmp:const.sn.sound.${e}.playing`, !1), e === "VOICE" && this.#Ce();
 		}));
@@ -3779,14 +3779,14 @@ var Ua = class p {
 				++this.#Ie;
 				return;
 			}
-			this.#Fe = !0, this.#gt(!1), this.#l ??= {
+			this.#Fe = !0, this.#vt(!1), this.#l ??= {
 				...e.nowScrIdx(),
 				mark: this.#v(),
 				clearOnResume: e.clearOnResume
 			};
 			try {
 				for (;;) {
-					this.$fncs.setWait(null);
+					this.$fncs.setWait(null), this.#Ze = void 0;
 					let t;
 					try {
 						t = e.step();
@@ -3794,7 +3794,7 @@ var Ua = class p {
 						this.myTrace(`シナリオ解析エラー fn:${e.fn} ${String(t)}`, "ET");
 						return;
 					}
-					for (let e of t) this.#ot(e);
+					for (let e of t) this.#ct(e);
 					let n = t.at(-1);
 					if (n?.t === "waitTrans") {
 						this.#J(n.canskip);
@@ -3861,7 +3861,7 @@ var Ua = class p {
 						return;
 					}
 					if (n?.t !== "loadScript") {
-						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#at();
+						e.atEnd ? this.myTrace(`スクリプト終端です fn:${e.fn}`, "I") : this.#st();
 						return;
 					}
 					try {
@@ -3945,9 +3945,9 @@ var Ua = class p {
 		let { fore: e, back: t } = this.$fncs.getPages(), n = [];
 		for (let [r, o] of [[e, "fore"], [t, "back"]]) for (let e of r) if (a(e)) {
 			e.fn && n.push((async () => {
-				let [t, n] = await Promise.all([this.#Qe(this.#Xe("lay", e.fn)), Promise.all(e.aFace.map(async (e) => ({
+				let [t, n] = await Promise.all([this.#et(this.#Qe("lay", e.fn)), Promise.all(e.aFace.map(async (e) => ({
 					...e,
-					src: await this.#Qe(this.#Xe("add_face", e.fn))
+					src: await this.#et(this.#Qe("add_face", e.fn))
 				})))]);
 				this.$fncs.chgPic({
 					nm: e.nm,
@@ -3961,7 +3961,7 @@ var Ua = class p {
 			})());
 			for (let t of e.aFx ?? []) {
 				let r = t.tex;
-				r && n.push(this.#rt(r).then((n) => this.$fncs.chgFx({
+				r && n.push(this.#at(r).then((n) => this.$fncs.chgFx({
 					aLayNm: [e.nm],
 					page: o,
 					mode: "add",
@@ -3973,7 +3973,7 @@ var Ua = class p {
 			}
 		} else if (i(e)) {
 			let t = e.b_pic;
-			t && n.push(this.#Qe(this.#Xe("lay", t)).then((n) => this.$fncs.chgBPic({
+			t && n.push(this.#et(this.#Qe("lay", t)).then((n) => this.$fncs.chgBPic({
 				nm: e.nm,
 				page: o,
 				fn: t,
@@ -4030,7 +4030,9 @@ var Ua = class p {
 		let t = e === "l" ? "breakline" : "breakpage";
 		return this.#Je[e] ??= this.sys.cfg.matchPath(`^${t}$`, d.SP_GSM).length > 0 ? this.sys.cfg.searchPath(t, d.SP_GSM) : "";
 	}
-	#Xe(e, t) {
+	#Xe = /* @__PURE__ */ new Map();
+	#Ze;
+	#Qe(e, t) {
 		if (!t) return "";
 		if (t.startsWith("userdata:/")) return this.#m.getFile(t) || (this.myTrace(`[${e}] 保存された画像がありません fn:${t}`, "E"), "");
 		try {
@@ -4039,7 +4041,7 @@ var Ua = class p {
 			return this.myTrace(`[${e}] 画像が見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#Ze(e, t) {
+	#$e(e, t) {
 		if (!t) return "";
 		try {
 			return this.sys.cfg.searchPath(t, d.SOUND);
@@ -4047,21 +4049,21 @@ var Ua = class p {
 			return this.myTrace(`[${e}] 音声ファイルが見つかりません fn:${t} ${String(n)}`, "E"), "";
 		}
 	}
-	#Qe(e) {
+	#et(e) {
 		return l(e, this.sys.crypto, this.sys.fetch, (e) => this.sys.decAB(e));
 	}
-	#$e = /* @__PURE__ */ new Map();
-	#et = /* @__PURE__ */ new Map();
 	#tt = /* @__PURE__ */ new Map();
-	#nt(e) {
+	#nt = /* @__PURE__ */ new Map();
+	#rt = /* @__PURE__ */ new Map();
+	#it(e) {
 		let t = this.#D(e);
 		return () => t === this.$fncs.getForeIdx() ? "fore" : "back";
 	}
-	#rt(e) {
-		return this.#Qe(this.#Xe("add_fx", e));
+	#at(e) {
+		return this.#et(this.#Qe("add_fx", e));
 	}
-	#it = /* @__PURE__ */ new Map();
-	#at() {
+	#ot = /* @__PURE__ */ new Map();
+	#st() {
 		let e = this.#r;
 		if (e) for (let t of new Set(e.peekUpcomingPicFn())) {
 			let e;
@@ -4074,10 +4076,10 @@ var Ua = class p {
 				new Image().src = e;
 				continue;
 			}
-			this.#it.has(e) || this.#it.set(e, this.#Qe(e));
+			this.#ot.has(e) || this.#ot.set(e, this.#et(e));
 		}
 	}
-	#ot(e) {
+	#ct(e) {
 		switch (e.t) {
 			case "addLay":
 				switch (e.cls) {
@@ -4112,8 +4114,8 @@ var Ua = class p {
 				break;
 			case "layPlg": break;
 			case "chgPic": {
-				let t = this.#Xe("lay", e.fn), { isSheet: n, isMovie: r } = Ha(t), i = e.aFace?.map((e) => {
-					let t = this.#Xe("add_face", e.fn);
+				let t = this.#Qe("lay", e.fn), { isSheet: n, isMovie: r } = Ha(t), i = e.aFace?.map((e) => {
+					let t = this.#Qe("add_face", e.fn);
 					return {
 						...e,
 						src: t,
@@ -4132,8 +4134,8 @@ var Ua = class p {
 					});
 					break;
 				}
-				let a = `${e.nm}:${e.page}`, o = (this.#$e.get(a) ?? 0) + 1;
-				this.#$e.set(a, o), this.$fncs.chgPic({
+				let a = `${e.nm}:${e.page}`, o = (this.#tt.get(a) ?? 0) + 1;
+				this.#tt.set(a, o), this.$fncs.chgPic({
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
@@ -4145,12 +4147,12 @@ var Ua = class p {
 						src: ""
 					})) }
 				});
-				let s = this.#nt(e.page), c = (e) => {
-					let t = this.#it.get(e);
-					return t && this.#it.delete(e), t ?? this.#Qe(e);
+				let s = this.#it(e.page), c = (e) => {
+					let t = this.#ot.get(e);
+					return t && this.#ot.delete(e), t ?? this.#et(e);
 				};
 				Promise.all([c(t), ...i?.map((e) => c(e.src)) ?? []]).then(([t, ...c]) => {
-					this.#$e.get(a) === o && this.$fncs.chgPic({
+					this.#tt.get(a) === o && this.$fncs.chgPic({
 						nm: e.nm,
 						page: s(),
 						fn: e.fn,
@@ -4183,7 +4185,7 @@ var Ua = class p {
 					});
 					break;
 				}
-				let t = this.#Xe("lay b_pic", e.fn);
+				let t = this.#Qe("lay b_pic", e.fn);
 				if (!this.sys.crypto) {
 					this.$fncs.chgBPic({
 						nm: e.nm,
@@ -4193,16 +4195,16 @@ var Ua = class p {
 					});
 					break;
 				}
-				let n = `${e.nm}:${e.page}`, r = (this.#et.get(n) ?? 0) + 1;
-				this.#et.set(n, r), this.$fncs.chgBPic({
+				let n = `${e.nm}:${e.page}`, r = (this.#nt.get(n) ?? 0) + 1;
+				this.#nt.set(n, r), this.$fncs.chgBPic({
 					nm: e.nm,
 					page: e.page,
 					fn: e.fn,
 					src: ""
 				});
-				let i = this.#nt(e.page);
-				this.#Qe(t).then((t) => {
-					this.#et.get(n) === r && this.$fncs.chgBPic({
+				let i = this.#it(e.page);
+				this.#et(t).then((t) => {
+					this.#nt.get(n) === r && this.$fncs.chgBPic({
 						nm: e.nm,
 						page: i(),
 						fn: e.fn,
@@ -4226,7 +4228,7 @@ var Ua = class p {
 				this.$fncs.startTrans({
 					aLayNm: e.aLayNm,
 					time: e.time,
-					...e.rule ? { ruleSrc: this.#Xe("trans", e.rule) } : {},
+					...e.rule ? { ruleSrc: this.#Qe("trans", e.rule) } : {},
 					...e.vague === void 0 ? {} : { vague: e.vague },
 					...e.glsl === void 0 ? {} : { glslSrc: e.glsl }
 				}), e.time <= 0 && this.#E.finishTrans(e.aLayNm, t, []), this.#K(e.time, e.aLayNm);
@@ -4237,7 +4239,7 @@ var Ua = class p {
 			case "chgStr":
 				{
 					let t = v(e.str);
-					for (let e of t) e.pic && (e.src = this.#Xe("graph", e.pic));
+					for (let e of t) e.pic && (e.src = this.#Qe("graph", e.pic));
 					this.$fncs.chgStr({
 						nm: e.nm,
 						page: e.page,
@@ -4248,12 +4250,11 @@ var Ua = class p {
 				}
 				break;
 			case "addBtn": {
-				let t = e.sty && {
+				let t = e.sty?.pic ? this.#Qe("button pic", e.sty.pic) : void 0, n = e.sty?.b_pic ? this.#Qe("button b_pic", e.sty.b_pic) : void 0, r = this.sys.crypto && (t ?? n) !== void 0, i = e.sty && {
 					...e.sty,
-					...e.sty.pic ? { src: this.#Xe("button pic", e.sty.pic) } : {},
-					...e.sty.b_pic ? { b_src: this.#Xe("button b_pic", e.sty.b_pic) } : {}
-				};
-				this.$fncs.addBtn({
+					...t === void 0 ? {} : { src: r ? "" : t },
+					...n === void 0 ? {} : { b_src: r ? "" : n }
+				}, a = this.$fncs.addBtn({
 					layerNm: e.layerNm,
 					page: e.page,
 					...e.nm === void 0 ? {} : { nm: e.nm },
@@ -4263,8 +4264,20 @@ var Ua = class p {
 					...e.fn === void 0 ? {} : { fn: e.fn },
 					...e.arg === void 0 ? {} : { arg: e.arg },
 					...e.url === void 0 ? {} : { url: e.url },
-					...t === void 0 ? {} : { sty: t }
+					...i === void 0 ? {} : { sty: i }
 				});
+				if (r) {
+					let r = this.#it(e.page);
+					Promise.all([t === void 0 ? Promise.resolve(void 0) : this.#et(t), n === void 0 ? Promise.resolve(void 0) : this.#et(n)]).then(([t, n]) => {
+						this.$fncs.chgBtnPic({
+							layerNm: e.layerNm,
+							page: r(),
+							nm: a,
+							...t === void 0 ? {} : { src: t },
+							...n === void 0 ? {} : { b_src: n }
+						});
+					});
+				}
 				break;
 			}
 			case "chgLay":
@@ -4338,11 +4351,11 @@ var Ua = class p {
 					}), this.#me(e);
 					break;
 				}
-				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#tt.get(t) ?? 0) + 1;
-				this.#tt.set(t, n);
-				let r = e.page === "both" ? (() => "both") : this.#nt(e.page);
-				this.#rt(e.fx.tex).then((i) => {
-					this.#tt.get(t) === n && this.$fncs.chgFx({
+				let t = `${e.aLayNm?.join(",") ?? ""}:${e.page}:${e.fx.name}`, n = (this.#rt.get(t) ?? 0) + 1;
+				this.#rt.set(t, n);
+				let r = e.page === "both" ? (() => "both") : this.#it(e.page);
+				this.#at(e.fx.tex).then((i) => {
+					this.#rt.get(t) === n && this.$fncs.chgFx({
 						aLayNm: e.aLayNm,
 						page: r(),
 						mode: "add",
@@ -4539,33 +4552,57 @@ var Ua = class p {
 			case "pageTo":
 			case "pageToPlace": break;
 			case "trace":
-				this.#ct({ text: e.text });
+				this.#ut({ text: e.text });
 				break;
 			case "log":
-				this.#ut({ text: e.text }, e.fn, e.lineNum);
+				this.#ft({ text: e.text }, e.fn, e.lineNum);
 				break;
 			case "dumpScript":
-				this.#ht(e.setFnc, e.breakFnc, e.needErr);
+				this.#_t(e.setFnc, e.breakFnc, e.needErr);
 				break;
 			case "loadScript": break;
 			case "stop": {
 				let t = this.#l;
-				if (this.#l = void 0, t && (this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#r?.setPageLogKey(`${String(t.idx)}:${t.fn}`)), this.#d = !1, this.#f(), e.kind === "l" || e.kind === "p" || e.kind === "waitclick") {
-					let t = e.kind === "waitclick" ? void 0 : this.#Ye(e.kind);
-					this.$fncs.setWait({
+				if (this.#l = void 0, t && (this.#c.push(t.fn, t.idx, t.mark, t.clearOnResume), this.#r?.setPageLogKey(`${String(t.idx)}:${t.fn}`)), this.#d = !1, this.#f(), e.kind === "waitclick") this.$fncs.setWait({
+					nm: e.nm,
+					kind: e.kind,
+					...e.mark,
+					...e.noMark ? { noMark: !0 } : {}
+				});
+				else if (e.kind === "l" || e.kind === "p") {
+					let t = e.kind, n = this.#Ye(t);
+					if (!n || !this.sys.crypto) this.$fncs.setWait({
 						nm: e.nm,
-						kind: e.kind,
-						...t ? { src: t } : {},
+						kind: t,
+						...n ? { src: n } : {},
 						...e.mark,
 						...e.noMark ? { noMark: !0 } : {}
 					});
+					else {
+						this.$fncs.setWait({
+							nm: e.nm,
+							kind: t,
+							...e.mark,
+							...e.noMark ? { noMark: !0 } : {}
+						}), this.#Ze = e.nm;
+						let r = this.#Xe.get(t);
+						r || (r = this.#et(n), this.#Xe.set(t, r)), r.then((n) => {
+							this.#Ze === e.nm && this.$fncs.setWait({
+								nm: e.nm,
+								kind: t,
+								src: n,
+								...e.mark,
+								...e.noMark ? { noMark: !0 } : {}
+							});
+						});
+					}
 				}
-				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setNextChHint(this.#r?.peekNextDisplayChar()), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || c), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#gt(!0);
+				this.#P = e.kind === "s", e.resume ? this.#V(e.resume.mode, e.resume.msec) : this.$fncs.setSkipping(!1), this.#_(), this.$fncs.setBackAlpha(Number(this.#r?.getVal("sys:TextLayer.Back.Alpha") ?? 1)), this.$fncs.setNextChHint(this.#r?.peekNextDisplayChar()), this.$fncs.setBtnFont(String(this.#r?.getVal("tmp:sn.button.fontFamily") ?? "") || c), this.#r && this.$fncs.setChWait(this.#r.chWait), this.#vt(!0);
 				break;
 			}
 		}
 	}
-	async #st(e) {
+	async #lt(e) {
 		try {
 			let t = this.sys.cfg.searchPath(e, d.SCRIPT), n = "";
 			try {
@@ -4586,37 +4623,37 @@ var Ua = class p {
 			throw this.myTrace(`[load] スクリプト読込に失敗しました fn:${e} ${String(t)}`, "ET"), t;
 		}
 	}
-	#ct(e) {
+	#ut(e) {
 		return this.myTrace(e.text || `(text is ${e.text})`, "I"), !1;
 	}
-	#lt = !0;
-	#ut(n, r, i) {
+	#dt = !0;
+	#ft(n, r, i) {
 		let a = "";
-		return this.#lt && (this.#lt = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
+		return this.#dt && (this.#dt = !1, a = `== ${t.plat_desc} ==\n`), this.sys.appendFile(this.sys.path_downloads + "log.txt", `${a}--- ${e("-", "_", "")} [fn:${r} line:${String(i)}] prj:${this.sys.arg.cur}\n${n.text || `(text is ${String(n.text)})`}\n`), !1;
 	}
-	#dt;
-	#ft;
-	#pt = "";
-	#mt = Object.create(null);
-	#ht(e, t, n) {
+	#pt;
+	#mt;
+	#ht = "";
+	#gt = Object.create(null);
+	#_t(e, t, n) {
 		let r = globalThis, i = r[e];
 		if (typeof i != "function") {
 			n && this.myTrace(`[dump_script] globalThis に関数 ${e} が見つかりません`, "ET");
 			return;
 		}
-		if (this.#dt = i, t) {
+		if (this.#pt = i, t) {
 			let e = r[t];
-			typeof e == "function" ? this.#ft = e : n && this.myTrace(`[dump_script] globalThis に関数 ${t} が見つかりません`, "ET");
+			typeof e == "function" ? this.#mt = e : n && this.myTrace(`[dump_script] globalThis に関数 ${t} が見つかりません`, "ET");
 		}
-		this.#gt(!0);
+		this.#vt(!0);
 	}
-	#gt(e) {
+	#vt(e) {
 		let t = this.#r;
-		if (!this.#dt || !t) return;
+		if (!this.#pt || !t) return;
 		let n = t.lineNum;
 		if (!Number.isFinite(n)) return;
 		let r = t.fn;
-		r !== this.#pt && (this.#pt = r, this.#dt(this.#mt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#ft?.(n, t.colNum, e);
+		r !== this.#ht && (this.#ht = r, this.#pt(this.#gt[r] ??= this.#n[r]?.aToken.join("") ?? "")), this.#mt?.(n, t.colNum, e);
 	}
 	myTrace = (e, n = "E") => {
 		let r = "";

@@ -1,6 +1,8 @@
 import { n as e } from "./rolldown-runtime.js";
+import { o as t } from "./CmnLib.js";
+import { n } from "./ConfigBase.js";
 //#region src/ts/Crypto.ts
-var t = {
+var r = {
 	png: "image/png",
 	jpg: "image/jpeg",
 	jpeg: "image/jpeg",
@@ -9,27 +11,28 @@ var t = {
 	mp4: "video/mp4",
 	webm: "video/webm"
 };
-async function n(e, n, r, i) {
-	if (!n || !e || e.startsWith("data:") || e.startsWith("blob:") || e.endsWith(".json")) return e;
-	let a = t[/\.([a-z0-9]+)$/i.exec(e)?.[1]?.toLowerCase() ?? ""];
+async function i(e, t, n, i) {
+	if (!t || !e || e.startsWith("data:") || e.startsWith("blob:") || e.endsWith(".json")) return e;
+	let a = r[/\.([a-z0-9]+)$/i.exec(e)?.[1]?.toLowerCase() ?? ""];
 	if (!a) return e;
-	let o = await i(await (await r(e)).arrayBuffer());
+	let o = await i(await (await n(e)).arrayBuffer());
 	return URL.createObjectURL(new Blob([o], { type: a }));
 }
 //#endregion
 //#region src/ts/Sprite.ts
-var r = /* @__PURE__ */ e({
-	aniSpriteClass: () => b,
-	aniSpriteCss: () => x,
-	getNatSize: () => _,
-	loadSheet: () => f,
-	parseSheet: () => i,
-	setDecFncs: () => u,
-	setFetch: () => l,
-	setNatSize: () => g,
-	sheetImgSrc: () => m
+var a = /* @__PURE__ */ e({
+	aniSpriteClass: () => w,
+	aniSpriteCss: () => T,
+	getNatSize: () => x,
+	loadSheet: () => g,
+	parseSheet: () => o,
+	setDecFncs: () => f,
+	setFetch: () => d,
+	setNatSize: () => b,
+	setSearchPath: () => m,
+	sheetImgSrc: () => v
 });
-function i(e, t) {
+function o(e, t) {
 	let { frames: n, meta: r } = e, i = Object.values(n ?? {}), a = i[0];
 	if (!a || !r.size) return;
 	let { w: o, h: s } = a.sourceSize ?? a.frame;
@@ -51,46 +54,53 @@ function i(e, t) {
 		sec: i.length / (60 * (c > 0 ? c : 1))
 	};
 }
-var a = (e, t) => fetch(e, t), o = (e, t) => Promise.resolve(t), s = (e) => Promise.resolve(e), c = !1;
-function l(e) {
-	a = e;
+var s = (e, t) => fetch(e, t), c = (e, t) => Promise.resolve(t), l = (e) => Promise.resolve(e), u = !1;
+function d(e) {
+	s = e;
 }
-function u(e, t, n) {
-	o = e, s = t, c = n;
+function f(e, t, n) {
+	c = e, l = t, u = n;
 }
-var d = Object.create(null);
-function f(e) {
-	return d[e] ??= a(e).then(async (e) => {
+var p;
+function m(e) {
+	p = e;
+}
+var h = Object.create(null);
+function g(e) {
+	return h[e] ??= s(e).then(async (e) => {
 		if (!e.ok) throw `${String(e.status)} ${e.statusText}`;
-		return o("json", p(await e.arrayBuffer()));
-	}).then((e) => JSON.parse(e)).then(async (t) => i(t, await n(m(e, t), c, a, s))).catch(() => void 0);
+		return c("json", _(await e.arrayBuffer()));
+	}).then((e) => JSON.parse(e)).then(async (t) => o(t, await i(v(e, t), u, s, l))).catch(() => void 0);
 }
-function p(e) {
+function _(e) {
 	let t = new Uint8Array(e);
 	return t[0] === 255 && t[1] === 254 ? new TextDecoder("utf-16le").decode(e.slice(2)) : t[0] === 254 && t[1] === 255 ? new TextDecoder("utf-16be").decode(e.slice(2)) : new TextDecoder("utf-8").decode(e);
 }
-function m(e, t) {
-	let n = t.meta.image ?? "";
-	return e.replace(/[^/]*$/, "") + n;
+function v(e, r) {
+	let i = r.meta.image ?? "";
+	if (p) try {
+		return p(t(i), n.SP_GSM);
+	} catch {}
+	return e.replace(/[^/]*$/, "") + i;
 }
-var h = Object.create(null);
-function g(e, t, n) {
-	h[e] = {
+var y = Object.create(null);
+function b(e, t, n) {
+	y[e] = {
 		w: t,
 		h: n
 	};
 }
-function _(e) {
-	return h[e];
+function x(e) {
+	return y[e];
 }
-var v = Object.create(null), y = 0;
-function b(e, t = document) {
-	let n = v[e.img];
+var S = Object.create(null), C = 0;
+function w(e, t = document) {
+	let n = S[e.img];
 	if (n) return n;
-	let r = v[e.img] = `sn_ani${String(++y)}`, i = t.createElement("style");
-	return i.dataset.sn = "sprite", i.textContent = x(e, r), t.head.appendChild(i), r;
+	let r = S[e.img] = `sn_ani${String(++C)}`, i = t.createElement("style");
+	return i.dataset.sn = "sprite", i.textContent = T(e, r), t.head.appendChild(i), r;
 }
-function x({ img: e, boxW: t, boxH: n, frames: r, cnt: i, sec: a }, o) {
+function T({ img: e, boxW: t, boxH: n, frames: r, cnt: i, sec: a }, o) {
 	let s = ({ x: e, y: r, w: i, h: a, ox: o, oy: s }) => `background-position: ${String(-e + o)}px ${String(-r + s)}px; clip-path: inset(${String(s)}px ${String(t - o - i)}px ${String(n - s - a)}px ${String(o)}px);`;
 	return `@keyframes ${o}_f {
 ${r.map((e, t) => `\t${String(Math.round(t / i * 1e6) / 1e4)}% {${s(e)} animation-timing-function: step-end;}`).join("\n")}
@@ -111,6 +121,6 @@ ${r.map((e, t) => `\t${String(Math.round(t / i * 1e6) / 1e4)}% {${s(e)} animatio
 }`;
 }
 //#endregion
-export { g as a, f as i, b as n, n as o, _ as r, r as t };
+export { b as a, g as i, w as n, i as o, x as r, a as t };
 
 //# sourceMappingURL=Sprite.js.map
